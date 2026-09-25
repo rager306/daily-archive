@@ -1,0 +1,2590 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Dynamic Cheatsheet: Test-Time Learning with Adaptive Memory</title>
+				<funder>
+					<orgName type="full">HAI-SAP</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-04-10">10 Apr 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Mirac</forename><surname>Suzgun</surname></persName>
+							<email>msuzgun@stanford.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Stanford University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Mert</forename><surname>Yuksekgonul</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Stanford University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Federico</forename><surname>Bianchi</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Together AI</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Dan</forename><surname>Jurafsky</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Stanford University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">James</forename><surname>Zou</surname></persName>
+							<email>jamesz@stanford.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Stanford University</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="department">Together AI</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Dynamic Cheatsheet: Test-Time Learning with Adaptive Memory</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-04-10">10 Apr 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">C2DD2E68CEFF0553524B37CEED08D14C</idno>
+					<idno type="arXiv">arXiv:2504.07952v1[cs.LG]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:00+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Despite their impressive performance on complex tasks, current language models (LMs) typically operate in a vacuum: Each input query is processed separately, without retaining insights from previous attempts. Here, we present Dynamic Cheatsheet (DC), a lightweight framework that endows a black-box LM with a persistent, evolving memory. Rather than repeatedly re-discovering or re-committing the same solutions and mistakes, DC enables models to store and reuse accumulated strategies, code snippets, and general problem-solving insights at inference time. This test-time learning enhances performance substantially across a range of tasks without needing explicit ground-truth labels or human feedback. Leveraging DC, Claude 3.5 Sonnet's accuracy more than doubled on AIME math exams once it began retaining algebraic insights across questions. Similarly, GPT-4o's success rate on the Game of 24 puzzle increased from about 10% to 99% after the model discovered and reused a Python-based solution. In tasks prone to arithmetic mistakes, such as balancing equations, DC enabled GPT-4o and Claude to reach near-perfect accuracy by recalling previously validated code, whereas their baselines stagnated around 50%. Beyond arithmetic challenges, DC yields notable accuracy gains on knowledge-demanding tasks. Claude achieved a 9% improvement in GPQA-Diamond and an 8% boost on MMLU-Pro Engineering and Physics problems. Crucially, DC's memory is self-curated, focusing on concise, transferable snippets rather than entire transcripts, thereby facilitating meta-learning and avoiding context ballooning. Unlike fine-tuning or static retrieval methods, DC adapts LMs' problem-solving skills on the fly, without modifying their underlying parameters, and offers a practical approach for continuously refining responses and cutting routine errors. Overall, our findings present DC as a promising approach for augmenting LMs with persistent memory, bridging the divide between isolated inference events and the cumulative, experience-driven learning characteristic of human cognition. *</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>In Game of 24, GPT-4o leaps from 10% (baseline) to 99% under DC-RS, reflecting its ability to retain and apply Python-based solutions efficiently. Similarly, Claude 3.5 Sonnet's accuracy more than doubles in Math Equation Solver, reaching 98%. Overall, these findings highlight the impact of test-time learning through controlled memory augmentation and efficient retrieval.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>Modern large language models (LLMs) can tackle complex reasoning tasks, answer various questions, and generate extensive texts. Yet they still suffer from one critical limitation: once deployed, these models are fixed prior to deployment and typically retain no explicit or implicit memory of past questions, successes, or mistakes during inference. They approach each new problem de novo, often re-deriving the same insights-and re-committing the same errors. In contrast, human cognition stands on a foundation of incremental learning, continuously internalizing new experiences and solutions into a persistent mental model.</p><p>In this work, we present Dynamic Cheatsheet (DC), a simple and intuitive framework that endows black-box LLMs with a persistent, evolving memory at inference time. Rather than fine-tuning weights (for instance, through dynamic evaluation <ref type="bibr" target="#b27">(Krause et al., 2019)</ref> or domain adaptation <ref type="bibr" target="#b18">(Gururangan et al., 2020)</ref>) or retrieving facts from a massive static corpus (as in traditional retrieval-augmented generation systems <ref type="bibr" target="#b19">(Guu et al., 2020;</ref><ref type="bibr">Zhang et al., 2024b)</ref>), DC dynamically curates a compact library of reusable strategies, solution sketches, and code snippets. Either before or after each query, DC enables the system to decide which lessons to store, what to discard, and how to refine existing entries-thus effectively "learning" from successes and failures. It is a flexible online-learning approach that enables a black-box LLM to improve itself without needing any explicit ground truth labels or human feedback.</p><p>The overall workflow of DC is intuitive and compelling. In one version of DC (DC-Cu.), when presented with a new query, the LM first consults its external memory to see if any prior insights, strategies or relevant model solutions have been stored. It then proposes a solution by combining the retrieved insights with its own internal reasoning capabilities.</p><p>Upon generating an answer, it then proceeds to a curation phase that updates the memory: If the approach seems to be correct, useful, or practical, DC codifies it in its memory for future use; if an error surfaces, DC may revise or prune faulty heuristics. This all happens without gradient-based parameter updates, so computational overhead remains modest, and compatibility with black-box APIs (e.g., GPT-4 or Claude) is fully preserved. See Figure <ref type="figure" target="#fig_3">4</ref>. We tested DC across multiple challenging benchmarks and observed that it increases performance and reduces repetitive mistakes. On AIME 2024, Claude 3.5 Sonnet jumped from 23% to 50% accuracy, more than doubling its baseline score, by retaining algebraic and combinatorial insights. Likewise, it gained 30% accuracy on AIME 2025. Notably, these improvements hold in knowledge-intensive tasks as well. On GPQA-Diamond, which tests specialized domain questions, DC lifted Claude by over 9%. In MMLU-Pro Engineering and Physics, it provided up to an 8% boost in performance by allowing the model to maintain a "toolkit" of formulas and general problem-solving patterns.</p><p>An even more striking and compelling example is the Game of 24, a puzzle that requires the solver to combine four digits into an arithmetic expression equaling 24. GPT-4o's baseline performance (10%) increased to 99% under DC. Early in the test sequence, the model discovered that an efficient Python brute-force solver eliminated all manual guesswork. Once this snippet was stored, GPT-4o simply retrieved it for subsequent queries, avoiding manual arithmetic entirely. We saw a similar pattern in Math Equation Balancer, where GPT-4o and Claude soared from 45-50% to 98-100% by "recalling" a straightforward code-based approach instead of manually fumbling with numeric manipulations.</p><p>Nonetheless, DC is not a panacea. We found that smaller models, such as GPT-4o-mini, benefit from DC in limited amounts. These models generate too few correct solutions in these challenging tasks in the first place, leaving the memory populated with flawed or incomplete strategies. Worse, they struggle to refine stored content. DC can amplify the strengths of models that can already produce high-quality outputs, but not fix foundational gaps in reasoning.</p><p>We also note that DC differs from naive "append the entire conversation history" in-context learning approaches. Under DC, memory is carefully curated, focusing on succinct, useful, and transferable knowledge over raw transcripts. This prevents ballooning context lengths <ref type="bibr">(Liu et al., 2024a)</ref> and helps ensure that repeated retrieval remains tractable. Indeed, part of DC's contribution is in formalizing a mechanism for selective, evolving retention-storing just enough to solve the next set of tasks without drowning in an evergrowing text buffer. Cf. <ref type="bibr" target="#b23">(Karpicke &amp; Roediger III, 2008;</ref><ref type="bibr" target="#b45">Roediger &amp; Butler, 2011;</ref><ref type="bibr" target="#b22">Karpicke &amp; Blunt, 2011</ref>) </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Dynamic Cheatsheet (DC) Methodology</head><p>DC, in its core, includes an external, non-parametric memory that evolves in tandem with the LLM's inference process. Rather than fine-tuning the underlying weights, DC tracks successes and failures of the model at test time, then selectively stores heuristics, strategies, or short textual artifacts that can guide the LLM in future instances. Notably, this approach respects the black-box nature of many commercial LLM APIs: no gradient-based updates are required, and the model's core parameters remain untouched.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1.">DC: Building Blocks and Iterative Loop</head><p>The DC framework consists of two core modules: generation and curation. Both modules can easily operate on top of the same LM (prompted differently) or on separate LMs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1.1.">Solution Generation with Memory</head><p>Let's consider a sequence of inputs (x 1 , x 2 , . . . , x n ), where each x i ∼ D test indicates a new query or problem posed to the model sampled from the same distribution D test (a typical setting in online learning). The distribution D test is unknown to us. At the i-th step, the model is provided with both the new query x i and the current memory state M i , which captures knowledge gleaned from previous successes and failures. We denote the solution generator by Gen:</p><formula xml:id="formula_0">ỹi = Gen(x i , M i ) (1)</formula><p>Here, ỹi is the candidate solution produced by the model. M i helps condition the model to reuse or adapt previously stored solutions, insights, techniques, or heuristics.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1.2.">Memory Curation Step</head><p>After the generator produces its answer ỹi to x i , the curator, Cur, updates the current content of the memory:</p><formula xml:id="formula_1">M i+1 = Cur(M i , x i , ỹi ) (<label>2</label></formula><formula xml:id="formula_2">)</formula><p>During memory curation, Cur mainly considers: (i) the usefulness and generalizability of the newly produced answer (i.e., if ỹi is correct or provides valuable and generalizable insights, it is distilled into a form suitable for later reference), (ii) refinement or removal of existing memory entries (i.e., if an existing memory entry was incorrect or superseded by a more efficient or versatile strategy, Cur may remove or update it), and (iii) clarity and compactness of the entire memory (i.e., memory entries are consolidated to retain succinct, high-impact references and heuristics). Cur does not have access to ground-truth labels; so, it has to assess the correctness and efficiency of the solutions by itself before updating the memory. In our experiments, we instruct a single model to perform this crucial step. Yet, in practice, Cur can be implemented as a series of steps that instruct multiple tools and models, through different prompts, to verify the validity and efficiency of the solution and to transform the raw solution text into even more generalizable, reliable, and efficient strategies, insights, and code snippets.</p><p>We refer to this version of DC above as DC-Cu (short for DC-Cumulative). Under DC-Cu, the system first performs solution generation based on the current memory (Eqn. 1) and then updates the memory (Eqn. 2), by cumulatively expanding and refining the memory items thus far. Unlike DC-RS, which is discussed in the next part, DC-Cu, does not contain a retrieval component, however.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2.">DC with Retrieval &amp; Synthesis (DC-RS)</head><p>DC-Cu has two potential drawbacks. First, it updates the memory after processing an input query, rather than refining it before generating a response. This means the model lacks the opportunity to incorporate new insights from the current query while reasoning through its solution. Second, DC-Cu does not store or revisit past input-output pairs unless explicitly retained in memory. This omission prevents the model from directly retrieving and leveraging historical responses, which can be particularly valuable in benchmarks covering diverse topics or domains (e.g., GPQA-Diamond).</p><p>To address these issues, DC-RS modifies the sequence of memory updates and introduces a retrieval mechanism, Retr, into the curation process. Retr allows the model to retrieve the most relevant past input-output pairs from its knowledge base. By refining the memory before responding and retrieving prior cases when needed, DC-RS enhances the model's adaptability and reasoning efficiency.</p><p>DC-RS first retrieves<ref type="foot" target="#foot_0">foot_0</ref> top-k most similar inputs, along with their model-generated outputs, from previously seen examples, which we denote by R (k) i</p><p>(or simply R i ). <ref type="foot" target="#foot_1">2</ref> It then passes these select examples, R i , along with the most recent memory content, M i-1 , to the curator to update the memory, that is to get M i . Finally, it uses the generator to produce ỹi , given x i and M i . We summarize all these steps below:</p><formula xml:id="formula_3">R i = Retr(x i , {(x j , ỹj )} j&lt;i , k)<label>(3)</label></formula><formula xml:id="formula_4">M i = Cur(M i-1 , x i , R i )<label>(4)</label></formula><formula xml:id="formula_5">ỹi = Gen(x i , M i )<label>(5)</label></formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3.">Baselines</head><p>To quantify the efficacy of memory-driven test-time learning, we compare DC and its variants to four baselines:</p><p>(1) Baseline prompting (BL). This plain "vanilla" prompting approach, with minimal instructions, simply prompts the model without any iterative memory or retrieval mechanism. It reflects traditional one-off inference.<ref type="foot" target="#foot_2">foot_2</ref> </p><p>(2) DC-∅ (empty memory). To isolate the effect of memory curation, this DC baseline always keeps the memory content effectively empty.<ref type="foot" target="#foot_3">foot_3</ref> DC-∅ allows us to measure how much performance improvement arises purely from storing and reusing knowledge over time. While there is no continuous knowledge storage or strategy reuse, this method follows the instructions in Figure <ref type="figure" target="#fig_2">13</ref> and is therefore a strong baseline.</p><p>(3) Full-History Appending (FH). This is a naive approach that appends the entire conversation history to the model input without any curation or truncation.</p><p><ref type="foot" target="#foot_4">foot_4</ref> FH can exceed context-window limits and include redundant or low-value information, but nonetheless, it provides a useful comparison for methods that actively curate content.<ref type="foot" target="#foot_5">foot_5</ref> (4) Dynamic Retrieval (DR). A final baseline uses retrieval but no curation. Specifically, for each new query, it retrieves the most similar past interactions and directly pastes them, verbatim, into the prompt. DR can help the model see relevant input-output pairs but not directly codify any abstract or generalized solutions.<ref type="foot" target="#foot_6">foot_6</ref> Figure 3 (above) contains pseudocodes of all the primary methods and baselines considered in this paper.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Experimental Setup</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.">Tasks and Datasets</head><p>To rigorously evaluate DC's effectiveness, we focus on challenging tasks where contemporary state-of-the-art LLMs, such as GPT-4o and Claude 3.5, still face limitations. Rather than evaluating on benchmarks where performance is near saturation (e.g., BBH <ref type="bibr">(Suzgun et al., 2023b)</ref>, MGSM <ref type="bibr" target="#b49">(Shi et al., 2023)</ref>, GSM8K <ref type="bibr" target="#b11">(Cobbe et al., 2021)</ref>), we prioritize tasks that demand multi-step reasoning, heuristic search, strategic adaptation, and cumulative learning-that is, tasks in which iterative memory refinement can yield tangible improvements over time. <ref type="foot" target="#foot_7">8</ref>Overall, the selected datasets include algorithmic, logical, and domain-specific reasoning tasks, each chosen to stresstest the model's ability to refine its reasoning over time.</p><p>(a) AIME 2020-2025 Exam Questions: The American Invitational Mathematics Examination (AIME) is a prestigious high-school competition featuring complex problems across algebra, combinatorics, number theory, geometry, and probability. These questions require deep mathematical reasoning and multi-step problem-solving. We consider three subsets: AIME 2024<ref type="foot" target="#foot_8">foot_8</ref> (30 questions), AIME 2025<ref type="foot" target="#foot_9">foot_9</ref> (30 questions), and AIME 2020-2024<ref type="foot" target="#foot_10">foot_10</ref> (133 questions).</p><p>(b) GPQA-Diamond <ref type="bibr" target="#b44">(Rein et al., 2024)</ref>: A high-quality, difficult subset of the Graduate-Level Google-Proof Q&amp;A (GPQA) benchmark, GPQA-Diamond contains 198 expertvalidated questions across natural sciences, including biology, chemistry, and physics. These questions were correctly answered by domain experts but often missed by non-experts, making them ideal for evaluating DC's ability to handle complex, multi-hop reasoning tasks.</p><p>(c) Game of 24 <ref type="bibr" target="#b70">(Yao et al., 2023;</ref><ref type="bibr" target="#b55">Suzgun &amp; Kalai, 2024)</ref>: A heuristic-driven arithmetic challenge where the objective is to form an expression that evaluates to 24 using four given numbers exactly once. For instance, if the input values were "7 7 8 11," one valid answer would be "8*(7+7-11)." This task emphasizes systematic search, strategic reasoning, and pattern recognition. We use the 100 examples from <ref type="bibr" target="#b55">(Suzgun &amp; Kalai, 2024)</ref> to assess DC's capacity for refining computational heuristics and strategy over manual attempts.</p><p>(d) Math Equation Balancer: Focused on elementary arithmetic reasoning, this dataset requires the model to complete equations by inserting the appropriate operators to form valid expressions. The task emphasizes the sequential placement of operators, as illustrated by the example "1 ? 2 ? 3 = 6," where the model must identify the correct operators to satisfy the equation ("1 + 2 + 3 = 6" or "1 * 2 * 3 = 6"). We compiled 250 arithmetic expressions for this task.</p><p>(e) MMLU-Pro (Engineering and Physics) <ref type="bibr">(Wang et al., 2024b)</ref>: A professional-level subset of the MMLU benchmark focused on physics and engineering. All questions are presented in a multiple-choice form. The original dataset contains 1,299 physics and 969 engineering questions. We sampled 250 questions from each subset.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.">Language Models</head><p>We evaluate the efficacy of DC across a range of language models. Our selection includes both state-of-the-art LLMs such as GPT-4o and Claude 3.5 Sonnet and their smallerscale counterparts (namely, GPT-4o-mini and Claude 3.5 Haiku), as well as models such as DeepSeek R1 that are designed specifically for reasoning-intensive tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.">Evaluation Protocol</head><p>To ensure standardized and reliable evaluation, all models are instructed to format their final answers in a structured, machine-readable format. All model answers are expected to be wrapped in the following XML-style tags:</p><p>&lt;answer&gt; (final answer) &lt;/answer&gt;</p><p>This explicit format ensures accurate and consistent parsing, eliminating errors arising from extraneous text or ambiguous outputs. Once extracted, the final answers are evaluated using their corresponding task-specific accuracy metric.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.1.">Accuracy Metrics</head><p>Given the diversity of the tasks, we use different accuracy metrics tailored to the specific requirements of each dataset.</p><p>Soft Match (SM) is a lenient metric that considers an answer correct if it matches the ground truth after ignoring minor formatting differences, such as punctuation or whitespace variations. We apply this metric to GPQA-Diamond, and MMLU Pro (Engineering and Physics), in which questions are presented in a multiple-choice format.</p><p>Functionally Correct (FC) is an even more flexible metric that evaluates whether the model's output satisfies the taskspecific constraints, even if the exact numeral presentation or formatting differs slightly from the reference solution.</p><p>We apply this metric to the Game of 24, Math Equation Balancer, and AIME benchmarks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Main Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.">DC enables test-time learning and reduces repetitive errors</head><p>One of the most compelling illustrations of DC's capabilities emerges from the Game of 24 task. As seen in Table <ref type="table" target="#tab_0">1</ref>, GPT-4o's baseline accuracy on this arithmetic puzzle was just 10%. Under DC-RS, its performance increased to 99%, illustrating DC's capacity for test-time learning and iterative refinement. Early in the task sequence, GPT-4o discovered a reliable, Python-based brute-force method to solve Game of 24 and later on recognized the repetitive structure of the problem. The model then encoded this approach into its memory. Once established, GPT-4o consistently retrieved and applied the more or less same Python solution for subsequent examples, leading to rapid and accurate results.</p><p>The performance under DC-∅ (19%) further highlights the positive impact of memory curation and retrieval. DC-∅ uses the same core generator but keeps the memory empty, thus lacking the mechanism to store and reuse solutions. The large gap between 19% (DC-∅) and 99% (DC-RS) confirms that effective memory usage, in which past solutions are retrieved and generalized, is the main driver of GPT-4o's transformation from ad-hoc solver to near-perfect performer in Game of 24.</p><p>In contrast, Claude 3.5 Sonnet showed marginal gain, moving from 12% to 14%. Despite DC's scaffolding, Claude did not internalize a generalized approach but instead continued to rely on manual arithmetic solutions. This underscores that while DC provides the framework for test-time adaptation, its ultimate success hinges on the model's innate capacity to identify and encode robust, reusable strategies. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2.">DC provides substantial improvements across various challenging reasoning benchmarks</head><p>Beyond Game of 24, DC yielded significant gains across a range of complex mathematical and algorithmic tasks. See Table <ref type="table" target="#tab_0">1</ref>. The results below illustrate how iterative solution reuse can helpful in complex reasoning problems.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>AIME Exam Problems.</head><p>The AIME exams provided some of the most dramatic improvements under DC. For Claude 3.5 Sonnet, performance on AIME 2020-2024 surged from 6.7% to 40.6% under DC-RS. A similar upward trend appeared on AIME 2024 (23.3% to 50.0%) and AIME 2025 (6.7% to 36.7%) under DC-Cu. DC-Cu, where the model curates memory after processing the input and does not involve a retrieval stage, also proved potent in recent exam sets, achieving highest accuracy scores in AIME 2024 and 2025. GPT-4o also showed some noteworthy gains. Its AIME 2024 performance raised from 20.0% to 40.0% under DC-RS, while its AIME 2025 score climbed from 6.7% to 20.0%. These boosts suggests that structured test-timeproduced memory can help tackle difficult math problems.</p><p>GPQA-Diamond. On GPQA-Diamond, Claude 3.5 Sonnet improved from 59.6% to 68.7% under DC-RS, a robust 9.1% gain purely from test-time adaptation. DR (63.6%) demonstrated that retrieval alone helps, but the further jump to 68.7% highlights how memory curation and synthesis can yield additional benefits. By contrast, GPT-4o experienced only a slight increase from 57.1% to 58.1% with DC-RS; our quantitative analysis of the model's outputs and memory showed us that retrieval can, in some cases, introduce confusion, especially if suboptimal examples are recalled. This contrast between different models underscores how the success of retrieval-based adaptation partly depends on model-specific generation and curation capabilities.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Math Equation Balancer.</head><p>As Table <ref type="table" target="#tab_0">1</ref> shows, the base-line performance for Claude 3.5 Sonnet (44.8%) rose to 98-100% with DC-RS and DC-Cu, while GPT-4o similarly improved from 50.0% to near-perfect accuracy (99-100%).</p><p>As observed in Game of 24, the models quickly learned an algorithmic or Python-based balancing routine, stored it in external memory, and repeatedly retrieved it, achieving exceptional consistency once the core method was established.</p><p>MMLU-Pro Tasks. For MMLU-Pro Eng. and Physics, Claude 3.5 Sonnet exhibited consistent gains, rising by up to 8.0% in Physics (from 74% to 82%). Our examination of the curated memory entries shows that Claude temporarily stored and retrieved compact "reference guides" on engineering and physics principles, which might have proved beneficial for thematically similar questions. GPT-4o, on the other hand, observed slight decreases from the baseline on these tasks, suggesting that domain complexity and baseline knowledge gaps may attenuate DC's benefits if curated memory is less reliable or consistent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.">Memory curation (DC) fosters generalization and provides gains over full-history-appending (FH)</head><p>Whereas FH (full-history) simply appends every previous dialogue turn into the prompt, DC actively filters and synthesizes high-value content. As shown in Table <ref type="table" target="#tab_1">2</ref>, Sonnet under FH reached 26.7% accuracy in 2024 questions, while DC-based methods hit 50.0%. Similarly, GPT-4o managed a baseline of 20.0% but fell to 6.7% using FH, in direct contrast to 40.0% with DC-RS. Excessive uncurated inputoutput pairs can not only overwhelm the model's context window, dilute crucial insights and hamper retrieval efficiency, but also significantly increase inference costs over time. On the other hand, DC's selective memory curation ensures that problem-solving tips or code snippets remain readily accessible without clutter, thus facilitating more robust and consistent improvements across consecutive queries.</p><p>Reusable Code Snippets and Solution Strategies &lt;memory_item&gt; &lt;/memory_item&gt; Count: 99 &lt;example&gt; Steps: 1. Understand the Problem:</p><p>-Input: Four integers.</p><p>-Goal: Combine the numbers using arithmetic operations and parentheses to evaluate to 24.</p><p>-Constraints: Each number must be used exactly once.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Approach:</head><p>-Use brute force or systematic trial-and-error to test all possible combinations of numbers, operations, and parentheses.</p><p>-Prioritize operations that simplify the problem (e.g., division resulting in integers, subtraction reducing values).</p><p>-Check edge cases (e.g., repeated numbers, large/small values).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Example Solution:</head><p>-Input: 6, 8, 8, 12 -Solution: (6 * ((8 + 8) -12) = 24) 4. Tips:</p><p>-Use parentheses to control operation precedence.</p><p>-Division should result in valid integers or fractions.</p><p>-Test all permutations of the numbers and operations systematically. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4.">DC fosters efficient tool usage / code generation</head><p>A successful behavior under DC is the LLMs' inclination toward code generation to handle computationally intensive tasks. GPT-4o's near-complete reliance on Python scripts for Game of 24 exemplifies this shift. Rather than performing manual arithmetic repeatedly, GPT-4o recognized that code-based brute force is more systematic. It generated, stored, and iteratively refined a Python function that tested permutations of numbers and operations, allowing it to solve each instance of Game of 24 with high accuracy.</p><p>This inclination toward automation illustrates DC's potential to nurture efficient tool-usage: the capacity to recognize when external tools (e.g., Python, symbolic math engines, or dedicated solvers) are more robust than internally verbalized chain-of-thought calculations. While we restricted the scope of tool usage to Python interpreter in this study, future expansions could easily explore a broader suite of tools, potentially amplifying LLM performance in specialized domains such as computational biology or legal research.  Table 3, for instance, shows that Claude 3.5 Haiku achieved moderate gains under DC, with its accuracy on AIME 2024 rising from 10.0% (baseline) to 36.7% under DC-Cu. But gains on AIME 2025 were weaker, reaching only 13.3% under DC-∅ and DC-Cu. Interestingly, GPQA-Diamond saw an improvement from 43.4% to 49.0% under DC-RS, GENERAL META-REASONING STRATEGIES &lt;memory_item&gt; &lt;/memory_item&gt; Count: 20 - <ref type="figure">----------------------------</ref>-&lt;memory_item&gt; &lt;example&gt; Example application: 1. Requirements: list all given conditions 2. Observations: identify applicable theorems 3. Patterns: look for structural relationships 4. Sub-problems: break into steps 5. Verification: test against examples 6. Implementation: use Python for verification &lt;/example&gt; &lt;description&gt; Systematic Problem Analysis Framework (Reference: Q1-Q20) For complex mathematical problems: 1. State problem requirements clearly 2. List key observations and theorems applicable 3. Identify patterns and relationships 4. Break into manageable sub-problems 5. Verify against examples 6. Consider computational approach when analytical solution is complex 7. For grid problems, analyze movement patterns and symmetries 8. For combinatorial problems, use appropriate counting techniques 9. Implement verification code when possible 10. Consider edge cases and constraints 11. For grid coloring problems, consider row/column patterns &lt;/description&gt; &lt;description&gt; Solution Verification Strategy (Reference: Q5-Q20) When verifying mathematical solutions: 1. Use both analytical and computational approaches 2. Implement multiple verification methods 3. Check edge cases and boundary conditions 4. For grid problems, verify movement patterns 5. For combinatorial problems, verify counting logic 6. Test solution against given examples 7. Implement computational verification when possible  suggesting that retrieval-based adaptation might still provide utility in smaller models.</p><p>Tasks Claude 3.5 Haiku BL DC-∅ DC-Cu. DC-RS AIME 2024 10.0 26.7 36.7 30.0 AIME 2025 0.0 13.3 13.3 10.0 GPQA-Diamond 43.4 41.9 43.7 49.0 Tasks GPT-4o-mini BL DC-∅ DC-Cu. DC-RS AIME 2024 16.7 20.0 13.3 13.3 AIME 2025 10.0 13.3 13.3 16.7 GPQA-Diamond 34.3 34.3 33.8 32.3 Table 3: Performance of Claude 3.5 Haiku and GPT-4o-mini, the smaller counterparts of Claude 3.5 Sonnet and GPT-4o, across AIME (2024, 2025) and GPQA-Diamond. These smaller models struggle to fully leverage DC, suggesting that memory-based adaptation is most effective when the base LM has sufficient generative competence. Performance improvements are more muted, highlighting the dependency of DC on model-scale reasoning ability.</p><p>That said, GPT-4o-mini (Table <ref type="table">3</ref>) showed even smaller gains, with some variants leading to slight declines in performance. On AIME 2024, DC-∅ provided a 20.0% boost, but both DC-Cu and DC-RS performed worse than baseline. AIME 2025 showed a minor improvement, peaking at 16.7% under DC-RS. On GPQA-Diamond, GPT-4o-mini's performance, however, remained largely stagnant or slightly declined under memory-based adaptation, suggesting that it struggled to leverage stored information effectively.</p><p>These imply two drawbacks of smaller models under DC:</p><p>(a) Generative competence. For DC to be effective, the base model must produce correct solutions with sufficient frequency to populate the memory with high-quality, reusable strategies. Smaller models, such as GPT-4o-mini and Claude 3.5 Haiku, generate correct solutions less reliably, leading to a sparse or low-quality memory repository. As a result, iterative refinement stalls because the stored knowledge consists mostly of incorrect or partial attempts.</p><p>(b) Contextual and memory curation limitations. Smaller models struggle with long-context understanding/generation and memory retrieval, leading to inefficient or irrelevant memory usage. Unlike their larger counterparts, which can more effectively retrieve and synthesize solutions from stored heuristics, smaller models often fail to retrieve the most relevant past solutions or misapply retrieved knowledge to new problems. This results in inconsistent performance under DC-RS, particularly in tasks requiring complex reasoning or strategic adaptation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.6.">Test-time task similarity and example ordering can amplify DC's overall impact</head><p>Another central insight is that DC thrives when test examples share structural similarities. In both Game of 24 and Math Equation Balancer, once GPT-4o identified an efficient solution, it reused it consistently for subsequent tasks. Similarly, in AIME, discovering a geometry or combinatorics strategy allowed for easy transfer across questions of analogous structure. Consequently, tasks arranged to present related questions early may accelerate and improve the model's test-time learning. This suggests that curriculum-style learning <ref type="bibr" target="#b3">(Bengio et al., 2009)</ref>, where simpler or archetypal problems are presented first to build a repository of valid heuristics, may potentially bootstrap performance. Cf. <ref type="bibr" target="#b34">(Lopez-Paz &amp; Ranzato, 2017;</ref><ref type="bibr" target="#b72">Zelikman et al., 2022;</ref><ref type="bibr" target="#b10">Chen et al., 2024)</ref> </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Additional Analyses and Discussions</head><p>Reasoning and information efficiency. One key insight is that DC reduces the need to "reinvent the wheel" for each query. By encoding and reusing well-established techniques (e.g., Python-based solving for Game of 24), models can bypass repeated rediscovery of the same strategies. This significantly cuts down reasoning overhead and token usage in subsequent queries, though the initial cost of discovering a robust approach and curating it remains non-trivial.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>DC performs better than majority voting (MV).</head><p>To test if DC provides advantages over conventional MV at inference, we also tested Sonnet on AIME 2024 and 2025 using both approaches. MV, which selects the most common answer from three independent generations, yielded no improvements over single-shot inference. As seen in Table <ref type="table" target="#tab_2">4</ref>, on AIME 2024, MV performed identically to the baseline (23.3%), while on AIME 2025, it remained at 6.7%, offering no tangible gain. Even with DC-∅, MV slightly underperformed (33.3% vs. 36.7%). In contrast, DC-Cu outperformed MV, reaching 50.0% on AIME 2024 and 36.7% on AIME 2025. Unlike MV, which passively aggregates outputs, DC actively refines knowledge over time, eliminating errors and improving solution quality. This confirms that memory-based adaptation is far more effective than simple statistical voting in complex reasoning tasks. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Clustering of errors and corrections.</head><p>Our experiments suggest that errors and their corrections often cluster in a latent embedding space. See Figure <ref type="figure" target="#fig_0">10</ref>. Once a model acquires a high-quality heuristic for a cluster of related queries, it can apply this knowledge to tightly embedded neighbors. However, faulty heuristics that slip into memory can be equally amplified. Ensuring that the memory remains "clean" thus requires careful curation and, if necessary, pruning to avoid propagating erroneous strategies.</p><p>Transferability of memory content across models. We also observed that larger models, such as Claude 3.5 Sonnet and GPT-4o, can sometimes produce higher-quality strategies that, in principle, could benefit smaller models if the memory is transferred. However, if a smaller model lacks the generative capacity to interpret or refine those strategies correctly, its performance can stall or degrade. In our ablation experiments, we observed mixed results. This indicates that memory entries, while helpful, cannot fully compensate for inadequate base capability.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Long-context generation versus understanding.</head><p>Most large LLMs excel at processing lengthy inputs but struggle to generate comparably long 12 and well-organized outputs.</p><p>12 See, e.g., <ref type="bibr">(Liu et al., 2024b</ref>).</p><p>DC's memory curation after each query can demand precise reproduction or modification of prior knowledge. We observed instances where the model merely references or abbreviates the existing memory (e.g., "Previous content [...] preserved") instead of explicitly rewriting it. Such truncated memory updates can reduce the quality of stored heuristics over time. Potential solutions include maintaining a structured, external database that the LM can reference without regenerating large swaths of text each time.</p><p>Retrieval bottlenecks and noise. While retrieval-based variants (e.g., DC-RS) can substantially improve accuracy, poorly filtered retrieval mechanisms can introduce confusion, particularly when presented with highly diverse or loosely related queries. For example, in our experiments, GPT-4o's performance occasionally dipped in GPQA-Diamond due to suboptimal retrieval choices. This underscores the importance of robust retrieval methods (e.g., dense vector search, advanced ranking algorithms) that can reliably surface higher quality exemplars or heuristics while suppressing irrelevant or contradictory texts.</p><p>Hierarchical and modular memory. As LLM deployments scale, specialized domains may benefit from subdividing or hierarchically organizing memory. For instance, a system could maintain separate curated memories for topics like combinatorics or physics, each updated by a specialized retrieval or curation mechanism. This may reduce the load on a unified memory store and help isolate errors within their respective domains, with the goal of further improving the clarity and reliability of retrieved heuristics.</p><p>Time and token complexity. Although DC requires memory curation after each query, it optimizes efficiency over time by reducing redundant computation and token usage. <ref type="foot" target="#foot_11">13</ref>As the model retrieves and refines solutions, memory maintenance becomes a net gain rather than a cost. However, its sequential structure still poses challenges for large-scale parallel or batch tasks requiring independent inference.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Smaller or more specialized models and R1 experiments.</head><p>Finally, we note that smaller models, such as GPT-4o-mini, show limited gains under DC, as seen in Table <ref type="table">3</ref>. Additional experiments with "R1" models such as DeepSeek R1 and o1 similarly showed minimal or inconsistent improvements. In these cases, these models' generative ability appears too restricted to produce reliable strategies for storage or to interpret retrieved heuristics effectively. The solutions were far too verbose and long. Without sufficiently accurate and efficient base solutions, memory curation cannot yield substantial gains. This limitation ties back to the core premise that effective DC demands a capable foundation model to seed and refine the curated knowledge.</p><p>Overall, DC offers a useful and practical framework for continuous, test-time learning in LLMs. Our findings emphasize the synergy between model capacity and memory curation, the importance of structural task similarity and retrieval precision, and the benefits of offloading repeated computations to flexible external stores (e.g., Python scripts). At the same time, alternative mechanisms (e.g., specialized sub-memories or adaptive example ordering) and more sophisticated retrieval techniques (e.g., topological clustering) remain promising directions for further research.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Background &amp; Related Work</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1. Test-time learning (online learning)</head><p>Test-time learning-also referred to as online or incremental learning (adaptation)-encompasses a family of methods in which a stochastic model updates its predictions by incorporating information seen during inference, without undergoing conventional, full-scale offline finetuning. Early versions of test-time adaptation focused on local or transductive learning, where a model re-fit or re-weighted its parameters with each new test instance or batch <ref type="bibr">(Mc-Closkey &amp; Cohen, 1989;</ref><ref type="bibr" target="#b61">Thrun &amp; Mitchell, 1995;</ref><ref type="bibr" target="#b0">Amari, 1998;</ref><ref type="bibr" target="#b60">Syed et al., 1999;</ref><ref type="bibr" target="#b6">Bottou &amp; Cun, 2003;</ref><ref type="bibr" target="#b7">Bottou &amp; Le Cun, 2005</ref>, inter alia). In computer vision, for example, methods like test-time training have been shown to mitigate domain shifts by optimizing a self-supervised loss on incoming data <ref type="bibr" target="#b63">(Wang et al., 2020;</ref><ref type="bibr" target="#b52">Sun et al., 2020;</ref><ref type="bibr" target="#b32">Liu et al., 2021;</ref><ref type="bibr" target="#b8">Boudiaf et al., 2022;</ref><ref type="bibr" target="#b41">Niu et al., 2022;</ref><ref type="bibr" target="#b74">Zhang et al., 2022;</ref><ref type="bibr" target="#b53">Sun et al., 2024)</ref>. In the context of natural-language generation, test-time adaptation has appeared under terms such as "dynamic evaluation" <ref type="bibr" target="#b39">(Mikolov et al., 2010;</ref><ref type="bibr" target="#b16">Graves, 2013;</ref><ref type="bibr" target="#b27">Krause et al., 2019;</ref><ref type="bibr" target="#b43">Rannen-Triki et al., 2024)</ref>, in which a language model is updated with gradient steps on the test-time data itself.</p><p>However, directly updating language model weights at test time can be computationally expensive and requires the capacity to modify parameters. For large-scale, black-box APIs (e.g., GPT-3 or Claude), one often lacks the ability to perform parameter updates easily, thereby making such an approach difficult, if not completely infeasible <ref type="bibr" target="#b50">(Shi et al., 2024)</ref>. To address this, a growing body of work has explored parameter-free adaptation, whereby one structurally modifies immediate model inputs (e.g., prompting) or draws from external memory to "update" the model's effective reasoning. Our approach aligns with this direction by allowing an LM to iteratively record solutions, explanations, or heuristics in an external memory component over successive interactions, avoiding weight updates entirely.</p><p>In the broader test-time learning literature, reflexive, compositional, and iterative refinement approaches like Reflexion <ref type="bibr" target="#b51">(Shinn et al., 2023)</ref>, Self-Refine <ref type="bibr" target="#b37">(Madaan et al., 2023)</ref>, (Self-)Critic <ref type="bibr" target="#b15">(Gou et al., 2023)</ref>, Chameleon <ref type="bibr" target="#b35">(Lu et al., 2023)</ref>, Meta-Prompting <ref type="bibr" target="#b55">(Suzgun &amp; Kalai, 2024)</ref>, and Self-RAG <ref type="bibr" target="#b2">(Asai et al., 2023)</ref> inter alia, use feedback loops or verification mechanisms to correct mistakes in solutions. TextGrad <ref type="bibr" target="#b71">(Yuksekgonul et al., 2025)</ref> similarly draws on the notion of "textual gradients" as an alternative to parameterbased gradients and provides a pathway for improvement based on the content of mistakes. Our proposed DC framework differs by focusing explicitly on storing generalizable heuristics, solutions, or meta-level insights that can be repeatedly retrieved and applied across tasks, not just to correct a single solution. Furthermore, DC does not require a new training loop for each batch or scenario; instead, the memory itself is updated to reflect newly found solutions, errors, or strategies without touching the model weights.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2. Test-time compute and reasoning</head><p>It is now widely known and accepted that contemporary LLMs such as GPT-4 can exhibit substantial improvements in reasoning and generation capability when additional compute is devoted to inference-time strategies (e.g., chain-ofthought prompting <ref type="bibr" target="#b67">(Wei et al., 2022;</ref><ref type="bibr" target="#b26">Kojima et al., 2022;</ref><ref type="bibr" target="#b77">Zhou et al., 2022)</ref>, tree-of-thought expansions <ref type="bibr" target="#b70">(Yao et al., 2023;</ref><ref type="bibr" target="#b33">Long, 2023)</ref>, minimum Bayes risk decoding <ref type="bibr">(Suzgun et al., 2023a;</ref><ref type="bibr" target="#b48">Shi et al., 2022;</ref><ref type="bibr" target="#b14">Golovneva et al., 2023)</ref>, majority-vote sampling <ref type="bibr" target="#b64">(Wang et al., 2023)</ref>). Prompting methods such as Tree-of-Thought <ref type="bibr" target="#b70">(Yao et al., 2023)</ref>, Graphof-Thought <ref type="bibr" target="#b4">(Besta et al., 2024)</ref>, and other non-linear compositional reasoning paradigms systematically enlarge the inference-time search space. They allow models to explore various reasoning paths and exploit consensus or iterative corrections to arrive at more accurate and reliable conclusions <ref type="bibr" target="#b67">(Wei et al., 2022;</ref><ref type="bibr" target="#b64">Wang et al., 2023)</ref>.</p><p>However, these expansions come at the cost of increased computational overhead per test instance <ref type="bibr" target="#b70">(Yao et al., 2023)</ref>. They are, however, typically ephemeral: once a solution is generated, subsequent tasks or input samples do not generally benefit from the heavy compute spent earlier, unless the user manually engineers advanced prompt-sharing or in-context demonstration strategies. Cf. <ref type="bibr" target="#b72">(Zelikman et al., 2022)</ref>. Our work, on the other hand, aims to reduce repeated overhead across multiple test instances of a similar domain by building a memory that persists from one query to the next. This memory not only reduces repetitive mistakes, but also consolidates and codifies robust solution strategies-effectively amortizing or "sharing" the cost of initial reflection across future tasks. 14   Another related thread involves tool usage or code execution <ref type="bibr" target="#b46">(Schick et al., 2023;</ref><ref type="bibr" target="#b35">Lu et al., 2023;</ref><ref type="bibr" target="#b47">Shen et al., 2023;</ref><ref type="bibr" target="#b42">Qin et al., 2023;</ref><ref type="bibr" target="#b54">Surís et al., 2023;</ref><ref type="bibr" target="#b55">Suzgun &amp; Kalai, 2024)</ref>. These studies have explored how LLMs can call external Python interpreters, symbolic solvers, or other specialized 14 Some lines of work-such as majority voting or samplingbased self-consistency-combine multiple inference passes for a single question but still lack a persistent knowledge base that spans different queries. DC differs in that we treat consecutive tasks in a sequence as a chance to refine a persistent, external store of learned lessons. The memory curation step selectively compiles relevant solutions, heuristics, expansions, or code blocks into a form that can be reused for upcoming queries. Thus, while the compute for the first few tasks may be higher, future tasks become simpler because the system can consult and adapt previously curated knowledge. This approach echoes the underlying motivation of test-time training-performing ongoing improvement at inference-but capitalizes on a cheap, external memory update in lieu of repeated or expensive parameter updates. services and APIs to offload complex computations. Our empirical findings too illustrate that once an LLM under DC recognizes a systematic way (e.g., Python-based brute force algoritgm) to handle a certain class of problems (like arithmetic puzzles), it can store that approach in memory and repeatedly retrieve it. Thus, DC not only invests extra compute in a single session but spreads that computational benefit across multiple interactions, effectively learning to use tools more consistently and reliably over time.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3. Memory-augmented generation and reasoning</head><p>Augmenting language models with external memory has seen renewed interest in recent years <ref type="bibr" target="#b40">(Munkhdalai et al., 2019;</ref><ref type="bibr" target="#b19">Guu et al., 2020;</ref><ref type="bibr" target="#b25">Khandelwal et al., 2020;</ref><ref type="bibr" target="#b9">Bulatov et al., 2022;</ref><ref type="bibr" target="#b5">Borgeaud et al., 2022;</ref><ref type="bibr" target="#b76">Zhong et al., 2022;</ref><ref type="bibr" target="#b13">Feng et al., 2022;</ref><ref type="bibr" target="#b20">He et al., 2024;</ref><ref type="bibr">Wang et al., 2024a</ref>)see also <ref type="bibr" target="#b17">(Graves et al., 2014;</ref><ref type="bibr" target="#b68">Weston et al., 2014;</ref><ref type="bibr" target="#b21">Joulin &amp; Mikolov, 2015;</ref><ref type="bibr" target="#b56">Suzgun et al., 2019)</ref> for early studies. Modern retrieval-augmented LLM approaches generally consult an external corpus of documents (i.e., a knowledge base) to improve factuality and reduce hallucination <ref type="bibr" target="#b29">(Lewis et al., 2020;</ref><ref type="bibr" target="#b28">Lazaridou et al., 2023;</ref><ref type="bibr" target="#b62">Vu et al., 2023;</ref><ref type="bibr">Zhang et al., 2024b)</ref>, but the retrieval corpus is almost always fixed prior to inference and does not evolve over time. These methods have been especially effective for open-domain question answering <ref type="bibr" target="#b29">(Lewis et al., 2020;</ref><ref type="bibr" target="#b19">Guu et al., 2020;</ref><ref type="bibr" target="#b24">Karpukhin et al., 2020)</ref>, where the model's own parameters may not hold all relevant knowledge. In practice, retrieval augmentation typically involves selecting and concatenating top-k passages from a knowledge-base-while useful for factual queries, the approach, however, does not inherently solve iterative improvement or learning from mistakes in the sense of building upon prior solutions at inference time.</p><p>Another line of research more closely aligns with our vision by storing not just reference knowledge but also the reasoning processes and solution strategies of language models. Several recent works have explored this direction. Thought-Retriever <ref type="bibr" target="#b12">(Feng et al., 2024)</ref> logs the model's chain-of-thought from past queries and uses them for new, analogous queries. Buffer-of-Thoughts (BoT; <ref type="bibr" target="#b69">Yang et al., 2025)</ref> takes a slightly different approach by distilling highlevel "thought templates" from problem-solving processes, though it relies on predefined templates that seem to be tailored towards specific task types that were considered in their experiments. <ref type="bibr" target="#b36">Madaan et al. (2022)</ref> have demonstrated that deployed models like GPT-3 can be improved through memory mechanisms that capture user feedback on errors, preventing similar mistakes in future interactions. <ref type="bibr">Zhang et al. (2024a)</ref> have proposed a dual memory architecture combining long-term and short-term storage for medical applications, though their approach requires fine-tuning to incorporate new knowledge.</p><p>While these works reveal the many strategies for harnessing memory or feedback, DC emphasizes selectively storing the most relevant insights and heuristics. DC aims to avoid naive accumulation of full raw transcripts and ephemeral chain-of-thought expansions that can lead to memory bloat. Moreover, unlike methods that assume the model can be retrained or finetuned to incorporate memory items, we remain fully external and training-free; this aligns with "plug-andplay" usage principle, in which an off-the-shelf model is augmented by an external memory that it reads from and writes to, but does not require any gradient-based adaptation. B.4. Solution Generator and Memory Curator Prompts B.4.1. Prompt Used by the Generator Model in Baseline Please answer the following question. ----## FINAL ANSWER FORMAT ALWAYS present your final answer in the following format: FINAL ANSWER: &lt;answer&gt; (final answer) &lt;/answer&gt; N.B. Make sure that the final answer is properly wrapped inside the &lt;answer&gt; block. * For multiple-choice questions: Only provide the letter choice (e.g., (A)) * For numerical answers: Only provide the final number (e.g., 42) * For other types of answers, including free-response answers: Provide the complete final answer Example: Q: What is the meaning of life? A: [...] FINAL ANSWER: &lt;answer&gt; 42 &lt;/answer&gt; ----INPUT: ''' [[QUESTION]] ''' </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2. Clustering of Errors and Corrections</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>CHEATSHEET: ''' [[CHEATSHEET]] ''' --------</head><p>Now it is time to solve the following question.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>CURRENT INPUT: ''' [[QUESTION]] '''</head><p>Figure <ref type="figure" target="#fig_2">13</ref>: Generator prompt used in the DR, FH, and DC approaches, where the model receives structured high-level instructions on solution development, strategy selection, and tool usage. This prompt explicitly encourages Python code generation and execution for computational tasks. Notably, this same structured prompt is used in all non-BL methods, including DC-∅, DR, FH, DC-Cu, and DC-RS. We also remark that during the initial phases of our experiments, we used "cheatsheet" and "memory" interchangeably to describe stored problem-solving content. However, to maintain consistency, we formally define Mi as memory throughout this paper. Since this was purely a semantic choice, we did not find it necessary to rerun our experiments to reflect this terminology shift.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.4.3. Prompt Used by the Memory Curation Model under DC-RS</head><p># CHEATSHEET CURATOR ### Purpose and Goals You are responsible for maintaining, refining, and optimizing the Dynamic Cheatsheet, which serves as a compact yet evolving repository of problem-solving strategies, reusable code snippets, and meta-reasoning techniques. Your goal is to enhance the model's long-term performance by continuously updating the cheatsheet with high-value insights while filtering out redundant or trivial information.</p><p>-The cheatsheet should include quick, accurate, reliable, and practical solutions to a range of technical and creative challenges.</p><p>-After seeing each input, you should improve the content of the cheatsheet, synthesizing lessons, insights, tricks, and errors learned from past problems and adapting to new challenges.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>----### Core Responsibilities Selective Knowledge Retention:</head><p>-Preserve only high-value strategies, code blocks, insights, and reusable patterns that significantly contribute to problem-solving.</p><p>-Discard redundant, trivial, or highly problem-specific details that do not generalize well.</p><p>-Ensure that previously effective solutions remain accessible while incorporating new, superior methods.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Continuous Refinement &amp; Optimization:</head><p>-Improve existing strategies by incorporating more efficient, elegant, or generalizable techniques.</p><p>-Remove duplicate entries or rephrase unclear explanations for better readability.</p><p>-Introduce new meta-strategies based on recent problem-solving experiences.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Structure &amp; Organization:</head><p>-Maintain a well-organized cheatsheet with clearly defined sections:</p><p>-Reusable Code Snippets and Solution Strategies -General Problem-Solving Heuristics -Optimization Techniques &amp; Edge Cases -Specialized Knowledge &amp; Theorems -Use tagging (e.g., Q14, Q22) to reference previous problems that contributed to a given strategy.</p><p>----</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>### Principles and Best Practices</head><p>For every new problem encountered:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Evaluate the Solution's Effectiveness</head><p>-Was the applied strategy optimal? -Could the solution be improved, generalized, or made more efficient? -Does the cheatsheet already contain a similar strategy, or should a new one be added?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Curate &amp; Document the Most Valuable Insights</head><p>-Extract key algorithms, heuristics, and reusable code snippets that would help solve similar problems in the future.</p><p>-Identify patterns, edge cases, and problem-specific insights worth retaining.</p><p>-If a better approach than a previously recorded one is found, replace the old version.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Maintain Concise, Actionable Entries</head><p>-Keep explanations clear, actionable, concise, and to the point.</p><p>-Include only the most effective and widely applicable methods.</p><p>-Seek to extract useful and general solution strategies and/or Python code snippets.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Implement a Usage Counter</head><p>-Each entry must include a usage count: Increase the count every time a strategy is successfully used in problem-solving.</p><p>-Use the count to prioritize frequently used solutions over rarely applied ones.</p><p>----### Memory Update Format Use the following structure for each memory item:</p><p>``` &lt;memory_item&gt; &lt;description&gt; [Briefly describe the problem context, purpose, and key aspects of the solution.] (Reference: Q1, Q2, Q6, etc.) &lt;/description&gt; &lt;example&gt; [Provide a well-documented code snippet, worked-out solution, or efficient strategy.] &lt;/example&gt; &lt;/memory_item&gt; ** Count: [Number of times this strategy has been used to solve a problem.] &lt;memory_item&gt; [...] &lt;/memory_item&gt; ** Count: [...] [...] &lt;memory_item&gt; [...] &lt;/memory_item&gt; ```</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>-Prioritize accuracy, efficiency &amp; generalizability:</head><p>The cheatsheet should capture insights that apply across multiple problems rather than just storing isolated solutions.</p><p>-Ensure clarity &amp; usability: Every update should make the cheatsheet more structured, actionable, and easy to navigate.</p><p>-Maintain a balance: While adding new strategies, ensure that old but effective techniques are not lost.</p><p>-Keep it evolving: The cheatsheet should be a living document that continuously improves over time, enhancing test-time meta-learning capabilities.</p><p>N.B. Keep in mind that once the cheatsheet is updated, any previous content not directly included will be lost and cannot be retrieved. Therefore, make sure to explicitly copy any (or all) relevant information from the previous cheatsheet to the new cheatsheet! Furthermore, make sure that all information related to the cheatsheet is wrapped inside the &lt;cheatsheet&gt; block.</p><p>----</p><p>## Cheatsheet Template Use the following format for creating and updating the cheatsheet: NEW CHEATSHEET: ``` &lt;cheatsheet&gt; Version: [Version Number] ## Reusable Code Snippets and Solution Strategies &lt;memory_item&gt; [...] &lt;/memory_item&gt; [...] ## General Problem-Solving Heuristics &lt;memory_item&gt; [...] &lt;/memory_item&gt; [...] [...]</p><p>Figure <ref type="figure" target="#fig_3">14</ref>: Prompt used for the memory curator under DC-RS, which is responsible for maintaining an evolving repository of problemsolving strategies, code snippets, and heuristics. The curator selectively retains high-value insights, refines existing strategies, and organizes memory efficiently. This ensures the memory (cheatsheet) remains concise, generalizable, and action-oriented, continuously improving test-time reasoning. (Once again, we note that during the initial phases of our experiments, we used "cheatsheet" and "memory" interchangeably to describe stored problem-solving content. However, to maintain consistency, we formally define Mi as memory throughout this paper. Since this was purely a semantic choice, we did not find it necessary to rerun our experiments to reflect this terminology shift.)</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Comparison of different baselines and Dynamic Cheatsheet (DC) variants on challenging reasoning benchmarks, including AIME exams and GPQA-Diamond. Baseline represents a standard prompting approach with minimal guidance, while DC-∅ (a stronger baseline) contains explicit structured instructions for problem solving, as well as for Python code generation and execution, but lacks a memory component. Our proposed DC-Cu and DC-RS variants incorporate an evolving, text-based memory to enhance inference-time learning. Results (accuracy, %) demonstrate substantial improvements, with Claude 3.5 Sonnet gaining 27% on AIME 2024 and 30% on AIME 2025 under DC-Cu. In Game of 24, GPT-4o leaps from 10% (baseline) to 99% under DC-RS, reflecting its ability to retain and apply Python-based solutions efficiently. Similarly, Claude 3.5 Sonnet's accuracy more than doubles in Math Equation Solver, reaching 98%. Overall, these findings highlight the impact of test-time learning through controlled memory augmentation and efficient retrieval.</figDesc><graphic coords="1,136.96,441.14,87.03,145.05" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Overall task performance of Claude 3.5 Sonnet under the baseline prompting approach with minimal instructions (BL) and Dynamic Cheatsheet with Retrieval &amp; Synthesis (DC-RS).</figDesc><graphic coords="2,307.44,67.06,231.66,183.56" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Algorithmic illustration of the Dynamic Cheatsheet (DC)-based approaches and other baseline methods. Here, Gen represents the solution generator model, Cur the memory curator, and Retr the retriever. While we use the same black-box LLMs for both generation and curation, we differentiate their roles via task-agnostic instructions (prompts). The retrieval mechanism ranks historical inputs based on cosine similarity with the current query, selecting the most relevant past examples along with their generated solutions.</figDesc><graphic coords="3,218.59,67.09,159.93,104.53" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>MemoryFigure 4 :</head><label>4</label><figDesc>Figure 4: Illustration of Dynamic Cheatsheet (DC-Cu variant).</figDesc><graphic coords="3,352.29,399.36,81.76,54.51" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 5 :</head><label>5</label><figDesc>Figure5: Excerpt from GPT-4o's external memory after processing 100 examples from Game of 24 under DC-RS. Early in the test sequence, the model discovered a Python-based brute-force solution, stored it, and subsequently retrieved it for subsequent puzzles. This shift to structured code reuse resulted in a dramatic performance increase from 10% to 99% accuracy, eliminating arithmetic errors and redundant problem-solving efforts.</figDesc><graphic coords="7,307.50,400.07,234.82,539.15" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>4. 5 .</head><label>5</label><figDesc>Model scale and capacity impact DC effectivenessOur current results indicate that the effectiveness of DC is strongly tied to the model's scale and underlying generative capacity. While Claude 3.5 Sonnet and GPT-4o showed notable gains across multiple tasks under DC, their smaller counterparts, Claude 3.5 Haiku and GPT-4o-mini, showed more limited and inconsistent gains.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 6 :</head><label>6</label><figDesc>Figure6: Example of Claude 3.5 Sonnet's curated memory after processing 20 AIME 2024 questions under DC-Cu. The memory captures key solution strategies, enables the model to generalize across similar computational problems, and boosts its accuracy.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Cumulative performance progression under DC for GPQA-Diamond (left) and Game of 24 (right). In GPQA-Diamond, Claude 3.5 Sonnet steadily improves as it accumulates relevant knowledge snippets (the first few points are noisy because y measures cumulative accuracy). Meanwhile, in Game of 24, GPT-4o rapidly transitions from trial-and-error arithmetic to near-perfect performance once it recognizes and stores a Python-based solution. These trends highlight DC's ability to enhance accuracy via iterative test-time learning.</figDesc><graphic coords="8,57.81,67.06,238.14,142.88" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 10 :Figure 12 :</head><label>1012</label><figDesc>Figure10: t-SNE visualization of the embeddings of the raw questions in GPQA-Diamond. Note that correct and incorrect answers often cluster in latent embedding space. DC can help transfer learned strategies within these clusters, but without careful curation, erroneous heuristics may also spread, thus requiring careful memory refinement and verification of solution strategies.</figDesc><graphic coords="17,57.87,91.73,481.15,320.77" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><graphic coords="16,164.79,111.10,267.31,211.81" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><graphic coords="16,164.79,356.77,267.31,211.81" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><graphic coords="18,57.87,91.72,481.15,288.69" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Performance comparison of Dynamic Cheatsheet (DC) variants for Claude 3.5 Sonnet and GPT-4o across multiple benchmarks. BL (Baseline): standard inference without memory; DC-∅ (Empty Memory): includes structured problem-solving and explicit tool-use instructions but no memory retention mechanism; DR (Dynamic Retrieval): uses retrieval but lacks curated memory updates; DC-Cu (Cumulative Memory): iteratively accumulates model solutions but lacks retrieval; and DC-RS (Retrieval &amp; Synthesis): combines retrieval with memory refinement/synthesis. These results highlight substantial accuracy gains under DC: Claude 3.5 Sonnet's AIME 2024 accuracy jumps by 27% under DC-Cu, and GPT-4o's Game of 24 accuracy leaps from 10% to 99% under DC-RS.</figDesc><table><row><cell>Tasks</cell><cell></cell><cell cols="2">Claude 3.5 Sonnet</cell><cell></cell><cell></cell><cell></cell><cell>GPT-4o</cell><cell></cell></row><row><cell></cell><cell cols="9">BL DC-∅ DR DC-Cu. DC-RS BL DC-∅ DR DC-Cu. DC-RS</cell></row><row><cell>AIME 2024</cell><cell cols="2">23.3 36.7 43.3</cell><cell>50.0</cell><cell>46.7</cell><cell cols="3">20.0 36.7 26.7</cell><cell>36.7</cell><cell>40.0</cell></row><row><cell>AIME 2025</cell><cell>6.7</cell><cell>23.3 23.3</cell><cell>36.7</cell><cell>30.0</cell><cell>6.7</cell><cell cols="2">10.0 10.0</cell><cell>16.7</cell><cell>20.0</cell></row><row><cell>AIME 2020-24</cell><cell>6.7</cell><cell>30.1 39.1</cell><cell>38.4</cell><cell>40.6</cell><cell>9.8</cell><cell cols="2">24.1 24.1</cell><cell>20.3</cell><cell>24.8</cell></row><row><cell>Game of 24</cell><cell cols="2">12.0 10.0 11.0</cell><cell>14.0</cell><cell>14.0</cell><cell cols="2">10.0 19.0</cell><cell>6.0</cell><cell>93.0</cell><cell>99.0</cell></row><row><cell>GPQA Diamond</cell><cell cols="2">59.6 60.1 63.6</cell><cell>61.1</cell><cell>68.7</cell><cell cols="3">57.1 57.1 55.1</cell><cell>58.1</cell><cell>57.1</cell></row><row><cell cols="3">Math Eqn. Balancer 44.8 56.4 60.4</cell><cell>100</cell><cell>97.8</cell><cell cols="2">50.0 88.0</cell><cell>100</cell><cell>100</cell><cell>99.2</cell></row><row><cell>MMLU Pro Eng.</cell><cell cols="2">61.2 57.2 65.2</cell><cell>66.8</cell><cell>67.6</cell><cell cols="3">53.2 51.6 48.8</cell><cell>44.0</cell><cell>51.2</cell></row><row><cell cols="3">MMLU Pro Physics 74.0 75.6 80.4</cell><cell>77.6</cell><cell>82.0</cell><cell cols="3">75.6 70.8 75.6</cell><cell>70.4</cell><cell>75.2</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Performance breakdown of BL (default baseline), FH (full history), DC-Cu, and DC-RS approaches under AIME 2024 and 2025. FH stores all past queries and outputs, while DC-Cu and DC-RS selectively refine stored memory. Results indicate that targeted memory curation in DC-RS leads to greater accuracy gains compared to full history retention, supporting the need for structured, self-updating knowledge mechanisms.</figDesc><table><row><cell>Tasks</cell><cell cols="3">Claude 3.5 Sonnet</cell><cell></cell><cell>GPT-4o</cell></row><row><cell></cell><cell>BL</cell><cell cols="3">FH DC-Cu. BL</cell><cell cols="2">FH DC-RS</cell></row><row><cell cols="3">AIME 2024 23.3 26.7</cell><cell>50.0</cell><cell cols="2">20.0 13.3</cell><cell>40.0</cell></row><row><cell cols="2">AIME 2025 6.7</cell><cell>6.7</cell><cell>36.7</cell><cell>6.7</cell><cell>3.3</cell><cell>20.0</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 4 :</head><label>4</label><figDesc>Comparison of majority voting (MV) with DC on AIME.</figDesc><table><row><cell>Tasks</cell><cell></cell><cell cols="2">Claude 3.5 Sonnet</cell><cell></cell></row><row><cell cols="5">BL MV(BL) DC-∅ MV(DC-∅) DC-Cu.</cell></row><row><cell>AIME 2024 23.3</cell><cell>23.33</cell><cell>36.7</cell><cell>33.3</cell><cell>50.0</cell></row><row><cell>AIME 2025 6.7</cell><cell>6.7</cell><cell>23.3</cell><cell>23.3</cell><cell>36.7</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>We used OpenAI's text-embedding-3-small model to map input queries (raw questions) to embedding vectors.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>We set k to</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>in all our experiments. (Initially, we considered higher top-k values such as 5 and 7, but the gain was insignificant.)3 Please refer to Figure12to see the full instruction (prompt) used in BLh. We experimented with the zero-shot CoT approach<ref type="bibr" target="#b26">(Kojima et al., 2022)</ref> in our preliminary experiments, but it did not yield any gains<ref type="bibr" target="#b1">(Arcuschin et al., 2025)</ref>. We, therefore, did not include it as a baseline method in our experiments.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_3"><p>We adopt the generator prompt template used in DC-RS, namely Figure13, for DC-∅, though we replace the memory placeholder with the text "(empty cheatsheet)".</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_4"><p>We consider and test this baseline only on AIME 2024 and AIME 2025, which are relatively small in their size (each contains 30 examples) compared to other benchmarks.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_5"><p>We use the generator prompt template in Figure13again, but include the entire raw input-output pairs from the previous steps in the memory-without any curation, truncation, or synthesis.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="7" xml:id="foot_6"><p>FH is similar to DR, but we include only a select (most relevant) input-output pairs in the memory content.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="8" xml:id="foot_7"><p>We release all the original input-output pairs in our codebase: http://github.com/suzgunmirac/dynamic-cheatsheet.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="9" xml:id="foot_8"><p>huggingface.co/datasets/HuggingFaceH4/aime 2024</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="10" xml:id="foot_9"><p>huggingface.co/datasets/yentinglin/aime 2025.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="11" xml:id="foot_10"><p>huggingface.co/datasets/di-zhang-fdu/AIME 1983 2024.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="13" xml:id="foot_11"><p>On AIME 2024, Claude Sonnet averaged 370 tokens under BL, 494 under DC-∅, 1035 under DC-RS, and 1831 under DC-Cu.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgments</head><p>We thank <rs type="person">Batu El</rs>, <rs type="person">Sabri Eyuboglu</rs>, <rs type="person">Tayfun Gur</rs>, <rs type="person">Emily Shen</rs>, <rs type="person">Jake Silberg</rs>, <rs type="person">Elana Simon</rs>, and <rs type="person">Kyle Swanson</rs> for their helpful comments and suggestions. We also thank the members of the <rs type="institution">James Zou Lab at Stanford</rs> for their feedback in the early stages of this project. Suzgun gratefully acknowledges the support of an <rs type="funder">HAI-SAP</rs> Fellowship.</p></div>
+			</div>
+			<listOrg type="funding">
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p># CHEATSHEET CURATOR (cont'd) [...] ## Cheatsheet Template Use the following format for creating and updating the cheatsheet: NEW CHEATSHEET: ``` &lt;cheatsheet&gt; Version: [Version Number] ## Reusable Code Snippets and Solution Strategies &lt;memory_item&gt; [...] &lt;/memory_item&gt; [...] ## General Problem-Solving Heuristics &lt;memory_item&gt; [...] &lt;/memory_item&gt; [...] [...] &lt;/cheatsheet&gt; ``` N.B. Make sure that all information related to the cheatsheet is wrapped inside the &lt;cheatsheet&gt; block. The cheatsheet can be as long as circa 2000-2500 words. ----## PREVIOUS CHEATSHEET [[PREVIOUS_CHEATSHEET]] ----## NOTES FOR CHEATSHEET [[PREVIOUS_INPUT_OUTPUT_PAIRS]]</p><p>----Make sure that the cheatsheet can aid the model tackle the next question.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>## NEXT INPUT: [[NEXT_INPUT]]</head><p>Figure <ref type="figure">15</ref>: The rest of the prompt used by the memory curator under DC-RS (Figure <ref type="figure">14</ref>).</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>B</head><figDesc>. Additional Figures and Tables B.1. Performance Comparison of Baseline and DC-RS Approaches Figure 8: Overall performance of Claude 3.5 Sonnet under the baseline prompting approach with minimal instructions (Baseline) and Dynamic Cheatsheet with Retrieval &amp; Synthesis (DC-RS).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><head>Figure 9 :</head><label>9</label><figDesc>Overall performance of GPT-4o under the baseline prompting approach with minimal instructions (Baseline) and Dynamic Cheatsheet with Retrieval &amp; Synthesis (DC-RS).B.3. Evolution of Memory Content under Dynamic CheatsheetFigure11: This figure illustrates how memory content of GPT-4o evolves over time in Game of 24, quantified using a longest-commonsubsequence (LCS)-similarity metric(Suzgun et al., 2024)  between consecutive states (measured at the word level). While both DC-Cu and DC-RS show high stability after the first few iterations, DC-Cu experiences slightly greater fluctuations in the second half of inference.</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Natural gradient works efficiently in learning</title>
+		<author>
+			<persName><forename type="first">S.-I</forename><surname>Amari</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Neural computation</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="251" to="276" />
+			<date type="published" when="1998">1998</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought reasoning in the wild is not always faithful</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Arcuschin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Janiak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Krzyzanowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Rajamanoharan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Nanda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Conmy</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=L8094Whth0" />
+	</analytic>
+	<monogr>
+		<title level="m">Workshop on Reasoning and Planning for Large Language Models</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Selfrag: Learning to retrieve, generate, and critique through self-reflection</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Asai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hajishirzi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Curriculum learning</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Louradour</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Collobert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Weston</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 26th annual international conference on machine learning</title>
+		<meeting>the 26th annual international conference on machine learning</meeting>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="41" to="48" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Graph of thoughts: Solving elaborate problems with large language models</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Besta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Blach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kubicek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Gerstenberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Podstawski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Gianinazzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gajda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lehmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Niewiadomski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Nyczyk</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page" from="17682" to="17690" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Improving language models by retrieving from trillions of tokens</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Borgeaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mensch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hoffmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Rutherford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Millican</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">B</forename><surname>Van Den Driessche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-B</forename><surname>Lespiau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Damoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Clark</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on machine learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="2206" to="2240" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Large scale online learning. Advances in neural information processing systems</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bottou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cun</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2003">2003</date>
+			<biblScope unit="volume">16</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">On-line learning for very large data sets</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bottou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Le Cun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Applied stochastic models in business and industry</title>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="page" from="137" to="151" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Parameter-free online test-time adaptation</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Boudiaf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Mueller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Ben Ayed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bertinetto</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="8344" to="8353" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Recurrent memory transformer</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bulatov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Kuratov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Burtsev</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="11079" to="11091" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Self-play fine-tuning converts weak language models to strong language models</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Gu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.01335</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">K</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schulman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.14168</idno>
+		<title level="m">Training verifiers to solve math word problems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Thought-retriever: Don&apos;t just retrieve raw data, retrieve thoughts</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>You</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=SkDNQbMQba" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Learn to remember: Transformer with recurrent memory for document-level machine translation</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Koehn</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.01546</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">O</forename><surname>Golovneva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>O'brien</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Pasunuru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Fazel-Zarandi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Celikyilmaz</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Pathfinder</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.05180</idno>
+		<title level="m">Guided search over multi-step reasoning paths</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Critic: Large language models can selfcorrect with tool-interactive critiquing</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.11738</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Generating sequences with recurrent neural networks</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Graves</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1308.0850</idno>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Graves</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Wayne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Danihelka</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1410.5401</idno>
+		<title level="m">Neural turing machines</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gururangan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Marasović</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Swayamdipta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Beltagy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Downey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2004.10964</idno>
+		<title level="m">Don&apos;t stop pretraining: Adapt language models to domains and tasks</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Retrieval augmented language model pre-training</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Guu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Tung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Pasupat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chang</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on machine learning</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="3929" to="3938" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Z</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Karlinsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Mcauley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Krotov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Feris</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Camelot</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.13449</idno>
+		<title level="m">Towards large language models with training-free consolidated associative memory</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Inferring algorithmic patterns with stack-augmented recurrent nets</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Joulin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Mikolov</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="volume">28</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Retrieval practice produces more learning than elaborative studying with concept mapping</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Karpicke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">R</forename><surname>Blunt</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Science</title>
+		<imprint>
+			<biblScope unit="volume">331</biblScope>
+			<biblScope unit="issue">6018</biblScope>
+			<biblScope unit="page" from="772" to="775" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">The critical importance of retrieval for learning</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Karpicke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iii</forename><surname>Roediger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">L</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">science</title>
+		<imprint>
+			<biblScope unit="volume">319</biblScope>
+			<biblScope unit="issue">5865</biblScope>
+			<biblScope unit="page" from="966" to="968" />
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Dense passage retrieval for open-domain question answering</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Karpukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Oguz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">S</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Edunov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-T</forename><surname>Yih</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="6769" to="6781" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Generalization through memorization: Nearest neighbor language models</title>
+		<author>
+			<persName><forename type="first">U</forename><surname>Khandelwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Levy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Jurafsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lewis</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=HklBjCEKvH" />
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Large language models are zero-shot reasoners. Advances in neural information processing systems</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kojima</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">S</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Iwasawa</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="22199" to="22213" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Dynamic evaluation of transformer language models</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Krause</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Kahembwe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Murray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Renals</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1904.08378</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Internet-augmented language models through few-shot prompting for open-domain question answering</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lazaridou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Gribovskaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">J</forename><surname>Stokowiec</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Grigorev</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=hFCUPkSSRE" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Retrieval-augmented generation for knowledgeintensive nlp tasks. Advances in neural information processing systems</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Piktus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Karpukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Küttler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-T</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Rocktäschel</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="9459" to="9474" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Lost in the middle: How language models use long contexts</title>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">F</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hewitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Paranjape</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bevilacqua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="page" from="157" to="173" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Longgenbench</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.04199</idno>
+		<title level="m">Long-context generation benchmark</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Ttt++: When does self-supervised test-time training fail or thrive?</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Kothari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Van Delft</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Bellot-Gurlet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Mordan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Alahi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="21808" to="21820" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Large language model guided tree-of-thought</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Long</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.08291</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Gradient episodic memory for continual learning</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lopez-Paz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ranzato</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="volume">30</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Chameleon: Plug-andplay compositional reasoning with large language models</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Galley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K.-W</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">N</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S.-C</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="43447" to="43478" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Memoryassisted prompt editing to improve gpt-3 after deployment</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Tandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2022 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="2833" to="2861" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Self-refine: Iterative refinement with selffeedback</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Tandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hallinan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wiegreffe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Prabhumoye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="46534" to="46594" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Catastrophic interference in connectionist networks: The sequential learning problem</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mccloskey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">J</forename><surname>Cohen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Psychology of learning and motivation</title>
+		<imprint>
+			<biblScope unit="volume">24</biblScope>
+			<biblScope unit="page" from="109" to="165" />
+			<date type="published" when="1989">1989</date>
+			<publisher>Elsevier</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Recurrent neural network based language model</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Mikolov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Karafiát</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Burget</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Cernockỳ</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Khudanpur</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">In Interspeech</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="1045" to="1048" />
+			<date type="published" when="2010">2010</date>
+			<publisher>Makuhari</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Metalearned neural memory</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Munkhdalai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sordoni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Trischler</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="volume">32</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Efficient test-time model adaptation without forgetting</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Niu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Tan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on machine learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="16888" to="16905" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Qian</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.16789</idno>
+		<title level="m">Facilitating large language models to master 16000+ real-world apis</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">Revisiting dynamic evaluation: Online adaptation for large language models</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Rannen-Triki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bornschein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Pascanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hutter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>György</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Galashov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">W</forename><surname>Teh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">K</forename><surname>Titsias</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.01518</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">GPQA: A graduate-level google-proof q&amp;a benchmark</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Rein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">L</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">C</forename><surname>Stickland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Petty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">Y</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dirani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Michael</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">R</forename><surname>Bowman</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=Ti67584b98" />
+	</analytic>
+	<monogr>
+		<title level="m">First Conference on Language Modeling</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">The critical role of retrieval practice in long-term retention</title>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">L</forename><surname>Roediger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">C</forename><surname>Butler</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Trends in cognitive sciences</title>
+		<imprint>
+			<biblScope unit="volume">15</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="20" to="27" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Toolformer: Language models can teach themselves to use tools</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Scialom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="68539" to="68551" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Solving AI tasks with chatGPT and its friends in hugging face</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hugginggpt</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=yHdTscY6Ci" />
+	</analytic>
+	<monogr>
+		<title level="m">Thirty-seventh Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Natural language to code translation with execution</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ghazvininejad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">I</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2022 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="3533" to="3546" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Language models are multilingual chain-of-thought reasoners</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Suzgun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Freitag</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Srivats</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Vosoughi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">W</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ruder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Das</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=fR3wGCk-IXp" />
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">REPLUG: Retrievalaugmented black-box language models</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yasunaga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Seo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>James</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-T</forename><surname>Yih</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.naacl-long.463</idno>
+		<ptr target="https://aclanthology.org/2024.naacl-long.463/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</title>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Duh</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Gomez</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Bethard</surname></persName>
+		</editor>
+		<meeting>the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies<address><addrLine>Mexico City, Mexico</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024-06">June 2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="8371" to="8384" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<analytic>
+		<title level="a" type="main">Reflexion: Language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="8634" to="8652" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Test-time training with self-supervision for generalization under distribution shifts</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Efros</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hardt</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on machine learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="9229" to="9248" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Dalal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Vikram</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dubois</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Koyejo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.04620</idno>
+		<title level="m">Rnns with expressive hidden states</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>Learning to (learn at test time</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Vipergpt: Visual inference via python execution for reasoning</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Surís</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Menon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Vondrick</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF International Conference on Computer Vision</title>
+		<meeting>the IEEE/CVF International Conference on Computer Vision</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="11888" to="11898" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<title level="m" type="main">Meta-prompting: Enhancing language models with task-agnostic scaffolding</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Suzgun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">T</forename><surname>Kalai</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.12954</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<title level="m" type="main">Memory-augmented recurrent neural networks can learn generalized dyck languages</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Suzgun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gehrmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Belinkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">M</forename><surname>Shieber</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1911.03329</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<analytic>
+		<title level="a" type="main">Follow the wisdom of the crowd: Effective text generation via minimum bayes risk decoding</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Suzgun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Melas-Kyriazi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Jurafsky</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: ACL 2023</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="4265" to="4293" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<analytic>
+		<title level="a" type="main">Challenging big-bench tasks and whether chain-ofthought can solve them</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Suzgun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gehrmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">W</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: ACL 2023</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="13003" to="13051" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<analytic>
+		<title level="a" type="main">string2string: A modern python library for string-to-string algorithms</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Suzgun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">M</forename><surname>Shieber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Jurafsky</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page" from="278" to="285" />
+		</imprint>
+	</monogr>
+	<note>System Demonstrations)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<analytic>
+		<title level="a" type="main">Handling concept drifts in incremental learning with support vector machines</title>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">A</forename><surname>Syed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">K</forename><surname>Sung</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the fifth ACM SIGKDD international conference on Knowledge discovery and data mining</title>
+		<meeting>the fifth ACM SIGKDD international conference on Knowledge discovery and data mining</meeting>
+		<imprint>
+			<date type="published" when="1999">1999</date>
+			<biblScope unit="page" from="317" to="321" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<analytic>
+		<title level="a" type="main">Lifelong robot learning</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Thrun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">M</forename><surname>Mitchell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Robotics and autonomous systems</title>
+		<imprint>
+			<biblScope unit="volume">15</biblScope>
+			<biblScope unit="issue">1-2</biblScope>
+			<biblScope unit="page" from="25" to="46" />
+			<date type="published" when="1995">1995</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<monogr>
+		<author>
+			<persName><forename type="first">T</forename><surname>Vu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Iyyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Constant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Tar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y.-H</forename><surname>Sung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Le</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.03214</idno>
+		<title level="m">Refreshing large language models with search engine augmentation</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<monogr>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Shelhamer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Olshausen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Darrell</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2006.10726</idno>
+		<title level="m">Tent: Fully test-time adaptation by entropy minimization</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<analytic>
+		<title level="a" type="main">Selfconsistency improves chain of thought reasoning in language models</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">H</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=1PL1NIMMrw" />
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.04624</idno>
+		<title level="m">Towards self-updatable large language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b66">
+	<analytic>
+		<title level="a" type="main">MMLU-pro: A more robust and challenging multi-task language understanding benchmark</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chandra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Arulraj</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ku</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=y10DM6R2r3" />
+	</analytic>
+	<monogr>
+		<title level="m">The Thirty-eight Conference on Neural Information Processing Systems Datasets and Benchmarks Track, 2024b</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b67">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24824" to="24837" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b68">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">J</forename><surname>Weston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chopra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bordes</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1410.3916</idno>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Memory networks. arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b69">
+	<monogr>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Cui</surname></persName>
+		</author>
+		<title level="m">Buffer of thoughts: Thoughtaugmented reasoning with large language models. Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="113519" to="113544" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b70">
+	<monogr>
+		<title level="m" type="main">Tree of Thoughts: Deliberate problem solving with large language models</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">L</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b71">
+	<analytic>
+		<title level="a" type="main">Optimizing generative ai by backpropagating language model feedback</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yuksekgonul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Bianchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Boen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Guestrin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="volume">639</biblScope>
+			<biblScope unit="page" from="609" to="616" />
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b72">
+	<analytic>
+		<title level="a" type="main">Star: Bootstrapping reasoning with reasoning</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Zelikman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goodman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="15476" to="15488" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b73">
+	<analytic>
+		<title level="a" type="main">LLM-based medical assistant personalization with short-and longterm memory coordination</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.naacl-long.132</idno>
+		<ptr target="https://aclanthology.org/2024.naacl-long.132/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</title>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Duh</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Gomez</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Bethard</surname></persName>
+		</editor>
+		<meeting>the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies<address><addrLine>Mexico City, Mexico</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024-06">June 2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="2386" to="2398" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b74">
+	<analytic>
+		<title level="a" type="main">Test time robustness via adaptation and augmentation</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Memo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="38629" to="38642" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b75">
+	<analytic>
+		<title level="a" type="main">RAFT: Adapting language model to domain specific RAG</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">G</forename><surname>Patil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zaharia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Stoica</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=rzQGHXNReU" />
+	</analytic>
+	<monogr>
+		<title level="m">First Conference on Language Modeling, 2024b</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b76">
+	<analytic>
+		<title level="a" type="main">Training language models with memory augmentation</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2022.emnlp-main.382</idno>
+		<ptr target="https://aclanthology.org/2022.emnlp-main.382/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing</title>
+		<editor>
+			<persName><forename type="first">Y</forename><surname>Goldberg</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Z</forename><surname>Kozareva</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</editor>
+		<meeting>the 2022 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Abu Dhabi, United Arab Emirates</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2022-12">December 2022</date>
+			<biblScope unit="page" from="5657" to="5673" />
+		</imprint>
+	</monogr>
+	<note>Association for Computational Linguistics</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b77">
+	<monogr>
+		<title level="m" type="main">Least-to-most prompting enables complex reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Bousquet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Le</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.10625</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

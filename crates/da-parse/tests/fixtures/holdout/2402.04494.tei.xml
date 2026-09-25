@@ -1,0 +1,1739 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Amortized Planning with Large-Scale Transformers: A Case Study on Chess</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-10-21">21 Oct 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Anian</forename><surname>Ruoss</surname></persName>
+							<email>anianr@google.com</email>
+						</author>
+						<author>
+							<persName><forename type="first">Grégoire</forename><surname>Delétang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Sourabh</forename><surname>Medapati</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Jordi</forename><surname>Grau-Moya</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Li</forename><forename type="middle">Kevin</forename><surname>Wenliang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Elliot</forename><surname>Catt</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">John</forename><surname>Reid</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Cannada</forename><forename type="middle">A</forename><surname>Lewis</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Joel</forename><surname>Veness</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Tim</forename><surname>Genewein</surname></persName>
+						</author>
+						<title level="a" type="main">Amortized Planning with Large-Scale Transformers: A Case Study on Chess</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-10-21">21 Oct 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">A7151B41908E674AF50B53097B979BF2</idno>
+					<idno type="arXiv">arXiv:2402.04494v2[cs.LG]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:38+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>This paper uses chess, a landmark planning problem in AI, to assess transformers' performance on a planning task where memorization is futile -even at a large scale. To this end, we release ChessBench, a large-scale benchmark dataset of 10 million chess games with legal move and value annotations (15 billion data points) provided by Stockfish 16, the state-of-the-art chess engine. We train transformers with up to 270 million parameters on ChessBench via supervised learning and perform extensive ablations to assess the impact of dataset size, model size, architecture type, and different prediction targets (state-values, action-values, and behavioral cloning). Our largest models learn to predict action-values for novel boards quite accurately, implying highly non-trivial generalization. Despite performing no explicit search, our resulting chess policy solves challenging chess puzzles and achieves a surprisingly strong Lichess blitz Elo of 2895 against humans (grandmaster level). We also compare to Leela Chess Zero and AlphaZero (trained without supervision via self-play) with and without search. We show that, although a remarkably good approximation of Stockfish's search-based algorithm can be distilled into large-scale transformers via supervised learning, perfect distillation is still beyond reach, thus making ChessBench well-suited for future research.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="26" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>The ability to plan ahead and reason about long-term consequences of actions is a hallmark of rationality and human intelligence. Its replication in artificial systems has been a central goal of AI research since the field's inception. Perhaps the historically most famous planning problem in AI is chess, where naive search is computationally intractable and brute-force memorization is futile -even at scale. Conceptually, the ability to plan and reason about consequences of actions is implemented via search algorithms and value computation <ref type="bibr">[1,</ref><ref type="bibr" target="#b1">2]</ref>. To implement such algorithms at scale, feed-forward neural networks have been playing an increasingly important role. For instance, DQN <ref type="bibr">[3]</ref> and AlphaGo <ref type="bibr">[4]</ref> popularized the use of neural value estimators to scale RL and (Monte Carlo) tree search. Similarly, today's strongest chess engines also employ a combination of search and amortized neural value estimation. For example, the state-of-the-art Leela Chess Zero <ref type="bibr" target="#b4">[5,</ref><ref type="bibr">6]</ref>, which builds upon AlphaZero <ref type="bibr">[7]</ref>, augments Monte Carlo tree search with neural value predictions. Likewise, Stockfish 16, currently the strongest chess engine, uses efficiently updatable neural network evaluation <ref type="bibr">[8]</ref>, a highly specialized neural architecture to obtain fast evaluations. It is trained on value estimates of an earlier Stockfish version that uses human chess heuristics. All these chess engines tweak value-estimation networks towards fast evaluations that are to be combined with search</p><p>Board annotation via strong oracle (Stockfish 16) Draw N games, extract all unique boards Action [UCI] a Action-value [Win%] Q SF (s, a) Best Action [UCI] a SF (s) e2e3 48 Qd1f3 e2e4 53 ⋮ ⋮ Qd1f3 62 Compute SF oracle action-values Collection of games [PGN notation] Action-value Loss: Policy: Loss: Policy: State-value Loss: Policy: Behavioral cloning Board State [FEN] s State-value [Win%] V SF (s) &lt;FEN 1&gt; 51 &lt;FEN 2&gt; 54 ⋮ ⋮ &lt;FEN M&gt; 31 N games Dataset for all legal actions Legal action leading to next state with minimal predicted expected state-value for opponent player. Legal action with maximal predicted expected action-value. Legal action with highest predicted probability. Datasets Puzzle Test set 1.33% overlap with training set Source: curated chess puzzles from Lichess Source: games from Lichess (range of Elo) 10k 1M Training sets 1k Test set 14.7% overlap with training set (mostly early-game boards) Predictors (M ≈ 40N) 10M 10k</p><p>Figure <ref type="figure">1</ref>: Top (Data annotation): We extract all boards from N randomly drawn games from Lichess, discard duplicate board states, and compute the state-value for each board as the win-probability via Stockfish. We compute action-values and the best action for all legal moves of a board state in the same way. Bottom left (Dataset creation): We construct training and test sets of various sizes (see Table <ref type="table">A1</ref>). Our largest training set has 15.3B action-values. Drawing games i.i.d. from the game database for our test set leads to 14.7% of test boards appearing in the largest training set (mostly very early game states). We also use a test set of 10K chess puzzles that come with a correct sequence of moves. Bottom right (Policies): We train predictors on three targets (state-or action-values, or oracle actions), each of which can be used for a chess policy. Our value predictors are discrete discriminators (classifiers) that predict into which bin z i ∈ {z 1 , . . . , z K } the oracle value falls. over many possible future move sequences. As a result, the value estimates themselves may not necessarily be optimal, which leaves open the question of how far amortized planning with modern neural networks can be pushed with scale and whether the resulting "searchless" engines can match engines that use search at test time, at least in principle (putting aside computational efficiency).</p><p>To scientifically address this question, we create ChessBench (<ref type="url" target="https://github.com/google-deepmind/searchless_chess">https://github.com/  google-deepmind/searchless_chess</ref>), a large-scale chess dataset created from 10 million human games that we annotate with Stockfish 16. We use ChessBench to train transformers of up to 270 million parameters via supervised learning to predict action-values given a board-state. We also construct searchless chess policies from these predictors, where the playing strength depends entirely on the quality of the value predictions. We find that predictions by our largest trained models generalize well and non-trivially to novel board states. The resulting policies are capable of solving challenging chess puzzles and playing chess at a high level (grandmaster) against humans. Due to the combinatorial explosion of chess board states, virtually every new game involves many board states that were never seen during training (see Figure <ref type="figure">1</ref>). This rules out memorization as a possible explanation and suggests that an approximate version of Stockfish's (search-based) value estimation algorithm can indeed be distilled into large transformers. Nonetheless, we also find that the performance gap cannot be fully closed, which may indicate that architectural innovations (or better optimization, data augmentation, etc.) might be needed instead of even larger scale.</p><p>Our main contributions are:</p><p>• We introduce ChessBench, a large-scale benchmark dataset for chess, consisting of 530M board states (from 10M games on lichess.org) annotated via Stockfish 16 with state-values and best-action, as well as 15B action-values for all legal actions in each board state (corresponding to roughly 8864 days of unparallelized Stockfish evaluation time).</p><p>• We train transformers of up to 270M parameters to predict action-values via supervised learning. The largest models generalize well to novel boards, enable play at grandmaster level (Lichess blitz Elo of 2895) against humans, and solve chess puzzles with dificulty ratings up to a Lichess Puzzle Elo of 2867 -without using explicit search at test time.</p><p>• We perform extensive ablations, including model-and dataset size, network architecture, action-value vs. state-value vs. behavioral cloning, and various hyper-parameters.</p><p>• We open source our ChessBench dataset, our model weights, and all training and evaluation code at <ref type="url" target="https://github.com/google-deepmind/searchless_chess">https://github.com/google-deepmind/searchless_chess</ref>, and provide a series of benchmark results through our models, ablations, and comparisons with Stockfish 16, Leela Chess Zero, and AlphaZero, and their searchless policy/value networks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Methodology</head><p>We now describe the dataset creation, the neural predictors and how to construct policies from them, and our evaluation methodology (see Figure <ref type="figure">1</ref> for an overview; full details in Appendix A).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">ChessBench Dataset</head><p>To construct a training dataset for supervised learning we downloaded 10 million games from Lichess (lichess.org) from February 2023 <ref type="foot" target="#foot_0">1</ref> . We extract all board states s from these games and estimate the state-value V SF (s) for each state with Stockfish 16 (our "value oracle") using a time limit of 50ms per board (unbounded depth and maximum skill level). The value of a state is the win percentage estimated by Stockfish, lying between 0% and 100%. <ref type="foot" target="#foot_1">2</ref> Note that Stockfish does not provide a centipawn score when it detects a mate-in-k, so we map all of these cases to a win percentage of 100%. We also use Stockfish to estimate action-values Q SF (s, a) for all legal actions a ∈ A legal (s) in each state. Here we use a time limit of 50ms per state-action pair (unbounded depth and max skill level), which corresponds to a Lichess blitz Elo of 2713 for our action-value oracle (see Section 3.1).</p><p>The action-values (win percentages) also determine the oracle best action a SF :</p><formula xml:id="formula_0">a SF (s) = arg max a∈Alegal(s) Q SF (s, a).</formula><p>In the case where multiple moves are tied in value, we pick a maximizing action arbitrarily. Since we train on individual boards and not whole games we shuffle the dataset after annotation. For our largest training dataset, based on 10M games, we thus obtain 15.3B action-value estimates (or ≈ 530M state-value estimates and oracle best-actions; cf. Table <ref type="table">A1</ref>) to train on (corresponding to roughly 8864 days of unparallelized Stockfish 16 evaluation time given the limit of 50ms per move).</p><p>To create our test dataset we follow the same annotation procedure, but on 1K games downloaded from a different month (March 2023), resulting in ≈ 1.8M action-value estimates (or ≈ 62K statevalue estimates and oracle best actions). Since there is only a small number of early-game board states and players often play popular openings, 14.7% of boards in this i.i.d. test are also in the training set. We deliberately chose not remove them, to not introduce a distributional shift and skew test set metrics. We also create a puzzle test set, following Carlini <ref type="bibr" target="#b8">[9]</ref>, consisting of 10K challenging board states that have an Elo rating and a sequence of moves to solve the puzzle. Only 1.33% of the puzzle boards appear in the training set (i.e., the initial board states, not the complete solution sequences).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Data Preprocessing and Training</head><p>Value binning The predictors we train are discrete discriminators (i.e., classifiers). Therefore we convert the win percentages (i.e., the ground truth state-or action-values) into discrete "classes" via binning, akin to distributional RL <ref type="bibr" target="#b9">[10]</ref>. We divide the interval from 0% to 100% uniformly into K bins (non-overlapping sub-intervals) and assign a one-hot code to each bin z i ∈ {z 1 , . . . , z K }. If not mentioned otherwise, K = 128. For our behavioral cloning experiments we train to directly predict the oracle actions, which are already discrete. We ablate the number of bins K in Appendix B.1, and we investigate losses that do (i.e., the log loss) and do not (i.e., the HL-Gauss and L2 loss) maintain semantic interconnectedness of the labels (i.e., the dependence between the classes) in Table <ref type="table" target="#tab_0">2</ref>.</p><p>Tokenization A FEN <ref type="bibr" target="#b10">[11]</ref> string is a standard string-based description of a chess position. It consists of a board state, the current side to move, the castling availability for both players, a potential en passant target, a half-move clock and a full-move counter, all represented in a single ASCII string. Our tokenization uses this representation, except that we flatten any uses of run-length encoding to obtain a fixed length (77) tokenized representation. Actions are stored in UCI notation <ref type="bibr" target="#b11">[12]</ref>, for example 'e2e4' for the popular opening move for white. To tokenize we use the index of a move into a lexiographically sorted array of the 1968 possible UCI encoded actions (see Appendix A.1 for more details). Note that this representation technically makes the game non-Markovian, because FENs do not contain the move history and therefore, cannot capture all information for rules such as drawing by threefold repetition (drawing because the same board occurs three times).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Network inputs and outputs</head><p>For all our predictors we use a modern decoder-only transformer backbone <ref type="bibr" target="#b12">[13]</ref><ref type="bibr" target="#b13">[14]</ref><ref type="bibr" target="#b14">[15]</ref> to parameterize a categorical distribution by normalizing the transformer's outputs with a log softmax layer. The models thus output log probabilities. The context size is 79 for actionvalue prediction and 78 for state-value prediction and behavioral cloning (see 'Tokenization' above). The output size is K (i.e., the number of bins) for action-and state-value prediction and 1968 (the number of all possible legal actions) for behavioral cloning. We use learned positional encodings <ref type="bibr" target="#b15">[16]</ref> as the length of the input sequences is constant. Our largest model has ≈ 270 million parameters, i.e., 16 layers, 8 heads, and an embedding dimension of 1024 (full details in Appendix A.2).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Training protocol</head><p>We train our predictors by minimizing the cross-entropy loss via mini-batch stochastic gradient descent using Adam <ref type="bibr" target="#b16">[17]</ref>. The target labels are either bin-indices for state-or action-value prediction or action indices for behavioral cloning. For state-and action-value prediction, we additionally apply label smoothing via the HL-Gauss loss <ref type="bibr" target="#b17">[18]</ref>, using a Gaussian smoothing distribution with the mean given by the label and a standard deviation of σ = 0.75/K ≈ 0.05 as recommended by Farebrother et al. <ref type="bibr" target="#b18">[19]</ref>. Thus, the labels are no longer one-hot but multi-hot encoded (see Figure <ref type="figure">3</ref> in <ref type="bibr" target="#b18">[19]</ref> for an overview). We ablate the loss function, i.e., HL-Gauss vs. cross-entropy vs. MSE, in Section 3.4. We train for 10 million steps, which corresponds to 2.67 epochs for a batch size of 4096 with 15.3B data points (cf. Table <ref type="table">A1</ref>; details in Appendices A.2 and A.3).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">Predictors and Policies</head><p>Our predictors are categorical distributions parameterized by neural networks P θ (z|x) that take a tokenized input x and output a predictive distribution over discrete labels {z 1 , . . . , z K }. Depending on the prediction target we distinguish between three tasks (see Figure <ref type="figure">1</ref> for an overview).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>(AV) Action-value prediction</head><p>The target label is the bin z i into which the ground-truth action-value estimate Q SF (s, a) falls. The input to the predictor is the concatenation of tokenized state and action. The loss for a single input data point (s i , a i ) is:</p><formula xml:id="formula_1">- z∈{z1,...z K } q i (z) log P AV θ (z|s i , a i ) with q i := HL-Gauss K (Q SF (s, a)),<label>(1)</label></formula><p>where K is the number of bins and HL-Gauss K (x) is the function that computes q i (the smoothed version of label z i ), i.e., a smooth categorical distribution using HL-Gauss <ref type="bibr" target="#b17">[18]</ref> rather than the standard one-hot procedure. To use the predictor in a policy, we evaluate the predictor for all legal actions in the current state and pick the action with maximal expected action-value:</p><formula xml:id="formula_2">âAV (s) = arg max a∈Alegal E Z∼P AV θ (•|s,a) [Z]</formula><p>Qθ (s,a)</p><p>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>(SV) State-value prediction</head><p>The target label is the bin z i that the ground-truth state-value V SF (s) falls into. The input to the predictor is the tokenized state. The loss for a single data point is:</p><formula xml:id="formula_3">- z∈{z1...z K } q i (z) log P SV θ (z|s i ) with q i := HL-Gauss K (V SF (s i )).<label>(2)</label></formula><p>To use the state-value predictor as a policy, we evaluate the predictor for all states s ′ = T (s, a) that are reachable via legal actions from the current state (where T (s, a) is the deterministic transition of taking action a in state s). Since s ′ implies that it is now the opponent's turn, the policy picks the action that leads to the state with the worst expected value for the opponent:</p><formula xml:id="formula_4">âSV (s) = arg min a∈Alegal E Z∼P SV θ (•|s ′ ) [Z]</formula><p>Vθ (s ′ ) .</p><p>(BC) Behavioral cloning The target label is the (one-hot) action-index of the ground-truth action a SF (s) within the set of all possible actions (see 'Tokenization' in Section 2.2). The input to the predictor is the tokenized state, which leads to the loss for a single data point:</p><formula xml:id="formula_5">-log P BC θ (a SF (s)|s).<label>(3)</label></formula><p>This gives a policy that picks the highest-probability action: âBC (s) = arg max a∈Alegal P BC θ (a|s).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.4">Evaluation</head><p>We use the following metrics to evaluate our models and/or measure training progress.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Action accuracy</head><p>The test set percentage where the policy picks the best action: â(s) = a SF (s).</p><p>Action ranking (Kendall's τ ) The average test set rank correlation <ref type="bibr" target="#b19">[20]</ref> of the predicted action distribution with the ground truth given by Stockfish. Kendall's τ ranges from -1 (exact inverse order) to 1 (exact same order), with 0 indicating no rank correlation. The ranking is obtained by evaluating for all legal actions Qθ (s, a), -Vθ (T (s, a)), or P BC θ (a|s), in the case of AV, SV, or BC prediction, respectively. The ground-truth ranking is given by evaluating Q SF (s, a) for all legal actions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Puzzle accuracy</head><p>We evaluate our policies on their capability of solving puzzles from a collection of Lichess puzzles that are rated by Elo difficulty from 399 to 2867 based on how often each puzzle has been solved correctly. We use puzzle accuracy as the percentage of puzzles where the policy's action sequence exactly matches the entire solution action sequence. For our main results in Sections 3.1 and 3.2 we use 10K puzzles; otherwise, we use the first 1K puzzles to speed up evaluation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Game playing strength (Elo)</head><p>We evaluate the playing strength (measured as an Elo rating) of the policies in two ways: (i) we run an internal tournament between all the agents from Table <ref type="table">1</ref> except for GPT-3.5-turbo-instruct, and (ii) we play Blitz games on Lichess against either only humans or only bots. For the tournament we play 400 games per agent pair, yielding 22K games in total, and compute the Elo with BayesElo <ref type="bibr" target="#b20">[21]</ref> using the default confidence parameter of 0.5. To ensure variability in the games, we use the openings from the Encyclopaedia of Chess Openings (ECO) <ref type="bibr" target="#b21">[22]</ref>. When playing on Lichess, we use a softmax policy with a low temperature of 0.005 for the first five full-moves instead of the arg max policy to create variety in games and prevent simple exploits via repeated play. We anchor the relative BayesElo values to the Lichess Elo vs. bots of our largest (270M) model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.5">Engine Comparisons</head><p>We compare the performance of our models against the following engines:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Stockfish 16</head><p>We consider two variants: (i) a 50ms time limit per legal move (i.e., the dataset oracle), and (ii) a 1.5s limit per board, which is roughly the amount of time the first variant (i) takes on average per board (i.e., there are roughly 30 legal moves per board on average).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>AlphaZero</head><p>We consider three variants of AlphaZero <ref type="bibr">[7]</ref>: (i) with 400 MCTS simulations, (ii) only the policy network, and (iii) only the value network (where (ii) and (iii) perform no additional search). AlphaZero's networks have 27.6M parameters and are trained on 44M games (full details in <ref type="bibr" target="#b22">[23]</ref>).</p><p>Leela Chess Zero We consider three variants: (i) with 400 MCTS simulations, (ii) only the policy network, and (iii) only the value network (where (ii) and (iii) perform no additional search). We use the T82 network, which is a convolutional network with 768 filters, 15 blocks, and mish activations <ref type="bibr" target="#b23">[24]</ref> -the largest network available on the official Leela Chess Zero website. At the time of writing, the precise network architecture, training data, and training protocol for the T82 network were not reported on the Leela Chess Zero website or other source. Concurrently to our paper, Monroe and Leela Chess Zero Team <ref type="bibr">[6]</ref> published a rigorous tech report which now provides many of these details about for a slightly different (state-of-the-art) Leela Zero architecture called ChessFormer, and includes a comparison against our vanilla networks. Table <ref type="table">1</ref>: Comparison of our action-value models against Stockfish 16, variants of Leela Chess Zero and AlphaZero (with and without Monte Carlo tree search), and GPT-3.5-turbo-instruct. Tournament Elo ratings are obtained by making the agents play against each other and cannot be directly compared to the Lichess Elo. Lichess (blitz) Elo ratings result from playing against either human opponents or bots on Lichess. Stockfish 16 with a time limit of 50ms per move is our data-generating oracle. Models operating on the PGN observe the full move history, whereas FENs only contain very limited historical information (sufficient for the fifty-move rule). Unlike all other engines, our policies were trained with supervised learning and use no explicit search at test time (except for GPT-3.5-turbo-instruct, which was trained via self-supervised learning and then instruction tuned).</p><p>Lichess Elo Agent Train Search Input Tournament Elo vs. Bots vs. Humans Puzzle Acc. (%) 9M Transformer (ours) SL FEN 2025 (±18) 2054 -88.9 136M Transformer (ours) SL FEN 2259 (±16) 2156 -94.5 270M Transformer (ours) SL FEN 2299 (±15) 2299 2895 95.4 GPT-3.5-turbo-instruct SSL PGN -1755 -66.5 AlphaZero (policy net only) RL PGN 1777 (±25) --56.1 AlphaZero (value net only) RL PGN 1992 (±19) --82.0 AlphaZero (400 MCTS sim.) RL ✓ PGN 2470 (±16) --95.6 Leela Chess Zero (policy net only) RL PGN 2292 (±16) 2224 -88.6 Leela Chess Zero (value net only) RL PGN 2418 (±16) 2318 -95.9 Leela Chess Zero (400 MCTS sim.) RL ✓ PGN 2858 (±20) 2620 -99.6 Stockfish 16 (50ms per move) [oracle] SL ✓ FEN + Moves 2711 (±18) 2713 -99.8 Stockfish 16 (1.5s per board) SL ✓ FEN + Moves 2935 (±23) 2940 -100.0</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>GPT-3.5-turbo-instruct</head><p>We follow Carlini <ref type="bibr" target="#b8">[9]</ref> and encode the entire game with the Portable Game Notation (PGN) <ref type="bibr" target="#b10">[11]</ref> to reduce hallucinations. Since Carlini <ref type="bibr" target="#b8">[9]</ref> found that (at that time) GPT-4 struggled to play full games without making illegal moves, we do not consider GPT-4.</p><p>In contrast to our models, all of the above engines rely on the entire game's history (via the PGN; we use the FEN, which only contains the game's current state and very limited historical information).</p><p>Observing the full game's history helps, for instance, detecting and preventing draws from threefold repetition (games are drawn if the same board state appears three times throughout the game). Our engines require a workaround to deal with this problem (described in Section 4).</p><p>A direct comparison between all engines comes with a lot of caveats since some engines use the game history, some have very different training protocols (i.e., RL via self-play instead of supervised learning), and some use search at test time. We show these comparisons to situate the performance of our models within the wider landscape, but emphasize that some conclusions can only be drawn within our family of models and the corresponding ablations that keep all other factors fixed.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Case-Study Results</head><p>We use two settings for our experiments: (i) a large-scale setting for our main results (Sections 3.1 and 3.2; details in Appendix A.2), and (ii) a setting geared towards getting representative results with better computational efficiency for our ablations (Sections 3.3 and 3.4; details in Appendix A.3).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Main Result</head><p>Table <ref type="table">1</ref> shows the playing strength (internal tournament Elo, external Lichess Elo, and puzzle accuracy) of our large-scale transformers trained on the full (10M games) training set. We compare models with 9M, 136M, and 270M parameters (none of them overfit the training set as shown in Appendix B.4). The results show that all three models exhibit non-trivial generalization to novel boards and can successfully solve a large fraction of puzzles. Across all metrics, increasing model size consistently improves the scores, confirming that model scale matters for strong chess performance. Our largest model achieves a blitz Elo of 2895 against human players, which places it into grandmaster territory. However, the Elo drops when playing against bots on Lichess, which may be a result of having a significantly different player pool <ref type="bibr" target="#b24">[25]</ref>, minor technical issues, or a qualitative difference in how bots exploit weaknesses compared to humans (see Section 4 for a detailed discussion). 0 1 2 3 4 5 Step 1e6 0 20 40 60 80 Puzzle Accuracy (%) 10'000 Games 400K 1M 2M 7M 9M 34M 0 1 2 3 4 5 Step 1e6 100'000 Games 0 1 2 3 4 5 Step 1e6 1'000'000 Games Figure 3: Puzzle accuracy for different training set sizes (stated above panels) and model sizes (color-coded), evaluated on our small set of 1K puzzles.</p><p>Generally, larger models trained on larger datasets lead to higher accuracy (which strongly correlates with test set performance and general chess playing strength), highlighting the importance of scale for strong chess play. This effect cannot be explained by memorization since &lt; 1.41% of the initial puzzle board states appear in our training set. If the model is too large in relation to the training set it overfits (left panel; loss curves in Figure <ref type="figure">A3</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Puzzles</head><p>In Figure <ref type="figure">2</ref> we compare the puzzle performance of our 270M parameter model against Stockfish 16 (50ms limit per move), GPT-3.5-turbo-instruct, AlphaZero, and Leela Chess Zero. We use our large puzzle set of 10K puzzles, grouped by their assigned Elo difficulty from Lichess. Stockfish 16 performs the best across all difficulty categories, followed by Leela Chess Zero, AlphaZero, and our model. Impressively, our model, which does not use any explicit search at test time, nearly matches the performance of AlphaZero with (Monte Carlo) tree search. GPT-3.5-turbo-instruct achieves non-trivial puzzle performance but significantly lags behind our model. We emphasize that solving the puzzles requires a correct move sequence, and since our policy cannot explicitly plan ahead, solving the puzzle sequences relies entirely on having good value estimates that can be used greedily.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Scaling Analysis</head><p>Figure <ref type="figure">3</ref> shows a scaling analysis over the dataset and model size. We visualize the puzzle accuracy (train and test losses in Figure <ref type="figure">A3</ref>), which correlates well with the other metrics and the overall playing strength. For small training set size (10K games, left panel) larger architectures (≥ 7M) start to overfit. This effect disappears as the dataset size is increased to 100K (middle panel) and 1M games (right panel). The results also show that the final accuracy of a model increases as the dataset size is increased (consistently across model sizes). Similarly, we observe the general trend of increased architecture size leading to increased overall performance (as in our main result in Section 3.1).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">Variants and Ablations</head><p>We perform extensive ablations using the 9M-parameter model and show the results in Tables <ref type="table" target="#tab_0">2</ref> and <ref type="table" target="#tab_0">A2</ref>. We use the results and conclusions drawn to inform and justify our design choices and determine the default model-, data-, and training configurations. Predictor targets By default we learn to predict action-values given a board state.</p><p>Here we compare against using state-values or oracle actions (behavioral cloning) as the prediction targets (Section 2.3 and Figure <ref type="figure">1</ref> describe how to construct policies from the predictors). Table <ref type="table" target="#tab_0">2</ref> and Figure <ref type="figure">A4</ref> show that the action-value predictor is superior in terms of action-ranking (Kendall's τ ), action accuracy, and puzzle accuracy. This superior performance might stem primarily from the significantly larger actionvalue dataset (15.3B state-action pairs vs. ≈ 530M states for our largest training set). We thus run an ablation where we train all three predictors on the same amount of data (results in Table <ref type="table">A4</ref> and Figure <ref type="figure" target="#fig_4">A5</ref>, which largely confirm this hypothesis). Appendix B.5 contains detailed discussion, including why the performance discrepancy between behavioral cloning and the statevalue prediction policy may be largely due to training only on expert actions rather than the full action distribution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Loss function</head><p>We treat learning Stockfish action-values as a classification problem and train by minimizing the HL-Gauss loss <ref type="bibr" target="#b17">[18]</ref>. Here we compare this to the cross-entropy loss (log-loss), which is as close as possible to the (tried and tested) standard LLM setup. Another alternative is to treat the problem as a scalar regression problem by parameterizing a fixed-variance Gaussian likelihood model with a transformer and performing maximum (log) likelihood estimation, i.e., minimizing the mean-squared error (L2 loss). To that end, we modify the architecture to output a scalar (without a final log-layer or similar). Table <ref type="table" target="#tab_0">2</ref> shows that the HL-Gauss loss outperforms the other two losses.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Network depth</head><p>Table <ref type="table" target="#tab_0">2</ref> shows the influence of increasing the transformer's depth (i.e., the number of layers) for a fixed number of parameters (we vary the embedding dimension and the widening factor such that all models have the same number of parameters). Since transformers may learn to roll out iterative computation (which arises in search) across layers, deeper networks may hold the potential for deeper unrolls. The performance of our models increases with their depth but saturates at around 16 layers, indicating that depth is important, but not beyond a certain point.</p><p>Value binning Table <ref type="table" target="#tab_0">2</ref> shows the impact of varying the number of bins used for state-and actionvalue discretization (from 16 to 256), demonstrating that more bins generally lead to improved performance (up to a certain point). We therefore use K = 128 bins for our experiments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Discussion</head><p>When using our state-based policies to play against humans and bots, two minor technical issues appear that can only be solved by having (some) access to the game's history. In this section, we discuss both issues and present our corresponding workarounds.</p><p>Blindness to threefold repetition By construction, our state-based predictor cannot detect the risk of threefold repetition (drawing because the same board occurs three times), since it has no access to the game's history (FENs contain minimal historical info, sufficient for the fifty-move rule). To reduce draws from threefold repetitions, we check if the agent's next move would trigger the rule and set the corresponding action's win percentage to 50% before computing the softmax. However, our agents still cannot plan ahead to mimize the risk of being forced into threefold repetition. Figure <ref type="figure">4</ref>: Two options to win the game in 3 or 5 moves, respectively (more options exist). Since they both map into the highest-value bin our bot ignores Nh6+, the fastest way to win (in 3), and instead plays Nd6+ (matein-5). Unfortunately, a state-based predictor without explicit search cannot guarantee that it will continue playing the Nd6+ strategy and thus might randomly alternate between different strategies. Overall this increases the risk of drawing the game or losing due to a subsequent (low-probability) mistake, such as a bad softmax sample. Board from a game between our 9M Transformer (white) and a human (blitz Elo of 2145).</p><p>Indecisiveness in the face of overwhelming victory If Stockfish detects a matein-k it outputs k and not a centipawn score. When annotating our dataset, we map all such outputs to a win percentage of 100%.</p><p>Similarly, in a very strong position, several actions may end up in the maximum value bin. Thus our agent sometimes plays somewhat randomly rather than committing to a plan that finishes the game (the agent has no knowledge of its past moves).</p><p>Paradoxically, this means that our agent, despite being in a position of overwhelming win percentage, sometimes fails to take the (virtually) guaranteed win (see Figure <ref type="figure">4</ref>) and might draw or even end up losing since small chances of a mistake accumulate with longer games. To alleviate this, we check whether the predicted scores for all top five moves lie above a win percentage of 99% and double-check this condition with Stockfish, and if so, use Stockfish's top move (out of these) to have consistency in strategy across time-steps.</p><p>Elo: Humans vs. bots We have three plausible hypotheses for why the Lichess Elo in Table <ref type="table">1</ref> differs when playing against humans vs. bots: (i) humans tend to resign when our bot is in an overwhelmingly winning position but bots do not (i.e., the previously described problem gets amplified against bots);</p><p>(ii) most humans on Lichess rarely play against bots, i.e., the two player pools (humans and bots) are hard to compare and their Elo ratings may be miscalibrated <ref type="bibr" target="#b24">[25]</ref>; and (iii) based on anecdotal analysis by a chess National Master, our models make the occasional tactical mistake which may be penalized more severely by bots than humans (analysis in Appendices B.7 and B.8). While investigating this Elo discrepancy is interesting, it is not central to our paper and does not impact our main claims.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Limitations</head><p>Our primary goal was to investigate whether a complex search algorithm such as Stockfish 16 can be approximated with a feedforward neural network on our dataset via supervised learning. While our largest model achieves good performance, it does not fully close the gap to Stockfish 16, and it is unclear whether further scaling would close this gap or whether other innovations are needed.</p><p>While we produced a strong chess policy, our goal was not to build a state-of-the-art chess engine. Our models are impractical in terms of speed and would perform poorly in computer chess tournaments with compute limitations. Therefore, we calibrated our policy's playing strength via Lichess, where the claim of "grandmaster-level" play currently holds only against human opponents. In addition, we only evaluated our biggest model against humans on Lichess due to the extensive amount of time required. We also cannot rule out that opponents, through extensive repeated play, may find weaknesses due to the deterministic nature of our policy. Finally, we reiterate that we compare to other engines to situate our models within the wider landscape, but that a direct comparison between all the engines comes with a lot of caveats due to differences in their inputs (FENs vs. PGNs), training protocols (RL vs. supervised learning), and the use of search at test time.</p><p>Leela Chess Zero's networks, which are trained with self-play and RL, achieve higher Elo ratings without using explicit search at test time than our transformers, which we trained via supervised learning. However, in contrast to our work, very strong chess performance (at low computational cost) is the explicit goal of this open source project (which they have clearly achieved via domain-specific adaptations). We refer interested readers to <ref type="bibr">[6]</ref> (which was published concurrently to our work) for details on the current state-of-the-art and a comparison against our networks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Related Work</head><p>Unsurprisingly given its long history in AI, there is a vast literature on applying algorithmic techniques to chess. Earlier works predominantly focused on methods which would increase the strength of chess playing entities, but as time has progressed, the role of chess as a problem domain has changed more from a challenge area to that of an illuminating benchmark, and our work continues this tradition.</p><p>Early computer chess research focused on designing explicit search strategies coupled with heuristics, as evidenced by Turing's initial explorations <ref type="bibr" target="#b25">[26]</ref> and implementations like NeuroChess <ref type="bibr" target="#b26">[27]</ref>. This culminated in systems like Deep Blue <ref type="bibr" target="#b27">[28]</ref> and early versions of Stockfish <ref type="bibr" target="#b28">[29]</ref>.</p><p>AlphaZero <ref type="bibr">[7]</ref> and Leela Chess Zero <ref type="bibr" target="#b4">[5]</ref> marked a paradigm shift: They employed deep RL with Monte Carlo tree search to learn heuristics (policy and value networks) instead of manually designing them <ref type="bibr" target="#b29">[30,</ref><ref type="bibr" target="#b30">31]</ref>. Several works built upon this framework <ref type="bibr" target="#b31">[32]</ref>, including enhancements to AlphaZero's self-play mechanisms <ref type="bibr" target="#b32">[33]</ref> and the use of model-free RL <ref type="bibr" target="#b22">[23]</ref>. At the time of writing, Leela Zero's T82 networks were state-of-the art, but their training protocol, training data, and some architectural details were not fully reported. In the meantime, Monroe and Leela Chess Zero Team <ref type="bibr">[6]</ref> have published a detailed tech report on another transformer-based Leela Zero architecture called the ChessFormer.</p><p>Their comparison shows that ChessFormers comparable in size to our models outperform our vanilla transformers while requiring fewer FLOPS thanks to clever domain-specific adaptations.</p><p>Another line of work moved away from explicit search methods by leveraging large-scale game datasets for (un)supervised learning, both for chess <ref type="bibr" target="#b33">[34]</ref><ref type="bibr" target="#b34">[35]</ref><ref type="bibr" target="#b35">[36]</ref><ref type="bibr" target="#b36">[37]</ref> and Go <ref type="bibr" target="#b37">[38]</ref>. Most closely related to our work, project Maia <ref type="bibr" target="#b34">[35]</ref> used behavioral cloning on 12M human games but, rather than maximizing performance (i.e., distilling Stockfish), focused on predicting human moves at different levels of play.</p><p>The rise of large (pretrained) foundation models also led to innovations in various areas of computer chess research: learning the rules of chess <ref type="bibr" target="#b38">[39,</ref><ref type="bibr" target="#b39">40]</ref>, evaluating move quality <ref type="bibr" target="#b40">[41]</ref>, evaluating playing strength <ref type="bibr" target="#b8">[9,</ref><ref type="bibr" target="#b41">42]</ref>, state tracking <ref type="bibr" target="#b42">[43,</ref><ref type="bibr" target="#b43">44]</ref>, and playing chess from visual inputs <ref type="bibr" target="#b44">[45]</ref>. Fine-tuning on chess-specific data sources (e.g., chess textbooks) has further improved performance <ref type="bibr" target="#b45">[46]</ref><ref type="bibr" target="#b46">[47]</ref><ref type="bibr" target="#b47">[48]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>Our paper introduces ChessBench, a large-scale, open source benchmark dataset for chess, and shows the feasibility of distilling an approximation of Stockfish 16, a complex planning algorithm, into a feed-forward transformer via standard supervised training. The resulting predictor generalizes well to unseen board states, and, when used in a policy, leads to strong chess play. We show that strong chess capabilities from supervised learning only emerge at sufficient dataset and model scale. Our work thus adds to a rapidly growing body of literature showing that sophisticated algorithms can be distilled into feed-forward transformers, implying a paradigm shift to viewing large transformers as a powerful technique for general algorithm approximation rather than "mere" statistical pattern recognizers. Nevertheless, perfect distillation of Stockfish 16 is still beyond reach and closing the performance gap might need other (e.g., architectural) innovations. Our open source benchmark dataset, ChessBench, thus provides a solid basis for scientific comparison of any such developments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Impact Statement</head><p>While the results of training transformer-based architectures at scale in a (self-)supervised way will have significant societal consequences in the near future, these concerns do not apply to closed domains, such as chess, that have limited real-world impact. Moreover, chess has been a domain of machine superiority for decades. Another advantage of supervised training on a single task over other forms of training (particularly self-play or reinforcement learning and meta-learning) is that the method requires a strong oracle solution to begin with (for data annotation) and is unlikely to significantly outperform the oracle, which means that the potential for the method to rapidly introduce substantial unknown capabilities (with wide societal impacts) is very limited.</p><p>Table A1: Dataset sizes. For simplicity, we typically refer to the datasets by the number of games they were created from. State-Value Behavioral Cloning Action-Value Split Games Records Bytes Records Bytes Records Bytes Train 10 4 591 897 43.7 MB 589 130 41.1 MB 17 373 887 1.4 GB 10 5 5 747 753 422.0 MB 5 720 672 397.4 MB 167 912 926 13.5 GB 10 6 55 259 971 4.0 GB 54 991 050 3.8 GB 1 606 372 407 129.0 GB 10 7 530 310 443 38.6 GB 527 633 465 36.3 GB 15 316 914 724 1.2 TB Test 10 3 62 829 4.6 MB 62 561 4.4 MB 1 838 218 148.3 MB 0.0 0.2 0.4 0.6 0.8 1.0 Win %  <ref type="table">A1</ref>). We use 50 buckets to generate the histograms. The win percentage distribution is skewed towards 0 as we consider all legal moves per board and most actions are not advantageous for the player.</p><p>played the following numbers of games for the different policies shown in Table <ref type="table">1</ref>: 553 games for 9M, 169 games for 136M, 228 games against bots and 174 games against humans for 270M, 181 games for GPT-3.5-turbo-instruct, 37 games for Leela Chess Zero (policy net only), 46 games for Leela Chess Zero (value net only), 44 games for Leela Chess Zero (400 MCTS sim.), 30 games for Stockfish (50ms per move) [oracle], and 42 games for Stockfish (1.5s per board).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.6 Stockfish Setup</head><p>We use Stockfish 16 (the version from December 2023) throughout the paper. When we play, we use the oracle we used for training, which is an unconventional way to play with this engine: We evaluate each legal move in the position for 50ms, and return the best move based on these scores. This is not entirely equivalent to a standard thinking time of 50ms multiplied by the number of legal moves per position, as we force Stockfish to spend 50ms on moves that could be uninteresting and unexplored. We chose to keep this setup to have a comparison to the oracle we train on. Note that, when comparing the legal moves in a given position, we do not clear Stockfish's cache between the moves. Therefore, due to the way the cache works, this biases the accuracy of Stockfish's evaluation to be weaker for the first moves considered. Finally, due to the nature of our internal hardware setup, we use two different kinds of chips to run Stockfish: (i) to compute the Lichess Elo, we use a 6-core Intel(R) Xeon(R) W-2135 CPU @ 3.70GHz, and (ii) to compute the tournament Elo, we use a single Tensor Processing Unit (V3), as for all the other agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.7 AlphaZero Setup</head><p>We use the AlphaZero <ref type="bibr">[7]</ref> version from 2020, with a network trained at that time <ref type="bibr" target="#b22">[23]</ref>. We investigate three different versions: (i) policy network only, (ii) value network only and (iii) standard version with search. For (i) we do a search limited to 1 node. For (ii) we do a search limited to 1 node for every legal action and then take the arg max. For (iii), we use the standard search from the paper, with 400 MCTS simulations (confirmed via personal correspondence with Schrittwieser et al. <ref type="bibr" target="#b22">[23]</ref>) and the exact same UCB scaling parameters. We also take the arg max over visit counts. Note that AlphaZero's policy and value network have been trained on 44M games, whereas we trained our largest models on only 10M games.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.8 Leela Chess Zero Setup</head><p>We use the latest release version (v31.0) of Leela Chess Zero <ref type="bibr" target="#b4">[5]</ref> with the largest network officially supported at the time of submission (i.e., the 'Large' T82 network from <ref type="url" target="https://lczero.org/play/networks/bestnets">https://lczero.org/  play/networks/bestnets</ref>). We investigate three different versions: (i) policy network only, (ii) value network only and (iii) standard version with search. For (i) we do a search limited to 1 node. For (ii) we do a search limited to 1 node for every legal action and then take the arg max. For (iii), we use 400 MCTS simulations. The network architecture and training protocol for T82 were not fully available; more details are now provided in Monroe and Leela Chess Zero Team <ref type="bibr">[6]</ref> (written concurrently to our work) about a slightly different architecture, called the ChessFormer.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.9 Computational Resources</head><p>Our codebase is based on JAX <ref type="bibr" target="#b50">[51]</ref> and the DeepMind JAX Ecosystem <ref type="bibr" target="#b51">[52,</ref><ref type="bibr" target="#b52">53]</ref>. We used 4 Tensor Processing Units (V5) per model for the ablation experiments. We used 128 Tensor Processing Units (V5) per model to train our large (9M, 136M and 270M) models. We used a single Tensor Processing Unit (V3) per agent for our Elo tournament.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Additional Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1 Additional Ablations</head><p>We perform additional ablations using the 9M parameter model. As in Section 3.4, the results and conclusions drawn are used to justify our design choices and determine default configuration for model, data, and training. Table <ref type="table" target="#tab_0">A2</ref> shows the results.</p><p>Table A2: Ablating the Stockfish time limit (used for dataset annotation), the data sampling method for training, and the model architecture (see Appendix B.1). Accuracy (%) Ablation Parameter Puzzles Actions Kendall's τ Stockfish limit [s] 0.05 84.0 62.2 0.256 0.1 85.4 62.5 0.254 0.2 84.3 62.6 0.259 0.5 83.3 63.0 0.259 Data sampler Uniform 83.3 63.0 0.259 Weighted 49.9 48.2 0.192 Architecture Transformer 83.3 63.0 0.259 ConvNet 17.3 37.6 0.171</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Stockfish time limit</head><p>We create training sets from 1 million games annotated by Stockfish with varying time limits to manipulate the playing strength of our oracle. We report scores on the puzzle set (same for all models) and a test set created using the same time limit as the training set (different for all models). Table <ref type="table" target="#tab_0">2</ref> shows that a basic time limit of 0.05 seconds gives only marginally worse puzzle performance. As a compromise between computational effort and final model performance we thus choose this as our default value (for our 10M games dataset we need about 15B action-evaluation calls with Stockfish, i.e., roughly 8680 days of unparallelized Stockfish evaluation time).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Data sampler</head><p>We remove duplicate board states during the generation of the training and test sets. This increases data diversity but introduces distributional shift compared to the "natural" game distribution of boards where early board states and popular openings occur more frequently. To quantify the effect of this shift we use an alternative "weighted" data sampler that draws boards from our filtered training set according to the distribution that would occur if we had not removed duplicates. Results in Table <ref type="table" target="#tab_0">A2</ref> reveal that training on the natural distribution (via the weighted sampler) leads to significantly worse results compared to sampling uniformly randomly from the filtered training set (both trained models are evaluated on a filtered test set with uniform sampling,</p><p>Table A3: Inference times and legal move accuracy. (a) Inference times for the agents from Table 1 on 1000 random baords from the Encyclopedia of Chess Openings (ECO). Inference Time [ms] Agent Average Standard Deviation 9M Transformer (ours) 14.5 34.4 136M Transformer (ours) 32.0 58.5 270M Transformer (ours) 57.1 117.2 AlphaZero (policy net only) 4.5 4.0 AlphaZero (value net only) 127.1 38.7 AlphaZero (400 MCTS sim.) 293.1 4.4 Leela Chess Zero (policy net only) 4.3 22.5 Leela Chess Zero (value net only) 116.8 51.4 Leela Chess Zero (400 MCTS sim.) 116.1 49.7 Stockfish 16 (50ms per move) [oracle] 1525.3 349.6 Stockfish 16 (1.5s per board) 1501.1 0.6 (b) Legal move accuracy on 1000 random boards from three data sources. Measuring the legal move accuracy only really makes sense for BC, which, indeed, almost always plays a legal move. In contrast, our actionvalue predictor was not trained to play legal moves, since Stockfish's Q SF (s, a)-values are undefined for illegal moves. Note that the legal move accuracy cannot be computed for state-value prediction since it is only defined on boards reachable via legal moves. Legal Move Accuracy (%) Prediction Target ECO Puzzles Test Action-Value 0.0 10.5 0.5 Behavioral Cloning 100.0 99.6 99.5</p><p>and the puzzle test set). We hypothesize that the increased performance is due to the increased data diversity seen under uniform sampling. As we train for very few epochs, the starting position and common opening positions are only seen a handful of times during training under uniform sampling, making it unlikely that strong early-game play of our models can be attributed to memorization.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Model architecture</head><p>To investigate the performance of architectures other than transformers on our benchmark, we perform a preliminary investigation with an AlphaZero-like convolutional neural network. We therefore train a residual tower with 8 layers and 256 channels (no pooling, broadcasting, or bottleneck layers), followed by a linear layer and a log softmax. We input the 8-by-8 board in a single channel and treat the other scalars in the FEN as additional channels. Table <ref type="table" target="#tab_0">A2</ref> shows that this particular model-and training configuration does not lead to strong results for the convolutional architecture we consider. Note that we did not extensively tune our experiment setup and would therefore expect highly domain-specific setups that more closely resemble those of AlphaZero or Leela Chess Zero to achieve much higher performance. Thus, the purpose of this experiment is to show that the vanilla transformer setup seems to achieve better performance than an "equivalently vanilla" convolutional setup.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2 Inference Times</head><p>Table <ref type="table">A3a</ref> shows the inference times in milliseconds on 1000 random boards from the Encyclopedia of Chess Openings <ref type="bibr" target="#b21">[22]</ref> using a single TPU (V5). Unsurprisingly, the "searchless" agents (i.e., our models and the policy networks) are orders of magnitudes faster than the agents that rely on tree search at test time. Note that the value networks are slow to evaluate since we compute every legal action individually (and sequentially) and then take the arg max over the values.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3 Predicting Legal Moves</head><p>A natural question that arises when training models to play chess is whether they have actually learned the rules of the game. However, the problem of generating legal moves is tangential to our paper since we use a legal move generator (given by the environment) for our policies, as is standard in the chess AI literature (see, e.g., AlphaZero, Stockfish, or Leela Chess Zero). In fact, computing the legal move accuracy does not actually make sense for action-value prediction since the action-value function is only defined for legal moves. In contrast, for behavioral cloning the question of legal move accuracy is potentially more interesting (throughout this work, we normalize the predictive distribution to support only the legal moves except when evaluating the legal move accuracy) since the model is trained to output the oracle (and therefore a valid) action.</p><p>We investigate the legal move accuracy for action-value and behavioral cloning in Table <ref type="table">A3b</ref> (the legal move accuracy is undefined for state-value prediction since we can only evaluate boards reachable via legal moves). Unsurprisingly, Table <ref type="table">A3b</ref> shows that the action-value predictor has a very low legal 0 1 2 3 4 5 Step 1e6 0 1 2 3 4 5 6 Train Loss 10'000 Games 0 1 2 3 4 5 Step 1e6 100'000 Games 0 1 2 3 4 5 Step 1e6 1'000'000 Games 400K 1M 2M 7M 9M 34M (a) Training Loss 0 1 2 3 4 5 Step 1e6 2 0 2 1 2 2 2 3 2 4 Val. Loss (log scale) 10'000 Games 0 1 2 3 4 5 Step 1e6 100'000 Games 0 1 2 3 4 5 Step 1e6 1'000'000 Games 400K 1M 2M 7M 9M 34M (b) Test Loss Figure A3: Loss curves when scaling model size and training set size.</p><p>move accuracy, since its outputs for illegal moves are undefined (i.e., never adjusted during training). In contrast, our behavioral cloning policy has learned to almost always predict a legal move, even for highly out-of-distribution puzzle boards, showing that our networks have the capacity to learn the rules given our training protocol and dataset -if explicitly trained to do so (i.e., unlike action-value prediction).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.4 Loss Curves</head><p>In Figure <ref type="figure">A2</ref> we show the train and test loss curves (and the evolution of the puzzle accuracy) for the large models from Section 3.1. We observe that none of the models overfit and that larger models improve both the training and the test loss.</p><p>In Figure <ref type="figure">A3</ref> we visualize the train and test loss curves for the scaling experiment from Section 3.3. In line with the results shown in the main paper we observe that on the smallest training set, models with ≥ 7M parameters start to overfit but not for the larger training sets. Except for the overfitting cases we observe that larger models improve both the training and test loss, regardless of training set size, and that larger training set size improves the test loss when keeping the model size constant.</p><p>0 1 2 3 4 5 Step 1e6 0 5 10 15 20 25 Kendall's τ Action-Value State-Value Behavioral Cloning (a) Kendall's τ 0 1 2 3 4 5 Step 1e6 0 20 40 60 80 Puzzle Accuracy (%) Action-Value State-Value Behavioral Cloning (b) Puzzles Accuracy (%) 0 1 2 3 4 5 Step 1e6 10 20 30 40 50 60 Action Accuracy (%) Action-Value State-Value Behavioral Cloning (c) Action Accuracy (%)</p><p>Figure <ref type="figure">A4</ref>: Comparison of the three different prediction targets (action-value, state-value, and behavioral cloning) trained on the datasets generated from 1 million games. Note that this means that the action-value network is trained on roughly 30 times more data than the other two (cf. Table <ref type="table">A1</ref>). Action-value learning (trained on 1.6B action-values) learns slightly slower but outperforms the other two variants in the long run (which are trained on roughly 55M states / best actions). Behavioralcloning falls significantly short of state-value learning, even though both are trained on virtually the same amount of data.</p><p>Table <ref type="table">A4</ref>: Ranking the policies that arise from our three different predictors by having them play against each other in a tournament and computing relative Elo rankings (200 games per pairing; i.e., 600 games per column). When constructing the training data for all three predictors based on the same number of games (middle column), the action-value dataset is much larger than the state-value / behavioral cloning set, which leads to a stronger policy. When correcting for this by forcing the same number of training data points for all three (right column), the difference between state-and action-value prediction disappears.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Relative</head><p>Tournament Elo Prediction Target Same # of Games in Dataset Same # of Data Points Action-Value +492 (±31) +252 (±22) State-Value +257 (±23) +264 (±22) Behavioral Cloning 0 (±28) 0 (±24) B.5 Predictor-Target Comparison</p><p>In Figure <ref type="figure">A4</ref> we compare the puzzle accuracy for the three different predictor targets (action-values, state-values, or best action) trained on 1 million games. As discussed in the main text, for a fixed number of games we have very different dataset sizes for state-value prediction (roughly 55 million states) and action-value prediction (roughly 1.6 billion states); see Table <ref type="table">A1</ref> for all dataset sizes. It seems plausible that learning action-values might pose a slightly harder learning problem, leading to slightly slower initial learning, but eventually this is compensated for by having much more data to train on compared to state-value learning (see Figure <ref type="figure">A4</ref>, which shows this trend). Also note that since we use the same time-budget per Stockfish call, all action-values for one state use more Stockfish computation time in total (due to one call per action) when compared to state-values (one call per board). To control for the effect of dataset size, we train all three predictors (9M parameter model) on a fixed set of 40 million data points. Results are shown in Figure <ref type="figure" target="#fig_4">A5</ref>. As the results show, the state-value policy in this case slightly outperforms the action-value policy, except for action-ranking (Kendall's τ ), which makes sense since the action-value predictor is implicitly trained to produce good action rankings. To see how this translates into playing-strength, we pit all three policies (AV, SV, BC) against each other and determine their relative Elo rankings. Table <ref type="table">A4</ref> shows that when not controlling for the number of training data points, the action-value policy is strongest (in line with the findings in Table <ref type="table" target="#tab_0">2</ref> and Figure <ref type="figure">A4</ref>), but when controlling for the number of training data points the action-value and state-value policy perform almost identical (in line with Figure <ref type="figure" target="#fig_4">A5</ref>).</p><p>Throughout all these results we observe lower performance of the behavioral cloning policy, despite being trained on a comparable number of data points as the state-value policy. The main hypothesis for this is that the amount of information in the behavioral cloning dataset is lower than the state-value dataset, since we throw away any information in the state-or action-values beyond the index of the oracle action. We suspect that training on the full action distribution of the oracle (with cross-entropy loss), rather than the best action only would largely close this gap, but we consider this question beyond the scope of this paper and limit ourselves to simply reporting the observed effect in our setting.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.6 Fischer Random Chess</head><p>As a measure of out-of-distribution generalization, we evaluate the performance of our 9M transformer on Fischer random chess<ref type="foot" target="#foot_2">foot_2</ref> (Chess960) via Lichess (using the same setup as for Table <ref type="table">1</ref>). Fischer is a variation of the game of chess, which employs the same board and pieces as classical chess, but the starting position of the pieces on the players' home ranks is randomized, following certain rules. The random setup makes gaining an advantage through the memorization of openings impracticable; players instead must rely more on their skill and creativity over the board. Thus, Fischer random chess can be viewed as a measure of whether our models have learned general tactics (for the early stages of the game). While our bot attains a blitz Elo of 2054 (cf. Table <ref type="table">1</ref>), it only manages to play Fischer random chess at 1539 Elo (against bots), suggesting that the distribution shift is too high for our models to handle.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.7 Tactics</head><p>In Figure <ref type="figure">A6</ref>, we analyze the tactics learned by our 270M transformer used against a human with a blitz Elo of 2145. We observe that our model has learned to sacrifice material when it is advantageous to build a longer-term advantage.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.8 Playing Style</head><p>We recruited chess players of National Master level and above to analyze our agent's games against bots and humans on the Lichess platform. They made the following qualitative assessments of its playing style and highlighted specific examples (see Figure <ref type="figure">A7</ref>).</p><p>The agent has an aggressive enterprising style where it frequently sacrifices material for long-term strategic gain. The agent plays optimistically: it prefers moves that give opponents difficult decisions to make even if they are not always objectively correct. It values king safety highly in that it only reluctantly exposes its own king to danger but also frequently sacrifices material and time to expose the opponent's king. For example 17 .. Bg5 in game B.8.1 encouraged its opponent to weaken their king position. Its style incorporates strategic motifs employed by the most recent neural engines <ref type="bibr">[7,</ref><ref type="bibr" target="#b53">54]</ref>. For example it pushes wing pawns in the middlegame when conditions permit (see game B.8.2). In game B.8.3 the agent executes a correct long-term exchange sacrifice. In game B.8.4 the bot uses a motif of a pin on the back rank to justify a pawn sacrifice for long term pressure. Game B.8.5 features a piece sacrifice to expose its opponent's king. The sacrifice is not justified according to Stockfish although the opponent does not manage to tread the fine line to a permanent advantage and blunders six moves later with Bg7.</p><p>The agent has a distinct playing style to Stockfish: one analyzer commented "it feels more enjoyable than playing a normal engine", "as if you are not just hopelessly crushed". Indeed it does frequently agree with Stockfish's move choices suggesting that the agent's action-value predictions match Stockfish's. However the disagreements can be telling: the piece sacrifice in the preceding paragraph is such an example. Also, game B.8.6 is interesting because the agent makes moves that Stockfish strongly disagrees with. In particular the agent strongly favours 18 .. Rxb4 and believes black is better, in contrast Stockfish believes white is better and prefers Nd4. Subsequent analysis by the masters suggests Stockfish is objectively correct in this instance. Indeed on the very next move the agent has reversed its opinion and agrees with Stockfish. The agent's aggressive style is highly successful against human opponents and achieves a grandmasterlevel Lichess blitz Elo of 2895. However, against other engines its estimated Elo is far lower, i.e., 2299. Its aggressive playing style does not work as well against engines that are adept at tactical calculations, particularly when there is a tactical refutation to a sub-optimal move. Most losses against bots can be explained by just one tactical blunder in the game that the opponent refutes. For example Bxh3 in game B.8.7 loses a piece to g4.</p><p>Finally, the recruited chess masters commented that the agent's style makes it very useful for opening repertoire preparation. It is no longer feasible to surprise human opponents with opening novelties as all the best moves have been heavily over-analyzed. Modern opening preparation amongst professional chess players now focuses on discovering sub-optimal moves that pose difficult problems for opponents. This aligns extremely well with the agent's aggressive, enterprising playing style which does not always respect objective evaluations of positions.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :Figure 3 :</head><label>23</label><figDesc>Figure2: Puzzle solving comparison for our 270M transformer, Stockfish 16 (50ms per move), Leela Chess Zero, AlphaZero, and GPT-3.5-turbo-instruct on 10K Lichess puzzles (curated following<ref type="bibr" target="#b8">[9]</ref>).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><figDesc>(a) Possible Move (Mate-in-3) (b) Actual Move (Mate-in-5)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure A1 :</head><label>A1</label><figDesc>FigureA1: Win percentage and move distributions for our action-value dataset generated from 1000 games (cf. TableA1). We use 50 buckets to generate the histograms. The win percentage distribution is skewed towards 0 as we consider all legal moves per board and most actions are not advantageous for the player.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure A2 :Figure A3 :</head><label>A2A3</label><figDesc>FigureA2: Train and test loss curves and puzzle accuracy over time for the models from Section 3.1. We observe no overfitting, which justifies always using the fully trained model in our evaluations.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure A5 :</head><label>A5</label><figDesc>FigureA5: Comparison of the three different prediction targets (action-value, state-value, and behavioral cloning) trained on exactly the same number of data points (40M). The superiority of action-value learning over state-value learning disappears (or even reverses to some degree), except when measuring the action-ranking correlation (Kendall's τ ) which the action-value policy is indirectly trained to perform well on.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><figDesc>Figure A7: Examples of our 270M transformer's playing style against online human opponents.</figDesc><graphic coords="22,246.60,369.99,118.79,118.79" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 2 :</head><label>2</label><figDesc>Ablating the predictor target, loss function, network depth, and number of value bins (see Section 3.4). The best configurations are: action-value prediction (see Appendix B.5 for a detailed discussion), HL-Gauss loss, depth 16, and 128 bins. We conduct further ablations (over the data sampler, the Stockfish time limit, and the model architecture) in Appendix B.1 and TableA2.</figDesc><table><row><cell>Accuracy (%)</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>Lichess games and puzzles are released under the Creative Commons CC0 license.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>Stockfish returns a score in centipawns that we convert to the win percentage with the standard formula win% = 100/(1 + exp(-0.00368208 • centipawns)) from https://lichess.org/page/accuracy.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>https://en.wikipedia.org/wiki/Fischer_random_chess</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgments</head><p>We thank <rs type="person">Aurélien Pomini</rs>, <rs type="person">Avraham Ruderman</rs>, <rs type="person">Eric Malmi</rs>, <rs type="person">Charlie Beattie</rs>, <rs type="person">Chris Colen</rs>, <rs type="person">Chris Wolff</rs>, <rs type="person">David Budden</rs>, <rs type="person">Dashiell Shaw</rs>, <rs type="person">Guillaume Desjardins</rs>, <rs type="person">Guy Leroy</rs>, <rs type="person">Hamdanil Rasyid</rs>, <rs type="person">Himanshu Raj</rs>, <rs type="person">John Schultz</rs>, <rs type="person">Julian Schrittwieser</rs>, <rs type="person">Laurent Orseau</rs>, <rs type="person">Lisa Schut</rs>, <rs type="person">Marc Lanctot</rs>, <rs type="person">Marcus Hutter</rs>, <rs type="person">Matthew Aitchison</rs>, <rs type="person">Matthew Sadler</rs>, <rs type="person">Nando de Freitas</rs>, <rs type="person">Neel Nanda</rs>, <rs type="person">Nenad Tomasev</rs>, <rs type="person">Nicholas Carlini</rs>, <rs type="person">Nick Birnie</rs>, <rs type="person">Nikolas De Giorgis</rs>, <rs type="person">Ritvars Reimanis</rs>, <rs type="person">Satinder Baveja</rs>, <rs type="person">Thomas Fulmer</rs>, <rs type="person">Tor Lattimore</rs>, <rs type="person">Vincent Tjeng</rs>, <rs type="person">Vivek Veeriah</rs>, <rs type="person">Zhengdong Wang</rs>, and the anonymous reviewers for insightful discussions and their helpful feedback.</p></div>
+			</div>			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Experimental Setup</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 Tokenization</head><p>The first part of a FEN string encodes the position of pieces rank-wise (row-wise). The only change we make is that we encode each empty square with a '.', which always gives us 64 characters for a board. The next character denotes the active player ('w' or 'b'). The next part of the FEN string denotes castling availability (up to four characters for King-and Queen-side for each color, or '-' for no availability)-we take this string and if needed pad it with '.' such that it always has length 4. Next are two characters for the en passant target, which can be '-' for no target; we use the two characters literally or '-.' for no target. Finally we have the halfmove clock (up to two digits) and the fullmove number (up to three digits); we take the numbers as characters and pad them with '.' to make sure they are always tokenized into two and three characters respectively.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Main Setup</head><p>We use the same basic setup for all our main experiments and only vary the model architecture.</p><p>We train for 10 million steps with a batch size of 4096, meaning that we train for 2.67 epochs on the full training dataset (10M games). We use the Adam optimizer <ref type="bibr" target="#b16">[17]</ref> with a learning rate of 1 × 10 -4 . We train on the dataset generated from 10 million games (cf. Table <ref type="table">A1</ref>) for the action-value policy with 128 return buckets and a stockfish time limit of 0.05s. We use the unique sampler and evaluate on 1k games (cf. Table <ref type="table">A1</ref>) and 10k puzzles from a different month than that used for training.</p><p>We train a vanilla decoder-only transformer without causal masking <ref type="bibr" target="#b12">[13]</ref>, with the improvements proposed in LLaMA <ref type="bibr" target="#b13">[14]</ref> and Llama 2 <ref type="bibr" target="#b14">[15]</ref>, i.e., post-normalization and SwiGLU <ref type="bibr" target="#b48">[49]</ref>. We use three different model configurations (with a widening factor of 4): (i) 8 heads, 8 layers, and an embedding dimension of 256, (ii) 8 heads, 8 layers, and an embedding dimension of 1024, and (iii) 8 heads, 16 layers, and an embedding dimension of 1024.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3 Ablation Setup</head><p>We use the same basic setup for all our ablation experiments and only vary the ablation parameters.</p><p>We train for 5 million steps with a batch size of 1024, meaning that we train for 3.19 epochs on a smaller training dataset (1M games). We use the Adam optimizer <ref type="bibr" target="#b16">[17]</ref> with a learning rate of 4×10 -4 . We train on the dataset generated from 1 million games (cf. Table <ref type="table">A1</ref>) for the action-value policy with 32 return buckets and a stockfish time limit of 50ms. We use the unique sampler and evaluate on 1K games (cf. Table <ref type="table">A1</ref>) and 1K puzzles (1.4% overlap with training set) from a different month than that used for training. We train a vanilla decoder-only transformer <ref type="bibr" target="#b12">[13]</ref> with post-normalization, 8 heads, 8 layers, an embedding dimension of 256, a widening factor of 4, and no causal masking.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.4 Dataset Statistics</head><p>We visualize some dataset statistics in Figure <ref type="figure">A1</ref>. Note that, even though we should have the same amount of board-state data points for state-value prediction and behavioral cloning, we occasionally run into time-outs when annotating our dataset with Stockfish (due to our internal infrastructure setup) and therefore drop the corresponding record.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.5 Playing-Strength Evaluation</head><p>Lichess We evaluate and calibrate the playing strength of our models by playing against humans and bots on Lichess (using the lichess-bot project <ref type="bibr" target="#b49">[50]</ref> as a basis). Our standard evaluation allows for both playing against bots and humans (see Table <ref type="table">1</ref>), but since humans tend to rarely play against bots the Elo ratings in this case are dominated by playing against other bots (see our discussion of how this essentially creates two different, somewhat miscalibrated, player pools in Section 4). In our case the policies in the column denoted with 'vs. Bots' in Table <ref type="table">1</ref> have played against some humans but the number of games against humans is &lt; 4.5% of total games played. To get better calibration against humans we let our largest model play exclusively against humans (by not accepting games with other bots) which leads to a significantly higher Elo ranking (see Table <ref type="table">1</ref>). Overall we have 9. Code Of Ethics Question: Does the research conducted in the paper conform, in every respect, with the NeurIPS Code of Ethics <ref type="url" target="https://neurips.cc/public/EthicsGuidelines">https://neurips.cc/public/EthicsGuidelines</ref>? Answer: [Yes] Justification: No ethical concerns. 10. Broader Impacts Question: Does the paper discuss both potential positive societal impacts and negative societal impacts of the work performed? Answer: [Yes] Justification: See Section 7. 11. Safeguards Question: Does the paper describe safeguards that have been put in place for responsible release of data or models that have a high risk for misuse (e.g., pretrained language models, image generators, or scraped datasets)? Answer: [NA] Justification: The paper poses no such risks. 12. Licenses for existing assets Question: Are the creators or original owners of assets (e.g., code, data, models), used in the paper, properly credited and are the license and terms of use explicitly mentioned and properly respected? Answer: [Yes] Justification: Section 2 discusses the license for Lichess games and puzzles. 13. New Assets Question: Are new assets introduced in the paper well documented and is the documentation provided alongside the assets? Answer: [Yes] Justification: We described our benchmark dataset, which we open sourced, in Section 2. 14. Crowdsourcing and Research with Human Subjects Question: For crowdsourcing experiments and research with human subjects, does the paper include the full text of instructions given to participants and screenshots, if applicable, as well as details about compensation (if any)? Answer: [NA] Justification: No research with human subjects (other than competing on Lichess.org). 15. Institutional Review Board (IRB) Approvals or Equivalent for Research with Human Subjects Question: Does the paper describe potential risks incurred by study participants, whether such risks were disclosed to the subjects, and whether Institutional Review Board (IRB) approvals (or an equivalent approval/review based on the requirements of your country or institution) were obtained? Answer: [NA] Justification: No risks incurred by human study participants.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure A6 :</head><label>A6</label><figDesc>Example of the learned tactics for our 270M transformer vs. a human player with a blitz Elo of 2145 (the game progresses from left to right and top to bottom). Our model decides to sacrifice two pawns since the white bishop will not be able to prevent it from promoting one of the pawns. The individual subfigure captions contain the Stockfish analysis from Lichess (i.e., our model plays optimally).</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Artificial Intelligence: A Modern Approach</title>
+		<author>
+			<persName><forename type="first">Stuart</forename><surname>Russell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Norvig</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<publisher>Pearson</publisher>
+		</imprint>
+	</monogr>
+	<note>th Edition</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Reinforcement learning -an introduction</title>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">S</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">G</forename><surname>Barto</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1998">1998</date>
+			<publisher>MIT Press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Human-level control through deep reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Volodymyr</forename><surname>Mnih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Koray</forename><surname>Kavukcuoglu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrei</forename><forename type="middle">A</forename><surname>Rusu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joel</forename><surname>Veness</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><forename type="middle">G</forename><surname>Bellemare</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Graves</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><forename type="middle">A</forename><surname>Riedmiller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Fidjeland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Georg</forename><surname>Ostrovski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stig</forename><surname>Petersen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Beattie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amir</forename><surname>Sadik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Helen</forename><surname>King</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dharshan</forename><surname>Kumaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daan</forename><surname>Wierstra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shane</forename><surname>Legg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Demis</forename><surname>Hassabis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nat</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Mastering the game of go with deep neural networks and tree search</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aja</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><forename type="middle">J</forename><surname>Maddison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Guez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurent</forename><surname>Sifre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Van Den Driessche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vedavyas</forename><surname>Panneershelvam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Lanctot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sander</forename><surname>Dieleman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dominik</forename><surname>Grewe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Nham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nal</forename><surname>Kalchbrenner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><forename type="middle">P</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Madeleine</forename><surname>Leach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Koray</forename><surname>Kavukcuoglu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nat</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note>Thore Graepel, and Demis Hassabis</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title/>
+		<ptr target="https://lczero.org" />
+	</analytic>
+	<monogr>
+		<title level="j">The LCZero Authors. LeelaChessZero</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Monroe</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.12272</idno>
+		<title level="m">The Leela Chess Zero Team. Mastering chess with a transformer model</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Mastering chess and shogi by self-play with a general reinforcement learning algorithm</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Hubert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Guez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Lanctot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurent</forename><surname>Sifre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dharshan</forename><surname>Kumaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thore</forename><surname>Graepel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><forename type="middle">P</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karen</forename><surname>Simonyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Demis</forename><surname>Hassabis</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1712.01815</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Efficiently updatable neural-network-based evaluation functions for computer shogi</title>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Nasu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<publisher>Ziosoft Computer Shogi Club</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Playing chess with large language models</title>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Carlini</surname></persName>
+		</author>
+		<ptr target="https://nicholas.carlini.com/writing/2023/chess-llm.html" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">G</forename><surname>Marc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Will</forename><surname>Bellemare</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Dabney</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rowland</surname></persName>
+		</author>
+		<title level="m">Distributional Reinforcement Learning</title>
+		<imprint>
+			<publisher>MIT Press</publisher>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Standard: Portable game notation specification and implementation guide</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Steven</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Edwards</surname></persName>
+		</author>
+		<ptr target="https://ia802908.us.archive.org/26/items/pgn-standard-1994-03-12/PGN_standard_1994-03-12.txt" />
+		<imprint>
+			<date type="published" when="1994">1994</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Universal chess interface</title>
+		<author>
+			<persName><forename type="first">Rudolf</forename><surname>Huber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Meyer-Kahlen</surname></persName>
+		</author>
+		<ptr target="https://www.shredderchess.com/chess-features/uci-universal-chess-interface.html" />
+		<imprint>
+			<date type="published" when="2000">2000</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Attention is all you need</title>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Vaswani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niki</forename><surname>Parmar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakob</forename><surname>Uszkoreit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Llion</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aidan</forename><forename type="middle">N</forename><surname>Gomez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Illia</forename><surname>Polosukhin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NIPS</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thibaut</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gautier</forename><surname>Izacard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Martinet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marie-Anne</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothée</forename><surname>Lacroix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baptiste</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Faisal</forename><surname>Azhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aurélien</forename><surname>Rodriguez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armand</forename><surname>Joulin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edouard</forename><surname>Grave</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guillaume</forename><surname>Lample</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.13971</idno>
+		<title level="m">Llama: Open and efficient foundation language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Llama 2: Open foundation and fine-tuned chat models</title>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Stone</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.09288</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Convolutional sequence to sequence learning</title>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Gehring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Auli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Grangier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denis</forename><surname>Yarats</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><forename type="middle">N</forename><surname>Dauphin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Adam: A method for stochastic optimization</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Diederik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Kingma</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ba</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR (Poster)</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Improving regression performance with distributional losses</title>
+		<author>
+			<persName><forename type="first">Ehsan</forename><surname>Imani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martha</forename><surname>White</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Farebrother</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jordi</forename><surname>Orbay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quan</forename><surname>Vuong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adrien</forename><surname>Ali Taïga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Irpan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pablo</forename><surname>Samuel Castro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Faust</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aviral</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Agarwal</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.03950</idno>
+		<title level="m">Stop regressing: Training value functions via classification for scalable deep RL</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">A new measure of rank correlation</title>
+		<author>
+			<persName><forename type="first">Maurice</forename><surname>George</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kendall</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Biometrika</title>
+		<imprint>
+			<date type="published" when="1938">1938</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Whole-history rating: A bayesian rating system for players of time-varying strength</title>
+		<author>
+			<persName><forename type="first">Rémi</forename><surname>Coulom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Computers and Games</title>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Encyclopaedia of Chess Openings</title>
+		<author>
+			<persName><forename type="first">Aleksandar</forename><surname>Matanović</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1978">1978</date>
+			<publisher>Batsford Limited</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Mastering atari, go, chess and shogi by planning with a learned model</title>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Hubert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karen</forename><surname>Simonyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurent</forename><surname>Sifre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Schmitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Guez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Lockhart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Demis</forename><surname>Hassabis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thore</forename><surname>Graepel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><forename type="middle">P</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nat</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Mish: A self regularized non-monotonic neural activation function</title>
+		<author>
+			<persName><forename type="first">Diganta</forename><surname>Misra</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1908.08681</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Exact ratings for everyone on lichess</title>
+		<author>
+			<persName><forename type="first">Justas</forename><surname>Zabulionis</surname></persName>
+		</author>
+		<ptr target="https://lichess.org/@/justaz/blog/exact-ratings-for-everyone-on-lichess/klIoAEAU" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Faster than thought: A symposium on digital computing machines</title>
+		<author>
+			<persName><forename type="first">Cyril</forename><surname>Burt</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">British Journal of Statistical Psychology</title>
+		<editor>
+			<persName><forename type="first">B</forename><forename type="middle">V</forename><surname>Bowden</surname></persName>
+		</editor>
+		<imprint>
+			<date type="published" when="1955">1955</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Learning to play the game of chess</title>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Thrun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NIPS</title>
+		<imprint>
+			<date type="published" when="1994">1994</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Murray</forename><surname>Campbell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Joseph Hoane</surname><genName>Jr</genName></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feng-Hsiung</forename><surname>Hsu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artif. Intell</title>
+		<imprint>
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+	<note>Deep blue</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Tord</forename><surname>Romstad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marco</forename><surname>Costalba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joona</forename><surname>Kiiski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gary</forename><surname>Linscott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Nasu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Motohiro</forename><surname>Isozaki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hisayori</forename><surname>Noda</surname></persName>
+		</author>
+		<ptr target="https://stockfishchess.org" />
+		<imprint>
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Bootstrapping from game tree search</title>
+		<author>
+			<persName><forename type="first">Joel</forename><surname>Veness</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">B</forename><surname>William</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Uther</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Blair</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NIPS</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Giraffe: Using deep reinforcement learning to play chess</title>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Lai</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1509.01549</idno>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dominik</forename><surname>Klein</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2209.01506</idno>
+		<title level="m">Neural networks for chess</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Deep pepper: Expert iteration based chess agent in the reinforcement learning setting</title>
+		<author>
+			<persName><forename type="first">Sai</forename><surname>Krishna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">V</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Goyette</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmad</forename><surname>Chamseddine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Breandan</forename><surname>Considine</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1806.00683</idno>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Deepchess: End-to-end deep neural network for automatic learning in chess</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Omid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><forename type="middle">S</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lior</forename><surname>Netanyahu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wolf</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="volume">ICANN</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Aligning superhuman AI with human behavior: Chess as a model system</title>
+		<author>
+			<persName><forename type="first">Reid</forename><surname>Mcilroy-Young</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siddhartha</forename><surname>Sen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jon</forename><forename type="middle">M</forename><surname>Kleinberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashton</forename><surname>Anderson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">KDD</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Learning models of individual behavior in chess</title>
+		<author>
+			<persName><forename type="first">Reid</forename><surname>Mcilroy-Young</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Russell</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siddhartha</forename><surname>Sen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jon</forename><forename type="middle">M</forename><surname>Kleinberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashton</forename><surname>Anderson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">KDD</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Improving the strength of human-like models in chess</title>
+		<author>
+			<persName><forename type="first">Saumik</forename><surname>Narayanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kassa</forename><surname>Korley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chien-Ju</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siddhartha</forename><surname>Sen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Move evaluation in go using deep convolutional neural networks</title>
+		<author>
+			<persName><forename type="first">Chris</forename><forename type="middle">J</forename><surname>Maddison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aja</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">In ICLR</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Learning chess with language models and transformers</title>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Deleo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erhan</forename><surname>Guven</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2209.11902</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Watching a language model learning chess</title>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Stöckl</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">RANLP</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<author>
+			<persName><forename type="first">Isaac</forename><surname>Kamlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Isaac</forename><surname>Bentata Chocron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Mccarthy</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sentimate</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1907.08321</idno>
+		<title level="m">Learning to play chess through natural language processing</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Exploring GPT&apos;s capabilities in chess-puzzles</title>
+		<author>
+			<persName><forename type="first">Borja</forename><surname>Albert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gramaje</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+		<respStmt>
+			<orgName>Universitat Politècnica de València</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">Master&apos;s thesis</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Chess as a testbed for language model state tracking</title>
+		<author>
+			<persName><forename type="first">Shubham</forename><surname>Toshniwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Wiseman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karen</forename><surname>Livescu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Gimpel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">The illusion of state in state-space models</title>
+		<author>
+			<persName><forename type="first">William</forename><surname>Merrill</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jackson</forename><surname>Petty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.08819</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Representation matters: The game of chess poses a challenge to vision transformers</title>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Czech</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jannis</forename><surname>Blüml</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kristian</forename><surname>Kersting</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.14918</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">The chess transformer: Mastering play using generative language models</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Noever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Ciolino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Kalin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2008.04057</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<title level="m" type="main">Learning to play chess from textbooks (LEAP): a corpus for evaluating chess moves based on sentiment analysis</title>
+		<author>
+			<persName><forename type="first">Haifa</forename><surname>Alrdahi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Riza</forename><surname>Batista-Navarro</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.20260</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xidong</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yicheng</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongrui</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengyue</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Mguni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yali</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.09200</idno>
+		<title level="m">Chessgpt: Bridging policy learning and language modeling</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Shazeer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2002.05202</idno>
+		<title level="m">GLU variants improve transformer</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Pantidis</surname></persName>
+		</author>
+		<ptr target="https://github.com/lichess-bot-devs/lichess-bot" />
+		<title level="m">lichess-bot</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<title level="m" type="main">JAX: composable transformations of Python+NumPy programs</title>
+		<author>
+			<persName><forename type="first">James</forename><surname>Bradbury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roy</forename><surname>Frostig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Hawkins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><forename type="middle">James</forename><surname>Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Leary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dougal</forename><surname>Maclaurin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Necula</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Paszke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jake</forename><surname>Vanderplas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Skye</forename><surname>Wanderman-Milne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiao</forename><surname>Zhang</surname></persName>
+		</author>
+		<ptr target="http://github.com/google/jax" />
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Deepmind</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kate</forename><surname>Babuschkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alison</forename><surname>Baumli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Surya</forename><surname>Bell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jake</forename><surname>Bhupatiraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Bruce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Buchlovsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Trevor</forename><surname>Budden</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aidan</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ivo</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Danihelka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claudio</forename><surname>Dedieu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Fantacci</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Godwin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ross</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Hemsley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matteo</forename><surname>Hennigan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaobo</forename><surname>Hessel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Kapturowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iurii</forename><surname>Keck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Kemaev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Markus</forename><surname>King</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lena</forename><surname>Kunesch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hamza</forename><surname>Martens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladimir</forename><surname>Merzic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tamara</forename><surname>Mikulik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Norman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Papamakarios</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roman</forename><surname>Quan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francisco</forename><surname>Ring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alvaro</forename><surname>Ruiz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurent</forename><surname>Sanchez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rosalia</forename><surname>Sartran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eren</forename><surname>Schneider</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Sezener</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Srivatsan</forename><surname>Spencer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miloš</forename><surname>Srinivasan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wojciech</forename><surname>Stanojević</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Stokowiec</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guangyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Viola</surname></persName>
+		</author>
+		<ptr target="http://github.com/google-deepmind" />
+	</analytic>
+	<monogr>
+		<title level="j">The DeepMind JAX Ecosystem</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<title level="m" type="main">Haiku: Sonnet for JAX</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Hennigan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Trevor</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tamara</forename><surname>Norman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lena</forename><surname>Martens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Babuschkin</surname></persName>
+		</author>
+		<ptr target="http://github.com/deepmind/dm-haiku" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<title level="m" type="main">Game Changer: AlphaZero&apos;s Groundbreaking Chess Strategies and the Promise of AI</title>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Sadler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Natasha</forename><surname>Regan</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<publisher>New In Chess</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<title level="m" type="main">Bxc6 bxc6 10. Nbd2 Nxd2 11. Bxd2 Qb6 12. dxc5 Qxc5 13</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+		</imprint>
+	</monogr>
+	<note>d4 d5 8. e5 Ne4 9 h3 Qb5 14. b4 a5 15. a4 Qc4 16. Rc1 Bd7 17. Bg5 f6 18. Bd2 Bf5 19. exf6 exf6 20. Nd4 Bd7 21. Nb3 axb4 22. cxb4 Qh4 23. Nc5 Bf5 24. Ne6 Rfc8 25. Nxg7 Kxg7 26. Re7+ Kh8 27. a5 Re8 28. Qe2 Be4 29. Rxe8+ Rxe8 30. f3 1-0</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<title level="m" type="main">Ng3 c5 6. Bb5+ Bd7 7</title>
+		<imprint>
+			<date type="published" when="1925">4 c6 2. d4 d5 3. Nc3 dxe4 4. Nxe4 Nf6 5. 2 Qxc5 10</date>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="page" from="0" to="1" />
+		</imprint>
+	</monogr>
+	<note>Bxd7+ Nbxd7 8. dxc5 Qa h4 12. Ne2 h3 13. g3 e5 14. Nc3 Qc6 15. Qe2 Bb4 16 Rae1 Rfe8 18. Ne4 Bxd2 19. Qxd2 Nxe</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<title level="m" type="main">Exchange sacrifice game</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<monogr>
+		<title level="m" type="main">Nf3 Nf6 6. Bg5 h6 7</title>
+		<imprint>
+			<date type="published" when="0555">4 d5 2. c4 e6 3. Nc3 Bb4 4. cxd5 exd5 5</date>
+			<biblScope unit="page">10</biblScope>
+		</imprint>
+	</monogr>
+	<note>Bh4 g5 8. Bg3 Ne4 9</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<monogr>
+		<title level="m" type="main">Kd2 Re8 17. Bd3 Nd7 18. Kc2 Rxe3 19. Kb1 Qe7 20. Qc2 Nf8 21. Rhf1 Ne6 22</title>
+		<imprint>
+			<biblScope unit="volume">16</biblScope>
+		</imprint>
+	</monogr>
+	<note>Nxg3 11. fxg3 c6 12. e3 Bd6 13 Bh7+ Kg7 23. Bf5 Rxf3 24. gxf3 Nxd4 25. Qd3 Nxf5 26. gxf5 Qe5 27. Ka1 Bxf5 28. Qe2 Re8 29. Qxe5+ Rxe5 30. Rfd1 Bxh3 31. Rc2 Re3 32. Ne2 Bf5 33. Rcd2 Rxf3 34. Nxg3 hxg3 0-1</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<monogr>
+		<title level="m" type="main">Long term sacrifice game</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<analytic>
+		<title level="a" type="main">Rc8+ Kh7 37. Be3 Re1 38. Bb5 Bd3 39. Bxd3+ Nxd3 40. Rd8 Nxb2 41. Rd5 Be7 42</title>
+		<idno>Kxc3 1/2-1/2</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Bc5 Ra5 68. Bd4 Ra6 69. Nc4 Ra4 70. Nb6 Ra5 71. Ke4 h4 72</title>
+		<imprint>
+			<date type="published" when="0533">2 g5 31. h4 g4 32. Nh2 h5 33</date>
+			<biblScope unit="volume">5</biblScope>
+		</imprint>
+	</monogr>
+	<note>d4 d5 2. c4 e6 3. Nf3 Nf6 4. Nc3 Bb4 5. Bg5 dxc4 6. e4 b5 7. a4 Bb7 8. axb5 Bxe4 9 Rc5 Nc6 29 Bc1 Bb4 30 Bd3 Ra1 34. Nf1 Ne5 35. Be2 Be4 36 Bc4 Qd1+ 24. Qxd1 Rxd1+ 25. Bf1 Ba5 26. Rc4 Rb1 27. Rc2 Nb4 28 Rd7 Bxh4 43. g3 Bf6 44 Rxf7+ Kg6 45. Rxf6+ Kxf6 46 Kd3 Ra6 64. Bc3 Rc6 65. Bb4 Kg6 66. Nd6 Ra6 67 gxh4 Kh5 73. Bf6 Ra2 74. Ke3 Ra3+ 75. Ke2 g3 76. Nd5 Ra2+ 77 Kf3 gxf2 78. Nf4+ Kh6 79. Kg2 f1=Q+ 80. Kxf1 Rc2 81 Kh7 82. Ne2 Kg6 83. Kf2 Ra2 84. Kf3 Ra4 85. Ng3 Rc4 86. Bf4 Rc3+ 87. Kg4 Rc4 88. h5+ Kf6 89. Nf5 Ra4 90. Ne3 Ra5 91. Nc4 Ra4 92. Ne5 Kg7 93. Kf5 Ra5 94. Kg5 Rb5 95. Kg4 Rb1 96. Kf5 Rb5 97. Ke4 Ra5 98. h6+ Kh7 99. Bd2 Ra2 100. Be3 Ra6 101. Ng4 Ra3 102. Bd2 Ra2 103. Bf4 Ra5 104. Kf3 Rf5 105. Ke3 Kg6 106. Ke4 Rh5 107. Kf3 Rh3+ 108. Kg2 Rh5 109. Kg3 Ra5 110. Be3 Ra3 111. Kf3 Rb3 112. Ke4 Rb4+ 113. Bd4 Ra4 114. Ke5 Rc4 115. Kd5 Ra4 116. Ke4 Rb4 117. Kd3 Ra4 118. Kc3 Ra3+ 119. Kc4 Rg3 120. Ne3 Rh3 121. Kd5 Rxh6 122. Bb6 Rh3 123. Nc4 Rh5+ 124. Ke6 Rg5 125. Nd2 Rg2 126. Nf1 Rb2 127. Bd8 Re2+ 128. Kd5 Re1 129. Ne3 Rxe3 130. Bh4 Kf5 131. Bf2 Rd3+ 132. Kc4 Ke4 133. Bc5 Rc3+ 134</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<monogr>
+		<title level="m" type="main">Bc3 Qxa2 19. Rd8+ Kf7 20. Qf4+ Bf6 21. Rxh8 Qa1+ 22. Kd2 Qxh1 23. Bxf6 exf6 24</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="page" from="1" to="1" />
+		</imprint>
+	</monogr>
+	<note>Qe3 Bg7 18</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<monogr>
+		<title level="m" type="main">Stockfish disagreement game</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<monogr>
+		<title level="m" type="main">Bxf6 Bxf6 14</title>
+		<imprint>
+			<date type="published" when="1933">4 c5 2. Nf3 Nc6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 e6 6. Ndb5 d6 7. 4 b4 15. Nc2 Rb8 16. g3 b3 17. axb3 Rxb3 18. Ncb4 Rxb4 19. Nxb4 Nxb4 20</date>
+		</imprint>
+	</monogr>
+	<note>Bf4 e5 8. Bg5 a6 9. Na3 b5 10. Nd5 Qa5+ 11. Bd2 Qd8 12. Bg5 Be7 13 Qa4+ Kf8 21. Qxb4 g6 22. Bg2 h5 23. h4 Kg7 24. O-O g5 25. hxg5 Bxg5 26. f4 Be7 27. fxe5 dxe5 28. Qc3 Bc5+ 29. Kh2 Qg5 30. Rf5 Bxf5 31. Qxe5+ Qf6 32. Qxf6+ Kxf6 33. exf5 Kg5 34. Bd5 Rb8 35. Ra2 f6 36. Be6 Kg4 37. Kg2 Rb3 38. Bf7 Rxg3+ 39. Kf1 h4 40. Ra5 Bd4 41. b4 h3 42. Bd5 h2 43. Bg2 Rb3 44. Rxa6 Rb1+ 45. Ke2 Rb2+ 0-1</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<monogr>
+		<title level="m" type="main">Qxf7+ Rxf7 27. Bb4 Ref8 28. Bxd6 cxd6 29. b4 Nf5 30. Re6 Kg7 31</title>
+		<idno>10. c5 Bxc5 11. Nxe5 Bb7 12. d4 Bd6 13</idno>
+		<imprint>
+			<biblScope unit="page">14</biblScope>
+		</imprint>
+	</monogr>
+	<note>b3 e5 2. Bb2 Nc6 3. e3 d5 4. Bb5 Bd6 5. Bxc6+ bxc6 6. d3 Qg5 7. Nf3 Qe7 8. c4 Nh6 9 Qh5 cxd4 15. exd4 Rae8 16. Rfe1 f6 17. Nd3 Qf7 18. Qf3 Bc8 19. h3 Nf5 20. g3 Ne7 21. Bc3 Bxh3 22. g4 f5 23. Qxh3 fxg4 24. Qxg4 h5 25 Qe6 g5 26 Rd1 Rc7 32. Nf3 g4 33. Nd2 h4 34. Nb3 Rc2 35. Nf4 g3 36. Nh5+ Kh7 37. fxg3 Nxg3 38. Nxg3 Rg8 39 Rd3 Rxa2 40. Rxd6 Rb2 41 Rxd5 Rxg3+ 42. Rxg3 hxg3 43. Nc5 Kg6 44. b5 Rxb5 45. Kg2 a5 46. Kxg3 a4 47. Rd6+ Kf5 48. Nxa4 Rb3+ 49. Kf2 Rh3 50. Nc5 Kg5 51. Rc6 Kf5 52. d5 Ke5 53. d6 Rh2+ 54. Kg3 Rd2 55. d7 Rxd7 56. Nxd7+ Ke4 57. Rd6 Ke3 58. Nf6 Ke2 59. Ng4 Ke1 60. Kf3 Kf1 61. Rd1# 1-0 NeurIPS Paper Checklist 1. Claims Question: Do the main claims made in the abstract and introduction accurately reflect the paper&apos;s contributions and scope? Answer: [Yes] Justification: The experimental results in Section 3 and Appendix B support the claims from Section 1</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<monogr>
+		<title level="m" type="main">Theory Assumptions and Proofs Question: For each theoretical result, does the paper provide the full set of assumptions and a complete (and correct) proof?</title>
+		<imprint/>
+	</monogr>
+	<note>Answer: [NA] Justification: No theoretical results or proofs</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b66">
+	<monogr>
+		<title level="m" type="main">Experimental Result Reproducibility Question: Does the paper fully disclose all the information needed to reproduce the main experimental results of the paper to the extent that it affects the main claims and/or conclusions of the paper (regardless of whether the code and data are provided or not)? Answer: [Yes] Justification: We provide all experimental details in Section 2 and Appendix A. 5. Open access to data and code Question: Does the paper provide open access to the data and code, with sufficient instructions to faithfully reproduce the main experimental results, as described in supplemental material? Answer: [Yes] Justification: We open sourced our dataset, model weights</title>
+		<ptr target="https://github.com/google-deepmind/searchless_chess" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b67">
+	<monogr>
+		<title level="m" type="main">Experimental Setting/Details Question: Does the paper specify all the training and test details (e.g., data splits, hyperparameters, how they were chosen, type of optimizer, etc.) necessary to understand the results? Answer: [Yes] Justification: We provide all experimental details in Section 2 and Appendix A and open sourced our our dataset, model weights</title>
+		<imprint/>
+	</monogr>
+	<note>and code</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b68">
+	<monogr>
+		<title level="m" type="main">Experiment Statistical Significance Question: Does the paper report error bars suitably and correctly defined or other appropriate information about the statistical significance of the experiments</title>
+		<imprint/>
+	</monogr>
+	<note>Answer: [Yes] Justification: See Table 1 for the tournament Elo</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b69">
+	<monogr>
+		<title level="m" type="main">Experiments Compute Resources Question: For each experiment, does the paper provide sufficient information on the computer resources (type of compute workers, memory, time of execution</title>
+		<imprint/>
+	</monogr>
+	<note>needed to reproduce the experiments? Answer: [Yes] Justification: See Appendix A.9</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

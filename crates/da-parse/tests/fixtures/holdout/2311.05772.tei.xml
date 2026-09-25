@@ -1,0 +1,1519 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">ADAPT: As-Needed Decomposition and Planning with Language Models</title>
+				<funder ref="#_wjmruNU">
+					<orgName type="full">DARPA Machine Commonsense (MCS)</orgName>
+				</funder>
+				<funder ref="#_fJbTqGB">
+					<orgName type="full">NSF-CAREER</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Archiki</forename><surname>Prasad</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">UNC Chapel Hill ♠ Allen Institute for AI ♡ Saarland University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Alexander</forename><surname>Koller</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">UNC Chapel Hill ♠ Allen Institute for AI ♡ Saarland University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Mareike</forename><surname>Hartmann</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">UNC Chapel Hill ♠ Allen Institute for AI ♡ Saarland University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">UNC Chapel Hill ♠ Allen Institute for AI ♡ Saarland University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">UNC Chapel Hill ♠ Allen Institute for AI ♡ Saarland University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Mohit</forename><surname>Bansal</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">UNC Chapel Hill ♠ Allen Institute for AI ♡ Saarland University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">UNC Chapel Hill ♠ Allen Institute for AI ♡ Saarland University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">ADAPT: As-Needed Decomposition and Planning with Language Models</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">35E29AF24DD9BD5DBA8DF258B2CD6049</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:35+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large Language Models (LLMs) are increasingly being used for interactive decisionmaking tasks requiring planning and adapting to the environment. Recent works employ LLMs-as-agents in broadly two ways: iteratively determining the next action (iterative executors) or generating plans and executing sub-tasks using LLMs (plan-and-execute). However, these methods struggle with task complexity, as the inability to execute any sub-task may lead to task failure. To address these shortcomings, we introduce As-Needed Decomposition and Planning for complex Tasks (ADAPT), an approach that explicitly plans and decomposes complex sub-tasks as-needed, i.e., when the LLM is unable to execute them. ADAPT recursively decomposes sub-tasks to adapt to both task complexity and LLM capability. Our results demonstrate that ADAPT substantially outperforms established strong baselines, achieving success rates up to 28.3% higher in ALFWorld, 27% in WebShop, and 33% in TextCraft -a novel compositional dataset that we introduce. Through extensive analysis, we illustrate the importance of multilevel decomposition and establish that ADAPT dynamically adjusts to the capabilities of the executor LLM as well as to task complexity. 1  </p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="26" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="27" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Recent advances in Large Language Models (LLMs) have expanded their application beyond conventional NLP tasks to more complex tasks involving mathematical, symbolic, and commonsense reasoning <ref type="bibr" target="#b33">(Wei et al., 2022;</ref><ref type="bibr" target="#b15">Huang and Chang, 2023)</ref>. Recent models have even been applied to decision-making tasks, such as performing household chores, navigating a webpage, etc., that require interactions with external environments or tools <ref type="bibr">(Yao et al., 2023b;</ref><ref type="bibr">Qin et al., 2023)</ref>.</p><p>Prior works on using LLMs for decision-making, such as ReAct <ref type="bibr">(Yao et al., 2023b)</ref>, iteratively generate the next action to be executed in the environment given the history of actions and observations (see Fig. <ref type="figure" target="#fig_0">1</ref>; top-left). However, as the tasks become more complex, LLMs struggle due to their limited composition ability <ref type="bibr" target="#b7">(Dziri et al., 2023)</ref> and inability to deal with the distractors <ref type="bibr" target="#b20">(Shi et al., 2023)</ref> in a long action-observation trajectory.</p><p>To mitigate this, modular approaches <ref type="bibr" target="#b10">(Khot et al., 2023;</ref><ref type="bibr" target="#b36">Yang et al., 2023;</ref><ref type="bibr">Sun et al., 2023)</ref> incorporate a separate planner module that utilizes an LLM to create a high-level plan. 2 The planner then delegates simpler sub-tasks to an executor LLM module thereby reducing the compositional complexity and length of action trajectory required by the executor. We refer to this category broadly as plan-andexecute approaches (see Fig. <ref type="figure" target="#fig_0">1</ref>; top-right). While the plans enable these methods to guide the execution and track progress <ref type="bibr">(Wang et al., 2023b)</ref>, their non-adaptive nature poses a limitation when confronting unachievable sub-tasks. These approaches inherently lack the flexibility to adapt to task complexity and manage execution failures, as shown in Fig. <ref type="figure" target="#fig_0">1</ref>(top-right), where just one sub-task that is too complex results in overall task failure.</p><p>To address such failures, we propose As-Needed Decomposition and Planning for complex Tasks (ADAPT), a recursive algorithm that further decomposes sub-tasks when necessary, to dynamically accommodate to task complexity. We utilize separate planner and executor LLM modules within our framework but only decompose a task using the planner, if the executor LLM detects a failure. As shown in Fig. <ref type="figure" target="#fig_0">1</ref>, the overall task of putting a clean mug on a desk in an unfamiliar 2 By "planning", we refer to the colloquial concept of designing a list of sub-tasks to accomplish a complex task rather than its usage in classical AI-planning literature. E.g., a "plan" for preparing a lasagna could be to cook the pasta, prepare the sauce, layer the ingredients, and then bake it. household is too complex for the model, leading to failure of the iterative executor. While a plan-andexecute-style approach initially breaks down the task into three sub-tasks, it falls short in accounting for the complexity in finding a mug. Moreover, it is challenging to anticipate the difficulty of such a subtask in advance, as the executor could find a mug in the first attempt or in an obscure location. Therefore, ADAPT employs its recursive structure to dynamically adapt to execution failures (assessed by LLMs), by further decomposing the complex sub-task of finding a mug via the planner. Empirically, we demonstrate the effectiveness of ADAPT on three datasets involving interactive environments: ALFWorld <ref type="bibr" target="#b24">(Shridhar et al., 2021)</ref>, <ref type="bibr">WebShop (Yao et al., 2022)</ref>, and a new compositional text game for crafting Minecraft recipes called TextCraft (Sec. 4.1). Using GPT-3.5 as the underlying LLM, ADAPT outperforms strong baselines (discussed in Sec. 4.2) such as ReAct <ref type="bibr">(Yao et al., 2023b)</ref>, and Plan-and-Solve <ref type="bibr">(Wang et al., 2023b</ref>) by up to 28.3%, 27%, and 33% absolute points on ALFWorld, WebShop, and TextCraft respectively (Sec. 5). Compared to Reflexion <ref type="bibr" target="#b21">(Shinn et al., 2023)</ref>, an adaptive approach that addresses failures in the full task trajectory, ADAPT yields higher success rates by 14.1%, 9%, and 20% on ALFWorld, WebShop, and TextCraft respectively. Through extensive analysis of ADAPT, we establish the importance of recursive decomposition (Sec. 6.1) and showcase dynamic adaptation to the capabilities of the executor LLM including open-source models such LLaMA-2 <ref type="bibr" target="#b30">(Touvron et al., 2023)</ref> and Lemur <ref type="bibr" target="#b35">(Xu et al., 2023)</ref> in Sec. 6.2. Lastly, we demonstrate that ADAPT incorporates task complexity (Sec. 6.3), where the extent of recursive decomposition aligns with the inherent task complexity. To summarize, our contributions are: 1. We present ADAPT, a recursive algorithm that dynamically decomposes complex sub-tasks on an as-needed basis, i.e., intervening only if the task is too complex for the executor. 2. On three diverse datasets, ALFWorld, WebShop, and TextCraft, ADAPT improves success rate of GPT-3.5 over previous approaches by up to 28.3%, 27%, and 33% points respectively. 3. Analysis of ADAPT underscores the significance of recursive decomposition and the ability to adapt dynamically to varying LLM execution capabilities and task complexities.</p><p>2 Related Work LLMs for Decision-Making. LLMs have been successfully used as agents to perform a wide variety of decision-making tasks such as robotic navigation <ref type="bibr" target="#b0">(Ahn et al., 2022;</ref><ref type="bibr">Huang et al., 2023b;</ref><ref type="bibr" target="#b25">Singh et al., 2023)</ref>, complex multi-modal games like Minecraft <ref type="bibr" target="#b9">(Fan et al., 2022;</ref><ref type="bibr">Wang et al., 2023a</ref>), text-based environments <ref type="bibr" target="#b24">(Shridhar et al., 2021;</ref><ref type="bibr" target="#b35">Liu et al., 2023)</ref>. While most of these works focus on learning from trajectories, ReAct <ref type="bibr">(Yao et al., 2023b)</ref> uses few-shot prompting to build an agent that reasons about the current state (thoughts) and generates the next action in the environment, given prior actions and observations. Their iterative approach (shown in Fig. <ref type="figure" target="#fig_0">1</ref>; top-left) can handle failures, but they have to keep track of the entire plan implicitly while deciding every local action (c.f. ADAPT in Fig. <ref type="figure">9</ref> of Appendix A). By incorporating planning and execution into separate modules and enabling dynamic adaptation we are able to achieve higher success rates (refer to Sec. 5).</p><p>Several follow-up works improve upon the Re-Act framework by incorporating feedback in future trials <ref type="bibr">(Madaan et al., 2023;</ref><ref type="bibr" target="#b21">Shinn et al., 2023)</ref>, or using LLMs to develop heuristics for search <ref type="bibr">(Yao et al., 2023a;</ref><ref type="bibr">Zhou et al., 2023)</ref>. In contrast to ADAPT, they do not employ task decomposition, leading to unnecessary computation as they explore multiple trajectories or trials for the whole task, even though the LLM struggles with just one subtask. Such works are complementary to ADAPT as they can be incorporated within the planner or executor modules to strengthen LLM performance (just like they are incorporated in ReAct).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Decomposition and Modularity.</head><p>Our work follows extensive literature in NLP on decomposing tasks into neural modules <ref type="bibr" target="#b1">(Andreas et al., 2016;</ref><ref type="bibr" target="#b13">Gupta et al., 2019;</ref><ref type="bibr">Jiang and Bansal, 2019)</ref> or seq2seq models <ref type="bibr">(Min et al., 2019;</ref><ref type="bibr" target="#b29">Talmor and Berant, 2018;</ref><ref type="bibr">Khot et al., 2021;</ref><ref type="bibr">Perez et al., 2020;</ref><ref type="bibr">Saha et al., 2023b)</ref>. With the advent of few-shot prompted black-box LLMs, this paradigm of programmatic decomposition into LLMs has become more popular <ref type="bibr">(Yao et al., 2023b;</ref><ref type="bibr" target="#b10">Khot et al., 2023;</ref><ref type="bibr">Wang et al., 2023b, inter alia)</ref>, referred to as LLM Programs <ref type="bibr">(Schlag et al., 2023;</ref><ref type="bibr" target="#b6">Dohan et al., 2022)</ref>. Additionally, past works in program synthesis <ref type="bibr">(Murali et al., 2018;</ref><ref type="bibr">Nye et al., 2019;</ref><ref type="bibr" target="#b16">Zheng et al., 2023)</ref> also employ task decomposition via generating a "program sketch" prior to program generation.</p><p>ADAPT not only decomposes tasks via the planner module and delegates them to the executor module but also automatically adapts to executor failures by further decomposing complex tasks as-needed. This dynamic capability distinguishes ADAPT from prior works with a non-adaptive structure. ADAPT extends the recursive and hierarchical decomposition in <ref type="bibr" target="#b10">Khot et al. (2023)</ref>, enabling inter-module communications, and robust strategies for execution failures, excelling in realworld textual environments like online shopping.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Hierarchical Problem Solving.</head><p>In AI problemsolving, there is a longstanding tradition of hierarchical task decomposition employed in planning <ref type="bibr" target="#b12">(Ghallab et al., 2004;</ref><ref type="bibr" target="#b11">Georgievski and Aiello, 2014;</ref><ref type="bibr" target="#b14">Höller et al., 2020)</ref>, reinforcement learning <ref type="bibr" target="#b28">(Sutton et al., 1999;</ref><ref type="bibr" target="#b2">Barto and Mahadevan, 2003;</ref><ref type="bibr">Nachum et al., 2018;</ref><ref type="bibr">Zhang et al., 2021)</ref>, and navigation <ref type="bibr" target="#b19">(She et al., 2014;</ref><ref type="bibr" target="#b18">Sharma et al., 2022;</ref><ref type="bibr" target="#b3">Blukis et al., 2022;</ref><ref type="bibr">Min et al., 2022;</ref><ref type="bibr">Song et al., 2023)</ref>. These approaches, such as Hierarchical Task Networks <ref type="bibr" target="#b8">(Erol et al., 1994)</ref>, leverage domain knowl-edge, e.g., hand-specified library of plans, to break complex problems into simpler tasks. Our work embraces this tradition but distinguishes itself by exploring how LLMs can autonomously decompose tasks by leveraging their extensive world knowledge, without predefined plan libraries. Lastly, ADAPT performs dynamic hierarchical planning by employing its recursive structure.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Methodology</head><p>We introduce As-Needed Decomposition and Planning for complex Tasks (ADAPT), a modular approach for decision-making that integrates an LLM as an executor and a planner (Secs. 3.1 and 3.2) within an LLM program called the controller (Sec. 3.3). In Fig. <ref type="figure" target="#fig_0">1</ref>, when ADAPT is given a complex task, it first attempts to accomplish the entire task by running the executor iteratively, and resorting to the LLM planner for further decomposition into sub-tasks if the executor fails. Subsequently, ADAPT is recursively called for each sub-task to ensure their successful completion, ultimately leading to overall task success.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">LLM as an Executor</head><p>Overview. In a given environment, the executor is provided with a concise natural language task specification, as shown in Fig. <ref type="figure" target="#fig_2">2</ref> (left). Following Yao et al. (2023b), the executor iteratively interacts with the environment via actions generated by the LLM. This interaction continues until the task is either completed or a preset maximum iteration limit is reached. Consistent with Ahn et al. (2022), we provide the LLM with in-context demonstrations of low-level "atomic" skills specific to the environment (listed in Table <ref type="table">5</ref> of Appendix A), such as knowing how to correctly heat objects in ALFWorld. This approach offers two advantages: (i) it allows us to employ the same executor with environment-specific knowledge for all baselines (Sec. 4.2); and (ii) it enables the planner (discussed in Sec. 3.2) to work at a higher level of abstraction, leveraging the LLM's general world knowledge.</p><p>Execution Capabilities of an LLM. At a minimum, the LLM executor should reliably execute atomic skills. While we provide demonstrations for successful execution of atomic skills, LLMs can adapt to failures by combining multiple skills to perform complex tasks, as discussed in Sec. 6.2. For instance, in Fig. <ref type="figure" target="#fig_2">2</ref> (left), we show the LLM successfully cleaning a mug it's carrying (an atomic [LLM]&gt; inventory skill). An advanced executor could combine "finding a mug" with the "cleaning" skill to accomplish "find a clean mug" without an explicit planner.</p><p>Self-generated Success Heuristic. In order to decompose based on the abilities of the executor, we need to determine whether the executor is capable of finishing the given (sub-)task independently or if further decomposition is required. To this end, we employ the executor LLM to determine the completion of the (sub-)task without relying on the environment for obtaining gold rewards for (sub-)tasks. We include a simple instruction in the executor prompt to output "task completed" if it determines it has succeeded, otherwise output "task failed" in case it cannot proceed. Refer to example in Fig. <ref type="figure" target="#fig_2">2</ref> (left). Our success heuristic aligns with binary classification models employed in <ref type="bibr" target="#b21">Shinn et al. (2023)</ref>, providing a way to simulate intermediate rewards, which complements end-of-task environment rewards <ref type="bibr">(Rengarajan et al., 2022)</ref>. We study this LLM-generated heuristic in Appendix F and show that it closely matches the gold reward.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">LLM as a Planner</head><p>Overview. The objective of the planner is to break down complex tasks into smaller sub-tasks.</p><p>To achieve this, we instruct the LLM to generate a concise yet comprehensive plan consisting of a few steps, typically 3-5, as shown in Fig. <ref type="figure" target="#fig_2">2</ref> (right). We opt for shorter, more abstract plans because expecting a detailed, fine-grained plan upfront can be impractical, especially in unexplored environments. E.g., devising a 10-step plan to put a clean mug on a desk without prior knowledge of the mug's location can lead to cascading errors due to incor-rect assumptions. Therefore, we task the LLM to generate short plans, with the flexibility to decompose further in subsequent iterations, based on the executor's capabilities.</p><p>Composition Logic for Sub-tasks. Along with the sub-tasks, we prompt the planner to generate logical operators to combine various sub-tasks in the plan to accomplish the task. We allow for two logical operators: "AND" and "OR". Sub-tasks are linked using AND when they must be executed sequentially for the task to succeed. However, in cases requiring exploration, such as finding an item in an unknown room, we employ the OR operator to simulate conditional checks. Here, the task succeeds if any of the sub-tasks are successful. For instance, in Fig. <ref type="figure" target="#fig_0">1</ref>, the plan to "find a mug" would be to "find a mug on the countertop" OR "find a mug in the cabinet". We execute the latter only if the agent has not found the mug yet. While examples in Figs. <ref type="figure" target="#fig_0">1</ref> and <ref type="figure" target="#fig_2">2</ref> show homogeneous logic, ADAPT can handle complex logical expressions as described in Appendix B.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Controller -LLM Program</head><p>Overall Pipeline.</p><p>Thus far, we describe two LLM-based modules that can perform the roles of low-level execution and high-level planning. We incorporate these modules into ADAPT via the controller which is a pre-determined and recursive algorithm -making the overall pipeline of ADAPT an LLM program (Schlag et al., 2023; Dohan et al., 2022), shown in Algorithm 1. The overall flow of the controller program is as follows: (i) given an input task, the controller calls the executor to check if it can succeed in performing the task directly; (ii)</p><p>if the executor does not succeed, the controller delegates decomposing the complex task to the planner and recursively calls ADAPT for each sub-task until we hit a termination criterion, i.e., if a maximum depth d max (≥1) is reached. Fig. <ref type="figure" target="#fig_2">2</ref> (mid) shows the control flow of ADAPT. A complex task such as "put a clean mug on the desk" is first assigned to the executor. If the executor does not succeed, then ADAPT calls the planner to decompose the task into sub-tasks along with a logical operator (AND or OR) indicating how to compose them. Each sub-task (referred to as 'step' in Fig. <ref type="figure" target="#fig_2">2</ref>) is then assigned recursively to ADAPT and is combined using the logical operator. In the end, the success of sub-tasks after recursive decomposition ensures overall task success (unrolled calls to planner and executor are shown in Fig. <ref type="figure" target="#fig_0">1</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experimental Setup</head><p>We describe the datasets used in our experiments and baselines used for comparison with ADAPT.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Datasets</head><p>We employ LLMs-as-agents to perform tasks in the following three environments and use task success rate as our evaluation metric in Secs. 5 and 6.</p><p>ALFWorld. ALFWorld <ref type="bibr" target="#b24">(Shridhar et al., 2021)</ref> is a text-based game version of the embodied AL-FRED benchmark <ref type="bibr" target="#b23">(Shridhar et al., 2020)</ref> implemented in the TextWorld environment <ref type="bibr" target="#b5">(Côté et al., 2019)</ref>. It encompasses 6 distinct task types, where an agent is required to accomplish high-level tasks through navigation and interaction via text-based actions in a simulated household that gives textual feedback to an agent (e.g., put a clean mug on desk discussed earlier in Fig. <ref type="figure" target="#fig_2">2</ref>). Following <ref type="bibr" target="#b24">Shridhar et al. (2021)</ref>, we present results on 134 unseen evaluation games (test set) with a separate dev set of 10 games per task from the seen evaluation games split. Along with atomic skills, we add example gold trajectories, following <ref type="bibr">Yao et al. (2023b)</ref>, for two tasks: heat and look in the executor prompt. <ref type="foot" target="#foot_1">3</ref>WebShop. <ref type="bibr">WebShop (Yao et al., 2022)</ref> is an online shopping website environment featuring 1.18 million real-world products containing 500 user queries in the test set. It serves as a complex Crafting Commands: craft 4 oak planks using 1 oak log craft 1 honeycomb block using 4 honeycomb craft 1 beehive using 6 planks, 3 honeycomb</p><p>Goal: craft beehive [Action] get 1 oak log [Env] Got 1 oak log [Action] craft 4 oak planks using 1 oak log [Env] Crafted 4 minecraft:dark_oak_planks [Action] get 1 oak log [Env] Got 1 oak log [Action] craft 4 oak planks using 1 oak log [Env] Crafted 4 minecraft:dark_oak_planks [Action] craft 1 beehive using 6 oak planks, 3 honeycomb [Env] Crafted 1 minecraft:beehive ... 1x 1x 4x 4x 3x 1x decision-making environment with practical applications wherein an agent must navigate a website through a variety of commands to purchase an item matching a user specification (e.g., grey sectional sofa priced less than $300 with fast delivery). Following Shinn et al. (2023), we report performance on 100 user instructions and use a different subset of 40 queries as the dev set.</p><p>TextCraft. We create a new text-only environment for crafting Minecraft<ref type="foot" target="#foot_2">foot_2</ref> items similar to Word-Craft <ref type="bibr" target="#b4">(Coenen et al., 2021)</ref>. Unlike existing agentbased environments, tasks in TextCraft exhibit a natural compositional structure, resembling cooking recipes with steps of varying complexity, where some sub-tasks are more intricate, such as layering a lasagna, while others are simpler, like baking it. Tasks in TextCraft are inherently decomposable. In Fig. <ref type="figure" target="#fig_3">3</ref>, crafting a beehive necessitates crafting its ingredients, like planks and honeycomb, which may require further decomposition. The agent thus needs to identify and adapt to varying task complexity, e.g., crafting a plank is easier than crafting a beehive. Moreover, some recipes allow using any item from a particular category. For instance, crafting a beehive uses planks (a category), requiring the agent to use linguistic knowledge for proper item selection (e.g., select oak planks, a specific item in the category planks). We evaluate our approach on a test set of 200 tasks where the target items have recipe trees of depth 2, 3, and 4 (example tree of depth 2 is shown in Fig. <ref type="figure" target="#fig_3">3</ref>). We use the</p><p>Method (dmax = 3) Pick Clean Heat Cool Look Pick2 All ReAct 33.3 67.7 43.5 33.3 55.6 11.8 43.3 Plan-and-Execute 29.2 61.3 47.8 38.1 61.1 11.8 43.3 Try Again with ReAct 50.0 51.6 60.8 47.6 61.1 5.9 47.8 Reflexion 70.8 61.3 61.0 66.7 61.1 5.9 57.5 ADAPT (Ours) 87.5 80.6 60.8 76.2 61.1 52.9 71.6 Table 1: ADAPT yields the highest the overall success rates (%) compared to baselines from prior work (discussed in Sec. 4.2) on ALFWorld (test split). Best (highest) success rates are highlighted in bold and second-highest rates are underlined. Method WebShop TextCraft ReAct 32.0 19.0 Plan-and-Execute 17.0 27.0 Try Again with ReAct 30.0 15.0 Reflexion 35.0 † 32.0 LATS (Zhou et al., 2023) 38.0 † -ADAPT (Ours) 44.0 52.0 Table 2: ADAPT yields the highest success rate on WebShop and TextCraft (test split) with d max = 3 and 4 respectively. † Performance reported by Zhou et al. (2023)</p><p>items with recipe tree depth of 3 (123 tasks), depth of 4 (11 tasks) and depth of 2 (77 out of 297) in our test set, and the rest of depth 2 tasks constitute the dev set. Additional details about creating the environment are present in Appendix E.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Baseline Approaches</head><p>We compare ADAPT with four classes of baseline approaches described below.</p><p>Iterative Executor-Only (ReAct). In this setting, we employ the executor to interact iteratively with the environment, adopting the think-act-observe prompting style from ReAct <ref type="bibr">(Yao et al., 2023b)</ref>. All methods discussed below, including ADAPT, share the same executor, ensuring a standardized impact of the executor's strength and design choices when comparing relative performance in Sec. 5. When d max = 1, ADAPT solely relies on this executor.</p><p>Plan-and-Execute. As shown in Fig. <ref type="figure" target="#fig_0">1</ref>, in this setting, we generate a plan first and then assign each sub-task to the executor. This approach only plans once and as a result has a non-adaptive structure (consistent with <ref type="bibr">Wang et</ref>  <ref type="formula">al. (2023b</ref> Try Again with ReAct. By design, ADAPT makes multiple calls to the executor module, albeit with different (sub-)tasks. Like <ref type="bibr" target="#b36">Yang et al. (2023)</ref>, we design a simple controller that requests the executor to retry the task in a total of d max separate trials and then uses the trial with the best performance for each task instance.</p><p>Reflexion. <ref type="bibr" target="#b21">Shinn et al. (2023)</ref> execute the entire task first, and if unsuccessful, reflect and store feedback in memory for subsequent d max -1 trials. While adaptive, this approach repeats the entire trial even if a single sub-task fails, redundantly re-executing previously successful sub-tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ADAPT and Shared Implementation Details.</head><p>Following <ref type="bibr">(Yao et al., 2023b;</ref><ref type="bibr" target="#b21">Shinn et al., 2023;</ref><ref type="bibr">Zhou et al., 2023)</ref>, by default, we use the GPT-3.5 <ref type="bibr">(Ouyang et al., 2022)</ref> LLM for both planning and execution in ADAPT and other baselines. We use the completion-based models for ALFWorld and TextCraft and the chat-based model for Web-Shop. <ref type="foot" target="#foot_3">5</ref> Further, we use ADAPT (and other baselines) with d max = 3 for ALFWorld, and WebShop and increase to d max = 4 for TextCraft to accommodate recipes with a depth of 4 (Sec. 4.1). For additional details, refer to Appendix A. We increase the maximum number of iterations for the ReAct baseline by a factor of d max and ensure all baselines use a comparable number of LLM calls (Sec. 6.5).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Main Results</head><p>Using GPT-3.5 as the underlying LLM, in this section, we show that ADAPT yields the highest success rate compared to baselines from prior work on ALFWorld, WebShop, and TextCraft datasets.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ALFWorld.</head><p>In Table <ref type="table">1</ref>, we observe that ADAPT achieves the highest overall success rate, while using ReAct alone results in the lowest overall performance. By leveraging adaptive decomposition, ADAPT improves over ReAct's performance by 28.3% points (absolute) as well as over Planand-Execute and Try Again by 28.3% and 23.8% points, respectively. Lastly, we find that ADAPT yields 14.1% points higher overall success rate than Reflexion, despite the latter having access to dedicated memory and natural language feedback. Specifically, we find baselines yield poor results on 'pick2' tasks (&lt; 12% success rate) as they require the agent to compose two 'pick'-style tasks involving a longer action history. However, ADAPT yields significant improvements (by over a factor of 4×) for this type of tasks.</p><p>WebShop.</p><p>Table 2 shows a similar trend with ADAPT surpassing all baselines and achieving the highest success rate. ADAPT outperforms Re-Act, Plan-and-Execute, and Try-Again baselines by up to 27% points. We corroborate the findings of Shinn et al. (2023) and observe that natural language feedback offers limited gains in performance, as compared to ADAPT (which surpasses Reflexion by 9% points). Additionally, we compare with a recent search-based baseline LATS (Zhou et al., 2023) and find that ADAPT outperforms the success rate of LATS by 6% points.</p><p>TextCraft. Our results on TextCraft are summarized in Table <ref type="table">2</ref>. First, we observe that ADAPT achieves an improvement of 33% compared to the ReAct executor. In contrast to Plan-and-Execute, i.e., starting with a fixed plan, having the dynamic ability to adapt to complex sub-tasks (in this case, crafting complex ingredients) in ADAPT improves performance by 25% points. Lastly, ADAPT outperforms Reflexion by 20% points, highlighting the importance of adaptive and as-needed planning. We hypothesize that ADAPT consistently outperforms Reflexion across datasets as the latter relies on generating feedback based on errors in the entire trajectory. In contrast, due its design, ADAPT often handle failures of small sub-tasks and redirects more resources in the form of calling the planner and decomposition to the challenging sub-tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Analysis and Discussion</head><p>We analyze ADAPT in detail by addressing the following research questions on dev data splits.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.1">How does performance of ADAPT scale with the depth of decomposition?</head><p>Setup. To assess the impact of adaptive decomposition, we study ADAPT under three settings with increasing maximum depth d max ∈ {1, 2, 3} for ALFWorld, WebShop, and TextCraft. Note that d max = 1 setting corresponds to the iterative executor-only baseline (ReAct).</p><p>Results. Fig. <ref type="figure" target="#fig_5">4</ref> shows that across all datasets, performance of ADAPT scales with increasing the maximum depth d max . Consistently, we find a significant improvement in success rates as we move from d max = 1 to d max = 2, i.e., adding the planner to decompose a complex task when executor fails proves to be effective. Finally, the performance increase from d max = 2 to d max = 3 validates our hypothesis that some sub-tasks are difficult for the LLM to directly execute successfully, and decomposing these further boosts overall performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.2">Does ADAPT cater to different execution capabilities of LLMs?</head><p>Same LLM, different execution capabilities.</p><p>We run ADAPT on three different executor prompts on ALFWorld: (i) task-specific gold trajectories, (ii) atomic skills and common goldtrajectories for 2 tasks used in Sec. 5 (hybrid), and (iii) only atomic skills. Using gold trajectories aligns closely with the task at inference-time and thus, should exhibit high performance. In contrast,</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>AlfWorld</head><p>WebShop TextCraft executor using only atomic skills relies on the inherent composition abilities of the LLM, yielding weaker performance. Here we examine if ADAPT can improve success rates for all three settings.</p><p>Results. In Fig. <ref type="figure" target="#fig_6">5</ref>, we observe that ADAPT consistently improves over the executor-only baseline for all diverse executor settings. As expected, the executor prompted with task-specific trajectories performs the best (left), while the executor with only atomic skills performs the worst (right). Notably, ADAPT substantially improves performance of the relatively weak executor, improving success rate from 3.3% to 41.7%.</p><p>ADAPT with different LLMs. We study the ability of ADAPT to improve performance across different LLMs (as planners and executors): (i) GPT-3.5, (ii) GPT-4 (OpenAI, 2023), (iii) LLaMA-2 70B <ref type="bibr" target="#b30">(Touvron et al., 2023)</ref>, and (iv) Lemur 70B <ref type="bibr" target="#b35">(Xu et al., 2023)</ref> on test splits of all datasets.</p><p>Results. Fig. <ref type="figure" target="#fig_7">6</ref> shows that ADAPT consistently improves downstream performance for all models across all three datasets. Consistent with <ref type="bibr" target="#b35">Liu et al. (2023)</ref>, we find that the gated GPT models outperform the open-source models based on absolute success rates. Nevertheless, ADAPT is effective across LLMs and improves performance of GPT-4, the strongest LLM, by up to 37%, as well as LLaMA, the least performant LLM, by up to 15% on the TextCraft dataset.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.3">Does ADAPT handle task complexity?</head><p>Setup. By the compositional design of TextCraft, complexity of each task in the dataset can be defined with respect to the depth of the crafting recipe, i.e., recipes with higher depth would be more complex to craft. We evaluate efficacy of ADAPT and the ReAct baseline on the test set of TextCraft with increasing recipe depth. <ref type="foot" target="#foot_5">6</ref> Furthermore, while we provide ADAPT with a maximum budget of d max = 4, we study how the maximum decomposition depth utilized by ADAPT to succeed (k max ) varies with task complexity.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Results.</head><p>In Table <ref type="table" target="#tab_0">3</ref> we observe that ADAPT improves success rates for games with recipe depth of 2 from 26.9% to 78.2%, and of depth 3 from 1.8% to 38.7% as compared to the ReAct baseline. As expected, the executor alone is unable to handle complex recipes with depth ≥ 3, but with the help of ADAPT the performance improves significantly. Additionally, given the same budget d max = 4, as the recipe depth (complexity) increases from 2 to 3, ADAPT's level of decomposition (k max ) also increases from 1.9 to 2.8. This showcases that ADAPT leverages as-needed decomposition in order to handle task complexity.</p><p>6.4 Can we use different planner and executor LLMs within ADAPT? Setup. The planner and executor modules of ADAPT do not need to necessarily use the same underlying model. Following, Lin et al. (2023) we explore if a relatively smaller LLM can be used to perform local actions in the executor and a more Executor LM Planner LM Success Rate GPT-3.5 -38.4 GPT-3.5 GPT-3.5 58.3 LLaMA-2-70B -20.4 LLaMA-2-70B GPT-3.5 43.3 Table 4: ADAPT improves performance on ALFWorld (dev) when using different planner and executor LLMs.</p><p>advanced LLM be used to devise plans. To this end, we explore different combinations of planner and executor LLM, with the latter using both gated and open-source models on ALFWorld.</p><p>Results. Table <ref type="table">4</ref> shows that ADAPT can successfully be used to generate plans from one LLM that are useful to a different, possibly smaller, executor LLM, improving success rates by up to 19.9% compared to the executor-only (ReAct) setting. Interestingly, using an open-source model, such as LLaMA-2-70B-chat <ref type="bibr" target="#b30">(Touvron et al., 2023)</ref> can be used as an executor with a more advanced LLMs such as GPT-3.5 to improve success rates by 22.9% points. Since the planner LLM is used sparingly, open-source executors can dramatically decrease the monetary or computational costs of using ADAPT. We defer combining knowledge from stronger and weaker LMs within ADAPT to future work, as examined in the context of mathematical reasoning <ref type="bibr" target="#b10">(Fu et al., 2023;</ref><ref type="bibr">Saha et al., 2023a)</ref>.</p><p>6.5 How does ADAPT compare to baselines in terms of LLM calls?</p><p>Setup. Performance of decision-making agents can be enhanced by increasing the number of calls allowed to an LLM, e.g., number of retrials in Reflexion. To verify that the gains in ADAPT are not simply due to higher number of LLM calls, we compare the average of number of LLM calls made by ADAPT to the baselines.</p><p>Results. Fig. <ref type="figure" target="#fig_8">7</ref> shows that a ADAPT employs a comparable number of LLM calls w.r.t. Try-Again and Reflexion baselines in order to yield performance improvements discussed in Sec. 5 (Tables <ref type="table">1</ref> and <ref type="table">2</ref>). Note that while all methods including Re-Act and Plan-and-Execute baselines are offered a comparable computational budget, the actual number of LLM calls used by the latter is often lower due to their inability to handle intermediate execution failures. This strengthens the argument for effectiveness of ADAPT as the improvements do not simply stem from using substantially higher number of calls to the LLM.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Conclusion</head><p>We introduce ADAPT, a recursive algorithm designed to harness the planning capabilities of LLMs, dynamically decomposing complex tasks when the LLM acting as an executor encounters challenges. Our evaluation across three diverse decision-making tasks, ALFWorld, WebShop, and TextCraft, reveals impressive performance of ADAPT, surpassing existing baselines by substantial margins of up to 28.3%, 27%, and 33% points, respectively. This not only underscores the effectiveness of ADAPT but also highlights the significance of as-needed decomposition in enhancing task performance. Moreover, our findings demonstrate that ADAPT not only adapts to the capabilities of the underlying executor LLM but also takes into account the complexity of individual task instances, showcasing its versatility and effectiveness.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitations</head><p>ADAPT relies on the success heuristic generated by the executor LLM to determine if the model is capable of performing a complex task.</p><p>For decision-making tasks studied in this work, we find that LLMs can reliably determine task success based on past action trajectories and textual feedback from the environment (see Appendix F). However, Huang et al. (2023a); Stechly et al. (2023) discuss the limits of LLM's ability to self-evaluate and self-refine. In such situations, future works may additionally employ external verifiers (Lightman et al., 2023; Shridhar et al., 2023), theory-ofmind strategies among multiple LMs (Saha et al., 2023a), and other calibration and self-evaluation techniques (Kadavath et al., 2022). These improved self-evaluation techniques could be useful to extend our framework to non-decision making tasks such as question answering. Yichen Jiang and Mohit Bansal. 2019. <ref type="url" target="https://doi.org/10.18653/v1/D19-1455">Self-assembling  modular networks for interpretable multi-hop rea- soning</ref>. In Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing and the 9th International Joint Conference on Natural Language Processing (EMNLP-IJCNLP), pages 4474-4484, Hong Kong, China. Association for Computational Linguistics. Saurav Kadavath, Tom Conerly, Amanda Askell, Tom Henighan, Dawn Drain, Ethan Perez, Nicholas Schiefer, Zac Hatfield-Dodds, Nova DasSarma, Eli Tran-Johnson, et al. 2022. Language models (mostly) know what they know. arXiv preprint arXiv:2207.05221. Tushar Khot, Daniel Khashabi, Kyle Richardson, Peter Clark, and Ashish Sabharwal. 2021. <ref type="url" target="https://doi.org/10.18653/v1/2021.naacl-main.99">Text modular  networks: Learning to decompose tasks in the lan- guage of existing models</ref>. In Proceedings of the 2021 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, pages 1264-1279, Online. Association for Computational Linguistics. Tushar Khot, Harsh Trivedi, Matthew Finlayson, Yao Fu, Kyle Richardson, Peter Clark, and Ashish Sabharwal. 2023. <ref type="url" target="https://openreview.net/forum?id=_nGgzQjzaRy">Decomposed prompting: A modular  approach for solving complex tasks</ref>. In The Eleventh International Conference on Learning Representations. Hunter Lightman, Vineet Kosaraju, Yura Burda, Harri Edwards, Bowen Baker, Teddy Lee, Jan Leike, John Schulman, Ilya Sutskever, and Karl Cobbe. 2023. Let's verify step by step. arXiv preprint arXiv:2305.20050. Bill Yuchen Lin, Yicheng Fu, Karina Yang, Prithviraj Ammanabrolu, Faeze Brahman, Shiyu Huang, Chandra Bhagavatula, Yejin Choi, and Xiang Ren. 2023. Swiftsage: A generative agent with fast and slow thinking for complex interactive tasks. arXiv preprint arXiv:2305.17390. Xiao Liu, Hao Yu, Hanchen Zhang, Yifan Xu, Xuanyu Lei, Hanyu Lai, Yu Gu, Hangliang Ding, Kaiwen Men, Kejuan Yang, et al. 2023. Agentbench: Evaluating llms as agents. arXiv preprint arXiv:2308.03688. Aman Madaan, Niket Tandon, Prakhar Gupta, Skyler Hallinan, Luyu Gao, Sarah Wiegreffe, Uri Alon, Nouha Dziri, Shrimai Prabhumoye, Yiming Yang, et al. 2023. Self-refine: Iterative refinement with self-feedback. arXiv preprint arXiv:2303.17651. Sewon Min, Victor Zhong, Luke Zettlemoyer, and Hannaneh Hajishirzi. 2019. <ref type="url" target="https://doi.org/10.18653/v1/P19-1613">Multi-hop reading compre- hension through question decomposition and rescor- ing</ref>. In Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics, pages 6097-6109, Florence, Italy. Association for Computational Linguistics. So Yeon Min, Devendra Singh Chaplot, Pradeep Kumar Ravikumar, Yonatan Bisk, and Ruslan Salakhutdinov. 2022. Film: Following instructions in language with modular methods. In International Conference on Learning Representations. Vijayaraghavan Murali, Letao Qi, Swarat Chaudhuri, and Chris Jermaine. 2018. <ref type="url" target="https://openreview.net/forum?id=HkfXMz-Ab">Neural sketch learning  for conditional program generation</ref>. In International Conference on Learning Representations. Ofir Nachum, Shixiang Shane Gu, Honglak Lee, and Sergey Levine. 2018. Data-efficient hierarchical reinforcement learning. Advances in neural information processing systems, 31. Maxwell Nye, Luke Hewitt, Joshua Tenenbaum, and Armando Solar-Lezama. 2019. Learning to infer program sketches. In International Conference on Machine Learning, pages 4861-4870. PMLR. OpenAI. 2023. <ref type="url" target="http://arxiv.org/abs/2303.08774">Gpt-4 technical report</ref>. Long Ouyang, Jeffrey Wu, Xu Jiang, Diogo Almeida, Carroll Wainwright, Pamela Mishkin, Chong Zhang, Sandhini Agarwal, Katarina Slama, Alex Ray, et al. 2022. Training language models to follow instructions with human feedback. Advances in Neural Information Processing Systems, 35:27730-27744. Ethan Perez, Patrick Lewis, Wen-tau Yih, Kyunghyun Cho, and Douwe Kiela. 2020. <ref type="url" target="https://doi.org/10.18653/v1/2020.emnlp-main.713">Unsupervised question  decomposition for question answering</ref>. In Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP), pages 8864-8880, Online. Association for Computational Linguistics. Yujia Qin, Shihao Liang, Yining Ye, Kunlun Zhu, Lan Yan, Yaxi Lu, Yankai Lin, Xin Cong, Xiangru Tang, Bill Qian, et al. 2023. Toolllm: Facilitating large language models to master 16000+ real-world apis. arXiv preprint arXiv:2307.16789. Desik Rengarajan, Gargi Vaidya, Akshay Sarvesh, Dileep Kalathil, and Srinivas Shakkottai. 2022. <ref type="url" target="https://openreview.net/forum?id=YJ1WzgMVsMt">Rein- forcement learning with sparse rewards using guid- ance from offline demonstration</ref>. In International Conference on Learning Representations. Swarnadeep Saha, Peter Hase, and Mohit Bansal. 2023a. Can language models teach weaker agents? teacher explanations improve students via theory of mind. arXiv preprint arXiv:2306.09299. Swarnadeep Saha, Shiyue Zhang, Peter Hase, and Mohit Bansal. 2023b. <ref type="url" target="https://openreview.net/forum?id=ooxDOe7ZtBe">Summarization programs: Inter- pretable abstractive summarization with neural mod- ular trees</ref>. In The Eleventh International Conference on Learning Representations. Imanol Schlag, Sainbayar Sukhbaatar, Asli Celikyilmaz, Wen-tau Yih, Jason Weston, Jürgen Schmidhuber, and Xian Li. 2023. Large language model programs. arXiv preprint arXiv:2305.05364. Shunyu Yao, Howard Chen, John Yang, and Karthik Narasimhan. 2022. Webshop: Towards scalable realworld web interaction with grounded language agents. Advances in Neural Information Processing Systems, 35:20744-20757. Shunyu Yao, Dian Yu, Jeffrey Zhao, Izhak Shafran, Thomas L Griffiths, Yuan Cao, and Karthik Narasimhan. 2023a. Tree of thoughts: Deliberate problem solving with large language models. arXiv preprint arXiv:2305.10601. Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik R Narasimhan, and Yuan Cao. 2023b. <ref type="url" target="https://openreview.net/forum?id=WE_vluYUL-X">React: Synergizing reasoning and acting  in language models</ref>. In The Eleventh International Conference on Learning Representations. Jesse Zhang, Haonan Yu, and Wei Xu. 2021. Hierarchical reinforcement learning by discovering intrinsic options. In International Conference on Learning Representations. Wenqing Zheng, SP Sharan, Ajay Kumar Jaiswal, Kevin Wang, Yihan Xi, Dejia Xu, and Zhangyang Wang. 2023. Outline, then details: Syntactically guided coarse-to-fine code generation. In International Conference on Machine Learning, pages 42403-42419. PMLR. Andy Zhou, Kai Yan, Michal Shlapentokh-Rothman, Haohan Wang, and Yu-Xiong Wang. 2023. Language agent tree search unifies reasoning acting and planning in language models. arXiv preprint arXiv:2310.04406.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A ADAPT Implementation Details</head><p>Executor. We use a common ReAct executor for each dataset. To this end, we provide the LLM in the executor with in-context example trajectories for each atomic skill (refer to Table <ref type="table">5</ref> for an exhaustive list). Atomic skills are inherently task dependent, and thus, vary with the underlying environment. For ALFWorld, in which the agent needs to navigate and perform tasks in the household, the atomic skills include: taking an object, putting it down at a location, cleaning, heating, etc. On the other hand, the goal in WebShop is to buy a product based on user queries, thus, atomic skills include: searching a specified query, shortlisting products based on search page, matching if a product satisfies a criteria, and buying a product. Lastly, the atomic skills in TextCraft are fetching objects from the environment, and crafting them given the recipe and the ingredients. Following Yao et al. (2023b), we add gold trajectories for two tasks: heat and look in the executor prompt for ALFWorld, and one full gold trajectory for TextCraft.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Atomic Skill Description</head><p>ALFWorld put Assuming that the robot is carrying an object, put it on a given receptacle. take Take a specified object from a specified receptacle. clean/heat/cool Assuming that the robot is carrying an object, clean/heat/cool the object. examine Assuming the robot is at a desk with a desk lamp, use it to look at an object.</p><p>WebShop search Put a given query in the search box, results in a page with list of products. shortlist</p><p>Based on the search page and query, get list of any matching products. match Given a product ID and query, navigate to the product page and verify it matches the query. buy Given a product ID and query, buy product by selecting relevant options.</p><p>TextCraft craft Assuming the agent has all the ingredients in the inventory, craft a target object by picking an appropriate command from the list of crafting recipes. fetch Look for a given object in the inventory or get it directly from the game. inventory Look-up the game inventory.</p><p>Table 5: Overview of atomic skills used in Sec. 3.1.</p><p>Planner. We provide the LLM with a brief description of atomic skills and in-context demonstrations of few task decompositions for each dataset.</p><p>• ALFWorld: The planner includes 6 demonstrations of task decompositions for one household configuration. Specifically, "find" is not an atomic skill for the executor, and therefore, needs to be handled by the planner (refer to Fig. <ref type="figure" target="#fig_2">2</ref>).</p><p>• WebShop: The planner breaks down a given task in terms of the atomic skills described in Table <ref type="table">5</ref> via 2 in-context demonstrations.</p><p>• TextCraft: The planner determines the necessary ingredients for each item and creates a plan to obtain them and then craft the item, illustrated via 2 examples with different crafting commands.</p><p>Controller. The controller performs two crucial roles in the overall functioning of ADAPT. First, it serves as the communication bridge between planner and executor, propagating salient information across the two depending on the task. Second, since ADAPT is a recursive algorithm, the controller determines the termination criterion using the logical expression from the planner and success heuristic from the executor or if a maximum depth d max (≥1) is reached. The controller propagates taskdependent salient information described below:</p><p>• ALFWorld: In the controller, we propagate the last successful action from a previous execution</p><p>Method Pick Clean Heat Cool Look Pick2 All ReAct 66.7 41.9 47.8 80.9 83.3 23.5 56.7 Plan-and-Execute 87.5 58.1 73.9 52.4 83.3 17.6 63.4 Try Again with ReAct 75.0 38.7 60.9 76.2 66.7 23.5 56.7 Reflexion 83.3 61.3 73.9 85.7 61.1 29.4 67.2 ADAPT (Ours) 91.7 67.7 78.3 81.0 100 64.7 79.8 Table 6: Comparison of success rates (%) achieved by ADAPT and other baselines from prior work on ALFWorld (test split) with executor used by Yao et al. (2023b) Method Score Success Rate Iterative Executor-Only 42.1 29.0 Static Decomposition 27.7 17.0 Retry Execution 45.4 30.0 Naive 58.3 24.0 Reflexion* 64.2 35.0 LATS (Zhou et al., 2023)* 75.9 38.0 ADAPT (Ours) 60.0 44.0 Table 7: Performance comparison of different methods on WebShop. Algorithm 1 Algorithm for ADAPT 1: function ADAPT(Task T , Current depth k) 2: // ADAPT(•) Generates success heuristic value completed for the task T . Initialized with k = 1. 3: // Base case: terminate on reaching maximum depth 4: if k &gt; dmax then return F alse 5: // Execute the task/sub-task to assess if the LLM can directly perform it using LLM-generated success. 6: completed ← executorLLM(T ) 7: // Plan only when the executor fails. 8: if completed is F alse then 9: // Using the LLM, decompose the task into a set of sub-tasks, P, and a Boolean function, logic(•), that combines output of the sub-tasks. 10: P, logic ← planner LLM (T ) 11: // Get the outputs for individual sub tasks 12: O = {ADAPT(T sub , k+1)|T sub ∈ P} 13: // Combine the outputs of the sub tasks 14: completed ← logic(O) 15: return completed run to subsequent calls of the executor. Note that information is only propagated from successful sub-tasks. For sub-tasks connected via "OR", each receives the same information from the controller. Unlike Shinn et al. (2023), executor does not get text feedback from prior failures.</p><p>• WebShop: We propagate the current page visible to the agent along with past unsuccessful executor tasks to the planner (without any rationales). Once we find a matching product, we also propagate the product ID in future executor calls.</p><p>• TextCraft: We propagate the current inventory of the agent to the executor. This is akin to executors starting with the inventory command as the first step to keep stock of which items are missing and need to be fetched or crafted. For partial rolled-out trajectories with ADAPT refer to Figs. 9 to 11. Communication between planner and executor is highlighted in gray box(es) .</p><p>LLM-related Hyperparameters. Following previous works <ref type="bibr" target="#b21">(Shinn et al., 2023;</ref><ref type="bibr" target="#b35">Liu et al., 2023)</ref> we use text-davinci-003 from the OpenAI API for ALFWorld. For WebShop, we use the gpt-3.5-turbo models, and for TextCraft we use the gpt-3.5-turbo-instruct models. All executors have a maximum budget of iterations to interact with the environment and execute the task. We set this budget to 20, 15, and 20 respectively for ALFWorld, WebShop, and TextCraft respectively. For try again with ReAct, we sample additional trajectories with a temperature of 0.7. As discussed in Sec. 4.2, we run the iterative executor-only baseline for 60, 45, 60 iterations for ALFWorld, WebShop, and TextCraft respectively. In Sec. 6.2, we use publicly available checkpoints for LLaMA 70B <ref type="foot" target="#foot_6">7</ref> and Lemur 70B<ref type="foot" target="#foot_7">foot_7</ref> available on Huggingface <ref type="bibr" target="#b34">(Wolf et al., 2019)</ref>. For both planner and executor modules, we use a fixed prompt consisting of few in-context examples (as described above) for each dataset. We show all executor and planner prompts to the LLM in Appendix G. Due to cost constraints, we report success rates for a single run of each LLM in Secs. 5 and 6.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Handling Complex Logic in Plans</head><p>While the examples in Figs. <ref type="figure" target="#fig_0">1</ref> and <ref type="figure" target="#fig_2">2</ref> show homogeneous logic across sub-tasks in the plan, our controller can handle complex logical expressions including both "AND" and "OR" operators. Specifically, we provide instructions to the planner to output this logical expressing at the end of the plan with a fixed prefix: Execution Order. We then build a deterministic parser that can parse complex logical expressions that the controller can process. We do so by splitting the logical expression into a series of homogeneous expression each passed to ADAPT. Whenever the task given to ADAPT comprises of multiple sub-tasks connected via (one) logical operator, we automatically decompose this task as per the logical expression. For example, in Fig. <ref type="figure">8</ref>, a detailed plans used by the plan-andexecute baseline (discussed in Sec. 4.2) comprised of logical expressions using both AND, and OR operators. Therefore, the parser will break automatically break this into multiple levels, i.e.,</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Step 6 = Step 1 OR Step 2 OR Step 3, followed by Step 6 AND Step 4 AND Step 5.</head><p>While such complex logical expressions are mostly associated with the plan-and-execute baseline, they can be easily used within the ADAPT framework. Furthermore, this allows the plan-and-execute baseline to simulate a multi-level planning structure via detailed plans without being adaptive to the executor.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Task-specific Executors in ALFWorld</head><p>In Table <ref type="table">1</ref>, we use a standardized executor with in-context demonstrations of atomic skills and two gold trajectories. While this allows for a common executor across different sub-tasks, task-specific executors yield higher performance on the specific sub-tasks. We now show ADAPT can also be used on top of task-specific executors used by <ref type="bibr">Yao et al. (2023b)</ref>. The results are shown in we observe that ADAPT yields the overall success rate by up to 23.1% points and also surpasses baselines on all but 1 task types. Interestingly, we find strong performance of the plan-and-execute baseline when using a stronger executor (as compared to Table <ref type="table">1</ref>) possibly as such an executor can handle complex sub-tasks better.</p><p>Consistent with Table 1, ADAPT outperforms Reflexion by 12.6% points despite lack of dedicated memory and natural language feedback.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Additional WebShop Experiments</head><p>Evaluation Metrics. We focus on success rate and not the (soft) score as the primary metric for this task because it is possible to get a non-zero score by naively buying a product. To this effect, we construct a naive executor that inputs the user query in the search bar and buys the first available product.</p><p>Table 7 shows that while this baseline yields the lowest success rate, it surprisingly yields a high success rate of 58.3. In contrast, our executors often do not buy products especially when the previous sub-goals fail which can adversely impact scores even though the success rate remains unaffected. Therefore, we argue for optimizing the success rate instead of the score as opposed to prior works (Zhou et al., 2023). ADAPT accommodating task complexity. By default, Yao et al. (2023b) use a search page with only the top-3 search results displayed. Intuitively, increasing the number of products on the search page requires the model to choose from a wider array of products and track all their information to determine the best fit to the user query, making the overall task harder. Therefore, we apply ADAPT on Webshop in two settings with 3, and 10 products per search page. Results. From Table 8, we observe that ADAPT effectively improves success rate by 20.0% and 22.5% for 3 and 10 products respectively over the Room: You are in the middle of a room. Looking quickly around you, you see a cabinet 21, a cabinet 20, a cabinet 19, a cabinet 18, a cabinet 17, a cabinet 16, a cabinet 15, a cabinet 14, a cabinet 13, a cabinet 12, a cabinet 11, a cabinet 10, a cabinet 9, a cabinet 8, a cabinet 7, a cabinet 6, a cabinet 5, a cabinet 4, a cabinet 3, a cabinet 2, a cabinet 1, a coffeemachine 1, a countertop 2, a countertop 1, a diningtable 1, a drawer 5, a drawer 4, a drawer 3, a drawer 2, a drawer 1, a fridge 1, a garbagecan 1, a microwave 1, a sinkbasin 1, a stoveburner 4, a stoveburner 3, a stoveburner 2, a stoveburner 1, desk 1, and a toaster 1. Your task is to: Put a clean mug on desk. Execute: Put a clean mug on desk &gt; Go to countertop 1 You reached loc 1, ... &gt; Go to countertop 2 You reached loc 2, ... Room: You are in the middle of a room. Looking quickly around you, you see a cabinet 21, a cabinet 20, a cabinet 19, a cabinet 18, a cabinet 17, a cabinet 16, a cabinet 15, a cabinet 14, a cabinet 13, a cabinet 12, a cabinet 11, a cabinet 10, a cabinet 9, a cabinet 8, a cabinet 7, a cabinet 6, a cabinet 5, a cabinet 4, a cabinet 3, a cabinet 2, a cabinet 1, a coffeemachine 1, a countertop 2, a countertop 1, a diningtable 1, a drawer 5, a drawer 4, a drawer 3, a drawer 2, a drawer 1, a fridge 1, a garbagecan 1, a microwave 1, a sinkbasin 1, a stoveburner 4, a stoveburner 3, a stoveburner 2, a stoveburner 1, desk 1, and a toaster 1.</p><p>Your task is to: Put a clean mug on desk.</p><p>Execute: Put a clean mug on desk &gt; Think: To solve the task, I need to find and take a mug, then clean it with sinkbasin, then put on the desk. OK. &gt; Think: First I need to find a mug. A mug is more likely to appear in fridge (1), countertop (1-2), dining</p><p>table (1), cabinet (1-21), drawer (1-5). I can check one by one, starting with fridge 1. OK. &gt; open fridge 1 Nothing happens. &gt; go to fridge 1 You arrive at loc 15, fridge 1 is closed. &gt; open fridge 1 You open the fridge 1. The fridge 1 is open. In it, you see a bowl 1, a cup 1, a egg 1, a lettuce 1, a plate 1, and a tomato 1. &gt; Think: There is no mug in fridge 1, I need to go to countertop 1 next. OK. &gt; go to countertop 1 You reached loc 1, on it you see a cd 2, a cellphone 3, a cellphone 1, a keychain 3, a pen 2, a pencil 3 and a pencil 2. &gt; go to countertop 2 You reached loc 2, on it you see a egg 3, a knife 2, a knife 1, a potato 1, a potato 2, a bread 1, a dishsponge 3, and a saltshaker 1. &gt; Think: There is no mug in countertop 2, I need to go to cabinet 1. OK. &gt; go to cabinet 1 You arrive at loc 4, cabinet 1 is closed. &gt; open cabinet 1 You open cabinet 1. Cabinet 1 is open. In it, you see bowl 3, fork 2, soapbottle 1, and a cloth 1. &gt; go to cabinet 2 You arrive at loc 5, cabinet 2 is closed. &gt; open cabinet 2 You open cabinet 2. Cabinet 2 is open. In it, you see nothing. &gt; open cabinet 4 Nothing happens. &gt; go to cabinet 4 You arrive at loc 7, cabinet 4 is closed. &gt; open cabinet 4 You open cabinet 4. Cabinet 4 is open. In it, you see a spatula 1, a cloth 2, a peppershaker 1, cup 3, a apple 2, and a toiletpaper 1. &gt; take mug 3 from cabinet 4 Nothing happens. &gt; take cup 3 from cabinet 4 You pick up cup 3 from cabinet 4 &gt; Think: Now I found cup (3). Next I need to clean it. For this ...</p><p>... ADaPT (Adaptive Decomposition, Dynamic Depth) Iterative Executor (ReAct) ... ... ... ...</p><p>Figure <ref type="figure">9</ref>: Comparison of iterative executors such as ReAct with ADAPT. On left, ReAct uses interleaved "thought" statements to set milestones and track their progress. However, due to a large action history, it struggles to follow the plan exactly and hallucinates the wrong object (highlighted in red). ADAPT, on the right, decomposes complex tasks into smaller sub-tasks whenever the executor fails, leading to shorter action trajectories for easy execution.</p><p>ReAct baseline. The difference in ReAct performance for both settings corroborates our hypothesis that increasing number of products on the search page increases task complexity, all else equal. Notably, we show that ADAPT yields higher improvement for more complex task settings.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E TextCraft</head><p>TextCraft: Environment Details. In TextCraft, the objective is to obtain target Minecraft items by crafting them from available items in the environment. We define an environment with three ac-tions: craft &lt;item&gt; using &lt;ingredients&gt;, get &lt;item&gt;, and inventory. We utilize Minecraft's crafting recipes to specify craftable items and their ingredients, assuming that all other items are obtainable from the environment. Similar to Alf-World, our agent can directly execute these operations in the embodied game. The game begins with a list of crafting commands provided to the agent that detail recipes that can be used to craft the final target, its ingredients along with some distractors (details in Appendix E). A reward of 1 is generated when the target item gets added to the   In the gray box we communicate to the planner the current (search) page that is visible to the agent, and once a matching product is found, we propagate it to future executor runs. Note "match on search page" corresponds to shortlist skill in Table <ref type="table">5</ref>, and "detail match on product page" corresponds to match skill.</p><p>agent's inventory. An illustrative gold trajectory from TextCraft is shown in Fig. <ref type="figure" target="#fig_3">3</ref>.</p><p>We create the TextCraft environment using Minecraft v1.16.5 recipes. We only consider the recipes craftable using a crafting table. We consider both shapeless (only count matters) and shaped (position of ingredients matters) recipes and convert them into crafting commands (e.g. craft 4 sticks using 2 planks). Items that do not have any recipe are considering obtainable via the get command, e.g. get 4 diamond.</p><p>Since the entire set of crafting commands would not fit in the context of modern LLMs, we create Crafting Commands: craft andesite slab using 3 andesite craft 2 andesite using 1 diorite, 1 cobblestone craft 6 diorite wall using 6 diorite craft 2 diorite using 2 quartz, 2 cobblestone In the gray box, we propagate the inventory of the agent to subsequent executor calls. Note that while "diorite" is not directly present in the environment, i.e., it needs to be crafted. The executor LLM is able to inherently compose skills to fetch it without further decomposition.</p><p>a set of relevant crafting commands for every task.</p><p>Apart from the set of gold crafting commands (i.e, crafting commands for all the items in the recipe tree), we also add up to 10 distractor commands. To create this distractor set, we sub-sample up to 10 recipes for every ingredient in the recipes of our gold recipe tree. We finally sub-sample up to 10 distractors from this entire set to ensure a reason- able context size. Note that we do not provide the list of valid get commands as that can be inferred from the craft commands.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F Evaluation of Success Heuristic</head><p>In Sec. 3.1, we describe the executor module used in ADAPT. For tasks assigned to the executor, we prompt the LLM to generate a binary success heuristic. We use this heuristic repeatedly to evaluate if the (sub-)task needs to be decomposed further. We now study the ability of LLMs to generate this success heuristic on all our datasets. To this end, we run ADAPT and in the end compare the success rate when using the LLM's self-assessed task success with the gold reward from the environment in Fig. <ref type="figure" target="#fig_15">12</ref>. On ALFWorld and TextCraft, we find the LLM slightly over-estimates its overall task success. This is to be expected as the underlying tasks involve minimal subjectivity (e.g., the agent either has an item on its inventory or not). However, on WebShop, where a product can match the user criteria to different degrees (partially or fully), we find that the LLM's assessment is significantly inflated compared to the environment reward (&gt; 30 points). This imperfect feedback affects downstream performance of ADAPT, as the algorithm terminates even though further decomposition is needed. We leave it to future work to address the shortcomings of self-evaluation with LLMs <ref type="bibr">(Huang et al., 2023a;</ref><ref type="bibr" target="#b27">Stechly et al., 2023)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G Prompts</head><p>We provide all the prompts used in our planner and executor modules for ALFWorld, WebShop, and TextCraft datasets in the following pages.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ALFWorld Hybrid Executor Prompt</head><p>Here is a demo of actions you can perform.</p><p>You are in the middle of a room. Looking quickly around you, you see a desk 1, microwave 1, a cabinet 3, a cabinet 9, a drawer 2, a coffeemachine 1, a stoveburner 4, a drawer 5, a cabinet 11, a drawer 3, a stoveburner 1, a drawer 1, a toaster 1, a fridge 1, a stoveburner 2, a cabinet 6, a cabinet 10, a countertop 1, a cabinet 13, a cabinet 7, a garbagecan 1, a cabinet 2, a cabinet 8, a cabinet 12, a drawer 4, a cabinet 1, a sinkbasin 1, a cabinet 5, a stoveburner 3, and a cabinet 4.</p><p>Your task is to: Put a tomato in cabinet 1. &gt; think: Input assumption: I am carrying a tomato. Now I need to verify this. OK. &gt; inventory You are carrying: a tomato 1. &gt; examine tomato 1 There's nothing special about tomato 1. &gt; think: Based on previous context assumption is true, now I can proceed. &gt; go to cabinet 1 The cabinet 1 is closed. &gt; open cabinet 1 You open the cabinet 1. The cabinet 1 is open. In it, you see a candle 1, and a spraybottle 2. &gt; put tomato 1 in/on cabinet 1 You put the tomato 1 in/on the cabinet 1. &gt; think: End state: Now I put tomato (1) in cabinet (1). Task completed! Your task is to: Take a mug from cabinet 5 &gt; think: Input assumption: None OK. &gt; go to cabinet 5 The cabinet 5 is closed. &gt; open cabinet 5 You open the cabinet 5. The cabinet 5 is open. In it, you see a mug 3. &gt; take mug 3 from cabinet 5 You pick up the mug 3 from the cabinet 5. &gt; think: End state: Now I take a mug (3) from cabinet (5). Task completed! Your task is to: Heat an egg. &gt; think: Input assumption: I am carrying an egg. Now I need to verify this. OK. &gt; inventory You are carrying: a egg 2. &gt; examine egg 2 There's nothing special about egg 2. &gt; think: Based on previous context assumption is true, now I can proceed. OK. &gt; go to microwave 1 The microwave 1 is closed. &gt; heat egg 2 with microwave 1 You heat the egg 2 using the microwave 1. &gt; think: End state: Now I heat a egg (2). Task completed! Your task is to: Cool a mug. &gt; think: Input assumption: I am carrying a mug. Now I need to verify this. OK. &gt; inventory You are carrying: a mug 3. &gt; examine mug 3 There's nothing special about mug 3. &gt; think: Based on previous context assumption is true, now I can proceed. OK. &gt; go to fridge 1 The fridge 1 is closed. &gt; cool mug 3 with fridge 1 You cool the mug 3 using the fridge 1. &gt; think: End state: Now I cool a mug (3). Task completed! Your task is to: Clean a lettuce. &gt; think: Input assumption: I am carrying a lettuce. Now I need to verify this. OK. &gt; inventory You are carrying: a lettuce 1. &gt; examine lettuce 1 There's nothing special about lettuce 1. &gt; think: Based on previous context assumption is true, now I can proceed. OK. &gt; go to sinkbasin 1 On the sinkbasin 1, you see a apple 2, a ladle 2, a spoon 1, and a tomato 3. &gt; clean lettuce 1 with sinkbasin 1 You clean the lettuce 1 using the sinkbasin 1. &gt; think: End state: Now I clean a lettuce (1). Task completed! ALFWorld Hybrid Executor Prompt (cont.) Your task is to: Use a desklamp to look at tomato 1. &gt; think: Input assumption: I am at the location that contains desklamp (1). Now I need to verify this. OK. &gt; inventory You are carrying: a tomato 1. &gt; look You are facing desk 1. Next to it, you see nothing. &gt; examine desk 1 On desk 1, you see a spoon 1, a desklamp 1, and a pencil 2. &gt; think: Based on previous context assumption is true, now I can proceed. OK. &gt; use desklamp 1 You turn on the desklamp 1. &gt; think: Now I use desklamp (1). Task completed! Here are two example tasks.</p><p>You are in the middle of a room. Looking quickly around you, you see a cabinet 13, a cabinet 12, a cabinet 11, a cabinet 10, a cabinet 9, a cabinet 8, a cabinet 7, a cabinet 6, a cabinet 5, a cabinet 4, a cabinet 3, a cabinet 2, a cabinet 1, a coffeemachine 1, a countertop 1, a diningtable 1, a drawer 1, a fridge 1, a garbagecan 1, a microwave 1, a shelf 3, a shelf 2, a shelf 1, a sinkbasin 1, a stoveburner 4, a stoveburner 3, a stoveburner 2, a stoveburner 1, and a toaster 1. Your task is to: put a hot apple in fridge. &gt; think: To solve the task, I need to find and take an apple, then heat it with microwave, then put it in fridge. OK. &gt; think: First I need to find an apple. An apple is more likely to appear in fridge (1), diningtable (1), coffeetable (1), drawer (1), cabinet (1-13), garbagecan (1). I can check one by one, starting with fridge 1. OK. &gt; go to fridge 1 The fridge 1 is closed. &gt; open fridge 1 You open the fridge 1. The fridge 1 is open. In it, you see a cup 1, and a egg 1. &gt; go to diningtable 1 On the diningtable 1, you see a apple 1, a bread 1, a fork 3, a fork 2, a fork 1, a mug 2, a peppershaker 3, a plate 2, a pot 1, a soapbottle 3, a spatula 1, a spoon 3, a spoon 2, a spoon 1, a winebottle 3, and a winebottle 2. &gt; think: Now I find an apple (1). Next, I need to take it. OK. &gt; take apple 1 from diningtable 1 You pick up the apple 1 from the diningtable 1. &gt; think: Now I take an apple (1). Next, I need to go to a microwave (1) and heat it. OK. &gt; go to microwave 1 The microwave 1 is closed. &gt; heat apple 1 with microwave 1 You heat the apple 1 using the microwave 1. &gt; think: Now I heat an apple (1). Next, I need to put it in/on fridge 1. OK. &gt; go to fridge 1 The fridge 1 is open. In it, you see a cup 1, and a egg 1. &gt; put apple 1 in/on fridge 1 You put the apple 1 in/on the fridge 1.</p><p>&gt; think: Task completed! You are in the middle of a room. Looking quickly around you, you see a bed 1, a desk 1, a drawer 3, a drawer 2, a drawer 1, a garbagecan 1, a safe 1, a shelf 5, a shelf 4, a shelf 3, a shelf 2, a shelf 1, a sidetable 2, and a sidetable 1. Your task is to: look at bowl under the desklamp. &gt; think: To solve the task, I need to find and take a bowl, then find and use a desklamp. OK. &gt; think: First I need to find a bowl. A bowl is more likely to appear in drawer shelf (1-5), drawer (1-3). I can check one by one, starting with drawer 1. OK. &gt; go to shelf 1 On the shelf 1, you see nothing. &gt; go to shelf 2 On the shelf 2, you see a bowl 1. &gt; think: Now I find a bowl (1). Next, I need to take it. OK. &gt; take bowl 1 from shelf 2 You pick up the bowl 1 from the shelf 2. &gt; think: Now I take a bowl (1). Next, I need to find a desklamp. A desklamp is more likely to appear in desk (1), sidetable (1-2), and drawer (1-3). I can check one by one, starting with desk 1. OK. &gt; go to desk 1 On the desk 1, you see a alarmclock 2, a book 1, a cellphone 1, a keychain 1, a laptop 2, a laptop 1, and a pen 3. &gt; go to sidetable 1 On the sidetable 1, you see a cd 1, a pen 1, and a pencil 1. &gt; go to sidetable 2 On the sidetable 2, you see a alarmclock 1, a desklamp 1, and a pen 2. &gt; think: Now I find a desklamp (1). Next, I need to use it. OK. &gt; use desklamp 1 You turn on the desklamp 1. &gt; think: Task completed!</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ALFWorld Planner Prompt</head><p>Here are some examples. You are in the middle of a room. Looking quickly around you, you see a desk 1, microwave 1, a cabinet 3, a cabinet 9, a drawer 2, a coffeemachine 1, a stoveburner 4, a drawer 5, a cabinet 11, a drawer 3, a stoveburner 1, a drawer 1, a toaster 1, a fridge 1, a stoveburner 2, a cabinet 6, a cabinet 10, a countertop 1, a cabinet 13, a cabinet 7, a garbagecan 1, a cabinet 2, a cabinet 8, a cabinet 12, a drawer 4, a cabinet 1, a sinkbasin 1, a cabinet 5, a stoveburner 3, and a cabinet 4.</p><p>Goal: Put a mug in/on desk. Come up with an abstract plan to perform this task in a couple of steps. # Think: To perform this task, I need to find and take mug and then put it on desk. First, I will focus on finding mug. Here is the goal. &lt;room&gt; Goal: &lt;task&gt;. Come up with an abstract plan to perform this task in a couple of steps. Constraints: The robot can hold/take/put only one object at a time to a location. Ensure each step can be understood independently and mentions the name of object. When stating the execution order, ensure that 'AND'/'OR' statements are properly nested using brackets '()'.</p><p>WebShop Executor Prompt: Shortlist (cont.) You are given a search page on an online shopping site with a list of products along with name and price. Based on this information, your task is return a list of product IDs (enclosed in []) of all products that exactly match all requirements in the criteria. If the information provided is not enough to make a determination, return an empty list. Here are a few examples. Search Page: [Back to Search] Page 1 (Total results: 50) [Next &gt;] [B078GWRC1J] Bright Citrus Deodorant by Earth Mama | Safe for Sensitive Skin, Pregnancy and Breastfeeding, Contains Organic Calendula 3-Ounce $10.99 [B08KBVJ4XN] Barrel and Oak -Aluminum-Free Deodorant, Deodorant for Men, Essential Oil-Based Scent, 24-Hour Odor Protection, Cedar &amp; Patchouli Blend, Gentle on Sensitive Skin (Mountain Sage, 2.7 oz, 2-Pack) $35.95 [B078GTKVXY] Ginger Fresh Deodorant by Earth Mama | Natural and Safe for Sensitive Skin, Pregnancy and Breastfeeding, Contains Organic Calendula 3-Ounce $10.99 [B08SMG4WB9] Each &amp; Every 2-Pack Natural Aluminum-Free Deodorant for Sensitive Skin with Essential Oils, Plant-Based Packaging (Citrus &amp; Vetiver, 2.5 Ounce (Pack of 2)) $25.0 [B08KVCCSD6] Each &amp; Every 3-Pack, Natural Aluminum-Free Deodorant for Sensitive Skin Made with Essential Oils, 2.5 Oz. (Lavender &amp; Lemon, Citrus &amp; Vetiver, and Coconut &amp; Lime) $35.0 Criteria: less than 5 ounce citrus deodorant sensitive skin, price less than $30. Answer: My requirements are 5 ounce, citrus deodrant, suitable for sensitive skin, and price less than $30. Looks like this information is available on the search page, so I can proceed. Products B078GWRC1J, B08SMG4WB9 look suitable as they are less than 5 ounce, citrus and have price 10.99 and $25 less than $30. Thus, shortlisted IDs are shortlisted=['B078GWRC1J', 'B08SMG4WB9'] Criteria: less than 5 ounce citrus deodorant sensitive skin, cruelty free. Answer: My requirements are 5 ounce, citrus deodrant, suitable for sensitive skin, and cruelty-free. Since there is no information about cruelty free on the search page, I cannot proceed. Task failed! Here is another task with a different search page and criteria. List all the product ids (enclosed in []) from the search page that match ALL the requirements in the criteria. Name this list shortlisted. If you cannot make the determination about even 1 sub-criteria, do not make a guess, output "task failed!". Generate an explanation before the answer to justify your decision. Search Page: {} Criteria: {} Answer: WebShop Planner Prompt Write an abstract plan to successfully complete the goal. In each step of the plan mention which module (including arguments) that need to be called. Learn from and incorporate information from previous runs, e.g. do not repeat previously successful or unsuccesful commands. Here are some examples:Information from previous run: -Goal: Buy 3 ounce bottle of citrus deodorant for sensitive skin, that is natural and priced less than 50.00 dollars. # Think: Based on the criteria and the search bar, I should query 3 ounce citrus deodorant sensitive skin. I have the following constraints: natural and price lower than $30 which I can use to narrow down search results. Step 1: Search[3 ounce citrus deodorant sensitive skin] # Think: Now I will need to narrow down the search results for price lower than $30 and natural Step 2: SimpleMatch[3 ounce citrus deodorant sensitive skin with price lower than $50 and natural] # Think: Since it returns a list of up to 3 products, I will pick the first suitable product. For now, Ill denote its id as prod_id for placeholder. Step 3: Buy[prod_id, "3 ounce bottle of citrus deodorant for sensitive skin, that is natural and priced less than 30.00 dollars"] #Think: My plan requrires all these steps to succeed sequentially, so I will use the "AND" operator. Execution Order: (Step 1 AND Step 2 AND Step 3) Information from previous run: -Unable to get matching product using: SimpleMatch[3 ounce citrus deodorant sensitive skin with price lower than $30 and natural] -Search results page: [Back to Search] Page 1 (Total results: 50) [Next &gt;] [B078GWRC1J] Bright Citrus Deodorant by Earth Mama | Safe for Sensitive Skin, Pregnancy and Breastfeeding, Contains Organic Calendula 3-Ounce $10.99 [B08KBVJ4XN] Barrel and Oak -Aluminum-Free Deodorant, Deodorant for Men, Essential Oil-Based Scent, 24-Hour Odor Protection, Cedar &amp; Patchouli Blend, Gentle on Sensitive Skin (Mountain Sage, 2.7 oz, 2-Pack) $35.95 [B078GTKVXY] Ginger Fresh Deodorant by Earth Mama | Natural and Safe for Sensitive Skin, Pregnancy and Breastfeeding, Contains Organic Calendula 3-Ounce $10.99 [B08SMG4WB9] Each &amp; Every 2-Pack Natural Aluminum-Free Deodorant for Sensitive Skin with Essential Oils, Plant-Based Packaging (Citrus &amp; Vetiver, 2.5 Ounce (Pack of 2)) $25.0 [B08KVCCSD6] Each &amp; Every 3-Pack, Natural Aluminum-Free Deodorant for Sensitive Skin Made with Essential Oils, 2.5 Oz. (Lavender &amp; Lemon, Citrus &amp; Vetiver, and Coconut &amp; Lime) $35.0 [B087WKSR2G] Goal: Narrow down search results for 3 ounce bottle of citrus deodorant for sensitive skin that is priced lower than $30 and natural. You cannot search again. #Think: Based on the search results and previous information, SimpleMatch failed because my criteria was too complex. Price constraint is easy to verify, I will narrow down based on that first then examine in detail for natural constraint #Think: Based on price, I narrow down my search to B078GWRC1J, B08SMG4WB9 as they look suitable. These are on my shortlist to examine the natural constraint in detail one by one. Step 1: DetailMatch[B078GWRC1J, 3 ounce bottle of for sensitive skin, that is natural and priced less than 30.00 dollars] Step 2: DetailMatch[B08SMG4WB9, 3 ounce bottle of citrus deodorantcitrus deodorant for sensitive skin, that is natural and priced less than 30.00 dollars] #Think: If none of the products exactly match my criteria, I will search again with a new query that includes the natural criteria too. This ensures my plan is compelete. Step 3: Search[3 ounce citrus deodrant natural and sensitive skin] #Think: Since these steps are linked by an if condition, I only need one of them to succeed. I will connect them using the "OR" operator. Execution Order: (Step 1 OR Step 2 OR Step 3)</p><p>Here is a new goal. Write an abstract plan to successfully complete the goal. In each step of the plan mention which module (including arguments) that need to be called. Learn from and incorporate information from previous runs, e.g. do not repeat previously successful or unsuccesful commands. In the end, output the intended execution order.</p><p>Information from previous run: {} Goal: {}</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>TextCraft Executor Prompt</head><p>You are given few useful crafting recipes to craft items in Minecraft. Crafting commands are of the format "craft [target object] using [input ingredients]". You can either "fetch" an object (ingredients) from the inventory or the environment or "craft" (target) using any of the crafting commands. You can use ONLY these crafting commands provided, do not use your own crafting commands. However, if the crafting command uses a generic ingredient like "planks", you can use special types of the same ingredient e.g. "dark oak planks" in the command instead. For any other natural language or thoughts, use prefix 'think: '.</p><p>Here is a demo of how to fetch and craft objects. Crafting commands: craft 3 dark oak sign using 6 dark oak planks, 1 stick craft 4 dark oak planks using 1 dark oak log craft 1 stick using 1 planks craft 4 stick using 2 bamboo craft 4 oak planks using 1 oak log craft 1 dark oak fence using 2 stick, 4 dark oak planks craft 1 warped stairs using 6 warped planks craft 3 oak sign using 6 oak planks,</p><p>1 stick Goal: craft dark oak sign &gt; think: I should check if I can fetch dark oak sign directly from the environment or the inventory. OK. &gt; inventory: Inventory: [stick] (1) [dark oak planks] (8) &gt; get dark oak sign Could not find dark oak sign &gt; think: I cannot get dark oak sign directly, I need to craft it. From the crafting commands, I can use: craft dark oak sign using 6 dark oak planks, 1 stick. Ingredients needed: 6 dark oak planks, 1 stick. Input assumption: I have all the neccessary ingredients in my inventory. Let me verify this first. OK. &gt; inventory Inventory: [stick] (1) [dark oak planks] (8) &gt; think: I found my ingredients: 6 dark oak planks, 1 stick in my inventory. My assumption is true, I can proceed. I will use the crafting command: craft dark oak sign using 6 dark oak planks OK. &gt; craft 1 dark oak sign using 6 dark oak planks, 1 stick Crafted 1 minecraft:dark_oak_sign &gt; inventory Inventory: [dark oak sign] (1) &gt; think: I now have dark oak sign in my inventory. Task Completed! OK. Goal: fetch 2 dark oak logs. &gt; think: I should check my inventory first, to see if I already have dark oak sign. Otherwise, I will directly try to get it from the environment. OK. &gt; inventory Inventory: [stick] (1) &gt; get 2 dark oak logs. Got 2 dark oak logs &gt; inventory Inventory: [dark oak log] (2) [stick] (1) &gt; think: I have 2 dark oak logs in my inventory. Task Completed! OK. TextCraft Executor Prompt (cont.) Here is an example of a complex goal. Goal: craft 2 oak planks &gt; think: I should check if I can fetch dark oak sign directly from the environment or the inventory. OK. &gt; inventory: Inventory: [stick] (1) &gt; get 2 oak planks Could not find 2 oak planks &gt; think: I cannot get oak planks directly, I need to craft it. From the crafting commands, I can use: craft 4 oak planks using 1 oak log. Ingredients needed: 1 dark oak log. Input assumption: I have the ingredients needed in my inventory. Let me verify this first. OK. &gt; inventory Inventory: [stick] (1) &gt; think: My assumption is false. I need to get the ingredients: 1 oak log first. OK. &gt; get 1 oak log Got 1 oak log &gt; craft 4 oak planks using 1 oak log Crafted 4 minecraft:oak_planks &gt; inventory Inventory: [stick] (1) [oak_planks] (4) &gt; think: I now have 2 oak planks in my inventory. Task Completed! OK. Now here is a different goal. You can use these crafting commands to accomplish the goal. When you the desired item in your inventory, think: Task Completed! If you have tried your best but cannot proceed, think: task failed!</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>TextCraft Planner Prompt</head><p>Your task is to come up with a short plan to help me accomplish my goal in a couple of steps using at most ONE of the provided crafting commands. You can take the help of crafting commands below to create new objects. Craft command can be understood as follows: craft [target] using [ingredients], where target is item/object generated by the craft command as output and ingredient are the inputs. You are given an agent that can "craft" or "fetch" objects.</p><p>Here is are some examples.</p><p>Crafting commands: craft 3 dark oak sign using 6 dark oak planks, 1 stick craft 4 dark oak planks using 1 dark oak log craft 1 stick using 1 planks craft 4 stick using 2 bamboo craft 4 oak planks using 1 oak log craft 1 dark oak fence using 2 stick, 4 dark oak planks craft 1 warped stairs using 6 warped planks craft 3 oak sign using 6 oak planks, 1 stick Goal: craft dark oak sign.</p><p># Think: My target is a dark oak sign. From the list of crafting commands, only 1 command generates my target: craft 3 dark oak sign using 6 oak planks, 1 stick. I will use this command to devise a plan. My ingredients are: 6 dark oak planks, 1 stick. I should first get all the ingredients and then use the crafting command. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Execution Order: (Step 1 AND Step 2 AND Step 3)</head><p>Here is a different goal with different craft commands. Your task is to come up with a short plan to help me accomplish my goal in a couple of steps using at most ONE of the provided crafting commands. You can take the help of crafting commands below to create new objects. Keep in mind that: -It is okay to generate more target objects than your goal.</p><p>-Be very careful with the count of objects, SAME object counts mentioned in the input crafting command.</p><p>-You cannot use a partial crafting command recipe, i.e. if the recipe generates 2 objects you CANNOT alter it to produce just 1. -Also, you can use ONLY 1 crafting command in your plan.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Top-Left: Iterative executors such as Re-Act (Yao et al., 2023b) interact directly with the environment, performing planning implicitly. Top-Right: Plan-and-Execute, e.g., Yang et al. (2023), creates a fixed plan for the task, without accounting for complexity in executing step 1. Bottom: ADAPT dynamically decomposes based on success of the executor.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>[</head><figDesc>LLM] Think: Input assumption: I am carrying a mug. Now I need to verify this.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>[#Figure 2 :</head><label>2</label><figDesc>Figure2: Block diagram of the ADAPT pipeline with an example from ALFWorld. Left: Use of LLM as an executor to interact iteratively with the environment along with an example execution trajectory. Middle: Overall recursive algorithm (depth k ≤ d max ) that embeds the executor and planner, refer to Algorithm 1 for details. Right: Outline of using LLM as a planner to generate sub-tasks (steps) and logical operators combining them.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Example gold trajectory in TextCraft for a task with recipe depth of 2.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>);<ref type="bibr" target="#b36">Yang et al. (2023)</ref>;Sun et al. (2023)). To ensure each plan step is executable without further decomposition, we design new prompts with more detailed plans. Note that ADAPT with d max = 2 differs from plan-and-execute as it is adaptive, i.e., decomposes only when executor fails and generates relatively shorter plans (refer to Appendix B).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 4 :</head><label>4</label><figDesc>Figure4: Success rate of ADAPT increases with the maximum depth d max for all datasets (dev splits).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: ADAPT improves success rates across varying settings capturing different executor capabilities (i.e., executor-only performance) on ALFWorld (dev).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 6 :</head><label>6</label><figDesc>Figure6: ADAPT improves (test) performance of GPT-3.5, GPT-4, LLaMA, and Lemur LLMs across datasets.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Average number of LLM calls for each approach including ADAPT and baselines discussed in Sec. 4.2 with GPT-3.5 LLM across datasets.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Plan:</head><figDesc>Figure8: Illustration of how multiple levels of plans from ADAPT, can be collapsed into one detailed plan in non-adaptive settings as used in the plan-and-execute baseline (Sec. 4.2). Our controller can handle complex (non-homogeneous) logical expressions.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>&gt;</head><figDesc>Think: Mug not found, task failed! Plan: Put a clean mug on desk # Think: To do this task, .... Step 1: Find and take the mug AND # Think: Now that I have found it, .... Step 2: Clean the mug using sinkbasin AND # Think: Now that I have cleaned .... Step 3: Put clean mug on desk Execute: Find and take the mug &gt; Think: Task failed! Plan: Find and take the mug # Think: To do this task, .... Step 1: Find and take mug from countertop OR # Think: If I do not find the mug, .... Step 2: Find and take mug from cabinet OR # Think: If I do not find the mug, .... Step 3: Find and take mug from drawer Execute: Find and take mug from countertop &gt; Think: Task failed! Execute: Find and take mug from cabinet &gt; Think: Task completed! Execute: Clean the mug using sinkbasin &gt; Think: Task completed! Execute: Find and take the mug from countertop &gt; Think: Task completed!</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Execute</head><figDesc>Webpage:[Search]   Task: I am looking to buy a product. i need a leak proof travel bottle that is reusable and comes in 6 pack, and price lower than 30.00 dollars Execute: Task &gt; search[leak proof reusable bottle] Page: [B0956WL7LT] ... [B098XRX6M2] ... &gt; Think: Task failed! Plan: Task # Think: To do this task, .... Step 1: Search "leak proof travel bottle reusable 6 pack" AND # Think: Now that I have found it, .... Step 2: Match product on search page AND # Think: Now that I have matched .... Step 3: Buy matching product Execute: Search "leak proof travel bottle reusable 6 pack" &gt; Think: Task completed! Plan: Match product on search page # Think: To do this task, .... Step 1: Detail Match [B09...7LT] on product page OR # Think: If that does not match, .... Step 2: Detail Match [B08...GBG] on product page OR # Think: If that does not match, .... Step 3: Search "leak proof bottle reusable 6 pack $30" Execute: Detail Match [B09...7LT] on product page &gt; Think: Task failed! Execute: Detail Match [B08...GBG] on product page &gt; Think: Task completed!</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><figDesc>Portable Travel Bottles Set ... [B08BGBPGBG] JND Plastic Squeeze Bottle ... Prev: Failed Match product on search page ...</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><head>Figure 10 :</head><label>10</label><figDesc>Figure10: Partial rolled out trajectories for WebShop with ADAPT. In the gray box we communicate to the planner the current (search) page that is visible to the agent, and once a matching product is found, we propagate it to future executor runs. Note "match on search page" corresponds to shortlist skill in Table5, and "detail match on product page" corresponds to match skill.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_14"><head>Figure 11 :</head><label>11</label><figDesc>Figure11: Partial rolled out trajectories for TextCraft using ADAPT. In the gray box, we propagate the inventory of the agent to subsequent executor calls. Note that while "diorite" is not directly present in the environment, i.e., it needs to be crafted. The executor LLM is able to inherently compose skills to fetch it without further decomposition.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_15"><head>Figure 12 :</head><label>12</label><figDesc>Figure 12: Comparison of LLM-generated success heuristic with gold environment rewards to compute success rates for all datasets.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_16"><figDesc>Step 1: Find and take mug # Think: Now that I am carrying mug, I will focus on putting it in/on desk. Step 2: Put mug in/on desk Execution Order: (Step 1 AND Step 2) Goal: Clean mug and put it in/on desk. Come up with an abstract plan to perform this task in a couple of steps. # Think: To perform this task, I need to find and take mug, clean it, and then put it on desk. First, I will focus on finding mug. Step 1: Find and take mug # Think: Now that I am carrying mug, I will focus on cleaning it. Step 2: Clean mug with sinkbasin # Think: Now that I have cleaned mug, I will focus on putting it in/on desk. Step 3: Put cleaned mug in/on desk Execution Order: (Step 1 AND Step 2 AND Step 3) Goal: Cool mug and put it in/on desk. Come up with an abstract plan to perform this task in a couple of steps. # Think: To perform this task, I need to find and take mug, cool it, and then put it on desk. First, I will focus on finding mug. Step 1: Find and take mug # Think: Now that I am carrying mug, I will focus on cooling it. Step 2: Cool mug with fridge # Think: Now that I have cooled mug, I will focus on putting it in/on desk. Step 3: Put cooled mug in/on desk Execution Order: (Step 1 AND Step 2 AND Step 3) Goal: Heat mug and put it in/on desk. Come up with an abstract plan to perform this task in a couple of steps. # Think: To perform this task, I need to find and take mug, heat it, and then put it on desk. First, I will focus on finding mug. Step 1: Find and take mug # Think: Now that I am carrying mug, I will focus on heating it. Step 2: Heat mug with microwave # Think: Now that I have heated mug, I will focus on putting it in/on desk. Step 3: Put heated mug in/on desk Execution Order: (Step 1 AND Step 2 AND Step 3) Goal: Look at mug under desklamp. Come up with an abstract plan to perform this task in a couple of steps. # Think: To perform this task, I need to find and take mug, and then go to the desklamp and use it. First, I will focus on finding mug. Step 1: Find and take mug # Think: Now that I have found and taken mug, I will focus on using the desklamp. Step 2: Use the desklamp Execution Order: (Step 1 AND Step 2) Goal: Find and take mug Come up with an abstract plan to perform this task in a couple of steps. # Think: To perform this task I need to find mug in the room. mug is likely to be in desk, cabinet, countertop, or drawer. Now I will focus on finding mug in each of these locations one by one. Step 1: Find and take mug from desk # Think: If mug not found so far, I will next look in the cabinet. Step 2: Find and take mug from cabinet # Think: If mug not found so far, I will next look in the countertop. Step 3: Find and take mug from countertop # Think: If mug not found so far, I will next look in the drawer. Step 4: Find and take mug from drawer Execution Order: (Step 1 OR Step 2 OR Step 3 OR Step 4)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_17"><figDesc>Step 1: fetch 6 dark oak planks Step 2: fetch 1 stick # Think: Now that I have collected the input ingredients, I can craft the dark oak sign using given command. Step 3: craft dark oak sign using 6 dark oak planks, 1 stick # Think: To succeed, I need to perform all these steps, one after the other. So I need to use the "AND" operator. Execution Order: (Step 1 AND Step 2 AND Step 3) Goal: fetch 6 dark oak planks. # Think: My target is 6 dark oak planks. From the list of crafting commands, only 1 command generates my target: craft 4 dark oak planks using 1 dark oak log. My ingredients are: 1 dark oak log. To successfully accomplish the goal, I should first get all the ingredients and then use the crafting command. Step 1: fetch 1 dark oak log # Think: Now that I have collected the input ingredients, I can craft dark oak planks using given command. I know that I cannot use a partial recipe. Step 2: craft 4 dark oak planks using 1 dark oak log # Think: This gives me 4 dark oak planks which is less than my desired 6 dark oak planks. I know that I cannot use a partial recipe. So my goal is not satisfied, I need to craft more dark oak planks by repeating Step 2 one more time. Step 3: craft 4 dark oak planks using 1 dark oak log # Think: To succeed, I need to perform all these steps, one after the other. So I need to use the "AND" operator.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 3 :</head><label>3</label><figDesc>ADAPT improves TextCraft (test) performance even as recipe depth increases. The maximum decomposition depth used by ADAPT to succeed at the task (k max ) also scales with the recipe depth.</figDesc><table><row><cell>Method</cell><cell cols="3">Recipe Depth kmax Success Rate</cell></row><row><cell>ReAct</cell><cell>2</cell><cell>1.0</cell><cell>26.9</cell></row><row><cell>ADAPT (dmax = 4)</cell><cell>2</cell><cell>1.9</cell><cell>78.2</cell></row><row><cell>ReAct</cell><cell>3</cell><cell>1.0</cell><cell>1.8</cell></row><row><cell>ADAPT (dmax = 4)</cell><cell>3</cell><cell>2.8</cell><cell>38.7</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 6 .</head><label>6</label><figDesc>First,</figDesc><table><row><cell>Method</cell><cell cols="2">#Products Success Rate</cell></row><row><cell>ReAct</cell><cell>3</cell><cell>27.5</cell></row><row><cell>ADAPT (dmax = 3)</cell><cell>3</cell><cell>47.5</cell></row><row><cell>ReAct</cell><cell>10</cell><cell>20.0</cell></row><row><cell>ADAPT (dmax = 3)</cell><cell>10</cell><cell>42.5</cell></row><row><cell cols="3">Table 8: ADAPT improves WebShop (dev) performance</cell></row><row><cell cols="3">irrespective of how many products (3 or 10) are chosen</cell></row><row><cell>from the search page.</cell><cell></cell><cell></cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>Project: https://allenai.github.io/adaptllm</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_1"><p>UnlikeYao et al. (2023b), we use a standardized executor prompt for all ALFWorld tasks, avoiding the agent to know the task-type apriori. Table6in Appendix C further demonstrates that ADAPT still improves over task-specific executors.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_2"><p>https://www.minecraft.net</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_3"><p>We use the completion model as chat variants of GPT-3.5 consistently underperform their completion counterparts<ref type="bibr" target="#b35">(Liu et al., 2023;</ref><ref type="bibr" target="#b36">Yang et al., 2023)</ref>. We discuss the effectiveness of ADAPT different LLMs in Sec.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_4"><p>6.2.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_5"><p>As we have only 11 tasks with recipe depth of 4, we exclude them from this analysis.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="7" xml:id="foot_6"><p>https://huggingface.co/meta-llama/ Llama-2-70b-hf</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="8" xml:id="foot_7"><p>https://huggingface.co/OpenLemur/ lemur-70b-chat-v1</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgements</head><p>Part of this work was done during internship at AI2 and was partially supported at <rs type="institution">UNC</rs> by <rs type="funder">NSF-CAREER</rs> Award <rs type="grantNumber">1846185</rs>, <rs type="institution">NSF-AI Engage Institute DRL-2112635</rs>, <rs type="funder">DARPA Machine Commonsense (MCS)</rs> Grant <rs type="grantNumber">N66001-19-2-4031</rs>,. We sincerely thank <rs type="person">Bodhisattwa Prasad Majumder</rs>, <rs type="person">Chris Callison-Burch</rs>, <rs type="person">Shashank Gupta</rs>, <rs type="person">Peter Jansen</rs>, <rs type="person">Bill Yuchen Lin</rs> and the <rs type="institution">Aristo team</rs> for their valuable feedback. We also thank <rs type="person">Swarnadeep Saha</rs>, <rs type="person">Elias Stengel-Eskin</rs>, and <rs type="person">Peter Hase</rs> for their feedback.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_fJbTqGB">
+					<idno type="grant-number">1846185</idno>
+				</org>
+				<org type="funding" xml:id="_wjmruNU">
+					<idno type="grant-number">N66001-19-2-4031</idno>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>WebShop Executor Prompt: Match (cont.)</head><p>You are given a webpage of an item on an online shopping website and a criteria. Your task is to answer if the product on the page exactly matches the criteria. Not the criteria could have multiple requirements that should be checked one by one and all must satisfy for an exact match.</p><p>Here are a few examples:</p><p>Criteria: 3 ounce bottle of citrus deodorant for sensitive skin that is priced lower than $30 and natural. Item Page: [Back to Search] [&lt; Prev] scent [assorted scents][bright citrus][calming lavender][ginger fresh][simply non-scents] size [travel set (4-pack)][3 ounce (pack of 1)][3-ounce (2-pack)] Bright Citrus Deodorant by Earth Mama | Natural and Safe for Sensitive Skin, Pregnancy and Breastfeeding, Contains Organic Calendula 3-Ounce Price: $10.99 Rating: N.A. [Description] Features: NEW from Earth Mama (formerly Earth Mama Angel Baby), formulated especially for pregnancy, breastfeeding and sensitive skin Contains organic grapefruit, tangerine and calendula NO propylene glycol, artificial fragrance, parabens or aluminum Dermatologist tested and clinically tested for irritation Better than natural organic! NSF/ANSI 305 Certified by Oregon Tilth [Reviews] [Attributes] [Buy Now]</p><p>Answer: The product is available in 3 ounce size, is citrus and suitable for sensitive skin. It is also organic or natural.</p><p>Its price is $10.99 which is less than $30. Thus, the answer is True (exact match).</p><p>Criteria: 3 ounce bottle of citrus deodorant for sensitive skin that is priced lower than $30 and natural. Item Page: [Back to Search] [&lt; Prev] size [3 ounce][3 ounce (pack of 1)] unit count [2.0][3.0] Barrel and Oak -Aluminum-Free Deodorant, Deodorant for Men, Essential Oil-Based Scent, 24-Hour Odor Protection, Cedar &amp; Patchouli Blend, Gentle on Sensitive Skin (Mountain Sage, 2.7 oz, 2-Pack) Price: $15.95 Rating: N.A. [Description] Features: About this item WHY ALUMINUM-FREE DEODORANT? Aluminum-free deodorants use more natural ingredients unlike antiperspirants, which use chemicals to block sweat. Safely fight odor for 24 hours with Barrel &amp; Oak's deodorantsour gentle formula is easy on sensitive skin. START SMELLING LIKE THE MAN YOU WANT TO BE: Our mountain sage aluminum-free men's deodorant is naturally fragranced with an outdoorsy scent of crisp conifer, sage, &amp; citrus. Think sweet notes of citrus with earthy tones of cedar &amp; patchouli. PREMIUM INGREDIENTS FOR NATURAL FRAGRANCES: Our deodorants for men are composed of natural, essential oil-based scents. These natural fragrance deodorants are more subtle than their synthetic counterparts, but they're better for you &amp; the planet. DESIGNED FOR THE MODERN MAN: Barrel &amp; Oak has a full spectrum of grooming &amp; body care products that are designed with function, fragrance, &amp; effective ingredients for the health-conscious &amp; practical modern man. Give your body what it deserves. EARTH-FRIENDLY, YOU-FRIENDLY, WALLET-FRIENDLY: Our premium products for men are scented with natural fragrances &amp; essential oils, free of parabens, phthalates, &amp; SLS, packaged in recyclable materials, cruelty-free, &amp; vegan or vegetarian. [Reviews] [Attributes] [Buy Now] Answer: The product is not citrus in nature. It does not match the criteria. It's price is $15.95 which is less than $30.</p><p>Thus, the answer is False (not an exact match). Now here is the criteria and item page for the another task. Try you best to determine exact match, otherwise, respond with "False", i.e., no exact match. Generate an explanation before the answer to justify your decision.</p><p>Criteria: {} Item Page: {} Answer:</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Michael Ahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Byron</forename><surname>Cortes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuyuan</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keerthana</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hausman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.01691</idno>
+		<title level="m">Do as i can, not as i say: Grounding language in robotic affordances</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Neural module networks</title>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Andreas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcus</forename><surname>Rohrbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Trevor</forename><surname>Darrell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Klein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE conference on computer vision and pattern recognition</title>
+		<meeting>the IEEE conference on computer vision and pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="39" to="48" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Recent advances in hierarchical reinforcement learning. Discrete event dynamic systems</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Andrew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sridhar</forename><surname>Barto</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mahadevan</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2003">2003</date>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="page" from="41" to="77" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">A persistent spatial semantic representation for high-level natural language instruction execution</title>
+		<author>
+			<persName><forename type="first">Valts</forename><surname>Blukis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Paxton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dieter</forename><surname>Fox</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Animesh</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoav</forename><surname>Artzi</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="706" to="717" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Wordcraft: a human-ai collaborative editor for story writing</title>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Coenen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Davis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daphne</forename><surname>Ippolito</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emily</forename><surname>Reif</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ann</forename><surname>Yuan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.07430</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Textworld: A learning environment for text-based games</title>
+		<author>
+			<persName><forename type="first">Marc-Alexandre</forename><surname>Côté</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akos</forename><surname>Kádár</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingdi</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Kybartas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tavian</forename><surname>Barnes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emery</forename><surname>Fine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Moore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Hausknecht</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Layla</forename><forename type="middle">El</forename><surname>Asri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mahmoud</forename><surname>Adada</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Computer Games: 7th Workshop, CGW 2018, Held in Conjunction with the 27th International Conference on Artificial Intelligence</title>
+		<meeting><address><addrLine>Stockholm, Sweden</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2018-07-13">2019. 2018. July 13. 2018</date>
+			<biblScope unit="page" from="41" to="75" />
+		</imprint>
+	</monogr>
+	<note>Revised Selected Papers 7</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">David</forename><surname>Springer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Winnie</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aitor</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Lewkowycz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raphael</forename><forename type="middle">Gontijo</forename><surname>Bieber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhuai</forename><surname>Lopes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Rif</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jascha</forename><surname>Saurous</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sohl-Dickstein</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2207.10342</idno>
+		<title level="m">Language model cascades</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Nouha</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ximing</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Sclar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lorraine</forename><surname>Xiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liwei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Jian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Yuchen Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chandra</forename><surname>West</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bhagavatula</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Ronan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jena</forename><forename type="middle">D</forename><surname>Bras</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hwang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.18654</idno>
+		<title level="m">Faith and fate: Limits of transformers on compositionality</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Htn planning: Complexity and expressivity</title>
+		<author>
+			<persName><forename type="first">Kutluhan</forename><surname>Erol</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Hendler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dana</forename><forename type="middle">S</forename><surname>Nau</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI</title>
+		<imprint>
+			<date type="published" when="1994">1994</date>
+			<biblScope unit="volume">94</biblScope>
+			<biblScope unit="page" from="1123" to="1128" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Minedojo: Building open-ended embodied agents with internet-scale knowledge</title>
+		<author>
+			<persName><forename type="first">Linxi</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanzhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Mandlekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuncong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoyi</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>De-An</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuke</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anima</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Anandkumar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="18343" to="18362" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Litu</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2301.12726</idno>
+		<title level="m">Specializing smaller language models towards multi-step reasoning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">An overview of hierarchical task network planning</title>
+		<author>
+			<persName><forename type="first">Ilche</forename><surname>Georgievski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marco</forename><surname>Aiello</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1403.7426</idno>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">Malik</forename><surname>Ghallab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dana</forename><surname>Nau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paolo</forename><surname>Traverso</surname></persName>
+		</author>
+		<title level="m">Automated Planning: theory and practice</title>
+		<imprint>
+			<publisher>Elsevier</publisher>
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Neural module networks for reasoning over text</title>
+		<author>
+			<persName><forename type="first">Nitish</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Roth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sameer</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matt</forename><surname>Gardner</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Hddl: An extension to pddl for expressing hierarchical planning problems</title>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Höller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gregor</forename><surname>Behnke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pascal</forename><surname>Bercher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Susanne</forename><surname>Biundo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Humbert</forename><surname>Fiorino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Damien</forename><surname>Pellier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ron</forename><surname>Alford</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI conference on artificial intelligence</title>
+		<meeting>the AAAI conference on artificial intelligence</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="9883" to="9891" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Towards reasoning in large language models: A survey</title>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">-Chuan</forename><surname>Chang</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.findings-acl.67</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: ACL 2023</title>
+		<meeting><address><addrLine>Toronto, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="1049" to="1065" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swaroop</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Huaixiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adams</forename><forename type="middle">Wei</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinying</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.01798</idno>
+		<title level="m">Large language models cannot self-correct reasoning yet</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">2023b. Inner monologue: Embodied reasoning through planning with language models</title>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harris</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacky</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Chebotar</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<biblScope unit="page" from="1769" to="1782" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Skill induction and planning with latent language</title>
+		<author>
+			<persName><forename type="first">Pratyusha</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonio</forename><surname>Torralba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Andreas</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2022.acl-long.120</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 60th Annual Meeting of the Association for Computational Linguistics<address><addrLine>Dublin, Ireland</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="1713" to="1726" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Back to the blocks world: Learning new actions through situated human-robot dialogue</title>
+		<author>
+			<persName><forename type="first">Lanbo</forename><surname>She</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaohua</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunyi</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joyce</forename><surname>Chai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Xi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 15th annual meeting of the special interest group on discourse and dialogue (SIGDIAL)</title>
+		<meeting>the 15th annual meeting of the special interest group on discourse and dialogue (SIGDIAL)</meeting>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="89" to="97" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Large language models can be easily distracted by irrelevant context</title>
+		<author>
+			<persName><forename type="first">Freda</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kanishka</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Huai Hsin Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Scharli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beck</forename><surname>Labash</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.11366</idno>
+		<title level="m">Reflexion: Language agents with verbal reinforcement learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page">14</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">Koustuv</forename><surname>Kumar Shridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Sinha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianlu</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ping</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ram</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mrinmaya</forename><surname>Pasunuru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Sachan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Asli</forename><surname>Weston</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Celikyilmaz</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.07961</idno>
+		<title level="m">The art of llm refinement: Ask, refine, and trust</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Alfred: A benchmark for interpreting grounded instructions for everyday tasks</title>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Shridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Thomason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Gordon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Winson</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roozbeh</forename><surname>Mottaghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dieter</forename><surname>Fox</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF conference on computer vision and pattern recognition</title>
+		<meeting>the IEEE/CVF conference on computer vision and pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="10740" to="10749" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">ALFWorld: Aligning Text and Embodied Environments for Interactive Learning</title>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Shridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingdi</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc-Alexandre</forename><surname>Côté</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Trischler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Hausknecht</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Learning Representations (ICLR)</title>
+		<meeting>the International Conference on Learning Representations (ICLR)</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Progprompt: Generating situated robot task plans using large language models</title>
+		<author>
+			<persName><forename type="first">Ishika</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Valts</forename><surname>Blukis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arsalan</forename><surname>Mousavian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ankit</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danfei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Tremblay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dieter</forename><surname>Fox</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Thomason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Animesh</forename><surname>Garg</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2023 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="11523" to="11530" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Llm-planner: Few-shot grounded planning for embodied agents with large language models</title>
+		<author>
+			<persName><forename type="first">Hee</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaman</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clayton</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><forename type="middle">M</forename><surname>Washington</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Lun</forename><surname>Sadler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Chao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Su</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF International Conference on Computer Vision</title>
+		<meeting>the IEEE/CVF International Conference on Computer Vision</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="2998" to="3009" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Gpt-4 doesn&apos;t know it&apos;s wrong: An analysis of iterative prompting for reasoning problems</title>
+		<author>
+			<persName><forename type="first">Kaya</forename><surname>Stechly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Marquez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Subbarao</forename><surname>Kambhampati</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.12397</idno>
+		<idno>ArXiv, abs/2305.14564</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Simeng Sun, Y. Liu, Shuo Wang, Chenguang Zhu, and Mohit Iyyer</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>Pearl: Prompting large language models to plan and execute actions over long documents</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Between mdps and semi-mdps: A framework for temporal abstraction in reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Doina</forename><surname>Richard S Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Satinder</forename><surname>Precup</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Singh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artificial intelligence</title>
+		<imprint>
+			<biblScope unit="volume">112</biblScope>
+			<biblScope unit="issue">1-2</biblScope>
+			<biblScope unit="page" from="181" to="211" />
+			<date type="published" when="1999">1999</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">The web as a knowledge-base for answering complex questions</title>
+		<author>
+			<persName><forename type="first">Alon</forename><surname>Talmor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Berant</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/N18-1059</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2018 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</title>
+		<title level="s">Long Papers</title>
+		<meeting>the 2018 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies<address><addrLine>Louisiana</addrLine></address></meeting>
+		<imprint>
+			<publisher>New Orleans</publisher>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="641" to="651" />
+		</imprint>
+	</monogr>
+	<note>Association for Computational Linguistics</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Albert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amjad</forename><surname>Almahairi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasmine</forename><surname>Babaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolay</forename><surname>Bashlykov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soumya</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prajjwal</forename><surname>Bhargava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shruti</forename><surname>Bhosale</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.09288</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Open foundation and fine-tuned chat models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">Guanzhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqi</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Mandlekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaowei</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuke</forename><surname>Zhu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.16291</idno>
+		<title level="m">Linxi Fan, and Anima Anandkumar. 2023a. Voyager: An open-ended embodied agent with large language models</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Plan-and-solve prompting: Improving zeroshot chain-of-thought reasoning by large language models</title>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanyu</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihuai</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqiang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunshi</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roy</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ka-Wei</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ee-Peng</forename><surname>Lim</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.acl-long.147</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 61st Annual Meeting of the Association for Computational Linguistics<address><addrLine>Toronto, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="2609" to="2634" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24824" to="24837" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Huggingface&apos;s transformers: State-ofthe-art natural language processing</title>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Wolf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lysandre</forename><surname>Debut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Sanh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julien</forename><surname>Chaumond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clement</forename><surname>Delangue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Moi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierric</forename><surname>Cistac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Rault</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rémi</forename><surname>Louf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Morgan</forename><surname>Funtowicz</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1910.03771</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yiheng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongjin</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Xing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyu</forename><surname>Mi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weijia</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yitao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianbao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhoujun</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siheng</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingpeng</forename><surname>Kong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bailin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Yu</surname></persName>
+		</author>
+		<title level="m">Lemur: Harmonizing natural language and code for language agents</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Intercode: Standardizing and benchmarking interactive coding with execution feedback</title>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akshara</forename><surname>Prabhakar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.14898</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Buy product [B078GWRC1J] that matches criteria: 3 ounce bottle of bright citrus deodorant for sensitive skin, and price lower than 50.00 dollars Action: think[&apos;I should be on the search page where I can see a list of products, I should verify that</title>
+		<imprint>
+			<publisher>WebShop Executor Prompt: Buy Instruction</publisher>
+		</imprint>
+		<respStmt>
+			<orgName>OK. Action: load Observation</orgName>
+		</respStmt>
+	</monogr>
+	<note>Back to Search] Page 1 (Total results: 50</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Bright Citrus Deodorant by Earth Mama | Safe for Sensitive Skin, Pregnancy and Breastfeeding, Contains Organic Calendula 3-Ounce</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="page">99</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Barrel and Oak -Aluminum-Free Deodorant, Deodorant for Men, Essential Oil-Based Scent, 24-Hour Odor Protection</title>
+	</analytic>
+	<monogr>
+		<title level="j">Cedar &amp; Patchouli Blend, Gentle on Sensitive Skin</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Ginger Fresh Deodorant by Earth Mama | Natural and Safe for Sensitive Skin, Pregnancy and Breastfeeding, Contains Organic Calendula 3-Ounce $10.99 Action: think[&apos;I can spot product [B078GWRC1J] and it is a clickable link since its enclosed in square brackets. I should click on it</title>
+		<imprint/>
+	</monogr>
+	<note>Observation: OK. Action: click[B078GWRC1J] Observation: [Back to Search</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">]</forename><surname>Prev</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Scent</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note>assorted scents bright citrus calming lavender ginger fresh simply non-scents travel set (4-pack 3 ounce (pack of 1) 3-ounce (2-pack</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Bright Citrus Deodorant by Earth Mama | Natural and Safe for Sensitive Skin, Pregnancy and Breastfeeding, Contains Organic Calendula 3-Ounce Price: $10</title>
+		<imprint>
+			<biblScope unit="volume">99</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">Action: think[I&apos;m already on the product page. I see multiple possible options enclosed in &apos;[]&apos; for scent and size for this product. To match the input criteria, I should click on options &apos;[bright citrus]&apos; for scent and &apos;[3 ounce (pack of 1) ]&apos; for size one by one and then buy in the end.] Observation: OK. Action: click[bright citrus] Observation: You have clicked bright citrus</title>
+		<imprint>
+			<publisher>{}</publisher>
+		</imprint>
+	</monogr>
+	<note>Buy Now Action: click[3 ounce (pack of 1)] Observation: You have clicked 3 ounce (pack of 1) Action: think[My task is to buy the product, for it should to click &apos;buy now&apos;] Observation: OK. Action: click[Buy Now] Observation: You have clicked buy now Action: think[I finished buying the product. Task completed!] Here is another task in which you need to buy a product. When you finish buying the product with the most relevant choices, use &apos;think[Task completed&apos;]. If you cannot find the matching options or proceed, think[&apos;Task failed&apos;] Note that you can only click on text enclosed in &apos;[]&apos; on the webpage. Everything else is only a description, not valid with the &quot; click&quot; action. Instruction: Buy product [{}] that matches the criteria</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

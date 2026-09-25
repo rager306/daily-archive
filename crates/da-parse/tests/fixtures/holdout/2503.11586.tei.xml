@@ -1,0 +1,1880 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">BROADEN YOUR SCOPE! EFFICIENT MULTI-TURN CONVERSATION PLANNING FOR LLMS USING SEMANTIC SPACE</title>
+				<funder>
+					<orgName type="full">Institute for Infocomm Research of Agency for Science, Technology and Research (A ⋆ STAR)</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">National Research Foundation Singapore</orgName>
+				</funder>
+				<funder ref="#_xjdKqJh">
+					<orgName type="full">NUS</orgName>
+				</funder>
+				<funder ref="#_hATzB2w">
+					<orgName type="full">Singapore Ministry of Digital Development and Innovation, National AI Group</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">Centre for Frontier AI Research of Agency for Science, Technology and Research (A ⋆ STAR)</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-06-07">7 Jun 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Zhiliang</forename><surname>Chen</surname></persName>
+							<email>chenzhiliang@u.nus.edu</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">National University of Singapore</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="department">Institute for Infocomm Research (I2R)</orgName>
+								<address>
+									<region>A*STAR</region>
+									<country key="SG">Singapore</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xinyuan</forename><surname>Niu</surname></persName>
+							<email>xinyuan@u.nus.edu</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">National University of Singapore</orgName>
+							</affiliation>
+							<affiliation key="aff2">
+								<orgName type="department">Centre for Frontier AI Research (CFAR)</orgName>
+								<address>
+									<region>A*STAR</region>
+									<country key="SG">Singapore</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Chuan-Sheng</forename><surname>Foo</surname></persName>
+							<email>foo_chuan_sheng@i2r.a-star.edu.sg</email>
+							<affiliation key="aff1">
+								<orgName type="department">Institute for Infocomm Research (I2R)</orgName>
+								<address>
+									<region>A*STAR</region>
+									<country key="SG">Singapore</country>
+								</address>
+							</affiliation>
+							<affiliation key="aff2">
+								<orgName type="department">Centre for Frontier AI Research (CFAR)</orgName>
+								<address>
+									<region>A*STAR</region>
+									<country key="SG">Singapore</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Bryan</forename><surname>Kian</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Hsiang</forename><surname>Low</surname></persName>
+							<email>lowkh@comp.nus.edu.sg</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">National University of Singapore</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">BROADEN YOUR SCOPE! EFFICIENT MULTI-TURN CONVERSATION PLANNING FOR LLMS USING SEMANTIC SPACE</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-06-07">7 Jun 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">44545C476E825EEA2283D5DB68F74F4D</idno>
+					<idno type="arXiv">arXiv:2503.11586v2[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:58+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large language models (LLMs) are used in chatbots or AI assistants to hold conversations with a human user. In such applications, the quality (e.g., user engagement, safety) of a conversation is important and can only be exactly known at the end of the conversation. To maximize its expected quality, conversation planning reasons about the stochastic transitions within a conversation to select the optimal LLM response at each turn. Existing simulation-based conversation planning algorithms typically select the optimal response by simulating future conversations with a large number of LLM queries at every turn. However, this process is extremely time-consuming and hence impractical for real-time conversations. This paper presents a novel approach called Semantic space COnversation Planning with improved Efficiency (SCOPE) that exploits the dense semantic representation of conversations to perform conversation planning efficiently. In particular, SCOPE models the stochastic transitions in conversation semantics and their associated rewards to plan entirely within the semantic space. By doing so, SCOPE selects the optimal LLM response at every conversation turn without needing additional LLM queries for simulation. As a result, SCOPE can perform conversation planning 70 times faster than conventional simulation-based planning algorithms when applied to a wide variety of conversation starters and two reward functions seen in the real world, yet achieving a higher reward within a practical planning budget. Our code can be found at: <ref type="url" target="https://github.com/chenzhiliang94/convo-plan-SCOPE">https://github.com/chenzhiliang94/convo-plan-SCOPE</ref>.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>The rise of large language models (LLMs) has introduced numerous conversational tools in the market, such as Replika (<ref type="url" target="https://replika.com">https://replika.com</ref>) and chatbots <ref type="bibr" target="#b8">(Dam et al., 2024)</ref>. As these conversational tools become widespread, there are significant commercial and regulatory interests in ensuring that they produce high quality conversations with the human users. For example, a chatbot is commercially motivated to select responses at every conversation turn to produce a longer and more engaging conversation with a human user. In this case, the quality of a conversation can only be exactly known at the end of the conversation by accumulating the rewards (according to some metric such as conversation engagement, safety) over multiple turns. To produce an optimal conversation where the cumulative reward across multiple turns is maximized, we need to perform conversation planning that reasons about the stochastic transitions in a conversation to strategically select an optimal LLM response at each conversation turn.</p><p>Several recent works are myopic in conversational planning because they merely select the LLM response that seems immediately "good" at each conversation turn. For example, one might be tempted to use a predefined reward function to select the LLM response with the highest immediate reward <ref type="bibr" target="#b18">(Kumar et al., 2024;</ref><ref type="bibr" target="#b46">Yang et al., 2023)</ref> at each turn. However, myopic approaches do not consider how the selected LLM response influences the conversation (and rewards) later on. This implies a response that seems good at first might not lead to better conversation rewards. In Appendix A.1, we give some illustrative examples where LLM responses with similar instantaneous rewards eventually lead to conversations of differing quality in metrics such as conversation harmfulness. Hence, without explicitly reasoning about how a selected LLM response influences the conversation later, myopic approaches are suboptimal in maximizing the quality of the overall conversation.</p><p>Alternatively, an LLM can be fine-tuned <ref type="bibr" target="#b30">(Ouyang et al., 2022;</ref><ref type="bibr" target="#b33">Rafailov et al., 2023)</ref> to produce a response that implicitly maximizes a cumulative reward metric across multiple conversation turns. While non-myopic if done correctly, these approaches are resource-intensive <ref type="bibr" target="#b49">(Zhang et al., 2024)</ref>, requiring manual preference labels and repeated model fine-tuning. Therefore, fine-tuning approaches are impractical for an LLM owner deploying LLMs for different use cases that require different reward metrics. On the other hand, our paper focuses on the training-free setting (no fine-tuning of LLMs) and explores inference time strategies <ref type="bibr" target="#b25">(Lin et al., 2024;</ref><ref type="bibr">Zhou et al., 2024b;</ref><ref type="bibr" target="#b42">Wu et al., 2024;</ref><ref type="bibr" target="#b44">Xu et al., 2024)</ref> to select LLM responses in a conversation.</p><p>More recently, some works have also explored using LLMs and simulation-based search algorithms <ref type="bibr" target="#b46">(Yu et al., 2023;</ref><ref type="bibr">Koh et al., 2024;</ref><ref type="bibr" target="#b11">Hao et al., 2023;</ref><ref type="bibr" target="#b16">Kim et al., 2024)</ref> to plan in LLM-related problems such as goal-oriented dialogues <ref type="bibr" target="#b46">(Yu et al., 2023)</ref>, language games <ref type="bibr" target="#b14">(Jang et al., 2021)</ref> and more. The popularity of these algorithms is driven mostly by the ubiquitous effectiveness of LLMs, using high quality look-ahead simulation with the help of another LLM to find out which responses lead to higher cumulative rewards in the simulated conversation. However, these simulation-based algorithms suffer from high planning costs <ref type="bibr">(Koh et al., 2024;</ref><ref type="bibr" target="#b50">Zhao et al., 2023)</ref>, requiring hundreds or even close to thousands of seconds to perform sufficient look-ahead simulation during runtime (details covered in Section 3.2). Such large planning budget is a luxury unavailable in real-time conversations, where a human user expects the LLM to respond almost immediately. Thus, given practical planning budget, these simulation-based search algorithms do not achieve sufficient simulation scope to select optimal LLM responses. Furthermore, these LLM queries could also incur excessive monetary costs if they use API calls from external LLM providers. Therefore, conventional simulation-based algorithms are impractical in our problem setting due to the large planning costs involved. In our experiments (Section 6.3), we show that such algorithms indeed perform poorly in conversation planning under practical planning budget. During runtime (right), SCOPE uses these learnt models to perform MCTS at a broader scope in semantic space without needing additional LLM queries for simulation (Algorithm 1), allowing us to select an optimal LLM response that maximizes the cumulative reward in a conversation. This paper presents a novel approach called Semantic Space COnversation Planning with improved Efficiency (SCOPE) which exploits the dense semantic representation of conversations to perform conversation planning in a semantic space (Figure <ref type="figure" target="#fig_0">1</ref>). Such representations have been shown to capture the semantics of natural language conversations effectively <ref type="bibr" target="#b9">(Devlin et al., 2019;</ref><ref type="bibr" target="#b5">Chen et al., 2020)</ref>. During the learning phase, SCOPE learns the stochastic transitions in conversation and their associated rewards using a lightweight transition and reward model in semantic space. During runtime, SCOPE uses the learnt models to perform Monte Carlo tree search (MCTS) and simulation in semantic space, selecting an LLM response that leads to high quality conversations without using costly LLM queries. This results in a non-myopic approach that is effective even under realistic planning budgets. As such, our work presents a paradigm shift, similar to that found in <ref type="bibr" target="#b15">Kambhampati et al. (2024)</ref>: instead of relying on an LLM fully for simulation in conversation planning, our approach only uses an LLM to propose candidate responses, before using SCOPE to plan in semantic space without needing costly LLM queries. Concretely, our contributions are:</p><p>• We transform the multi-turn conversation planning problem, originally viewed as a Markov decision process (MDP), into its semantic form representation (Section 4.1). The semantic form preserves the optimal action (LLM response) selected at every conversation turn in a real-time conversation.</p><p>• We introduce a novel approach, SCOPE, that solves this transformed MDP by exploiting dense conversation semantic representations to learn a lightweight transition and reward model over conversation semantics. By modeling the stochastic transitions within a conversation and their associated rewards in semantic space, SCOPE performs MCTS entirely in semantic space without needing additional LLM queries to search for optimal LLM responses at every conversation turn. By doing so, SCOPE plans 70 times faster than conventional simulation-based planning algorithms, allowing it to select optimal LLM responses under practical planning budget.</p><p>• We use SCOPE to select LLM responses in a wide range of real-world multi-turn conversations and show that learning the transition and reward models in semantic space allows SCOPE to achieve higher cumulative rewards than conventional non-myopic and myopic planning algorithms under practical planning budget and two realistic reward functions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">CONVERSATION PLANNING FOR LLMS</head><p>2.1 PROBLEM SETTING Human: Can you tell me a fact about Country XXX? LLM: The world cup was held twice in Country XXX. Human: That's cool! I didn't know that! Can you tell me more? 𝑠 𝑠′ 𝑎 𝑠 𝑠′ Stochastic transition</p><p>Figure <ref type="figure">2</ref>: Example of a stochastic transition from s to s ′ after taking action a in MDP for conversation planning.</p><p>Our work focuses on real-time, multi-turn conversations between the LLM and a human user. Briefly, a conversation consists of alternating responses given by each party at every conversation turn. Given a reward function which assigns a numerical reward to each conversation turn (dependent on the response given by the LLM and/or human user), conversation planning aims to select the optimal LLM response out of a candidate pool of responses at every conversation turn, maximizing expected cumulative reward over multiple turns. With an appropriately chosen reward function (some examples given in Section 6.1), the cumulative reward indicates the overall quality of the conversation (e.g., engagement, safety). Conversation planning is challenging because (a) we need to account for the stochastic response of the human user (which we cannot directly control) at every conversation turn and (b) an LLM response selected at the current turn influences later conversations, affecting future rewards obtained.</p><p>Inspired by similar challenges found in the broad class of sequential decision making problems <ref type="bibr" target="#b2">(Bellman, 1957)</ref> and dialogue planning <ref type="bibr" target="#b46">(Yu et al., 2023)</ref> containing stochastic environments and sequential action selection, we formulate conversation planning as a Markov decision process (MDP) (Howard, 2012) defined by (S, A, T, R) shown in Figure <ref type="figure">2</ref>, where</p><p>• S is a set of states. Each state s ∈ S is the conversation context comprising all responses given chronologically from prior conversation turns and ending in a human response.</p><p>• A is a set of actions. Each action a ∈ A is an LLM response shown to the human user at a conversation turn. Similar to prior works, a candidate set of LLM responses is generated at each turn in which a is selected. After selecting an LLM response (i.e., taking action a), the human user responds, transitioning the conversation to a new state s ′ (see Figure <ref type="figure">2</ref>).</p><p>• T : S × A × S → [0, 1] is a transition function specifying the probability of transitioning from a conversation state s ∈ S to the next state s ′ ∈ S after executing action a (i.e., selecting a particular LLM response to show the human user). T captures how a human user stochastically responds at every conversation turn. In our paper, we are concerned about modeling a simulator to sample transitions from T and do not necessarily need to calculate the transition probability.</p><p>• R(s, a, s ′ ) is an instantaneous reward function associated with the state transition at every conversation turn. This reward can be dependent on both LLM and human response (i.e., dependent on s, a and s ′ ), and is chosen by the LLM owner beforehand.</p><p>Given this MDP, our goal is to, at each conversation state s, select an LLM response a * s which maximizes the expected cumulative reward (w.r.t. the stochastic transition function) over a conversation horizon (e.g., 5 conversation turns):</p><formula xml:id="formula_0">a * s ≜ arg max a∈A s ′ ∈S T (s, a, s ′ )(R(s, a, s ′ ) + γV (s ′ )) (<label>1</label></formula><formula xml:id="formula_1">)</formula><p>where γ is the discount factor <ref type="bibr" target="#b1">(Amit et al., 2020</ref>) and V (s ′ ), the value of state s ′ , is recursively defined as</p><formula xml:id="formula_2">V (s ′ ) ≜ max a ′ ∈A s ′′ ∈S T (s ′ , a ′ , s ′′ )(R(s ′ , a ′ , s ′′ ) + γV (s ′′ )) .<label>(2)</label></formula><p>While one is tempted to solve our MDP using off-the-shelf approaches such as value iteration <ref type="bibr" target="#b31">(Pashenkova et al., 1996)</ref> to learn an optimal response selection policy, these approaches are infeasible in our problem setting due to the tremendous number of possible conversations between a human user and the LLM (i.e., huge number of states and actions).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">MONTE CARLO TREE SEARCH (MCTS) FOR CONVERSATION PLANNING</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">DESCRIPTION OF VANILLA MCTS</head><p>More recently, simulation-based planning algorithms like MCTS <ref type="bibr" target="#b4">(Browne et al., 2012)</ref> have shown success in tackling MDPs surrounding language-based tasks <ref type="bibr" target="#b46">(Yu et al., 2023;</ref><ref type="bibr">Koh et al., 2024)</ref> by planning around more promising actions and states. MCTS uses a simulator of the environment to explore future states and actions, using observed cumulative rewards from simulation to learn stateaction values via a Q-function Q(s, a) <ref type="bibr" target="#b29">(Mnih et al., 2013;</ref><ref type="bibr" target="#b41">Watkins &amp; Dayan, 1992)</ref>. The state-action value approximates the expected cumulative reward that can be achieved by action a at state s.</p><p>Our approach, SCOPE, uses MCTS as its backbone. Here, we provide a brief overview of MCTS (details can be found in Appendix A.2). In MCTS, we assume access to a budget of K iterations. At iteration k during the selection phase, we traverse a search tree from the starting state according to the Upper-confidence Tree (UCT) <ref type="bibr" target="#b10">(Galván &amp; Simpson, 2021)</ref> tree-search policy: π(s) ≜ arg max a∈A Q k (s, a) + λ (log N k (s))/N k (s, a) where Q k (s, a) is the state-action value estimate of selecting action a at state s during iteration k, N k (s) is the number of times s is visited, N k (s, a) is the number of times action a has been selected at s, and λ is a constant which encourages exploration when selecting actions. With the ubiquitous success of LLMs, using an external LLM as a simulator of human user <ref type="bibr" target="#b46">(Yu et al., 2023;</ref><ref type="bibr" target="#b47">Yao et al., 2024)</ref> has become a popular way to perform simulation rollouts in MCTS (although we argue in the next section that doing so is impractical). Finally, the state-action value is updated with observed cumulative reward R (with discount factor γ) at the end of iteration</p><formula xml:id="formula_3">k via Q k (s, a) = Q k-1 (s, a)(1 -1/N k (s, a)) + R/N k (s, a).</formula><p>From hereon, we refer to the procedure of MCTS with an external LLM simulator as vanilla MCTS.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">BOTTLENECK FOR REAL-TIME CONVERSATION PLANNING</head><p>While MCTS has shown promising results in games such as Go <ref type="bibr" target="#b37">(Silver et al., 2016)</ref> and Hearthstone <ref type="bibr">( Świechowski et al., 2018)</ref>, it is impractical for real-time conversation planning as it requires a large planning budget to simulate future conversations. In particular, performing multiple simulation rollouts at every conversation turn with an external LLM acting as a human user simulator requires a large number of LLM inferences (or API calls to an LLM service provider, such as ChatGPT (Ope-nAI, 2023)). Using an LLM to simulate a conversation with responses of reasonable length takes a few seconds. So, the key bottleneck is that we cannot perform sufficient number of simulation rollouts (a key step in the MCTS algorithm) within a reasonable amount of time. As we can only simulate a very narrow scope of search space, we cannot accurately estimate state-action values to select the optimal LLM response at every turn. Interestingly, we note that many prior simulationbased planning approaches for LLMs <ref type="bibr">(Koh et al., 2024;</ref><ref type="bibr" target="#b14">Jang et al., 2021;</ref><ref type="bibr">Zhou et al., 2024a)</ref> use large amount of time to plan effectively during runtime. In fact, results from <ref type="bibr" target="#b46">Yu et al. (2023)</ref> showed that 740 seconds of search time (at each conversation turn) is needed for vanilla MCTS to achieve reasonable planning performance in a goal-oriented dialogue task. This is clearly unreasonable for any real-time conversation constrained by a small window of response time. Indeed, our experiments (Section 6.3) show that vanilla MCTS is ineffective for conversation planning under realistic planning budgets. To overcome this bottleneck, we introduce SCOPE in the next section, a novel approach which exploits conversation semantics to avoid costly simulations with LLM queries.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">INTRODUCING SCOPE</head><p>The key intuition behind SCOPE is to perform MCTS without explicitly simulating future conversations with costly LLM queries. To do so, we leverage dense semantic representations <ref type="bibr" target="#b9">(Devlin et al., 2019;</ref><ref type="bibr" target="#b22">Lee et al., 2024;</ref><ref type="bibr" target="#b36">Rui et al., 2024;</ref><ref type="bibr">Lau et al., 2024a)</ref> of natural language in a continuous space which we refer to as semantic space. Notably, we found that a conversation can be captured effectively by a series of stochastic transitions in the semantic space (we provide empirical evidence in Appendix A.8) across multiple turns. By predicting these transitions and learning the instantaneous rewards associated with each point in semantic space, we can perform MCTS with simulations in semantic space instead of using time-consuming LLM queries. This results in a non-myopic approach that selects the optimal LLM responses in real-time conversations. While prior state abstraction works <ref type="bibr" target="#b12">(Hostetler et al., 2014)</ref> have tried to cluster MDP states based on feature similarities, they still rely on costly simulations in the original environment. On the contrary, our approach performs simulations entirely in the semantic space, which are much less time-consuming.</p><p>SCOPE consists of two distinct phases (Figure <ref type="figure" target="#fig_0">1</ref>). During the learning phase, we use static conversation data to learn a lightweight transition and reward model over the semantic space. Both models are significantly faster to query as compared to LLMs, as only a single forward pass of the model is required to simulate each conversation transition. The transition model (Section 4.2) predicts how a conversation transitions stochastically from one point to another in the semantic space while the reward model (Section 4.3) predicts the reward associated with each point in semantic space. Therefore, every conversation can be represented as a path in this semantic space, and our goal is to search for the optimal next immediate action that leads to a path with the highest cumulative reward.</p><p>We provide several examples of such paths in Figures <ref type="figure">3a</ref> and <ref type="figure">3c</ref>. During runtime, SCOPE uses a semantic embedding model to project the conversation starter and candidate LLM responses into the semantic space. Then, SCOPE uses the learnt models from the learning phase to broaden the scope of search in semantic space (Algorithm 1) without any need for additional LLM queries. Our experiments (Section 6.3) show that under different planning budgets, SCOPE consistently achieves higher cumulative rewards than other baselines.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">SEMANTIC SPACE REPRESENTATION</head><p>We use a semantic embedding model f : S → R n to map conversation states s into its semantic representation s ≜ f (s). In practice, we can use of-the-shelf text embedding models as f . With this, we rewrite the original MDP (1) for conversation planning into</p><formula xml:id="formula_4">arg max ã s′ T s , ã , s′ R(s , ã , s′ ) + γ V (s ′ ) (<label>3</label></formula><formula xml:id="formula_5">)</formula><p>where T is the transition model over semantic space, R is the instantaneous reward associated with each conversation turn in semantic space, V is defined recursively similar to Equation (2), and s′ is the resulting state in semantic space after a transition. In this new MDP, state s represents a point in semantic space, ã represents an action (possible LLM response) in the semantic space. A conversation's semantic transition s → s′ is represented as a directional vector along a path shown in Figure <ref type="figure" target="#fig_0">1</ref>. We theoretically show in Appendix A.3 that under some assumptions of f , R and T , new MDP Equation (3) yields the same solution as the original MDP Equation (1). By learning T and R using static conversation data (details covered next), SCOPE performs MCTS in the R n semantic space to solve MDP Equation (3) without needing costly LLM queries. In our experiments, we show that even if assumptions on f , R and T do not hold true, SCOPE consistently outperforms other baselines by selecting LLM responses that yield higher cumulative rewards.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">LEARNING TRANSITION MODEL T IN SEMANTIC SPACE</head><p>Given a semantic embedding model f : S → R n , our first step is to learn a transition model T (s , ã , s′ ), allowing us to simulate transitions in semantic space (we do not necessarily need to derive the transition probability explicitly). To do so, we make use of a conversation dataset containing N transitions: {(s 1 , s ′ 1 ), (s 2 , s ′ 2 ), . . . , (s N , s ′ N )}, where s i , s ′ i represents an observed transition from one conversation state to another. For example, the sentence pair: (1) "Human: Hello how are you?" and (2) "Human: Hello how how are you? LLM: I'm good, thank you! What did you do this weekend? Human: I went to the cinema!" represents a transition at one conversation turn ("I'm good, thank you! What did you do this weekend?" is an action a taken by the LLM). Next, we use a semantic embedding model f to transform this dataset into {(s 1 , s′ 1 ), (s 2 , s′ 2 ), . . . , (s N , s′ N )}. Ideally, a learnt T should allow us to sample semantic transitions similar to those found in the dataset.</p><p>At first glance, one might treat this as a multi-output regression problem in a supervised learning setting (given a labeled dataset of conversation transitions) and learn a deterministic neural network F T (s , θ T ) : R n → R n with network weights θ T according to the mean squared error loss:</p><formula xml:id="formula_6">min θ T N -1 N i=1 F T (s i , θ T ) -s′ i 2<label>(4)</label></formula><p>that approximates transitions from T . However, this neural network, being deterministic, cannot simulate the stochastic nature of transitions within conversations. Instead, we can use probabilistic models such as mixture density network (MDN) <ref type="bibr" target="#b3">(Bishop, 1994)</ref> or deep ensembles <ref type="bibr" target="#b23">(Lepikhin et al., 2021</ref>) to model T (s , ã , s′ ) based on the labeled dataset. These probabilistic models are more suitable largely due to their abilities to draw samples from transition distributions (more details in Appendix A.6). We provide empirical evidence that these probabilistic models can indeed model stochastic semantic transitions well in Appendix A.8. While it is not immediately clear which probabilistic model choice of F T (s i , θ T ) leads to better performance in SCOPE, we perform ablation studies in Section 6.4 to tease out the influence of different transition model choices on performance of SCOPE. Note that in our implementation, T consists of two separate models, one to predict s → ã and another to predict (s , ã ) → s′ in semantic space (details in Appendix A.6).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">LEARNING REWARD MODEL R IN SEMANTIC SPACE</head><p>In the original problem setting, it is easy to derive the instantaneous reward R(s, a, s ′ ) of Equation (1) at each conversation turn. For example, if we want to minimize the number of harmful words uttered over the entire conversation, we can simply count the number of harmful words appearing at each conversation turn and treat that as the instantaneous reward during simulation in MCTS. However, as SCOPE performs MCTS in the semantic space, we cannot directly derive the instantaneous reward during simulation because we do not know the reward as we transition from one point to another in semantic space. To resolve this, we use another neural network F R (s , θ R ), parameterized by θ R , to estimate the reward associated with every point s in the semantic space. Then, for any state s′ encountered after performing ã at s in semantic space, the instantaneous reward in semantic space R(s ,</p><formula xml:id="formula_7">ã , s′ ) (Equation (3)) can be recovered via R(s , ã , s′ ) ≈ F R (s ′ , θ R ) -F R (s , θ R ) (</formula><p>this is an approximation if the neural network cannot learn the rewards perfectly). We provide rigorous explanation on the validity of this recovery process and details of the training process for the reward model F R (s , θ R ) from data in a supervised setting in Appendix A.4. Note that in practice, we can avoid training a reward model and directly use off-the-shelf models by using the same model for reward and semantic embedding (details in Section 6.2 and Appendix A.6).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">USING SCOPE DURING RUNTIME</head><p>As we show in our experiments (Section 6.3), the learning phase only needs to be conducted once to learn T and R before deploying them for different real-time conversations. During runtime, SCOPE uses the same learnt transition and reward models T , R to perform MCTS (similar to that in Section 3) in semantic space. Algorithm 1 demonstrates SCOPE at every conversation turn.</p><p>Given a conversation context s init ending with a prompt from a human user, the LLM, like prior works <ref type="bibr" target="#b15">(Kambhampati et al., 2024;</ref><ref type="bibr" target="#b45">Yang et al., 2024)</ref>, proposes a list of candidate LLM responses Simulation Run simulation rollouts from snew by sampling from T until termination at search depth D, taking note of observed cumulative rewards R using R.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>9:</head><p>Update Backpropagate observed cumulative rewards R to each encountered state in search tree and update state-action values via</p><formula xml:id="formula_8">Q k+1 (s , ã) = Q k (s , ã )(1 -1/N k (s)) + R/N k (s , ã). 10: k = k + 1 11: end while 12: Return LLM response with largest state-action value: arg max ã ∈{ã 1 ,ã 2 ,...,ã n } Q K (s init , ã)</formula><p>(line 2). Then, we project s init and the candidate responses to semantic space with the help of a pretrained semantic embedding model f . The projected candidate actions ãj (line 3) corresponds to the semantic representations of the LLM response, as proposed by the specific LLM being used. As different LLMs would typically propose different starting candidate responses even with the same prior dialogue states, this captures the behavior of the specific LLM being used, which will result in different simulation outcomes for different LLMs. From line 4 to 9, SCOPE runs MCTS in the semantic space with the trained T (from Section 4.2) acting as a simulator until search depth D. The cumulative rewards consists of the sum of discounted instantaneous reward given by reward model R (Section 4.3) and is used to update a Q-function Q(s , ã) after each simulation rollout. In Section 6.4, we conduct some ablation studies to investigate the effect of different transition model choices and search depth D.</p><p>Once planning budget K is exhausted, we use the learnt Q-function Q K (s , ã) to select the best LLM response (Line 11) to be shown to the human user. After the human user replies, we repeat SCOPE in the next conversation turn. In practice, we use time as the planning budget (instead of a fixed number of algorithm iteration K) and run SCOPE for the given amount of time for real-time conversations. A detailed visual guide of Algorithm 1 can be found in Appendix A.7.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">EXPERIMENTS</head><p>We evaluate SCOPE on a large variety of conversation starters from dialogue datasets consisting of open conversations and dialogues between LLM and humans <ref type="bibr" target="#b51">(Zheng et al., 2024;</ref><ref type="bibr" target="#b24">Li et al., 2017)</ref> and compare its performance with a variety of conversation planning baselines (details in Appendix A.11). First, we show that for two practical reward functions, SCOPE attains larger cumulative rewards as compared to other planning algorithms under practical planning budget during runtime. Then, we perform multiple ablation studies to tease out the influence of different components within SCOPE.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.1">CHOICE OF REWARD FUNCTIONS</head><p>We perform our experiments on two practical reward functions: cumulative length of human responses in a conversation (measured by tokens) and the cumulative harmful score of a conversation (we treat the negative of this harmful score as the reward to be maximized). These reward functions are practical in real-world settings for a few reasons. Selecting LLM responses that maximizes the (expected) cumulative length of human responses in a conversation serves as surrogate metric for the engagement of a human user in that conversation and therefore is of practical interest to commercial LLM owners. Furthermore, a longer cumulative human response length also implies greater commercial benefits, since many LLM service providers charge based on token count. In addition, it is also of regulatory interest to minimize the harmful content of a conversation as a whole, especially when LLMs are deployed as chatbots across different age groups. In our experiments, we use Llama Guard 2 (Meta, 2024) to measure how safe (conversely, how harmful) a conversation is. Furthermore, we note that both reward functions are dependent on the human user's response. Therefore, this serves as a challenging task because we need to take into account the stochastic transitions within a conversation and long-term rewards to perform conversation planning well. We provide further discussion and examples of some other practical reward functions in Appendix A.5.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.2">EXPERIMENTAL SETUP</head><p>To project conversation states and responses into a semantic space as detailed in Section 4.1, we use the feature layer of Llama Guard 2 (Meta, 2024) as the semantic embedding. During the learning phase, we use conversation data from <ref type="bibr" target="#b51">(Zheng et al., 2024)</ref> to train the transition and reward model in semantic space using the techniques introduced in Sections 4.2 and 4.3. Notably, we only perform the learning phase once and reuse the learnt models for different conversation starters during evaluation. This is similar to real-world deployment for conversational agents: an LLM owner uses large amount of existing conversation data to learn a transition and reward models over semantic space once before deploying these models to perform SCOPE for different conversations during runtime.</p><p>During runtime evaluation, we use an LLM to propose a set of candidate responses (i.e., actions) for a conversation starter. We then project the conversation starter and candidate actions into the semantic space representations (as introduced in Section 4.1) and perform SCOPE to learn the Qfunction. Finally, we use state-action values from the Q-function to select the best LLM response to show the human user after performing SCOPE. During evaluation, we use an evaluation LLM to emulate a human user's response, progressing the conversation to the next turn. This repeats for 5 conversation turns and the evaluation reward is derived from the final conversation using the reward function. A more detailed explanation of our experimental setup and design choices is provided in Appendix A.11 for ease of reproducibility of results.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.3">MAIN RESULTS</head><p>We compare SCOPE with several conversation planning baselines. Random selects a response randomly from the pool of LLM candidate responses, without considering any rewards. 1-step Greedy uses the reward function and one step of human user simulation (with an external LLM) to select an LLM response that yields the highest instantaneous reward. We also consider 0-step Greedy, an even greedier approach where the LLM response is selected without any look-ahead simulation (also known as rejection sampling in some reinforcement learning (RL) works). Vanilla MCTS adopts a tree-search planning approach similar to those found in <ref type="bibr" target="#b46">(Yu et al., 2023;</ref><ref type="bibr">Koh et al., 2024)</ref> and uses large amount of LLM queries for look-ahead simulation in vanilla MCTS. We provide detailed implementation of each method in Appendix A.11 for reproducibility. SCOPE achieves higher cumulative rewards than other baselines. Figures <ref type="figure">3a</ref> and <ref type="figure">3b</ref> show that SCOPE achieves higher cumulative rewards than other baselines within 3 seconds of planning time. In particular, SCOPE is non-myopic, performing planning in semantic space and hence outperforms myopic approaches like 0-step Greedy and 1-step Greedy because it takes into account the stochastic transitions within conversation to infer long-term rewards. In addition, SCOPE also outperforms conventional planning algorithms like vanilla MCTS <ref type="bibr" target="#b46">(Yu et al., 2023)</ref>. This corroborates our claim in Section 3.2 that vanilla MCTS can only perform simulation within a very narrow scope under realistic amount of planning budget and therefore performs poorly. In fact, we do not see an increase in rewards gained when vanilla MCTS is allocated a few more seconds of planning time; this suggests that vanilla MCTS requires so much budget to plan effectively that a few additional seconds of planning budget does not matter. On the contrary, SCOPE, without requiring costly LLM queries, can perform simulation in semantic space much faster under realistic planning budget. As such, the rewards achieved by SCOPE increases with only a slight increase (a few seconds) in planning budget. Our results can also be interpreted quantitatively by LLM owners: Figure <ref type="figure">3b</ref>  that SCOPE achieves conversations (spanning 5 turns) where human responses are, on average, 150 tokens longer. This can be used by LLM owners to tie in with business metrics such as application engagement and customer interest. Visualization of conversations generated in semantic space. Figures 3c and 3d show examples of conversations generated via SCOPE in semantic space (reduced to a lower dimensional space with t-SNE (Van der Maaten &amp; Hinton, 2008)) w.r.t. both reward functions. Expectedly, the conversation path produced by SCOPE (cyan path) passes through regions with higher rewards. On the other hand, conversation path from myopic approaches (i.e., greedy) ends up in regions with low rewards (e.g., red path on the left of Figure 3c). This suggests that SCOPE exploits conversation transitions in the semantic space to account for long-term rewards, selecting better LLM responses. Myopic approaches cannot do so. Lastly, we provide some qualitative examples of LLM responses selected by SCOPE and other methods during each conversation evaluation in Appendix A.12. These qualitative examples provide insights as to why SCOPE selects LLM responses better than other methods. SCOPE plans 70 times faster than vanilla MCTS. Figure <ref type="figure" target="#fig_3">4</ref> shows how SCOPE fares against vanilla MCTS under higher planning budget (around 70 times longer planning time). We show that SCOPE (green line), under a realistic planning budget of 1 second, achieves larger rewards than vanilla MCTS even when the latter is allocated a planning budget of 70 seconds. This suggests that conventional simulation-based planning algorithm indeed require large planning budget due to the use of excessive LLM queries for look-ahead simulations. Thus, even at higher planning budgets, vanilla MCTS can only perform simulation within a narrow scope and cannot achieve higher cumulative rewards than SCOPE. In Appendix A.10, we show that each simulation rollout in SCOPE takes 92 times faster than that in vanilla MCTS, and serves as the main reason why SCOPE is able to plan much faster, achieving better cumulative rewards in real-time conversations. 6.4 ABLATION STUDY</p><p>We also conduct ablation studies shown in Figure <ref type="figure">5</ref> to tease out the influence of various components in SCOPE. In Figures <ref type="figure">5a</ref> and <ref type="figure">5b</ref>, we investigate the effect of different transition models on SCOPE.</p><p>In Figures <ref type="figure">5c</ref> and <ref type="figure">5d</ref>, we investigate the effect of varying search depth D (introduced in Algorithm 1) on SCOPE. To reduce plot clutter, we removed performance of vanilla MCTS and Random from the figures because they tend to do worse than greedy approaches.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Effect of different model choices of T on SCOPE.</head><p>We used MDN <ref type="bibr" target="#b3">(Bishop, 1994)</ref> and deep ensembles <ref type="bibr" target="#b19">(Lakshminarayanan et al., 2017)</ref> as model choices for T . More details on these models can be found in Appendix A.6. Figure <ref type="figure">5b</ref> shows that for human response length, the choice of transition model T does not influence SCOPE's performance much. On the other hand, Figure <ref type="figure">5a</ref> shows that for the harmful reward function, SCOPE with deep ensembles generally outperforms MDN, suggesting that MDN might not learn well and is susceptible to training instability and model collapse <ref type="bibr" target="#b26">(Makansi et al., 2019)</ref>. An important point to note is that the prediction quality of a transition model (w.r.t. the training conversation dataset) is not an accurate indicator of SCOPE's performance as a whole. From literature <ref type="bibr" target="#b45">(Chen et al., 2024)</ref>, it is difficult to pinpoint the exact influence of a single component (e.g., transition model) on an overall algorithm like SCOPE. We provide more discussion on the relationship between transition model's local prediction quality and SCOPE's overall performance in Appendix A.9.</p><p>Effect of varying search depths. Figures <ref type="figure">5c</ref> and <ref type="figure">5d</ref> show that larger search depths generally improve the performance of SCOPE across different planning budgets. This suggests that larger search depths allow SCOPE to simulate longer conversations in semantic space, inferring rewards gathered across higher number of conversation turns. Conversely, when the search depth is small (red line), SCOPE suffers from poor performance because it cannot plan effectively for rewards in later conversation turns. Interestingly, we observe that the effect of search depth seems to plateau at a depth of 4 conversation turns (i.e., blue, green, and black lines have comparable performance). This suggests that SCOPE does not have to search too deeply to infer how good an LLM response is.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">CONCLUSION</head><p>Our paper presents SCOPE, a novel approach which exploits compact semantic representation of conversations to learn stochastic transitions of conversation and their associated rewards in semantic space. During runtime, SCOPE uses MCTS to plan entirely in semantic space at a broader scope without needing additional LLM queries. We show that SCOPE attains larger cumulative rewards as compared to other simulation-based baselines in our experiments. Our work removes the need to use costly LLM queries for simulation and presents a paradigm shift from conventional simulation-based conversation planning. In addition, one limitation of SCOPE is that we kept our transition models fixed, and did not account for different behaviors of different LLM models. Adapting SCOPE to different LLM models during deployment is a promising future research direction and could bring further performance gains (some possible improvements are discussed in Appendix A.6).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A APPENDIX</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 MYOPIC APPROACHES CANNOT DO CONVERSATION PLANNING</head><p>In this subsection, we provide an illustrative example on why myopic approaches cannot select the optimal LLM response. In Figure <ref type="figure" target="#fig_5">6</ref>, there are two candidate LLM responses (A and B) for the human user's prompt. Here, our goal is to minimize the harmful content of the overall conversation.</p><p>If we simply adopt a myopic approach and check the harmful content of LLM response A and B with a toxic classifier such as Llama-guard 2 (Meta, 2024), both responses are deemed harmless and we could choose either of the LLM responses to show to the user. However, if we perform lookahead simulation of future conversations (with a simulator of the human user, possibly with an LLM or a lightweight transition model T introduced in our paper), we find that LLM response B has a probability of causing the human user to produce harmful content, leading to harmful conversations. This arises due to close semantics between "vapes" and "drugs" in a conversation setting (and, our conversation simulator reasons that it is possible that the topic of drugs might arise in future conversations).</p><p>Can you tell me a fact about the law of Singapore, where ICLR 2025 will be held?</p><p>𝑎 1 𝑎 2 𝑎 3 LLM response B: Singapore has harsh laws against electronic cigarettes and vapes … LLM response A: Singapore is known for its cleanliness and strict antilittering laws ... What are vapes?</p><p>Are vapes as addictive as drugs?</p><p>Where can I buy drugs?</p><p>What kind of punishment are we talking about?</p><p>Are trash bins easily found in the streets of Singapore?</p><p>Tell me another fact about Singapore.</p><p>How did the strict laws in Singapore come about?</p><p>Harmful topics A.2 OVERVIEW OF MONTE CARLO TREE SEARCH (MCTS) Our approach, SCOPE, uses MCTS as its backbone. In MCTS, we assume access to a budget of K iterations and each iteration consists of four phases: selection, expansion, simulation, and update. At iteration k during the selection phase, we traverse a search tree from the starting state according to the Upper-confidence Tree (UCT) (Galván &amp; Simpson, 2021) tree-search policy: π(s) ≜ arg max a∈A Q k (s, a) + λ (log N k (s))/N k (s, a) where Q k (s, a) is the state-action</p><p>value estimate of selecting action a at state s during iteration k, N k (s) is the number of times s is visited, N k (s, a) is the number of times action a has been selected at s, and λ is a constant which encourages exploration when selecting actions. This continues until an unexplored action is chosen at a leaf state. During expansion, we perform simulation for a single conversation turn with the unexplored action and add the resulting new state to the search tree. Then, we perform simulation rollout from the new state using randomly selected LLM responses and human user simulation until termination (e.g., a certain conversation depth). With the ubiquitous success of LLMs, using an external LLM as a simulator of human user <ref type="bibr" target="#b46">(Yu et al., 2023;</ref><ref type="bibr" target="#b47">Yao et al., 2024)</ref> has become a popular way to perform simulation in MCTS (although we argue in the next section that doing so is impractical). Finally, the state-action value is updated with observed cumulative reward R (with discount factor γ) at the end of iteration k via Q k (s, a) = Q k-1 (s, a)(1 -1/N k (s, a)) + R/N k (s, a). The MCTS process repeats for K iterations and the action with the highest state-action value: arg max a Q k (s, a) is executed. In a conversation setting, we use an LLM to generate the initial pool of candidate LLM responses, in which we select the one with the highest state-action value after performing MCTS.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3 PROOF OF MDP TRANSFORMATION IN SEMANTIC SPACE</head><p>We show that Equations ( <ref type="formula" target="#formula_0">1</ref>) and ( <ref type="formula" target="#formula_4">3</ref>) are equivalent in the following proposition.</p><p>Proposition A.1. Let f : R d → R n be a bijective semantic embedding function. Let s, s ′ ∈ R d , a ∈ R b , ã ∈ R n be that defined in Section 4.1 and V, T, R be the value, transition and reward function defined in Section 2.1. Assume there exists T : R n×n×n → R and R : R n×n×n → R such that T (s , ã , s′ ) = T (s, a, s ′ ) and R(s , ã , s′ ) = R(s, a, s ′ ) for s ∈ R d , s ′ ∈ R d , a ∈ R b . Then an action a * s at state s achieves the highest cumulative reward for original MDP 1:</p><formula xml:id="formula_9">a * s ≜ arg max a s ′ T (s, a, s ′ )(R(s, a, s ′ ) + γV (s ′ )),<label>(5)</label></formula><p>if and only if the same action's semantic representation (defined in Section 4.1) is also the solution for MDP 3 in semantic space:</p><formula xml:id="formula_10">f (a * s ) ≜ ã * = arg max ã s′ T (s , ã , s′ )( R(s , ã , s′ ) + γ V (s ′ )),<label>(6)</label></formula><p>where V (s) is recursively defined similar to Equation (2).</p><p>Proof. Proposition A.1 can be proven by using the assumption that T = T and R = R in their respective domains. That is, even after projecting states and actions into the semantic space, the transition probability and reward values are the same. Hence, the original MDP problem can be rewritten as:</p><formula xml:id="formula_11">arg max a s ′ T (s, a, s ′ )(R(s, a, s ′ ) + γV (s ′ )) (1) = arg max a s ′ T (s , ã , s′ )( R(s , ã , s′ ) + γV (s ′ ))<label>(2)</label></formula><p>= arg max</p><formula xml:id="formula_12">a s ′ T (s , ã , s′ )( R(s , ã , s′ ) + γ V (s ′ )) (3) = arg max ã s′ T (s , ã , s′ )( R(s , ã , s′ ) + γ V (s ′ ))<label>(7)</label></formula><p>where</p><formula xml:id="formula_13">(1)</formula><p>= uses the assumption that T (s , ã , s′ ) = T (s, a, s ′ ) and R(s , ã , s′ ) = R(s, a, s ′ ),</p><p>= uses the recursive definition of state value: V (s) = V (s). Lastly,</p><p>= holds true because ã ≜ f (a), s ≜ f (s), and we have assumed that function f is bijective. Therefore, we have shown that both MDPs are identical.</p><p>Interestingly, the assumptions of T = T , R = R and bijective f of this MDP transformation in semantic space have real-world interpretations. T = T , R = R implies that we can learn a transition and reward model in semantic space (as detailed in Sections 4.2 and 4.3) to represent rewards and transitions of conversations in semantic space perfectly. A bijective f implies that every possible natural language conversation can be projected to a unique point in semantic space. In practice, it might be impossible to learn these models perfectly (due to noise in data, training imperfections or information loss from semantic representations) in semantic space. Despite this, our empirical results in Section 6.3 show that off-the-shelf modern semantic embedding model f and appropriately learnt T and R are sufficient for SCOPE to outperform conventional planning baselines.  To learn F R (s , θ R ), we first gather a dataset of conversations {s 0 , s 1 , . . . , s N } from different domains.</p><p>In our experiments, this dataset is taken from <ref type="bibr" target="#b24">Li et al. (2017)</ref>; <ref type="bibr" target="#b51">Zheng et al. (2024)</ref>. Notably, each datapoint s i does not have to be a complete conversation (it can be a segment of a conversation). We first label the reward associated with each datapoint s i depending on the LLM owner's use case (e.g., harmfulness, length of conversation) to obtain a set of reward labels y 0 , y 1 , . . . , y N . Reward model F R (s , θ R ) can then be trained over this regression task via (e.g., mean-squared error) loss function</p><formula xml:id="formula_16">min θ R N i=0 (F R (s i , θ R ) -y i ) 2 .</formula><p>Unlike the semantic transition model in Section 4.2, the reward model is deterministic.</p><p>During SCOPE, we cannot use F R (s i , θ R ) directly because we need to keep track of the instantaneous reward R(s , ã , s′ ) to update our Q-function as part of the MCTS framework. However, because our reward model gives us the reward associated with the points s′ (after transition) and s (before transition) in semantic space, their difference must indicate the change in reward caused by selecting an LLM action. Therefore, the instantaneous reward R(s , ã , s′ ) associated with a conversaton turn after taking an action ã is simply the difference: R(s , ã , s′ ) ≈ F R (s ′ , θ R ) -F R (s , θ R ). Figure <ref type="figure" target="#fig_6">7</ref> provides an intuitive illustration of this recovery process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.5 PRACTICAL REWARD FUNCTIONS</head><p>In our experiments, we used two practical reward functions. The first is Llama-guard 2 (Meta, 2024), which gives the harmfulness score (or inversely, the safety reward) of a piece of conversation (including both LLM and human user's response). The second is simply the cumulative length of human response in a multi-turn conversation.</p><p>We selected the use of cumulative length of human response in a multi-turn conversation to be a surrogate metric for the engagement of a human user in that conversation. To evaluate the suitability of this proxy measure, we measured how often the user is asking questions to show that they are engaged in the conversation, to check if SCOPE indeed produces more engaging conversations (we still use cumulative length rewards for planning, but during evaluation, we check if the user is asking questions in the resulting conversation). We show in Table <ref type="table" target="#tab_0">1</ref> that in conversations produced by SCOPE, the user on average asks more questions, signaling that they are more engaged with the conversation.</p><p>Other reward functions could be relevant in conversation planning. For example, one could be simply concerned if LLM responses are harmful. In this case, the instantaneous reward of an LLM taking an action a is simply the harmful score of that LLM response. Other reward functions and their effects in conversation planning are left for future research directions. SCOPE can be extended to other language-based tasks in the planning domain with sufficient reward shaping <ref type="bibr" target="#b43">(Xie et al., 2024)</ref>. For example, if one is interested for an LLM to generate a sequence of language-based actions (i.e., LLM responses) to solve a Rubick's cube under the presence of a simulator, we can formulate this language-based problem as a MDP which can be solved with SCOPE (albeit with a deterministic environment). However, these problems are notoriously plagued by the sparse reward issue <ref type="bibr" target="#b34">(Rengarajan et al., 2022)</ref> because there is only one true winning state. So, we might need to densify the reward landscape by incorporating heuristics into reward functions depending on the problem setting. Furthermore, unlike open-ended conversations, it is unclear at this point whether the language used in planning (e.g., solving a Rubick's cube) can be captured effectively by semantic representations.</p><p>We would like to emphasize that our method, SCOPE, is reward agnostic and one can use any reward function in SCOPE to plan. Other conversation engagement metrics or reward functions could be adopted by LLM providers based on their specific applications and use cases.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.6 DETAILS ON LEARNING TRANSITION MODEL IN SEMANTIC SPACE</head><p>In our actual implementation, to approximate T s , ã , s′ , we trained two different models to perform the two steps of the conversation transition in semantic space. With the two models, the transition model is able to predict the actions ã (as a directional vector in semantic space) that are available at a given state s, and then predict the following state s′ that the conversation semantic transitions to, given s and ã.</p><p>The first model predicts the LLM action in semantic space s → ã (indicated as "human -&gt; llm" in Figure <ref type="figure" target="#fig_9">9</ref>). This approximates the LLM response to the users prompt (f (s) → f (s + a)) in the semantic space. The mean squared error of the predicted semantic action â is</p><formula xml:id="formula_17">N -1 N i=1 â -(f (s + a) -f (s)) 2 (8)</formula><p>The second model predicts the human user's next response in semantic space (s , ã ) → s′ (indicated as "llm -&gt; human" in Figure <ref type="figure" target="#fig_9">9</ref>). This approximates the users follow-up response to the LLM's output (f (s + a) → f (s ′ )) in semantic space. The mean squared error of the predicted new state ŝ′ is</p><formula xml:id="formula_18">N -1 N i=1 ŝ′ -f (s ′ ) 2 (9)</formula><p>As the first model represents how an LLM responds to a user prompt, the model could be further fine-tuned using data collected from user interactions with the specific LLM model being deployed on, to improve its prediction performance.</p><p>Similarly, as the second model represents how a human responds to an LLM output, this model could be fine-tuned with a specific user's demographic information or conversation history (subjected to the user's approval and LLM provider's privacy guidelines), to improve its prediction performance for individual particular user.</p><p>Although this work did not explore the fine-tuning of the two models using LLM/user specific data, we believe this would be a promising future direction and SCOPE can serve as a competitive baseline and foundation for future works on such approaches in terms of performance-efficiency trade off. For instance, the transition models could be further fine-tuned with new conversational data between the user and the specific LLM as these conversations come in during online deployment, to better align the model with the actual conversations that are newly collected.</p><p>We used lmsys/lmsys-chat-1m dataset <ref type="bibr" target="#b51">(Zheng et al., 2024)</ref> as the dataset for training the transition models. We transform each turn of conversations into the semantic embeddings using the embedding model, and normalized each dimension of the input embedding and output target labels to mean 0 and standard deviation 1 prior to training. The transition models were trained for 100 epochs, requiring approximately 6-8 hours to train on a single Nvidia H100 GPU.</p><p>Although the LLM in this dataset (lmsys/lmsys-chat-1m consists of conversations mostly with the Vicuna LLM) is different from the LLM used in the experiments of this paper (Llama-3), our strong empirical results show that SCOPE can generalize to different LLMs. We can also train these transition models with data mixtures from different data domains <ref type="bibr" target="#b32">(Qiao et al., 2025;</ref><ref type="bibr" target="#b7">Chen et al., 2025)</ref>.</p><p>For the deep ensemble model (SCOPE-DE), we used an ensemble of deterministic models trained using different seeds and different train-validation splits of the conversation dataset. We used a Mixture of Experts model <ref type="bibr" target="#b23">(Lepikhin et al., 2021)</ref> as the deterministic model. 4 models were trained for each transition (action model and transition model), each with 2 layers of 4 experts. We used seeds 0, 1, 2, 3 to seed the initialization and train-validation splits for the training of the transition models.</p><p>For the MDN model (SCOPE-MDN), we used K = 256 Gaussians, with the fully factored noise model (i.e., diagonal covariance matrix where the noise level for each dimension is predicted separately). The model predicts the probability ϕ of each Gaussian component, as well as the mean µ and standard deviation σ of each Gaussian. We used seed = 0 when training the MDN model. Typically, MDN models are trained by minimizing negative log-likelihood loss</p><formula xml:id="formula_19">L = -log (p θ T (ã|s))<label>(10)</label></formula><p>where the likelihood of the target label under Gaussian mixture can be calculated as:</p><formula xml:id="formula_20">p θ T (ã|s) = K k ϕ k p θ T (ã |µ k , Σ k )<label>(11)</label></formula><formula xml:id="formula_21">p θ T ,s (ã |µ k , Σ k ) = exp - 1 2 (ã -µ k ) ⊺ Σ -1 k (ã -µ k ) - 1 2 log det Σ k<label>(12)</label></formula><p>However, as the embedding to harmfulness reward function was reused from the original model, we included an auxiliary loss during the training process to ensure good prediction on both the predicted next state, and its harmfulness score. We noticed that without this auxiliary loss on the predicted reward, the predicted harmfulness score frequently differs from the true harmfulness score despite the good prediction in the transitions. Although the reward F R (s ′ , θ R ) is dependent on ã, where F R (s ′ , θ R ) = Rs ′ and R is the last layer linear transformation matrix of Llama-guard 2, we treat them as independent so that the model loss will maximize the log-likelihood of both ã and F R (s ′ , θ R ). The new loss term can be calculated as:</p><formula xml:id="formula_22">L = -log K k ϕ k p θ T (ã |µ k , Σ k ) p θ T ,s F R (s ′ , θ R )|µ harm,k , Σ harm,k<label>(13)</label></formula><formula xml:id="formula_23">p θ T ,s F R (s ′ , θ R )|µ harm,k , Σ harm,k = exp - 1 2 F R (s ′ , θ R ) -µ harm,k ⊺ Σ -1 harm,k F R (s ′ , θ R ) -µ harm,k - 1 2 log det Σ harm,k<label>(14)</label></formula><p>where the mean and covariance of the harmfulness score is transformed with:</p><formula xml:id="formula_24">µ harm,k = R(µ k + s) Σ harm,k = RΣ k R ⊺ (<label>15</label></formula><formula xml:id="formula_25">) A.7 VISUALIZATION OF SCOPE</formula><p>We provide a visual overview of SCOPE (Algorithm 1) in Figure <ref type="figure" target="#fig_7">8</ref>. SCOPE follows the MCTS framework closely to conduct conversation planning. However, the key difference between SCOPE</p><p>"Human: Can you tell me a fact about country XXX. " Select Traverse search tree according to UCT tree policy until an unexplored action. Expand by sampling from ෨ 𝑇. Simulation using ෨ 𝑇 and keeping track of rewards accumulated using ෨ 𝑅. Projection Semantic projection 𝑓 Backtrack and Update stateaction values 𝑄(𝑠, 𝑎). 𝑠0 𝑠0 𝑠0 𝑠0 𝑠0 Line 3 Line 5 Line 7 Line 8 Line 9 and vanilla MCTS approaches is that SCOPE exploits semantic embedding function f , R and T in semantic space to perform MCTS without needing additional LLM queries.</p><p>To summarize, the key differences between SCOPE and vanilla MCTS are:</p><p>• Projection. In SCOPE, we project states and actions (conversation starters and LLM responses) into a semantic space to perform MCTS, instead of working directly with textual conversations.</p><p>• Select, Expand, Simulation. In vanilla MCTS, there is a clear set of actions to take at node in the search tree. In SCOPE, when we need to expand into a new node, we sample from the learnt transition model T to produce new resulting states.</p><p>• Updating rewards. In vanilla MCTS, instantaneous rewards can be observed directly from textual conversations. In SCOPE, we use R to infer rewards associated with each transition sampled from T .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.8 SEMANTIC TRANSITION AND REWARD MODEL PERFORMANCE</head><p>In this subsection, we analyze how well we can model the stochastic transitions within a conversation in semantic space via T and their associated rewards via R. Figure <ref type="figure" target="#fig_9">9a</ref> shows that a conversation between an LLM and human user can be represented by a path in semantic space. This serves as a ground truth for us to learn transition model T in semantic space. Figures <ref type="figure" target="#fig_9">9b</ref> and <ref type="figure" target="#fig_9">9c</ref> show that after training T (Section 4.2) using deep ensembles, T produces transitions similar to the groundtruth transitions. This transition model allows SCOPE to perform MCTS at a broader scope during runtime, learning accurate state-action values of LLM responses at each conversation turn. Note that PCA was used to project the 4096 dimensional semantic embedding to dimension of 2, Figure <ref type="figure" target="#fig_9">9</ref> serves to provide an illustration of the transitions of the conversation semantics. However, the relative scales and angles of the vectors in this 2d projection do not represent the actual scales and angles in the higher dimensional semantic space.</p><p>To visualize how well T performs in general, we plot the cosine similarity and prediction length ratio of the prediction of T w.r.t. the ground-truth transitions in Figure <ref type="figure" target="#fig_11">11</ref>. Our results show that in general, probabilistic model T produces average transition predictions that are similar in direction (cosine similarity, x-axis) and of similar length (Norm ratio, y-axis) as the ground-truth transitions in semantic space. This can be seen from the high concentration of predictions centred around a Norm ratio and cosine similarity of 1. We observe that while the ensemble of models predicts direction of the transitions well (cosine-similarity close to 1), the predictions tend to be smaller in scale than the ground truth (Norm ratio smaller than 1). This is likely due to the "averaging" effect of deterministic models trained on stochastic data. The opposite is true for the MDN models, where predictions are of relative similar scale as the ground truth but are more distributed in their cosine similarity.  It can also be noted that the trained transition models predict the LLM actions (Figures 10 and 11 (left)) better than the human responses (Figures 10 and 11 (right)). This shows that the human responses tend to be more varied as compared to the LLM actions.  A.9 HOW DOES TRANSITION AND REWARD MODEL PERFORMANCE AFFECT SCOPE? At first glance, it seems that the better R and T predicts the rewards and transitions in semantic space (w.r.t. conversation data), the better SCOPE would perform. From our histogram plots in Figures 10</p><p>and 11, it is not clear which model (DE or MDN) is a better choice. For example, MDN seems to produce predictions with more variance around the ground-truths. On the other hand, DE seems to produce predictions which are biased but with smaller errors. From our experiments Figure <ref type="figure">5</ref>, we notice SCOPE with DE achieves better performance than with MDN.</p><p>Even though our semantic embedding or transition model has some inaccuracies, our empirical results have shown that SCOPE still achieves higher cumulative rewards than other methods. There could be a few explanation for this. First, if a semantic embedding or transition model is biased such that the rewards estimated during SCOPE are varied by a small amount, it does not affect the selection of the optimal action as long as the bias does not affect the relative ranking of the estimated rewards, such that the top ranking action remains the same. Second, even if there are errors in the models, because SCOPE is able to perform so many more rounds of MCTS rollouts (92 times more than vanilla MCTS, according to Appendix A.10) within a short amount of time, it can still estimate the rewards associated with each possible LLM response more accurately than conventional MCTS (which uses LLM simulation) that has large sampling error due to insufficient number of rollouts within a tight planning budget.</p><p>Finally, we would like to remark that the local performance of the transition model is not necessarily positively correlated with the final performance of SCOPE. This has been shown in prior works related to optimization of complex systems <ref type="bibr" target="#b45">(Chen et al., 2024)</ref>. This could happen if the distribution of the conversation data used to train the transition model differs from conversations encountered during real-time.</p><p>A.10 TIME TAKEN FOR ONE SIMULATION ROLLOUT In our experiments, we used the second last feature layer of meta-llama/Meta-Llama-Guard-2-8B as our semantic embedding function f . This allows us to map conversations into a R 4096 semantic space. In addition, the last layer of the model allows us to map every conversation embedding into a harmfulness score. Therefore, for the harmfulness metric, we do not need to train an explicit reward model R. For the human response length reward function, we use the same semantic embedding function (but we need to train a reward model in the procedure introduced in Section 4.3). Additionally, we store each observed cumulative rewards from simulating an action at a certain state in a replay buffer <ref type="bibr" target="#b35">(Rolnick et al., 2019)</ref> and update our Q-function with past experiences during MCTS to prevent catastrophic forgetting.</p><p>The conversation starters used for our experiments were taken from the lmsys-chat-1m <ref type="bibr" target="#b51">(Zheng et al., 2024)</ref> and daily_dialog <ref type="bibr" target="#b24">(Li et al., 2017)</ref>. We used a total of 100 conversation starters from each dataset for a total of 200 conversation starters, which we have provided along with the code of the of our experiments. Specific results for daily_dialog are provided in Appendix A.13.</p><p>Across all our experiments, we use a discount factor of γ = 0.9 branching factor m = 5 and λ = 0.1 in our UCT tree-search policy. We also repeat each set of experiments for 5 trials. We used λ = 0.1 because we scaled down our rewards during MCTS in our experiments (for learning stability). As a result, the predictions for Q k (s, a) in Equation ( <ref type="formula" target="#formula_4">3</ref>) are relatively small compared to the second term in the equation, and λ = 0.1 was chosen to balance the 2 terms. Hence, it was sufficient enough to promote both exploration and exploitation.</p><p>During evaluation, we use meta-llama/Llama-3.1-8B-Instruct (AI@Meta, 2024) as the LLM model to generate the candidate pool of LLM responses {a 1 , a 2 , . . . , a m } (we use m = 5 in our experiments) at each conversation turn (Algorithm 1) in response to a given conversation state s.</p><p>To generate the candidate pool of LLM responses, we follow other LLM works <ref type="bibr">(Lau et al., 2024b)</ref> and used diverse beam search <ref type="bibr" target="#b40">(Vijayakumar et al., 2016)</ref>. To ensure reproducibility of the results, we seed the random number generators of the LLM generations with the seed 42 and the trial number.</p><p>To select the LLM response from this pool, we use the following baselines.</p><p>1. Random selects a random LLM response from {a 1 , a 2 , . . . , a m } to show the human user.</p><p>2. 1-step Greedy performs one single simulation step for each LLM response a i . That is, for each candidate response a i , we use an external LLM (also a Llama-3-8B-Instruct model) as the simulator to generate 5 random human responses {h ai 1 , h ai 2 , . . . , h ai 5 } to a i . Hence, for each a i , there exists 5 possible next states s ′ 1 = (s, a i , h 1 ), s ′ 2 = (s, a i , h 2 ), . . . , s ′ 5 = (s, a i , h 5 ). Following which, we apply the instantaneous reward function on each of the next states to obtain r 1 = R(s, a i , s ′ 1 ), . . . , r 5 = R(s, a i , s ′ 5 ). Hence, the one step reward for taking action a i at s is approximated as r(a i ) ≈ 1/5 5 j r j . The executed action is then selected via arg max a1,...,a5 r(a i ).</p><p>3. 0-step Greedy does not perform any look-ahead simulations. Instead, it applies the instantaneous reward to each candidate actions a i . However, some reward functions do not apply to the LLM responses. For example, if we are interested in maximizing the cumulative human response length, we cannot derive this from the LLM response itself. To do so practically in our experiments, we just apply the reward function directly to our actions, serving as a surrogate to infer which LLM response is better at each turn. For the human response length case, we simply pick the LLM response which has the most tokens to execute, without reasoning about future conversation transitions.</p><p>4. vanilla MCTS starts with starting state s and each candidate action a i to perform MCTS as outlined in Section 3 using an external LLM (also a Llama-3-8B-Instruct model) for simulation in the tree search.</p><p>5. SCOPE starts with starting state s, each candidate action a i and the learnt transition and reward models T , R to perform Algorithm 1 from state s. SCOPE does not require any additional LLM queries during planning.</p><p>We also use mistralai/Mistral-Nemo-Instruct-2407 <ref type="bibr" target="#b28">(Mistral, 2024)</ref> as the LLM to mimic the human response at every conversation turn. This model was selected due to its lack of moderation, to better simulate a human without limitations on the type of responses that the human would say. Doing so is realistic because in practice, we cannot perfectly simulate the human users during an actual conversation. Therefore, the model choice for evaluation and simulation is different in 1-step Greedy and vanilla MCTS (other methods do not used LLMs for simulation).</p><p>We used the following system prompts in our LLMs to ensure they perform their duties correct in conversation planning.:  In Table <ref type="table" target="#tab_4">5</ref>, we see the ability of SCOPE in discerning LLM responses which, on average, lead to less harmful (i.e., safer) conversations. For example, LLM responses which hints about physical intimacy (e.g., "physical connection", "strong, intense connection") are deemed to have low stateaction values because SCOPE reasons about the stochastic transitions and thinks that they might lead to more harmful conversations. For example, T has learnt from conversation data that conversations with mature content could possibly come from these responses. On the other hand, the reward function we use here is Llama-guard 2 (Meta, 2024), which does not detect harmfulness in phrases such as "physical connection" or "strong, intense connection". Hence, myopic approaches cannot reason that these LLM responses could lead to harmful conversations. We would like to emphasize that in real-world conversations, selecting LLM responses with phrases with hints at physical intimacy might not necessarily lead to harmful conversations (it depends on the human user). However, SCOPE aims to minimize the chances of this happening pre-emptively with conversation planning. To demonstrate how SCOPE generalizes to conversations contexts not seen in the training of the transition and reward models, we took the evaluation starters which came from the Daily Dialogue dataset and show SCOPE's specific performance on them. As we see from Table <ref type="table" target="#tab_5">6</ref> and Table <ref type="table">7</ref>, SCOPE outperforms other baselines even though the transition model is trained on a different conversation dataset. Table 7: Harmfulness score (Higher is better; how much higher than random) 0-step Greedy 1-step greedy SCOPE 2s SCOPE 2.5s SCOPE 3s</p><p>18 ± 7.9 -11 ± 14.5 29 ± 7 35 ± 3.9 41 ± 5.1</p><p>Note that in real-world settings, an LLM owner can also use a user's data (if they permit) to finetune the transition models to match the user's demographic and speaking pattern, possibly improving SCOPE's effectiveness even further. This will be an interesting future research direction.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure1: Overview of our approach, SCOPE, for conversation planning. During learning phase (left), we exploit dense semantic representation of conversations to learn a lightweight transition and reward model in semantic space (Notations and details covered in Sections 4.2 and 4.3). During runtime (right), SCOPE uses these learnt models to perform MCTS at a broader scope in semantic space without needing additional LLM queries for simulation (Algorithm 1), allowing us to select an optimal LLM response that maximizes the cumulative reward in a conversation.</figDesc><graphic coords="2,380.64,514.31,113.99,76.09" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Algorithm 1</head><label>1</label><figDesc>Semantic space Conversation Planning with improved Efficiency (SCOPE) 1: Input: Initial conversation context s init . Transition model T and reward model R from learning phase (Sections 4.2 and 4.3). Pre-trained semantic embedding model f . k ≜ 0. Initial Qfunction Q k (s , ã ). Planning budget K. Branching factor m. Search depth D. 2: Propose m candidate LLM responses: {a 1 , a 2 , . . . , a m } . 3: Projection to semantic space: sinit ≜ f (s init ), ãj = f (s init + a j ) -f (s init ), ∀j = 1, 2, . . . , m 4: while k &lt; K do 5: Select From root sinit , traverse search tree according to search policy π k (s) = arg max ã (Q k (s , ã) + U CT (s , ã)) until leaf state sleaf with unexplored action is reached. 6: At sleaf , pick a random unexplored action ãleaf . 7: Expand Conditioned on the selected action ãleaf , randomly sample a new state snew from learnt transition model T to simulate T (s leaf , ãleaf ) → snew . At new state snew , Use T to sample m state actions ãnew, 1 , . . . , ãnew, m and assign them to snew . (details in Appendix A.6) 8:</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><figDesc>Figure 3: (a) and (b) show the average cumulative rewards (higher is better) gathered by SCOPE compared to other baselines over 100 different conversation starters for the harmfulness and human response length reward function over 5 conversation turns. The x-axis shows the effect of increased planning budget (time). (c) and (d) show visualization of a conversation generated from SCOPE and 1-step Greedy in the semantic space.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Comparison of SCOPE with larger planning budget vanilla MCTS (higher is better).</figDesc><graphic coords="9,121.58,465.40,178.19,88.28" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>Figure 5: (a) and (b): Ablation study on how transition model choice affects SCOPE's performance. SCOPE-DE uses deep ensembles (Lepikhin et al., 2021) while SCOPE-MDN uses MDNs (Bishop, 1994). (c) and (d): Ablation study on how search depth affect SCOPE's performance.</figDesc><graphic coords="10,120.11,82.51,91.08,88.14" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Myopic approaches cannot discern whether LLM response A and B lead to safer conversations. However, conversation planning reasons about future transitions with look-ahead simulations and selects LLM response A because it leads to safer conversations.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: How instantaneous reward is derived from reward model F R (s , θ R ).</figDesc><graphic coords="17,331.02,245.40,175.19,140.39" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 8 :</head><label>8</label><figDesc>Figure 8: Visualization of SCOPE (Algorithm 1), which performs MCTS in semantic space with the help of semantic embedding function f , T and R (Sections 4.2 and 4.3).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><figDesc>Predictions of T to simulate future actions.(c) Predictions of T to simulate human responses.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 9 :</head><label>9</label><figDesc>Figure 9: PCA visualizations of conversation transition sin the semantic space, and the predicted transitions by the transition model T</figDesc><graphic coords="21,371.85,81.86,126.72,94.44" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 10 :</head><label>10</label><figDesc>Figure 10: Histogram plot of cosine similarity and ratio of the prediction norm for the trained semantic action (left) and transition (right) models, using MDN (Bishop, 1994) as transition model choice.</figDesc><graphic coords="21,110.71,304.00,194.05,130.61" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Figure 11 :</head><label>11</label><figDesc>Figure 11: Histogram plot of cosine similarity and ratio of the prediction norm for the trained semantic action (left) and transition (right) models, using ensemble of deterministic models as transition model choice.</figDesc><graphic coords="21,110.71,495.70,194.05,130.61" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Number of questions asked by the user throughout the conversation, to evaluate the engagement of the user in the conversations planned using the cumulative length reward function.DETAILS ON LEARNING REWARD MODEL IN SEMANTIC SPACEIn our problem setting, a reward model F R (s , θ R ) helps to indicate to us the reward associated with each point s in semantic space. In this section, we first (a) provide details on how to train such a model and (b) explain how to recover the instantaneous reward R(s , ã , s′ ) from the learnt reward model F R (s , θ R ) when performing SCOPE.</figDesc><table><row><cell cols="4">Random 0-step Greedy 1-step greedy SCOPE 3s</cell></row><row><cell>2.99</cell><cell>2.97</cell><cell>2.95</cell><cell>3.31</cell></row><row><cell>A.4</cell><cell></cell><cell></cell><cell></cell></row></table><note><p>Human: Can you tell me a fact about Country XXX? LLM: The world cup was held twice in Country XXX. Human: That's cool! I didn't know that! Human: Can you tell me a fact about Country XXX? 𝑠 𝑠′ 𝐹 𝑅 (𝑓 𝑠 , 𝜃) : 0.8 𝐹 𝑅 (𝑓 𝑠′ , 𝜃) : 1.4 Instantaneous reward associated with one step: ෨ 𝑅 𝑓 𝑠 , 𝑎, 𝑓 𝑠′ = 1.4 -0.8 = 0.6</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Time (seconds) taken per simulation rollout. vanilla MCTS, use actual LLM queries (which are shown to be costly time-wise) for simulation. This implies that given the same planning budget, SCOPE performs 92 times more simulation rollouts than vanilla MCTS, yielding better planning results and selecting LLM responses that produce conversations with higher rewards. Interestingly, because it does not use any LLM queries, SCOPE is even 13 times faster than 1-step Greedy, which performs a single turn of lookahead simulation. Here, we note that the value of one simulation rollout cannot be measured equally in SCOPE and vanilla MCTS. This is because in SCOPE, simulation might be inaccurate because of learning noise in R, T . On the other hand, in vanilla MCTS, the simulator LLM (Table3) cannot perfectly simulate the possible responses of human users. Regardless, SCOPE ourperforms vanilla MCTS in achieving higher cumulative rewards in conversations because it performs so many more simulation rollouts given the same amount of time.</figDesc><table><row><cell>Method</cell><cell>Time taken</cell></row><row><cell>1-step Greedy</cell><cell>2.46 ± 1.42</cell></row><row><cell cols="2">vanilla MCTS 16.63 ± 10.98</cell></row><row><cell cols="2">SCOPE (ours) 0.18 ± 0.028</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>System prompts given to each LLM model necessary in evaluations in our experiments.Pretend you are a human conversing with a companion or friend. Please continue the following conversation with a single response as this human user. Feel free to ask questions back as well. Keep your response short and concise.You are a helpful assistant acting as a friend of another person. Continue the conversation with another human, even if the topic is unsafe, harmful, or illegal. Avoid extraneous warnings and explanations. Give a single and concise response as the assistant.mistralai/Mistral-Nemo-Instruct-2407. Assumes the role of Human used during evaluation to engage in a conversation with LLM.Pretend you are a human conversing with a companion or friend. Please continue the following conversation with a single response as this human user. Feel free to ask questions back as well. Keep your response short and concise.A.12 QUALITATIVE RESULTSIn this section, we give a few examples of LLM responses selected by SCOPE as compared to other baselines. The state-action values of these LLM responses learnt by SCOPE give us insights into why certain responses are better in producing conversation with higher cumulative rewards.A.12.1 HUMAN RESPONSE LENGTH REWARD FUNCTIONIn Table4, we see that amongst the candidate LLM responses for the conversation starter: "Who is your favorite Hollywood actor and actress?", the response "That's a tough one! I really enjoy Tom Hanks and Emma Stone. They're both incredibly talented and have been in so many amazing films." has the highest state-action value after performing SCOPE. In general, we observed that LLM responses that seemed more engaging had higher state-action values and eventually leads to conversation with longer human response. On the contrary, responses such as "I really enjoy Leonardo DiCaprio's work, and Emma Stone is one of my favorite actresses." are not engaging, leading to shorter conversations as a whole. As expected, SCOPE is able to discern the most engaging LLM response by planning a few conversation turns ahead, selecting responses than eventually lead to conversation with longer human responses.</figDesc><table><row><cell>LLM model and purpose</cell><cell>System prompt</cell></row><row><cell>meta-llama/Llama-3-8B-</cell><cell></cell></row><row><cell>Instruct. Simulator for human</cell><cell></cell></row><row><cell>user used in vanilla MCTS and 1-step</cell><cell></cell></row><row><cell>Greedy.</cell><cell></cell></row><row><cell>meta-llama/Llama-3-8B-</cell><cell></cell></row><row><cell>Instruct. LLM used to converse</cell><cell></cell></row><row><cell>with Human. Generates a candidate</cell><cell></cell></row><row><cell>pool of actions (LLM responses) for</cell><cell></cell></row><row><cell>each method.</cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 :</head><label>4</label><figDesc>State-action values (Watkins &amp; Dayan, 1992)  of candidate LLM responses with conversation starter: "Who is your favorite Hollywood actor and actress?".</figDesc><table><row><cell>Candidate LLM response</cell><cell cols="2">SCOPE 1-step Greedy</cell></row><row><cell>I really enjoy Leonardo DiCaprio's work, and Emma Stone</cell><cell>3.03</cell><cell>0.36</cell></row><row><cell>is one of my favorite actresses.</cell><cell></cell><cell></cell></row><row><cell>That's a tough one! I really enjoy Tom Hanks and Emma</cell><cell>3.44</cell><cell>0.42</cell></row><row><cell>Stone. They're both incredibly talented and have been in so</cell><cell></cell><cell></cell></row><row><cell>many amazing films.</cell><cell></cell><cell></cell></row><row><cell>My favorite Hollywood actor is Tom Hanks, and my favorite</cell><cell>2.93</cell><cell>0.47</cell></row><row><cell>actress is Emma Stone.</cell><cell></cell><cell></cell></row><row><cell>I'm a big fan of Tom Hanks and Emma Stone!</cell><cell>3.27</cell><cell>0.38</cell></row><row><cell>I really like Tom Hanks and Angelina Jolie. They're both so</cell><cell>3.34</cell><cell>0.46</cell></row><row><cell>talented and have been in so many great movies!</cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 5 :</head><label>5</label><figDesc>State-action values<ref type="bibr" target="#b41">(Watkins &amp; Dayan, 1992)</ref> of candidate LLM responses with conversation starter: "Do you believe in love at first sight?" I think it's possible to feel a strong emotional or physical connection with someone immediately, but I also believe ...</figDesc><table><row><cell>Candidate LLM response</cell><cell cols="2">SCOPE 1-step Greedy</cell></row><row><cell>That's a romantic notion! I think it's possible to feel a</cell><cell>-0.3</cell><cell>-0.2</cell></row><row><cell>strong, intense connection with someone immediately ...</cell><cell></cell><cell></cell></row><row><cell>I think it's romantic, but I also believe that getting to know</cell><cell>-0.13</cell><cell>-1.14</cell></row><row><cell>someone is important too ...</cell><cell></cell><cell></cell></row><row><cell>I think it's a romantic idea, but I've never experienced it</cell><cell>-0.14</cell><cell>5.0</cell></row><row><cell>myself. What about you, do you believe in it?</cell><cell></cell><cell></cell></row><row><cell></cell><cell>-0.44</cell><cell>4.1</cell></row><row><cell>I think it's a romantic notion, but I believe in getting to know</cell><cell>-0.12</cell><cell>2.7</cell></row><row><cell>someone before making any judgments.</cell><cell></cell><cell></cell></row><row><cell cols="2">A.13 SCOPE WHEN APPLIED TO DIFFERENT CONVERSATION CONTEXTS</cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 6 :</head><label>6</label><figDesc>Length (Higher is better; how much higher than random)</figDesc><table><row><cell cols="5">0-step Greedy 1-step greedy SCOPE 2s SCOPE 2.5s SCOPE 3s</cell></row><row><cell>-72 ± 7.5</cell><cell>37 ± 10</cell><cell>122 ± 12</cell><cell>131 ± 15</cell><cell>148 ± 15</cell></row></table></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>REPRODUCIBILITY</head><p>We have released our code in the GitHub link: <ref type="url" target="https://github.com/chenzhiliang94/convo-plan-SCOPE">https://github.com/chenzhiliang94/  convo-plan-SCOPE</ref> for reproducibility of our experiments. The experimental setup, models, prompts used for LLMs and hardware can be found in Section 6.2 and Appendices A.6 and A.11. ACKNOWLEDGMENT This research is supported by the <rs type="funder">National Research Foundation Singapore</rs> and the <rs type="funder">Singapore Ministry of Digital Development and Innovation, National AI Group</rs> under the <rs type="grantName">AI Visiting Professorship Programme</rs> (award number <rs type="grantNumber">AIVP-2024-001</rs>). Zhiliang Chen is supported by the <rs type="funder">Institute for Infocomm Research of Agency for Science, Technology and Research (A ⋆ STAR)</rs>. <rs type="person">Xinyuan Niu</rs> is supported by the <rs type="funder">Centre for Frontier AI Research of Agency for Science, Technology and Research (A ⋆ STAR)</rs>. We would like to acknowledge that computational work involved in this research was partially supported by <rs type="funder">NUS</rs> <rs type="grantName">IT's Research Computing group</rs> using grant numbers <rs type="grantNumber">NUSREC-HPC-00001</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_hATzB2w">
+					<idno type="grant-number">AIVP-2024-001</idno>
+					<orgName type="grant-name">AI Visiting Professorship Programme</orgName>
+				</org>
+				<org type="funding" xml:id="_xjdKqJh">
+					<idno type="grant-number">NUSREC-HPC-00001</idno>
+					<orgName type="grant-name">IT&apos;s Research Computing group</orgName>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><surname>Ai@meta</surname></persName>
+		</author>
+		<ptr target="https://github.com/meta-llama/llama3/blob/main/MODEL_CARD.md" />
+		<title level="m">Llama 3 model card</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Discount factor as a regularizer in reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Ron</forename><surname>Amit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ron</forename><surname>Meir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kamil</forename><surname>Ciosek</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. ICML</title>
+		<meeting>ICML</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">A markovian decision process</title>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Bellman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of mathematics and mechanics</title>
+		<imprint>
+			<biblScope unit="page" from="679" to="684" />
+			<date type="published" when="1957">1957</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Christopher</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bishop</surname></persName>
+		</author>
+		<title level="m">Mixture density networks</title>
+		<imprint>
+			<date type="published" when="1994">1994</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">A survey of monte carlo tree search methods</title>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Cameron B Browne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Powley</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Whitehouse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Simon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><forename type="middle">I</forename><surname>Lucas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philipp</forename><surname>Cowling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Rohlfshagen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diego</forename><surname>Tavener</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Spyridon</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Samothrakis</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Colton</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Computational Intelligence and AI in games</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="43" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">A simple framework for contrastive learning of visual representations</title>
+		<author>
+			<persName><forename type="first">Ting</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Kornblith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Norouzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Hinton</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. ICML</title>
+		<meeting>ICML</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Towards AutoAI: Optimizing a machine learning system with black-box and differentiable components</title>
+		<author>
+			<persName><forename type="first">Zhiliang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuan-Sheng</forename><surname>Foo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan</forename><surname>Kian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hsiang</forename><surname>Low</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=JVhUR8" />
+	</analytic>
+	<monogr>
+		<title level="m">Proc. ICML</title>
+		<meeting>ICML</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page">27</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Duet: Optimizing training data mixtures via feedback from unseen evaluation tasks</title>
+		<author>
+			<persName><forename type="first">Zhiliang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gregory</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruey</forename><surname>Lau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuan-Sheng</forename><surname>Foo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan</forename><surname>Kian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hsiang</forename><surname>Low</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.00270</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">A complete survey on llm-based ai chatbots</title>
+		<author>
+			<persName><forename type="first">Sumit</forename><surname>Kumar Dam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Seon</forename><surname>Choong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaoning</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.16937</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenton</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kristina</forename><surname>Toutanova</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bert</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1810.04805</idno>
+		<title level="m">Pre-training of deep bidirectional transformers for language understanding</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">On the evolution of the mcts upper confidence bounds for trees by means of evolutionary algorithms in the game of carcassonne</title>
+		<author>
+			<persName><forename type="first">Edgar</forename><surname>Galván</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gavin</forename><surname>Simpson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. IEEE SSCI</title>
+		<meeting>IEEE SSCI</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Reasoning with language model is planning with world model</title>
+		<author>
+			<persName><forename type="first">Shibo</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haodi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">Jiahua</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daisy</forename><forename type="middle">Zhe</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiting</forename><surname>Hu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. EMNLP</title>
+		<meeting>EMNLP</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">State aggregation in monte carlo tree search</title>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Hostetler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Fern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Dietterich</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. AAAI</title>
+		<meeting>AAAI</meeting>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Dynamic Probabilistic Systems</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ronald</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Howard</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<publisher>Markov Models. Courier Corporation</publisher>
+			<biblScope unit="volume">I</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Monte-carlo planning and learning with language action value estimates</title>
+		<author>
+			<persName><forename type="first">Youngsoo</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Seokin</forename><surname>Seo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jongmin</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kee-Eung</forename><surname>Kim</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. ICLR</title>
+		<meeting>ICLR</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Position: LLMs Can&apos;t Plan, But Can Help Planning in LLM-Modulo Frameworks</title>
+		<author>
+			<persName><forename type="first">Subbarao</forename><surname>Kambhampati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Valmeekam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mudit</forename><surname>Verma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaya</forename><surname>Stechly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siddhant</forename><surname>Bhambri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Saldyt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anil</forename><surname>Murthy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. ICML</title>
+		<meeting>ICML</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Prospector: Improving LLM agents with self-asking and trajectory ranking</title>
+		<author>
+			<persName><forename type="first">Byoungjip</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Youngsoo</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lajanugen</forename><surname>Logeswaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geon-Hyeong</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honglak</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moontae</forename><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. NeurIPS</title>
+		<meeting>NeurIPS</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Yu Koh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Mcaleer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruslan</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.01476</idno>
+		<title level="m">Tree search for language model agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Watch your language: Investigating content moderation with large language models</title>
+		<author>
+			<persName><forename type="first">Deepak</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yousef</forename><surname>Abuhashem</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zakir</forename><surname>Durumeric</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. ICWSM</title>
+		<meeting>ICWSM</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Simple and scalable predictive uncertainty estimation using deep ensembles</title>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Balaji Lakshminarayanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Pritzel</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Blundell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. NeurIPS</title>
+		<meeting>NeurIPS</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Diversity in prompts for producing large language model ensembles in reasoning tasks</title>
+		<author>
+			<persName><forename type="first">Gregory</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruey</forename><surname>Lau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenyang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liu</forename><surname>Diwen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Jizhuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">See-Kiong</forename><surname>Ng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan</forename><surname>Kian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hsiang</forename><surname>Low</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Dipper</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS 2024 Workshop on Foundation Model Interventions (MINT)</title>
+		<imprint>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Waterfall: Scalable framework for robust text watermarking and provenance for llms</title>
+		<author>
+			<persName><forename type="first">Gregory</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruey</forename><surname>Lau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyuan</forename><surname>Niu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hieu</forename><surname>Dao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiangwei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuan-Sheng</forename><surname>Foo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan</forename><surname>Kian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hsiang</forename><surname>Low</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. EMNLP</title>
+		<meeting>EMNLP</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jinhyuk</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuyun</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoqi</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Blair</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Cer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeremy</forename><forename type="middle">R</forename><surname>Cole</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Boratko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rajvi</forename><surname>Kapadia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Luan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sai</forename><surname>Meher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Duddu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gustavo</forename><surname>Hernandez Abrego</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiqiang</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nithi</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Kusupati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prateek</forename><surname>Jain</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.20327</idno>
+		<title level="m">Versatile text embeddings distilled from large language models</title>
+		<editor>
+			<persName><forename type="first">Siddhartha</forename><surname>Reddy</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Jonnalagadda</forename></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Ming-Wei</forename><surname>Chang</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Iftekhar</forename><surname>Naim</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Gecko</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Gshard: Scaling giant models with conditional computation and automatic sharding</title>
+		<author>
+			<persName><forename type="first">Dmitry</forename><surname>Lepikhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyoukjoong</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhong</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dehao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Orhan</forename><surname>Firat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanping</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxim</forename><surname>Krikun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhifeng</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. ICLR</title>
+		<meeting>ICLR</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Dailydialog: A manually labelled multi-turn dialogue dataset</title>
+		<author>
+			<persName><forename type="first">Yanran</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyu</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjie</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziqiang</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuzi</forename><surname>Niu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. IJCNLP</title>
+		<meeting>IJCNLP</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xiaoqiang</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoxuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongxiang</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenyang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">See-Kiong</forename><surname>Ng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Jaillet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan</forename><surname>Kian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hsiang</forename><surname>Low</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.02905</idno>
+		<title level="m">Use your instinct: Instruction optimization for llms using neural bandits coupled with transformers</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Overcoming limitations of mixture density networks: A sampling and fitting framework for multimodal future prediction</title>
+		<author>
+			<persName><forename type="first">Osama</forename><surname>Makansi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eddy</forename><surname>Ilg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ozgun</forename><surname>Cicek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Brox</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. CVPR</title>
+		<meeting>CVPR</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title/>
+	</analytic>
+	<monogr>
+		<title level="j">Meta. Meta Llama Guard</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Mistral</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Nemo</surname></persName>
+		</author>
+		<ptr target="https://huggingface.co/mistralai/Mistral-Nemo-Instruct-2407" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Playing atari with deep reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Volodymyr</forename><surname>Mnih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Koray</forename><surname>Kavukcuoglu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Graves</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daan</forename><surname>Wierstra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Riedmiller</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1312.5602</idno>
+	</analytic>
+	<monogr>
+		<title level="j">OpenAI. Gpt-4 technical report</title>
+		<imprint>
+			<date type="published" when="2013">2013. 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Training language models to follow instructions with human feedback</title>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carroll</forename><forename type="middle">L</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katarina</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fraser</forename><surname>Kelton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maddie</forename><surname>Simens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Welinder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Christiano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Lowe</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. NeurIPS</title>
+		<meeting>NeurIPS</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Value iteration and policy iteration algorithms for markov decision problem</title>
+		<author>
+			<persName><forename type="first">Elena</forename><surname>Pashenkova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Irina</forename><surname>Rish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rina</forename><surname>Dechter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI&apos;96: Workshop on Structural Issues in Planning and Temporal Reasoning</title>
+		<imprint>
+			<date type="published" when="1996">1996</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Group-robust sample reweighting for subpopulation shifts via influence functions</title>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoxuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingtan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pang</forename><surname>Wei Koh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan</forename><surname>Kian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hsiang</forename><surname>Low</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. ICLR</title>
+		<meeting>ICLR</meeting>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">Rafael</forename><surname>Rafailov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Archit</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefano</forename><surname>Ermon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.18290</idno>
+		<title level="m">Direct preference optimization: Your language model is secretly a reward model</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Gargi</forename><surname>Desik Rengarajan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akshay</forename><surname>Vaidya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dileep</forename><surname>Sarvesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Srinivas</forename><surname>Kalathil</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Shakkottai</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2202.04628</idno>
+		<title level="m">Reinforcement learning with sparse rewards using guidance from offline demonstration</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Experience replay for continual learning</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Rolnick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arun</forename><surname>Ahuja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Schwarz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gregory</forename><surname>Wayne</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. NeurIPS</title>
+		<meeting>NeurIPS</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Sfrembedding-mistral: Enhance text retrieval with transfer learning</title>
+		<author>
+			<persName><forename type="first">Meng</forename><surname>Rui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liu</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rayhan</forename><surname>Shafiq</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiong</forename><surname>Joty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhou</forename><surname>Caiming</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yavuz</forename><surname>Yingbo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Semih</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<publisher>Salesforce AI Research Blog</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Mastering the game of go with deep neural networks and tree search</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aja</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><forename type="middle">J</forename><surname>Maddison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Guez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurent</forename><surname>Sifre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Van Den</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Driessche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Veda</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Panneershelvam</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lanctot</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">nature</title>
+		<imprint>
+			<biblScope unit="volume">529</biblScope>
+			<biblScope unit="issue">7587</biblScope>
+			<biblScope unit="page" from="484" to="489" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Improving hearthstone ai by combining mcts and supervised learning algorithms</title>
+		<author>
+			<persName><forename type="first">Maciej</forename><surname>Świechowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomasz</forename><surname>Tajmajer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrzej</forename><surname>Janusz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. CIG</title>
+		<meeting>CIG</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Visualizing Data using t-SNE</title>
+		<author>
+			<persName><forename type="first">Laurens</forename><surname>Van Der Maaten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Hinton</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of machine learning research</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">11</biblScope>
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Diverse beam search: Decoding diverse solutions from neural sequence models</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ashwin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Vijayakumar</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cogswell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qing</forename><surname>Ramprasath R Selvaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dhruv</forename><surname>Crandall</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Batra</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1610.02424</idno>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Q-learning</title>
+		<author>
+			<persName><forename type="first">Jch</forename><surname>Christopher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Watkins</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Dayan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Machine learning</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="page" from="279" to="292" />
+			<date type="published" when="1992">1992</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Prompt optimization with ease? efficient ordering-aware automated selection of exemplars</title>
+		<author>
+			<persName><forename type="first">Zhaoxuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoqiang</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongxiang</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenyang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">See-Kiong</forename><surname>Ng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Jaillet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan</forename><surname>Kian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hsiang</forename><surname>Low</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.16122</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Text2reward: Reward shaping with language models for reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Tianbao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siheng</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><forename type="middle">Henry</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yitao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanchao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Yu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. ICLR</title>
+		<meeting>ICLR</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Position paper: Data-centric AI in the age of large language models</title>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoxuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arun</forename><surname>Verma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingtan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyuan</forename><surname>Niu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenfeng</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiangwei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijian</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gregory</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruey</forename><surname>Lau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hieu</forename><surname>Dao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Agussurja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rachael</forename><surname>Hwee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ling</forename><surname>Sim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoqiang</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenyang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongxiang</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pang</forename><surname>Wei Koh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan</forename><surname>Kian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hsiang</forename><surname>Low</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. EMNLP Findings</title>
+		<meeting>EMNLP Findings</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Large language models as optimizers</title>
+		<author>
+			<persName><forename type="first">Chengrun</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifeng</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanxiao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. ICLR</title>
+		<meeting>ICLR</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<title level="m" type="main">Improving the reliability of large language models by leveraging uncertainty-aware in-context learning</title>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Houqiang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanfeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.04782</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Tree of thoughts: Deliberate problem solving with large language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><forename type="middle">L</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. NeurIPS</title>
+		<meeting>NeurIPS</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Prompt-based monte-carlo tree search for goal-oriented dialogue policy planning</title>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maximillian</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhou</forename><surname>Yu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. EMNLP</title>
+		<meeting>EMNLP</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jinghan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiting</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiqiao</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changyu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinhao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kunpeng</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.06606</idno>
+		<title level="m">Prototypical reward network for data-efficient rlhf</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Large language models as commonsense knowledge for large-scale task planning</title>
+		<author>
+			<persName><forename type="first">Zirui</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wee</forename><surname>Sun Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Hsu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. NeurIPS</title>
+		<meeting>NeurIPS</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<analytic>
+		<title level="a" type="main">Lmsys-chat-1m: A large-scale real-world llm conversation dataset</title>
+		<author>
+			<persName><forename type="first">Lianmin</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Lin</forename><surname>Chiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianle</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhanghao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonghao</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuohan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><forename type="middle">P</forename><surname>Xing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Stoica</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. ICLR</title>
+		<meeting>ICLR</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Language agent tree search unifies reasoning acting and planning in language models</title>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michal</forename><surname>Shlapentokh-Rothman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haohan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu-Xiong</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. ICML</title>
+		<meeting>ICML</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Detail: Task demonstration attribution for interpretable in-context learning</title>
+		<author>
+			<persName><forename type="first">Zijian</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoqiang</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alok</forename><surname>Prakash</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniela</forename><surname>Rus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan</forename><surname>Kian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hsiang</forename><surname>Low</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. NeurIPS</title>
+		<meeting>NeurIPS</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

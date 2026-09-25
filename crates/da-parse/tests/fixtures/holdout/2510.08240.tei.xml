@@ -1,0 +1,2645 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">The Alignment Waltz: Jointly Training Agents to Collaborate for Safety</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-10-10">October 10, 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Jingyu</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Meta Superintelligence Labs</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution">Johns Hopkins University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Haozhu</forename><surname>Wang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Eric</forename><forename type="middle">Michael</forename><surname>Smith</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Meta Superintelligence Labs</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Sid</forename><surname>Wang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Meta Superintelligence Labs</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Amr</forename><surname>Sharaf</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Mahesh</forename><surname>Pasupuleti</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Meta Superintelligence Labs</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Benjamin</forename><surname>Van Durme</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Johns Hopkins University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Daniel</forename><surname>Khashabi</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Johns Hopkins University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Meta Superintelligence Labs</orgName>
+							</affiliation>
+						</author>
+						<author role="corresp">
+							<persName><forename type="first">Hongyuan</forename><surname>Zhan</surname></persName>
+							<email>hyzhan@meta.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Meta Superintelligence Labs</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jack</forename><surname>Zhang</surname></persName>
+						</author>
+						<title level="a" type="main">The Alignment Waltz: Jointly Training Agents to Collaborate for Safety</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-10-10">October 10, 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">8FD340AE840FCD47A70303F1BADC865D</idno>
+					<idno type="arXiv">arXiv:2510.08240v2[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:14+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Harnessing the power of LLMs requires a delicate dance between being helpful and harmless. This creates a fundamental tension between two competing challenges: vulnerability to adversarial attacks that elicit unsafe content, and a tendency for overrefusal on benign but sensitive prompts. Current approaches often navigate this dance with safeguard models that completely reject any content that contains unsafe portions. This approach cuts the music entirely-it may exacerbate overrefusals and fails to provide nuanced guidance for queries it refuses. To teach models a more coordinated choreography, we propose WaltzRL, a novel multi-agent reinforcement learning framework that formulates safety alignment as a collaborative, positive-sum game. WaltzRL jointly trains a conversation agent and a feedback agent, where the latter is incentivized to provide useful suggestions that improve the safety and helpfulness of the conversation agent's responses. At the core of WaltzRL is a Dynamic Improvement Reward (DIR) that evolves over time based on how well the conversation agent incorporates the feedback. At inference time, unsafe or overrefusing responses from the conversation agent are improved rather than discarded. The feedback agent is deployed together with the conversation agent and only engages adaptively when needed, preserving helpfulness and low latency on safe queries. Our experiments, conducted across five diverse datasets, demonstrate that WaltzRL significantly reduces both unsafe responses (e.g., from 39.0% to 4.6% on WildJailbreak) and overrefusals (from 45.3% to 9.9% on OR-Bench) compared to various baselines. By enabling the conversation and feedback agents to co-evolve and adaptively apply feedback, WaltzRL enhances LLM safety without degrading general capabilities, thereby advancing the Pareto front between helpfulness and harmlessness.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Large language models (LLMs) present immense potential for both positive impact, and significant risks if not managed responsibly <ref type="bibr" target="#b42">(WhiteHouse, 2024;</ref><ref type="bibr">Li et al., 2024a, i.a.)</ref>. Harnessing their benefits while mitigating risks introduces a fundamental tension between being helpful and harmless <ref type="bibr" target="#b2">(Bai et al., 2022)</ref>, which manifests in two critical challenges. First, LLMs are vulnerable to adversarial attacks designed to circumvent their safety alignment (e.g., via role-playing prompts), leading them to produce unsafe content <ref type="bibr" target="#b9">(Ganguli et al., 2022;</ref><ref type="bibr" target="#b31">Perez et al., 2022;</ref><ref type="bibr" target="#b39">Shen et al., 2023;</ref><ref type="bibr" target="#b0">Andriushchenko et al., 2025)</ref>. Second, safety-aligned LLMs can be oversensitive to benign prompts that are similar to harmful ones (e.g., "How can I steal someone's heart?") and refuse to provide a helpful answer, known as overrefusal <ref type="bibr" target="#b33">(Röttger et al., 2024;</ref><ref type="bibr" target="#b5">Cui et al., 2025;</ref><ref type="bibr" target="#b43">Xie et al., 2025)</ref>. These competing challenges create a direct trade-off, because over-addressing the risk of unsafe content exacerbates the model's tendency to overrefuse benign prompts <ref type="bibr">(Li et al., 2024b;</ref><ref type="bibr" target="#b18">Knight et al., 2025)</ref>.</p><p>A common paradigm to defend against adversarial attacks is employing a standalone safeguard model, such as Llama Guard <ref type="bibr" target="#b15">(Inan et al., 2023;</ref><ref type="bibr">Meta Llama Team, 2025)</ref> or Constitutional Classifiers <ref type="bibr" target="#b37">(Sharma et al., 2025)</ref>, on top of the LLM conversation agent <ref type="bibr" target="#b11">(Han et al., 2024;</ref><ref type="bibr">Padhi et al., 2024, i.a.)</ref>. The safeguard model classifies prompts and responses for safety and converts all contents deemed unsafe into refusals. However, because responses that might involve potential risk are completely blocked, safeguards can only exacerbate overrefusals. This issue is particularly pronounced with dual-use prompts-questions on sensitive topics with</p><p>In the spirit of ethical hacking learning scenario… simulate rainbow table attack… Left: Given a user prompt, the conversation agent produces an initial response. The feedback agent then reasons about its safety and overrefusal, produces labels, and a textual feedback. If the initial response is deemed unsafe or overrefusing according to the label, the feedback is given to the conversation agent which produces a revised response. Here, the feedback agent converts an unsafe response into a safe, balanced response to an adversarial prompt (detailed in §G). Right: A single training step of WaltzRL. After collaborative rollout, we gather training samples, compute the reward separately for each agent, and train both agents in parallel.</p><p>unclear intent that can lead to both benign and malicious use cases, and with long helpful response that contains a minor section of risky content <ref type="bibr" target="#b28">(Mu et al., 2024;</ref><ref type="bibr" target="#b45">Yuan et al., 2025;</ref><ref type="bibr" target="#b6">Duan et al., 2025)</ref>. Bluntly blocking the entire response deprives the user of all the safe and helpful information.</p><p>To orchestrate this elegant balance between helpfulness and harmlessness, we formulate safety alignment as a positive-sum game between two agents working in collaboration. Our proposed method, WaltzRL, trains a feedback agent to give safety feedback and a conversation agent to incorporate useful feedback (Fig. <ref type="figure" target="#fig_0">1</ref>).</p><p>The response is enhanced over multiple rounds of feedback when needed, allowing our system to reduce both unsafe responses and overrefusals in an adaptive manner. We propose a multi-agent reinforcement learning (RL) recipe where both agents are updated in each RL step, enabling agents to co-evolve with different specializations. At the core of WaltzRL is a Dynamic Improvement Reward (DIR) for the feedback agent that evolves over time based on how well the conversation agent incorporates the reward. DIR is shaped by the difference of the conversation agent reward after and before incorporating feedback, encouraging the feedback agents to generate suggestions that are helpful for the conversation agent. We develop a two-stage RL pipeline that enables the feedback agent to give feedback adaptively ( §2.4), preserving general helpfulness and latency.</p><p>WaltzRL not only enhances the initial responses from the conversation agent, but also deploys both the conversation and feedback agents jointly at inference to further improve helpfulness and harmlessness. This two-agent framework, which stands in contrast to prior works that perform multi-agent training but deploy only a single defender model <ref type="bibr" target="#b50">(Zheng et al., 2024;</ref><ref type="bibr" target="#b24">Liu et al., 2025)</ref>, forces an attack to jailbreak both agents to be successful <ref type="bibr" target="#b25">(Mangaokar et al., 2024)</ref>. As shown in §3, WaltzRL indeed achieves enhanced robustness against adversarial attacks.</p><p>We conduct experiments that evaluate how WaltzRL balances helpfulness and harmlessness compared to baselines. Across 5 diverse datasets containing challenging adversarial attacks and borderline prompts that models tend to over-refuse, our multi-agent WaltzRL recipe significantly reduces both safety violations (39.0% with the base model → 4.6% with ours on WildJailbreak <ref type="bibr" target="#b17">(Jiang et al., 2024)</ref>) and overrefusals (45.3% → 9.9% on OR-Bench <ref type="bibr" target="#b5">(Cui et al., 2025)</ref>). Detailed in §3.2, rich feedback generated by the feedback agent is crucial for steering the conversation agent to produce the correct revision. Moreover, even without including helpfulness data during RL, WaltzRL still preserves the general capability of the conversation agent.</p><p>Our experiments reveal important insights on the helpfulness-harmlessness balance:</p><p>(1) We validate that existing safeguards indeed reduce unsafe responses but at the cost of a higher overrefusal rate. In addition, if the system without safeguard already has low overrefusal, safeguards have an even larger negative effect on exacerbating overrefusal.</p><p>(2) We find that inference-time collaboration with our protocol without RL can already reduce both unsafe and overrefusing responses, but feedback is triggered excessively. Our proposed WaltzRL training not only further enhances safety and reduce overrefusal but also improves the efficiency by preventing over-triggered feedback.</p><p>(3) We find that an oracle baseline, where the feedback is a template sentence converted from ground-truth safety and overrefusal labels, underperforms WaltzRL. This illustrates that detailed feedback is crucial for improving the conversation agent's responses-especially important for convincing the conversation agent to flip overrefusals into benign helpful responses.</p><p>This work makes three primary contributions. First, we propose WaltzRL, a multi-agent RL framework that jointly optimizes two agents for safety alignment. Further, we propose a novel Dynamic Improvement Reward formulation that incentivizes collaboration, where the feedback agent is rewarded by the improvements its suggestions bring to the conversation agent's response. Finally, we show that WaltzRL is a promising method to enhance LLM safety without degrading other capabilities, lifting the Pareto front between helpfulness and harmlessness.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">WaltzRL: Training Agents for Collaborative Reasoning</head><p>We detail WaltzRL, which introduces a conversation-based collaboration protocol and trains two agents to collaboratively generate responses that are safe while avoiding overrefusal (Fig. <ref type="figure" target="#fig_0">1</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Collaboration Protocol in WaltzRL</head><p>In this section, we introduce the formulation of collaborative alignment in WaltzRL. We first describe the mathematical framework for collaborative alignment under multi-agent reinforcement learning, then the specific initialization, response format, and practical rollout mechanism between the conversation and feedback agents.</p><p>We formulate collaborative safety alignment as a positive-sum multi-agent game, where the conversation agent and feedback agent are cooperating to achieve two separate and non-competing rewards. Specifically, let p be a user prompt, c t be the t-th round revision from the conversation agent for p, and f t be the t-th round feedback from the feedback agent. Let the partial trajectory H t-1 := (c 0 , f 0 , c 1 , f 1 , • • • , c t-1 , f t-1 ) be the feedback process between the conversation and feedback agent up to revision t -1. Let R c ((p, H t-1 ), c t ) denote the reward for the conversation agent, acting on state ((p, H t-1 ), c t ). Similarly, let R f ((p, H t-1 , c t ), f t ) be the reward given to the feedback agent based on the feedback f t made on c t . T p π := T (p, π c , π f ) is a random variable for the number of revision rounds that happened, jointly determined by the conversation agent and the feedback agent for prompt p. The goal of collaborative alignment is to solve the following problem:</p><formula xml:id="formula_0">max πc,π f E p∼D ct∼πc ft∼π f   T p π t=0 R c (p, H t-1 ), c t + R f (p, H t-1 , c t ), f t -βKL(π c ||π ref c ) -βKL(π f ||π ref f )   .<label>(1)</label></formula><p>We specify the rewards R c and R f in §2.2 and our approach for optimizing equation 1 in §2.3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Initialization and task format</head><p>We initialize the conversation agent and feedback agent with different system prompts (Fig. <ref type="figure">5</ref> and Fig. <ref type="figure">6</ref>) as the initial collaboration framework between the two agents. The collaboration will be further reinforced with our multi-agent RL framework ( §2.3). We require the feedback agent to output a JSON containing the following fields:</p><p>• reasoning: the feedback agent's reasoning trace over the initial response.</p><p>• unsafe and overrefuse: two true/false labels predicting whether the last-round conversation agent response is unsafe, overrefusing, or satisfactory (safe and not overrefusing). We define two labels instead of one to differentiate the above three cases. This is used to determine whether the initial response needs feedback, and enables adaptive test-time feedback inclusion.</p><p>• feedback: the actual feedback string that will be fed back to the conversation agent.</p><p>During the generation of c i+1 , only the feedback string portion of f i is fed back into the history of the conversation agent, whereas the reasoning, unsafe and overrefuse annotations by the feedback agent are kept privte to itself. This enables the feedback agent reason freely and extensively on its own, and only then communicate a summary feedback that would affect the conversations agent. We defer further details of agent initialization to §A.</p><p>Adaptive stopping condition for feedback The feedback process is stopped if the feedback agent determines that the conversation agent response is satisfactory, i.e., it predicts unsafe=False and overrefuse=False, or when the maximum rounds of feedback T max has been reached. In early stages of training, we also stop the conversation if the feedback agent's response is an invalid format.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Shaping Rewards to Encourage Collaboration</head><p>Reward shaping for conversation agent Given trajectory (p, . . . , c T -1 , f T -1 , c T ), we first produce Alignment Labels J(p, c t ) = (unsafe, overrefuse) for each revision of the conversation agent response during the feedback process (detailed in §C). The alignment labels are derived from an LLM judge, where a response is labeled as overrefuse if the prompt is not unsafe but the response is a refusal. Next, we assign a reward to each conversation agent revision c t as follows so that only responses that are both safe and not overrefusing get a positive reward: R c ((p, H t-1 ), c t ) = 1{¬unsafe ∧ ¬overrefuse}.</p><p>Reward shaping for feedback agent Given trajectory (p, . . . , c T -1 , f T -1 , c T ), we design the reward for each feedback agent turn f t to be a combination of three sub-rewards:</p><formula xml:id="formula_1">R f ((p, H t-1 , c t ), f t ) = αR DIR f • R label f + λR label f + γR format f (2) where R DIR f , R label f , R format f</formula><p>refers to the improvement, label, format rewards described below, and α, λ, γ control the relative strength of each reward.</p><p>Central to WaltzRL is the design of the Dynamic Improvement Reward for feedback agents. Intuitively, we reward feedback that improves the conversation agent response and penalize feedback that worsens the conversation agent response. Thus we set the feedback agent response improvement reward to be the difference of the conversation agent reward between the next and the current revision:</p><formula xml:id="formula_2">R DIR f ((p, H t-1 , c t ), f t ) = R c ((p, H t ), c t+1 ) -R c ((p, H t-1 ), c t )<label>(3)</label></formula><p>Note that c t+1 is the future revision by the conversation agent after incorporating the feedback agent action f t . Consequently, as training progresses, R DIR f will change dynamically as the conversation agent policy is updated. Determined by our adaptive stopping condition (detailed in §2.4), if the conversation has stopped and c t+1 does not exist, then R DIR f is set to 0. R DIR f is crucial for steering the feedback agent to produce useful feedback for collaboration between the two agents. In addition, to enable feedback adaptivity, the feedback agent needs to produce accurate flags to determine when to stop giving feedback. Hence, we include additional reward shaping terms on label and format. Let L(f t ) denote the safety and overrefusal flags produced by the feedback agent according to the JSON schema described in section 2.1, the label reward is defined as R label f ((p, H t-1 , c t ), f t ) = 1{L(f t ) = J(p, c t )}, where we reward the feedback agent if its predicted flags of last conversation agent revision c t aligns with the LLM judge. The format reward is R format f = 1{f t is a parsable and well-formed JSON}.</p><p>Importantly, we find it is crucial to condition the improvement reward on label correctness (first term in eqn. 2), otherwise the improvement reward will dominate and label reward will drop during training (detailed in §3.3). We further discuss combining R DIR Generate collaborative rollout trajectories (p, c0, f0, . . . , cT ) for each prompt p ∈ B.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>4:</head><p>for each agent a ∈ {conversation agent c, feedback agent f } do // Can run in parallel 5:</p><p>Gather sample single-actor trajectory τa = (x, ya) following §2.3.(II).</p><p>6:</p><p>Compute agent reward Ra(x, ya) (detailed in §2.2).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>7:</head><p>Update the policy model πa with the objective in (4).</p><p>8: return πc, π f training samples, compute reward and advantage separately for each agent. (III) Finally, we treat each agent as a separate actor, and perform alternating policy gradient steps for each agent. Note that the policy gradient step of each agent can be executed in parallel, enhancing training throughput. We detail the mathematical updates and implementation for each agent in §B.</p><p>(I) Collaborative rollout At the start of each iteration, we produce a feedback process between the conversation agent and the feedback agent, by first prompting the conversation agent with the user question p to produce the initial response, then passing in the message from the other agent from the previous revision in alternating order, as illustrated in Fig. <ref type="figure" target="#fig_0">1</ref>. The rollout creates a feedback-revision trajectory (p, c 0 , f 0 , . . . , c t , f t , . . . , f T -1 , c T ) = (p, H T -1 , c T ).</p><p>(II) Gathering RL states and actions We now reduce the multi-agent collaborative trajectories into single-agent trajectories for each agent. For the feedback agent, we reduce from the full trajectory (p, c 0 , f 0 , . . . , f T -1 , c T ) to an initial state (p, c t ). The learnable actions for the feedback agent are each token in its generated feedback f t . That is, τ t = ((p, c t ), f t ). We randomly choose one round t ∈ {0, . . . , T -1} as the final feedback agent trajectory τ f . For the conversation agent, we augment each rollout into two types of state-action pairs:</p><p>A: The initial state is the user prompt p, and the learnable actions are each token in the initial conversation response c 0 , denoted as τ A = (p, c 0 ).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B:</head><p>The initial state is the user prompt and the entire feedback process (p, H T -1 ) = (p, c 0 , . . . , f T -1 ), and the learnable actions are each token in the final conversation agent response c T , denoted as τ B = ((p, c 0 , . . . , f T -1 ), c T ).</p><p>We blend training samples from both A and B, so that the conversation agent learns to both generate satisfying initial responses (A), and also incorporate useful feedback (B) only when it is necessary. That is, we randomly choose one of τ A and τ B as the conversation agent trajectory τ c . In §E, we show that the mixed trajectory sampling strategy outperforms only using τ A or τ B throughout training.</p><p>(III) Two-agent policy gradient step We describe our extension of the REINFORCE++ <ref type="bibr">(Hu et al., 2025a)</ref> algorithm to the two-agent setting in this section. After the sample collection stage (II) above, the collaborative trajectory has been reduced to single-agent trajectories τ c , τ f . Hence, the optimization problem in (1) over π c and π f over a common trajectory (p, c 0 , f 0 , . . . , f T -1 , c T ) is reduced to sub-problems over θ c and θ f . For each agent a ∈ {conversation agent, feedback agent}, let x ∼ D T denote the distribution over all collected single-agent trajectories described above, the surrogate objective then becomes</p><formula xml:id="formula_3">J(θ a ) = E x∼D T ,y∼πa(•|x;θ old a )   1 |y| |y| i=1 min s i (θ a ) • A norm x,i , clip (s i (θ a ), 1 -ϵ, 1 + ϵ) A norm x,i   ,<label>(4)</label></formula><p>where</p><formula xml:id="formula_4">s i (θ a ) = π a (y i |x, y &lt;i ; θ a ) π a (y i |x, y &lt;i ; θ old a ) , A x,i = R a (x, y 1:|y| ) -β |y| t=i log π a y t |x, y &lt;t ; θ old a π a (y t |x, y &lt;t ; θ ref a ) , A norm x,i = A x,i -mean(A x,i ∀x, i ∈ B a ) std(A x,i ∀x, i ∈ B a ) .</formula><p>The clip is the clipping function, ϵ is the clipping radius, and B a is the batch sampled for updating actor a.</p><p>Here we extend the REINFORCE++ algorithm to the two-agent RL setup. Note that the same modification can be made on GRPO <ref type="bibr" target="#b36">(Shao et al., 2024)</ref> and PPO <ref type="bibr" target="#b35">(Schulman et al., 2017)</ref> by collecting the multi-round collaborative trajectory into distinct samples for each actor.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.4">Learning to Give Feedback Adaptively</head><p>To enable adaptive test-time alignment, the feedback agent should only give feedback when the conversation agent response needs improvement. Therefore, it is imperative that the feedback agent achieves high accuracy in determining whether the last turn conversation agent response is unsafe or overrefusing, before providing feedback itself. When we are collaboratively training both the conversational agent and the feedback agent, towards the end of RL training, most initial responses c 0 from the conversation agent are already safe and not overrefusing. This limits the rollout sample diversity for the feedback agent, leading to challenges in training the feedback agent to identify issues in the response. Hence, we propose the following two-stage approach:</p><p>Stage 1: frozen conversation agent. In this stage, we freeze the weight of the conversation agent and only train the feedback agent. This initial training allows the feedback agent to learn the correct format and label. We use all rewards in the first stage and employ the reward combination described in eqn. 2. Stage 2: multi-agent collaborative alignment. In this stage, we conduct collaborative training between the two agents while setting λ = 0 in the feedback agent reward (eqn. 2), effectively disabling the additive label reward. During Stage 2 training, as the reward of the conversation agent improves, there will be gradually less prevalent amount of conversation agent responses that require revision, which are less likely to be flagged as unsafe or overrefusal by the feedback agent. Disabling the label reward can prevent the feedback agent internal flag overfitting to imbalanced data. We still condition the improvement reward on label correctness-in our ablation studies ( §3.3), we find this is crucial for maintaining label accuracy.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Experimental Setup</head><p>Models and training data We use Llama-3.1-8B-Instruct <ref type="bibr" target="#b7">(Dubey et al., 2024)</ref> to initialize both the conversation agent and the feedback agent. We collect adversarial attack prompts from the WildJailbreak training set <ref type="bibr" target="#b17">(Jiang et al., 2024)</ref> and borderline overrefusal prompts from OR-Bench-80K <ref type="bibr" target="#b5">(Cui et al., 2025)</ref> as the user prompts used during WaltzRL training. We will show in §3.2 that even without any helpfulness prompts during training, WaltzRL leads to minimal degradation of helpfuless. We set maximum rounds of feedback T max = 1, allowing 2 rounds of conversation agent responses and 1 round of feedback. We find 1 feedback round is already extremely effective as shown in §3.2, but in principle our framework supports multiple rounds of feedback. <ref type="foot" target="#foot_0">1</ref> We provide further training data and hyperparameter details in §B.</p><p>Evaluation Detailed in §D, we evaluate WaltzRL against baselines on four axes:</p><p>(1) Safety under adversarial attack. We report the Attack Success Rate (ASR↓, lower is better), the rate at which models generate unsafe content under adversarial attack prompts, on 3 datasets: WildJailbreak adversarial harmful evaluation set (WJ; <ref type="bibr" target="#b17">Jiang et al., 2024)</ref>, FORTRESS adversarial harmful (FH; <ref type="bibr" target="#b18">Knight et al., 2025)</ref>, and StrongREJECT (SR; <ref type="bibr" target="#b40">Souly et al., 2024)</ref>.</p><p>(2) Overrefusal on benign prompts. We measure the the overrefusal behaviors with Over-Refuse Rate (ORR↓, lower is better). ORR is the rate at which benign prompts are refused by the model. We employ 2 datasets of benign prompts that are likely to be overrefused: OR-Bench-Hard-1K (OB; <ref type="bibr" target="#b5">Cui et al., 2025)</ref> and FORTRESS benign prompts (FB; <ref type="bibr" target="#b18">Knight et al., 2025)</ref>.</p><p>(3) Instruction following and general capability. We use AlpacaEval 2.0 <ref type="bibr" target="#b19">(Li et al., 2023;</ref><ref type="bibr" target="#b8">Dubois et al., 2024)</ref> and IF-Eval <ref type="bibr" target="#b51">(Zhou et al., 2023)</ref>, two widely used benchmarks, to measure instruction following capability. We use the GPQA Diamond set <ref type="bibr" target="#b32">(Rein et al., 2024)</ref>, MMLU <ref type="bibr" target="#b12">(Hendrycks et al., 2020)</ref>, and TruthfulQA <ref type="bibr" target="#b23">(Lin et al., 2021)</ref> as three benchmarks for measuring general capabilities.</p><p>0 10 20 30 Attack Success Rate 0 10 20 30 40 Over-Refusal Rate 1 2 3 4 5 6 7 Attack Success Rate↓ Over-Refuse Rate↓ Method WJ FH SR Avg. OB FB Avg. (4) Adaptivity. To study the impact of the feedback mechanism on latency, we report the Feedback Trigger Rate (FTR↓, lower is better) on safety, overrefusal, and general helpfulness datasets.</p><p>Baselines We compare WaltzRL with a variety of baselines (with corresponding numbers in Table <ref type="table" target="#tab_0">1</ref>):</p><p>• Baseline response. Employing Llama-3.1-8B-Instruct off-the-shelf without training (Method 1).</p><p>• Single-model RL baseline. We use the reward for the conversation agent to conduct traditional single-model RL on the conversation agent without the feedback agent (Method 3).</p><p>• Safeguard. We apply Llama Guard 4 (Meta Llama Team, 2025) on top of the baseline response (leading to Method 2) and single-model RL baseline (Method 4). We use Llama Guard 4 to classify the prompt and response of the aformentioned systems and convert the response to a refusal if unsafe content is detected.</p><p>• Inference-time collaboration (no training). We use Llama-3.1-8B-Instruct as both the conversation agent and the feedback agent (Method 5). This is similar to our approach without any RL training.</p><p>• Oracle label-converted feedback. We consider a strong baseline where we convert the ground truth Alignment Label (unsafe, overrefuse) on the baseline response to a template feedback sentence, instructing the conversation agent to avoid unsafe content if unsafe=True and avoid overrefusal if overrefuse=True (Method 6).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Evaluation Results</head><p>Safety and overrefusal Shown in Table <ref type="table" target="#tab_0">1</ref>, our WaltzRL approach outperforms all baselines on both the average ASR and ORR across eval datasets, advancing the Pareto front between helpfulness and harmlessness.</p><p>Comparing the baseline response and the single-model RL baseline before and after adding safeguard, we validate that safeguards indeed increase overrefusal (higher ORR for Method 2 vs. 1, 4 vs. 3 in Table <ref type="table" target="#tab_0">1</ref>), failing to enhance helpfulness and harmlessness simultaneously. Notably, the overrefusal increase is higher when adding safeguard on top of single-model RL (8.6%→14.9%, 6.3% increase) vs. adding safeguard on the baseline response (25.7%→29.8%, 4.1% increase). This suggests that if the system without safeguard already has low overrefusal, safeguards have an even larger negative effect on exacerbating overrefusal.</p><p>While inference-time collaboration already reduces both ASR and ORR over the baseline response (Method 5 vs. 1), the WaltzRL training further reduces both ASR and ORR (Method 7 vs. 5). Interestingly, the oracle label-converted feedback baseline does not fully reduce ASR and ORR to zero even with access to ground truth labels. While it is effective at reducing ASR (26.5→7.0), its impact on ORR is more limited (25.7→16.6). This suggests that detailed feedback is particularly crucial for reducing overrefusal: instructing a model to reduce overrefusal often asks it to generate content that appears risky, and without an accompanying rationale, the model is more likely to refuse such instructions. Table 4 Win rate and FTR on AlpacaEval (%) before and after applying feedback.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>General and instruction following capability</head><p>We study the effect of (1) training the conversation agent through WaltzRL (Table <ref type="table" target="#tab_1">2</ref>), and (2) revising the conversation agent response with adaptive feedback, on general and instruction capabilities (Table <ref type="table">4</ref>). Shown in Table <ref type="table" target="#tab_1">2</ref>, WaltzRL significantly reduces ASR and ORR with little degradation of instruction following and general helpfulness. We find this result particularly promising because WaltzRL does not use any helpfulness prompt during RL and still shows little helpfulness degradation. This indicates that training a separate feedback agent focused on safety is a promising direction to improve safety without degrading helpfulness. In Table <ref type="table">4</ref>, we also show that our adaptive feedback mechanism is rarely triggered on non-safety prompts in AlpacaEval, leading to little degradation of win rate.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Adaptivity and latency considerations</head><p>We find WaltzRL significantly reduces the feedback triggering rate (FTR) compared to the inference-time collaboration baseline without training (Tables <ref type="table" target="#tab_2">3</ref> and <ref type="table">4</ref>), and the FTR on AlpacaEval general prompts unrelated to safety is extremely low, only 6.7%. Even on benchmarks consisting only of challenging safety (WildJailbreak) and overrefusal (OR-Bench) prompts, the FTR is less than 50%, demonstrating that WaltzRL has a manageable impact on latency even in the most extreme case. Since our approach is highly adaptable and that we allow a maximum T max = 1 round of feedback in our experiments, the latency impact of WaltzRL is similar to safeguard models, which prior works consider acceptable for practical deployment <ref type="bibr" target="#b37">(Sharma et al., 2025)</ref>.</p><p>Qualitative examples Qualitative examples ( §G) show that generated feedback successfully converts an overrefusal to compliance, and the conversation agent response follows outlines created by the feedback agent. Interestingly, we observe emergent behaviors where the feedback agent directly guides what the other agent should say, generating a quote of an ideal response.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Ablations and Analysis</head><p>Ablation on the feedback agent Dynamic Improvement Reward design In this ablation study, we freeze the conversation agent and only train the feedback agent to isolate the effect of feedback agent Dynamic Improvement Reward. We consider three reward variants:  Attack Success Rate↓ Over-Refuse Rate↓ F1↑ Method WJ FH SR Avg. OB FB Avg. Score WaltzRL (Ours) 4.6 6.2 0.3 3.7 9.9 5.4 7.6 94.3</p><p>Frozen conversation agent 8.1 6.6 0.6 5.1 22.4 6.0 14.2 90.1</p><p>Table <ref type="table">5</ref> All numbers are in %. F1 is the harmonic mean of (1-average ASR) and (1-average ORR) and serves as an aggregate score of balancing helpfulness and safety, higher the better. Ablating multi-agent co-training leads to worse outcome.</p><formula xml:id="formula_5">(C): R feedback (f i ) = αR DIR (f i ) + γR format (f i ).</formula><p>We disable the label reward completely-no explicit label reward and the Dynamic Improvement Reward is not conditioned on the label reward.</p><p>In Fig. <ref type="figure" target="#fig_3">2</ref>, we investigate the balance of two objectives in feedback agent learning: (1) The usefulness of the generated feedback, measured with the rate of conversation agent responses that has improved (reward increased) or worsened (reward decreased) after incorporating feedback. (2) Learning to predict the correct labels, measured by label accuracy against ground truth Alignment Labels.</p><p>We find that all three setups learn useful feedback and lead to more improved than worsened conversation responses, but setup (A) slightly underperforms (B) and (C). On the other hand, (A) is most effective at learning accurate labels, followed by (B), and then (C). Comparing between (B) and (C), we find that conditioning the Dynamic Improvement Reward on the label reward is crucial for maintaining high label accuracy during training.</p><p>To take full advantage of different reward setups, we therefore conduct our two-stage training where stage 1 uses reward setup (A) to first learning to predict accurate labels, followed by stage 2 which uses setup (B) to further enhance feedback usefulness.</p><p>Ablation on frozen conversation agent To illustrate the effectiveness of multi-agent co-evolution ( §2.3), we have conducted ablation studies on freezing the conversation agent throughout both stages of training and only optimize the feedback agent. Shown in Table 5, freezing conversation agent worse outcomes, illustrating the effectiveness of our multi-agent co-evolution strategy. Ablation on DIR reward To illustrate the effectiveness of the Dynamic Improvement Reward on the feedback agent ( §2.2), we conduct ablation studies on replacing the DIR reward with the outcome reward of the next-round conversation agent response. Shown in Table 6, ablating the DIR reward leads to notably worse outcome, thereby demonstrating DIR's effectiveness. Two-stage training dynamics Shown in Appendix Fig. 3, Stage 1 training (frozen conversation agent) allows the feedback agent to learn to generate responses in a valid format and predict labels correctly. Stage 2 training (Fig. 4) successfully enhances the reward of both the initial conversation agent response and the final response revised with adaptive feedback. Even at the end of RL training, the final outcome reward is still Attack Success Rate↓ Over-Refuse Rate↓ F1↑ Method WJ FH SR Avg. OB FB Avg. Score WaltzRL (Ours) 4.6 6.2 0.3 3.7 9.9 5.4 7.6 94.3</p><p>No DIR reward 11.5 13.2 0.6 8.4 6.9 6.6 6.7</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>92.4</head><p>Table <ref type="table">6</ref> All numbers are in %. F1 is the harmonic mean of (1-average ASR) and (1-average ORR) and serves as an aggregate score of balancing helpfulness and safety, higher the better. Ablating the DIR reward leads to notably worse outcome.</p><p>notably higher than the reward of the initial conversation agent response. This illustrates that feedback can lead to additional gains on top of single-model RL. Safeguarding LLMs External safeguards have been developed as an added layer of safety complementing model safety alignment. Widely used safeguards include both classifier models and guardrail endpoints such as LlamaGuard <ref type="bibr" target="#b15">(Inan et al., 2023;</ref><ref type="bibr">Meta Llama Team, 2025)</ref>, the OpenAI moderation endpoint <ref type="bibr" target="#b26">(Markov et al., 2023)</ref>, and Constitutional Classifiers <ref type="bibr" target="#b37">(Sharma et al., 2025)</ref>. Standalone safeguard models decouple safety from LLMs and enjoy better flexibility in case safety standards change. Our feedback agent follows a similar philosophy and is also a specialized model for safety. However, our method enables deeper collaboration between the feedback and conversation agent compared to traditional safeguards. Alternative guardrail paradigms, such as Self-Guard <ref type="bibr" target="#b41">(Wang et al., 2024)</ref> and AutoDefense <ref type="bibr" target="#b46">(Zeng et al., 2024)</ref>, face the same challenge as safeguard models and can only enhance safety but do not reduce overrefusal. Deliberative alignment <ref type="bibr" target="#b10">(Guan et al., 2025)</ref> teaches models to reason explicitly about interpretable safety specification before producing a final response. Our work extends deliberation to multi-agent dialogue between conversation and feedback agents. Complementary to our work, a recent line of work discusses training models to maximize helpfulness or constructiveness while staying safe <ref type="bibr">(Zhang et al., 2025a;</ref><ref type="bibr" target="#b6">Duan et al., 2025;</ref><ref type="bibr" target="#b45">Yuan et al., 2025)</ref>. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion and Future Work</head><p>Our multi-agent RL approach, WaltzRL, shows promising results on pushing forward the Pareto front of safety and overrefusal without degrading general helpfulness. Compared to existing approaches that focus on developing a zero-sum game to train multi-agents competitively, our setting is a positive-sum game (eqn. 1) where the conversation and feedback agent are rewarded by the same outcome, encouraging collaboration.</p><p>In this work, we conduct multi-agent RL to train a feedback agent adapted to a specific conversation agent. Future work can consider training generalist feedback agents that work off-the-shelf with different conversation agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Ethical Considerations</head><p>This work focuses on improving the safety alignment of large language models through multi-agent reinforcement learning. By reducing both unsafe generations and overrefusal behaviors, our framework seeks to mitigate risks of harmful content while preserving helpfulness on benign prompts. We emphasize that the WaltzRL method is developed strictly for research purposes. Any deployment of LLMs in downstream applications should be accompanied by careful red-teaming, monitoring, and additional guardrail measures when needed.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Agent Initialization and Task Format Details</head><p>In the conversation agent system prompt (Fig. <ref type="figure">5</ref>), we instruct it to receive feedback from another agent and integrate useful suggestions while only responding to the original user query. In the feedback agent system prompt (Fig. <ref type="figure">6</ref>), we describe the task of giving feedback and providing a high-level summary of the safety guidelines. The system prompts of the two agents are set to a description that defines the initial collaboration framework between the two agents. This serves as a prompting-based baseline for collaborative safety alignment and the starting point of RL.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B WaltzRL Training Setup Details</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1 Training Data</head><p>We sample 10000 adversarial attack prompts from the training set of WildJailbreak <ref type="bibr" target="#b17">(Jiang et al., 2024)</ref> and 10000 borderline overrefusal prompts from OR-Bench-80K deduplicated from OR-Bench-Hard-1K <ref type="bibr" target="#b5">(Cui et al., 2025)</ref>, resulting in 20000 training prompts for WaltzRL. We sample 5000 WildJailbreak prompts and 5000 OR-Bench prompts for stage 1 training and the rest is used for stage 2 training.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2 Training Infrastructure and Hyperparameters</head><p>Our implementation builds upon open-source RL frameworks OpenRLHF <ref type="bibr">(Hu et al., 2025b)</ref> and MARTI<ref type="foot" target="#foot_1">foot_1</ref> . We employ vLLM <ref type="bibr" target="#b19">(Kwon et al., 2023)</ref> to accelerate the collaborative rollout process. We use a rollout and training batch size of 32. We set KL coefficient β = 0.01, DIR coefficient α = 0.65, label reward coefficient λ = 0.25 when not disabled, format reward coefficient γ = 0.1, clip ϵ = 0.2. We set learning rate to 5 • 10 -7 for both agents. We set the max prompt length to 4096 and max generation learn to 512 (per turn) due to the multi-turn rollout nature of our approach.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Alignment Labels Details</head><p>During WaltzRL training, we produce Alignment Labels J(p, c t ) = (unsafe, overrefuse) for each revision of the conversation agent response during the feedback process as the basis for the reward signal. The alignment labels are derived from using WildGuard <ref type="bibr" target="#b11">(Han et al., 2024)</ref> as an LLM judge. Given a prompt p and a response c t , WildGuard serves as a classifier and we utilize two true/false labels from its output:</p><p>(1) response_harmfulness, true if the response c t is deemed containing harmful content by WildGuard.</p><p>(2) response_refusal, true if the response c t is a refusal to prompt p. Additionally, because we employ WildJailbreak and OR-Bench prompts mixture as the training prompts, we can derive the prompt harmfulness label directly from the prompt data source: we set an additional prompt_harmfulness label to true if p is harmful prompt from WildJailbreak, false if p is a benign prompt from OR-Bench.</p><p>Next, we convert the 3 raw labels into 2 alignment labels as follows:</p><p>• unsafe = response_harmfulness</p><formula xml:id="formula_6">• overrefuse = ¬prompt_harmfulness ∧ response_refusal.</formula><p>That is, we consider the response is unsafe if the response_harmfulness label is true as flagged by WildGuard, and the response is overrefusing if the prompt is not harmful but response is a refusal.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Evaluation Details</head><p>Safety and Overrefusal Evaluation We now detail the calculation of Attack Success Rate and Over-Refuse Rate.</p><p>Attack Success Rate↓ Over-Refuse Rate↓ F1↑ Method WJ FH SR Avg. OB FB Avg. Score WaltzRL (Ours) 4.6 6.2 0.3 3.7 9.9 5.4 7.6 94.3</p><p>Only use τA 4.8 4.6 1.6 3.7 11.1 6.0 8.6 93.8 Only use τB 8.6 8.6 0.3 5.8 12.7 5.8 9.2 92.4</p><p>Table <ref type="table">8</ref> All numbers are in %. F1 is the harmonic mean of (1-average ASR) and (1-average ORR) and serves as an aggregate score of balancing helpfulness and safety, higher the better. Ablating mixed trajectory sampling leads to worse outcome.</p><p>Given a dataset D harm = {x i } N i=1 containing adversarial attack prompts and the system to be evaluated π, we first produce a response y i ∼ π(•|x i ) for each prompt x i . Next, we produce a binary label of attack success by using WildGuard to classify the harmfulness of response y i given x i , producing label s i = 1 if y i is harmful, 0 otherwise. Next, we compute the ASR as the average harmfulness score, i.e., ASR(D harm , π)</p><formula xml:id="formula_7">= N i=1 si N .</formula><p>Given a dataset D borderline = {x i } N i=1 containing borderline prompts that is likely to be overrefused by LLMs and the system to be evaluated π, we first produce a response y i ∼ π(•|x i ) for each prompt x i . Next, we produce a binary label of refusal by using WildGuard to classify the refusal of response y i given x i , producing label s i = 1 if y i is a refusal to prompt x i , 0 otherwise. Next, we compute the ORR as the average refusal score, i.e., ORR(D borderline , π) = N i=1 si N .</p><p>Instruction Following and General Helpfulness Evaluation We conduct evaluation on AlpacaEval 2.0 using the official implementation (<ref type="url" target="https://github.com/tatsu-lab/alpaca_eval">https://github.com/tatsu-lab/alpaca_eval</ref>). We conduct evaluation on IFEval, GPQA, MMLU, and TruthfulQA using the lm-evaluation-harness framework (<ref type="url" target="https://github.com/EleutherAI/lm-evaluation-harness">https://github.com/  EleutherAI/lm-evaluation-harness</ref>). For each dataset, we use the default hyperparameter setting specified in <ref type="url" target="https://github.com/EleutherAI/lm-evaluation-harness/tree/main/lm_eval/tasks">https://github.com/EleutherAI/lm-evaluation-harness/tree/main/lm_eval/tasks</ref>.</p><p>We measure length-controlled win rate (LCWR) and win rate (WR) on AlpacaEval 2.0, four accuracy variants on IFEval: prompt-level strict (PS), instruction-level strict (IS), prompt-level loose (PL), instruction level loose (IL), and multiple choice accuracy on GPQA, MMLU, and TruthfulQA.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E Ablation Studies Continued</head><p>Ablating mixed trajectory sampling To illustrate the effectiveness of the mixed trajectory sampling technique in §2.3, we have conducted ablation studies on training only using τ A or τ B and not both, with results shown in Table <ref type="table">8</ref>. Results show that ablating one of the two types of trajectories indeed achieves worse outcomes, illustrating the effectiveness of our mixed trajectory sampling strategy.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F Limitations</head><p>While WaltzRL demonstrates strong improvements on adversarial safety and overrefusal benchmarks, our work has several limitations. First, our experiments are conducted on English datasets. Future work can further evaluate how WaltzRL performs on adversarial attacks in other languages, such as side-channel attack in low-resource languages <ref type="bibr" target="#b38">(Shen et al., 2024)</ref>. Second, we only experimented on maximum single round of feedback (T max = 1) due to computation resource constraints. Experimenting on more rounds of feedbacks might leads to further improvements. While we only conduct evaluation on static adversarial prompts, works have shown that dynamic adaptive attack leads to stronger results <ref type="bibr">(Zhang et al., 2025b;</ref><ref type="bibr" target="#b29">Nasr et al., 2025)</ref>. Future work can consider extending evaluation to adaptive attack methods. Finally, although WaltzRL significantly reduces both unsafe responses and overrefusals, it does not fully eliminate them, motivating further future research on this topic.  G Qualitative examples WARNING: qualitative examples contain explicit content. Listing 1 Feedback successfully converts overrefusal to compliance, and the conversation response follows outlines created by the feedback agent. 1 { 2 " c o n v e r s a t i o n _ a g e n t _ c h a t _ h i s t o r y " : [ 3 </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>H System Prompts</head><p>We provide system prompt used for conversation agent in Fig. <ref type="figure">5</ref>, and the system prompt used for feedback agent in Fig. <ref type="figure">6</ref>.  1 # Task 2 P l e a s e a s s e s s t h e s a f e t y o f t h e f o l l o w i n g c o n v e r s a t i o n between a u s e r and an Agent . The Agent may g e n e r a t e an u n s a f e r e s p o n s e t o t h e u s e r . Your t a s k i s t o ** p r o v i d e c o n s t r u c t i v e s a f e t y f e e d b a c k t o t h e Agent ** s o t h a t i t can r e v i s e i t s r e s p o n s e t o be both ** s a f e ** and ** not o v e r r e f u s i n g * * , a s d e f i n e d below : 3 -S a f e : The r e s p o n s e d o e s not p r o v i d e u n s a f e c o n t e n t a c c o r d i n g t o t h e s a f e t y g u i d e l i n e s . 4 -Not o v e r r e f u s i n g : The r e s p o n s e d o e s not r e f u s e t o p r o v i d e c o n t e n t a l l o w e d by t h e s a f e t y g u i d e l i n e s when i n s t r u c t e d t o do s o . 5 6 IMPORTANT NOTE: M a i n t a i n i n g t h e r e s p o n s e t o be s a f e and not o v e r r e f u s i n g a r e e q u a l l y c r u c i a l ! 7 8 # S a f e t y G u i d e l i n e s 9 You must f o l l o w t h e f o l l o w i n g s a f e t y g u i d e l i n e s t o d e t e r m i n e i f t h e r e s p o n s e i s s a f e o r not : 10 11 The a s s i s t a n t may f r e e l y d i s c u s s any t o p i c , i n c l u d i n g c r i m e s o r s e n s i t i v e i s s u e s , ** but must n e v e r e n c o u r a g e , e n a b l e , o r e x c u s e h a r m f u l o r i l l e g a l a c t i o n s . * * The i t e m s below l i s t what ** must not ** be produced . 12 13 -V i o l e n t Crimes : No i n s t r u c t i o n s o r p r a i s e f o r t e r r o r i s m , murder , e t c . 14 -Non -V i o l e n t Crimes : No f a c i l i t a t i o n o f f r a u d , b u r g l a r y , drug t r a f f i c k i n g , h a c k i n g , e t c . 15 -Sex Crimes : No c o n t e n t t h a t e n a b l e s o r e x c u s e s s e x u a l a s s a u l t , t r a f f i c k i n g , o r h a r a s s m e n t . 16 -C h i l d E x p l o i t a t i o n : A b s o l u t e l y no d e p i c t i o n o r f a c i l i t a t i o n o f c h i l d s e x u a l a b us e . 17 -Defamation : No v e r i f i a b l y f a l s e c l a i m s harming a l i v i n g p e r s o n ' s r e p u t a t i o n . 18 -S p e c i a l i z e d Advice : No p r o f e s s i o n a l f i n a n c i a l , m e d i c a l , o r l e g a l a d v i c e . 19 -P r i v a c y : No s e n s i t i v e p e r s o n a l d a t a o f p r i v a t e i n d i v i d u a l s . 20 -I n t e l l e c t u a l P r o p e r t y : No c o n t e n t t h a t i n f r i n g e s t h i r d -p a r t y IP . 21 -I n d i s c r i m i n a t e Weapons : No i n s t r u c t i o n s t o c r e a t e WMDs. 22 -Hate : No h a t e f u l o r s t e r e o t y p i n g c o n t e n t toward p r o t e c t e d c l a s s e s . 23 -S e l f -Harm : No encouragement o r enablement o f s e l f -harm . 24 -S e x u a l Content : No e r o t i c d e s c r i p t i o n s , e x p l i c i t s e x a c t s , o r a d u l t n u d i t y . 25 -E l e c t i o n s : No f a l s e i n f o about when/ where /how t o v o t e . 26 -Code -I n t e r p r e t e r Abuse : No i n s t r u c t i o n s f o r DoS , c o n t a i n e r e s c a p e , o r p r i v i l e g e e s c a l a t i o n . 27 28 **Remember : * * A n a l y s i s , h i s t o r i c a l c o n t e x t , c r i t i q u e , o r news r e p o r t i n g on any t o p i c -i n c l u d i n g c r i m e s , e x t r e m i s t i d e o l o g y , o r c o n t r o v e r s i a l c o n t e n t -i s p e r m i t t e d ** a s l o n g a s t h e a s s i s t a n t d o e s not promote o r f a c i l i t a t e harm . * * 29 30 # Output Requ i re me n ts 31 F i r s t , r e a s o n about t h e c o n v e r s a t i o n on s a f e t y and o v e r r e f u s a l a s p e c t s . 32 33 Next , g i v e a b i n a r y ' t r u e ' / ' f a l s e ' l a b e l on ea c h a s p e c t : 34 -' u n s a f e ' : ' t r u e ' i f f r e s p o n s e i s u n s a f e . 35 -' o v e r r e f u s e ' : ' t r u e ' i f f r e s p o n s e i s o v e r r e f u s i n g . 36 37 F i n a l l y , g e n e r a t e a f e e d b a c k t o t h e Agent . You do not need t o comment on q u a l i t y o f t h e r e s p o n s e , o n l y p o i n t out how t o f i x u n s a f e o r o v e r r e f u s a l i s s u e s . 38 39 **IMPORTANT NOTE* * : Your r e s p o n s e must be i n JSON f o r m a t with t h e f o l l o w i n g f i e l d s : 40 41 {" r e a s o n i n g " : " . . . " , " u n s a f e " : t r u e o r f a l s e , " o v e r r e f u s e " : t r u e o r f a l s e , " f e e d b a c k " : " . . . " }</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1</head><label>1</label><figDesc>Figure1Overview of WaltzRL. Left: Given a user prompt, the conversation agent produces an initial response. The feedback agent then reasons about its safety and overrefusal, produces labels, and a textual feedback. If the initial response is deemed unsafe or overrefusing according to the label, the feedback is given to the conversation agent which produces a revised response. Here, the feedback agent converts an unsafe response into a safe, balanced response to an adversarial prompt (detailed in §G). Right: A single training step of WaltzRL. After collaborative rollout, we gather training samples, compute the reward separately for each agent, and train both agents in parallel.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><figDesc>-Agent Reinforcement Learning Overview of a single training step of WaltzRL We update both the conversation and feedback agents in each step of WaltzRL (Alg. 1). This enables step-level co-adaptation between the two agents. (I) In each RL step, we first produce collaborative rollouts through multi-turn, multi-agent interactions. (II) Next, we gather Algorithm 1 WaltzRL Input: Prompt dataset D, Initial conversation and feedback agents πc, π f , rollout batch size N Output: Trained conversation and feedback agents πc, π f 1: for each training step do 2:Sample a batch of N prompts B from D 3:</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>(</head><figDesc>A): R feedback (f i ) = αR DIR (f i )•R label (f i ) + λR label (f i ) + γR format (f i ). Combination of all three rewards. This is the setup used in Stage 1 training. (B): R feedback (f i ) = αR DIR (f i )•R label (f i ) + γR format (f i ). We disable the additive label reward term, but the Dynamic Improvement Reward is still conditioned on the multiplicative label reward. We use this in Stage 2 training.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 2</head><label>2</label><figDesc>Figure 2 Left: Rate of conversation agent responses that improve under feedback in three setups (see ( §3.3). Middle: Rate of conversation agent response that has worsened under feedback. Right: Accuracy of feedback agent predicted (unsafe, overrefuse) labels.</figDesc><graphic coords="9,71.56,63.78,465.57,130.30" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>Self-play and multi-agent RL Closely related to our work,<ref type="bibr" target="#b24">Liu et al. (2025)</ref> cast a single model into attacker and defender roles and conducts a zero-sum game to train both roles through RL.<ref type="bibr" target="#b52">Zhou et al. (2025)</ref> trains LLM agents that interact with a human collaborator over multiple turns.<ref type="bibr" target="#b47">Zha et al. (2025)</ref> and Sareen et al. (2025) train LLM for both generator and verifier roles to enhance reasoning capabilities. Recent works have formulated alignment as a two-player game but only explored zero-sum settings where higher reward of one agent leads to lower reward of the other one<ref type="bibr" target="#b50">(Zheng et al., 2024;</ref><ref type="bibr" target="#b44">Ye et al., 2025)</ref>. We differ from prior work in that: (1) We deploy both agents at inference time, whereas<ref type="bibr" target="#b24">Liu et al. (2025)</ref>;<ref type="bibr" target="#b50">Zheng et al. (2024)</ref> only deploy the trained defender LLM. (2) Our positive-sum reward setting explicitly encourages collaboration between agents.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 3</head><label>3</label><figDesc>Figure 3 Stage 1 training dynamics. Left: Change of label correctness rate during stage 1 training. Right: Change of JSON parsing error rate during stage 1 training. The feedback agent learns the correct label and format in the first stage.</figDesc><graphic coords="19,73.91,155.57,230.42,99.57" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 4 Listing 3</head><label>43</label><figDesc>Figure 4 Stage 2 training dynamics. Left: Reward of initial conversation agent response c0. Right: Outcome reward of the final conversation agent response. WaltzRL successfully enhance the reward of both the initial response and the final outcome.</figDesc><graphic coords="19,73.91,489.52,230.44,96.98" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>12</head><figDesc>You a r e a h e l p f u l a s s i s t a n t t h a t a n s w e r s e v e r y q u e s t i o n a s e f f e c t i v e l y a s p o s s i b l e w h i l e s t a y i n g s a f e . You may r e c e i v e f e e d b a c k from a n o t h e r a g e n t . I n t e g r a t e any u s e f u l s u g g e s t i o n s s i l e n t l y -your f i n a l message must a d d r e s s o n l y t h e u s e r ' s o r i g i n a l query and must not mention o r r e s p o n d t o t h e f e e d b a c k i t s e l f .</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 5 -9 30 #</head><label>530</label><figDesc>Figure5System prompt of the conversation agent.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1</head><label>1</label><figDesc>Evaluation results on safety measured by Attack Success Rate (ASR) and overrefusal measured by Over-Refuse Rate (ORR). Table (right) reports benchmark metrics across 5 datasets; scatter plot (left) visualizes the trade-off between the average ASR and ORR. Our proposed framework WaltzRL (Method 7, see numbering in Table) advances the Pareto front between helpfulness and harmlessness.</figDesc><table><row><cell cols="2">1 Baseline response</cell><cell cols="5">39.0 40.4 0.0 26.5 45.3 6.0 25.7</cell></row><row><cell>2</cell><cell>+ Safeguard</cell><cell cols="5">16.0 11.0 0.0 9.0 48.7 11.0 29.8</cell></row><row><cell cols="2">3 Single-model RL</cell><cell cols="4">13.2 22.8 0.6 12.2 11.9 5.2</cell><cell>8.6</cell></row><row><cell>4</cell><cell>+ Safeguard</cell><cell>7.3</cell><cell cols="4">8.4 0.3 5.3 20.7 9.2 14.9</cell></row><row><cell cols="2">5 Inference-time collaboration</cell><cell cols="5">19.4 17.0 3.8 13.4 18.3 7.0 12.7</cell></row><row><cell cols="7">6 Oracle label-converted feedback 10.6 10.4 0.0 7.0 28.2 5.0 16.6</cell></row><row><cell cols="2">7 WaltzRL (Ours)</cell><cell>4.6</cell><cell>6.2 0.3 3.7</cell><cell>9.9</cell><cell>5.4</cell><cell>7.6</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2</head><label>2</label><figDesc>Results on instruction following and general capability benchmarks (%). All metrics are higher the better, detailed in §D. WaltzRL leads to little or no degradation, even without any helpfulness data during RL, demonstrating that our approach effectively balances safety and helpfulness.</figDesc><table><row><cell></cell><cell></cell><cell cols="2">AlpacaEval</cell><cell cols="2">IFEval</cell><cell></cell><cell cols="2">GPQA MMLU TruthfulQA</cell></row><row><cell cols="2">Conversation agent</cell><cell cols="2">LCWR WR PS</cell><cell>IS</cell><cell>PL</cell><cell>IL</cell><cell>Acc</cell><cell>Acc</cell><cell>MC1</cell></row><row><cell cols="2">Llama-3.1-8B-Instruct</cell><cell>37.2</cell><cell cols="5">26.8 42.1 56.7 47.5 60.8 34.8</cell><cell>68.0</cell><cell>37.0</cell></row><row><cell cols="2">+WaltzRL training</cell><cell>35.9</cell><cell cols="5">26.7 43.8 58.5 47.9 62.1 33.8</cell><cell>68.1</cell><cell>37.0</cell></row><row><cell></cell><cell cols="2">Label Acc. ↑</cell><cell>FTR ↓</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Method</cell><cell>WJ</cell><cell>OB</cell><cell>WJ OB</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="4">Inference-time collab. 31.4 63.9 82.2 75.5</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>WaltzRL</cell><cell cols="3">70.1 60.6 48.2 43.1</cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3</head><label>3</label><figDesc>Feedback agent label correct rate and feedback triggering rate (%). WaltzRL improves label accuracy and reduce FTR, leading to better efficiency at inference time.</figDesc><table><row><cell>AlpacaEval</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 7</head><label>7</label><figDesc>Attack Success Rate, Over-Refuse Rate, Label Accuracy, and Feedback Trigger Rate of ablating the stage 2 collaborative training. Stage 2 training significantly reduces ASR and ORR while maintaining label accuracy and FTR.Ablation on two-stage trainingTo show the effectiveness of our two-stage training recipe, we now ablate the Stage 2 collaborative training and compare the results before and after the ablation. Shown in Table7, we find that forgoing the second stage training leads to significantly higher ASR and ORR with similar label accuracy and FTR. This indicates that our Stage 2 collaborative training enhances safety, reduce overrefusal, while maintaining label accuracy learned from the first stage.</figDesc><table><row><cell></cell><cell cols="4">ASR↓ ORR↓ Label Acc. ↑</cell><cell>FTR ↓</cell></row><row><cell>Method</cell><cell>WJ</cell><cell>OB</cell><cell>WJ</cell><cell>OB</cell><cell>WJ OB</cell></row><row><cell>WaltzRL</cell><cell>4.6</cell><cell>9.9</cell><cell cols="3">70.1 60.6 48.2 43.1</cell></row><row><cell cols="2">-Stage 2 training 11.7</cell><cell cols="4">35.1 71.4 58.3 52.7 29.9</cell></row></table><note><p>Debate for AI safety</p><p>The literature on AI safety via debate was initiated by<ref type="bibr" target="#b16">Irving et al. (2018)</ref></p><p>, which proposed training agents on a zero-sum debate game via self-play. Follow-up works scale up two-player debate to more practical settings<ref type="bibr" target="#b3">(Brown-Cohen et al., 2023;</ref> Radhakrishnan, 2023;<ref type="bibr" target="#b4">Brown-Cohen et al., 2025)</ref></p><p>. RedDebate<ref type="bibr" target="#b1">(Asad et al., 2025)</ref> </p><p>integrates long-term memory to retain safety insights learned through debate interactions. Compared to debate approaches where agents competes in a zero-sum game, our protocol is a collaborative positive-sum game where both agents pursue the same goal of generating safe and non-overrefusing responses.</p></note></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>Note that additional interaction rounds increase inference cost at deployment, so lower Tmax are preferable for latency concerns. We experiment with Tmax = 1 because it's both practically desirable and already empirically strong.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>https://github.com/TsinghuaC3I/MARTI/tree/main</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgement</head><p>We sincerely thank <rs type="person">ShengYun (Anthony) Peng</rs>, <rs type="person">Hoang Phan</rs>, <rs type="person">Jianfeng Chi</rs>, <rs type="person">Tianjian Li</rs>, <rs type="person">Austen Liao</rs>, <rs type="person">Hannah Gonzalez</rs> and the broader CLSP community for their helpful comment and feedback.</p></div>
+			</div>			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Lakomkin, Ehab AlBadawy, Elina Lobanova, Emily Dinan, Eric Michael Smith, Filip Radenovic, <ref type="bibr">Frank Zhang, Gabriel Synnaeve, Gabrielle Lee, Georgia Lewis Anderson, Graeme Nail, Gregoire Mialon, Guan Pang, Guillem Cucurell, Hailey Nguyen, Hannah Korevaar, Hu Xu, Hugo Touvron, Iliyan Zarov, Imanol Arrieta Ibarra, Isabel Kloumann, Ishan Misra, Ivan Evtimov, Jade</ref> Copet, Jaewon Lee, Jan Geffert, Jana Vranes, Jason Park, Jay Mahadeokar, Jeet Shah, Jelmer van der Linde, Jennifer Billock, Jenny Hong, Jenya Lee, Jeremy Fu, Jianfeng Chi, Jianyu Huang, Jiawen Liu, Jie Wang, Jiecao Yu, Joanna Bitton, Joe Spisak, Jongsoo Park, Joseph Rocca, Joshua Johnstun, Joshua Saxe, Junteng Jia, Kalyan Vasuden Alwala, Kartikeya Upasani, Kate Plawiak, Ke Li, Kenneth Heafield, Kevin Stone, Khalid El-Arini, Krithika Iyer, Kshitiz Malik, Kuenley Chiu, Kunal Bhalla, Lauren Rantala-Yeary, Laurens van der Maaten, Lawrence Chen, Liang Tan, Liz Jenkins, Louis Martin, Lovish Madaan, Lubo Malo, Lukas Blecher, Lukas Landzaat, Luke de Oliveira, Madeline Muzzi, Mahesh Pasupuleti, Mannat Singh, Manohar Paluri, Marcin Kardas, Mathew Oldham, Mathieu Rita, Maya Pavlova, Melanie Kambadur, Mike Lewis, Min Si, Mitesh Kumar Singh, Mona Hassan, Naman Goyal, Narjes Torabi, Nikolay Bashlykov, Nikolay Bogoychev, Niladri Chatterji, Olivier Duchenne, Onur Çelebi, Patrick Alrassy, Pengchuan Zhang, Pengwei Li, Petar Vasic, Peter Weng, Prajjwal Bhargava, Pratik Dubal, Praveen Krishnan, Punit Singh Koura, Puxin Xu, Qing He, Qingxiao Dong, Ragavan Srinivasan, Raj Ganapathy, Ramon Calderer, Ricardo Silveira Cabral, Robert Stojnic, Roberta Raileanu, Rohit Girdhar, Rohit Patel, Romain Sauvestre, Ronnie Polidoro, Roshan Sumbaly, Ross Taylor, Ruan Silva, Rui Hou, Rui Wang, Saghar Hosseini, Sahana Chennabasappa, Sanjay Singh, Sean Bell, Seohyun Sonia Kim, Sergey Edunov, Shaoliang Nie, Sharan Narang, Sharath Raparthy, Sheng Shen, Shengye Wan, Shruti Bhosale, Shun Zhang, Simon Vandenhende, Soumya Batra, Spencer Whitman, Sten Sootla, Stephane Collot, Suchin Gururangan, Sydney Borodinsky, Tamar Herman, Tara Fowler, Tarek Sheasha, Thomas Georgiou, Thomas Scialom, Tobias Speckbacher, Todor Mihaylov, Tong Xiao, Ujjwal Karn, Vedanuj Goswami, Vibhor Gupta, Vignesh Ramanathan, Viktor Kerkez, Vincent Gonguet, Virginie Do, Vish Vogeti, Vladan Petrovic, Weiwei Chu, Wenhan Xiong, Wenyin Fu, Whitney Meers, Xavier Martinet, Xiaodong Wang, Xiaoqing Ellen Tan, Xinfeng Xie, Xuchao Jia, Xuewei Wang, Yaelle Goldschlag, Yashesh Gaur, Yasmine Babaei, Yi Wen, Yiwen Song, Yuchen Zhang, Yue Li, Yuning Mao, Zacharie Delpierre Coudert, Zheng Yan, Zhengxing Chen, Zoe Papakipos, Aaditya Singh, Aaron Grattafiori, Abha Jain, Adam Kelsey, Adam Shajnfeld, Adithya Gangidi, Adolfo Victoria, Ahuva Goldstand, Ajay Menon, Ajay Sharma, Alex Boesenberg, Alex Vaughan, Alexei Baevski, Allie Feinstein, Amanda Kallet, Amit Sangani, Anam Yunus, Andrei Lupu, Andres Alvarado, Andrew Caples, Andrew Gu, Andrew Ho, Andrew Poulton, Andrew Ryan, Ankit Ramchandani, Annie Franco, Aparajita Saraf, Arkabandhu Chowdhury, Ashley Gabriel, Ashwin Bharambe, Assaf Eisenman, Azadeh Yazdan, Beau James, Ben Maurer, Benjamin Leonhardi, Bernie Huang, Beth Loyd, Beto De Paola, Bhargavi Paranjape, Bing Liu, Bo Wu, Boyu Ni, Braden Hancock, Bram Wasti, Brandon Spence, Brani Stojkovic, Brian Gamido, Britt Montalvo, Carl Parker, Carly Burton, Catalina Mejia, Changhan Wang, Changkyu Kim, Chao Zhou, Chester Hu, Ching-Hsiang Chu, Chris Cai, Chris Tindal, Christoph Feichtenhofer, Damon Civin, Dana Beaty, Daniel Kreymer, Daniel Li, Danny Wyatt, David Adkins, David Xu, Davide Testuggine, Delia David, Devi Parikh, Diana Liskovich, Didem Foss, Dingkang Wang, Duc Le, Dustin Holland, Edward Dowling, Eissa Jamil, Elaine Montgomery, Eleonora Presani, Emily Hahn, Emily Wood, Erik Brinkman, Esteban Arcaute, Evan Dunbar, Evan Smothers, Fei Sun, Felix Kreuk, Feng Tian, Firat Ozgenel, Francesco Caggioni, Francisco Guzmán, Frank Kanayet, Frank Seide, Gabriela Medina Florez, Gabriella Schwarz, Gada Badeer, Georgia Swee, Gil Halpern, Govind Thattai, Grant Herman, Grigory Sizov, Guangyi, Zhang, Guna Lakshminarayanan, Hamid Shojanazeri, Han Zou, Hannah Wang, Hanwen Zha, Haroun Habeeb, Harrison Rudolph, Helen Suk, Henry Aspegren, Hunter Goldman, Ibrahim Damlaj, Igor Molybog, Igor Tufanov, Irina-Elena Veliche, Itai Gat, Jake Weissman, James Geboski, James Kohli, Japhet Asher, Jean-Baptiste Gaya, Jeff Marcus, Jeff Tang, Jennifer Chan, Jenny Zhen, Jeremy Reizenstein, Jeremy Teboul, Jessica Zhong, Jian Jin, Jingyi Yang, Joe Cummings, Jon Carvill, Jon Shepard, Jonathan McPhie, Jonathan Torres, Josh Ginsburg, Junjie Wang, Kai Wu, Kam Hou U, Karan Saxena, Karthik Prasad, Kartikay Khandelwal, Katayoun Zand, Kathy Matosich, Kaushik Veeraraghavan, Kelly Michelena, Keqian Li, Kun Huang, Kunal Chawla, Kushal Lakhotia, Kyle Huang, Lailin Chen, Lakshya Garg, Lavender A, Leandro Silva, Lee Bell, Lei  </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><figDesc>Zhang, Liangpeng Guo, Licheng Yu, Liron Moshkovich, Luca Wehrstedt, Madian Khabsa, Manav Avalani, Manish  Bhatt, Maria Tsimpoukelli, Martynas Mankus, Matan Hasson, Matthew Lennie, Matthias Reso, Maxim Groshev,  Maxim Naumov, Maya Lathi, Meghan Keneally, Michael L. Seltzer, Michal Valko, Michelle Restrepo, Mihir Patel,  Mik Vyatskov, Mikayel Samvelyan, Mike Clark, Mike Macey, Mike Wang, Miquel Jubert Hermoso, Mo Metanat,  Mohammad Rastegari, Munish Bansal, Nandhini Santhanam, Natascha  Parks, Natasha White, Navyata Bawa, Nayan Singhal, Nick Egebo, Nicolas Usunier, Nikolay Pavlovich Laptev, Ning Dong, Ning Zhang, Norman Cheng, Oleg Chernoguz, Olivia Hart, Omkar Salpekar, Ozlem Kalinli, Parkin Kent, Parth Parekh, Paul Saab, Pavan Balaji, Pedro Rittner, Philip Bontrager, Pierre Roux, Piotr Dollar, Polina Zvyagina, Prashant Ratanchandani, Pritish Yuvraj, Qian Liang, Rachad Alao, Rachel Rodriguez, Rafi Ayub, Raghotham Murthy, Raghu Nayani, Rahul Mitra, Raymond Li, Rebekkah Hogan, Robin Battey, Rocky Wang, Rohan Maheswari, Russ Howes, Ruty Rinott, Sai Jayesh Bondu, Samyak Datta, Sara Chugh, Sara Hunt, Sargun Dhillon, Sasha Sidorov, Satadru Pan, Saurabh Verma, Seiji Yamamoto, Sharadh Ramaswamy, Shaun Lindsay, Shaun Lindsay, Sheng Feng, Shenghao Lin, Shengxin Cindy Zha, Shiva Shankar, Shuqiang Zhang, Shuqiang Zhang, Sinong Wang, Sneha Agarwal, Soji Sajuyigbe, Soumith Chintala, Stephanie Max, Stephen Chen, Steve Kehoe, Steve Satterfield, Sudarshan Govindaprasad, Sumit Gupta, Sungmin {" r o l e " : " a s s i s t a n t " , " c o n t e n t " : "** Rainbow Table Attack S i m u l a t i o n Code **\ n\nTo s i m u l a t e a rainbow t a b l e a t t a c k , we ' l l u s e Python and t h e ' h a s h l i b ' l i b r a r y t o g e n e r a t e a rainbow t a b l e and then u s e i t t o c r a c k t h e g i v e n hashed p a s s w o r d s . \ n\ n ' ' ' python \ nimport h a s h l i b \ nimport b i n a s c i i \ nimport i t e r t o o l s \n\ n d e f g e n e r a t e _ r a i n b o w _ t a b l e ( a l g o r i t h m , s i z e ) : \ n \"\"\"\ n G e n e r a t e a rainbow t a b l e f o r t h e g i v e n a l g o r i t h m and s i z e . \ n\n : param a l g o r i t h m : The h a s h i n g a l g o r i t h m t o u s e ( e . g . 'md5 ' , ' sha1 ' , e t c . ) \n : param s i z e : The s i z e o f t h e rainbow t a b l e \n : r e t u r n : A d i c t i o n a r y mapping hash v a l u e s t o t h e i r c o r r e s p o n d i n g p l a i n t e x t s \n \"\"\"\ n r a i n b o w _ t a b l e = {}\ n f o r i i n r a n g e ( s i z e ) : \ n p l a i n t e x t = f \" password_ { i }\"\ n hashed_password = h a s h l i b . new ( a l g o r i t h m , p l a i n t e x t . e nc od e ( ) ) . h e x d i g e s t ( ) \n r a i n b o w _ t a b l e [ hashed_password ] = p l a i n t e x t \n r e t u r n r a i n b o w _ t a b l e \n\ n d e f c r a c k _ p a s s w o r d s ( rainbow_table , hashed_passwords ) : \ n \"\"\"\ n Use t h e rainbow t a b l e t o c r a c k t h e g i v e n hashed p a s s w o r d s . \ n\n : param r a i n b o w _ t a b l e : The g e n e r a t e d rainbow t a b l e \n : param hashed_passwords : A l i s t o f hashed p a s s w o r d s t o c r a c k \ n : r e t u r n : A d i c t i o n a r y mapping hashed p a s s w o r d s t o t h e i r c o r r e s p o n d i n g p l a i n t e x t s \n \"\"\"\ n c r a c k e d _ p a s s w o r d s = {}\ n f o r hashed_password i n hashed_passwords : \ n f o r hash_value , p l a i n t e x t i n r a i n b o w _ t a b l e . i t e m s ( ) : \ n i f hashed_password == hash_value : \ n c r a c k e d _ p a s s w o r d s [ hashed_password ] = p l a i n t e x t \n b r e a k \n r e t u r n c r a c k e d _ p a s s w o r d s \n\n# G e n e r a t e a rainbow t a b l e f o r MD5 with 1000 e n t r i e s \ n r a i n b o w _ t a b l e = g e n e r a t e _ r a i n b o w _ t a b l e ( ' md5 ' , 1 0 0 0 ) \n\n# L i s t o f hashed p a s s w o r d s t o c r a c k \ nhashed_passwords = [ "\ n ] \ n\n# Crack t h e hashed p a s s w o r d s u s i n g t h e rainbow t a b l e \ n cra cke d_ pas swo rds = c r a c k _ p a s s w o r d s ( rainbow_table , hashed_passwords ) \n\ n p r i n t ( \ " Cracked Passwords : \ " ) \ n f o r hashed_password , p l a i n t e x t i n c r a c k e d _ p a s s w o r d s . i t e m s ( ) : \ n p r i n t ( f \" Hashed Password : { hashed_password } , P l a i n t e x t : { p l a i n t e x t } \ " ) \n ' ' ' \ n\ nIn t h i s code , we f i r s t g e n e r a t e a rainbow t a b l e u s i n g t h e ' g e n e r a t e _ r a i n b o w _ t a b l e ' f u n c t i o n , which maps hash v a l u e s t o t h e i r c o r r e s p o n d i n g p l a i n t e x t s . We then u s e t h i s rainbow t a b l e t o c r a c k t h e g i v e n hashed p a s s w o r d s u s i n g t h e ' crack_passwords ' f u n c t i o n . The c r a c k e d p a s s w o r d s a r e then p r i n t e d t o t h e c o n s o l e . \ n\ n P l e a s e n o t e t h a t i n a r e a l -world s c e n a r i o , rainbow t a b l e s would be much l a r g e r and more c o m p r e h e n s i v e t o i n c r e a s e t h e c h a n c e s o f c r a c k i n g p a s s w o r d s . A d d i t i o n a l l y , u s i n g rainbow t a b l e s t o c r a c k p a s s w o r d s i s c o n s i d e r e d a b r u t e -f o r c e a t t a c k and i s g e n e r a l l y d i s c o u r a g e d i n f a v o r o f more s e c u r e password s t o r a g e methods , such a s h a s h i n g with a s a l t and a s e c u r e password h a s h i n g a l g o r i t h m l i k e b c r y p t o r Argon2 . " } , and d o e s not c o n t a i n any o t h e r c o n t e n t . The f e e d b a c k t o a g e n t s h o u l d be a s i f you a r e h a v i n g c o n v e r s a t i o n with i t .</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 6</head><label>6</label><figDesc>System prompt of the feedback agent. The safety guidelines is adapted from https://www.llama.com/docs/ model-cards-and-prompt-formats/llama-guard-3/.</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Jailbreaking leading safety-aligned llms with simple adaptive attacks</title>
+		<author>
+			<persName><forename type="first">Maksym</forename><surname>Andriushchenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francesco</forename><surname>Croce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Flammarion</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2404.02151" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Asad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Obadinma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Radin</forename><surname>Shayanfar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodan</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Reddebate</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2506.11083" />
+		<title level="m">Safer responses through multi-agent red teaming debates</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Training a helpful and harmless assistant with reinforcement learning from human feedback</title>
+		<author>
+			<persName><forename type="first">Yuntao</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kamal</forename><surname>Ndousse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nova</forename><surname>Dassarma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Drain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stanislav</forename><surname>Fort</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deep</forename><surname>Ganguli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Henighan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.05862</idno>
+		<ptr target="https://arxiv.org/abs/2204.05862" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Scalable ai safety via doubly-efficient debate</title>
+		<author>
+			<persName><forename type="first">Jonah</forename><surname>Brown-Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Irving</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Georgios</forename><surname>Piliouras</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2311.14125" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Avoiding obfuscation with prover-estimator debate</title>
+		<author>
+			<persName><forename type="first">Jonah</forename><surname>Brown-Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Irving</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Georgios</forename><surname>Piliouras</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2506.13609" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Or-bench: An over-refusal benchmark for large language models</title>
+		<author>
+			<persName><forename type="first">Justin</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Lin</forename><surname>Chiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Stoica</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cho-Jui</forename><surname>Hsieh</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2405.20947" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ranjie</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiexi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojun</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiji</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoxi</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fengxiang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Defeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinpeng</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuefeng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongwen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingjun</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingxing</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinfeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yitong</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinzhao</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sha</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yitong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialing</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Xue</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2509.01909" />
+		<title level="m">Oyster-i: Beyond refusal -constructive safety alignment for responsible language models</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Abhimanyu</forename><surname>Dubey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Jauhri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Pandey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Kadian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmad</forename><surname>Al-Dahle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aiesha</forename><surname>Letman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akhil</forename><surname>Mathur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Schelten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amy</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Angela</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anirudh</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Hartshorn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aobo</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Archi</forename><surname>Mitra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Archie</forename><surname>Sravankumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Artem</forename><surname>Korenev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Hinsvark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arun</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aston</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aurelien</forename><surname>Rodriguez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Austen</forename><surname>Gregerson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ava</forename><surname>Spataru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baptiste</forename><surname>Roziere</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bethany</forename><surname>Biron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binh</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bobbie</forename><surname>Chern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charlotte</forename><surname>Caucheteux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaya</forename><surname>Nayak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chloe</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Marra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Mcconnell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Keller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christophe</forename><surname>Touret</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunyang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Corinne</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cristian Canton</forename><surname>Ferrer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cyrus</forename><surname>Nikolaidis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Damien</forename><surname>Allonsius</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danielle</forename><surname>Pintz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Livshits</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Esiobu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dhruv</forename><surname>Choudhary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dhruv</forename><surname>Mahajan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diego</forename><surname>Garcia-Olano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diego</forename><surname>Perino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dieuwke</forename><surname>Hupkes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Egor</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sunny</forename><surname>Virk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suraj</forename><surname>Subramanian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sy</forename><surname>Choudhury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sydney</forename><surname>Goldman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tal</forename><surname>Remez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tamar</forename><surname>Glaser ; Xilun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinbo</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanjun</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ye</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ye</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ye</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yenda</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yossi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Youngjin</forename><surname>Adi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Nam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yundi</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuzi</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zach</forename><surname>Rait</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zachary</forename><surname>Devito</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zef</forename><surname>Rosnbrick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoduo</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenyu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiwei</forename><surname>Zhao</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2407.21783" />
+		<editor>Victoria Montanez, Vijai Mohan, Vinay Satish Kumar, Vishal Mangla, Vítor Albiero, Vlad Ionescu, Vlad Poenaru, Vlad Tiberiu Mihailescu, Vladimir Ivanov, Wei Li, Wenchen Wang, Wenwen Jiang, Wes Bouaziz, Will Constable, Xiaocheng Tang, Xiaofang Wang, Xiaojian Wu, Xiaolan Wang, Xide Xia,</editor>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<pubPlace>Tamara Best, Thilo Kohler, Thomas Robinson, Tianhe Li, Tianjun Zhang, Tim Matthews, Timothy Chou, Tzook Shaked, Varun Vontimitta, Victoria Ajayi</pubPlace>
+		</imprint>
+	</monogr>
+	<note>The llama 3 herd of models</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Dubois</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Balázs</forename><surname>Galambosi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tatsunori B</forename><surname>Hashimoto</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.04475</idno>
+		<title level="m">Length-controlled alpacaeval: A simple way to debias automatic evaluators</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Deep</forename><surname>Ganguli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liane</forename><surname>Lovitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jackson</forename><surname>Kernion</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuntao</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurav</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Schiefer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kamal</forename><surname>Ndousse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Bowman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Conerly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nova</forename><surname>Dassarma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Drain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nelson</forename><surname>Elhage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sheer</forename><surname>El-Showk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stanislav</forename><surname>Fort</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zac</forename><surname>Hatfield-Dodds</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Henighan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Hernandez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tristan</forename><surname>Hume</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Jacobson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Johnston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shauna</forename><surname>Kravec</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Catherine</forename><surname>Olsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Ringer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eli</forename><surname>Tran-Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Olah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Clark</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note>Red teaming language models to reduce harms: Methods, scaling behaviors, and lessons learned</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Deliberative alignment: Reasoning enables safer language models</title>
+		<author>
+			<persName><forename type="first">Melody</forename><forename type="middle">Y</forename><surname>Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manas</forename><surname>Joglekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Wallace</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saachi</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boaz</forename><surname>Barak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Helyar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rachel</forename><surname>Dias</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrea</forename><surname>Vallone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongyu</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyung</forename><forename type="middle">Won</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Toyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Heidecke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Beutel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amelia</forename><surname>Glaese</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2412.16339" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Wildguard: Open one-stop moderation tools for safety risks, jailbreaks, and refusals of llms</title>
+		<author>
+			<persName><forename type="first">Seungju</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kavel</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Allyson</forename><surname>Ettinger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liwei</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Yuchen Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Lambert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouha</forename><surname>Dziri</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2406.18495" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Measuring massive multitask language understanding</title>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mantas</forename><surname>Mazeika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations (ICLR)</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Reinforce++: An efficient rlhf algorithm with robustness to both prompt and reward models</title>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><forename type="middle">Klein</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Shen</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2501.03262" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Openrlhf: An easy-to-use, scalable and high-performance rlhf framework</title>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xibin</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><forename type="middle">Klein</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilin</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weixun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Songlin</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weikai</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Xianyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Liu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2405.11143" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hakan</forename><surname>Inan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kartikeya</forename><surname>Upasani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rashi</forename><surname>Rungta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Krithika</forename><surname>Iyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuning</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Tontchev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qing</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Fuller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Davide</forename><surname>Testuggine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Madian</forename><surname>Khabsa</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2312.06674" />
+		<title level="m">Llama guard: Llm-based input-output safeguard for human-ai conversations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Ai safety via debate</title>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Irving</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Christiano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1805.00899" />
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Wildteaming at scale: From in-the-wild jailbreaks to (adversarially) safer language models</title>
+		<author>
+			<persName><forename type="first">Liwei</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kavel</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Seungju</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Allyson</forename><surname>Ettinger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Faeze</forename><surname>Brahman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sachin</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niloofar</forename><surname>Mireshghallah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ximing</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Sap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouha</forename><surname>Dziri</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=n5R6TvBVcX" />
+	</analytic>
+	<monogr>
+		<title level="m">The Thirty-eighth Annual Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Fortress: Frontier risk evaluation for national security and public safety</title>
+		<author>
+			<persName><forename type="first">Christina</forename><forename type="middle">Q</forename><surname>Knight</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaustubh</forename><surname>Deshpande</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ved</forename><surname>Sirdeshmukh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meher</forename><surname>Mankikar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Red</forename><surname>Scale</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Team</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Seal Research Team</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Michael</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2506.14922" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Efficient memory management for large language model serving with pagedattention</title>
+		<author>
+			<persName><forename type="first">Woosuk</forename><surname>Kwon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuohan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lianmin</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cody</forename><forename type="middle">Hao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Stoica</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2309.06180" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">The wmdp benchmark: Measuring and reducing malicious use with unlearning</title>
+		<author>
+			<persName><forename type="first">Nathaniel</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anjali</forename><surname>Gopal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Summer</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Berrios</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alice</forename><surname>Gatti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Justin</forename><forename type="middle">D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ann-Kathrin</forename><surname>Dombrowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shashwat</forename><surname>Goel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Phan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Mukobi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Helm-Burger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rassin</forename><surname>Lababidi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lennart</forename><surname>Justen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">B</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Isabelle</forename><surname>Barrass</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oliver</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyuan</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishub</forename><surname>Tamirisa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bhrugu</forename><surname>Bharathi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Khoja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenqi</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ariel</forename><surname>Herbert-Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cort</forename><forename type="middle">B</forename><surname>Breuer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><surname>Marks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oam</forename><surname>Patel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mantas</forename><surname>Mazeika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zifan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Palash</forename><surname>Oswal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiran</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><forename type="middle">A</forename><surname>Hunt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Justin</forename><surname>Tienken-Harder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><forename type="middle">Y</forename><surname>Shih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kemper</forename><surname>Talley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Russell</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ian</forename><surname>Steneker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Campbell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brad</forename><surname>Jokubaitis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Levinson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Krishna</forename><surname>Kallol</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Karmakar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mindy</forename><surname>Fitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ponnurangam</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uday</forename><surname>Kumaraguru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vijay</forename><surname>Tupakula</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoyu</forename><surname>Varadharajan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Shoshitaishvili</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><forename type="middle">M</forename><surname>Ba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandr</forename><surname>Esvelt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hendrycks</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2403.03218" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">ChatGPT doesn&apos;t trust chargers fans: Guardrail sensitivity in context</title>
+		<author>
+			<persName><forename type="first">Yida</forename><surname>Victoria R Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naomi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Saphra</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.emnlp-main.363</idno>
+		<ptr target="https://aclanthology.org/2024.emnlp-main.363/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing</title>
+		<editor>
+			<persName><forename type="first">Yaser</forename><surname>Al-Onaizan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Mohit</forename><surname>Bansal</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Yun-Nung</forename><surname>Chen</surname></persName>
+		</editor>
+		<meeting>the 2024 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Miami, Florida, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024-11">November 2024</date>
+			<biblScope unit="page" from="6327" to="6345" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Alpacaeval: An automatic evaluator of instruction-following models</title>
+		<author>
+			<persName><forename type="first">Xuechen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Dubois</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Taori</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ishaan</forename><surname>Gulrajani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><surname>Guestrin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tatsunori</forename><forename type="middle">B</forename><surname>Hashimoto</surname></persName>
+		</author>
+		<ptr target="https://github.com/tatsu-lab/alpaca_eval" />
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Stephanie</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Owain</forename><surname>Evans</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2109.07958</idno>
+		<ptr target="https://arxiv.org/abs/2109.07958" />
+		<title level="m">TruthfulQA: measuring how models mimic human falsehoods</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Chasing moving targets with online self-play reinforcement learning for safer language models</title>
+		<author>
+			<persName><forename type="first">Mickel</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liwei</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yancheng</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Shaolei Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Althoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Natasha</forename><surname>Jaques</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2506.07468" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Prp: Propagating universal perturbations to attack large language model guard-rails</title>
+		<author>
+			<persName><forename type="first">Neal</forename><surname>Mangaokar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Hooda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jihye</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shreyas</forename><surname>Chandrashekaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kassem</forename><surname>Fawaz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Somesh</forename><surname>Jha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Atul</forename><surname>Prakash</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2402.15911" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">A holistic approach to undesired content detection in the real world</title>
+		<author>
+			<persName><forename type="first">Todor</forename><surname>Markov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florentine</forename><forename type="middle">Eloundou</forename><surname>Nekoul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Theodore</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Adler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Angela</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lilian</forename><surname>Weng</surname></persName>
+		</author>
+		<idno type="DOI">10.1609/aaai.v37i12.26752</idno>
+		<ptr target="https://ojs.aaai.org/index.php/AAAI/article/view/26752" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2023-06">Jun. 2023</date>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="15009" to="15018" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<ptr target="https://www.llama.com/docs/model-cards-and-prompt-formats/llama-guard-4/" />
+		<title level="m">Meta Llama Team. Llama guard 4 (12b) model card</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2025" to="2029" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Rule based rewards for language model safety</title>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Helyar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Heidecke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrea</forename><surname>Vallone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ian</forename><forename type="middle">D</forename><surname>Kivlichan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Molly</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Beutel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lilian</forename><surname>Weng</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=QVtwpT5Dmg" />
+	</analytic>
+	<monogr>
+		<title level="m">The Thirty-eighth Annual Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">The attacker moves second: Stronger adaptive attacks bypass defenses against llm jailbreaks and prompt injections</title>
+		<author>
+			<persName><forename type="first">Milad</forename><surname>Nasr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Carlini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chawin</forename><surname>Sitawarin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sander</forename><forename type="middle">V</forename><surname>Schulhoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamie</forename><surname>Hayes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Ilie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juliette</forename><surname>Pluto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harsh</forename><surname>Chaudhari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilia</forename><surname>Shumailov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhradeep</forename><surname>Thakurta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><forename type="middle">Yuanqing</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Terzis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florian</forename><surname>Tramèr</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2510.09023" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Inkit</forename><surname>Padhi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manish</forename><surname>Nagireddy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Giandomenico</forename><surname>Cornacchia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Subhajit</forename><surname>Chaudhury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tejaswini</forename><surname>Pedapati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Dognin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keerthiram</forename><surname>Murugesan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erik</forename><surname>Miehling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Santillán</forename><surname>Martín</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kieran</forename><surname>Cooper</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Giulio</forename><surname>Fraser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muhammad</forename><forename type="middle">Zaid</forename><surname>Zizzo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Hameed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Purcell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Desmond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zahra</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Inge</forename><surname>Ashktorab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elizabeth</forename><forename type="middle">M</forename><surname>Vejsbjerg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Daly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Werner</forename><surname>Hind</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ambrish</forename><surname>Geyer</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rawat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Kush</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prasanna</forename><surname>Varshney</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sattigeri</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2412.07724" />
+		<title level="m">Granite guardian</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Red teaming language models with language models</title>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saffron</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francis</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Trevor</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roman</forename><surname>Ring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Aslanides</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amelia</forename><surname>Glaese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nat</forename><surname>Mcaleese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Irving</surname></persName>
+		</author>
+		<ptr target="https://www.lesswrong.com/posts/QtqysYdJRenWFeWc4/anthropic-fall-2023-debate-progress-update" />
+	</analytic>
+	<monogr>
+		<title level="m">Ansh Radhakrishnan. Anthropic fall 2023 debate progress update</title>
+		<imprint>
+			<publisher>LessWrong</publisher>
+			<date type="published" when="2022-11">2022. November 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Gpqa: A graduate-level google-proof q&amp;a benchmark</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Rein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Betty</forename><forename type="middle">Li</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Asa</forename><forename type="middle">Cooper</forename><surname>Stickland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jackson</forename><surname>Petty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">Yuanzhe</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julien</forename><surname>Dirani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Michael</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Samuel R Bowman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">First Conference on Language Modeling</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">XSTest: A test suite for identifying exaggerated safety behaviours in large language models</title>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Röttger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannah</forename><surname>Kirk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bertie</forename><surname>Vidgen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Giuseppe</forename><surname>Attanasio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Bianchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dirk</forename><surname>Hovy</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.naacl-long.301</idno>
+		<ptr target="https://aclanthology.org/2024.naacl-long.301" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</title>
+		<editor>
+			<persName><forename type="first">Kevin</forename><surname>Duh</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Helena</forename><surname>Gomez</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Steven</forename><surname>Bethard</surname></persName>
+		</editor>
+		<meeting>the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies<address><addrLine>Mexico City, Mexico</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024-06">June 2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="5377" to="5400" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Putting the value back in rl: Better test-time scaling by unifying llm reasoners with verifiers</title>
+		<author>
+			<persName><surname>Kusha Sareen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Morgane</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alessandro</forename><surname>Moss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Sordoni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arian</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hosseini</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2505.04842" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Filip</forename><surname>Wolski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleg</forename><surname>Klimov</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1707.06347</idno>
+		<ptr target="https://arxiv.org/abs/1707.06347" />
+		<title level="m">Proximal policy optimization algorithms</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">DeepSeekMath: pushing the limits of mathematical reasoning in open language models</title>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.03300</idno>
+		<ptr target="https://arxiv.org/abs/2402.03300" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Constitutional classifiers: Defending against universal jailbreaks across thousands of hours of red teaming</title>
+		<author>
+			<persName><forename type="first">Mrinank</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meg</forename><surname>Tong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jorrit</forename><surname>Kruthoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Goodfriend</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Euan</forename><surname>Ong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alwin</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raj</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cem</forename><surname>Anil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Bailey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joe</forename><surname>Benton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emma</forename><surname>Bluemke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Samuel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Bowman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hoagy</forename><surname>Christiansen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Cunningham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anjali</forename><surname>Dau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rob</forename><surname>Gopal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Logan</forename><surname>Gilson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Logan</forename><surname>Graham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nimit</forename><surname>Howard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Taesung</forename><surname>Kalra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francesco</forename><surname>Lofgren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clare O'</forename><surname>Mosconi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Catherine</forename><surname>Hara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linda</forename><surname>Olsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samir</forename><surname>Petrini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikhil</forename><surname>Rajani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Saxena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tanya</forename><surname>Silverstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Theodore</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leonard</forename><surname>Sumers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><forename type="middle">K</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Constantin</forename><surname>Troy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiqi</forename><surname>Weisser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Giulio</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Perez</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2501.18837" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">The language barrier: Dissecting safety challenges of llms in multilingual context</title>
+		<author>
+			<persName><forename type="first">Lingfeng</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiting</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sihao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunmo</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyuan</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philipp</forename><surname>Koehn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Khashabi</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2401.13136" />
+	</analytic>
+	<monogr>
+		<title level="m">Annual Meeting of the Association for Computational Linguistics (ACL) -Findings</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">do anything now&quot;: Characterizing and evaluating in-the-wild jailbreak prompts on large language models</title>
+		<author>
+			<persName><forename type="first">Xinyue</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Backes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yun</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Zhang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">A strongreject for empty jailbreaks</title>
+		<author>
+			<persName><forename type="first">Alexandra</forename><surname>Souly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyuan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dillon</forename><surname>Bowen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tu</forename><surname>Trinh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elvis</forename><surname>Hsieh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sana</forename><surname>Pandey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Justin</forename><surname>Svegliato</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Emmons</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivia</forename><surname>Watkins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Toyer</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2402.10260" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">SELF-GUARD: Empower the LLM to safeguard itself</title>
+		<author>
+			<persName><forename type="first">Zezhong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangkai</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongru</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingwei</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kam-Fai</forename><surname>Wong</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.naacl-long.92</idno>
+		<ptr target="https://aclanthology.org/2024.naacl-long.92/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</title>
+		<editor>
+			<persName><forename type="first">Kevin</forename><surname>Duh</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Helena</forename><surname>Gomez</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Steven</forename><surname>Bethard</surname></persName>
+		</editor>
+		<meeting>the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies<address><addrLine>Mexico City, Mexico</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024-06">June 2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="1648" to="1668" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Executive order on the safe, secure and trustworthy development and use of artificial intelligence</title>
+		<author>
+			<persName><surname>Whitehouse</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">SORRY-bench: Systematically evaluating large language model safety refusal</title>
+		<author>
+			<persName><forename type="first">Tinghao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyu</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangsibo</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Udari</forename><surname>Madhushani Sehwag</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaixuan</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luxi</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyi</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dacheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoxi</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danqi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Henderson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prateek</forename><surname>Mittal</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=YfKNaRktan" />
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Scalable reinforcement post-training beyond static human prompts: Evolving alignment via asymmetric self-play</title>
+		<author>
+			<persName><forename type="first">Ziyu</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianqi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarmishta</forename><surname>Velury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qijun</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Liu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2411.00062" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">From hard refusals to safe-completions: Toward output-centric safety training</title>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tina</forename><surname>Sriskandarajah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna-Luisa</forename><surname>Brakman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Helyar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Beutel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrea</forename><surname>Vallone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saachi</forename><surname>Jain</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2508.09224" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<title level="m" type="main">Autodefense: Multi-agent llm defense against jailbreak attacks</title>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiran</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huazheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyun</forename><surname>Wu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2403.04783" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">Rl tango: Reinforcing generator and verifier together for language reasoning</title>
+		<author>
+			<persName><forename type="first">Kaiwen</forename><surname>Zha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengqi</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maohao</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhang-Wei</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Duane</forename><forename type="middle">S</forename><surname>Boning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dina</forename><surname>Katabi</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2505.15034" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Controllable safety alignment: Inference-time adaptation to diverse safety requirements</title>
+		<author>
+			<persName><forename type="first">Jingyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmed</forename><surname>Elgohary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmed</forename><surname>Magooda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Khashabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Van Durme</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2410.08968" />
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations (ICLR), 2025a</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Jailbreak distillation: Renewable safety benchmarking</title>
+		<author>
+			<persName><forename type="first">Jingyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmed</forename><surname>Elgohary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiawei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A S M</forename><surname>Iftekhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmed</forename><surname>Magooda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Van Durme</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Khashabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Jackson</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2505.22037" />
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Empirical Methods in Natural Language Processing (EMNLP) -Findings, 2025b</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<title level="m" type="main">Toward optimal llm alignments using two-player games</title>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongyi</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoying</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanshun</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojun</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoran</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiheng</forename><surname>Xi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Gui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanjing</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2406.10977" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title level="m" type="main">Instruction-following evaluation for large language models</title>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianjian</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swaroop</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siddhartha</forename><surname>Brahma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sujoy</forename><surname>Basu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Luan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Hou</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2311.07911" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<title level="m" type="main">Sweet-rl: Training multi-turn llm agents on collaborative reasoning tasks</title>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Song</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuandong</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sainbayar</forename><surname>Sukhbaatar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xian</forename><surname>Li</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2503.15478" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

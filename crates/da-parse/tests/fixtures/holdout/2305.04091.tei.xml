@@ -1,0 +1,1469 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Plan-and-Solve Prompting: Improving Zero-Shot Chain-of-Thought Reasoning by Large Language Models</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Lei</forename><surname>Wang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Singapore Management University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Wanyu</forename><surname>Xu</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Southwest Jiaotong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yihuai</forename><surname>Lan</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Zhiqiang</forename><surname>Hu</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">Singapore University of Technology</orgName>
+								<address>
+									<country>Design</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yunshi</forename><surname>Lan</surname></persName>
+							<affiliation key="aff3">
+								<orgName type="institution">East China Normal University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ka-Wei</forename><surname>Lee</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">Singapore University of Technology</orgName>
+								<address>
+									<country>Design</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ee-Peng</forename><surname>Lim</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Singapore Management University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Plan-and-Solve Prompting: Improving Zero-Shot Chain-of-Thought Reasoning by Large Language Models</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">3C74CF23FC258F456E5EA06E01B25160</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:29+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large language models (LLMs) have recently been shown to deliver impressive performance in various NLP tasks. To tackle multi-step reasoning tasks, few-shot chain-of-thought (CoT) prompting includes a few manually crafted step-by-step reasoning demonstrations which enable LLMs to explicitly generate reasoning steps and improve their reasoning task accuracy. To eliminate the manual effort, Zeroshot-CoT concatenates the target problem statement with "Let's think step by step" as an input prompt to LLMs. Despite the success of Zero-shot-CoT, it still suffers from three pitfalls: calculation errors, missing-step errors, and semantic misunderstanding errors. To address the missing-step errors, we propose Planand-Solve (PS) Prompting. It consists of two components: first, devising a plan to divide the entire task into smaller subtasks, and then carrying out the subtasks according to the plan. To address the calculation errors and improve the quality of generated reasoning steps, we extend PS prompting with more detailed instructions and derive PS+ prompting. We evaluate our proposed prompting strategy on ten datasets across three reasoning problems. The experimental results over GPT-3 show that our proposed zero-shot prompting consistently outperforms Zero-shot-CoT across all datasets by a large margin, is comparable to or exceeds Zero-shot-Program-of-Thought Prompting, and has comparable performance with 8-shot CoT prompting on the math reasoning problem. The code can be found at <ref type="url" target="https://github.com/AGI-Edgerunners/Plan-and-Solve-Prompting">https://github.com/AGI- Edgerunners/Plan-and-Solve-Prompting</ref>.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Large language models (LLMs) <ref type="bibr" target="#b0">(Brown et al., 2020;</ref><ref type="bibr" target="#b32">Thoppilan et al., 2022;</ref><ref type="bibr" target="#b2">Chowdhery et al., 2022)</ref> have recently proven highly effective in various NLP tasks. Unlike the previous pre-trained language models (PTMs) <ref type="bibr" target="#b4">(Devlin et al., 2019</ref>; Liu * Corresponding author. et al., 2019), these LLMs are typically provided as a service, with no access to model parameters due to commercial considerations and potential risks of misuse <ref type="bibr">(Sun et al., 2022)</ref>. Thus, it is challenging to fine-tune LLMs for downstream tasks <ref type="bibr" target="#b8">(He et al., 2021;</ref><ref type="bibr" target="#b11">Houlsby et al., 2019;</ref><ref type="bibr" target="#b4">Devlin et al., 2019)</ref>. Instead, we leverage LLMs to solve complex reasoning problems by eliciting their strong reasoning abilities over their embedded knowledge using instructions (or trigger sentences). So far, LLMs have shown impressive abilities to solve new reasoning problems by simply conditioning them on a few illustrative examples (i.e., few-shot learning) or a prompt to solve new problems without illustrative examples (i.e., zero-shot learning).</p><p>To tackle multi-step complex reasoning tasks using LLMs, <ref type="bibr">Wei et al. (2022b)</ref> proposes few-shot chain-of-thought (CoT) prompting, which enables LLMs to explicitly generate the intermediate reasoning steps before predicting the final answer with a few manual step-by-step reasoning demonstration examples. In <ref type="bibr" target="#b15">(Kojima et al., 2022)</ref>, Zero-shot CoT eliminates the need for manually crafted examples in prompts by appending "Let's think step by step" to the target problem fed to LLMs such as GPT-3. This simple prompting strategy surprisingly enables LLMs to yield performance similar to few-shot CoT prompting.</p><p>Despite the remarkable success of Zero-shot-CoT in solving multi-step reasoning tasks, its results on a sample of 100 arithmetic test examples still point to three pitfalls (as shown in Figure <ref type="figure" target="#fig_0">1</ref>): (i) Calculation errors (in 7% of test examples): These are errors in the calculation leading to wrong answers; (ii) Missing Step errors (in 12% of test examples): These occur when some intermediate reasoning step(s) is missed-out especially when there are many steps involved; (iii) Semantic misunderstanding (in 27% of test examples): There are other errors in semantic understanding of the problem and coherence of reasoning steps likely to be caused by the insufficient capability of LLMs.</p><p>To address the issue of Zero-shot-CoT caused by missing reasoning steps, we propose Plan-and-Solve (PS) Prompting. It consists of two components: first, devising a plan to divide the entire task into smaller subtasks, and then carrying out the subtasks according to the plan. In our experiments, we simply replace "Let's think step by step" of Zeroshot-CoT with "Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan and solve the problem step by step" (see Figure <ref type="figure" target="#fig_1">2 (b)</ref>).</p><p>To address the calculation errors of Zero-shot-CoT and improve the quality of generated reasoning steps, we add more detailed instructions to PS prompting. Specifically, we extend it with "extract relevant variables and their corresponding numerals" and "calculate intermediate results (pay attention to calculation and commonsense)" instructions. This prompting variant is called the PS+ prompting strategy (see Figure <ref type="figure" target="#fig_2">3 (b)</ref>). Despite its simplicity, PS+ strategy greatly improves the quality of the generated reasoning process. Moreover, this prompting strategy can be easily customized to solve a variety of problems other than math reasoning, such as commonsense and symbolic reasoning problems.</p><p>We evaluate our proposed prompting on six math reasoning datasets, including AQuA <ref type="bibr" target="#b19">(Ling et al., 2017)</ref>, GSM8K <ref type="bibr" target="#b3">(Cobbe et al., 2021)</ref>, Mul-tiArith, AddSub, SingleEq, and SVAMP <ref type="bibr" target="#b23">(Patel et al., 2021)</ref>, two commonsense reasoning datasets (CommonsenseQA <ref type="bibr" target="#b31">(Talmor et al., 2019)</ref> and Strat-egyQA <ref type="bibr" target="#b7">(Geva et al., 2021)</ref>), and two symbolic reasoning datasets (Last Letter and Coin Flip <ref type="bibr">(Wei et al., 2022b)</ref>). The results of our experiments with GPT-3 show that our proposed Zero-shot-PS+ prompting consistently outperforms Zero-shot-CoT across all reasoning problems and datasets by a large margin, and is comparable to or exceeds Zeroshot-Program-of-Thought (PoT) Prompting <ref type="bibr" target="#b1">(Chen et al., 2022)</ref>). Furthermore, although PS+ prompting does not require manual demonstration examples, it has a performance similar to an 8-shot CoT prompting in arithmetic reasoning.</p><p>Overall, our results suggest that (a) Zero-shot PS prompting is capable of generating a higher-quality reasoning process than Zero-shot-CoT prompting, as the PS prompts provide more detailed instructions guiding the LLMs to perform correct reasoning tasks; (b) Zero-shot PS+ prompting outperforms Few-shot manual-CoT prompting on some datasets, indicating that in some instances it has the potential to outperform manual Few-shot CoT prompting, which hopefully will spark further development of new CoT prompting approaches to elicit reasoning in LLMs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Plan-and-Solve Prompting</head><p>Overview. We introduce PS prompting, a new zero-shot CoT prompting method, which enables LLMs to explicitly devise a plan for solving a given problem and generate the intermediate reasoning process before predicting the final answer for the input problem. As opposed to prior few-shot CoT approaches where step-by-step few-shot demonstration examples are included in the prompt, the zero-shot PS prompting method does not require demonstration examples, and its prompt covers the problem itself and a simple trigger sentence. Similar to Zero-shot-CoT, Zero-shot PS prompting consists of two steps. In step 1, the prompt first makes an inference using the proposed prompting template to generate the reasoning process and the answer to a problem. In step 2, it extracts the answer for evaluation by using the answer extraction prompting, such as "Therefore, the answer (arabic numerals) is".</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Step 1: Prompting for Reasoning Generation</head><p>To solve the input problem while avoiding errors resulting from incorrect calculation and missing reasoning steps, this step aims to construct templates to meet the following two criteria:</p><p>• The templates should elicit LLMs to deter- mine subtasks and accomplish the subtasks.</p><p>• The templates should guide LLMs to pay more attention to calculations and intermediate results and to ensure that they are correctly performed as much as possible.</p><p>To meet the first criterion, we follow Zero-shot-CoT and first convert the input data example into a prompt with a simple template "Q: [X]. A: [T]". Specifically, the input slot [X] contains the input problem statement and a hand-crafted instruction is specified in the input slot [T] to trigger LLMs to generate a reasoning process that includes a plan and steps to complete the plan. In Zero-shot-CoT, the instruction in the input slot [T] includes the trigger instruction 'Let's think step by step". Our Zero-shot PS prompting method instead includes the instructions "devise a plan" and "carry out the plan" as shown in Figure <ref type="figure" target="#fig_1">2(b)</ref>. Thus, the prompt would be "Q: <ref type="bibr">[X]</ref>. A: Let's first understand the problem and devise a plan to solve the problem.</p><p>Then, let's carry out the plan and solve the problem step by step."</p><p>We then pass the above prompt to the LLM which subsequently outputs a reasoning process. In accordance with Zero-shot-CoT, our method uses the greedy decoding strategy (1 output chain) for generating output by default.</p><p>To meet the second criterion, we extend the planbased trigger sentence with more detailed instruc-tions. Specifically, "pay attention to calculation" is added to the trigger sentence to request the LLMs to perform calculations as accurately as possible. To reduce errors resulting from missing necessary reasoning steps, we include "extract relevant variables and their corresponding numerals" to explicitly instruct the LLMs not to ignore relevant information in the input problem statement. We hypothesize that if the LLMs leave out the relevant and important variables, it is more likely to miss out relevant reasoning steps. Correlation analysis of generated content of variable and the missing reasoning step errors, shown in Figure <ref type="figure" target="#fig_4">5</ref>, empirically supports this hypothesis (correlation value is less than 0). Additionally, we add "calculate intermediate results" to the prompt to enhance LLM's ability to generate relevant and important reasoning steps. The specific example is illustrated in Figure <ref type="figure" target="#fig_2">3(b)</ref>. At the end of Step 1, LLM generates the reasoning text which includes the answer. For example, the generated reasoning text in Figure <ref type="figure" target="#fig_2">3(b)</ref> includes "Combined weight of Grace and Alex = 125 + 498 = 623 pounds". The strategy of adding specific descriptions to the trigger sentence represents a new way to improve zero-shot performance on complex reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Step 2: Prompting for Answer Extraction</head><p>Similar to Zero-shot-CoT, we devise another prompt in Step 2 to get the LLM to extract the final numerical answer from the reasoning text gener- ated in Step 1. This prompt includes the answer extraction instruction appended to the first prompt followed by the LLM generated reasoning text. This way, LLM is expected to return the final answer in the desired form. Based on the example in Figure 3(b), the prompt used in Step 2 will include "Q: Grace weighs 125 pounds • • • Variables: Grace: 125 pounds • • • Answer: Combined weight of Grace and Alex = 125 + 498 = 623 pounds.</p><p>Therefore, the answer (arabic numerals) is". For this example, the final answer returned by LLM is "623".</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Experimental Setup</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Benchmarks</head><p>The proposed method is evaluated on the ten benchmark datasets from three categories of reasoning problems: Arithmetic Reasoning: (1) the GSM8K <ref type="bibr" target="#b3">(Cobbe et al., 2021)</ref> dataset of high quality linguistically diverse grade school math word problems created by human problem writers, (2) the SVAMP <ref type="bibr" target="#b23">(Patel et al., 2021)</ref> benchmark of oneunknown arithmetic word problems for up-to-4 grade level students by making simple changes to a set of problems from another existing dataset, (3) the MultiArith (Roy and Roth, 2016) dataset of math word problems requiring multiple reasoning steps and operations, (4) the AddSub <ref type="bibr" target="#b10">(Hosseini et al., 2014</ref>) dataset of addition and subtraction arithmetic word problems, (5) the AQUA <ref type="bibr" target="#b19">(Ling et al., 2017)</ref> dataset of algebraic word problems with natural language rationales, and (6) the Sin-gleEq (Koncel-Kedziorski et al., 2015) dataset of single-equation grade-school algebra word problems with multiple math operations over nonnegative rational numbers and one variable; Commonsense Reasoning: (7) the CSQA <ref type="bibr" target="#b31">(Talmor et al., 2019)</ref> benchmark dataset of multiple-choice questions that require different types of commonsense knowledge to obtain the correct answers; and (8) the StrategyQA <ref type="bibr" target="#b7">(Geva et al., 2021)</ref> benchmark dataset with questions requiring multi-step reasoning but the reasoning steps are not given. Hence, they are to be inferred; Symbolic Reasoning: (9) the Last Letter Concatenation <ref type="bibr">(Wei et al., 2022b)</ref> dataset of questions requiring the last letters of words in a name to be concatenated (e.g., "James Brown" → "sn"), and (10) the Coin Flip <ref type="bibr">(Wei et al., 2022b)</ref> dataset of questions on whether a coin is still heads up after it is flipped or not flipped based on steps given in the questions. Table <ref type="table" target="#tab_0">1</ref> shows dataset statistics. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Zero-shot and Few-shot Baselines</head><p>We compare our proposed zero-shot PS and PS+ prompting methods with three types of prompting baselines: (1) Zero-shot baselines. We include zero-shot-CoT <ref type="bibr" target="#b15">(Kojima et al., 2022)</ref> and zeroshot-PoT <ref type="bibr" target="#b1">(Chen et al., 2022)</ref>.</p><p>The former appends "Let's think step by step" to the prompt without any demonstration examples. The latter uses LLM (mainly OpenAI Codex<ref type="foot" target="#foot_0">foot_0</ref> ) to generate a Python program and then derive an answer by executing the generated program on a Python interpreter; (2) Few-shot with manual demonstrations. Manual-CoT (Wei et al., 2022b) creates eight hand-crafted examples as demonstrations.</p><p>(3) Few-shot with automatic demonstrations. Auto-CoT <ref type="bibr" target="#b41">(Zhang et al., 2022)</ref> automatically selected examples by clustering with diversity and generates reasoning chains using zero-shot-CoT to construct demonstrations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Implementations</head><p>Following Auto-CoT <ref type="bibr" target="#b41">(Zhang et al., 2022)</ref>, we use the public GPT-3 <ref type="bibr" target="#b0">(Brown et al., 2020</ref>) (175B) as the backbone language model, which is one of the most widely-used LLMs with public APIs<ref type="foot" target="#foot_1">foot_1</ref> . Since text-davinci-003 is an upgraded version of text-davinci-002, which can produce higher-quality writing, accommodate more complex instructions, and perform better at longerform content generation, We report the results using text-davinci-003 engine for GPT-3 in the main paper. We set the temperature to 0 (argmax sampling) throughout our experiments for the greedy decoding strategy. We also include two few-shot baselines, Manual-CoT and Auto-CoT, we use 8 demonstration examples for MultiArith, GSM8K, AddSub, SingleEq, and SVAMP, 4 ex-amples for AQuA and Last Letters, 7 examples for CSQA, and 6 examples for StrategyQA as suggested in the original papers, <ref type="bibr">Wei et al. (2022b)</ref> and <ref type="bibr" target="#b41">Zhang et al. (2022)</ref>. Evaluation metrics wise, we follow Manual-CoT <ref type="bibr">(Wei et al., 2022b)</ref> and report the accuracy of all methods across datasets.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experimental Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Main Results</head><p>Arithmetic Reasoning.</p><p>Table 2 reports the accuracy comparison of our method and existing zeroshot and few-shot methods on the arithmetic reasoning datasets. In the zero-shot setting, our PS+ prompting (i.e., PS prompting with more detailed instructions) consistently outperforms Zero-shot-CoT across all arithmetic reasoning datasets by a large margin. Specifically, PS+ prompting improves the accuracy over Zero-shot CoT by at least 5% for all datasets except GSM8K which sees a 2.9% improvement. The exception could be due to GSM8K being a more challenging dataset from the linguistics complexity aspect. PS prompting also outperforms Zero-shot-CoT across all datasets, and enjoys 2.5% higher average accuracy than that of Zero-shot CoT. Compared with another competitive Zero-shot baseline, PoT, the performance of PS(+) and PS promptings are still impressive. PS+ prompting outperforms PoT on five out of six arithmetic datasets.</p><p>PS prompting also outperforms PoT on three arithmetic datasets. The results suggest that adding more detailed instructions to the prompt can effectively elicit higher-quality reasoning steps from LLMs.</p><p>Compared with the few-shot methods, Manual CoT and Auto-CoT, PS+ prompting yields an average accuracy (76.7%) slightly lower than Manual-CoT (77.6%) but higher than Auto-CoT (75.9%). While this is an unfair comparison, this result indicates that zero-shot prompting can outperform fewshot CoT prompting, which hopefully will spark further development of new ways with a less manual effort to effectively elicit reasoning in LLMs.</p><p>Commmonsense Reasoning.</p><p>Table 3 shows the results on commonsense reasoning datasets: Com-monsenseQA and StrategyQA. We only include our better zero-shot PS+ prompting strategy in this comparison. Zero-shot PoT is excluded as it does not work on this problem. While PS+ prompting underperforms Few-Shot-CoT(Manual) on this  75.7%) on GSM8K and SVAMP, respectively. The former also consistently outperforms Zero-shot-CoT with SC (70.7% and 81.7%) on GSM8K and SVAMP, respectively, although Zero-shot CoT also enjoys improvement with the self consistency approach.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Effect of Prompts.</head><p>Table 5 demonstrates a comparison of the performance of 6 different input prompts. Prompts 1 and 2 are used in Zero-shot CoT and Zero-shot PoT respectively. The rest are variations of prompts used in Step 1 of the Zeroshot PS+ prompting strategies with greedy decoding. We observe that Prompt 3 with variables and numeral extraction performs worse than Prompt 1 of Zero-shot-CoT. The reason is that Prompt 3 doesn't include instructions for devising and completing a plan. However, the other prompts of Zero-shot-PS+ perform well as we add more instructions about intermediate results calculation, plan design, and implementation. The above results conclude that LLMs are capable of generating high-quality reasoning text when the prompts include more detailed instructions to guide the LLMs. More prompts for different reasoning problems can be found in Appendix A.1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Error Analysis.</head><p>To qualitatively evaluate the impact of the Zero-shot-PS+ prompting on calculation errors and reasoning steps missing errors, we examine the distribution of errors on the GSM8K dataset. We first randomly sample 100 problems Table <ref type="table">5</ref>: Performance comparison of trigger sentences measured on GSM8K and SVAMP datasets with text-davinci-003 except for No. 2 (code-davinci-002). (*1) means the trigger sentence used in Zero-shot-CoT <ref type="bibr" target="#b15">(Kojima et al., 2022)</ref>. (*2) means the trigger sentence used in Zero-shot-PoT <ref type="bibr" target="#b1">(Chen et al., 2022)</ref>.</p><p>No. Trigger Sentence GSM8K SVAMP 1 Let's think step by step. (*1) 56.4 69.9 2 import math import numpy as np # Question: example['question'] # Answer this question by implementing a solver() function. def solver(): # Let's write a Python program step by step, and then return the answer # Firstly, we need define the following variable: (*2) 57.0 70.8 3 Extract variables and assign their corresponding numerals to these variables first and then solve the problem step by step. 50.5 69.5 4 Firstly, extract variables and their corresponding numerals. Then, calculate intermediate variables. Finally, solve the problem step by step. 54.8 70.8 5 Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan and solve the problem step by step. 58.2 72.0 6</p><p>Let's first understand the problem, extract relevant variables and their corresponding numerals, and make a plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="59.3">75.7</head><p>Table 6: Distribution of error types of 100 examples from GSM8K where Zero-shot-CoT, zero-shot PS (Zeroshot-PS) prompting, and zero-shot PS+ prompting get incorrect final answers.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Method Calculation Missing Semantic</head><p>Zero-shot-CoT 7% 12% 27%</p><p>Zero-shot-PS 7% 10% 26% Zero-shot-PS+ 5% 7% 27% from GSM8K, generate the reasoning text, and extract answers using Zero-Shot-CoT, Zero-shot-PS, and Zero-shot-PS+ prompting strategies. Zero-Shot-CoT generated incorrect final answers for 46 of the problems, 43 for Zero-shot-PS, and 39 for Zero-shot-PS+. Subsequently, we analyze and determine the error types of all these problems as shown in Table <ref type="table">6</ref>.</p><p>The analysis results show that PS+ prompting achieves the least calculation (5%) and missingstep (7%) errors, and semantic understanding errors comparable to Zero-shot-CoT. Zero-shot-PS has slightly more errors but is still better than Zeroshot-CoT. Their plan-and-solve prompts thus effectively guide the LLMs to generate clear and complete reasoning steps. Moreover, the additional detailed instructions in PS+ prompting (i.e., "extract relevant variables and their corresponding numerals" and "calculate intermediate variables") enable the LLMs to generate high-quality reason-ing steps leading to fewer calculation errors.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Correlation Analysis of Generated Reasoning and Error Types.</head><p>To obtain deeper insight into the impact of PS+ prompting on error types, we examine the correlation between the sub-parts of the generated reasoning and error types. Specifically, we analyze the existence of variable definition, reasoning plan, and solution in the generated reasoning text and correlate them with the three error types. The set of problems used for this analysis study is the same as that used in the earlier error type analysis. Figure <ref type="figure" target="#fig_4">5</ref> shows the correlation matrix among the existence of variable definitions, plans, solutions and three different types of errors. It is observed that both variable definition and plan existences have a negative correlation with calculation errors and missing-reasoning-step errors. The Zero-shot-PS+ prompt can further improve the performance of LLMs on mathematical reasoning problems by reducing calculation errors and missing-reasoning-step errors.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Exploring the Presence of Plans in PS Predictions.</head><p>To ascertain the presence of a plan in each prediction made by PS, we conducted a random sampling of 100 data examples and examined their corresponding predictions. Our analysis reveals that 90 of the 100 predictions indeed incorporated a plan. This observation indicates the emergence of strong planning abilities in recent LLMs such as GPT-3.5 and GPT-4.</p><p>5 Related Work</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Reasoning in NLP</head><p>It is well known that complex reasoning problems are challenging for NLP models, and such problems include mathematical reasoning <ref type="bibr" target="#b3">(Cobbe et al., 2021;</ref><ref type="bibr" target="#b23">Patel et al., 2021;</ref><ref type="bibr" target="#b19">Ling et al., 2017;</ref><ref type="bibr" target="#b17">Koncel-Kedziorski et al., 2016)</ref> (requiring the ability to understand mathematical concepts, calculation, and multi-step reasoning), commonsense reasoning <ref type="bibr" target="#b31">(Talmor et al., 2019;</ref><ref type="bibr" target="#b7">Geva et al., 2021)</ref> (requiring the ability to make judgments based on commonsense knowledge), and logical reasoning <ref type="bibr">(Wei et al., 2022b)</ref> (requiring the ability to manipulate symbols by applying formal logical rules). Before the advent of Large Language models (LLMs), <ref type="bibr" target="#b31">Talmor et al. (2019)</ref> trained the NLP model using explanations generated by the finetuned GPT model and found that the trained model yields better performance on commonsense QA problems. <ref type="bibr" target="#b9">Hendrycks et al. (2021)</ref> attempted to fine-tune pretrained language models with labeled rationale, but found out that these fine-tuned models could not easily generate high-quality reasoning steps. Recent work by <ref type="bibr">Wei et al. (2022a)</ref> showed that LLMs demonstrates strong reasoning ability when scaled up to tens of billions of parameters, such as GPT-3 <ref type="bibr" target="#b0">(Brown et al., 2020)</ref> and PaLM <ref type="bibr" target="#b2">(Chowdhery et al., 2022)</ref>. These LLMs with a few demonstration exemplars can yield impressive performance across different NLP tasks. However, these models still perform poorly in problems that require multi-step reasoning. This may be due to the fact that the few exemplars provided are insufficient to unlock the LLMs' capabilities.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Prompting Methods</head><p>To exploit the reasoning ability in LLMs, <ref type="bibr">Wei et al. (2022b)</ref> propose Chain-of-Thought prompting, appending multiple reasoning steps before the answer to the input question. With this simple few-shot prompting strategy, LLMs are able to perform much better in complex reasoning problems. Subsequently, many works <ref type="bibr">(Wang et al., 2022a;</ref><ref type="bibr" target="#b30">Suzgun et al., 2022;</ref><ref type="bibr" target="#b27">Shaikh et al., 2022;</ref><ref type="bibr" target="#b26">Saparov and He, 2022)</ref> propose to further improve CoT prompting in different aspects, including prompt format <ref type="bibr" target="#b1">(Chen et al., 2022)</ref>, prompt selection <ref type="bibr" target="#b22">(Lu et al., 2022)</ref>, prompt ensemble <ref type="bibr">(Wang et al., 2022b;</ref><ref type="bibr" target="#b18">Li et al., 2022;</ref><ref type="bibr" target="#b38">Weng et al., 2022;</ref><ref type="bibr" target="#b6">Fu et al., 2022)</ref>, problem decomposition <ref type="bibr" target="#b42">(Zhou et al., 2022;</ref><ref type="bibr" target="#b14">Khot et al., 2022;</ref><ref type="bibr" target="#b5">Dua et al., 2022;</ref><ref type="bibr" target="#b24">Press et al., 2022)</ref>, and planning <ref type="bibr" target="#b6">(Yao et al., 2022;</ref><ref type="bibr">Huang et al., 2022;</ref><ref type="bibr" target="#b35">Wang et al., 2023;</ref><ref type="bibr" target="#b20">Liu et al., 2023;</ref><ref type="bibr" target="#b28">Sun et al., 2023;</ref><ref type="bibr" target="#b39">Yao et al., 2023)</ref>. CoT prompts. Our work is different from the above works by focusing on eliciting multi-step reasoning by LLMs in a zero-shot approach. We ask LLMs to write a plan to decompose a complex reasoning task into multiple reasoning steps. Furthermore, we introduce detailed instructions to the prompt to avoid obvious errors in the reasoning steps. We refer readers to the survey <ref type="bibr" target="#b12">(Huang and Chang, 2022)</ref> for more related works.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>In this paper, we find that Zero-shot-CoT still suffers from three pitfalls: calculation errors, missingreasoning-step errors, and semantic understanding errors. To address these issues, we introduce plan-and-solve prompting strategies (PS and PS+ prompting).</p><p>They are new zero-shot prompting methods that guide LLMs to devise a plan that divides the entire task into smaller subtasks and then carries out the subtasks according to the plan. Evaluation on ten datasets across three types of reasoning problems shows PS+ prompting outperforms the previous zero-shot baselines and performs on par with few-shot CoT prompting on multiple arithmetic reasoning datasets. Overall, our results suggest that (a) Zero-shot PS+ prompting can generate a high-quality reasoning process than Zero-shot-CoT prompting since the PS prompts can provide more detailed instructions guiding the LLMs to perform correct reasoning; (b) Zero-shot PS+ prompting has the potential to outperform manual Fewshot CoT prompting, which hopefully will spark further development of new CoT prompting approaches to elicit reasoning in LLMs. Moreover, PS(+) prompting is a general idea that can be used for non-reasoning tasks, and refining the plan is also an interesting idea. We leave them for future work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Limitations</head><p>There are two limitations to this work. First, it takes effort to design the prompt to guide the LLMs to generate correct reasoning steps. The GPT-3 models are sensitive to the expressions in prompts. Thus we need to carefully design the prompts. Second, the proposed plan-and-solve prompting can help address the calculation errors and missing-reasoningstep errors, but the semantic misunderstanding errors still remain. We will explore how to address semantic misunderstanding errors by prompting instead of upgrading LLMs in the future.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8">Ethics</head><p>We experiment on six math reasoning datasets, including AQuA <ref type="bibr" target="#b19">(Ling et al., 2017)</ref>, GSM8K <ref type="bibr" target="#b3">(Cobbe et al., 2021)</ref>, MultiArith, AddSub, SingleEq, and SVAMP <ref type="bibr" target="#b23">(Patel et al., 2021)</ref>, two commonsense reasoning tasks (CommonsenseQA <ref type="bibr" target="#b31">(Talmor et al., 2019)</ref> and StrategyQA <ref type="bibr" target="#b7">(Geva et al., 2021)</ref>), and two symbolic tasks (Last Letter and Coin Flip <ref type="bibr">(Wei et al., 2022b)</ref>), where GSM8K and SVAMP use the MIT License code, AQUA and StrategyQA use the Apache-2.0 code, the remaining datasets are unspecified.</p><p>The proposed prompts do not collect and use personal information about other individuals. The prompts we used are listed in Appendix. The prompts in this work do not contain any words that discriminate against any individual or group. In this work, prompts would not negatively impact other people's safety.</p><p>Table 17: Example outputs by Zero-shot-PS+ for AQuA.</p><p>Q: The average wages of a worker during a fortnight comprising of 15 consecutive working days was $90 per day. During the first 7 days, his average wage was $87 per day and the average wage during the last 7 days was $92 per day. What was his wage on the 8th day? Answer Choices: (A) $83 (B) $92 (C) $90 (D) $97 (E) $104 A: Let's first understand the problem, extract relevant variables and their corresponding numerals, and make a complete plan.Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer.</p><p>Output: Variables: Average wage during the first 7 days = 87 Average wage during the last 7 days = 92 Average wage during the fortnight = 90 Plan: Calculate the total wages earned during the first 7 days. Calculate the total wages earned during the last 7 days. Calculate the total wages earned during the fortnight. Calculate the wage on the 8th day. Calculation: Total wages earned during the first 7 days = 7 x 87 = 609 Total wages earned during the last 7 days = 7 x 92 = 644 Total wages earned during the fortnight = 15 x 90 = 1350 Wage on the 8th day = (1350 -609 -644) / 1 = 97 Answer: (D) $97.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Q: If 27 bottles of soda cost A cents, how much will B bottles cost in dollars? Answer Choices: (A) AB/2700 (B) 27/AB (C) AB/270 (D) 2700/AB (E) 100AB/27</head><p>A: Let's first understand the problem, extract relevant variables and their corresponding numerals, and make a complete plan.Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer. Table 18: Example outputs by Zero-shot-PS+ for GSM8K.</p><p>Q: James decides to run 3 sprints 3 times a week. He runs 60 meters each sprint. How many total meters does he run a week?</p><p>A: Let's first understand the problem, extract relevant variables and their corresponding numerals, and make a complete plan.Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer.</p><p>Output: Given: James runs 3 sprints 3 times a week. Each sprint is 60 meters. Plan: We need to calculate the total meters run by James in a week. Calculation: Total number of sprints run by James in a week = 3 sprints x 3 times = 9 sprints Total meters run by James in a week = 9 sprints x 60 meters = 540 meters Answer: James runs 540 meters in a week.</p><p>Q: In a dance class of 20 students, 20% enrolled in contemporary dance, 25% of the remaining enrolled in jazz dance, and the rest enrolled in hip-hop dance. What percentage of the entire students enrolled in hip-hop dance?</p><p>A: Let's first understand the problem, extract relevant variables and their corresponding numerals, and make a complete plan.Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer. Table 19: Example outputs by Zero-shot-PS+ for MultiArith.</p><p>Q: The school cafeteria ordered 42 red apples and 7 green apples for students lunches. But, if only 9 students wanted fruit, how many extra did the cafeteria end up with?</p><p>A: Let's first understand the problem, extract relevant variables and their corresponding numerals, and devise a complete plan.Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer.</p><p>Output: Variables: Red apples = 42 Green apples = 7 Students wanting fruit = 9 Plan: Calculate the total number of apples ordered by the cafeteria Subtract the total number of apples ordered by the cafeteria from the number of students wanting fruit Calculation: Total number of apples ordered by the cafeteria = 42 + 7 = 49 Answer: Extra apples = 49 -9 = 40 Q: Carol and her mom were picking carrots from their garden. Carol picked 29 and her mother picked 16. If only 38 of the carrots were good, how many bad carrots did they have?</p><p>A: Let's first understand the problem, extract relevant variables and their corresponding numerals, and devise a complete plan.Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer.</p><p>Output: Variables: Carol: 29 Mom: 16 Good Carrots: 38 Plan: We can calculate the number of bad carrots by subtracting the number of good carrots from the total number of carrots picked. Calculation: Total Carrots Picked = Carol + Mom = 29 + 16 = 45 Bad Carrots = Total Carrots Picked -Good Carrots = 45 -38 = 7 Answer: There were 7 bad carrots.</p><p>Table 20: Example outputs by Zero-shot-PS+ for SVAMP.</p><p>Q: Mom buys 70 white t -shirts in total. If white t -shirts can be purchased in packages and mom buys 14 packages. How many white t -shirts does each package have?</p><p>A: Let's first understand the problem, extract relevant variables and their corresponding numerals, and make and device a complete plan.Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer. A: Let's first understand the problem, extract relevant variables and their corresponding numerals, and make and device a complete plan.Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer. Table 23: Example outputs by Zero-shot-PS+ for CommonsenseQA.</p><p>Q: What is a place that has a bench nestled in trees? Answer Choices: (A) state park (B) bus stop (C) bus depot (D) statue (E) train station A: Let's first understand the problem, extract relevant variables and their corresponding numerals, and devise a complete plan.Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Output:</head><p>The question is asking for a place that has a bench nestled in trees. The answer choices are (A) state park, (B) bus stop, (C) bus depot, (D) statue, and (E) train station. The answer is (A) state park. State parks are typically located in natural areas with trees, and they often have benches for visitors to sit and enjoy the scenery.</p><p>Q: Where is a good idea but not required to have a fire extinguisher? Answer Choices: (A) school bus (B) boat (C) house (D) hospital (E) school A: Let's first understand the problem, extract relevant variables and their corresponding numerals, and devise a complete plan.Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Output:</head><p>The question is asking for a good idea to have a fire extinguisher, but it is not required. The answer choices are (A) school bus, (B) boat, (C) house, (D) hospital, and (E) school. The best answer is (C) house. Having a fire extinguisher in a house is a good idea, but it is not required. Fire extinguishers are not typically required in school buses, boats, hospitals, or schools.  Table 26: Example outputs by Zero-shot-PS+ for Coin Flip.</p><p>Q: A coin is heads up. Walter does not flip the coin. Mikayla does not flip the coin. Larry does not flip the coin. Ryan does not flip the coin. Is the coin still heads up? Note that "flip" here means "reverse".</p><p>A: Let's first understand the problem and devise a complete plan. Then, let's carry out the plan and reason problem step by step. Every step answer the subquestion, "does the person flip and what is the coin's current state?". According to the coin's last state, give the final answer (pay attention to every flip and the coin's turning state). </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Error analysis of 46 GSM8K problems with incorrect answers returned by Zero-shot-CoT using GPT-3 LLM. Following Wei et al. (2022b) and Wang et al. (2022a), we assign "Calculation Error" (7%), "Step Missing Error" (12%), or "Semantic misunderstanding Error" (27%) to each incorrect answer.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Example inputs and outputs of GPT-3 with (a) Zero-shot-CoT prompting, (b) Plan-and-Solve (PS) prompting, and (c) answer extraction prompting. While Zero-shot-CoT encourages LLMs to generate multi-step reasoning with "Let's think step by step", it may still generate wrong reasoning steps when the problem is complex. Unlike Zero-shot-CoT, PS prompting first asks LLMs to devise a plan to solve the problem by generating a step-bystep plan and carrying out the plan to find the answer.</figDesc><graphic coords="3,70.87,70.86,453.48,206.16" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Example inputs and outputs of GPT-3 with (a) Plan-and-Solve (PS) Prompting and (b) Plan-and-Solve prompting with more detailed instructions (PS+ prompting). PS+ prompting greatly improves the quality of the generated reasoning process.</figDesc><graphic coords="4,70.87,70.88,453.45,276.40" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Results of methods with and without selfconsistency (SC) on GSM8K and SVAMP.</figDesc><graphic coords="6,306.35,215.02,106.98,79.83" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Correlation analysis of generated reasoning and error types of randomly sampled 100 data examples from GSM8K for Zero-shot-PS+.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><figDesc>Chen et al. (2022) introduced PoT prompting to use LLMs with code pre-training to write a program as a rationale for disentangling computation from reasoning. To do away with manual effort, Kojima et al. (2022) proposed Zero-shot-CoT to elicit reasoning step generation without exemplars. To leverage the benefit of demonstration examples and minimize manual effort, Zhang et al. (2022) designed Auto-CoT. It first automatically obtains k examples by clustering the given dataset. It then follows Zero-shot-CoT to generate rationales for the selected examples. Finally, demonstration examples are constructed by adding the generated rationales to selected examples as</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><figDesc>the cost of B bottles of soda Solution: 1. Convert A cents to dollars: A cents = A/100 dollars 2. Calculate the cost of B bottles of soda: B bottles of soda = (A/100) * (B/27) = AB/2700 dollars Answer: (A) AB/2700</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><figDesc>number of students = 20 Percentage of students enrolled in contemporary dance = 20% Percentage of students enrolled in jazz dance = 25% Plan: 1. Calculate the number of students enrolled in contemporary dance. 2. Calculate the number of students remaining after subtracting the number of students enrolled in contemporary dance. 3. Calculate the number of students enrolled in jazz dance. 4. Calculate the number of students enrolled in hip-hop dance. 5. Calculate the percentage of students enrolled in hip-hop dance. Calculation: 1. Number of students enrolled in contemporary dance = 20% of 20 = 20% × 20 = 4 2. Number of students remaining after subtracting the number of students enrolled in contemporary dance = 20 -4 = 16 3. Number of students enrolled in jazz dance = 25% of 16 = 25% × 16 = 4 4. Number of students enrolled in hip-hop dance = 16 -4 = 12 5. Percentage of students enrolled in hip-hop dance = 12/20 × 100% = 60% Answer: 60% of the entire students enrolled in hip-hop dance.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><figDesc>number of white t-shirts = 70 Number of packages = 14 Plan: We can use the equation: Total number of white t-shirts = Number of packages x Number of t-shirts per package Calculation: Number of t-shirts per package = 70/14 = 5 Answer: Each package has 5 white t-shirts. Q: Jesse's rooms are 19 feet long and 18 feet wide. If she has 20 rooms in all. How much carpet does she need to cover the floors of all rooms?</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><figDesc>Calculate the area of each room. Step 2: Multiply the area of each room by the number of rooms. Step 3: Show the answer. Calculation: Step 1: Area of each room = Length x Width = 19 feet x 18 feet = 342 square feet Step 2: Total area of all rooms = Area of each room x Number of rooms = 342 square feet x 20 rooms = 6840 square feet Answer: Jesse needs 6840 square feet of carpet to cover the floors of all rooms.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><figDesc>Walter does not flip the coin. Step 2: Mikayla does not flip the coin. Step 3: Larry does not flip the coin. Step 4: Ryan does not flip the coin. Answer: Yes, the coin is still heads up. Explanation: Step 1: Walter does not flip the coin. Therefore, the coin is still heads up. Step 2: Mikayla does not flip the coin. Therefore, the coin is still heads up. Step 3: Larry does not flip the coin. Therefore, the coin is still heads up. Step 4: Ryan does not flip the coin. Therefore, the coin is still heads up. Conclusion: Yes, the coin is still heads up. Q: A coin is heads up. Lorena does not flip the coin. Shana does not flip the coin. Priscilla does not flip the coin. Summer does not flip the coin. Is the coin still heads up? Note that "flip" here means "reverse" A: Let's first understand the problem and devise a complete plan. Then, let's carry out the plan and reason problem step by step. Every step answer the subquestion, "does the person flip and what is the coin's current state?". According to the coin's last state, give the final answer (pay attention to every flip and the coin's turning state). Output: Plan: Step 1: Lorena does not flip the coin. Step 2: Shana does not flip the coin. Step 3: Priscilla does not flip the coin. Step 4: Summer does not flip the coin. Answer: Step 1: Lorena does not flip the coin. Therefore, the coin is still heads up. Step 2: Shana does not flip the coin. Therefore, the coin is still heads up. Step 3: Priscilla does not flip the coin. Therefore, the coin is still heads up. Step 4: Summer does not flip the coin. Therefore, the coin is still heads up. Final Answer: Yes, the coin is still heads up.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Details of datasets being evaluated. Math: arithmetic reasoning. CS: commonsense reasoning. Sym.: symbolic reasoning.</figDesc><table><row><cell>Dataset</cell><cell cols="4">Domain # Samples Ave. words Answer</cell></row><row><cell>MultiArith</cell><cell>Math</cell><cell>600</cell><cell>31.8</cell><cell>Number</cell></row><row><cell>AddSub</cell><cell>Math</cell><cell>395</cell><cell>31.5</cell><cell>Number</cell></row><row><cell>GSM8K</cell><cell>Math</cell><cell>1319</cell><cell>46.9</cell><cell>Number</cell></row><row><cell>AQUA</cell><cell>Math</cell><cell>254</cell><cell>51.9</cell><cell>Option</cell></row><row><cell>SingleEq</cell><cell>Math</cell><cell>508</cell><cell>27.4</cell><cell>Number</cell></row><row><cell>SVAMP</cell><cell>Math</cell><cell>1000</cell><cell>31.8</cell><cell>Number</cell></row><row><cell>CSQA</cell><cell>CS</cell><cell>1221</cell><cell>27.8</cell><cell>Option</cell></row><row><cell>StrategyQA</cell><cell>CS</cell><cell>2290</cell><cell>9.6</cell><cell>Yes / No</cell></row><row><cell cols="2">Last Letters Sym.</cell><cell>500</cell><cell>15.0</cell><cell>String</cell></row><row><cell>Coin Flip</cell><cell>Sym.</cell><cell>500</cell><cell>37.0</cell><cell>Yes / No</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Accuracy comparison on six math reasoning datasets. The best and second best results are boldfaced and underlined respectively.</figDesc><table><row><cell>Setting</cell><cell cols="8">Method (text-davinci-003) MultiArith GSM8K AddSub AQuA SingleEq SVAMP Average</cell></row><row><cell></cell><cell>CoT</cell><cell>83.8</cell><cell>56.4</cell><cell>85.3</cell><cell>38.9</cell><cell>88.1</cell><cell>69.9</cell><cell>70.4</cell></row><row><cell>Zero-Shot</cell><cell>PoT PS (ours)</cell><cell>92.2 87.2</cell><cell>57.0 58.2</cell><cell>85.1 88.1</cell><cell>43.9 42.5</cell><cell>91.7 89.2</cell><cell>70.8 72.0</cell><cell>73.5 72.9</cell></row><row><cell></cell><cell>PS+ (ours)</cell><cell>91.8</cell><cell>59.3</cell><cell>92.2</cell><cell>46.0</cell><cell>94.7</cell><cell>75.7</cell><cell>76.7</cell></row><row><cell>Few-Shot</cell><cell>Manual-CoT Auto-CoT</cell><cell>93.6 95.5</cell><cell>58.4 57.1</cell><cell>91.6 90.8</cell><cell>48.4 41.7</cell><cell>93.5 92.1</cell><cell>80.3 78.1</cell><cell>77.6 75.9</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Accuracy on commonsense reasoning datasets.</figDesc><table><row><cell>Method</cell><cell cols="2">CSQA StrategyQA</cell></row><row><cell cols="2">Few-Shot-CoT (Manual) 78.3</cell><cell>71.2</cell></row><row><cell>Zero-shot-CoT</cell><cell>65.2</cell><cell>63.8</cell></row><row><cell>Zero-shot-PS+ (ours)</cell><cell>71.9</cell><cell>65.4</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 :</head><label>4</label><figDesc>Accuracy on symbolic reasoning datasets.</figDesc><table><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>Zero-shot-Cot</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>Zero-shot-PS+</cell></row><row><cell></cell><cell></cell><cell>w/o SC</cell><cell>w/ SC</cell><cell>w/o SC</cell><cell>w/ SC</cell></row><row><cell>Method</cell><cell cols="2">Last Letter Coin Flip</cell><cell></cell></row><row><cell>Few-Shot-CoT (Manual)</cell><cell>70.6</cell><cell>100.0</cell><cell></cell></row><row><cell>Zero-shot-CoT</cell><cell>64.8</cell><cell>96.8</cell><cell></cell></row><row><cell>Zero-shot-PS+ (ours)</cell><cell>75.2</cell><cell>99.6</cell><cell></cell></row><row><cell cols="3">Symbolic Reasoning. Table 4 shows the accu-</cell><cell></cell></row><row><cell cols="3">racy of PS+ prompting against Zero-shot-CoT</cell><cell></cell></row><row><cell cols="3">and Few-shot-CoT on symbolic reasoning datasets:</cell><cell></cell></row><row><cell cols="3">Last Letters and Coin Flip. Zero-shot PoT is again</cell><cell></cell></row><row><cell cols="3">excluded as it is not designed for the problem. On</cell><cell></cell></row><row><cell cols="3">Last Letters, our Zero-shot PS+ prompting (75.2%)</cell><cell></cell></row><row><cell cols="3">outperforms Manual-CoT (70.6%) and Zero-shot-</cell><cell></cell></row><row><cell cols="3">CoT (65.2%). On Coin Flip, Zero-shot PS+ prompt-</cell><cell></cell></row><row><cell cols="3">ing (99.6%) is slightly worse than Manual-CoT</cell><cell></cell></row><row><cell cols="3">(100.0%) but outperforms Zero-shot-CoT by a</cell><cell></cell></row><row><cell cols="3">good margin (96.8%). More examples from the</cell><cell></cell></row><row><cell cols="3">experiment results can be found in Appendix A.2.</cell><cell></cell></row><row><cell>4.2 Analysis</cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">Results of Prompting with Self-Consistency.</cell><cell></cell></row><row><cell cols="3">Self-consistency (Wang et al., 2022b) (SC) is pro-</cell><cell></cell></row><row><cell cols="3">posed to reduce randomness in LLM's output by</cell><cell></cell></row><row><cell cols="3">generating N reasoning results and determining</cell><cell></cell></row><row><cell cols="3">the final answer by majority voting. With SC, the</cell><cell></cell></row><row><cell cols="3">methods' results are usually expected to be con-</cell><cell></cell></row><row><cell cols="3">sistent and better. Hence, we evaluate Zero-shot</cell><cell></cell></row><row><cell cols="3">PS+ prompting with SC on GSM8K and SVAMP</cell><cell></cell></row></table><note><p>problem, it consistently outperforms Zero-shot-CoT on CommonsenseQA (71.9% vs. 65.2%) and StrategyQA (65.4% vs. 63.8%) datasets.</p><p>datasets. We set the temperature to 0.7 and N to 10 for experiments with SC. Figure4</p><p>shows that PS+ prompting with SC (73.7% and 84.4%) substantially outperforms that without SC (58.7% and</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 24 :</head><label>24</label><figDesc>Example outputs by Zero-shot-PS+ for StrategyQA.Does the country that received the most gold medals during the 1976 Olympics still exist?A: Let's first prepare relevant information and make a plan. Then, let's answer the question step by step (pay attention to commonsense and logical coherence). The 1976 Olympics were held in Montreal, Canada. -The country that received the most gold medals during the 1976 Olympics was the Soviet Union. Plan: 1. Determine if the Soviet Union still exists. 2. If the Soviet Union still exists, answer the question. 3. If the Soviet Union does not exist, determine which countries it has been replaced by. Answer: 1. The Soviet Union no longer exists. 2. No, the country that received the most gold medals during the 1976 Olympics does not still exist. 3. The Soviet Union has been replaced by 15 independent countries, including Russia, Ukraine, Belarus, and Kazakhstan. Q:Is the Mona Lisa in the same museum as the Venus de Milo? A: Let's first prepare relevant information and make a plan. Then, let's answer the question step by step (pay attention to commonsense and logical coherence). Located in the Louvre Museum in Paris, France Venus de Milo: Located in the Louvre Museum in Paris, France Plan: Step 1: Identify the locations of the Mona Lisa and the Venus de Milo Step 2: Compare the locations Answer: Yes, the Mona Lisa and the Venus de Milo are both located in the Louvre Museum in Paris, France.</figDesc><table><row><cell>Output:</cell></row><row><cell>Relevant information:</cell></row><row><cell>-Output:</cell></row><row><cell>Relevant information:</cell></row><row><cell>Mona Lisa:</cell></row></table><note><p>Q:</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 25 :</head><label>25</label><figDesc>Example outputs by Zero-shot-PS+ for Last Letters.Take the last letters of each words in "Lino Mariel Aditya Elisabeth" and concatenate them A:Let's devise a plan and solve the problem step by step.Step 1: Take the last letters of each word in the given string.Take the last letters of each words in "Jacky Socorro Mark Wanda" and concatenate them A:Let's devise a plan and solve the problem step by step.</figDesc><table><row><cell>Output:</cell></row><row><cell>Lino: o</cell></row><row><cell>Mariel: l</cell></row><row><cell>Aditya: a</cell></row><row><cell>Elisabeth: h</cell></row><row><cell>Step 2: Concatenate the last letters.</cell></row><row><cell>Answer: olah</cell></row><row><cell>Q: Output:</cell></row><row><cell>Step 1: Take the last letters of each word.</cell></row><row><cell>Jacky: y</cell></row><row><cell>Socorro: o</cell></row><row><cell>Mark: k</cell></row><row><cell>Wanda: a</cell></row><row><cell>Step 2: Concatenate the letters.</cell></row><row><cell>Answer: yoka</cell></row></table><note><p>Q:</p></note></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>https://openai.com/blog/openai-codex/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>https://beta.openai.com/docs/models/gpt-3</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Appendix</head><p>This section includes two parts: (1) Results of all prompts we have tried; (2) Example texts generated by Zero-shot-PS+. Unless otherwise mentioned, we use GPT3 (text-davinci-003) model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 Results of All Trigger Sentences</head><p>Tables 7 to 16 list the results of all prompts we have tried for each dataset.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Example Outputs by Zero-shot-PS+</head><p>Tables 17 to 25 list example outputs generated by Zero-shot-PS+ for each dataset.</p><p>Table 7: Performance comparison of prompts used in Step 1 of Zero-shot-PS+ prompting with text-davinci-003 on AQuA.</p><p>No. Trigger Setence Accuracy 1 Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan to solve the problem step by step. 42.5 2 Let's first understand the problem, extract all relevant variables and their corresponding numerals carefully, and devise a plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and common sense), solve the problem step by step carefully, and show the answer.</p><p>42.9 3 Let's first understand the problem, extract relevant correct variables and their correct corresponding numerals, and devise complete plans. Then, let's carry out the plan, calculate intermediate variables including extracted variables (pay attention to correct numerical calculation and common sense), solve the problem by single equations, and show the answer.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="43.7">4</head><p>Let's first understand the problem, extract relevant variables and their corresponding numerals, and make a complete plan.Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer.</p><p>46.0</p><p>Table 8: Performance comparison of prompts used in Step 1 of Zero-shot-PS+ prompting with text-davinci-003 on GSM8K. No. Trigger Setence Accuracy 1 Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan to solve the problem step by step. 58.2 2 Let's first understand the problem, extract relevant variables and their corresponding numerals, and devise a plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numeral calculation and commonsense), solve the problem step by step, and show the answer. 58.7 3 Let's first understand the problem, extract relevant variables and their corresponding numerals, and make a complete plan.Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer. 59.3 Table 9: Performance comparison of prompts used in Step 1 of Zero-shot-PS+ prompting with text-davinci-003 on MultiArith. No. Trigger Setence Accuracy 1 Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan to solve the problem step by step. 87.2 2</p><p>Let's first understand the problem, extract relevant variables and their corresponding numerals, and devise a plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numeral calculation and commonsense), solve the problem step by step, and show the answer.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="88.3">3</head><p>Let's first understand the problem, extract relevant variables and their corresponding numerals, and devise a complete plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to the correctness of the calculation and common sense), solve the problem step by step, and show the answer.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="90.5">4</head><p>Let's first understand the problem, extract relevant variables and their corresponding numerals, and devise a complete plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer.</p><p>91.8</p><p>Table 10: Performance comparison of prompts used in Step 1 of Zero-shot-PS+ prompting with text-davinci-003 on SVAMP.</p><p>No. Trigger Setence Accuracy 1 Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan to solve the problem step by step. 72.0 2 Let's first understand the problem, extract relevant variables and their corresponding numerals, and devise a plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numeral calculation and commonsense), solve the problem step by step, and show the answer.</p><p>75.4 3 Let's first understand the problem, extract relevant variables and their corresponding numerals, and make a complete plan.Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer.</p><p>75.7 Table 21: Example outputs by Zero-shot-PS+ for AddSub.</p><p>Q: There were 28 bales of hay in the barn. Tim stacked bales in the barn today. There are now 54 bales of hay in the barn. How many bales did he store in the barn ?</p><p>A: Let's first understand the problem, extract relevant variables and their corresponding numerals, and devise a plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numeral calculation and commonsense), solve the problem step by step, and show the answer.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Output:</head><p>Given: Initial number of bales of hay in the barn = 28 Number of bales of hay in the barn after Tim stacked them = 54 Plan: Calculate the number of bales of hay Tim stored in the barn by subtracting the initial number of bales of hay from the number of bales of hay after Tim stacked them. Calculation: Number of bales of hay Tim stored in the barn = 54 -28 = 26 Answer: Tim stored 26 bales of hay in the barn.</p><p>Q: There were 6 roses in the vase. Mary cut some roses from her flower garden. There are now 16 roses in the vase. How many roses did she cut ?</p><p>A: Let's first understand the problem, extract relevant variables and their corresponding numerals, and devise a plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numeral calculation and commonsense), solve the problem step by step, and show the answer.</p><p>Output: Given: Initial number of roses in the vase = 6 Final number of roses in the vase = 16 Plan: Subtract the initial number of roses from the final number of roses to calculate the number of roses Mary cut. Calculation: Number of roses Mary cut = 16 -6 = 10 Answer: Mary cut 10 roses from her flower garden.</p><p>Table 22: Example outputs by Zero-shot-PS+ for SingleEq.</p><p>Q: After eating at the restaurant, Sally, Sam, and Alyssa decided to divide the bill evenly. If each person paid 45 dollars, what was the total of the bill ?</p><p>A: Let's first understand the problem, extract relevant variables and their corresponding numerals, and devise a plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numeral calculation and commonsense), solve the problem step by step, and show the answer.</p><p>Output: Problem: After eating at the restaurant, Sally, Sam, and Alyssa decided to divide the bill evenly. If each person paid 45 dollars, what was the total of the bill? Variables:</p><p>-Total of the bill (T) -Number of people (N) -Amount paid by each person (A) Numerals:</p><p>-N = 3 -A = 45 Plan: -Calculate the total of the bill (T) by multiplying the number of people (N) by the amount paid by each person (A). Calculation: T = N x A T = 3 x 45 T = 135 Answer: The total of the bill was 135 dollars.</p><p>Q: Mary is baking a cake. The recipe wants 8 cups of flour. She already put in 2 cups. How many more cups does she need to add ?</p><p>A: Let's first understand the problem, extract relevant variables and their corresponding numerals, and devise a plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numeral calculation and commonsense), solve the problem step by step, and show the answer. </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><figDesc>Mary needs to add 8 cups of flour to the cake. She has already put in 2 cups. Plan: Subtract the amount of flour Mary has already put in from the total amount of flour needed. Calculation: 8 cups (total amount of flour needed) -2 cups (amount of flour Mary has already put in) = 6 cups (amount of flour Mary needs to add) Answer: Mary needs to add 6 more cups of flour.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_9"><head>Table 11 :</head><label>11</label><figDesc>Performance comparison of prompts used in Step 1 of Zero-shot-PS+ prompting with text-davinci-003 on AddSub.Let's first understand the problem, extract relevant variables and their corresponding numerals, and devise a complete plan.Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer.Let's first understand the problem, extract relevant variables and their corresponding numerals, and devise a plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numeral calculation and commonsense), solve the problem step by step, and show the answer.</figDesc><table><row><cell>No. Trigger Setence</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_10"><head>Table 12 :</head><label>12</label><figDesc>Performance comparison of prompts used in Step 1 of Zero-shot-PS+ prompting with text-davinci-003 on SingleEq.Let's first understand the problem, extract relevant variables and their corresponding numerals, and devise a plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numeral calculation and commonsense), solve the problem step by step, and show the answer.</figDesc><table><row><cell>No. Trigger Setence</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_11"><head>Table 13 :</head><label>13</label><figDesc>Performance comparison of prompts used in Step 1 of Zero-shot-PS+ prompting with text-davinci-003 on CSQA.</figDesc><table><row><cell>No. Trigger Setence</cell></row></table><note><p>2</p><p>Let's devise a complete plan. Then, let's carry out the plan, solve the problem step by step, and show the answer. 63.0 3 Let's first prepare relevant information and make a plan. Then, let's answer the question step by step (pay attention to commonsense and logical coherence).</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_12"><head>Table 15 :</head><label>15</label><figDesc>Performance comparison of prompts used in Step 1 of Zero-shot-PS+ prompting with text-davinci-003 on Last Letters.</figDesc><table><row><cell cols="2">No. Trigger Setence</cell><cell>Accuracy</cell></row><row><cell>1</cell><cell cols="2">Let's devise a plan and solve the problem step by step. 75.2</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_13"><head>Table 16 :</head><label>16</label><figDesc>Performance comparison of prompts used in Step 1 of Zero-shot-PS+ prompting with text-davinci-003 on Coin Flip. Let's first understand the problem and devise a complete plan.Then, let's carry out the plan, reason problem step by step. Every step answer the subquestion "does the person flip and what is the coin current state?", and according to the last coin state, give the final answer (pay attention that the coin turns state at every flip). Let's first understand the problem and devise a complete plan. Then, let's carry out the plan, reason problem step by step. Every step answer the subquestion "does the person flip and what is the coin current state?", and according to the coin last state give the final answer(pay attention to every flip, the coin turns state). Let's first understand the problem and devise a complete plan. Then, let's carry out the plan and reason problem step by step. Every step answer the subquestion, "does the person flip and what is the coin's current state?". According to the coin's last state, give the final answer (pay attention to every flip and the coin's turning state).</figDesc><table><row><cell>No. Trigger Setence</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Program of thoughts prompting: Disentangling computation from reasoning for numerical reasoning tasks</title>
+		<author>
+			<persName><forename type="first">Wenhu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueguang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">W</forename><surname>Cohen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.12588</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaurav</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Barham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyung</forename><forename type="middle">Won</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Gehrmann</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.02311</idno>
+		<title level="m">PaLM: Scaling language modeling with pathways</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.14168</idno>
+		<title level="m">Training verifiers to solve math word problems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">BERT: Pre-training of deep bidirectional transformers for language understanding</title>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenton</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kristina</forename><surname>Toutanova</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of NAACL</title>
+		<meeting>NAACL</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="4171" to="4186" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dheeru</forename><surname>Dua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shivanshu</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sameer</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matt</forename><surname>Gardner</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.04092</idno>
+		<title level="m">Successive prompting for decomposing complex questions</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.00720</idno>
+		<title level="m">Complexity-based prompting for multi-step reasoning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Did aristotle use a laptop? a question answering benchmark with implicit reasoning strategies</title>
+		<author>
+			<persName><forename type="first">Mor</forename><surname>Geva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Khashabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elad</forename><surname>Segal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Roth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Berant</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">TACL</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="page" from="346" to="361" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Towards a unified view of parameter-efficient transfer learning</title>
+		<author>
+			<persName><forename type="first">Junxian</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunting</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhe</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Taylor</forename><surname>Berg-Kirkpatrick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.04366</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurav</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akul</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2103.03874</idno>
+		<title level="m">Measuring mathematical problem solving with the math dataset</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Learning to solve arithmetic word problems with verb categorization</title>
+		<author>
+			<persName><forename type="first">Mohammad Javad</forename><surname>Hosseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oren</forename><surname>Etzioni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nate</forename><surname>Kushman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="523" to="533" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Parameter-efficient transfer learning for nlp</title>
+		<author>
+			<persName><forename type="first">Neil</forename><surname>Houlsby</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrei</forename><surname>Giurgiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stanislaw</forename><surname>Jastrzebski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bruna</forename><surname>Morrone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quentin</forename><surname>De Laroussilhe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrea</forename><surname>Gesmundo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mona</forename><surname>Attariyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sylvain</forename><surname>Gelly</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="2790" to="2799" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">-Chuan</forename><surname>Chang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.10403</idno>
+		<title level="m">Towards reasoning in large language models: A survey</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Language models as zero-shot planners: Extracting actionable knowledge for embodied agents</title>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deepak</forename><surname>Pathak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="9118" to="9147" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Decomposed prompting: A modular approach for solving complex tasks</title>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harsh</forename><surname>Trivedi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Finlayson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Richardson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.02406</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">Takeshi</forename><surname>Kojima</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shane</forename><surname>Shixiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Machel</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutaka</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusuke</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Iwasawa</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.11916</idno>
+		<title level="m">Large language models are zero-shot reasoners</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Parsing algebraic word problems into equations</title>
+		<author>
+			<persName><forename type="first">Rik</forename><surname>Koncel-Kedziorski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oren</forename><surname>Etzioni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siena</forename><surname>Dumas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ang</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page" from="585" to="597" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">MAWPS: A math word problem repository</title>
+		<author>
+			<persName><forename type="first">Rik</forename><surname>Koncel-Kedziorski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Subhro</forename><surname>Roy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aida</forename><surname>Amini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nate</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of NAACL</title>
+		<meeting>NAACL</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="1152" to="1157" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeqi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shizhuo</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiang</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian-Guang</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2206.02336</idno>
+		<title level="m">On the advance of making language models better reasoners</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Program induction by rationale generation: Learning to solve and explain algebraic word problems</title>
+		<author>
+			<persName><forename type="first">Wang</forename><surname>Ling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dani</forename><surname>Yogatama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Dyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phil</forename><surname>Blunsom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 55th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 55th Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="158" to="167" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqian</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiqi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joydeep</forename><surname>Biswas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Stone</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.11477</idno>
+		<title level="m">Llm+ p: Empowering large language models with optimal planning proficiency</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yinhan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Myle</forename><surname>Ott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingfei</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mandar</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danqi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omer</forename><surname>Levy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Veselin</forename><surname>Stoyanov</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1907.11692</idno>
+		<title level="m">Roberta: A robustly optimized bert pretraining approach</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Dynamic prompt learning via policy gradient for semi-structured mathematical reasoning</title>
+		<author>
+			<persName><forename type="first">Pan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><forename type="middle">Nian</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Song-Chun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tanmay</forename><surname>Rajpurohit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Kalyan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2209.14610</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Are NLP models really able to solve simple math word problems?</title>
+		<author>
+			<persName><forename type="first">Arkil</forename><surname>Patel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Satwik</forename><surname>Bhattamishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Navin</forename><surname>Goyal</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of NAACL</title>
+		<meeting>NAACL</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="2080" to="2094" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muru</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sewon</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ludwig</forename><surname>Schmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03350</idno>
+		<title level="m">Measuring and narrowing the compositionality gap in language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Solving general arithmetic word problems</title>
+		<author>
+			<persName><forename type="first">Subhro</forename><surname>Roy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Roth</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1608.01413</idno>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Language models are greedy reasoners: A systematic formal analysis of chain-of-thought</title>
+		<author>
+			<persName><forename type="first">Abulhair</forename><surname>Saparov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">He</forename><surname>He</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.01240</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">On second thought, let&apos;s not think step by step! bias and toxicity in zeroshot reasoning</title>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Shaikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongxin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Held</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Bernstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diyi</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.08061</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Pearl: Prompting large language models to plan and execute actions over long documents</title>
+		<author>
+			<persName><forename type="first">Simeng</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuohang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenguang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Iyyer</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tianxiang</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfan</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hong</forename><surname>Qian</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.03514</idno>
+		<title level="m">Xuanjing Huang, and Xipeng Qiu. 2022. Black-box tuning for language-model-as-a-service</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Challenging big-bench tasks and whether chain-of-thought can solve them</title>
+		<author>
+			<persName><forename type="first">Mirac</forename><surname>Suzgun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Gehrmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyung</forename><forename type="middle">Won</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><forename type="middle">H</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.09261</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Commonsenseqa: A question answering challenge targeting commonsense knowledge</title>
+		<author>
+			<persName><forename type="first">Alon</forename><surname>Talmor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Herzig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Lourie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Berant</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of NAACL-HLT</title>
+		<meeting>NAACL-HLT</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="4149" to="4158" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">Romal</forename><surname>Thoppilan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">De</forename><surname>Freitas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamie</forename><surname>Hall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Apoorv</forename><surname>Kulshreshtha</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Heng-Tze</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alicia</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Taylor</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leslie</forename><surname>Bos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Du</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.08239</idno>
+		<title level="m">Lamda: Language models for dialog applications</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">2022a. Towards understanding chain-of-thought prompting: An empirical study of what matters</title>
+		<author>
+			<persName><forename type="first">Boshi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sewon</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaming</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">You</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Sun</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.10001</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.11171</idno>
+		<title level="m">Self-consistency improves chain of thought reasoning in language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Describe, explain, plan and select: Interactive planning with large language models enables open-world multi-task agents</title>
+		<author>
+			<persName><forename type="first">Zihao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaofei</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anji</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojian</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yitao</forename><surname>Liang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.01560</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishi</forename><surname>Bommasani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Raffel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barret</forename><surname>Zoph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Borgeaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dani</forename><surname>Yogatama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donald</forename><surname>Metzler</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2206.07682</idno>
+		<title level="m">Emergent abilities of large language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Chain of thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Thirty-sixth Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2022">2022. NeurIPS 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Large language models are reasoners with self-verification</title>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Weng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minjun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shizhu</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Zhao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.09561</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Tree of thoughts: Deliberate problem solving with large language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><forename type="middle">L</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">React: Synergizing reasoning and acting in language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2210.03629</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Automatic chain of thought prompting in large language models</title>
+		<author>
+			<persName><forename type="first">Zhuosheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aston</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Smola</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03493</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Least-to-most prompting enables complex reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Bousquet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.10625</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

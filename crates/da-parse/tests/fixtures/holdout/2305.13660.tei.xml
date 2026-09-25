@@ -1,0 +1,2015 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Prompt-Based Monte-Carlo Tree Search for Goal-oriented Dialogue Policy Planning</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2023-10-19">19 Oct 2023</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Xiao</forename><surname>Yu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">Columbia University</orgName>
+								<address>
+									<settlement>New York</settlement>
+									<region>NY</region>
+								</address>
+							</affiliation>
+						</author>
+						<author role="corresp">
+							<persName><forename type="first">Maximillian</forename><surname>Chen</surname></persName>
+							<email>maxchen@cs.columbia.edu</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">Columbia University</orgName>
+								<address>
+									<settlement>New York</settlement>
+									<region>NY</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhou</forename><surname>Yu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">Columbia University</orgName>
+								<address>
+									<settlement>New York</settlement>
+									<region>NY</region>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Prompt-Based Monte-Carlo Tree Search for Goal-oriented Dialogue Policy Planning</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2023-10-19">19 Oct 2023</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">68CDB345D3836F51080B2CFBB5C2EAE2</idno>
+					<idno type="arXiv">arXiv:2305.13660v2[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:29+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Planning for goal-oriented dialogue often requires simulating future dialogue interactions and estimating task progress. Many approaches thus consider training neural networks to perform look-ahead search algorithms such as A* search and Monte Carlo Tree Search (MCTS). However, this training often requires abundant annotated data, which creates challenges when faced with noisy annotations or low-resource settings. We introduce GDP-ZERO, an approach using Open-Loop MCTS to perform goal-oriented dialogue policy planning without any model training. GDP-ZERO prompts a large language model to act as a policy prior, value function, user simulator, and system model during the tree search. We evaluate GDP-ZERO on the goal-oriented task Persua-sionForGood, and find that its responses are preferred over ChatGPT up to 59.32% of the time, and are rated more persuasive than Chat-GPT during interactive evaluations 1 .</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>In many goal-oriented conversation tasks, interacting parties must retake initiative <ref type="bibr" target="#b0">(Allen et al., 1999)</ref> by executing conversational strategies to lead the conversation a desired outcome (e.g. successful negotiation <ref type="bibr" target="#b20">(Lewis et al., 2017)</ref> or emotional support <ref type="bibr" target="#b24">(Liu et al., 2021)</ref>). As such, it is imperative to have high-quality dialogue policy planners that can prescribe an "optimal" strategy at each turn of the dialogue <ref type="bibr" target="#b19">(Levin et al., 1997;</ref><ref type="bibr">Zhang et al., 2020b;</ref><ref type="bibr" target="#b22">Liu and Lane, 2017;</ref><ref type="bibr" target="#b23">Liu et al., 2018)</ref>.</p><p>Optimal policy planning is a difficult task. While in task-oriented settings (e.g. restaurant booking) there at least is objectivity with respect to successful planning, many goal-oriented tasks like persuasion are often subjective. For instance, in a persuasion task, individual persuaders might adopt different strategies, making it difficult to train or evaluate a policy planner 2 . Moreover, "optimality" in these complex tasks may require expert domain knowledge (e.g., negotiation skills). This also makes collecting and annotating high-quality conversations difficult <ref type="bibr">(Chen et al., 2023b)</ref>.</p><p>In this work, we contribute a novel approach to Goal-oriented Dialogue Planning with Zero training (GDP-ZERO). GDP-ZERO prompts a large language model (LLM) to perform planning by simulating future dialogue interactions (Figure <ref type="figure" target="#fig_0">1</ref>), making it particularly suitable for tasks which would otherwise require high-quality conversations 2 In our extensive initial experiments to build a policy planner for the PersuasionForGood <ref type="bibr" target="#b45">(Wang et al., 2019</ref>) task, we found 1) training a supervised or reinforcement learningbased multi-class classifier for next-dialogue-act-prediction yields only 18-25% accuracy at best (including finetuning LLaMA <ref type="bibr" target="#b41">(Touvron et al., 2023)</ref>, RoBERTa <ref type="bibr" target="#b27">(Liu et al., 2019)</ref>, and prompting LLMs such as ChatGPT), and 2) converting the multiclass policy prediction task into a binary task of whether to "propose to donate" still yields only 74% accuracy. and annotations. Unlike previous approaches, we treat policy planning as a stochastic game, and use prompting for every stage of an open-loop tree search. We evaluate GDP-ZERO on PersuasionFor-Good due to its difficult planning task <ref type="bibr" target="#b45">(Wang et al., 2019)</ref>, and find its responses are preferred over ChatGPT in both static and interactive evaluations.</p><p>2 Related Work Prompting Methods Few-shot dialogue techniques have a lot of advantages, including out-ofdomain generalization <ref type="bibr" target="#b55">(Zhao and Eskenazi, 2018;</ref><ref type="bibr" target="#b31">Mehri and Eskenazi, 2021)</ref> and difficult low resource settings with noisy annotations <ref type="bibr">(Chen et al., 2023b)</ref>. Recently, prompting LLMs has become the predominant approach to few-shot language tasks, and its applications in dialogue have received much attention. However, this has largely focused on dialogue response generation (e.g. <ref type="bibr">Chen et al. (2023b)</ref>; <ref type="bibr" target="#b28">Liu and Kilicoglu (2023)</ref>; <ref type="bibr">Madotto et al. (2021)</ref>; <ref type="bibr" target="#b29">Liu et al. (2022)</ref>), conversation synthesis (e.g. <ref type="bibr">Chen et al. (2023a)</ref>; <ref type="bibr" target="#b1">Kim et al. (2022)</ref>; <ref type="bibr" target="#b1">Bae et al. (2022)</ref>), and dialogue understanding (e.g. <ref type="bibr" target="#b49">Yang et al. (2022)</ref>; <ref type="bibr" target="#b12">Gupta et al. (2022)</ref>). To date, prompting has not been used for policy planning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Dialogue Policy Planning</head><p>Research on dialogue policy planning can be categorized into neuralfocused and algorithmic-focused. Neural-focused approaches use annotated dialogues to train dedicated classifiers or value functions to predict the next dialogue acts without explicit look-ahead planning <ref type="bibr">(Zhang et al., 2022a,b;</ref><ref type="bibr" target="#b3">Cao et al., 2020;</ref><ref type="bibr" target="#b34">Peng et al., 2018;</ref><ref type="bibr" target="#b52">Zhang et al., 2023)</ref>. For many goal-oriented dialogues, however, both annotated strategies and dialogue responses can be suboptimal/noisy, as different people can respond differently even given the same context.</p><p>To reduce the reliance on a labeled dataset, much work has also attempted to combine neural networks with search algorithms, such as A* search <ref type="bibr" target="#b9">(Cheng et al., 2022)</ref> and tree search <ref type="bibr" target="#b44">(Wang et al., 2020;</ref><ref type="bibr" target="#b48">Yang et al., 2021;</ref><ref type="bibr" target="#b17">Jang et al., 2020;</ref><ref type="bibr" target="#b42">Väth et al., 2023)</ref>. However, these methods still require model training for dialogue simulation or value function estimation, and are therefore highly dependent on training data quality <ref type="bibr" target="#b37">(Shi et al., 2019)</ref>. For example, <ref type="bibr" target="#b17">Jang et al. (2020)</ref> use MCTS for training an RNN-based policy model and <ref type="bibr" target="#b44">Wang et al. (2020)</ref> train multiple neural networks for user simulation and value function estimation. Consequently, these methods can face difficulties during dialogue simulation due to a) noisy data annotations causing sub-optimally trained generation models, and b) inaccurate responses generated at turn i compounding errors for simulations at turns &gt; i.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Method</head><p>In this work, we introduce GDP-ZERO, an algorithm-focused dialogue policy planner for goaloriented dialogue tasks like persuasion. GDP-ZERO uses zero model training and instead performs Open-Loop MCTS at decision time by prompting an LLM to simulate user and system response, evaluate current task progress, and predict a prior next dialogue act. Building on findings from <ref type="bibr">Chen et al. (2023b)</ref>, our approach has two main differences from existing policy planning work: we use few-shot prompting to bypass the need for model training on noisy data, and we use Open-Loop MCTS to reduce compounding simulation errors by continuously re-generating system and user responses during the tree search.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Problem Definition</head><p>To introduce tree search methods for dialogue policy planning, we first formulate planning as a Markov Decision Process (MDP). A t turn dialogue between a user and a system can be represented as:</p><formula xml:id="formula_0">h = (a sys 0 , u sys 1 , u usr 1 , ..., a sys t-1 , u sys t , u usr t )</formula><p>where a sys i is the system's dialogue act at turn i, u sys i is the system's response, and u usr i is the user's utterance at turn i. Similar to <ref type="bibr" target="#b48">Yang et al. (2021)</ref> and <ref type="bibr" target="#b44">Wang et al. (2020)</ref>, we define the task of planning the next a sys as an MDP problem ⟨S, A, R, P, γ⟩. The dialogue act of the system a sys i represents an action a i ∈ A at a turn i, and the corresponding dialogue history up to the i-th turn</p><formula xml:id="formula_1">s i = (a 0 , u sys 1 , u usr 1 , ..., a i-1 , u sys i , u usr i ) represents a state s i ∈ S.</formula><p>A reward function R(s, a) represents the likelihood of a desired conversational outcome, such as persuading a user to donate to a charity. The transition function P : S × A → S represents the probability of transitioning from a dialogue state s i to state s i+1 after executing a i at a turn. Finally, γ ∈ [0, 1) is the discount factor.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Dialogue Planning as a Stochastic MDP</head><p>In a typical MDP game like Go, much success has been achieved by employing closed-loop MCTS to plan for the next move/action a <ref type="bibr" target="#b38">(Silver et al., 2016</ref><ref type="bibr" target="#b39">(Silver et al., , 2017))</ref>. In general, MCTS algorithms improve the</p><p>Absolutely! ... You can find reviews ... credibility appeal root greeting .... ...history Are you familiar with Save the Children? No can you explain? logical appeal gre eti ng em otio nal app eal logical appeal ...history up to turn i [credibility] .... reputable... .... [logical] Absolutely! .... Nice! .... Cache simulation and update tree a b c Expansion and Evaluation Backpropagation Selection Repeat d Prediction root Best DA next turn credibility appeal It's a very reputable organization ... Best Utt next turn when tree search (a)-(c) finished 1 estimate next action prob. logical appeal Prompt [logical appeal]: root ... credibility appeal .... simulate next turn t=i sample from cache or simulate next turn [cred. appeal] It's a very reputable... Interesting ... t=i+2 Prompt: Nice! ... ...history + simulation up to t=i+1 : ... ... : ... ... t=i+2 evaluate task progress 2 Would you like to make a donation? t=i+3 x15 Prompt: [emotional appeal] Prompt: [positive reaction] actions proposed by an original policy model π θ by building a search tree that contain simulated outcomes of many potentially high-rewarding actions, and returning the best action according to the simulation/evaluation results. Specifically, MCTS repeatedly 1) explores a new action or exploits a successful action a proposed by π θ in a state s; 2) simulates the action outcome s ′ ← P(s, a); 3) evaluates the action's quality; and 4) updates its estimate Q(s, a) for that action. At the end of the search, MCTS produces probabilities π ∝ N (s, a) 1/τ for playing each action using the exponentiated visit count, which usually suggests much stronger moves than using the raw policy π θ <ref type="bibr" target="#b16">(Howard, 1960;</ref><ref type="bibr" target="#b40">Sutton and Barto, 2018;</ref><ref type="bibr" target="#b39">Silver et al., 2017)</ref>.</p><p>However, in simulating dialogue interactions during tree search, generating a slightly improbable system or user response for state s ′ and storing it in a search tree could lead to a large compounding error for the rest of the subtree from s ′ <ref type="bibr" target="#b44">(Wang et al. (2020)</ref>). This is because the state space representing all possible responses is large, and dialogue responses are diverse. This makes it difficult to accurately simulate the most probable next dialogue state s ′ given an (s, a) pair from the previous turn. We thus treat dialogue policy planning as a stochastic MDP, where the simulated next state s ′ ← P(s, a) is drawn from a large unknown distribution and might not be representative of the most probable s ′ <ref type="bibr" target="#b35">(Perez Liebana et al., 2015)</ref>. Unlike previous usages of (closed-loop) MCTS for dialogue which consider a deterministic transition <ref type="bibr" target="#b44">(Wang et al., 2020;</ref><ref type="bibr" target="#b48">Yang et al., 2021)</ref>, this formulation re-quires potentially different s ′ to be returned given the same dialogue context s and system action a.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">GDP-ZERO</head><p>To solve this stochastic problem, we base our algorithm on Open-Loop MCTS <ref type="bibr" target="#b47">(Weber, 2010;</ref><ref type="bibr" target="#b35">Perez Liebana et al., 2015)</ref>, a variant of MCTS where each tree node s tr i = (a 0 , ..., a i ) represents the sequence of dialogue actions to reach a dialogue turn i. Instead of using system/user utterances to represent a tree node, this design forces an algorithm to (re)generate the corresponding system and user utterances when traversing the tree (see Figure <ref type="figure" target="#fig_1">2</ref>). Over time, a tree node s tr stores statistics derived from executing the sequence of dialogue actions (DA) without relying on some specific instance of user/system utterances, which could cause errors to propagate into future simulations. Given a dialogue state s 0 , GDP-ZERO searches for the next best action by iteratively performing action selection, search tree expansion, action evaluation, and backpropagation to update tree statistics. After n iterations, GDP-ZERO outputs a prediction for the next best action for s 0 . GDP-ZERO is detailed in Figure <ref type="figure" target="#fig_1">2</ref> and Appendix A. Below we describe each stage of the algorithm.</p><p>Selection Given a tree state s tr , the action a * with the highest Predictor Upper Confidence Tree Bound (PUCT) <ref type="bibr" target="#b39">(Silver et al., 2017;</ref><ref type="bibr" target="#b36">Rosin, 2011)</ref> is selected to traverse the tree: PUCT(s tr , a) = Q(s tr , a) + c p a N (s tr , a) 1 + N (s tr , a)  ,</p><p>where N records the number of times a (s tr , a) pair has been visited, and c p is a hyperparameter controlling exploration. Since future simulations require a specific dialogue history, we either sample from the node's simulation cache if its size reached k, or generate a new simulation based on selected dialogue history h tr by prompting (Appendix B).</p><p>We repeat this process until s tr becomes leaf node.</p><p>Expansion Once a leaf node is reached, we treat a LLM M θ as a prior policy by prompting it to generate a distribution of next dialogue acts. This is done by sampling M θ at temperature τ = 1.0 for m times, and converting the sampled DAs into a distribution (see Appendix A). Finally, each DA is also initialized with Q(s tr , •) = Q 0 , a hyperparameter controlling exploration.</p><p>Evaluation We model the value of a state v(s tr ) by the probability that its dialogue context h tr can lead to task success. In a persuasion task to convince a user to donate to a charity, this can be achieved by appending the utterance "Would you like to make a donation?" to the context, and prompting an LLM l times to simulate the user's current inclination to donation (Appendix A).</p><p>Backpropagation At the end of each search, we first store any newly simulated histories h tr in a cache for each s tr . Then, we update the statistics of all nodes along the search path: . We also store a value v h estimated for each simulated history h tr that resulted in v(s tr ) by a running average:</p><formula xml:id="formula_2">N (s tr , a) ← N (s tr , a) + 1<label>(1)</label></formula><formula xml:id="formula_3">v h (h tr ) ← v h (h tr ) × N h (h tr ) + v(s tr ) N h (h tr ) + 1 ,<label>(3)</label></formula><p>with N h (•) stores the number of times h tr is visited.</p><p>Prediction After all simulations are completed, we select the optimal action a * = arg max a N (s tr 0 , a) based on the number of times an action has been visited, where s tr 0 is the root node of the tree. To avoid generating a response using M θ on a * again, we also extract from cache the best system utterance associated with executing action a * at state s tr 0 . We use v h computed during the simulations, and return the utterance with the highest estimated value:</p><formula xml:id="formula_4">h tr * = arg max h tr a * v h (h tr a * ),</formula><p>where h tr a * denote any history h tr that played action a * after the root state s tr 0 . We call this process "response selection".</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head><p>We evaluate GDP-ZERO in the context of Persua-sionForGood (P4G; <ref type="bibr">Wang et</ref>  <ref type="formula">al. (2019)</ref>), a dataset with 300 annotated dialogues where a "persuader" attempts to persuade a "persuadee" to donate to a charity called Save the Children (Appendix E). Due to the subjective nature of persuasion, it is not clear whether the annotated conversations reflect optimal persuasion strategies <ref type="bibr" target="#b7">(Chen et al., 2022)</ref>. This makes training and evaluating a policy planner challenging, since different persuaders likely adopt different strategies (Section 1). Motivated by this challenge, we employ GDP-ZERO to perform decision-time planning based on dialogue simulations, and focus on evaluating our approach's end-to-end performance in achieving the desired task outcome: successfully persuading a user to donate to Save the Children.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Static Evaluation</head><p>We use ChatGPT<ref type="foot" target="#foot_1">foot_1</ref> (OpenAI, 2022) as the generation backbone of GDP-ZERO, which has become accepted as one of the most coherent generalpurpose LLM (e.g. <ref type="bibr">Liu et</ref>  <ref type="formula">al. (2023b); Guo et al.  (2023)</ref>). We take the first 20 dialogues from P4G, and produce 154 turns for evaluation. For each turn, we compare the response generated with and without GDP-ZERO for planning. Then, we prompted ChatGPT to choose<ref type="foot" target="#foot_2">foot_2</ref> which generated response is more persuasive (Appendix F).</p><p>In Table <ref type="table">1</ref>, we found that generative approaches using ChatGPT were preferred over human ground truth responses about 90% of the time, with the highest score achieved by GDP-ZERO. In Table <ref type="table" target="#tab_0">2</ref>, we show that responses generated after GDP-ZERO planning were preferred in up to 59.32% of comparisons. We also observe increasing preference for GDP-ZERO when the number of simulations n increases. Finally, we find changing k, Q 0 (controls simulation diversity and exploration, respectively) can slightly improve performance (Appendix A). However, we consider the possibility that a) ChatGPT is biased towards its own generated dialogues <ref type="bibr">(Liu et al., 2023a)</ref>, and b) it might not have a robust criteria of what constitutes persuasiveness. As such, we also conducted interactive evaluation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Interactive Human Evaluation</head><p>We conducted interactive human evaluation using the LegoEval platform <ref type="bibr" target="#b21">(Li et al., 2021)</ref> with crowdworkers on Amazon Mechanical Turk. We primarily sought to evaluate GDP-ZERO in an end-to-end chatbot against two competitive baselines. The first is prompting ChatGPT for generation without GDP-ZERO planning. The second follows <ref type="bibr">Chen et al. (2023b)</ref> by using ChatGPT with RAP <ref type="bibr" target="#b7">(Chen et al., 2022)</ref>. To our knowledge, RAP is the current state-of-the-art system on P4G, using trained modules with fixed dialogue policies derived from expert knowledge. Recently, <ref type="bibr">Chen et al. (2023b)</ref> showed that using an LLM (e.g. ChatGPT) as the response generation module for RAP further improved performance (see Appendix G for details).</p><p>After the conversation, we asked the crowdworkers to evaluate our system based on the criteria in Table <ref type="table" target="#tab_1">3</ref>. We collected 40 survey results for GDP-ZERO, 35 for ChatGPT, and 36 for RAP (Appendix H). Our study revealed that GDP-ZERO achieves the best performance across all metrics related to persuasiveness. We also found that RAP is highly rated for strategy diversity and relevance, indicating the benefit of using expert knowledge in planning. In Appendix D we provide some analysis of the generated dialogues and the resulting dialogue act distributions using different planners.</p><p>In Appendix I we include some example dialogues.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Ablation Studies</head><p>To study how various components of GDP-ZERO helped improve task success, we conducted various ablation studies including 1) using Closed-Loop MCTS instead of the open-loop variant; 2) removing the "response selection" process; and 3) testing with both ChatGPT and Codex <ref type="bibr">(Chen et al., 2021)</ref> as a backbone. Our experiments (see Appendix C) show that using Open-Loop MCTS contributed the most to making a response more persuasive, and that using the "response selection" precedure further improves performance. We also find that GDP-ZERO can improve upon both backbone models.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>We propose GDP-ZERO, an algorithm to perform look-ahead policy planning with a large language model for goal-oriented dialogues. End-to-end evaluation shows that using the policy from GDP-ZERO surpasses previous state-of-the-art system (RAP) and direct prompting with state-of-the-art LLMs on the task of persuasion without any model training. Strong performance in the zero-data regime opens the possibility of future work building dialogue systems in more conversational tasks under data-scarce settings.</p><p>When is using GDP-ZERO appropriate? In this paper, we present GDP-ZERO, a general approach for close-domain dialogue policy planning at turn-level. However, in this work we only evaluated GDP-ZERO on P4G. This is because we believe simulation-based plannings would be most beneficial when the task 1) often requires longhorizon planning to be successful, 2) does not have "optimal" action annotations readily available for supervised learning, and 3) evaluation does not require study participants to follow fake hypothetical scenarios to conduct a conversation, as otherwise the outcome may be disingenuous. We thus believe tasks like persuasion are most suitable, where planning ahead is crucial to success and policy optimality from human demonstrations is extremely subjective. Additionally, such a user may or may not want to donate to the charity, and the task of the dialogue system is to try to persuade them. This is in contrast to other goal-oriented contexts like task-oriented dialogue (TOD), where strong policies can be directly learned due to TOD's mostly passive and objective nature (e.g. He et al. ( <ref type="formula">2022</ref>)), and also to dialogues where a hypothetical scenario is required. For example, to design a fair and controlled study, a user may need to make up fake preferences/objectives about a certain product in CraiglistsBargains <ref type="bibr" target="#b13">(He et al., 2018)</ref>, or pretend that they need emotional support for some fixed set of issues in ESConv <ref type="bibr" target="#b24">(Liu et al., 2021)</ref>. Additionally, while GDP-ZERO can be adapted to task-oriented contexts like Multi-Woz <ref type="bibr" target="#b2">(Budzianowski et al., 2018)</ref>, it may not necessarily be appropriate. Such task-oriented contexts often have hierarchical policies (e.g. " <ref type="bibr">[hotel]</ref> [recommend] name price" and " <ref type="bibr">[restaurant]</ref> [inform] food price area"), and adaptation to GDP-ZERO would require converting the hierarchy into a multi-label classification, resulting in a massive action space. We believe this could be very inefficient, and approaches such as building multiple search trees to perform high/low-level planning would be useful <ref type="bibr">(Zhang et al., 2020a)</ref>.</p><p>Runtime One important limitation for GDP-ZERO is runtime. The more exhaustive the tree search (e.g. increasing n or k), the more likely the algorithm is able to find the optimal dialogue policy (Table <ref type="table" target="#tab_0">2</ref>). However, this comes at the cost of longer simulation time, which may affect the overall user experience, and accordingly, user perceptions of persuasiveness.</p><p>With OpenAI API's rate limit and LLM's inference speed, we restricted GDP-ZERO to plan on 7 dialogue acts in P4G, with n = 10, k = 3 for a simulation time of around 35 seconds during interactive evaluation. We believe methods to parallelize tree search <ref type="bibr" target="#b4">(Chaslot et al., 2008)</ref> or to re-use part of the simulation subtrees could be helpful to speed up GDP-ZERO. We expect that as research with LLMs progresses, inference speed will continue to improve. In the short-term, one may bypass latency limitations by utilizing multiple accounts to parallelize API calls during simulation.</p><p>Simulation Quality GDP-ZERO prompts a LLM (e.g. ChatGPT) to perform dialogue simulation and value estimation. Despite LLM's strong few-shot performance on many tasks, issues with controllable generation can still create errors during simulation (e.g. generated system utterances might not match planned dialogue action). GDP-ZERO accounts for such errors by using an Open-Loop search with k &gt; 1, but this increases simulation runtime. We believe this trade-off between simulation quality and runtime is also an important aspect for future work to consider.</p><p>Using ChatGPT for static analysis While Chat-GPT is shown to outperform crowdworkers on many annotation and evaluation tasks (e.g. <ref type="formula">Gilardi  et al. (2023</ref>  <ref type="formula">2023a</ref>)), recent work has been finding that LLMs like ChatGPT may favor responses with a higher number of unique tokens <ref type="bibr" target="#b46">(Wang et al., 2023)</ref>. As such, we analyzed responses between GDP-ZERO (n = 20, k = 3, Q 0 = 0) and ChatGPT, and found that there is indeed some positive correlation (r = 0.29, p &lt; 0.001) between the number of words in a response and ChatGPT's preference for persuasiveness. However, it is not clear whether this is a limitation in our setting. Our setting of evaluating persuasiveness is not quite the same as the typical context of considering direct preference; there are many situations where longer responses which correlate with persuasiveness (for instance, an aptly used logical appeal). As such, we conducted interactive evaluation with crowdworkers in Section 4.2 and find that GDP-ZERO generated responses are indeed rated as more persuasive.</p><p>Our work describes an algorithm to perform dialogue policy planning for goal-oriented tasks without any model training. It is aimed at making future dialogue systems to build, and also better at helping users/systems achieve their tasks/goals.</p><p>Potential Abuses Generally, while most algorithms are not designed for unethical usage, there is often potential for abuse in their applications. In our experiments with PersuasionForGood <ref type="bibr" target="#b45">(Wang et al., 2019)</ref>, we apply GDP-ZERO on the goal of increasing users' intention to donate to a charity. However, because GDP-ZERO is fundamentally goal-agnostic, it is possible to use them for unethical tasks, such as scamming. We do not condone the use of GDP-ZERO for any unlawful or morally unjust purposes.</p><p>Interactive Human Evaluation In this study, we conducted interactive human evaluation using crowdworkers on the Amazon Mechanical Turk platform. All crowdworkers were informed that they were speaking with a chatbot. All study participants were paid at a rate of $15 per hour. Our study has received IRB approval.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Additional details on GDP-ZERO</head><p>We describe the details of GDP-ZERO in Algorithm 1. Similar to other MCTS algorithms, GDP-ZERO performs simulation based on four stages, selection, expansion, evaluation, and backpropagation, and finally predicts an action based on the simulations. Different from existing implementations, GDP-ZERO performs Open-Loop search using only a generative LLM M θ , by prompting it to do dialogue simulation, value function estimation, and prior policy estimation (see Appendix B for prompting details and examples).</p><p>GDP-ZERO requires a generative LLM M θ as a backbone model, and takes in a dialogue history h i at turn i as input. Given some fixed dialogue action space A (see appendix E for P4G), GDP-ZERO builds a search tree after n simulations. For each state, GDP-ZERO keeps a cache of size k storing newly generated user and system utterances. We use c p = 1.0, and Q 0 = {0.0, 0.25, 0.5} to promote exploration (see Table <ref type="table" target="#tab_0">2</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Prompting Details on P4G</head><p>For P4G, we used the same one-shot example for all cases, while dynamically changing the representation for each operation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>System response generation.</head><p>Following Chen et al. (2023b), we include the natural language form of a planned dialogue action (Table <ref type="table">A4</ref>) in the prompt to perform conditional generation. We present an example in Table <ref type="table">A7</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>User response generation.</head><p>We swap the user and the system role for this task, and prompt the LLM to act as a user simulator. We present an example in Table <ref type="table">A8</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Value function estimation.</head><p>To evaluate the user's inclination to donate at a given state, we first append the turn "Persuader: Would you be interested in donating to Save the Children?" to the dialogue history, and then prompt the LLM at temperature τ = 1.1 to sample the user's response for l = 10 times. We define "no donation"=-1.0, "negative reaction"=-0.5, "neutral"=0.0, "positive reaction"=0.5, and "donation"=1.0, and then convert the sampled responses to a score between -1.0 and 1.0. We present an example in Table <ref type="table">A9</ref>.</p><p>Prior policy estimation. We treat the backbone LLM as a prior policy, and prompt it to generate the next dialogue action at temperature τ = 1.0 for 15 times to simulate its policy distribution. Finally, to promote the diversity of the generated dialogue actions during GDP-ZERO tree search, we use add-1 smoothing to convert the generated dialogue actions to a probability distribution. We present an example in Table <ref type="table">A10</ref>.</p><p>Algorithm 1 GDP-Zero (M θ ) Require: generative LLM M θ Require: dialogue history h i until turn i Require: dialogue action space a ∈ A Require: hyperparameter n, k, c p , Q 0 1: Repeat for n searches: 2: initialize root node</p><formula xml:id="formula_5">s tr i , H(s tr i ) ← {h i } 3: s tr ← s tr i 4: // selection 5: while s tr is not a leaf node do 6: a ′ ← arg max a PUCT(s tr , a; c p ) 7: h tr ← sample(H(s tr )) 8: s tr ← s tr ∪ a ′ 9: if len(H(s tr )) &lt; k then 10: generate h new ← M θ (h tr • a ′ ) 11: save H(s tr ) ← H(s tr ) ∪ h new 12:</formula><p>end if 13: end while </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Ablation Studies</head><p>In Table <ref type="table">A1</ref> and Table <ref type="table" target="#tab_0">A2</ref>, we conduct ablations to study how each component in GDP-ZERO affect its performance. We use the same 20 dialogues from our static evaluation (Section 4.1), and test GDP-Zero with ChatGPT (Table <ref type="table" target="#tab_0">A2</ref>) and Codex 5 (Table <ref type="table">A1</ref>) as the generation backbone. Similar to Section 4.1, we use ChatGPT to evaluate the persuasiveness of the generated responses.</p><p>In all runs, we use n = 20, c p = 1, Q 0 = 0, k = 3 for GDP-ZERO, when applicable. Table <ref type="table">A1</ref> and Table <ref type="table" target="#tab_0">A2</ref> shows that GDP-ZERO improves the policy proposed by the raw backbone model, and also that of a Closed-Loop MCTS implementation (denoted as "w/o OpenLoop") and without the "response selection" process (denoted as "w/o Resp.Select"). This indicates that using the openloop variant and the proposed "response selection" process are beneficial for GDP-ZERO to improve dialogue planning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Analysis of GDP-ZERO Dialogues</head><p>In our experiments, we utilized GDP-ZERO to generate persuasive responses to convince a persuadee to donate to a charity. In this section, we provide an analysis of how and when GDP-ZERO impacts persuasiveness. 5 At the time of writing, Codex <ref type="bibr">(Chen et al., 2021)</ref> was freely accessible from the OpenAI API.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Algorithm</head><p>Backbone Win Rate v. GT Prompting Codex 38.09 ± 2.00% GDP-Zero Codex 45.46 ± 2.95% w/o OpenLoop Codex 39.16± 3.42% w/o Resp.Select Codex 40.80± 1.47% Table A1: Static evaluation using the first 20 dialogues of P4G with ChatGPT as judge. GT refers to Ground Truth. Results are µ ± σ repeated over three runs. Algorithm Backbone Win Rate v. GT Prompting ChatGPT 87.21 ± 0.60% GDP-Zero ChatGPT 91.13 ± 0.30% w/o OpenLoop ChatGPT 88.09± 0.81% w/o Resp.Select ChatGPT 91.03± 0.75% Table A2: Static evaluation using the first 20 dialogues of P4G with ChatGPT as judge. GT refers to Ground Truth. Results are µ ± σ repeated over three runs. Since ChatGPT generations are typically long, we use the first 3 sentences of each generation in this evaluation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Static evaluation.</head><p>Our static evaluation (Section 4.1) uses fixed dialogue contexts from the P4G dataset <ref type="bibr" target="#b45">(Wang et al., 2019)</ref>, and every turn of the conversation is already annotated with dialogue actions. We thus utilize those annotations and investigate when GDP-ZERO is producing more persuasive responses. For this analysis GDP-ZERO used n = 10, k = 3, Q 0 = 0.25, which is the same configuration as in our interactive evaluation (Section 4.2, Appendix G). We found that GDP-ZERO is rated as more persuasive 70.59% of the time when the user at the previous turn showed negative emotions (i.e. "negative-reactionto-donation" or "negative-to-inquiry"), and 59.26% of the time when the user showed positive emotions (i.e. "positive-reaction-to-donation" and "positiveto-inquiry"). We believe this implies that GDP-ZERO's simulations are most beneficial in persuading users who is having little intent to donation. This is because look-ahead planning may, for instance, help ensure a response has covered all of the user's concerns regarding donation. We present an example in Table <ref type="table">A6</ref>.</p><p>Interactive evaluation. Since each interactive dialogue is unlabeled, here we focus on analyzing the known dialogue actions generated by the different planners during those conversations. In Figure <ref type="figure" target="#fig_5">A1</ref> we present the distribution of planned dialogue actions produced by RAP, ChatGPT, and GDP-ZERO. In general, the planned dialogue actions using ChatGPT and GDP-ZERO are unevenly distributed across different stages of the dialogue. Across different times of the conversation, Chat-GPT and GDP-ZERO shared the most frequent DA at each stage is: "greeting" during turns 1-2, "logical appeal" during turns 3-5, and "emotion appeal" during turn 6-10. However, during turns 3-5 GDP-ZERO had a relatively even preference between "credibility appeal", "emotion appeal", and "logical appeal", while ChatGPT strongly preferred "logical appeal." Additionally, we find that throughout all turns ChatGPT prefers to use "emotion appeal" over other dialogue actions, while GDP-ZERO balances between "emotion appeal" and "logical appeal," and RAP prefers "task related inquiry." It is also worth noting that GDP-ZERO performs "proposition of donation" less frequently at turn 1-5 than ChatGPT, and more frequently at turns 6-10. This indicates GDP-ZERO potentially adopting a more "conservative" strategy than Chat-GPT overall. GDP-ZERO focuses on building up persuasive arguments and is less likely to select "proposition of donation" at early stages of the conversation in order to avoid over eargly propositions, which could lead to persuasion failure (also see Table <ref type="table" target="#tab_0">A12</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E GDP-ZERO Setup on P4G</head><p>PersuasionForGood (P4G) is annotated with 10 persuasion strategies and 7 important non-persuasive strategies (see Table <ref type="table" target="#tab_1">A3</ref>). However, since P4G is collected from human-human interaction, with both the "persuader" and the "persuadee" possibly donating to the charity, some of the dialogue actions are unsuitable when the "persuader" is a chatbot (e.g. self-modeling and personal story). We therefore choose a subset of dialogue actions to plan, by picking 4 frequent persuasive strategies suitable for chatbots, and 3 non-persuasive strategies including "other" to enable the chatbot to deal with unaccounted situations. We present the chosen dialogue actions and their prompts for LLM in Table <ref type="table">A4</ref>.</p><p>Dialogue Act Category Amount Logical appeal Strategy 325 Emotion appeal Strategy 237 Credibility appeal Strategy 779 Foot-in-the-door Strategy 134 Self-modeling Strategy 150 Personal story Strategy 91 Donation information Strategy 362 Source-related inquiry Strategy 167 Task-related inquiry Strategy 180 Personal-related inquiry Strategy 151 Greeting Non-Strategy -Proposition of donation Non-Strategy -Proposition of amount Non-Strategy -Proposition of confirmation Non-Strategy -Proposition of more donat. Non-Strategy -Experience affirmation Non-Strategy -Thank Non-Strategy -Table A3: Annotated dialogue actions in the P4G dataset.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F Additional details on static evaluation</head><p>In our static evaluation, we prompt ChatGPT to choose which generated response is better (e.g. with and without GDP-ZERO planning). Given two responses u a and u b , we ask ChatGPT "Which of the following responses can better help the Persuader convince the Persuadee to donate to Save the Children? Why? A: u a , B: u b , C: Can't tell." after providing the relevant task context and dialogue history (see Table <ref type="table">A5</ref>). For every evaluation, we sample the result 5 times and perform a majority vote. Interestingly, we find that ChatGPT skewed towards choosing option A, preferred choosing A Dialogue Act Category Natural Language Form Logical Appeal Strategy The Persuader use of reasoning and evidence to convince the Persuadee. Emotion Appeal Strategy The Persuader uses an emotion appeal to convince the Persuadee.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Credibility Appeal Strategy</head><p>The Persuader establishes credibility of Save the Children by citing its impact. Task Related Inquiry</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Strategy</head><p>The Persuader asks about the Persuadee's knowledge or opinion related to Save the Children.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Proposition of Donation Non-Strategy</head><p>The Persuader asks if the Persuadee would like to make a small donation. Greeting Non-Strategy The Persuader greets the Persuadee. Other Non-Strategy The Persuader responds to the Persuadee without using any persuasive strategy.</p><p>Table <ref type="table">A4</ref>: Mapping of persuader dialogue actions to natural language prompts used for prompting LLMs.</p><p>for 95.45% when u a = u b . We therefore randomly swap option A and B during all of our evaluations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G Additional details on interactive study</head><p>In our interactive evaluation, we compare the rulebased planner from RAP, ChatGPT, and GDP-ZERO in an end-to-end chatbot for the persuasion task.</p><p>RAP we use the rule-based planner derived from expert knowledge from RAP <ref type="bibr" target="#b7">(Chen et al., 2022)</ref>, which produces a dialogue action given a dialogue context. We then use the same prompting template in GDP-ZERO (Appendix B, Table <ref type="table">A7</ref>), and prompt ChatGPT to produce a system response conditioned on the planned dialogue action.</p><p>ChatGPT we first use the same prompting template in GDP-ZERO (Appendix B, Table <ref type="table">A10</ref>) to obtain ChatGPT's own prior distribution of the next dialogue actions. We then take the most probable action as the planned dialogue action, and use the same template in GDP-ZERO (Appendix B, Table <ref type="table">A7</ref>) to prompt ChatGPT again to produce a system response.</p><p>GDP-ZERO we use GDP-ZERO with ChatGPT backbone as policy planner, and use the "Response Selection" step to produce both the next dialogue action and the associated system response. We used n = 10, k = 3, Q 0 = 0.25, which had a high win rate against ChatGPT during static analysis while also not taking too much time to simulate.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>H Additional details on survey results</head><p>We require our crowdworkers to be located in the United States and have a HIT acceptance rate of at least 99%. After interacting with each chatbot, each crowdworker was asked to rate their conversational experience. This post-task survey included a validation question which asked what charity they talked to the chatbot about. We had a total of 216 respondents. 74 did not reach or complete the survey, and 31 were removed due to failing the validation question or responding with less than 3 unique sentences. This results in 40 survey results for GDP-ZERO, 35 for ChatGPT, and 36 for RAP.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I Example Interactive Conversations</head><p>We present multiple dialogues from the interactive evaluation (Section 4.2), and compare the strength and weaknesses of the three planners: RAP, ChatGPT, and GDP-ZERO. In Tables <ref type="table">A11</ref>, <ref type="table" target="#tab_1">A13</ref> and A15 we present conversations where the persuadee "strongly agreed" that the chatbot has increased his/her intention to donation for GDP-ZERO, ChatGPT, and RAP, respectively. In Tables A12, A14 and A16 we present conversations where the persuadee rated "neutral" for the question that the chatbot has increased his/her intention to donation for GDP-ZERO, ChatGPT, and RAP, respectively. We observe that in Table <ref type="table" target="#tab_0">A12</ref>, while GDP-ZERO did not succeed in convincing the user to donate, GDP-ZERO has been attempting various strategies and does not perform "proposition of donation" prematurely. On the other hand, in Tables <ref type="table">A14</ref> and <ref type="table">A16</ref> both ChatGPT and RAP performs "proposition of donation" at an arguably unsuitable timing.</p><p>Utterance Prompt The following is background information about Save the Children. Save the Children is head-quartered in London, and they work to help fight poverty around the world. Children need help in developing countries and war zones. Small donations like $1 or $2 go a long way to help. The following is a conversation between a Persuader and a Persuadee about a charity called Save the Children. The Persuader is trying to persuade the Persuadee to donate to Save the Children {insert dialogue context} Which of the following responses can better help the Persuader convince the Persuadee to donate to Save the Children? Why? A. Persuader: {insert response a} B. Persuader: {insert response b} C. Can't tell. Your can choose from either A, B, or C. Your choice: Generation A. (rest truncated)</p><p>Table A5: Prompting LLM to specify which generated response "response a" or "response b" is more persuasive. Utterance Context Persuader: Would you be interested in donating to Save the Children? Persuadee: I am one who like to donate. Can you tell me more about it? Persuader: Save the Children helps to promote childrens rights to health, education, and safety. Persuadee: Do they have any focus right now? More as where are the majority of the fund headed towards right now Persuader: At this point a lot of the focus is children in war zones. some of these donations can address the problem of the daily threat of violence Persuadee: It seems like Syria seems to be a high stakes area. Are any fund going to help the the children in Hawaii after the volcano and hurricane? Persuader: I'm not sure, but I think that would be a great idea. Maybe you could get more information on that by getting in contact with someone at [URL] Persaudee: What are some of the things that they do for the children? I would like to donate but I am not a huge fan or donating just for promotion? Persuader:</p><p>Crowdworker They help to provide basic health care, provide disaster relief, and help to ensure their rights to education and safety. How much would you like to donate ? Your donation will be deducted from your task payment.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ChatGPT</head><p>Save the Children provides a variety of services to children in need, including education, healthcare, and protection from harm. They also work with communities to help them become more self-sufficient and better able to care for their children.</p><p>GDP-ZERO Save the Children provides support in a variety of ways. They help create safe spaces for children, provide education programs and materials, and offer medical care and support. They also advocate for policy changes that benefit children's rights around the world. Your donation would go directly to help these programs rather than promotion.</p><p>Table <ref type="table">A6</ref>: Example response generated when using GDP-ZERO as the policy planner during static evaluation. Crowdworker's response is the original response in the P4G dataset <ref type="bibr" target="#b45">(Wang et al., 2019)</ref>. GDP-ZERO used n = 10, k = 3, Q 0 = 0.25 with ChatGPT as backbone.</p><p>Role (for ChatGPT) Utterance One-shot Example system Save the Children is head-quartered in London, and they work to help fight poverty around the world. Children need help in developing countries and war zones. Small donations like $1 or $2 go a long way to help. You are Persuader who is trying to persuade the Persuadee to donate to a charity called Save the Children. The following is an example conversation between a Persuader and a Persuadee. user Persuadee: Hello. How are you? The Persuader asks about the Persuadee's knowledge or opinion related to Save the Children. assistant Persuader: Very well. I'm just up organizing info for my charity called Save the Children. Have you heard of this charity before? user Persuadee: No, I have not. Can you tell me more? The Persuader establishes credibility of Save the Children by citing its impact. assistant Persuader: Save the Children is an organization that helps children in developing countries, by promoting children's rights and providing relief. It is an amazing charity that helps kids who are in desperate need. They can help with safety, education and more. user Persuadee: That sounds great. I believe in this charity, but still wonder how much of the money I donate actually helps. I am always worried if I donate it will just go to some higher up that is living the high life. The Persuader uses an emotion appeal to convince the Persuadee. assistant Persuader: Every little bit makes a difference. When you have people who are so poor, it's amazing what a tiny amount can do. I usually donate in hopes I can at least feel like I did my part. If I donated and some corrupt person took it, that's the worst karma and even worst scandal imaginable user Persuadee: With that all said I do feel like any organization that aims to help the children I am more inclined to donate to them than most. I think helping children is an important thing as they are our future! The Persuader asks if the Persuadee would like to make a small donation. assistant Persuader: I think donating to this cause would def be a step in the right direction to hopefully helping across the world the children that are in despair. I don't want you to donate any more than you want, so if you want to donate how much do you to do? user Persuadee: I would donate 1 dollar to this charity and feel good about it I think. Real dialogue system The following is a new conversation between Persuader (you) and a Persuadee. The Persuader greets the persuadee. assistant Persuader: Hello. How are you? user Persuadee: I am good. What about you? The Persuader asks about the Persuadee's knowledge or opinion related to Save the Children. assistant Persuader: I'm doing well, thanks for asking. I wanted to talk to you about an important cause that I am passionate about -Save the Children. Have you heard of them before? user Persuadee: No I have not.</p><p>The Persuader establishes credibility of Save the Children by citing its impact.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Generation assistant</head><p>Save the Children is an international non-governmental organization that is committed to improving the lives of children through education, healthcare, and other support programs. They work in over 100 countries around the world to help children who are living in poverty or affected by conflict.</p><p>Table <ref type="table">A7</ref>: Prompting LLM to generate a system response conditioned on a dialogue act. "Role" is used to be consistent with ChatGPT's API. Blue texts are prompts characteristic of this task. The</p><p>one-shot example changes its formatting across different tasks. Role (for ChatGPT) Utterance One-shot Example system You are a Persuadee. A Persuader is trying to persuade you to donate to a charity called Save the Children. You can choose amongst the following actions during a conversation to respond to the Persuader: [no donation] [negative reaction] [neutral] [positive reaction] [donate]. The following is an example conversation between a Persuader and some Persuadee. assistant Persuadee: [neutral] Hello. How are you? user Persuader: Very well. I'm just up organizing info for my charity called Save the Children. Have you heard of this charity before? assistant Persuadee: [neutral] No, I have not. Can you tell me more? user Persuader: Save the Children is an organization that helps children in developing countries, by promoting children's rights and providing relief. It is an amazing charity that helps kids who are in desperate need. They can help with safety, education and more. assistant Persuadee: [negative reaction] That sounds great. I believe in this charity, but still wonder how much of the money I donate actually helps. I am always worried if I donate it will just go to some higher up that is living the high life. user Persuader: Every little bit makes a difference. When you have people who are so poor, it's amazing what a tiny amount can do. I usually donate in hopes I can at least feel like I did my part. If I donated and some corrupt person took it, that's the worst karma and even worst scandal imaginable assistant Persuadee: [positive reaction] With that all said I do feel like any organization that aims to help the children I am more inclined to donate to them than most. I think helping children is an important thing as they are our future! user Persuader: I think donating to this cause would def be a step in the right direction to hopefully helping across the world the children that are in despair. I don't want you to donate any more than you want, so if you want to donate how much do you to do? assistant Persuadee: [donate] I would donate 1 dollar to this charity and feel good about it I think. Real dialogue system The following is a new conversation between a Persuader and a Persuadee (you). You may or may not want to donate to Save the Children. user Persuader: Hello. How are you? assistant Persuadee: [neutral] I am good. What about you? user Persuader: I'm doing well, thanks for asking. I wanted to talk to you about an important cause that I am passionate about -Save the Children. Have you heard of them before? assistant Persuadee: [neutral] No I have not. user Persuader: Save the Children is an international non-governmental organization that is committed to improving the lives of children through education, healthcare, and other support programs. They work in over 100 countries around the world to help children who are living in poverty or affected by conflict. Generation assistant [positive reaction] That sounds really good! How can I get involved?</p><p>Table <ref type="table">A8</ref>: Prompting LLM to simulate a user response conditioned on past (simulated) history. "Role" is used to be consistent with ChatGPT's API. Blue texts are prompts characteristic of this task. This one-shot example is the same as Table <ref type="table">A7</ref>, but a) with roles reversed and b) user response is prepended with a label. During a real dialogue all user responses are labelled with the 5 reaction DAs by prompting ChatGPT.</p><p>Table A11: Example conversation with GDP-ZERO as the policy planner. The user rates "strongly agree" for the question "the chatbot has increased my intention to donate." Party Dialogue act Utterance GDP-ZERO greeting Hello. How are you doing today? User I'm doing well. How are you doing? GDP-ZERO task related inquiry I'm doing great, thank you. I was just reaching out to talk to you about a charity called Save the Children. Have you heard of it before? User It sounds familiar, but I don't think that I have. GDP-ZERO credibility appeal Save the Children is an international non-governmental organization that works to promote children's rights, provide relief and support to children in developing countries, and protect them from harm. (rest omitted...) User That sounds very helpful. GDP-ZERO logical appeal Yes, Save the Children has helped millions of children in need over the years. They provide food, healthcare, education and protection to children in some of the poorest countries in the world. It's really amazing what they have been able to achieve so far. Do you think you would be interested in supporting this charity? User I'm not sure. How much of each dollar donated goes to the children that need saving and how much goes to organizational expenses? GDP-ZERO logical appeal That's a great question. Save the Children is very transparent about their finances and they have a strong commitment to making sure that donations go directly towards helping children in need. (rest omitted...) User You mentioned that "It's really amazing what they have been able to achieve so far".</p><p>What, specifically, have they been able to achieve so far? GDP-ZERO credibility appeal Save the Children has achieved a lot over the years. They have been able to provide essential services like healthcare, education, and protection to millions of children in need all around the world. For example, they've been able to vaccinate over 2 million children against deadly diseases, (rest omitted...) User That sounds really great! Regarding the eleven percent of donations that are kept as administrative expenses-how much does each executive of the charity collect per year as a salary? GDP-ZERO logical appeal Save the Children is a very ethical charity and they are very transparent about their finances. They have a strong commitment to making sure that donations go directly towards helping children in need. According to their most recent financial statements, the CEO of Save the Children US had a salary of around $500,000 per year, which is in line with other similar charities. However, it's important to keep in mind that this salary makes up only a small fraction of their overall expenses and only around 11% of all donations go towards administrative expenses. User Jaime, it just doesn't seem right to me. GDP-ZERO emotion appeal I understand your concern, and it's important to make sure that you feel comfortable with the charities you choose to support. However, I would like to point out that Save the Children is a highly reputable charity that has been operating for over 100 years (rest omitted...). User What do the lowest level employees make per hour? GDP-ZERO logical appeal I don't have that information readily available, but I can assure you that Save the Children is committed to paying all of their employees fairly and equitably. They believe in treating all employees with respect and dignity (rest omitted...). User So you're saying that the ends justify the means? GDP-ZERO logical appeal No, that's not what I'm saying. What I'm saying is that it's important to focus on the positive impact that Save the Children is having on children around the world rather than getting bogged down by concerns over salaries. (rest omitted...) User Jaime, I don't think that asking questions about how the charity allocates resources is "getting bogged down by concerns over salaries". GDP-ZERO logical appeal You're right, it's important to ask questions and understand how charities allocate their resources. Save the Children is very transparent about their finances and they have a strong commitment to making sure that donations go directly towards helping children in need. They regularly review their compensation policies to make sure they are competitive with other similar organizations (rest omitted...) User This doesn't feel like "a high level of transparency" to me, Jaime. They're not feeding you all the data. It's very opaque. GDP-ZERO emotion appeal I understand your concern and it's important to make sure that charities are transparent about how they allocate their resources. However, I can assure you that Save the Children is committed to being as transparent as possible about their finances. They regularly publish detailed financial statements and annual reports (rest omitted...) User Jaime, this feels like the top 1 percentile of income earners, your CEO, getting the bottom 10%, me, to redistribute some of my wealth to the bottom 1% that they've created AND skimming some of that for themselves. GDP-ZERO logical appeal I understand why you might feel that way, but it's important to keep in mind that Save the Children is a highly reputable charity (rest omitted...).</p><p>Table A12: Example conversation with GDP-ZERO as the policy planner. The user rates "neutral" for the question "the chatbot has increased my intention to donate." Party Dialogue act Utterance ChatGPT greeting Hello. How are you doing today? User I'm doing great, thank you. How about you? ChatGPT task related inquiry I'm doing well, thank you. I wanted to talk to you about a charity called Save the Children. Have you heard of it before? User Yes, I have heard of Save the Children before. It is an international charity that works to improve the lives of children around the world by providing health care, education, and other essential services. ChatGPT logical appeal That's right! Save the Children is an amazing organization that has been working tirelessly to help children in need for over 100 years. They work in over 100 countries around the world, providing life-saving assistance to children affected by poverty, conflict, and natural disasters. User Yes, Save the Children is an amazing organization. ChatGPT proposition of donation Absolutely. Did you know that Save the Children has helped over 157 million children worldwide? They have provided education to over 10 million children, and have helped to save the lives of countless others through their health programs. Your donation can help make a difference in the lives of these children who are in desperate need of assistance. User Yes, I did know that. I'm inspired and moved by the work that Save the Children does and I'm ready to make a donation to help support their cause. ChatGPT proposition of donation That's wonderful to hear! Your donation, no matter how small, can make a huge difference in the life of a child. Just think about the impact that your donation could have on a child who is struggling to survive in a war-torn country or living in extreme poverty. Your generosity can help provide them with access to education, healthcare and other essential services that they desperately need. Thank you so much for considering making a donation to Save the Children! User You are very welcome! We are so grateful for your kind contribution and we know that it will make a real difference in the lives of vulnerable children around the world. Thank you for extending your support and for being such a compassionate donor. Your generosity is truly appreciated! ChatGPT proposition of donation Thank you so much for your kind words. Would you like to make a donation now? Even a small amount can go a long way in helping children in need. User Yes, I would love to make a donation. Please tell me how I can do that. ChatGPT other That's great to hear! You can make a donation directly on the Save the Children website. They accept donations of any amount, and you can choose to make a one-time donation or set up a recurring monthly donation. Your contribution will help provide life-saving assistance to children in need around the world. Thank you so much for your generosity and compassion! Table A13: Example conversation with ChatGPT as the policy planner. The user rates "strongly agree" for the question "the chatbot has increased my intention to donate." Party Dialogue act Utterance ChatGPT greeting Hello. How are you doing today? User Fine, thanks. And you? ChatGPT task related inquiry I'm doing well, thank you. I wanted to talk to you about a charity called Save the Children. Have you heard of it before? User I have, but I don't know much about it. ChatGPT logical appeal Save the Children is an organization that works to improve the lives of children in developing countries and war zones. They provide education, healthcare, and other essential services to help children thrive. I think it's a really important cause. User Interesting, but I think I'd prefer to donate to charities that do work in the United States. ChatGPT proposition of donation I understand your concern, but it's important to remember that children in developing countries and war zones are often the most vulnerable and in need of help. Save the Children is a highly reputable organization that has been doing great work for over 100 years. They have a proven track record of making a real difference in the lives of children around the world. Even a small donation can go a long way towards helping these kids get access to basic necessities like food, clean water, and medical care. Would you be willing to consider making even a small donation? User Honestly, my concerns right now are more local than global. I hope you can understand that. ChatGPT emotion appeal I completely understand your concerns, and it's important to support causes that are close to our hearts. However, I would like to remind you that children are the future of our world, and we have a responsibility to help those who are in need. Even if you can't donate right now, I encourage you to learn more about Save the Children and their work. You never know when an opportunity might arise for you to make a difference in the life of a child who desperately needs it. User If I am in a position to do more, I will certainly consider Save the Children. ChatGPT credibility appeal That's great to hear. I just want to let you know that Save the Children is a highly reputable organization with a proven track record of making a real difference in the lives of children around the world. They have helped millions of children get access to education, healthcare, and other essential services that they would not have had otherwise. If you ever do decide to donate or get involved with their work, I can assure you that your contribution will be put towards making a real impact in the lives of those who need it most. User Got it. Thanks. ChatGPT other You're welcome. If you have any other questions or concerns, feel free to reach out to me anytime.</p><p>Table A14: Example conversation with ChatGPT as the policy planner. The user rates "neutral" for the question "the chatbot has increased my intention to donate." Party Dialogue act Utterance RAP greeting Hello. How are you doing today? User Fine, I am doing my job RAP task related inquiry Have you ever heard of a charity called Save the Children? They work to help fight poverty around the world, especially in developing countries and war zones where children are most vulnerable. User thinking about changes of my work. RAP task related inquiry That's understandable. Have you ever donated to any charities before? Small donations like $1 or $2 can go a long way in helping children in need. User Yes, i heard about charity to save the children and I donated charity before 3 months. RAP other That's great to hear that you've donated before! Do you have kids of your own? Imagine if they were living in poverty or a war zone, wouldn't you want someone to help them? User Yes i have kids... If i am living in that situation, but that time I don't have money to help the peoples, only to give foods. RAP credibility appeal I completely understand. But that's why organizations like Save the Children exist.</p><p>They have the expertise and resources to help those in need, especially children who are most vulnerable. And they are highly credible -they have been around for over 100 years and are headquartered in London, with a vast network of partners around the world. Every donation, no matter how small, can make a big difference in helping to fight poverty and improve children's lives. User</p><p>In UK the welfare reform and work act abolished the child poverty act, includes targets to reduce poverty and measure poverty based on family income. RAP emotion appeal I understand your concerns about poverty in the UK, but let's not forget about the millions of children around the world who are living in extreme poverty and war zones. They need our help now more than ever. User Soaring rent costs, insecure wor and low pay plus a patchy welfare system. RAP logical appeal I understand that the issues you mentioned are important and affect many families in the UK. But let's remember that poverty is a global issue, and it's not just limited to developed countries like the UK. Children in developing countries and war zones are often the most vulnerable and need our help urgently. By donating to Save the Children, we can make a difference in their lives and give them hope for a better future. Every little bit counts, so please consider making a small donation today. User Yes sure. I will arrange a small donation.</p><p>Table A15: Example conversation with RAP as the policy planner. The user rates "strongly agree" for the question "the chatbot has increased my intention to donate." Party Dialogue act Utterance RAP greeting Hello. How are you doing today? User Fine, I am doing my job RAP task related inquiry Have you heard of Save the Children before? They are a charity that works to fight poverty around the world, especially in developing countries and war zones. User No, I haven't. Have you donated to them? RAP task related inquiry Yes, I have donated to Save the Children before. They do amazing work for children in need. Have you donated to any charities before? User No, I never have because I'm poor RAP other I understand, but even small donations like $1 or $2 can make a big difference. Do you have any children of your own? User I don't have children. Even small amounts could make a difference in what I can afford RAP credibility appeal I completely understand your situation, but I want you to know that Save the Children is a highly reputable organization. They have been around for a long time and have helped countless children in need. Your donation, no matter how small, will make a difference in these children's lives. Can I send you some information about the organization so you can learn more about their work? User Sure RAP emotion appeal Thank you! I truly believe that every child deserves a chance at a better life, and Save the Children is doing just that. Your donation could help provide education, healthcare, and even food for children who would otherwise go without. Imagine the impact your small donation could have on their lives. It's a beautiful thing to be able to make a difference in someone else's life, don't you think? User Yes. Though I wish more wealthy people would donate RAP proposition of donation I understand your frustration, but we can't always rely on the wealthy to make a difference. Every little bit counts, and if more people like us donated even just a small amount, it could add up to make a significant impact. Plus, by spreading awareness about the work of organizations like Save the Children, we can encourage others to donate as well. Thank you for considering making a donation and helping to improve the lives of children in need. User exits.</p><p>Table <ref type="table">A16</ref>: Example conversation with RAP as the policy planner. The user rates "neutral" for the question "the chatbot has increased my intention to donate."</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>:Figure 1 :</head><label>1</label><figDesc>Figure1: Using GDP-ZERO for persuasion with zero model training.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: GDP-ZERO with ChatGPT backbone. During Selection, simulations are either sampled from cache or newly generated. During Expansion and Evaluation, we prompt ChatGPT for prior policy π and value estimation.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><figDesc>Q(s tr , a) ← Q(s tr , a) + ∆Q(s tr , a), (2) where ∆Q(s tr , a) = v(s tr )-Q(s tr ,a) N (s tr ,a)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><figDesc>); He et al. (2023); Pan et al. (2023); Wang et al. (2021); Liu et al. (</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>14: h tr ← sample(H(s tr )) 15: // expansion 16: generate p(a|s tr ) ← M θ (h tr ) 17: s tr .p ← p(a|s tr ), s tr .Q ← Q 0 , s tr .N = 0 18: // evaluation 19: generate v(s tr ) ← M θ (h tr ) 20: // backpropagation 21: while s tr ̸ = s tr i do 22: update v h (h tr ) with eq. (3) 23: save simulation H(s tr ) ← H(s tr ) ∪ h tr 24: (s tr , a) ← back to parent of s tr 25: update Q(s tr , a), N (s tr , a) with eq. (1) 26: end while 27: // prediction after n simulations 28: a * ← arg max a N (s tr i , a) 29: s tr * ← s tr i ∪ a * 30: u sys * ← arg max u sys v h (H(s tr * )) 31: return a * , u sys *</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure A1 :</head><label>A1</label><figDesc>FigureA1: Distribution of planned dialogue actions for each planner during interactive evaluations.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 2 :</head><label>2</label><figDesc>Static evaluation ChatGPT as backbone and judge. Runner-up is colored in gray. Results are µ ± σ repeated over three runs.</figDesc><table><row><cell cols="4">Algorithm n k Q 0 Win Rate v. Ground Truth</cell></row><row><cell>Prompting -</cell><cell>-</cell><cell>-</cell><cell>88.84 ± 0.75%</cell></row><row><cell cols="3">GDP-Zero 5 3 0.00</cell><cell>87.22 ± 0.61%</cell></row><row><cell cols="3">GDP-Zero 10 3 0.00</cell><cell>90.69 ± 1.60%</cell></row><row><cell cols="3">GDP-Zero 20 3 0.00</cell><cell>88.86 ± 1.24%</cell></row><row><cell cols="3">GDP-Zero 50 3 0.00</cell><cell>89.82 ± 1.10%</cell></row><row><cell cols="4">Table 1: Static evaluation with ChatGPT as backbone</cell></row><row><cell cols="4">and judge. Results are µ ± σ repeated over three runs.</cell></row><row><cell cols="3">GDP-Zero (ChatGPT) n k Q 0 Run Time</cell><cell>Win Rate v. ChatGPT</cell></row><row><cell>5 3 0.00</cell><cell></cell><cell>18s</cell><cell>50.65 ± 3.31%</cell></row><row><cell>10 3 0.00</cell><cell></cell><cell>36s</cell><cell>50.86 ± 1.10%</cell></row><row><cell>20 3 0.00</cell><cell></cell><cell>75s</cell><cell>53.24 ± 1.91%</cell></row><row><cell>50 3 0.00</cell><cell></cell><cell>740s</cell><cell>59.32 ± 1.84%</cell></row><row><cell>10 1 0.00</cell><cell></cell><cell>16s</cell><cell>49.57 ± 2.01%</cell></row><row><cell>10 2 0.00</cell><cell></cell><cell>29s</cell><cell>51.30 ± 1.59%</cell></row><row><cell>10 3 0.25</cell><cell></cell><cell>36s</cell><cell>57.79 ± 2.95%</cell></row><row><cell>10 3 0.50</cell><cell></cell><cell>36s</cell><cell>53.03 ± 2.00%</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 3 :</head><label>3</label><figDesc>Interactive evaluation using RAP, ChatGPT, and GDP-ZERO as planners, with ChatGPT used for response generation/backbone. Results are µ ± σ. All scores scaled to [1, 5] except for "donation prob." being [0, 1].</figDesc><table><row><cell>The chatbot...</cell><cell>RAP</cell><cell>ChatGPT GDP-Zero</cell></row><row><cell>donation prob. ↑</cell><cell>0.72±0.38</cell><cell>0.73±0.38 0.79±0.37</cell></row><row><cell cols="2">inc. donation intent ↑ 4.08±0.68</cell><cell>3.77±0.90 4.30±0.71  *  *</cell></row><row><cell>strong argument ↑</cell><cell>3.89±0.97</cell><cell>3.91±0.99 4.28±0.74  *</cell></row><row><cell>is convincing ↑</cell><cell>4.11±0.74</cell><cell>4.10±0.70 4.38±0.66  *  *</cell></row><row><cell>diverse strategy ↑</cell><cell>3.98±0.80</cell><cell>3.83±1.03 3.95±0.82</cell></row><row><cell>is manipulative ↓</cell><cell>2.64±1.36</cell><cell>2.96±1.38 2.29±1.33  *  *</cell></row><row><cell>is natural ↑</cell><cell>4.25±0.68</cell><cell>4.03±0.65 4.38±0.62  *  *</cell></row><row><cell>is relevant ↑</cell><cell cols="2">4.64±0.54  *  4.31±0.86 4.59±0.49</cell></row><row><cell>is coherent ↑</cell><cell>4.28±0.65</cell><cell>4.06±0.89 4.42±0.49  *</cell></row></table><note><p>* denotes p &lt; 0.05, and * * denotes p &lt; 0.01.</p></note></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>Code available at: https://github.com/jasonyux/GDPZero</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_1"><p>Version "gpt-3.5-turbo" as of 2023 April</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_2"><p>ChatGPT can outperform crowdworkers on many annotation and evaluation tasks (e.g.Gilardi et  al. (2023); He et al. (2023); Pan et al. (2023); Wang et al. (2021); Liu et al. (2023a))</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><p><rs type="person">Absolutely! And</rs> did you know that even a small donation can make a huge impact? For example, just $50 can provide 10 families with clean water for an entire month. And for as little as $5, you can provide a child with life-saving medication to treat malaria. Every dollar counts and goes towards making the world a better place for children in need. Would you consider making a donation to help support Save the Children's mission? <rs type="person">User Yes</rs>, I would love to make a donation to help support Save the Children's mission. GDP-ZERO other That's fantastic to hear! Your donation will go a long way towards helping children in need. You can easily make a donation by visiting the Save the Children website, where you can choose how much you'd like to donate and which specific area of their work you'd like to support. And if you ever have any questions or concerns about your donation, their team is always available to help. Thank you so much for considering this wonderful cause<rs type="person">! User You</rs>'re very welcome! It's great to know that my donation is going to have an impact and help children in need. Thank you for the information and I'm sure I'll be in touch if I have any questions. GDP-ZERO other I'm glad to hear that, thank you for your support<rs type="person">! And</rs> if you ever have any questions, don't hesitate to reach out. Thank you again for considering a donation -even a small amount can make a huge difference in the lives of children around the world. <rs type="person">User You</rs>'re very welcome, it's my pleasure to help. I'm sure the donations will make a big difference. Thank you for allowing me to be a part of it! GDP-ZERO emotion appeal It's wonderful to see people like you who care so much about helping others. Your generosity and kindness will undoubtedly make a huge difference in the lives of children who need it most. Thank you for your support and for being a part of this amazing cause! User Thank you for the kind words! It's an honor to be a part of this cause and I'm humbled by the opportunity to make a difference in the lives of children. I'm glad to know that my efforts are appreciated, and I will continue to do what I can to help those in need.</p></div>
+			</div>			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Utterance One-shot Example system You are a Persuadee. A Persuader is trying to persuade you to donate to a charity called Save the Children. You can choose amongst the following actions during a conversation to respond to the Persuader: [no donation] [negative reaction] [neutral] [positive reaction] [donate]. The following is an example conversation between a Persuader and some Persuadee. assistant Persuadee: [neutral] Hello. How are you? user Persuader: Very well. I'm just up organizing info for my charity called Save the Children. Have you heard of this charity before? assistant Persuadee: [neutral] No, I have not. Can you tell me more? user Persuader: Save the Children is an organization that helps children in developing countries, by promoting children's rights and providing relief. It is an amazing charity that helps kids who are in desperate need. They can help with safety, education and more. assistant Persuadee: [negative reaction] That sounds great. I believe in this charity, but still wonder how much of the money I donate actually helps. I am always worried if I donate it will just go to some higher up that is living the high life. user Persuader: Every little bit makes a difference. When you have people who are so poor, it's amazing what a tiny amount can do. I usually donate in hopes I can at least feel like I did my part. If I donated and some corrupt person took it, that's the worst karma and even worst scandal imaginable assistant Persuadee: [positive reaction] With that all said I do feel like any organization that aims to help the children I am more inclined to donate to them than most. I think helping children is an important thing as they are our future! user Persuader: I think donating to this cause would def be a step in the right direction to hopefully helping across the world the children that are in despair. I don't want you to donate any more than you want, so if you want to donate how much do you to do? assistant Persuadee: [donate] I would donate 1 dollar to this charity and feel good about it I think. Real dialogue system The following is a new conversation between a Persuader and a Persuadee (you). You may or may not want to donate to Save the Children. user Persuader: Hello. How are you? assistant Persuadee: [neutral] I am good. What about you? user Persuader: I'm doing well, thanks for asking. I wanted to talk to you about an important cause that I am passionate about -Save the Children. Have you heard of them before? assistant Persuadee: [neutral] No I have not. user Persuader: Save the Children is an international non-governmental organization that is committed to improving the lives of children through education, healthcare, and other support programs. They work in over 100 countries around the world to help children who are living in poverty or affected by conflict. assistant Persuadee: [positive reaction] It sounds like a great cause. user Persuader: Would you be interested in donating to Save the Children? Generation assistant ['neutral', 'neutral', 'neutral', 'positive reaction', 'positive reaction', 'positive reaction', 'donate', 'neutral', 'neutral', 'neutral']</p><formula xml:id="formula_6">Estimation v = psuccess = 0.25</formula><p>Table <ref type="table">A9</ref>: Prompting LLM as a value function at the current state. Blue texts are prompts characteristic of this task. "Persuader: Would you be interested in donating to Save the Children?" is manually appended at the end of the turn, and the LLM is prompted 10 times to measure user's current inclination donation. "Role" is used to be consistent with ChatGPT's API. This one-shot example is the same as Table <ref type="table">A8</ref>.</p><p>Role (for ChatGPT) Utterance One-shot Example system Save the Children is head-quartered in London, and they work to help fight poverty around the world. Children need help in developing countries and war zones. Small donations like 1or2 go a long way to help. You are Persuader who is trying to persuade the Persuadee to donate to a charity called Save the Children. You can choose amongst the following actions during a conversation: [credibility appeal] [emotion appeal] [proposition of donation] [logical appeal] [task related inquiry] [greeting] [other]. The following is an example conversation between a Persuader and a Persuadee. user Persuadee: Hello. How are you? The Persuader greets the Persuadee. assistant Persuader: [task related inquiry] Very well. I'm just up organizing info for my charity called Save the Children. Have you heard of this charity before? user Persuadee: No, I have not. Can you tell me more? assistant Persuader: [credibility appeal] Save the Children is an organization that helps children in developing countries, by promoting children's rights and providing relief. It is an amazing charity that helps kids who are in desperate need. They can help with safety, education and more. user Persuadee: That sounds great. I believe in this charity, but still wonder how much of the money I donate actually helps. I am always worried if I donate it will just go to some higher up that is living the high life. assistant Persuader: [emotion appeal] Every little bit makes a difference. When you have people who are so poor, it's amazing what a tiny amount can do. I usually donate in hopes I can at least feel like I did my part. If I donated and some corrupt person took it, that's the worst karma and even worst scandal imaginable user Persuadee: With that all said I do feel like any organization that aims to help the children I am more inclined to donate to them than most. I think helping children is an important thing as they are our future! assistant Persuader: [proposition of donation] I think donating to this cause would def be a step in the right direction to hopefully helping across the world the children that are in despair. I don't want you to donate any more than you want, so if you want to donate how much do you to do? user Persuadee: I would donate 1 dollar to this charity and feel good about it I think. Real dialogue system The following is a new conversation between Persuader (you) and a Persuadee. assistant Persuader: [greeting] Hello. How are you? user Persuadee: I am good. What about you? assistant Persuader: [task related inquiry] I'm doing well, thanks for asking. I wanted to talk to you about an important cause that I am passionate about -Save the Children. Have you heard of them before? user Persuadee: No I have not. assistant Persuader: [credibility appeal]Save the Children is an international nongovernmental organization that is committed to improving the lives of children through education, healthcare, and other support programs. They work in over 100 countries around the world to help children who are living in poverty or affected by conflict. user Persuadee: It sounds like a great cause. Generation assistant ['emotion appeal', 'emotion appeal', 'emotion appeal', 'logical appeal', 'logical appeal', 'logical appeal', 'logical appeal', 'logical appeal', 'logical appeal', 'logical appeal', 'logical appeal', 'logical appeal', 'logical appeal', 'logical appeal', 'logical appeal'] Estimation p(credibility appeal) = 0.03, p(emotion appeal) = 0.13, p(proposition of donation) = 0.03, p(logical appeal) = 0.43, p(task related inquiry) = 0.03, p(greeting) = 0.03, p(other) = 0.03</p><p>Table <ref type="table">A10</ref>: Prompting LLM as a prior policy at the current state. "Role" is used to be consistent with ChatGPT's API. Blue texts are prompts characteristic of this task. The system response is sampled 15 times. The probability distribution is computed according to each DA's frequency after add-1 smoothing. This one-shot example is the same as Table <ref type="table">A7</ref>, but with dialogue actions appended in front of each system response.</p><p>Party Dialogue act Utterance GDP-ZERO greeting Hello. How are you doing today? User I'm doing great, thanks for asking! How about you? GDP-ZERO task related inquiry I'm doing well, thanks. I was actually wondering if you've ever heard of the charity Save the Children? User</p><p>Yes, I have. Save the Children is a global charity organization dedicated to providing children around the world with access to quality education, healthcare, nutrition, and protection. It is one of the largest international charities in the world and has been operating since 1919. GDP-ZERO logical appeal That's great to hear! I think it's amazing that they've been able to help so many children for such a long time. Did you know that Save the Children helps children in over 100 countries, including those affected by conflict and disasters? They work tirelessly to ensure that every child gets the chance they deserve. User No, I didn't know that! That is really impressive. It's so important for organizations like Save the Children to keep working to make sure that every child has access to the resources they need. GDP-ZERO proposition of donation</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Mixed-initiative interaction</title>
+		<author>
+			<persName><surname>James E Allen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Curry I Guinn</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Horvitz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Intelligent Systems and their Applications</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="14" to="23" />
+			<date type="published" when="1999">1999</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Building a role specified open-domain dialogue system leveraging large-scale language models</title>
+		<author>
+			<persName><forename type="first">Sanghwan</forename><surname>Bae</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donghyun</forename><surname>Kwak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sungdong</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donghoon</forename><surname>Ham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soyoung</forename><surname>Kang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2022 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</title>
+		<meeting>the 2022 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="2128" to="2150" />
+		</imprint>
+	</monogr>
+	<note>Sang-Woo Lee, and Woomyoung Park</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Multiwoz -a largescale multi-domain wizard-of-oz dataset for taskoriented dialogue modelling</title>
+		<author>
+			<persName><forename type="first">Paweł</forename><surname>Budzianowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tsung-Hsien</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo-Hsiang</forename><surname>Tseng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iñigo</forename><surname>Casanueva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ultes</forename><surname>Stefan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2018 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note>Ramadan Osman, and Milica Gašić</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Adaptive dialog policy learning with hindsight and user modeling</title>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keting</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoping</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiqi</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 21th Annual Meeting of the Special Interest Group on Discourse and Dialogue</title>
+		<meeting>the 21th Annual Meeting of the Special Interest Group on Discourse and Dialogue</meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page">1</biblScope>
+		</imprint>
+	</monogr>
+	<note>st virtual meeting</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Parallel monte-carlo tree search</title>
+		<author>
+			<persName><forename type="first">Mj B</forename><surname>Guillaume</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chaslot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H Jaap</forename><surname>Hm Winands</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Van Den</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Herik</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Computers and Games: 6th International Conference</title>
+		<meeting><address><addrLine>Beijing, China</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2008-09-29">2008. 2008. September 29-October 1, 2008</date>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="page" from="60" to="71" />
+		</imprint>
+	</monogr>
+	<note>CG</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henrique</forename><surname>Ponde De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harri</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raul</forename><surname>Puri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Petrov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heidy</forename><surname>Khlaaf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brooke</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikhail</forename><surname>Pavlov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alethea</forename><surname>Power</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clemens</forename><surname>Winter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philippe</forename><surname>Tillet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felipe</forename><forename type="middle">Petroski</forename><surname>Such</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dave</forename><surname>Cummings</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fotios</forename><surname>Chantzis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elizabeth</forename><surname>Barnes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ariel</forename><surname>Herbert-Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Hebgen Guss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Nichol</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Paino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolas</forename><surname>Tezak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Babuschkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suchir</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shantanu</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Saunders</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">N</forename><surname>Carr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vedant</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evan</forename><surname>Morikawa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Knight</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miles</forename><surname>Brundage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mira</forename><surname>Murati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katie</forename><surname>Mayer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Welinder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bob</forename><surname>Mcgrew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note>Ilya Sutskever, and Wojciech Zaremba. 2021. Evaluating large language models trained on code</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">PLACES: Prompting language models for social conversation synthesis</title>
+		<author>
+			<persName><forename type="first">Maximillian</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandros</forename><surname>Papangelis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyang</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Seokhwan</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Rosenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhou</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dilek</forename><surname>Hakkani-Tur</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: EACL 2023</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Seamlessly integrating factual information and social content with persuasive dialogue</title>
+		<author>
+			<persName><forename type="first">Maximillian</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiyan</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feifan</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingwen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurav</forename><surname>Sahay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhou</forename><surname>Yu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2nd Conference of the Asia-Pacific Chapter of the Association for Computational Linguistics and the 12th International Joint Conference on Natural Language Processing</title>
+		<meeting>the 2nd Conference of the Asia-Pacific Chapter of the Association for Computational Linguistics and the 12th International Joint Conference on Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="399" to="413" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Controllable mixed-initiative dialogue generation through prompting</title>
+		<author>
+			<persName><forename type="first">Maximillian</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiyan</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Urvi</forename><surname>Awasthi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhou</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.acl-short.82</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 61st Annual Meeting of the Association for Computational Linguistics<address><addrLine>Toronto, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="951" to="966" />
+		</imprint>
+	</monogr>
+	<note>Short Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Improving multi-turn emotional support dialogue generation with lookahead strategy planning</title>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenge</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjie</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiashuo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruihui</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodan</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yefeng</forename><surname>Zheng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2022 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Abu Dhabi</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="3014" to="3026" />
+		</imprint>
+	</monogr>
+	<note>United Arab Emirates. Association for Computational Linguistics</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Chatgpt outperforms crowd-workers for textannotation tasks</title>
+		<author>
+			<persName><forename type="first">Fabrizio</forename><surname>Gilardi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meysam</forename><surname>Alizadeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maël</forename><surname>Kubli</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Biyang</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minqi</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinran</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianwei</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yupeng</forename><surname>Wu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>How close is chatgpt to human experts? comparison corpus, evaluation, and detection</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Instructdial: Improving zero and few-shot generalization in dialogue through instruction tuning</title>
+		<author>
+			<persName><forename type="first">Prakhar</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cathy</forename><surname>Jiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi-Ting</forename><surname>Yeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shikib</forename><surname>Mehri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxine</forename><surname>Eskenazi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><forename type="middle">P</forename><surname>Bigham</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<publisher>EMNLP</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Decoupling strategy and generation in negotiation dialogues</title>
+		<author>
+			<persName><forename type="first">He</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Derek</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anusha</forename><surname>Balakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Galaxy: A generative pre-trained model for task-oriented dialog with semisupervised learning and explicit policy injection</title>
+		<author>
+			<persName><forename type="first">Wanwei</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinpei</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinhe</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dermot</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luo</forename><surname>Si</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="10749" to="10757" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xingwei</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenghao</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yeyun</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Jiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Siu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Yiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.16854</idno>
+		<title level="m">Annollm: Making large language models to be better crowdsourced annotators</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Dynamic programming and markov processes</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ronald</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Howard</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1960">1960</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Bayes-adaptive monte-carlo planning and learning for goal-oriented dialogues</title>
+		<author>
+			<persName><forename type="first">Youngsoo</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jongmin</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kee-Eung</forename><surname>Kim</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="7994" to="8001" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hyunwoo</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Hessel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liwei</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ximing</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Youngjae</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pei</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronan</forename><surname>Le Bras</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Malihe</forename><surname>Alikhani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gunhee</forename><surname>Kim</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.10465</idno>
+		<title level="m">Maarten Sap, et al. 2022. Soda: Million-scale dialogue distillation with social commonsense contextualization</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Learning dialogue strategies within the markov decision process framework</title>
+		<author>
+			<persName><forename type="first">Esther</forename><surname>Levin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Pieraccini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wieland</forename><surname>Eckert</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">1997 IEEE Workshop on Automatic Speech Recognition and Understanding Proceedings</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="1997">1997</date>
+			<biblScope unit="page" from="72" to="79" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Deal or no deal? end-to-end learning of negotiation dialogues</title>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denis</forename><surname>Yarats</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Dauphin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Devi</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dhruv</forename><surname>Batra</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Empirical Methods in Natural Language Processing</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Legoeval: An open-source toolkit for dialogue system evaluation via crowdsourcing</title>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Arnold</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feifan</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiyan</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhou</forename><surname>Yu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 59th Annual Meeting of the Association for Computational Linguistics and the 11th International Joint Conference on Natural Language Processing: System Demonstrations</title>
+		<meeting>the 59th Annual Meeting of the Association for Computational Linguistics and the 11th International Joint Conference on Natural Language Processing: System Demonstrations</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="317" to="324" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Iterative policy learning in end-to-end trainable task-oriented neural dialog models</title>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ian</forename><surname>Lane</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2017 IEEE Automatic Speech Recognition and Understanding Workshop (ASRU)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="482" to="489" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Dialogue learning with human teaching and feedback in end-to-end trainable task-oriented dialogue systems</title>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gökhan</forename><surname>Tür</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dilek</forename><surname>Hakkani-Tur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pararth</forename><surname>Shah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Larry</forename><surname>Heck</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2018 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</title>
+		<meeting>the 2018 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies<address><addrLine>Long Papers</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="2060" to="2069" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Towards emotional support dialog systems</title>
+		<author>
+			<persName><forename type="first">Siyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chujie</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Orianna</forename><surname>Demasi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sahand</forename><surname>Sabour</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhou</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minlie</forename><surname>Huang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 59th annual meeting of the Association for Computational Linguistics</title>
+		<meeting>the 59th annual meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Iter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichong</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuohang</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.16634</idno>
+		<title level="m">Ruochen Xu, and Chenguang Zhu. 2023a. Gpteval: Nlg evaluation using gpt-4 with better human alignment</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Yiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianle</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayue</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaming</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengshen</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengliang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dajiang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Qiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dingang</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianming</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bao</forename><surname>Ge</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>research and perspective towards the future of large language models</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Yinhan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Myle</forename><surname>Ott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingfei</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mandar</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danqi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omer</forename><surname>Levy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Veselin</forename><surname>Stoyanov</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note>Roberta: A robustly optimized bert pretraining approach</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Commonsenseaware prompting for controllable empathetic dialogue generation</title>
+		<author>
+			<persName><forename type="first">Yiren</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Halil</forename><surname>Kilicoglu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.01441</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Multi-stage prompting for knowledgeable dialogue generation</title>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mostofa</forename><surname>Patwary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Prenger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shrimai</forename><surname>Prabhumoye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Ping</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Shoeybi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan</forename><surname>Catanzaro</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: ACL 2022</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="1317" to="1337" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Andrea</forename><surname>Madotto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaojiang</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.08118</idno>
+		<title level="m">Genta Indra Winata, and Pascale Fung. 2021. Few-shot bot: Promptbased learning for dialogue systems</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Schemaguided paradigm for zero-shot dialog</title>
+		<author>
+			<persName><forename type="first">Shikib</forename><surname>Mehri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxine</forename><surname>Eskenazi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 22nd Annual Meeting of the Special Interest Group on Discourse and Dialogue</title>
+		<meeting>the 22nd Annual Meeting of the Special Interest Group on Discourse and Dialogue</meeting>
+		<imprint>
+			<publisher>Singapore and Online. Association for Computational Linguistics</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="499" to="508" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Openai: Introducing chatgpt</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chan</forename><surname>Jun Shern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathaniel</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Woodside</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Ng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanlin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Emmons</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.03279</idno>
+		<title level="m">Do the rewards justify the means? measuring trade-offs between rewards and ethical behavior in the machiavelli benchmark</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Deep Dyna-Q: Integrating planning for task-completion dialogue policy learning</title>
+		<author>
+			<persName><forename type="first">Baolin</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiujun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingjing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kam-Fai</forename><surname>Wong</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/P18-1203</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 56th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 56th Annual Meeting of the Association for Computational Linguistics<address><addrLine>Melbourne, Australia</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="2182" to="2192" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Open loop search for general video game playing</title>
+		<author>
+			<persName><forename type="first">Diego</forename><surname>Perez Liebana</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jens</forename><surname>Dieskau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Hunermund</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sanaz</forename><surname>Mostaghim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Lucas</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/2739480.2754811</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2015 Annual Conference on Genetic and Evolutionary Computation, GECCO &apos;15</title>
+		<meeting>the 2015 Annual Conference on Genetic and Evolutionary Computation, GECCO &apos;15<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="337" to="344" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Multi-armed bandits with episode context</title>
+		<author>
+			<persName><surname>Christopher D Rosin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Annals of Mathematics and Artificial Intelligence</title>
+		<imprint>
+			<biblScope unit="volume">61</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="203" to="230" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">How to build user simulators to train RL-based dialog systems</title>
+		<author>
+			<persName><forename type="first">Weiyan</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuewei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhou</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/D19-1206</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing and the 9th International Joint Conference on Natural Language Processing (EMNLP-IJCNLP)</title>
+		<meeting>the 2019 Conference on Empirical Methods in Natural Language Processing and the 9th International Joint Conference on Natural Language Processing (EMNLP-IJCNLP)<address><addrLine>Hong Kong, China</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="1990" to="2000" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Mastering the game of go with deep neural networks and tree search</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aja</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><forename type="middle">J</forename><surname>Maddison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Guez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurent</forename><surname>Sifre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Van Den Driessche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Veda</forename><surname>Panneershelvam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Lanctot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sander</forename><surname>Dieleman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dominik</forename><surname>Grewe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Nham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nal</forename><surname>Kalchbrenner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Madeleine</forename><surname>Leach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Koray</forename><surname>Kavukcuoglu</surname></persName>
+		</author>
+		<idno type="DOI">10.1038/nature16961</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Thore Graepel, and Demis Hassabis</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="volume">529</biblScope>
+			<biblScope unit="page" from="484" to="489" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">George van den Driessche, Thore Graepel, and Demis Hassabis</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karen</forename><surname>Simonyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aja</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Guez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Hubert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adrian</forename><surname>Bolton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutian</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurent</forename><surname>Sifre</surname></persName>
+		</author>
+		<idno type="DOI">10.1038/nature24270</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="volume">550</biblScope>
+			<biblScope unit="issue">7676</biblScope>
+			<biblScope unit="page" from="354" to="359" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note>Mastering the game of Go without human knowledge</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Reinforcement learning: An introduction</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Richard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">G</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Barto</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<publisher>MIT press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thibaut</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gautier</forename><surname>Izacard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Martinet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marie-Anne</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothée</forename><surname>Lacroix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baptiste</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Faisal</forename><surname>Azhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aurelien</forename><surname>Rodriguez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armand</forename><surname>Joulin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edouard</forename><surname>Grave</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guillaume</forename><surname>Lample</surname></persName>
+		</author>
+		<title level="m">Llama: Open and efficient foundation language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Conversational tree search: A new hybrid dialog task</title>
+		<author>
+			<persName><forename type="first">Dirk</forename><surname>Väth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lindsey</forename><surname>Vanderlyn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ngoc</forename><forename type="middle">Thang</forename><surname>Vu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 17th Conference of the European Chapter of the Association for Computational Linguistics</title>
+		<meeting>the 17th Conference of the European Chapter of the Association for Computational Linguistics<address><addrLine>Dubrovnik, Croatia</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="1264" to="1280" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shuohang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichong</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenguang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Zeng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2108.13487</idno>
+		<title level="m">Want to reduce labeling cost? gpt-3 can help</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Task-completion dialogue policy learning via Monte Carlo tree search with dueling network</title>
+		<author>
+			<persName><forename type="first">Sihan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaijie</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kunfeng</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianping</forename><surname>Shen</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2020.emnlp-main.278</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP)</title>
+		<meeting>the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP)</meeting>
+		<imprint>
+			<publisher>Online. Association for Computational Linguistics</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="3461" to="3471" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Persuasion for good: Towards a personalized persuasive dialogue system for social good</title>
+		<author>
+			<persName><forename type="first">Xuewei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiyan</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoojung</forename><surname>Oh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sijia</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingwen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhou</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/P19-1566</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 57th Annual Meeting of the Association for Computational Linguistics<address><addrLine>Florence, Italy</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="5635" to="5649" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Yizhong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hamish</forename><surname>Ivison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pradeep</forename><surname>Dasigi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Hessel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raghavi</forename><surname>Khyathi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Chandu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kelsey</forename><surname>Wadden</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">A</forename><surname>Macmillan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iz</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Beltagy</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hajishirzi</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>How far can camels go? exploring the state of instruction tuning on open resources</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">Optimization and control</title>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Weber</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<publisher>University of Cambridge</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Multi-turn target-guided topic prediction with Monte Carlo tree search</title>
+		<author>
+			<persName><forename type="first">Jingxuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Si</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Guo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 18th International Conference on Natural Language Processing (ICON)</title>
+		<meeting>the 18th International Conference on Natural Language Processing (ICON)<address><addrLine>Silchar, India</addrLine></address></meeting>
+		<imprint>
+			<publisher>NLP Association of India</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="324" to="334" />
+		</imprint>
+		<respStmt>
+			<orgName>National Institute of Technology Silchar ; NL-PAI</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<title level="m" type="main">Prompt learning for few-shot dialogue state tracking</title>
+		<author>
+			<persName><forename type="first">Yuting</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenqiang</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jintao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tat-Seng</forename><surname>Chua</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.05780</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">A hierarchy mcts algorithm for the automated pcb routing</title>
+		<author>
+			<persName><forename type="first">Cong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huilin</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jienan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinkuan</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinting</forename><surname>Luo</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ICCA51439.2020.9264558</idno>
+	</analytic>
+	<monogr>
+		<title level="m">2020 IEEE 16th International Conference on Control &amp; Automation (ICCA)</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="1366" to="1371" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<analytic>
+		<title level="a" type="main">2022a. Efficient dialog policy learning by reasoning with contextual knowledge</title>
+		<author>
+			<persName><forename type="first">Haodi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhichao</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keting</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaishun</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiqi</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="11667" to="11675" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<title level="m" type="main">Ask an expert: Leveraging language models to improve strategic reasoning in goal-oriented dialogue models</title>
+		<author>
+			<persName><forename type="first">Qiang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Naradowsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusuke</forename><surname>Miyao</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shuo</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junzhou</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pinghui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junlan</forename><surname>Feng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.11481</idno>
+		<title level="m">think before you speak&quot;: Improving multi-action dialog policy by planning single-action dialogs</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Learning goal-oriented dialogue policy with opposite agent awareness</title>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lizi</forename><surname>Liao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyan</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tat-Seng</forename><surname>Chua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zitao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minlie</forename><surname>Huang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 1st Conference of the Asia-Pacific Chapter of the Association for Computational Linguistics and the 10th International Joint Conference on Natural Language Processing</title>
+		<meeting>the 1st Conference of the Asia-Pacific Chapter of the Association for Computational Linguistics and the 10th International Joint Conference on Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="122" to="132" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<analytic>
+		<title level="a" type="main">Zero-shot dialog generation with cross-domain latent actions</title>
+		<author>
+			<persName><forename type="first">Tiancheng</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxine</forename><surname>Eskenazi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 19th Annual SIGdial Meeting on Discourse and Dialogue</title>
+		<meeting>the 19th Annual SIGdial Meeting on Discourse and Dialogue</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="1" to="10" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

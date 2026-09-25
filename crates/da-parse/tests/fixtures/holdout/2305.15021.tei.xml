@@ -1,0 +1,2353 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">EmbodiedGPT: Vision-Language Pre-Training via Embodied Chain of Thought</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2023-09-13">13 Sep 2023</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Yao</forename><surname>Mu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">The University of Hong Kong</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Qinglong</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Shanghai AI Laboratory</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Mengkang</forename><surname>Hu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">The University of Hong Kong</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Wenhai</forename><surname>Wang</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Shanghai AI Laboratory</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Mingyu</forename><surname>Ding</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">The University of Hong Kong</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jun</forename><surname>Jin</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="laboratory">Noah&apos;s Ark Laboratory</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Bin</forename><surname>Wang</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="laboratory">Noah&apos;s Ark Laboratory</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jifeng</forename><surname>Dai</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Shanghai AI Laboratory</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yu</forename><surname>Qiao</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Shanghai AI Laboratory</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ping</forename><surname>Luo</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">The University of Hong Kong</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Shanghai AI Laboratory</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">EmbodiedGPT: Vision-Language Pre-Training via Embodied Chain of Thought</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2023-09-13">13 Sep 2023</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">D972976B8ED5900FD0BA0B995CDF0633</idno>
+					<idno type="arXiv">arXiv:2305.15021v2[cs.RO]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:30+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Embodied AI is a crucial frontier in robotics, capable of planning and executing action sequences for robots to accomplish long-horizon tasks in physical environments. In this work, we introduce EmbodiedGPT, an end-to-end multi-modal foundation model for embodied AI, empowering embodied agents with multimodal understanding and execution capabilities. To achieve this, we have made the following efforts: (i) We craft a large-scale embodied planning dataset, termed EgoCOT. The dataset consists of carefully selected videos from the Ego4D dataset, along with corresponding high-quality language instructions. Specifically, we generate a sequence of sub-goals with the "Chain of Thoughts" mode for effective embodied planning. (ii) We introduce an efficient training approach to Embod-iedGPT for high-quality plan generation, by adapting a 7B large language model (LLM) to the EgoCOT dataset via prefix tuning. (iii) We introduce a paradigm for extracting task-related features from LLM-generated planning queries to form a closed loop between high-level planning and low-level control. Extensive experiments show the effectiveness of EmbodiedGPT on embodied tasks, including embodied planning, embodied control, visual captioning, and visual question answering. Notably, EmbodiedGPT significantly enhances the success rate of the embodied control task by extracting more effective features. It has achieved a remarkable 1.6 times increase in success rate on the Franka Kitchen benchmark and a 1.3 times increase on the Meta-World benchmark, compared to the BLIP-2 baseline fine-tuned with the Ego4D dataset.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Embodied AI tasks, e.g., embodied planning, embodied VQA, and embodied control, aim to imbue robots with the ability to perceive, reason, and act within their environment, enabling them to perform long-horizon plans and execute actions autonomously based on real-time observations. Recently, large language models (LLMs) such as GPT4 <ref type="bibr" target="#b0">[1]</ref> and PaLM-E <ref type="bibr" target="#b1">[2]</ref>, have shown promising language understanding, reasoning, and "chain-of-thought" capabilities. Such advances may open new possibilities for developing robots capable of processing natural language instructions, performing multi-modal "chain-of-thought", and planning actions in physical environments.</p><p>Large-scale datasets play important roles in training large language models. For example, OpenCLIP trains its ViT-G/14 model on the LAION-2B dataset <ref type="bibr" target="#b2">[3]</ref>, which contains 2B image-language pairs. Unlike general-purpose visual language tasks that can get a huge amount of weakly labeled imagecaption pairs from the Internet, embodied AI tasks require egocentric data in robotics domains. Also, structured language instructions are needed for precise planning, which usually requires huge manual efforts and costs. This poses a challenging problem in collecting high-quality embodied multi-modal Figure 1: EmbodiedGPT's capabilities for video captioning, multi-turn question answering, embodied planning, and low-level control. The plans given by EmbodiedGPT are highly executable and incorporate task-specific features, leading to a significant improvement in the success rate of embodied control tasks, outperforming both R3M <ref type="bibr" target="#b11">[12]</ref> (a video-language contrastive learned model) and BLIP-2 <ref type="bibr" target="#b12">[13]</ref> (a multi-modal foundation model) on Franka Kitchen <ref type="bibr" target="#b13">[14]</ref> and Meta-World <ref type="bibr" target="#b14">[15]</ref> environments. data. Some researchers <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b4">5,</ref><ref type="bibr" target="#b5">6,</ref><ref type="bibr" target="#b6">7]</ref> explore creating large-scale embodied datasets with simulators, but a significant gap remains between simulation and the real world. Recent works <ref type="bibr" target="#b7">[8,</ref><ref type="bibr" target="#b8">9,</ref><ref type="bibr" target="#b9">10]</ref> also explore adapting the pre-trained LLMs to a new domain by efficient tuning strategies like LoRA <ref type="bibr" target="#b10">[11]</ref>. However, several open questions still remain: how to apply LLMs to the field of robotics which may face large domain gaps; how to leverage the "chain-of-thought" capability for structured planning; and how to use the output language plan for downstream manipulation tasks in an end-to-end manner.</p><p>To solve the above challenges, in this work, we first build a large-scale embodied planning dataset, termed EgoCOT, which features chain-of-thought planning instructions. It contains carefully selected egocentric videos from the Ego4D dataset <ref type="bibr" target="#b15">[16]</ref> and corresponding high-quality step-by-step language instructions, which are machine-generated, then semantics-based filtered, and finally human-verified. Additionally, we also create the EgoVQA dataset as an extension of the Ego4D dataset, focusing on egocentric human-object interaction video question-answering tasks, which aims to offer a wider range of egocentric multi-modal data.</p><p>Based on our EgoCOT and EgoVQA, we present an end-to-end multi-modal embodied foundation model called EmbodiedGPT, which can interact with the physical world in a more natural and intuitive manner, and perform many embodied tasks, as shown in Figure <ref type="figure">1</ref>, such as embodied planning, embodied VQA, and embodied control. EmbodiedGPT comprises four integrated modules that work together, including i) a frozen vision model for encoding visual features of current observations, ii) a frozen language model used to execute natural language for question answering, captioning, and embodied planning tasks, iii) an embodied-former with a language mapping layer for aligning the visual and embodied instructions and extracting task-relevant instance-level features with the generated planning for low-level control, and iv) a policy network, which is responsible for producing low-level actions based on the task-relevant features, enabling the agent to effectively interact with the environment. To further enhance EmbodiedGPT 's performance in generating reliable planning containing sub-goal sequences, we implement prefix tuning on the frozen language model to encourage the generation of more executable planning.</p><p>Our method possesses the following core advantages: i) the generated planning exhibits strong executability and granularity at the object part level, such as the gripper of a robotic arm or the handle of a door, manifested in sub-goal sequences. ii) the proposed EgoCOT dataset is built based on an open-source large-scale dataset, which offers greater scalability compared to the PaLM-E [2] model trained on proprietary robot data. And both the EgoCOT dataset, and the EmbodiedGPT model will be open-sourced. iii) EmbodiedGPT forms a closed-loop from high-level planning to low-level control, which enables seamless integration of high-level planning and low-level control, providing efficient task performance and adaptability to a wide range of tasks. To achieve this, we utilize the embodied-former to query task-relevant instance-level features through cross-attention between visual observations and generated embodied planning. This enables the policy network to complete low-level control tasks with fewer than 25 demonstrations.</p><p>The contributions can be summarized as follows: (i) We build an end-to-end multi-modal foundation model EmbodiedGPT for embodied AI, which is featured with "chain-of-thought" capability, empowering embodied agents to interact with the physical world in a more natural and intuitive manner. (ii) We develop two datasets, EgoCOT and EgoVQA, consisting of 200M annotated videos from the Ego4D dataset with corresponding detailed planning instructions and VQA data. The datasets are first machine-generated, then semantics-based filtered, and finally human-verified for quality control. (iii) We introduce EmbodiedGPT a cost-effective training approach and a paradigm for extracting task-relevant features from LLM-generated planning queries, thereby forming a closed loop between high-level planning and low-level control. We demonstrate our approach's effectiveness by achieving state-of-the-art or comparable performance on multiple embodied tasks, including embodied control, embodied planning, video captioning, and video QA. Notably, in comparison to BLIP-2 <ref type="bibr" target="#b16">[17]</ref> fine-tuned on the Ego4D dataset and R3M <ref type="bibr" target="#b11">[12]</ref> specifically designed for manipulation tasks, EmbodiedGPT outperforms both models on the Franka Kitchen <ref type="bibr" target="#b13">[14]</ref> benchmark with a margin of 22.1% and 5.5%, respectively. Similarly, on the Meta-World <ref type="bibr" target="#b13">[14]</ref> benchmark, EmbodiedGPT surpasses both models with margins of 22.5% and 4.2%, respectively.</p><p>2 Related Work</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Vision Language Pre-training with large scale foundation model</head><p>Vision-Language Pre-training focuses on strengthening the link between visual observation and natural language. The goal is to develop models that can better understand and process visual content, such as recognizing objects and actions, and generating descriptive text. As models become larger, the computational expense for end-to-end pre-training rises, leading to the need for modular vision-language pre-training methods. These methods smartly use pre-trained models, keeping them 'frozen' during vision language pre-training to save on computational costs. For example, models like Uniter <ref type="bibr" target="#b17">[18]</ref>, Oscar <ref type="bibr" target="#b18">[19]</ref>, VinVL <ref type="bibr" target="#b19">[20]</ref>, and LiT <ref type="bibr" target="#b20">[21]</ref> freeze the image encoder, while Frozen <ref type="bibr" target="#b21">[22]</ref> and VGPT <ref type="bibr" target="#b22">[23]</ref> freeze the language model. Furthermore, Flamingo <ref type="bibr" target="#b23">[24]</ref> and BLIP-2 <ref type="bibr" target="#b16">[17]</ref> use both frozen image encoders and language models, providing a balance between performance and computational efficiency. Due to the lack of open-source data for multi-modal embodied planning, previous works struggled to perform detailed task decomposition and lacked the ability to generate precise and executable plans. To tackle this issue, we create the EgoCOT dataset and develop an embodied chain-of-thought vision language pre-training framework to enhance the capacity of multi-modal models for embodied reasoning and planning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Egocentric Video Datasets.</head><p>Egocentric videos, which are captured using wearable cameras, provide a natural perspective of daily activities and pose several challenging research questions <ref type="bibr" target="#b24">[25,</ref><ref type="bibr" target="#b25">26,</ref><ref type="bibr" target="#b26">27]</ref>. Several egocentric video datasets have been created over the years, including <ref type="bibr" target="#b27">[28,</ref><ref type="bibr" target="#b28">29,</ref><ref type="bibr" target="#b29">30]</ref>. However, the collection of egocentric videos is expensive, and previous datasets tend to be small-scale and domain-specific. Recently, a massive egocentric video dataset, Ego4D <ref type="bibr" target="#b15">[16]</ref>, has been released and has been used for embodied representation learning. The dataset comprises 3,670 hours of videos collected by 931 people from 74 locations across 9 countries, with videos accompanied by narrations. For embodied AI tasks, learning from large and diverse egocentric human videos has emerged as a promising approach to acquiring a generally useful visual representation for controlling such tasks. For example, R3M <ref type="bibr" target="#b11">[12]</ref> developed a sparse and compact visual representation using the Ego4D human video dataset through a combination of time-contrastive learning and video-language alignment. VIP <ref type="bibr" target="#b30">[31]</ref>, learns general-purpose reward functions for goal-conditioned robotic manipulation using the Ego4D dataset.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">Large Foundation Model Assistant System</head><p>Recent advancements in large-scale multi-modal language models (LLMs), such as GPT-3 <ref type="bibr" target="#b31">[32]</ref> and GPT-4 <ref type="bibr" target="#b0">[1]</ref>, have resulted in the creation of various models that can understand multiple modes of</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Physical Manipulation</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Vision Transformer</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Embodied-Former Language Mapping</head><p>Embodied Queries</p><p>Text Queries CNN w/ global average pooling Instance information Global information Policy Mapping LLaMA Questions Task description Examples Dialogue Memory Text prompt &lt;imgs&gt;[Image/8de837d8.mp4] How to do this task? Assistant : Plans are Step 1: grasp the handle of the microwave oven door Step2: pull the handle out Actions: Grasp(handle) Pull out(handle) Embodied Planning Human: Please give caption of Video/8de837d8.mp4 Assistant: A robot is opening the door of the microwave Oven Video Caption &lt;imgs&gt;[Video/8de837d8.mp4] What object is the robot operating? Assistant: The microwave Oven. Video Q&amp;A Multi-turn Dialogue &lt;imgs&gt;[Video/8de837d8.mp4] What object is the robot operating? What is the color of the button? Assistant: The button Assistant: Red information. Two main approaches are used in this field: systematic collaboration and end-to-end trained models. Systematic collaboration approaches involve coordinating multiple vision models or tools with language models to combine visual information with textual descriptions. Examples include models like Visual ChatGPT <ref type="bibr" target="#b32">[33]</ref>, MM-REACT <ref type="bibr" target="#b33">[34]</ref>, and HuggingGPT <ref type="bibr" target="#b34">[35]</ref>. However, this approach is limited by the accuracy and capacity of fixed modular models, which can lead to an accumulation of errors. On the other hand, end-to-end models aim to provide unified models for multi-modal tasks. For example, Flamingo <ref type="bibr" target="#b23">[24]</ref> combines vision and language by freezing pre-trained vision encoders and language models. BLIP-2 <ref type="bibr" target="#b12">[13]</ref> introduces Q-Former to align visual features from frozen visual encoders with large language models. Recently, models such as MiniGPT-4 <ref type="bibr" target="#b35">[36]</ref> and LLaVA <ref type="bibr" target="#b36">[37]</ref> align instruction-tuned language models with visual features from frozen visual backbones. VideoChat <ref type="bibr" target="#b37">[38]</ref>, mPLUG-Owl <ref type="bibr" target="#b38">[39]</ref> and X-LLM <ref type="bibr" target="#b39">[40]</ref>, further expand support for video input. PaLM-E <ref type="bibr" target="#b40">[41]</ref> is the first large embodied multi-modal model, which directly incorporates features from sensor modalities to improve real-world performance and is trained with their largescale everyday robot data <ref type="bibr" target="#b41">[42]</ref>. Compared to PaLM-E, EmbodiedGPT is more compact, with a size of only 10B and offers additional support for video captioning, video QA and making planning according to a demonstration video. Furthermore, we form a closed-loop system that spans from high-level planning to low-level control.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Method</head><p>The goal of the embodied foundation model is to imitate human-like perception and interaction with the environment by accurately perceiving the environment, identifying relevant objects, analyzing their spatial relationships, and formulating a detailed task plan. To achieve this, the EmbodiedGPT employs a pre-trained vision transformer as the visual encoder and a pre-trained LLaMA <ref type="bibr" target="#b42">[43]</ref> model as the language model. As shown in Figure <ref type="figure" target="#fig_0">2</ref>, the embodied-former acts as a bridge between the visual and language domains, it first extracts compact visual features from the output of the vision model through attention-based interaction involving visual tokens, text queries, and learnable embodied queries and then maps it to the language modality through a language mapping layer. These embeddings are sent to the frozen LLaMA <ref type="bibr" target="#b42">[43]</ref> language model for visual caption, visual QA, and embodied planning. The generated planning is then used to query highly relevant features from the general visual tokens encoded by the visual model via the embodied-former. These features are utilized to generate low-level control commands for task execution through the downstream policy network. To enhance performance across a range of embodied tasks, we introduce a novel video-language pre-training paradigm that leverages a cognitive chain of thought to produce embodied planning from egocentric video inputs. We formulate this task as a standard VQA (Visual Question Answering) task, using "how to do the task that + original caption" as the question and embodied planning as the answer. This framework enriches the data of embodied planning and standard visual QA tasks, encouraging the embodied-former to capture task-specific features that are more suitable for embodied control tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Framework</head><p>The training process consists of three stages, each designed to incrementally develop reasoning and planning capabilities. The first two stages focus on pre-training in basic cognitive and responsive skills, while the third stage involves training the embodied AI task with egocentric video-text data on EgoCOT. In the first stage, we focus on image-text conversation alignment pre-training, which involves using three datasets: COCO Caption <ref type="bibr" target="#b43">[44]</ref>, 595 thousand finely filtered image-text pairs from CC3M <ref type="bibr" target="#b44">[45]</ref>, and 491 thousand filtered image-text pairs obtained by re-captioning LAION-400M using BLIP-2 <ref type="bibr" target="#b16">[17]</ref>. The primary goal of this stage is to pre-train the Embodied-former and language projection while keeping the vision and language model parameters frozen to save computational resources. In the second stage, our goal is to enhance the model's ability to comprehend and generate more complex sentences and improve its reasoning skills. We achieve this by updating the language projection and prefix language adapter and utilizing the "Complex_Reasoning_77k" and multi-turn conversation datasets provided by "LLaVA_Instruct_150K" <ref type="bibr" target="#b45">[46]</ref>.</p><p>Embodied "chain-of-thought" training with EgoCOT: During the third stage, we first use Conv3D <ref type="bibr" target="#b46">[47]</ref> to transfer the pre-trained vision model from stage 2 to the video encoder, with a time offset of 2 and a total frame count of 8 for the videos. Then, we introduce the 'chain-of-thought' vision language pre-training paradigm where the model takes 8 keyframes of the video as input, along with the task description, embodied planning, and structured verb-noun pairs summary to reason with a prompt, such as Listing 1. To avoid overfitting, we provide a prompt set that has different instructions with the same meaning. In this stage, we fine-tune the patch embedding, the language projection layer, and the prefix language adapter to better capture temporal information.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>¤</head><p>Watch this video , identify the actions and devise a plan using chain -of -thought . Extract detailed actions using this schema : Task : { " task description " } Plan : { " plan with chain -of -thought " } Actions : {{ " number " }: { ' verb ' }({ ' noun ' }) }.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>¦</head><p>Listing 1: Prompt we used for chain-of-thought pre-training.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Model Architecture</head><p>The Embodied-former, denoted as E(•), serves as a bridge between visual input x vis and the frozen language model, acting as an information bottleneck that delivers the most relevant visual data to the language model. The Embodied-former consists of two sub-modules: one for extracting features from the image input, denoted as E vis : x vis → y vis , and another for extracting features from the text input, denoted as E txt : x txt → y txt . We employ N learnable embodied query embeddings y query as the input of E to interact with x vis through cross-attention layers and with x txt through self-attention layers. We denote the output query representation as z ∈ R N ×D , where D is the dimensionality of the embeddings. The dimension of z is significantly smaller than that of the visual features. The output query embeddings are then transformed to z ′ ∈ R N ×D ′ , which have the same dimensionality D ′ as the LLM's text embedding in the language modality. This transformation is performed by a mapping function denoted as M : z → z ′ , which is accomplished by a linear projection via a fully-connected (FC) layer. The projected embeddings, z ′ , serve as "soft visual prompts for the language model," decoupling the whole interaction into visual-query interaction and query-text interaction. The final embodied planning is inferred by the language model with z ′ and text prompt(shown as Listing 1) as input. For low-level control which aims to generate actions to interact with the environment, the embodied plan x plan is used as input text for embodied-former to query the task-relevant instance level features z instance = E(x vis , x plan , y query ). Subsequently, the agent is capable of generating control commands, such as the turning angle of the servo, represented as a = g(z instance , z global ). This function combines both the instance-specific information z instance and the global context z global . The global context is inferred using a ResNet50 model <ref type="bibr" target="#b47">[48]</ref> that has been pre-trained on ImageNet <ref type="bibr" target="#b48">[49]</ref>, employing global average pooling. Here, g(•) represents the policy network, which is a Multi-Layer Perceptron (MLP) <ref type="bibr" target="#b49">[50]</ref> mapping function. The output of the policy network consists of specific executable actions, such as positions and velocities in the Cartesian coordinate system. More implementation details can be found in Appendix A.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Training Settings</head><p>We employ the same pre-trained image encoder as BLIP-2 <ref type="bibr" target="#b16">[17]</ref>. Specifically, we utilize the ViT-G/14 model from EVA-CLIP <ref type="bibr" target="#b50">[51]</ref> and remove its last layer, using the output features of the second last layer instead. For the frozen language model, we adopt a pre-trained LLaMA-7B <ref type="bibr" target="#b42">[43]</ref> model and fine-tune it using the ShareGPT dataset and a GPT-4 generated 52K English instruction-following dataset <ref type="bibr" target="#b51">[52]</ref>. We then utilize the well-fine-tuned language model as the frozen language model for vision-language pre-training. Additionally, we convert the data type of parameters of the frozen ViT <ref type="bibr" target="#b52">[53]</ref> and language model to FP16 during pre-training to increase efficiency.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">Creating EgoCOT and EgoVQA Dataset</head><p>For our EgoCOT dataset, we obtain basic data from the Ego4D dataset <ref type="bibr" target="#b15">[16]</ref>, which includes 9, 645 untrimmed videos of various durations ranging from 5 seconds to 7 hours. To prepare the data for our purposes, we conducted two stages of data cleaning to prepare our data. In the first stage, we filtered out videos with missing or very short narrations (which made up 7.4% and 0.9% of the text, respectively), as well as those with unsure tags (which accounted for 4.0% of the text). We also excluded videos without human-object interaction, such as watching TV or walking. After this stage, we were left with 2.9 thousand hours of video, containing 3.85 million narrations, from 129 different scenarios covering 2927 hours of video.</p><p>To generate pairs of captions, embodied plannings, and corresponding video segments with time intervals, we utilized the EgoVLP framework <ref type="bibr" target="#b53">[54]</ref> to segment the video. The narrations are organized as a sequence of sentences T 0 , • • • , T n with precise timestamps t 0 , • • • , t n that indicate when a described event occurred. For each narration T i with timestamp t i , we paired it with a clip V i by determining its start and end time points:</p><formula xml:id="formula_0">[t start i , t end i ] = [t i -β i /2α, t i + β i /2α],<label>(1)</label></formula><p>where</p><formula xml:id="formula_1">β i = n-1 j=0 (t j+1 -t j )</formula><p>/n is an adjustable parameter equal to the average temporal distance between consecutive narrations in a given video. Conversely, α is a scale factor computed as the average of all β i across all videos in the EgoCOT dataset (α = 4.9 seconds). For each video segment, we provide prompts and corresponding captions for ChatGPT <ref type="bibr" target="#b54">[55]</ref> to generate a reasonable and detailed embodied planning. The caption is typically a brief introduction such as "C opens a drawer." We use the ChatGPT to generate a chain of thought according to the caption and organize it into a list of verb-noun pairs, such as "plans: grasp the handle with the gripper and pull the handle; actions: 1. grasp(handle, gripper) 2. pull(handle)." The prompt we used to generate EgoCOT dataset is shown in Listing 2. To enhance the diversity of generated chain of thoughts, we employ a temperature parameter of 0.9 and a top-p parameter of 0.95. For each prompt, we perform five sampling iterations. ¤ You need to generate plans with chain of thought for each task , and then extract detailed actions ( collocation of nouns and verbs ) from the plan . The action can be of the following form : [ action_name ] , eg . , turn left ; [ action_name ] argument1 , eg . , pick up ( apple ) ; [ action_name ] argument1 argument2 , eg . , put ( apple , table ) Task : pick up a cup on the table plans : grasp the handle of the cup with the gripper and lift it up Actions : 1. grasp ( handle of the cup , gripper ) 2. lift up ( cup )</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>¦</head><p>Listing 2: Prompt we used for creating EgoCOT dataset.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Post-procedure.</head><p>To ensure the quality of the generated planning instructions, we perform the second stage of data cleaning. We used the CLIP model <ref type="bibr" target="#b55">[56]</ref> to assess the similarities between the video and text pairs. For each video, we compared it against five potential embodied plans and selected the one with the highest similarity as the corresponding label for the embodied plan. We then took our data-cleaning process a step further by filtering out any video-caption-planning pairs with similarities lower than the threshold. We eliminated both data with the low similarity between the video and caption and between the video and planning to ensure the highest quality data for our EgoCOT dataset. For each keyframe of the video segment, we use the CLIP model to encode both the text data T and the image data I into a shared embedding space. The similarity is calculated using the cosine similarity function as S(y T , y I ) = y T •y I ∥y T ∥∥y I ∥ , where S(y T , y I ) denotes the similarity between the text and image, and y T and y I are the respective embeddings. Given that each video contains multiple keyframes, an ensemble of similarity scores is obtained for each video. This ensemble strategy helps to alleviate the problem of variability among individual frames and ensures a more robust and representative measure of overall similarity. The ensemble similarity score between a video V with n keyframes and text data T is given by:</p><formula xml:id="formula_2">E(V, T ) = 1 n n i=1 S(y T i , y I i )<label>(2)</label></formula><p>where E(V, T ) is the ensemble similarity score, S(y T i , y I i ) is the similarity score for the i-th keyframe, and n is the total number of keyframes. We also created the EgoVQA dataset specifically for egocentric human-object interaction video question-answering tasks to enrich the training data. For each caption in the Ego4D dataset, we used ChatGPT to generate five QA pairs. To ensure relevance, we guided ChatGPT to focus on core key verbs and nouns by designing prompts as shown in Listing 3. The sampling schema when crafting EgoVQA is the same to that as EgoCOT. ¤</p><p>Please ask some questions accroding to the verbs and nouns in the sentence . For example , in this sentence " a man is picking up a cup " , the verb is picking up and the noun is cup , therefor questions can be " what is the object the man is picking up ? " or " what operation is performed on the cup ? " . Then You need to give the answer . input : a man is picking up a cup question : What is the object the man is picking up answer : The cup</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>¦</head><p>Listing 3: Prompt used for creating EgoVQA dataset.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head><p>In this section, we present a comprehensive evaluation of multi-modal foundation models and EmbodiedGPT, across various tasks including visual captioning, embodied planning, and control.</p><p>Evaluation on image input tasks. In order to evaluate the quality of generated captions and planning with the given image, we conducted a user study with 30 participants. The study included 10 cases of image caption tasks from MS-COCO dataset <ref type="bibr" target="#b43">[44]</ref>, 5 embodied planning scenarios in different embodied AI simulators, and 5 real-world scenes with accompanying embodied planning tasks. Participants were asked to rate the generated captions from different end-to-end models on five dimensions using a scoring system ranging from 1 to 10: object recognition accuracy, spatial relationship understanding, level of redundancy in the answer, and reasonability of the planning and the executability of the planning. The average scores among all the participants for different models are shown in Table <ref type="table" target="#tab_0">1</ref>. The results demonstrate that EmbodiedGPT achieves a comparable level of object recognition and spatial relationship understanding as the LLaVA-13B model, despite having only 7B parameters in the language model. Furthermore, EmbodiedGPT generates less redundant content in relation to the given embodied AI task, and produces the most reasonable and executable planning outputs. We also compared the performance of EmbodiedGPT with Visual ChatGPT <ref type="bibr" target="#b32">[33]</ref>, which adopts a hierarchical approach by combining several pre-trained vision models and language models to answer questions. In the Virtual-Home [57] benchmark, Visual ChatGPT uses a visual caption model to generate dense captions that are subsequently passed into ChatGPT for deriving a solution. As shown in Figure <ref type="figure" target="#fig_1">3</ref>, Visual ChatGPT failed to find a coat hanger due to its limitations of relying solely on the caption model for extracting visual information, resulting in poor performance when compared to the end-to-end model like EmbodiedGPT. These findings highlight the advantages of adopting a unified, end-to-end model over hierarchical approaches that rely on multiple stages.</p><p>Evaluation on video input embodied AI tasks. We evaluate the recognition ability of videos and planning abilities of our model for embodied control tasks on standard embodied AI benchmarks, Human: give a detailed explanation of the image, describe the scene and the observed objects, and spatial relationships in this image. Where should I go if I wish to find a coat hanger in this image?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>EmbodiedGPT:</head><p>1. The image is of a doorway with a clock on the wall above the door and a picture hanging on the wall. 2. There is a coat hanger on the floor, placed towards the left side of the scene. 3. The coat hanger is positioned near the right side of the doorway, and it is visible to the left of the woman's picture. 4. The coat hanger is near the edge of the image, and it is positioned in a way that it does not obstruct the view of the clock or the woman's picture.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Visual ChatGPT:</head><p>The image shows a bathroom with a clock on the wall and a toilet in the comer. The clock is white and has a black face with two hands owalls are tiled and there is a window in the room.</p><p>The image shows a bathroom with a clock and a toilet. There is no coat hanger visible in the image. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Human: describe this video in detail</head><p>Assistant:</p><p>The video displays a red robotic arm, a red cylinder, and a ring. The cylinder is positioned on a flat surface, and the ring is positioned next to it, with their centers aligned. The robotic arm is then used to pick up the ring. Carefully, the center of the ring is aligned with the center of the cylinder, and the ring is slowly lowered onto the cylinder, joining the two together. The final step is to inspect the join using the robotic arm, ensuring that it is secure and without gaps.</p><p>Human: can you write a detailed plan for the task the robot is performing?</p><p>Assistant:</p><p>1. Position the first object, a cylinder, on a flat surface. 2. Position the second object, a ring, next to the red cylinder, with their centers aligned. 3. Use the robotic arm to pick up the ring. 4. Carefully align the center of the ring with the center of the cylinder. 5. Slowly lower the ring onto the cylinder, joining the two objects together.</p><p>Video:</p><p>Figure <ref type="figure">4</ref>: Example of video input embodied AI tasks on Meta-World benchmark. EmbodiedGPT accurately analyzes embodied control tasks in demonstration videos and provides precise planning.</p><p>Franka Kitchen <ref type="bibr" target="#b13">[14]</ref> and Meta-World <ref type="bibr" target="#b14">[15]</ref>. Meta-World provides a challenging set of tasks that require complex object manipulation skills, including assembling a ring on a peg, picking and placing a block between bins, pushing a button, opening a drawer, and hammering a nail. Franka Kitchen benchmark focuses on tasks like sliding open the right door, opening the cabinet, turning on the light, turning the stovetop knob, and opening the microwave. As shown in Figure <ref type="figure">4</ref>, given a demonstration video, EmbodiedGPT can accurately interpret the embodied control task and provide step-by-step planning. The output planning is fed into the Embodied-former module of EmbodiedGPT to query highly relevant features for use as inputs in the policy network and the low-level actions are generated by the policy network to interact with the environment (see more visualizations in Appendix B).</p><p>Evaluation on embodied control tasks. For embodied control tasks, we compare our model with R3M <ref type="bibr" target="#b11">[12]</ref>, which is the state-of-the-art method in these two benchmarks, and an ablation version called 'BLIP-2[Ego4D]', which has the same structure and same amount of parameters as EmbodiedGPT,  cabinet_left cabinet_right micro_left micro_right knobs_left knobs_right light_left light_right sdoor_left sdoor_right Tasks 0 20 40 60 80 Success Rate BLIP-2(Ego4D) R3M Embodied-gpt (a) Performance comparison in Franka Kitchen with 25 demos. bin_left bin_right button_left button_right assembly_left assembly_right drawer_left drawer_right hammer_left hammer_right Tasks in Metaworld 0 20 40 60 80 100 Success Rate BLIP-2(Ego4D) R3M EmbodiedGPT (b) Performance comparison in Meta-World with 25 demos. Model Franka(10 demos) Franka(25 demos) Meta-World(10 demos) Meta-World(25 demos) EmbodiedGPT 50.8% ±2.8 58.5% ±2.7 76.4% ±2.2 81.2%±2.0 -Close-loop 38.6% ±2.9 47.3% ±2.5 62.7% ±2.2 64.9% ±2.0 -COT 26.2% ±3.2 36.4% ±2.7 55.2% ±2.4 58.7% ±2.0</p><p>Table <ref type="table">2</ref>: Ablation on the closed-loop spans from planning to low-level control, and "chain-of-thought" (COT) training with 25 and 10 demonstrations("-" symbol indicates "removing"). We report the average success rate over 5 tasks and 2 camera views per benchmark.</p><p>and is only fine-tuned on the video caption task using the Ego4D dataset without incorporating EgoCOT. In all experiments, the policy network is learned using few-shot learning on a small amount of demonstration data. There are two settings, one of which utilizes 10 demonstrations, and the other utilizes 25 demonstrations. We report the success rate in 100 random evaluations with only visual observations in 5 tasks per benchmark over 5 seeds and 2 different camera views for each setting, respectively. As shown in Figure <ref type="figure" target="#fig_3">5</ref> and Figure <ref type="figure" target="#fig_4">6</ref>, EmbodiedGPT outperforms the baseline methods, demonstrating the effectiveness of learning with EgoCOT.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Ablation study.</head><p>We perform ablation studies to analyze the effectiveness of the "Chain-of-Thought" training mode and the importance of a closed-loop design for embodied control. The results, as shown in Table <ref type="table">2</ref>, demonstrate a significant improvement in success rate when using the EgoCOT approach compared to training solely with the EGO4D caption task. Moreover, the closed-loop design is necessary as the generated plans contained specific and relevant sub-goal information, which proved crucial for control tasks.</p><p>In summary, EmbodiedGPT exhibits a strong ability to generate reasonable planning, accurately extract task-relevant features from visual inputs, as well as execute low-level actions to interact with the environment. The ablation experiments demonstrate that both the training paradigm based on EgoCOT and the closed-loop design from embodied planning to low-level control significantly contribute to the performance improvement of EmbodiedGPT.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>In this paper, we present EmbodiedGPT, an end-to-end multi-modal foundational model for embodied AI that enables agents to perform step-by-step planning and execute low-level commands. To achieve this, we create a large-scale embodied planning dataset called EgoCOT and develop an efficient training approach that utilizes prefix tuning to generate high-quality plans with a "chain-of-thought". Furthermore, our embodied control paradigm seamlessly coordinates high-level planning and lowlevel control. Extensive experiments demonstrate the effectiveness of EmbodiedGPT on various embodied tasks, achieving state-of-the-art or comparable performance. We believe that EmbodiedGPT represents a significant step towards developing more intelligent embodied AI agents. Future works and limitations: EmbodiedGPT freezes the parameters of the vision and language model due to limited computational resources. Joint training with all modules and exploring other modalities, such as speech, could be future works. We do not foresee obvious undesirable ethical or social impacts at this moment.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Our Prediction:</head><p>The image features a man standing in the kitchen area of a home. He is bending over, looking into a cupboard. A large dining table is located in the room, surrounded by chairs. The room appears to be brightly lit, either by natural light or artificial light.</p><p>There are multiple chairs in the dining area, with one chair positioned closer to the table. A television is mounted on the wall, and there are multiple potted plants on the table and the dining area. A remote is also present on the table, possibly belonging to the television. A person can be seen standing in the background near the window.</p><p>In the living area, there are chairs positioned near the windows. A chair is located in front of the window, while another one is placed towards the left side of the room. The kitchen area and the living area appear to be connected, with the dining table located in the middle and the kitchen counter adjacent to it." Label: A woman stands in the dining area at the table.</p><p>(a) Image caption in COCO dataset.</p><p>Assistant: 1. The image features a small kitchen area, where a robot is cooking near the kitchen counter. 2. The kitchen counter is positioned along the bottom part of the image, while the top part comprises a small window that lets in some light. 3. In the middle of the kitchen area, there is a gas stove, an oven, and a microwave oven. 4. The robot is sitting on a stool, and it is in the process of cooking an egg on the stove. 5. The kitchen backsplash is made of white tiles, and the cabinets are positioned along the walls. 6. There is a sink situated on the left side of the image, and the kitchen counter is positioned on the right side.</p><p>Human: Give a detailed explanation of the image, discribe the scene and the objects, and spatial relationships (b) Embodied image caption in Franka Kitchen benchmark.</p><p>Assistant:</p><p>1. The image depicts a clean and well-equipped kitchen with various appliances and furniture. A robot is present, standing next to the kitchen counter and interacting with a bowl on the countertop. The robot is likely a kitchen helper, possibly designed to assist with meal preparation. 2. The kitchen counter itself is well-stocked, featuring a sink, a refrigerator, a microwave, and a dining table where a person is seated. There are also two chairs placed around the table, one on each side. The dining table and chairs are positioned in the center of the room, providing a convenient space for people to gather and enjoy their meals.</p><p>Human: Give a detailed explanation of the image, describe the scene and the objects, and spatial relationships (c) Embodied image caption in Habitat2.0 benchmark.</p><p>Figure <ref type="figure">7</ref>: Generation results in image caption tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Evaluation metric and scoring criteria for user study</head><p>We show the Table <ref type="table">3</ref> to outline the scoring criteria for a user study incorporating the above five evaluation metrics:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Insight about the prompt designing for multi-modal large model</head><p>Through extensive experiments evaluating multi-modal large models in question answering tasks, we have identified a limitation in their ability to effectively utilize visual information. These models tend to rely heavily on textual inputs and may not fully exploit the visual cues present in the questionanswering process. In order to address this limitation and enhance their performance, we aimed to investigate the impact of incorporating additional prompts that guide the model's attention towards the visual content.</p><p>To achieve this goal, we propose a straightforward yet highly effective approach: incorporating additional prompting into the model's input. This involves introducing specific prompts such as "in the scene shown in this image/video" or allowing the model to describe the image/video as part of Assistant: 1. First, locate the coffee maker, which is a white coffee machine sitting on a wooden counter near a black refrigerator. 2. Next, take a closer look at the coffee maker to find the buttons and functions, such as the power button, water reservoir, and the selection button. 3. Ensure the coffee maker is turned on. 4. Fill the water reservoir with water, either by using a tap or a bottle, and select the type and amount of coffee to brew. Depending on the coffee maker, you can select the number of cups, the strength, or the type of coffee to brew. 5. After selecting the desired coffee, press the \"brew\" button. The coffee maker will then brew the selected coffee, which will fill up a cup positioned on a nearby counter. 6. Pour the coffee into the desired cup using the available pouring spout of the coffee maker. 7. Once the coffee has been poured, you can add any desired ingredients, such as sugar or milk, to enhance the taste. 8. Finally, enjoy your coffee while taking a moment to appreciate the convenience and functionality of the coffee maker."</p><p>Human: Give a plan to make a coffee based on the image and explain it in detail.</p><p>Figure <ref type="figure">8</ref>: Embodied planning of in real-world scenarios.</p><p>Assistant: 1. Identify your meeting point. In this image, there are two glass sliding doors with a large window visible between them. One can be the meeting point, and the other can be the entrance or exit of the room. 2. Choose a meeting room. Since there is a room with a desk, chair, and computer, you can use this as a meeting room. 3. Make a meeting schedule. Since there is no one in the room, schedule your meeting at a convenient time for both you and the person you'll be meeting with. 4. Prepare your materials. Since there is a desk and chair in the room, you can use them to prepare your materials for the meeting. 5. Arrange your meeting space. To make the meeting more professional, you can rearrange the furniture in the room to face the large window. This will provide a natural light and a pleasant atmosphere. 6. Invite your guests. After you have selected your meeting point and organized your materials, send an invitation to your guests to let them know about the meeting time, location, and any other relevant information."</p><p>Human: With the objects in the image, if you want to meeting with someone, where will you go? Write your plan and explain it.</p><p>(a) Embodied planning for abstract tasks [meeting].</p><p>Assistant: 1. First, find the object that is likely to be cool, which in this case is a fan. 2. Then, position the fan facing towards yourself to blow cool air towards you. 3. Next, locate the object that is likely to provide a cool surface, which in this case is a mouse pad. 4. Place the mouse pad under the fan, ensuring that it covers a majority of the fan's surface, to maximize the airflow and cooling effect on your skin. 5. Finally, adjust the fan's settings to increase the airflow and cooling effect, if needed. 6. By following these steps, you can use the items in the image to make yourself cool, maintain comfort, and minimize the discomfort caused by high temperatures.</p><p>Human: With the objects in the image, if you feel hot, what will you do to make yourself cool using these objects, write your plan and explain it.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Evaluation Metric Explanation</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Object Recognition Accuracy</head><p>This metric measures the ability of a system to accurately identify objects from images or videos. A higher accuracy indicates that the system can correctly recognize the objects present in the given visual data. Spatial Relationship Understanding Spatial relationship understanding refers to the system's capability to accurately discern the spatial relationships between objects in a scene. It evaluates whether the system can determine the relative positions, orientations, distances, and other spatial attributes of objects with precision.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Level of Redundancy in the Answer</head><p>The level of redundancy in the answer assesses the amount of unnecessary or repetitive information present in the system's response. Lower redundancy indicates that the system provides concise and non-repetitive answers, which is generally preferred as it reduces verbosity and improves clarity.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reasonability of the Planning</head><p>The reasonability of the planning metric gauges the logical coherence and appropriateness of the system's planning process. It examines whether the system's generated plans are sensible and align with the given goals or objectives.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Executability of the Planning</head><p>This metric evaluates the feasibility and practicality of the system's generated plans. It assesses whether the plans can be executed successfully in the real world.</p><p>Table <ref type="table">3</ref>: Explanation of Evaluation Metric Assistant: 1. Find a location in the image where there is an empty hanger. 2. Identify the size or shape of the hanger to ensure it can accommodate your clothes. 3. Use the handheld device to remove the clothes from the image. 4. Position the clothes on the hanger in the image, ensuring they fit comfortably. 5. Once the clothes are positioned correctly, use the device to hang them on the hanger. 6. Once you have successfully hung the clothes, verify that they are visible in the image." Human: with this image, if you want to take off clothes and hang them in the closet, write your plan according to the image  a multi-turn dialogue. By including these prompts, we aim to explicitly direct the model's focus towards the visual information available and encourage it to utilize this information when generating answers. Our experiments have yielded promising results. The introduction of additional prompts has significantly improved the model's ability to leverage visual information and provide accurate answers based on the visual content. By explicitly referencing the scene depicted in the image or video, the model's attention is directed towards the relevant visual features, leading to a more comprehensive integration of visual and textual information. Consequently, the model's reasoning ability is enhanced, resulting in more precise and contextually grounded answers.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Overall framework of EmbodiedGPT. The black arrow shows the vision-language planning process, while the red arrow represents that we leverage the queried language plans for better policy learning in low-level control tasks.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Comparison between EmbodiedGPT and VisualGPT in the question-answering task.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><figDesc>Performance comparison in Franka Kitchen with only 10 demos. bin_left bin_right button_left button_right assembly_left assembly_right drawer_left drawer_right hammer_left hammer_right Tasks in Performance comparison in Meta-World with only 10 demos.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Performance of EmbodiedGPT in low-level control tasks with 10 demonstration demos.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Performance of EmbodiedGPT in low-level control tasks with 25 demonstration demos.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><figDesc>(b) Embodied planning for abstract tasks[feel hot].</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 9 :</head><label>9</label><figDesc>Figure 9: Embodied planning for abstract tasks.</figDesc><graphic coords="15,111.96,539.36,112.15,111.71" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><figDesc>(a) Ask EmbodiedGPT write the plan directly.Assistant: 1. To hang clothes in the closet, you need to identify the closet area or location within the room where you can place the clothes. 2. In the image, there is a door or a closet visible on the far right side of the room. The location of the closet can vary depending on the specific setting or design of the room. 3. Once you have identified the closet, go to the closet and find a hanging rod or shelf to place the clothes on. 4. In the image, there is a hanging rod visible on the far right side of the door frame. Ensure that the hanging rod is large enough to accommodate the clothes you want to hang. 5. Take the clothes off the bed and place them on the hanging rod. Human: with this image, if you want to take off clothes and hang them in the closet, identify where you need to go and what you need to do in the scene shown in this image. (b) Ask EmbodiedGPT write the plan directly with image-related chain-of-thought.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 10 :</head><label>10</label><figDesc>Figure 10: Performance Comparison with different types prompt.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Generate Quality Evaluation on image input tasks.</figDesc><table><row><cell>Model</cell><cell cols="5">Object(↑) Spatial(↑) Redundancy(↓) Plan Reasonable(↑) Plan Executable(↑)</cell></row><row><cell>Minigpt4</cell><cell>5.6</cell><cell>4.8</cell><cell>4.4</cell><cell>4.5</cell><cell>4.8</cell></row><row><cell>LLaVA-7B</cell><cell>7.3</cell><cell>7.4</cell><cell>3.9</cell><cell>7.5</cell><cell>6.6</cell></row><row><cell>LLaVA-13B</cell><cell>8.5</cell><cell>8.6</cell><cell>3.4</cell><cell>8.4</cell><cell>7.6</cell></row><row><cell>EmbodiedGPT</cell><cell>8.4</cell><cell>8.8</cell><cell>2.6</cell><cell>8.8</cell><cell>8.4</cell></row></table></figure>
+		</body>
+		<back>
+
+			
+			<div type="funding">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>The task is opening the sliding door. Step 1: Move to the left side of the platform. Step 2: Grip the handle on the right side of the door. Step 3: Pull it to the right. Step 4: Hold the handle still while the door slides open. Step 5: Release the handle when thedoor is open.</p></div>
+			</div>
+
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Implementation details A.1 Hyper-parameters</head><p>We use the same set of training hyper-parameters for all models during vision-language pre-training. We employ the AdamW optimizer <ref type="bibr" target="#b57">[58]</ref> with β 1 = 0.9, β 2 = 0.98, and a weight decay of 0.05. We also utilize a cosine learning rate decay with a peak learning rate of 2 × 10 -5 and a linear warm-up with warm-up ratio 5 × 10 -2 . Our training data consists of images of size 224×224 that are augmented with random resized cropping and horizontal flipping. The maximize sequence length is set as 256.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Downstream policy learning</head><p>We adopt imitation learning as the method of policy learning in low level control tasks, which leverages demonstration data provided by an expert to learn the desired behavior. This technique has found applications in various domains, such as robotics, autonomous driving, and game playing. We provide each task 25 demonstrations, which are trajectories of observations and actions performed by an expert in the given task, and test the performance with 25 demonstrations and only 10 demonstrations respectively. The goal of imitation learning is to learn a policy, denoted as π, that maps the agent's observations to appropriate actions. The learned policy should be able to imitate the expert's behavior accurately. Speciffically, we use behavioral cloning to learn the downstream policy, which trains a supervised learning model to predict actions given states based on the expert demonstrations, and the loss function is shown as Equation 3</p><formula xml:id="formula_3">L(θ) = [π θ (a|s) log P * (a|s)]<label>(3)</label></formula><p>Here, θ represents the parameters of the policy model, π θ (a|s) denotes the predicted action probability distribution given a state s, and P * (a|s) represents the ground truth action probability distribution derived from the expert demonstrations.</p><p>For Franka-kitchen tasks, the length of demonstration is 50, which contains 50 state-action pairs. For Meta-World tasks, the length of demonstration is 500, which contains 500 state-action pairs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B More demos of EmbodiedGPT</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1 Visual Captioning</head><p>We assessed EmbodiedGPT on numerous visual captioning tasks spanning a range of embodied AI benchmarks. As shown in Figure <ref type="figure">9</ref>, the model displayed an exceptional ability to accurately describe objects, characters, and spatial relationships relevant to embodied AI tasks. Furthermore, EmbodiedGPT exhibited robust zero-shot learning capabilities, evidenced by its strong performance across multiple benchmarks without the need for task-specific fine-tuning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2 Embodied Planning with image input</head><p>Embodied Planning for Concrete Tasks (image input): In the context of concrete task planning, such as making a cup of coffee, EmbodiedGPT effectively utilized visual information to pinpoint the required objects and their positional relationships within the environment. The model produced coherent, multi-step plans, taking into consideration both the task requirements and environmental constraints. This capability demonstrates the model's potential to facilitate real-world applications and tackle complex planning challenges within the realm of embodied AI.</p><p>Embodied Planning for Abstract Tasks: For abstract task scenarios, EmbodiedGPT adeptly combined visual observations with abstract concepts to generate concrete sub-task descriptions. For instance, when given the abstract prompt of feeling hot, the model identified pertinent objects in the environment (e.g., a fan) and suggested a practical solution (e.g., turning on the fan). Subsequently, the model generated a detailed plan to accomplish the identified sub-tasks, highlighting its adaptability across diverse problem-solving contexts.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title/>
+	</analytic>
+	<monogr>
+		<title level="j">OpenAI. Gpt-4 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Palm-e: An embodied multimodal language model</title>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Driess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">M</forename><surname>Mehdi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Corey</forename><surname>Sajjadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Lynch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ayzaan</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Wahid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quan</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhe</forename><surname>Vuong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Sermanet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Duckworth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Vanhoucke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Klaus</forename><surname>Toussaint</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Greff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Mordatch</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Florence</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.03378</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Ilharco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mitchell</forename><surname>Wortsman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ross</forename><surname>Wightman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cade</forename><surname>Gordon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Carlini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Taori</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Achal</forename><surname>Dave</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vaishaal</forename><surname>Shankar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongseok</forename><surname>Namkoong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Farhadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ludwig</forename><surname>Schmidt</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Openclip</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021-07">July 2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yunfan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Agrim</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zichen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanzhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongqiang</forename><surname>Dou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanjun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anima</forename><surname>Anandkumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuke</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linxi</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Vima</surname></persName>
+		</author>
+		<idno>arXiv: Arxiv-2210.03094</idno>
+		<title level="m">General robot manipulation with multimodal prompts</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yizhou</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiaozi</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Govind</forename><surname>Thattai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gaurav</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sukhatme</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Opend</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.05211</idno>
+		<title level="m">A benchmark for language-driven door and drawer opening</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Cliport: What and where pathways for robotic manipulation</title>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Shridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Manuelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dieter</forename><surname>Fox</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="894" to="906" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Vlmbench: A compositional benchmark for vision-and-language manipulation</title>
+		<author>
+			<persName><forename type="first">Kaizhi</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaotong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Odest Chadwicke</forename><surname>Jenkins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="665" to="678" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Llama-adapter: Efficient fine-tuning of language models with zero-init attention</title>
+		<author>
+			<persName><forename type="first">Renrui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaming</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aojun</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangfei</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shilin</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongsheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Qiao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.16199</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaming</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Renrui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijie</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aojun</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Conghui</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyu</forename><surname>Yue</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.15010</idno>
+		<title level="m">Parameter-efficient visual instruction model</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Llm-adapters: An adapter family for parameter-efficient fine-tuning of large language models</title>
+		<author>
+			<persName><forename type="first">Zhiqiang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihuai</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanyu</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ee-Peng</forename><surname>Lim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roy</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ka-Wei</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lidong</forename><surname>Bing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soujanya</forename><surname>Poria</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.01933</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Edward</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yelong</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phillip</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyuan</forename><surname>Wallis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Allen-Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shean</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lora</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2106.09685</idno>
+		<title level="m">Low-rank adaptation of large language models</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">R3m: A universal visual representation for robot manipulation</title>
+		<author>
+			<persName><forename type="first">Suraj</forename><surname>Nair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aravind</forename><surname>Rajeswaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vikash</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Gupta</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.12601</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">BLIP-2: bootstrapping language-image pre-training with frozen image encoders and large language models</title>
+		<author>
+			<persName><forename type="first">Junnan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongxu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvio</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><forename type="middle">C H</forename><surname>Hoi</surname></persName>
+		</author>
+		<idno>CoRR, abs/2301.12597</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Relay policy learning: Solving long-horizon tasks via imitation and reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vikash</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Corey</forename><surname>Lynch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Hausman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1910.11956</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Meta-world: A benchmark and evaluation for multi-task and meta reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Tianhe</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deirdre</forename><surname>Quillen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhanpeng</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Julian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on robot learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="1094" to="1100" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Ego4d: Around the world in 3,000 hours of egocentric video</title>
+		<author>
+			<persName><forename type="first">Kristen</forename><surname>Grauman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Westbury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eugene</forename><surname>Byrne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zachary</forename><surname>Chavis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonino</forename><surname>Furnari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohit</forename><surname>Girdhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jackson</forename><surname>Hamburger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingyu</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="18995" to="19012" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Blip-2: Bootstrapping language-image pre-training with frozen image encoders and large language models</title>
+		<author>
+			<persName><forename type="first">Junnan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongxu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvio</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Hoi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2301.12597</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">UNITER: universal image-text representation learning</title>
+		<author>
+			<persName><forename type="first">Yen-Chun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linjie</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Licheng</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmed</forename><forename type="middle">El</forename><surname>Kholy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Faisal</forename><surname>Ahmed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Gan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingjing</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECCV</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">12375</biblScope>
+			<biblScope unit="page" from="104" to="120" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Oscar: Object-semantics aligned pre-training for vision-language tasks</title>
+		<author>
+			<persName><forename type="first">Xiujun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengchuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaowei</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lijuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Houdong</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Furu</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Gao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECCV</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="121" to="137" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">Pengchuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiujun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaowei</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianwei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lijuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Gao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2101.00529</idno>
+		<title level="m">Vinvl: Making visual representations matter in vision-language models</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Lit: Zero-shot transfer with locked-image text tuning</title>
+		<author>
+			<persName><forename type="first">Xiaohua</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Basil</forename><surname>Mustafa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Steiner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Keysers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Kolesnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Beyer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="18102" to="18112" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Multimodal few-shot learning with frozen language models</title>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Tsimpoukelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Menick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Serkan</forename><surname>Cabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">M</forename><surname>Ali Eslami</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oriol</forename><surname>Vinyals</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Hill</surname></persName>
+		</author>
+		<editor>Marc&apos;Aurelio Ranzato, Alina Beygelzimer, Yann N. Dauphin, Percy Liang, and Jennifer Wortman Vaughan</editor>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="200" to="212" />
+			<pubPlace>NeurIPS</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Visualgpt: Data-efficient adaptation of pretrained language models for image captioning</title>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Yi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohamed</forename><surname>Elhoseiny</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="18009" to="18019" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Flamingo: a visual language model for few-shot learning</title>
+		<author>
+			<persName><forename type="first">Jean-Baptiste</forename><surname>Alayrac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Donahue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pauline</forename><surname>Luc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Miech</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iain</forename><surname>Barr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yana</forename><surname>Hasson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karel</forename><surname>Lenc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Mensch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katie</forename><surname>Millican</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Malcolm</forename><surname>Reynolds</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roman</forename><surname>Ring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eliza</forename><surname>Rutherford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Serkan</forename><surname>Cabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tengda</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhitao</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sina</forename><surname>Samangooei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marianne</forename><surname>Monteiro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Menick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Borgeaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Brock</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aida</forename><surname>Nematzadeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sahand</forename><surname>Sharifzadeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikolaj</forename><surname>Binkowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ricardo</forename><surname>Barreira</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oriol</forename><surname>Vinyals</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Zisserman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karen</forename><surname>Simonyan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.14198</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Activitynet: A large-scale video benchmark for human activity understanding</title>
+		<author>
+			<persName><forename type="first">Fabian</forename><surname>Caba Heilbron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Escorcia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bernard</forename><surname>Ghanem</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juan</forename><forename type="middle">Carlos</forename><surname>Niebles</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="961" to="970" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">When will you do what?-anticipating temporal occurrences of activities</title>
+		<author>
+			<persName><forename type="first">Yazan</forename><surname>Abu Farha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Richard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juergen</forename><surname>Gall</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="5343" to="5352" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Assistq: Affordance-centric question-driven task completion for egocentric assistant</title>
+		<author>
+			<persName><forename type="first">Benita</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joya</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">You</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stan</forename><forename type="middle">Weixian</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongxing</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Difei</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><forename type="middle">Zheng</forename><surname>Shou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECCV</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Rescaling egocentric vision: Collection, pipeline and challenges for epic-kitchens-100</title>
+		<author>
+			<persName><forename type="first">Dima</forename><surname>Damen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hazel</forename><surname>Doughty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Giovanni</forename><forename type="middle">Maria</forename><surname>Farinella</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonino</forename><surname>Furnari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evangelos</forename><surname>Kazakos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Davide</forename><surname>Moltisanti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Munro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Toby</forename><surname>Perrett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Will</forename><surname>Price</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IJCV</title>
+		<imprint>
+			<biblScope unit="volume">130</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="33" to="55" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Charades-ego: A large-scale dataset of paired third and first person videos</title>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Gunnar A Sigurdsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cordelia</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Schmid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karteek</forename><surname>Farhadi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Alahari</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1804.09626</idno>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Delving into egocentric actions</title>
+		<author>
+			<persName><forename type="first">Yin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhefan</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><forename type="middle">M</forename><surname>Rehg</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="287" to="295" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Yecheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shagun</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dinesh</forename><surname>Sodhani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Osbert</forename><surname>Jayaraman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vikash</forename><surname>Bastani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amy</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Vip</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.00030</idno>
+		<title level="m">Towards universal visual reward and representation via value-implicit pre-training</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ariel</forename><surname>Herbert-Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Henighan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rewon</forename><surname>Child</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Ziegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clemens</forename><surname>Winter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Sigler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mateusz</forename><surname>Litwin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Chess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Berner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Larochelle</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Ranzato</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">R</forename><surname>Hadsell</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><forename type="middle">F</forename><surname>Balcan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Lin</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Visual chatgpt: Talking, drawing and editing with visual foundation models</title>
+		<author>
+			<persName><forename type="first">Chenfei</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengming</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhen</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zecheng</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Duan</surname></persName>
+		</author>
+		<idno>abs/2303.04671</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<publisher>CoRR</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhengyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linjie</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ehsan</forename><surname>Azarnasab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Faisal</forename><surname>Ahmed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zicheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ce</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lijuan</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.11381</idno>
+		<title level="m">Mm-react: Prompting chatgpt for multimodal reasoning and action</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Hugginggpt: Solving AI tasks with chatgpt and its friends in huggingface</title>
+		<author>
+			<persName><forename type="first">Yongliang</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaitao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongsheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiming</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yueting</forename><surname>Zhuang</surname></persName>
+		</author>
+		<idno>CoRR, abs/2303.17580</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Minigpt-4: Enhancing vision-language understanding with advanced large language models</title>
+		<author>
+			<persName><forename type="first">Deyao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoqian</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohamed</forename><surname>Elhoseiny</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong Jae</forename><surname>Lee</surname></persName>
+		</author>
+		<idno>CoRR, abs/2304.08485</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Videochat: Chat-centric video understanding</title>
+		<author>
+			<persName><forename type="first">Kunchang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinan</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhuo</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhai</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ping</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yali</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Limin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Qiao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.06355</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qinghao</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haiyang</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guohai</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiabo</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiyang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anwen</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengcheng</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaya</forename><surname>Shi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.14178</idno>
+		<title level="m">mplug-owl: Modularization empowers large language models with multimodality</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">X-llm: Bootstrapping advanced large language models by treating multi-modalities as foreign languages</title>
+		<author>
+			<persName><forename type="first">Feilong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minglun</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haozhi</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Xu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.04160</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Driess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">M</forename><surname>Mehdi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Corey</forename><surname>Sajjadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Lynch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ayzaan</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Wahid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quan</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhe</forename><surname>Vuong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Sermanet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Duckworth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Vanhoucke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Klaus</forename><surname>Toussaint</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Greff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Mordatch</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Florence</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>Palm-e: An embodied multimodal language model. CoRR, abs/2303.03378</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Michael Ahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Byron</forename><surname>Cortes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keerthana</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Herzog</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.01691</idno>
+		<title level="m">Do as i can, not as i say: Grounding language in robotic affordances</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thibaut</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gautier</forename><surname>Izacard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Martinet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marie-Anne</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothée</forename><surname>Lacroix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baptiste</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Faisal</forename><surname>Azhar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.13971</idno>
+		<title level="m">Open and efficient foundation language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Microsoft COCO: common objects in context</title>
+		<author>
+			<persName><forename type="first">Tsung-Yi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Maire</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Serge</forename><forename type="middle">J</forename><surname>Belongie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Hays</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pietro</forename><surname>Perona</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deva</forename><surname>Ramanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Dollár</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">Lawrence</forename><surname>Zitnick</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECCV</title>
+		<editor>
+			<persName><forename type="first">David</forename><forename type="middle">J</forename><surname>Fleet</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Tomás</forename><surname>Pajdla</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Bernt</forename><surname>Schiele</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Tinne</forename><surname>Tuytelaars</surname></persName>
+		</editor>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="volume">8693</biblScope>
+			<biblScope unit="page" from="740" to="755" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Conceptual captions: A cleaned, hypernymed, image alt-text dataset for automatic image captioning</title>
+		<author>
+			<persName><forename type="first">Piyush</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Goodman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Radu</forename><surname>Soricut</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 56th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 56th Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="2556" to="2565" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong Jae</forename><surname>Lee</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.08485</idno>
+		<title level="m">Visual instruction tuning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">3d convolutional neural network for object recognition: a review</title>
+		<author>
+			<persName><forename type="first">Rahul Dev</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Mittal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rajesh K</forename><surname>Bhatia</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Multimedia Tools and Applications</title>
+		<imprint>
+			<biblScope unit="volume">78</biblScope>
+			<biblScope unit="page" from="15951" to="15995" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Deep residual learning for image recognition</title>
+		<author>
+			<persName><forename type="first">Kaiming</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoqing</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Sun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE conference on computer vision and pattern recognition</title>
+		<meeting>the IEEE conference on computer vision and pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="770" to="778" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Imagenet: A large-scale hierarchical image database</title>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Socher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li-Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Fei-Fei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2009 IEEE conference on computer vision and pattern recognition</title>
+		<imprint>
+			<publisher>Ieee</publisher>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="248" to="255" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Multi layer perceptron</title>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Riedmiller</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lernen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Machine Learning Lab Special Lecture, University of Freiburg</title>
+		<imprint>
+			<biblScope unit="page" from="7" to="24" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<title level="m" type="main">Exploring the limits of masked visual representation learning at scale</title>
+		<author>
+			<persName><forename type="first">Yuxin</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binhui</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ledell</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinggang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tiejun</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinlong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Eva</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.07636</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Baolin</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengcheng</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michel</forename><surname>Galley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Gao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Instruction tuning with gpt-4</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">An image is worth 16x16 words: Transformers for image recognition at scale</title>
+		<author>
+			<persName><forename type="first">Alexey</forename><surname>Dosovitskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Beyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Kolesnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dirk</forename><surname>Weissenborn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohua</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Unterthiner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mostafa</forename><surname>Dehghani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Minderer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Georg</forename><surname>Heigold</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sylvain</forename><surname>Gelly</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Egocentric video-language pretraining</title>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Qinghong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinpeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mattia</forename><surname>Soldan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Wray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><forename type="middle">Z</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Difei</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rong-Cheng</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenzhe</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weijie</forename><surname>Kong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengfei</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename><surname>Hongfa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dima</forename><surname>Damen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bernard</forename><surname>Ghanem</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><forename type="middle">Zheng</forename><surname>Shou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Koyejo</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Mohamed</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Agarwal</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">D</forename><surname>Belgrave</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Cho</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Oh</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="7575" to="7586" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chatgpt</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">mar 14 version. 2023</date>
+		</imprint>
+	</monogr>
+	<note>large language model</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<title level="m" type="main">Learning transferable visual models from natural language supervision</title>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jong</forename><forename type="middle">Wook</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Hallacy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Goh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Clark</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2103.00020</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<analytic>
+		<title level="a" type="main">Virtualhome: Simulating household activities via programs</title>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Puig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Ra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marko</forename><surname>Boben</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaman</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tingwu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sanja</forename><surname>Fidler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonio</forename><surname>Torralba</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="8494" to="8502" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Loshchilov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><surname>Hutter</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1711.05101</idno>
+		<title level="m">Decoupled weight decay regularization</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

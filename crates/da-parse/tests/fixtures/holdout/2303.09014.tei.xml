@@ -1,0 +1,1379 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">ART: Automatic multi-step reasoning and tool-use for large language models</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2023-03-16">16 Mar 2023</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Bhargavi</forename><surname>Paranjape</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Washington</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Scott</forename><surname>Lundberg</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Microsoft Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Sameer</forename><surname>Singh</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Irvine</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Washington</orgName>
+							</affiliation>
+							<affiliation key="aff3">
+								<orgName type="institution">Allen Institute of Artificial Intelligence</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Washington</orgName>
+							</affiliation>
+							<affiliation key="aff4">
+								<address>
+									<settlement>Meta</settlement>
+									<region>AI</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Marco</forename><forename type="middle">Tulio</forename><surname>Ribeiro</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Microsoft Research</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">ART: Automatic multi-step reasoning and tool-use for large language models</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2023-03-16">16 Mar 2023</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">E518E3E2F159A64BEEF04FE901769315</idno>
+					<idno type="arXiv">arXiv:2303.09014v1[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:28+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large language models (LLMs) can perform complex reasoning in few-and zero-shot settings by generating intermediate chain of thought (CoT) reasoning steps. Further, each reasoning step can rely on external tools to support computation beyond the core LLM capabilities (e.g. search/running code). Prior work on CoT prompting and tool use typically requires hand-crafting task-specific demonstrations and carefully scripted interleaving of model generations with tool use. We introduce Automatic Reasoning and Tool-use (ART), a framework that uses frozen LLMs to automatically generate intermediate reasoning steps as a program. Given a new task to solve, ART selects demonstrations of multistep reasoning and tool use from a task library. At test time, ART seamlessly pauses generation whenever external tools are called, and integrates their output before resuming generation. ART achieves a substantial improvement over few-shot prompting and automatic CoT on unseen tasks in the BigBench and MMLU benchmarks, and matches performance of hand-crafted CoT prompts on a majority of these tasks. ART is also extensible, and makes it easy for humans to improve performance by correcting errors in task-specific programs or incorporating new tools, which we demonstrate by drastically improving performance on select tasks with minimal human intervention.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="26" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>In-context learning allows large language models (LLMs) to quickly adapt to new tasks simply by using natural language instructions and a few demonstrations as a prompt to the LLM <ref type="bibr" target="#b34">(Xie et al., 2021;</ref><ref type="bibr" target="#b2">Brown et al., 2020;</ref><ref type="bibr" target="#b5">Chowdhery et al., 2022)</ref>. While this circumvents annotating large datasets or even hosting the LLM itself (since many are available through APIs), there are severe performance limitations around multi-step reasoning <ref type="bibr" target="#b17">(Liu et al., 2022)</ref>,</p><p>Human Feedback Tool Output Task: Translate into Pig Latin Input: albert goes home Frozen LLM Task: Anachronisms Input: George HW ... Gulf War Q1: [search] When was George H. W. Bush, president? #1: From 1989-1993 ... Q2: [EOQ] Ans: True Task: Arithmetic Input: Viola bought 167 books... Q1: [gen code] Write arithmetic as python code #1: viola =167, nancy = 137 ans = viola -nancy Q2: [exec code] Execute code Q3: [EOQ] Ans: 30</p><p>Q1: [search] How to write english as pig latin? #1: Add "yay" if it starts with a vowel ... Q2: [gen code] Write code to translate "albert goes driving" to pig latin. #2: for w in ["albert", "goes", "home"]: if w[0] in "aeiou": print(w + "yay") ... Q3: [exec] Execute snippet #3: albertyay oesgay rivingday Q4: <ref type="bibr">[EOQ]</ref> Ans: albertyay oesgay rivingday Q1: [search] How to write english as pig latin? #1: Add "yay" if it starts with a vowel ... Q2: [gen code] Write code to translate "albert ... #2: for w in ["albert", "goes", "home"]: if w[0] in "aeiou": print(w + "yay") ...consonent_cluster = find_clstr(w) Q3: [exec code] Execute snippet #3: albertyay oesgay ivingdray Q4: <ref type="bibr">[EOQ]</ref> Ans: albertyay oesgay ivingdray math <ref type="bibr" target="#b22">(Patel et al., 2021)</ref>, having up-to-date information <ref type="bibr" target="#b15">(Komeili et al., 2022)</ref>, and others. To address these limitations, recent work proposes prompting LLMs to mimic a chain of thought (CoT) for multistep reasoning <ref type="bibr">(Wei et al.;</ref><ref type="bibr" target="#b36">Zhou et al., 2022;</ref><ref type="bibr" target="#b7">Wang et al., 2022;</ref><ref type="bibr" target="#b23">Press et al., 2022;</ref><ref type="bibr" target="#b13">Khot et al., 2022;</ref><ref type="bibr" target="#b0">Arora et al., 2022)</ref> or providing them with access to tools (e.g. a calculator or QA model) to enable more complex reasoning steps <ref type="bibr" target="#b10">(Gao et al., 2022;</ref><ref type="bibr" target="#b4">Chen et al., 2022;</ref><ref type="bibr" target="#b23">Press et al., 2022;</ref><ref type="bibr">Wei et al.;</ref><ref type="bibr">Schick et al., 2023)</ref>. However, existing methods for chained reasoning with tool use are difficult to extend to new tasks and tools, requiring fine-tuning or prompt-engineering tailored for a specific task <ref type="bibr" target="#b21">(Parisi et al., 2022)</ref> or tool <ref type="bibr">(Schick et al., 2023)</ref>.</p><p>In this paper, we present Automatic Reasoning and Tool use (ART), a framework that automatically generates decompositions (multi-step reasoning) for instances of new tasks. The framework also selects and uses the most appropriate available tools (like search engines, and code execution) in individual steps. Given a new task, ART retrieves demonstrations of related tasks from a task library to enable few-shot decomposition and tool use. These demonstrations follow a flexible but structured query language <ref type="bibr" target="#b1">(Beurer-Kellner et al., 2022)</ref>, such that it is easy to parse intermediate steps, stop generation to call external tools, and resume it after including the output of such tools (Figure <ref type="figure" target="#fig_0">1</ref>). ART provides the LLM with demonstrations of how to decompose instances of several related tasks, and how to select and use any tool from the tool library that is represented in these demonstrations. This encourages the model to generalize from demonstrations to decompose a new task and use tools in appropriate places, zero-shot. It also enables users to fix any mistakes in the reasoning chain or add new tools by simply updating the task and tool libraries, providing new demonstrations where necessary (e.g. for the task at hand).</p><p>We construct a task library for 15 diverse Big-Bench <ref type="bibr" target="#b27">(Srivastava et al., 2022)</ref> tasks, and evaluate ART on 19 unseen test tasks from Big-Bench, 6 MMLU tasks, and various tasks used by related work on tool use (SQUAD, TriviaQA, SVAMP, MAWPS). ART consistently matches or outperforms automatically generated CoT reasoning chains on 32 / 34 BigBench and all MMLU tasks, by an average of over 22 percentage points. Tool-use in particular improves performance on test tasks by an average of over 12.3 percentage points, as compared to when no tools are allowed (Table <ref type="table" target="#tab_2">3</ref>). ART improves over direct few-shot prompting by 10.8% percentage points on average across unseen BigBench and MMLU tasks. Improvements are particularly notable on unseen tasks requiring arithmetic and algorithmic reasoning, where ART improves over direct few-shot prompting by 12.5% and previous best-known results for GPT3 that use supervision for decomposition and/or tool use by 6.1% percentage points (Table <ref type="table" target="#tab_2">3</ref>).</p><p>Finally, ART enables human intervention and improvement of the reasoning process by simply updating the task and tool libraries with new demonstrations, making it very easy to improve performance on any specific task with minor human feedback. On 12 test tasks, ART with additional human feedback surpasses the best-known results for GPT3 by an average of over 20% points (Table <ref type="table" target="#tab_3">6</ref>).<ref type="foot" target="#foot_0">foot_0</ref> 2 Related Work Scaled finetuning for low-resource adaptation Recent work has shown that finetuning LLMs on a broad range of public NLP datasets (with prefixed instructions) is an effective technique for cross-task generalization <ref type="bibr" target="#b18">(Mishra et al., 2021;</ref><ref type="bibr" target="#b24">Sanh et al., 2021;</ref><ref type="bibr" target="#b12">Khashabi et al., 2020;</ref><ref type="bibr" target="#b31">Wei et al., 2021)</ref> in both the zero-shot and few-shot settings. <ref type="bibr" target="#b20">Ouyang et al. (2022)</ref> show that aligning language models with user intent on a wide range of tasks by fine-tuning with human feedback for desired model behavior (InstructGPT) further improves in-context learning performance on complex NLP tasks. <ref type="bibr">Chung et al. (2022)</ref> show that finetuning on an aggregated mixture of tasks (T0, CoT, dialog, and code datasets) together with scaling models to 540B parameters achieves state-of-the-art in-context learning performance on several benchmarks such as BigBench and MMLU. ART uses API access to InstructGPT and Codex (LLM finetuned on code <ref type="bibr" target="#b3">(Chen et al., 2021)</ref>) to leverage their emergent in-context learning abilities. Future improvements in scaled finetuning in LLMs will likely improve the performance on ART.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Prompting with intermediate reasoning steps</head><p>Chain-of-thought (CoT) prompting <ref type="bibr" target="#b32">(Wei et al., 2022;</ref><ref type="bibr" target="#b28">Suzgun et al., 2022)</ref> is a popular gradientfree technique that encourages LLMs to generate intermediate reasoning steps prior to the final answer, with multiple task-specific variants (e.g. Least-to-most prompting <ref type="bibr" target="#b36">(Zhou et al., 2022)</ref>, Self-Ask <ref type="bibr" target="#b23">(Press et al., 2022)</ref>, Ask-me-anything <ref type="bibr" target="#b0">(Arora et al., 2022)</ref>, Successive prompting <ref type="bibr" target="#b9">(Dua et al., 2022)</ref>, decomposed prompting <ref type="bibr" target="#b13">(Khot et al., 2022)</ref>). While such prompts were initially hand-crafted, recent work <ref type="bibr" target="#b14">(Kojima et al., 2022)</ref> showed that LLMs can generate CoT-style multi-step reasoning in a zero-shot manner, when prompted with the prefix "Let's think step-by-step". <ref type="bibr" target="#b35">Zhang et al. (2022)</ref> use LLMs to automatically generate such CoT-style prompts-AutoCoT-which are competitive with hand-crafted prompts in their performance on arithmetic and commonsense reasoning tasks. We compare ART, CoT and AutoCoT in Table <ref type="table" target="#tab_0">1</ref>. ART builds on this line of work, introducing a common language that enables cross-task demonstrations and flexible and extensible tool use, improving accuracy of intermediate reasoning steps.</p><p>Tool Use There is growing interest in overcoming LLM limitations with external tools such as search engines, web browsers, calculators, translation systems, and python interpreters <ref type="bibr" target="#b15">(Komeili et al., 2022;</ref><ref type="bibr" target="#b29">Thoppilan et al., 2022;</ref><ref type="bibr" target="#b16">Lazaridou et al., 2022;</ref><ref type="bibr" target="#b26">Shuster et al., 2022;</ref><ref type="bibr" target="#b19">Nakano et al., 2021;</ref><ref type="bibr" target="#b29">Thoppilan et al., 2022;</ref><ref type="bibr" target="#b8">Cobbe et al., 2021;</ref><ref type="bibr" target="#b29">Thoppilan et al., 2022;</ref><ref type="bibr" target="#b10">Gao et al., 2022;</ref><ref type="bibr" target="#b4">Chen et al., 2022)</ref>. Most of these approaches either require large amounts of human supervision <ref type="bibr" target="#b29">(Thoppilan et al., 2022;</ref><ref type="bibr" target="#b15">Komeili et al., 2022)</ref> or carefully constructed prompts tailored to specific tasks and particular tools. An alternative line of recent work uses self-supervision to teach LLMs to use search, translation, and a calculator <ref type="bibr">(Schick et al., 2023</ref>)-Toolformer. In contrast, since ART does not require any additional training or tool-specific prompts, it allows users flexibility both in terms of replacing the underlying LLM (e.g. when a new version of GPT-3 is released), and in replacing or adding new tools (either general-purpose tools or tools that are important for a specific task of interest). We compare ART and Toolformer in Table <ref type="table" target="#tab_0">1</ref>. In Section 3.4, we show how human-in-the-loop feedback -analyzing and debugging LLM generations and extending tool-use -can provide a large boost in the performance of ART while also extending it with new tools. This built-in feedback loop and adaptive capability of ART extends the capabilities of LLMs that are finetuning to follow instructions and use tools.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">ART</head><p>With ART, a frozen LLM decomposes instances of a new task into multiple steps (using external tools whenever appropriate), despite not having explicit supervision for decomposition or tool use. In this section, we present an overview of ART, followed by more thorough descriptions of each individual component. We use the Physics Question Answering (PQA) task as a running example, which consists of high-school physics problems.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Overview</head><p>In Figure <ref type="figure">2</ref>, ART is presented with a new task description and input instance. We also assume access to a few input-output pairs (not shown), with no decomposition or tool use supervision.</p><p>Prompt building. ART retrieves similar tasks from a task library (Figure <ref type="figure">2(A)</ref>; Section 3.2), and adds instances of those tasks as demonstrations in the prompt.</p><p>A demonstration in the task library is written in a specific format, defined by a custom parsing expression grammar (PeG) (Section 3.2). The grammar is defined such that each task instance is decomposed into a sequence of sub-steps. Some of these sub-steps contain symbols corresponding to tools in a tool library (Section 3.3). We refer to these decompositions as programs, since the sequential reasoning steps and symbolic calls to tools are similar to a conventional program with function calls.</p><p>The resultant prompt consists of programs from related tasks and teaches the LLM how to effectively decompose instances of a new task-related sub-steps and tools in these programs can be used by the LLM for cross-task generalization.</p><p>In Figure <ref type="figure">2(A)</ref>, the demonstrations include calls to both search and code tools.</p><p>Generation. At generation time (Figure <ref type="figure">2(B)</ref>), the LLM writes its own program. ART parses the program as it is generated, and pauses generation whenever a tool call is encountered in the generated text, resuming generation after the tool is called and its output is integrated back into the program. As illustrated in the figure, a search engine is used to find the appropriate physics formula, and then the LLM uses code generation and execution to substitute the given values and compute the answer.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Human feedback (optional).</head><p>Humans can add new decomposition demonstrations to the task library, or add/edit tools in the tool library in order to improve performance on a particular task of interest, or in general. In Figure <ref type="figure" target="#fig_2">3</ref>(C) a user corrects a specific program by including a step that adds the unit of measurement, and adds this (modified) program to the task library. While most of our experiments do not use such feedback, we show that it is very effective at drastically improving performance when task generalization does not happen automatically. Further, it gives users flexibility to add custom tools without retraining of the LLM.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Task Library</head><p>We construct a library of programs for a small seed set of tasks from Big-Bench <ref type="bibr" target="#b27">(Srivastava et al., 2022)</ref>, a collaborative benchmark that measures the capabilities and limitations of language models. Big-Bench tasks span categories of traditional NLP, mathematics, commonsense reasoning, and question-answering.</p><p>Constructing the task library. We identify five skills that are useful across more than half of the tasks in BigBench that encompass text classification or generation of short answers in English (see A.1). We group tasks in the benchmark by these skills into the following clusters:</p><p>• Arithmetic: arithmetic and algebra problems.</p><p>• Code: Generating and executing python code.</p><p>• Search and question decomposition: Single or multi-step questions that require search</p><p>• Free-form reasoning: Explaining step-by-step reasoning in natural language • String Operations: Reformatting/editing strings, checking string entailment, etc.</p><p>We then select 2-4 tasks from each cluster and write programs (decompositions) for a few instances of each task, including calls to external tools and real outputs of those tools. Examples of programs in each cluster are in Appendix A.1. These programs follow a specific grammar, as outlined below.</p><p>Program grammar The program format must be flexible in terms of task inputs , steps, and tool calls, such that a wide variety of NLP tasks can be covered.</p><p>To do so, we define a query language (Beurer-Kellner et al., 2022) that extends the decomposed prompting format of Khot et al. (2022), since it can represent decomposed reasoning steps sequentially and incorporates function calls to external tools (like other LLMs). Each program consists of a series of nodes -a task input node, several sub-step nodes, and an answer node. The input node contains the task name, a simple instruction describing the task, and the input for an instance of the task: "Answer this high-school Physics question. Input: Hector yanks...". The input node is followed by a sequence of sub-task nodes, represented as a (query, answer) pair "Q i : ..., #i : ...". The sub-task query Q i has a sub-task name and sub-Q1: [string split] What are the letters in "nwist" #1: %s Q2: [string permutation] What are the possible permutations of 'nwisr'? #2: ['nwist', 'nwits', 'nwsit', 'nwsti', 'nwtis', 'nwtsi', 'niwst', 'niwts', 'niswt',... Q3: [lookup] which word in the list is a common English word ? #3: twins Q4: [EOQ] Ans: twins Q1: [search]...What is the formula for the horizontal component of the tension force? #1: ... calculated as Ftens*cosine(θ)where θ is ... Q2: [generate code] Use formula Fx = Ftens*cosine(θ) to solve: Hanks... #2: Fx = T*math.cos(radians) ... print(Fx) Q3: [code execute] Execute snippet get the value of "Fx" #3: 58.9789 Q4: [arithmetic] Round the answer to the nearest integer #4: 59 Q5: [add unit] Add the appropriate unit of measurement to the answer. #5: 59 N Q4: [EOQ] Ans: 59 N def lookup(word_list): import enchant d = enchant.Dict("en_US") valid_list = [] for word in word_list: if d.check(word): valid_list.append(word) task input ("Q1: [search] What is the formula..."), while the sub-task answer #i is simply the output of the sub-task ("#1: The horizontal component (Fx) can be calculated..."). The program ends with a dummy sub-task ("Q3: [EOQ]"), followed by a final answer node ("Ans: 59N"). All examples in Figures 1 and 2 follow this format.</p><p>Task Retrieval Given a new task, ART retrieves N tasks from the task library to construct a dynamic multi-task prompt. We explore two strategies to retrieve similar tasks, depending on what data is available. If a small number of labeled examples for the new task is available (≈50), we iterate over all five task clusters and select a few task programs from each cluster to compose the prompt. Ultimately, the task cluster with the highest performance on the held-out set of examples is chosen when predicting on all unlabeled examples from the task. While this strategy requires a held-out set of input-output pairs, no additional supervision is needed to generate a decomposed program.</p><p>In the second strategy, we craft a few-shot prompt (Appendix A.2) with task pairs, where each task includes a name, instructions, and a few inputoutput examples. For each pair, we provide a label of "Similar" or "Not similar", and reasoning (e.g. "These are related because they require solving arithmetic word problems"). At run time, we pair the test task with every task in the task library, and choose the highest-ranked ones based on the log probability ratio between "Similar" and "Not similar". We explore both strategies in Section A.2.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Tool Library</head><p>Whenever a sub-task query name matches a tool name in the task library (e.g. "Q i : [search]"), generation is stopped and resumed after the tool is called and its output is incorporated into the partially completed program. We seed the tool library with the following tools (all of which have demonstrations in the task library). In particular, we describe the symbols used to represent these tools and their inputs. We also specify how the tool output is incorporated back into the program. Tool-specific implementation details and other tools added to ART during feedback (3.4) are in Appendix A.3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Search</head><p>We use SerpAPI<ref type="foot" target="#foot_1">foot_1</ref> , which provides an API for Google search. The input to search is the sequence generated by the LLM after "Q i : [search]". We extract answer box snippets when they are available or combine the top-2 search result snippets together. For PQA in Figure <ref type="figure">2(B</ref>), the search query is the original input followed by "What is the formula for the horizontal component of tension force?", and the output is ""... horizontal component (Fx) can be calculated as Ftens*cosine(θ) ..."".</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Code Generation</head><p>We use the Codex <ref type="bibr" target="#b3">(Chen et al., 2021)</ref> model for code generation. Input to code generation is the sequence generated by the LM after the sub-task query symbol "Qi : [generate python code]". This argument is an instruction for code generation and is prompted to Codex as a multi-line comment in Python. For example, in Figure <ref type="figure">2</ref>, Codex is prompted the instruction ""Use the formula Fx = Ftens * cosine(θ) to solve..."" as a comment and generates "T = 72.0, theta = 35.0, ..., Fx = T*math.cos(radians)", which is appended to the incomplete program.</p><p>Code Execution We run Python code in a virtual Python environment with arithmetic, symbolic, and scientific computing packages pre-installed. The argument to code execute is the previous sub-task's answer sequence "#(i -1) : . . . ", i.e. the python code snippet to be executed. For i = 1, the task input is used as the argument since it potentially contains the code snippet to be executed. In Figure <ref type="figure">2</ref>, the code snippet generated in the previous step is executed and the value of variable "Fx" is added to the incomplete program.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">Human feedback</head><p>ART is specifically designed to be amenable to human feedback since it does not require additional finetuning. Consequently, users can incorporate feedback immediately into ART, by editing the task library and/or the tool library. Since ART generates multi-step reasoning programs that are interpretable, we explore feedback in the form of debugging, i.e. users edit existing programs rather than creating programs from scratch. These edits can be in the form of correcting sub-step outputs, adding/removing sub-steps (with appropriate inputs and answers), adding calls to new tools, etc.</p><p>For example, in Figure <ref type="figure" target="#fig_2">3</ref>(a) the user edits a program by adding two sub-steps, in order to round the answer to the nearest integer and include the appropriate unit of measurement to the answer. This feedback demonstrates appropriate decompositions for the task, as these operations are still performed by the LLM (the tool library does not have "[arithmetic]" or "[add unit]" APIs). In contrast, in Figure <ref type="figure" target="#fig_2">3</ref>(b) the user demonstrates the use of a dictionary "[lookup]" and implements it as a tool in the tool library. While most of our experiments do not rely on such feedback (and thus measure "zero shot" task transfer with no supervision for reasoning/tooluse), we show that simple operations like these can drastically improve performance on target tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experimental Setup</head><p>Evaluation Datasets In addition to 15 tasks in the task library (Section 3.2), we evaluate ART on 19 additional test tasks from BigBench which also belong to the five task clusters identified in Section 3.2. To check for cross-benchmark generalization, we further evaluate ART on a random subset of tasks from the MMLU benchmark <ref type="bibr" target="#b11">(Hendrycks et al., 2020)</ref>. Finally, we also evaluate on a subset of tasks used to evaluate Toolformer <ref type="bibr">(Schick et al., 2023)</ref>, in order to compare ART to a model fine-tuned for tool use.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Details</head><p>We use InstructGPT (text-davinci-002) as the frozen LLM, and Codex as the code generation tool, with temperature set to 0.3. We set the number of seed tasks in the prompt to N = 3 and use 2 demonstration programs from each task. We measure the preferred scoring metric for each task as in <ref type="bibr" target="#b27">Srivastava et al. (2022)</ref>, and report performance averaged over 5 runs.</p><p>Baselines ART proposes an automatic framework to generate multi-step reasoning decompositions and use relevant available external tools within those decompositions. We compare with the following baselines:</p><p>• Few-shot/Direct: Prompting LLMs with input-output pairs (but no intermediate reasoning). We use 3 examples for BigBench and 5 examples for MMLU, as done in prior work <ref type="bibr" target="#b28">(Suzgun et al., 2022)</ref>. We evaluate this baseline for both, GPT-3 and Codex, and report the higher of the two.</p><p>• Auto-CoT: A baseline that automatically generates multi-step reasoning in natural language. A random subset of 5 examples is first used to elicit CoT-style reasoning (Input + Let's think step-by-step.). These examples and their generated output form the prompt for other unseen examples of the task. This baseline is free-form and does not include tools, and thus allows us to verify the effectiveness of our query language and task library. We evaluate this baseline for GPT-3.</p><p>• ART-tool: ART with tool-use turned off, i.e.</p><p>the LLM generates the output of every substep, to verify the gains from tool use.</p><p>• GPT-3 Best: Best published GPT-3/Codex (175B) result with multi-step decomposition and/or tool use. These often include additional human supervision to decompose reasoning steps, and external tools to boost performance (with carefully constructed prompts). Additional details about baselines and GPT-3 best models are in Appendix A.4.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Results</head><p>We evaluate ART (without human feedback) on tasks in the task library (5.1), and on a variety of test tasks from BigBench, MMLU, and QA benchmarks (5.2). Then, we show that ART can be further improved with more compute (selfconsistency) and with human feedback (5.3).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Results on the task library</head><p>For tasks in the task library, demonstrations in the prompt include two instances of the task itself, along with other instances from tasks in the same cluster. We present results in Table <ref type="table" target="#tab_1">2</ref>, where tasks are organized by skill cluster. Even with decomposition demonstrations for only two instances, ART drastically improves performance over fewshot learning (+14.9 % points on average), in line with prior work on CoT. It does not do as well on language games, code description, and auto debugging -tasks that use code generation and/or code editing models. We observe that code generation errors often lead to cascading errors in reasoning.</p><p>Similarly, ART outperforms AutoCoT on most tasks even without any tool use (by 8% points on average). We hypothesize that the program format (and PeG grammar) is better at eliciting multi-step reasoning from models than free-form CoT due to the added structure to the reasoning. When tool use is turned on, ART outperforms AutoCoT on all tasks (+17.7 % points) minus one. Tools are called in ≈ 95% of test instances, and significantly improve performance (+7.91 % points). Gains from tool use are particularly significant for arithmetic tasks that benefit from representing the arithmetic problem as code that executes complex arithmetic accurately (+21.85 on average). This has also been noted in prior work <ref type="bibr" target="#b4">(Chen et al., 2022;</ref><ref type="bibr" target="#b10">Gao et al., 2022)</ref>.</p><p>Compared to the best published GPT-3 results, ART is stronger or comparable in 5/8 tasks. For the others, further investigation indicates that the demonstrations provided by <ref type="bibr" target="#b13">Khot et al. (2022)</ref> and <ref type="bibr" target="#b28">Suzgun et al. (2022)</ref> are just more effective than the two programs we author for these tasks (we explore further human feedback for these in Appendix A.5). In sum, ART is stronger than few-shot learning and AutoCoT on the library tasks (where we provide 2 labeled decompositions), and comparable to the best published GPT-3 results.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Test tasks (cross-task transfer)</head><p>We measure cross-task generalization on test tasks where ART does not use explicit supervision for decomposition and tool use. ART retrieves demonstrations from the task library according to the first strategy in Section 3.2, which uses a small amount Table 4: Comparing ART results on GPT3 (175B) model and <ref type="bibr">(Schick et al., 2023)</ref>, which is a smaller GPT-J model finetuned for tool-use. Results are reported from their paper (their code and models are not publicly available).</p><p>of labeled input-output pairs to pick a task cluster and sample demonstration programs from that cluster. 3   BigBench test tasks Even though there is no decomposition or tool use supervision, the results in Table <ref type="table" target="#tab_2">3</ref> are similar to those for tasks in the 3 We compare both strategies in Appendix A.2 task library. ART outperforms few-shot learning (6.9 % points). In particular, ART has significant improvements on arithmetic tasks (+19.0) and is comparable to the few-shot performance on search tasks. Non-grammatical choices in ruin names and choices not in the input in temporal sequences are often incorrect, which the few-shot baseline may potentially learn to ignore, while ART attempts to</p><p>Simple Text CS Strategy QA Physics Unit Reasoning about Editing Algorithms Questions Interpretation colored objects ART 27.65 88.11 66.44 20.37 53.99 64.34 + Self Consistency 30.67(+3.0) 90.99(+2.9) 70.76(+4.3) 24.07(+3.7) 57.20(+3.2) 69.11(+4.8)</p><p>Table <ref type="table">5</ref>: Improving ART via self-consistency <ref type="bibr" target="#b7">(Wang et al., 2022)</ref>. Ensembling model generations over 15 runs further boosts performance. indicates that human-in-the-loop improvement was done over automatically generated CoT reasoning for these tasks. Feedback for ART includes correcting sub-steps in programs ("C:"), adding additional sub-steps("A:"), and defining new tools("T:"). Note that only five examples were edited for each task.</p><p>explicitly reason about them. As with library tasks, we observe that string manipulation tasks like simple text editing, word unscrambling, and repeat copy logic suffer from code generation errors.</p><p>As observed in the case of library tasks, ART is better than AutoCoT on almost all tasks (24.6 % points). Tools are once again called very frequently (89% of instances), and are responsible for a significant fraction of the gains over baselines.</p><p>When compared to the best published GPT-3 results, ART performs favorably on average, especially on arithmetic tasks (+6.1 % points). As before, it does worse in tasks where good human demonstrations of how to decompose the task itself (provided by <ref type="bibr" target="#b28">Suzgun et al. (2022)</ref>) have a big impact. We re-evaluate ART with more human feedback on these tasks in 5.3, but even without that we conclude that ART is competitive on Big-Bench even when we do not have supervision for decompositions for the task at hand (i.e. there is cross-task generalization).</p><p>Other benchmarks To make sure ART does not overfit to BigBench-style tasks, we evaluate performance on additional benchmarks. We report performance on randomly selected tasks from the MMLU benchmark <ref type="bibr" target="#b11">(Hendrycks et al., 2020)</ref> in Table <ref type="table" target="#tab_2">3</ref>, where ART is more effective than all baselines on 5/6 tasks (+8.5 points better than few-shot baseline on average), despite having no supervision for demonstrations or tool use. MMLU requires extensive world knowledge, and thus most of these tasks benefit the most from the search tool.</p><p>In Table <ref type="table">4</ref>, we compare ART to a random subset of tasks used to evaluate Toolformer <ref type="bibr">(Schick et al., 2023)</ref>, a model finetuned to use a variety of tools. The comparison is not exact since Toolformer uses a smaller GPT-J model, but it is informative that ART outperforms Toolformer by a large margin on 5/6 of these tasks. To make sure these gains are not simply a result of model scale, we also use vanilla GPT-3 as a baseline, which yields much worse results than ART on all tasks. Besides improved performance, we note again that ART does not require additional fine-tuning when new tools or new base LLMs are introduced, and also is amenable to further improvement at the cost of compute or human feedback.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Improving ART</head><p>Self-consistency Previous work has noted benefits in generating multiple LLM outputs and taking the most frequent answer (a process known as self-consistency), particularly for settings with multi-step reasoning <ref type="bibr" target="#b13">(Khot et al., 2022;</ref><ref type="bibr" target="#b7">Wang et al., 2022)</ref>. In Table <ref type="table">5</ref>, we present self-consistency results (generating 15 outputs) for ART on a subset of tasks and see that it consistently improves performance, at the cost of extra computation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Human feedback</head><p>We also pilot the use of taskspecific feedback in Table <ref type="table" target="#tab_3">6</ref>, by having one of the authors edit 5 random instances of modelgenerated programs that resulted in errors for each task. When editing, we correct errors in sub-steps (denoted as "C:"), adds missing substeps ("A:"), or defines a new tool and demonstrates its use ("T:"). For example, this involved introducing an "add unit" sub-step for the PQA task, and implementing a dictionary lookup function as a tool for the "Word Unscrambling" task (both illustrated by Figure <ref type="figure" target="#fig_2">3</ref>).</p><p>We also compare human feedback applied to CoT-style reasoning. <ref type="bibr" target="#b28">Suzgun et al. (2022)</ref> already provide reference CoT-style reasoning for some tasks. For datasets where human-authored CoT reasoning is unavailable, we correct the output of the automatic CoT baseline, as indicated in Table <ref type="table" target="#tab_3">6</ref>. The same author edits 5 random instances of Auto-CoT decompositions that lead to errors on the same tasks, correcting errors in sub-steps or adding new sub-steps. As a reference, the edits included 35% of tokens in the baseline, and 15.7% of tokens in the ART programs. This included correcting substep arguments and outputs in 72% of the chosen tasks and adding additional sub-steps in 44% of the tasks. New tool definitions were added for two tasks -dictionary lookup for word unscrambling and a Prolog engine for formal fallacies.</p><p>In both cases, editing programs and adding them as demonstrations leads to significant gains in performance on the task at hand. However, the gain is much more dramatic in ART, leading it to consistently outperform the best published GPT-3 baseline for the task at hand. Further, these corrected programs and tools can be added to the task and tool libraries, and our prior results in Table <ref type="table" target="#tab_2">3</ref> suggest that they potentially help improve ART on other tasks as well. This pilot indicates that besides being competitive on cross-task generalization, ART is very amenable to task-specific improvement with minimal human intervention. We report similar results in the task library in A.5.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>We introduce ART, a gradient-free approach for automatic multi-step reasoning generation and automatic tool-use for a large black-box language model. Our main contributions include a lightweight grammar to represent multi-step reasoning as a program (with tool calls and arguments), an extensible library of seed tasks for which programs are authored, and a tool library that consists of useful external utilities like search, code generation, and execution. The interpretable reasoning framework also allows humans to improve task decomposition and tool use to boost performance. ART achieves a substantial improvement over few-shot prompting and automatic generation of CoT reasoning on unseen tasks in the BigBench and MMLU benchmarks, and substantially exceeds performance on hand-crafted CoT prompts when human feedback is incorporated. ART also benefits from approaches such as self-consistency, or from new and more powerful LLMs trained for tool use.</p><p>the sequence generated by the LM after the function name symbol. The first argument is parsed as a python code snippet and interpreted as a list of lookup keys. The second argument is parsed as a code generation prompt which is consequently executed. For example, the first argument of l = ['yob', 'boy', 'oyb'] and the second argument Check which of these list of words is a word in English. Store the final answer is 'ans' and print it. results in the following code snippet and final answer 'boy': def lookup(word_list): import enchant d = enchant.Dict("en_US") valid_list = [] for word in word_list: if d.check(word): valid_list.append(word) return valid_list While this is a restricted definition for a general knowledge base lookup or query, we explore how human-in-the-loop feedback can be used to create custom lookup tools.</p><p>Prolog Engine This tool is added in the formal fallacies task. This task consits of first-order logic statements stated in natural language, as follows:</p><p>To begin with, Bonnie is a schoolmate of Miranda. Moreover, whoever is a workmate of Aubrey is not a schoolmate of Miranda. All this entails that Bonnie is not a workmate of Aubrey. Is the argument, given the explicitly stated premises, deductively valid or invalid?</p><p>This can be written in Prolog 5 as: workmate(X, aubrey) :-\+ schoolmate(X, miranda). schoolmate(bonnie, miranda). ?-workmate(bonnie, aubrey).</p><p>Humans provide feedback by authoring such prolog statements for a few instances with a new tool symbol "[translate to prolog]". They then author a new tool that calls a python prolog parsing engine to execute the prolog code and determine the binary value of the final expression. This is integrated back into the program.</p><p>5 <ref type="url" target="https://en.wikipedia.org/wiki/Prolog">https://en.wikipedia.org/wiki/Prolog</ref> A.4 Baselines Few-shot baseline This is the direct prompting baseline where the prompt consists of input-output pairs only and no additional intermediate reasoning steps. Following prior work that reports results with direct prompting <ref type="bibr" target="#b28">(Suzgun et al., 2022;</ref><ref type="bibr" target="#b32">Wei et al., 2022)</ref>, we use 3 randomly chosen input-output instances. We run direct prompting for both, InstructGPT (text-davinci-002) <ref type="bibr" target="#b20">(Ouyang et al., 2022)</ref> and Codex (code-davinci-002) <ref type="bibr" target="#b3">(Chen et al., 2021)</ref> and report the higher performance. This follows from <ref type="bibr">(Chung et al., 2022)</ref>, where they find that Codex models are better at analytical tasks than text models, even with direct prompting.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Auto CoT A baseline that generates automatic</head><p>CoT-style multi-step reasoning in a free-form natural language (as done in AutoCoT <ref type="bibr" target="#b35">(Zhang et al., 2022)</ref>). A randomly selected subset of examples in the dataset is used to prompt the LLM to elicit CoTstyle reasoning (Input + Let's think step-by-step.). Since CoT-style generation is free-form and parsing potential tool use symbols is harder, we don't use tools for this baseline. This baseline specifically measures the effectiveness of a custom query language (and PeG grammar) we use to write programs and parse tool calls; While <ref type="bibr" target="#b35">(Zhang et al., 2022)</ref> cluster training examples to provide diverse demonstrations to the LLM, we choose a random selection of 5 examples. A careful selection of demonstration examples may also be used for ART, and we leave an exploration of this choice to future work. We parse the generated CoT-style reasoning to extract the answer string and add the phrase "The final answer i" along with the answer string to the end of the reasoning. This pattern is used for evaluation.</p><p>Best GPT-3 Approaches We briefly describe the GPT-3 best results reported in Tables <ref type="table" target="#tab_1">2</ref> and <ref type="table">Ta</ref>bles 3, which correspond to the best GPT-3 results reported in approaches that use multi-step reasoning (like CoT) and tool use, with human supervision for both.</p><p>• <ref type="bibr" target="#b28">(Suzgun et al., 2022)</ref>: Human-authored CoT reasoning for several tasks in BigBench.</p><p>A closer inspection of their hand-crafted prompts revealed that they cast BigBench tasks to multiple-choice tasks (selecting between options A,B,C,...), which differs from the more challenging format proposed originally and used in this work. Hence, we modify</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: ART generates automatic multi-step decompositions for new tasks by selecting decompositions of related tasks in the task libray (A) and selecting and using tools in the tool library alongside LLM generation (B). Humans can optionally edit decompositions (eg. correcting and editing code) to improve performance (C).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><figDesc>Figure 2: A run-through of ART on a new task, Physics QA. (A) Programs of related tasks like anachronisms and Math QA provide few-shot supervision to the LLM -related sub-steps and tools in these programs can be used by the LLM for cross-task generalization (shown in purple). (B) Tool use: Search is used to find the appropriate physics formula, and code generation and execution are used to substitute given values and compute the answer (shown in orange).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Human feedback to ART shown for (a) PQA where reasoning steps are added to the program and; (b) Word unscrambling where tool library is augmented with a new lookup tool.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Comparing ART with related approaches for multi-step reasoning and tool-use</figDesc><table><row><cell>Feature</cell><cell>CoT Auto</cell><cell>Tool-</cell><cell>ART</cell></row><row><cell></cell><cell cols="2">CoT former</cell><cell></cell></row><row><cell>Multi-step reasoning</cell><cell></cell><cell></cell><cell></cell></row><row><cell>Limited supervision</cell><cell></cell><cell></cell><cell></cell></row><row><cell>Tool use</cell><cell></cell><cell></cell><cell></cell></row><row><cell>Extendable libraries</cell><cell></cell><cell></cell><cell></cell></row><row><cell>Cross-task transfer</cell><cell></cell><cell></cell><cell></cell></row><row><cell>Human feedback</cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>ART performance on tasks in the task library. ( 1 Human-crafted CoT<ref type="bibr" target="#b32">(Wei et al., 2022;</ref><ref type="bibr" target="#b28">Suzgun et al., 2022)</ref>,</figDesc><table><row><cell>Task Name (Cluster)</cell><cell cols="2">Few Shot AutoCot</cell><cell>ART</cell><cell cols="2">ART GPT-3</cell></row><row><cell></cell><cell></cell><cell></cell><cell>w/o Tool Use</cell><cell></cell><cell>Best</cell></row><row><cell>Anachronisms (Search)</cell><cell>71.3 5</cell><cell>51.48</cell><cell>70.87</cell><cell>75.66</cell><cell>-</cell></row><row><cell>Musique (Search)</cell><cell>2.03 5</cell><cell>12.88</cell><cell>10.04</cell><cell>19.19</cell><cell>15.2 3</cell></row><row><cell>Hindu Knowledge (Search)</cell><cell>85.02 5</cell><cell>73.03</cell><cell>83.42</cell><cell>87.98</cell><cell>-</cell></row><row><cell>Known Unknown (Search)</cell><cell>68.90 5</cell><cell>56.09</cell><cell>80.43</cell><cell>80.43</cell><cell>-</cell></row><row><cell>∆ with ART (Search)</cell><cell>+9.0</cell><cell>+17.44</cell><cell>+4.6</cell><cell></cell><cell>+4.0</cell></row><row><cell>Elementary Math QA (Arithmetic)</cell><cell>56.40 7</cell><cell>74.52</cell><cell>58.04</cell><cell>68.04</cell><cell>-</cell></row><row><cell>Aqua-rat (Arithmetic)</cell><cell>20.54 7</cell><cell>34.41</cell><cell>36.29</cell><cell>54.20</cell><cell>54.1 4</cell></row><row><cell>GSM8K (Arithmetic)</cell><cell>7.79 7</cell><cell>21.99</cell><cell>53.4</cell><cell>71.00</cell><cell>71.6 4</cell></row><row><cell>Navigate (Arithmetic)</cell><cell>60.7 7</cell><cell>61.7</cell><cell>72.4</cell><cell>72.4</cell><cell>85.90 1</cell></row><row><cell>∆ with ART (Arithmetic)</cell><cell>+30.0</cell><cell>+18.25</cell><cell>+11.4</cell><cell></cell><cell>-4.7</cell></row><row><cell>K'th letter concatenation (String)</cell><cell>3.2 5</cell><cell>0.64</cell><cell>8.19</cell><cell>40.00</cell><cell>98.0 2</cell></row><row><cell>Language games (String)</cell><cell>35.14 5</cell><cell>18.58</cell><cell>11.19</cell><cell>23.08</cell><cell>-</cell></row><row><cell>Date Understanding (String)</cell><cell>37.53 5</cell><cell>38.90</cell><cell>52.05</cell><cell>-</cell><cell>70.41 1</cell></row><row><cell>Auto Debugging (Code)</cell><cell>62.94 5</cell><cell>38.24</cell><cell>55.29</cell><cell>62.94</cell><cell>-</cell></row><row><cell>Code Description (Code)</cell><cell>97.99 7</cell><cell>88.67</cell><cell>84.67</cell><cell>88.00</cell><cell>-</cell></row><row><cell>Formal Fallacies (CoT)</cell><cell>44.84 5</cell><cell>56.4</cell><cell>64.76</cell><cell>-</cell><cell>58.4 1</cell></row><row><cell>Hyperbation (CoT)</cell><cell>62.72 5</cell><cell>55.4</cell><cell>80.80</cell><cell>-</cell><cell>72.4 1</cell></row><row><cell>∆ with ART (Misc)</cell><cell>+9.6</cell><cell>+16.4</cell><cell>+13.7</cell><cell></cell><cell>-15.4</cell></row><row><cell>∆ with ART (Overall)</cell><cell>+14.90</cell><cell>+17.17</cell><cell>+7.91</cell><cell></cell><cell>-9.0</cell></row></table><note><p>2 Decomposed Prompting (Khot et al., 2022), 3 Self-Ask (Press et al., 2022), 4 PoT (Chen et al., 2022), 5 InstructGPT (Ouyang et al., 2022), 7 Code-davinci-002 (Chen et al., 2021)). (-) For tasks using CoT reasoning, no tool use is used.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>ART performance on BigBench tasks and MMLU tasks. ( 1 Human-crafted CoT<ref type="bibr" target="#b32">(Wei et al., 2022;</ref><ref type="bibr" target="#b28">Suzgun et al., 2022)</ref>,5 InstructGPT(Ouyang et al., 2022), 6 Scaled instruction finetuning(Chung et al., 2022),7 Codedavinci-002<ref type="bibr" target="#b3">(Chen et al., 2021)</ref>).</figDesc><table><row><cell cols="2">Task Name (Cluster)</cell><cell></cell><cell cols="2">Few Shot AutoCot</cell><cell>ART</cell><cell cols="2">ART GPT-3</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">w/o Tool Use</cell><cell></cell><cell>Best</cell></row><row><cell></cell><cell></cell><cell></cell><cell>Test Tasks</cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="2">Sentence Ambiguity (Search)</cell><cell></cell><cell>70.67 5</cell><cell>51.47</cell><cell>71.00</cell><cell>73.33</cell><cell>-</cell></row><row><cell cols="2">Strategy QA (Search)</cell><cell></cell><cell>55.49 5</cell><cell>27.22</cell><cell>59.37</cell><cell>66.44</cell><cell>-</cell></row><row><cell cols="2">Physics (Search)</cell><cell></cell><cell>70.09 5</cell><cell>61.83</cell><cell>59.13</cell><cell>67.55</cell><cell>-</cell></row><row><cell cols="2">∆ with ART (Search)</cell><cell></cell><cell>+3.7</cell><cell>+22.27</cell><cell>+ 5.9</cell><cell></cell></row><row><cell cols="3">Physics Questions (Arithmetic)</cell><cell>7.02 5</cell><cell>5.56</cell><cell>6.30</cell><cell>20.37</cell><cell>-</cell></row><row><cell cols="2">Operators (Arithmetic)</cell><cell></cell><cell>71.23 7</cell><cell>75.52</cell><cell>71.80</cell><cell>92.00</cell><cell>-</cell></row><row><cell cols="3">Unit interpretation (Arithmetic)</cell><cell>58.2 7</cell><cell>41.20</cell><cell>51.4</cell><cell>53.99</cell><cell>-</cell></row><row><cell cols="3">Repeat copy logic (Arithmetic)</cell><cell>50.01 7</cell><cell>15.63</cell><cell>31.25</cell><cell>44.38</cell><cell>-</cell></row><row><cell cols="2">Object Counting (Arithmetic)</cell><cell></cell><cell>39.2 7</cell><cell>26.80</cell><cell>42.2</cell><cell cols="2">87.00 81.20 1</cell></row><row><cell cols="3">Penguins in a table (Arithmetic)</cell><cell>58.23 7</cell><cell>40.40</cell><cell>68.86</cell><cell cols="2">77.85 72.34 1</cell></row><row><cell cols="3">Reasoning about objects (Arithmetic)</cell><cell>71.00 7</cell><cell>33.33</cell><cell>45.35</cell><cell cols="2">64.34 52.69 1</cell></row><row><cell cols="3">Tracking shuffled objects (Arithmetic)</cell><cell>22.39 7</cell><cell>19.44</cell><cell>18.14</cell><cell cols="2">37.67 36.32 1</cell></row><row><cell cols="2">∆ with ART (Arithmetic)</cell><cell></cell><cell>+19.0</cell><cell>+36.7</cell><cell>+ 23.1</cell><cell></cell><cell>+6.1</cell></row><row><cell cols="2">Word Unscramble (String)</cell><cell></cell><cell>40.72 7</cell><cell>32.44</cell><cell>23.03</cell><cell>42.7</cell><cell>-</cell></row><row><cell cols="2">Simple Text Editing (Code)</cell><cell></cell><cell>35.31 5</cell><cell>30.21</cell><cell>20.74</cell><cell>27.65</cell><cell>-</cell></row><row><cell cols="2">CS Algorithms (Code)</cell><cell></cell><cell>73.48 7</cell><cell>0.0</cell><cell>41.59</cell><cell>88.11</cell><cell>-</cell></row><row><cell cols="2">Sports Understanding (CoT)</cell><cell></cell><cell>69.74 5</cell><cell>51.47</cell><cell>92.89</cell><cell>-</cell><cell>86.59 1</cell></row><row><cell>Snarks (CoT)</cell><cell></cell><cell></cell><cell>54.58 5</cell><cell>57.24</cell><cell>57.13</cell><cell>-</cell><cell>65.2 1</cell></row><row><cell cols="3">Disambiguation QA (Free-form)</cell><cell>55.03 5</cell><cell>48.45</cell><cell>55.89</cell><cell>-</cell><cell>60.62 1</cell></row><row><cell cols="2">Temporal sequences (CoT)</cell><cell></cell><cell>55.80 7</cell><cell>19.70</cell><cell>49.5</cell><cell>-</cell><cell>81.8 1</cell></row><row><cell cols="2">Ruin names (CoT)</cell><cell></cell><cell>71.01 5</cell><cell>55.28</cell><cell>60.22</cell><cell>-</cell><cell>-</cell></row><row><cell cols="2">∆ with ART (Misc)</cell><cell></cell><cell>2.4</cell><cell>22.5</cell><cell>24.37</cell><cell></cell><cell>-9.4</cell></row><row><cell cols="2">∆ with ART (Overall)</cell><cell></cell><cell>+6.9</cell><cell>+24.6</cell><cell>+16.7</cell><cell></cell><cell>-1.7</cell></row><row><cell></cell><cell></cell><cell></cell><cell>MMLU</cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">College Computer Science (Search)</cell><cell>41.00</cell><cell>43.99</cell><cell>63.40</cell><cell>67.80</cell><cell>63.6 6</cell></row><row><cell cols="2">Astronomy (Search)</cell><cell></cell><cell>62.10</cell><cell>41.48</cell><cell>76.71</cell><cell>79.1</cell><cell>62.5 6</cell></row><row><cell cols="2">Business Ethics (Search)</cell><cell></cell><cell>61.60</cell><cell>48.8</cell><cell>77.17</cell><cell>81.16</cell><cell>72.7 6</cell></row><row><cell cols="2">Virology (Search)</cell><cell></cell><cell>50.03</cell><cell>49.52</cell><cell>71.60</cell><cell cols="2">71.49 50.72 6</cell></row><row><cell cols="2">Geography (Search)</cell><cell></cell><cell>77.67</cell><cell>57.07</cell><cell>70.30</cell><cell>71.71</cell><cell>81.8 6</cell></row><row><cell cols="2">Mathematics (Arithmetic)</cell><cell></cell><cell>36.67</cell><cell>33.77</cell><cell>39.50</cell><cell>45.66</cell><cell>34.5 6</cell></row><row><cell cols="2">∆ with ART (MMLU)</cell><cell></cell><cell>+14.6</cell><cell>+23.7</cell><cell>+3.0</cell><cell></cell><cell>+8.5</cell></row><row><cell></cell><cell>SQuAD</cell><cell>T-REx</cell><cell>SVAMP</cell><cell>MAWPS</cell><cell>NQ</cell><cell></cell><cell>TriviaQA</cell></row><row><cell>GPT3 (175B)</cell><cell>29.90</cell><cell>39.8</cell><cell>10.0</cell><cell>19.8</cell><cell>22.6</cell><cell></cell><cell>65.9</cell></row><row><cell>Toolformer</cell><cell>33.8</cell><cell>53.5</cell><cell>29.4</cell><cell>44.0</cell><cell>17.7</cell><cell></cell><cell>48.8</cell></row><row><cell>ART</cell><cell cols="7">39.34(+5.5) 50.4(-3.1) 76.2(+46.8) 71.00(+27.0) 33.8(+16.1) 66.13(+17.33)</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 6 :</head><label>6</label><figDesc>Improving ART and free-form CoT via self-consistency and human-in-the-loop feedback. (*)</figDesc><table><row><cell>Task</cell><cell></cell><cell>CoT</cell><cell></cell><cell>ART</cell><cell cols="2">GPT-3 Human</cell></row><row><cell></cell><cell></cell><cell>+Human</cell><cell></cell><cell>+ Human</cell><cell>Best</cell><cell>Feedback</cell></row><row><cell>CS Algorithms</cell><cell>0.0</cell><cell>23.0</cell><cell>88.11</cell><cell>92.73</cell><cell>73.48</cell><cell>C: longest common subsequence code</cell></row><row><cell>Reasong about objs.</cell><cell>33.33</cell><cell>67.75</cell><cell>64.34</cell><cell>98.90</cell><cell>71.00</cell><cell>C: Define object, color, count data structure</cell></row><row><cell>Repeat Copy Logic*</cell><cell>15.63</cell><cell>45.22</cell><cell>44.38</cell><cell>80.31</cell><cell>50.01</cell><cell>C: string edit operation</cell></row><row><cell>Sentence Ambiguity</cell><cell>51.47</cell><cell>72.33</cell><cell>73.33</cell><cell>83.67</cell><cell>70.67</cell><cell>C: Constrain queries to extract relevant info.</cell></row><row><cell>Simple Text editing*</cell><cell>30.21</cell><cell>35.31</cell><cell>27.65</cell><cell>36.11</cell><cell>35.31</cell><cell>C: string edit operation</cell></row><row><cell>Strategy QA*</cell><cell>27.22</cell><cell>29.19</cell><cell>66.44</cell><cell>69.15</cell><cell>55.49</cell><cell>C: Constrain queries to extract relevant info.</cell></row><row><cell>Physics*</cell><cell>61.83</cell><cell>68.21</cell><cell>67.55</cell><cell>72.55</cell><cell>70.09</cell><cell>A: [search] Formula that connects mass, ...</cell></row><row><cell>Temporal Sequences</cell><cell>19.70</cell><cell>30.22</cell><cell>49.5</cell><cell>88.00</cell><cell>81.8</cell><cell>A: [subquestion] Is X free Yam to Zam?</cell></row><row><cell>Track Shuffled objs.</cell><cell>19.44</cell><cell>36.48</cell><cell>37.67</cell><cell>99.86</cell><cell>36.32</cell><cell>C: Define object pair data struct, swap logic</cell></row><row><cell>Unit Interpretation*</cell><cell>41.2</cell><cell>41.2</cell><cell>53.99</cell><cell>95.0</cell><cell>58.2</cell><cell>A: [add unit] Add the right unit to the answer</cell></row><row><cell cols="2">Word Unscrambling* 32.44</cell><cell>33.40</cell><cell>42.70</cell><cell>62.11</cell><cell>40.72</cell><cell>T: lookup permutations in dictionary</cell></row><row><cell>Average</cell><cell>30.2</cell><cell>43.8</cell><cell>56.0</cell><cell>79.85</cell><cell>58.5</cell><cell></cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>Code is available at https://github.com/ bhargaviparanjape/language-programmes/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>https://serpapi.com</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_2"><p>https://pypi.org/project/parsimonious/</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Appendix</head><p>A.1 Task Library Library Design We analyzed input-output instances of all 200 tasks in BigBench, filtered out text classification and short answer generation tasks in English, and created a list of reasoning skills that were relevant to solving each task. We do not focus on long text understanding, long text generation, and multi-lingual tasks in this work. We find that most of these tasks rely on a few common skills mentioned below: Visual Reasoning, Temporal Reasoning, Propositional logic, Natural Logic, Machine Translation, Web Search, Knowledge Base or Database lookup, Recursive sub-question decomposition, Long text understanding, Database Operations, Algebra and Arithmetic, Code Generation and Editing, Text Tagging/Annotation(linguistic markers), Specialized Search(eg. looking up linguistic knowledge, scientific knowledge etc), String editing, Recursive operations over multiple choices, Topic classification, Evidence extraction, conditional Text Generation/Editing, and Sentence similarity.</p><p>In this work, we choose to focus on the five most used skills that cover a significant proportion of BigBench tasks for classification (over 50 of the 91 tasks that remained after filtrating out long-text understanding, generation, and multi-lingual tasks). We randomly select 2-4 tasks from each of these 5 task clusters and author decomposed programs with appropriate tool use for these tasks. This results in a total of 15 tasks that compose the task library.</p><p>• Arithmetic: Elementary MathQA, Grade school math (GSM8K), arithmetic Questions about ratios (Aqua-Rat), Navigate Cluster Programs The programs written for tasks in each task cluster are shown in Table <ref type="table" target="#tab_5">7</ref> for tasks involving string editing and manipulation, in Table <ref type="table" target="#tab_6">8</ref> for arithmetic and algebra tasks, in Table <ref type="table">10</ref> for code generation, editing and debugging tasks, in Table <ref type="table" target="#tab_7">9</ref> for tasks benefit from search of world knowledge, and in Table <ref type="table">11</ref> for tasks that benefit from eliciting chain-of-thought reasoning following the prompt "Let's think step-by-step".</p><p>Program Format We define a parsing expression grammar (PEG) (shown in Figure <ref type="figure">4</ref>) that describes the language used to write multi-step reasoning programs. This grammar is designed to parse full programs of the form "Input: ... Q 1 : ... #1:... Q n : [EOQ] Ans: ". We use the python library parsimoneous 4 to construct the grammar and parse programs generated by LLMs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>String Operations</head><p>In these examples, you are given a task description and an input.</p><p>Break the input down into subtasks in order to solve the task. You can use string operations like splitting, reformatting, editing or merging. You can also use other operations like arithmetic and logic. Description: (Date Understanding) Find the required date in MM/DD/YYYY using information about related events and dates in the input. Clue: First find what day is today. Input: The deadline is Jun 1, 2021, which is 2 days away from now. What is the date 24 hours later in MM/DD/YYYY? Q1: [string reformat] Jun 1, 2021 in MM/DD/YYYY #1: 06/01/2021 Q2: [arithmetic] 06/01/2021 is 2 days away from now. What date is today? #2: Today is 04/01/2021 Q3: [arithmetic] What date is 24 hours later than today? #3: 05/01/2021 Q4: [EOQ] Ans: 05/31/2021 --Description: (Language games) Translate English into Pig Latin. Input: (English) Sami made his way across the bar and hugged Layla.</p><p>Q1: [string split] What are the words in "Sami made his way across the bar and hugged Layla."? #1: ["Sami", "made", "his", "way", "across", "the", "bar", "and", "hugged", "Layla", "."] Q2: [string edit] Transfer the initial consonant of each word to the end of the word and adding "ay" after it. #2: ["Amisay", "ademay", "ishay", "ayway", "acrossyay", "ethay", "arbay", "andyay", "uggedhay", "Aylalay", "."] Q3: [string merge] Concatenate #2 into a full sentence. #3: Amisay ademay ishay ayway acrossyay ethay arbay andyay uggedhay Aylalay.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Q4: [EOQ] Ans: Amisay ademay ishay ayway acrossyay ethay arbay andyay uggedhay</head><p>Aylalay.</p><p>--Description: (Kth letter concatenation) Take the letters at position 3 of the words in a list of words and concatenate them using a space. Input: Take the letters at position 3 of the words in "Savita Saeed Ramos Sato Yadav" and concatenate them using a space. Q1: [string split] What are the words in "Savita Saeed Ramos Sato Yadav"? #1: ["Savita", "Saeed", "Ramos", "Sato", "Yadav"] Q2: [string index] What is the third letter of words in the list in #1? #2: ["v", "e", "m", "t", "d"] Q3: [string merge] Concatenate #2 with spaces #3: "v e m t d" Q4: <ref type="bibr">[EOQ]</ref> Ans: v e m t d --Descripton: %s Input: %s Q1:  Table 10: Programs in the task library for tasks requiring code generation or editing. . CoT Reasoning</p><p>In these examples, you are given a task description and an input. Break the input down into subtasks in order to solve the task. Thinking though the problem explicitly can be one of the substeps you use. Description: (Sports Understanding) Determine whether an artificially constructed sentence relating to sports is plausible. The final answer should be "yes" or "no". Input: Is the following sentence plausible? "Santi Cazorla scored a touchdown." Q1: [think step-by-step] #1: Let's think step-by-step. Santi Cazorla is a soccer player. Touchdown is part of American football and rugby. So the answer is no. Q2: [EOQ] Ans: no --Description: (Hyperbation) Identify correct adjective ordering from the two choices. This involves selecting what would be considered the more inexplicably "intuitive" sentence by a native English speaker. Input: Which sentence has the correct adjective order: Options: (A) repulsive small Brazilian exercise ship (B) Brazilian repulsive exercise small ship Q1: [think step-by-step] #1: Let's think step-by-step. When there is more than one adjective before a noun, the adjectives need to respect the following order before a noun: "[1. opinion] [2. size] [3. age] [4. shape] [5. color] [6. origin] [7. material] [8. purpose] noun". Option (A): "repulsive small Brazilian exercise ship". (1) "repulsive" falls into the opinion category. (2) "small" falls into the size category. (3) "Brazilian" falls into the origin category. (4) "exercise" falls into the purpose category. Option (A) has the following adjective order: [1. opinion] [2. size] [6. origin] [8. purpose] (or, in numeric terms, 1 2 6 8). Because 1 &lt; 2 &lt; 6 &lt; 8 is correct, (A) has the correct ordering. Option (B): "Brazilian repulsive exercise small ship". Option (B) has the following adjective order: [6. origin] [1. opinion] [8. purpose] [2. size] (or, in numeric terms, 6 1 8 2). Because 6 &lt; 1 &lt; 8 &lt; 2 is not correct, (B) does not have the correct ordering. So the answer is (A). Q2: [EOQ] Ans: (A) --Description: (Formal Fallacies) Distinguish deductively valid syllogistic arguments from formal fallacies, paying specific attention to negations. Input: "It is not always easy to see who is related to whom -and in which ways. The following argument pertains to this question: To begin with, Lesley is a close friend of Fernando. Moreover, being a close friend of Fernando or a schoolmate of Lowell is sufficient for being a great-grandfather of Leroy. It follows that Lesley is a great-grandfather of Leroy." Is the argument, given the explicitly stated premises, deductively valid or invalid? Options: -valid -invalid Q1: [think step-by-step] #1: Let's think step-by-step.</p><p>(1) Lesley is a close friend of Fernando: Lesley = friend(Fernando).</p><p>(2) Being a close friend of Fernando or a schoolmate of Lowell is sufficient for being a great-grandfather of Leroy: If X = friend(Fernando) OR SCHOOLMATE(Lowell), then X = great-grandfather(Leroy). Hypothesis: Does it follow that Lesley is a great-grandfather of Leroy: Lesley = great-grandfather(Leroy)? Let's see whether the Hypothesis can be deduced from the arguments (1) and ( <ref type="formula">2</ref>) by logical reasoning? By (1), we have Lesley = friend(Fernando). By (2), we have if Lesley = friend(Fernando), then Lesley = greatgrandfather(Leroy). So, it is true that Lesley is a great-grandfather of Leroy. So the answer is valid. Q2: [EOQ] Ans: valid --Description: (Reasoning about colored objects) Given a collection of colored objects in the text input, answer the question at the end of the input. Input: On the nightstand, there is a red pencil, a purple mug, a burgundy keychain, a fuchsia teddy bear, a black plate, and a blue stress ball. What color is the stress ball? Q1: [think step-by-step] #1: Let's think step-by-step. According to this question, the color of the stress ball is blue. So the answer is blue. Q2: [EOQ] Ans: blue --Descripton: %s Input: %s Q1:""" Table <ref type="table">11</ref>: Programs in the task library for tasks requiring free-form chain-of-thought style reasoning about logic and lingusitics.</p><p>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Task Selection</head><p>When provided new task description and input instance, ART retrieves N tasks from the task library to constructs a dynamic multi-task prompt. We explore two strategies for task selection.</p><p>Task-Cluster based 50 examples used for tuning except in cases with fewer than 100 examples, where we reduce this number to 10.</p><p>We iterate over all five task clusters in the library, prompting the LLM with demonstration programs from just one cluster at a time. For example, we only use programs from arithmetic tasks as demonstrations in the prompt in one such iteration. The task cluster with the highest performance on the held-out set of examples ( 50) is chosen. This strategy requires as many API calls as there are task clusters, and a held-out set of input-output pairs for the new task. Note that no additional supervision is needed for the new task to generate a decomposed program.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LLM-Similarity based</head><p>The LLM is prompted with pairs of tasks. Some pairs contain two tasks from the same cluster and are labeled "Similar" while some pairs don't and are labeled "Not similar". Additionally, we also provide reasoning for the decision -"Elementary math QA and GSM8K are related tasks because they both require solving arithmetic word problems". A task in this prompt is represented by its name, an instruction, and a few input-output pairs. We use the prompt in Table <ref type="table">13</ref> to prompt LLMs.</p><p>The LLM is prompted for a decision for every library task paired with the new task. We choose the top-N tasks ranked by the ratio of log probabilities of "Similar" to "Not similar". This strategy requires fewer held-out examples but is prone to high variance in performance based on the tasks chosen in every experimental run. For PQA, the most similar tasks chosen based on the LLM-based similarity are anachronisms and GSM8K.</p><p>In Table <ref type="table" target="#tab_9">12</ref>, we examine the effect of changing the task selection strategy in ART. Instead of choosing the task cluster with the highest held-out performance over 50 examples, we use the LLMbased similarity score to choose task programs for the prompt. This strategy is worse on average compared to tuning performance on a held-out set and has high variance over several runs where different tasks are chosen by the LLM. Selecting similar tasks that share sub-tasks and tools (without any su-pervision) is still a challenging task for LLMs, and will explore this direction further in future work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3 Tool Use</head><p>Code Generation We use the Codex <ref type="bibr" target="#b3">(Chen et al., 2021)</ref> model for code generation. Argument for code generation is the previous sub-task's answer sequence ""#i -1 : . . . "" and the sequence generated by the LM after the sub-task query symbol ""Qi : [generate python code]"". When i = 1, the instance input is used as the first argument. We include the previous answer/input since it often contains information relevant to generating accurate code, like the arithmetic word problem for which code needs to be generated (see Table <ref type="table" target="#tab_6">8</ref> for examples). Both arguments are provided to Codex as a multi-line python comment, while maintaining their original formatting. To keep the answer variable consistent, we also append an additional instruction: Store the final answer in variable 'ans' and print it. For example: Janet's ducks lay 16 eggs per day. She eats three for breakfast every morning and bakes muffins for her friends every day with four. She sells the remainder at the farmers market daily for \$2 per fresh duck egg. How much in dollars does she make every day at the farmers market?</p><p>is used to prompt Codex as follows:</p><p>""" Janet's ducks lay 16 eggs per day. She eats three for breakfast every morning and bakes muffins for her friends every day with four. She sells the remainder at the farmers market daily for \$2 per fresh duck egg. How much in dollars does she make every day at the farmers market? Write down the arithmetic or algebra equations as python code, storing the answer as 'ans' and print it. """ Codex generation temperature is set to 0.3 and the maximum length to 500 tokens, with "print(ans)" used as the stopping criterion.</p><p>Code Editing We use the Codex <ref type="bibr" target="#b3">(Chen et al., 2021)</ref>  Prompt to LLM for selecting similar tasks</p><p>Give two tasks with their descriptions and examples of inputs and outputs for the tasks, determine if they are similar. Two tasks are similar if require common subtasks like string operations, web search, translation, arithmetic, code execution, etc.</p><p>--Task1: [Date understanding] Find the required date in MM/DD/YYYY using information about related events and dates in the input. Input: The deadline is Jun 1, 2021, which is 2 days away from now. What is the date 24 hours later in MM/DD/YYYY?</p><p>The final answer is 05/01/2021. Task2: [Language Games] Translate English into Pig Latin. Input: English sentence is "Sami made his way across the bar and hugged Layla". The final answer is "Amisay ademay ishay ayway acrossyay ethay arbay andyay uggedhay Aylalay." Are these similar? Yes. They both require answering in a spcific string format.</p><p>--Task1: [K'th letter concatenation] Take the letters at position 3 of the words in a list of words and concatenate them using a space. Input: What are the words in "Savita Saeed Ramos Sato Yadav"? The final answer is "v e m t d". Task2: [Language Games] Translate English into Pig Latin. Input: English sentence is "Sami made his way across the bar and hugged Layla". The final answer is "Amisay ademay ishay ayway acrossyay ethay arbay andyay uggedhay Aylalay." Are these similar? Yes. They both require accessing and manipulating characters in strings.</p><p>--Task1: [K'th letter concatenation] Take the letters at position 3 of the words in a list of words and concatenate them using a space. Input: What are the words in "Savita Saeed Ramos Sato Yadav"? The final answer is "v e m t d". Task2: [Known Unknown] Choose the option that best answers the question. If the question does not have a known answer, choose "Unknown". Input: How many hairs were on Neil Armstrong's head when he landed on the moon? The final answer is "Unknown". Are these similar? No. Task 1 requires manipulating strings and Task 2 requires answering a question by possibly looking up information on the web.</p><p>--Task1: [Anachronisms] An anachronism is a mistake in chronology, or a person, thing, or event that is out of its proper time. Does the sentence contain an anachrornism? Input: Kurt Cobain starred in the 1980 television show "Twin Peaks". The final answer is "Yes". Task2: [Known Unknown] Choose the option that best answers the question. If the question does not have a known answer, choose "Unknown". Input: Where was Mark Twain born? The final answer is Florida, Missouri. Are these similar? Yes. They both require searching information about entities mentioned in the text, like Kurt Cobain or Mark Twain.</p><p>--Task1: [Hindu Knowledge] Answer questions about Hindu mythology by choosing the option that best answers the question. Input: In the Mahabharata, Karna is cursed to forget the incantations needed to use which weapon? Choices: Anjalikastra, Narayanastra, Agneyastra, Brahmastra. The final answer is Brahmastra. Task2: [Code Debugging] Debug the following code snippets by finding the answer or the error message. Input: if x &lt; 5: pass The final answer is Traceback (most recent call last): File "&lt;stdin&gt;", line 1, in &lt;module&gt; NameError: name 'x' is not defined Are these similar? No. Task 1 is about asnswering a question and requires searching information about entities mentioned in the text. Task 2 is a question about debugging code and may require a Python interpreter. Task 1: %s Task 2: %s Are these similar?</p><p>Table <ref type="table">13</ref>: Programs in the task library. . grammar = parsimonious.grammar.Grammar( r""" program = program_start*node*partial_command*final_answer program_start = input_start~r"( |\n)"text~r"\n" input_start = ~r"Input:" text = ~r"(?&lt;=Input:( |\n))(.|\n|\t)*?(?=\nQ[0-9]+:)" node = command_node~r"\n"output_node~r"\n" command_node = command_start~r"( |\n)"command_instruction output_node = begin_answer~r"( |\n)"output command_instruction = ~r"(?&lt;=\]( |\n))(.|\n|\t)*?(?=\n\#[0-9]+)" command_start = ~r"Q[0-9]+: \[[A-Za-z_ ]+\]" begin_answer = ~r"\#[0-9]+:" output = ~r"(?&lt;=\#[0-9]+:( |\n))(.|\n|\t)*?(?=\nQ[0-9]+:)" partial_command = command_start~r"\n" final_answer = ~r"Ans:( |\n)(.|\n)*$" """)</p><p>Figure <ref type="figure">4</ref>: PeG Grammar used to parse ART programs sub-task's answer sequence "#i -1 : . . . " (or the input if i = 1), and the sequence generated by the LM after the sub-task query symbol "Qi : [generate python code]". The first argument is the code snippet that needs to be edited and the second argument is a multi-line comment in Python used as the instruction for editing/generation. To ensure that subsequent code execution results in the generation of an answer string independent of variable name, the edit instruction is to print the required variable. For example, for the auto debugging task in the task library, the following program snippet:</p><formula xml:id="formula_0">Input: ''' x = set([1, 1, 2, 3]) '''</formula><p>What is the value of x after this program executes? Q1: [code edit] Edit the code to print the value of x is used to prompt Codex in edit mode as follows. For code input:</p><formula xml:id="formula_1">x = set([1, 1, 2, 3])</formula><p>For edit instruction:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Edit the code to print the value of x</head><p>Code Execution We run python code in a virtual python environment with arithmetic, symbolic, and scientific computing packages pre-installed. The arguments to code execute include the previous subtask's answer sequence "#i-1 : . . . ", which is the python code snippet that requires executing. If i = 1, the input contains the code. The other argument is the sequence generated by the LM after the subtask query symbol "Qi : [execute code]" (which is simply to the code snippet as a comment). Again, to encourage executable code with consistent variable usage, we also append the sequence "Store your final answer is variable 'ans'" to the comment. The results of the execution call are used to replace the answer sequence generated by the language model. Finally, we prepend a code snippet consisting of useful module and function imports so that function calls external modules like numpy and scipy are executed successfully. This code prefix is shown in Table <ref type="table" target="#tab_10">14</ref>. We use the exec native python function to execute the code snippet and access the 'ans' local variable if it exists.</p><p>Knowledge Base lookup This tool is added in the Word Unscrambling task. This function call is used to look up data by keys in a relational knowledge base. For example, we use dictionary lookup for the Word Unscrambling task. The input to this function is again the previous sub-task's answer sequence (if it exists, or the original input is used) and</p><p>Task CoT ART Human feedback +Human + Human Kth letter concat* 0.64 59.40 40.0 100.0 Code C: k'th letter extraction and merge for a list of words Language Games* 18.58 26.08 23.08 35.38 Code C: Eng-&gt;Pig Latin and vice-versa Anachronisms* 51.48 49.82 75.66 82.91 C: search query constrained to extract time-periods Auto Debugging* 38.24 61.18 62.94 67.05 Code C: Code edit fixed to print variable asked in input A: "[generate answer] What is the final error message?" Navigate 61.7 85.9 72.4 80.89 Code C: correct forward, backward, right, left distances Date Understanding 38.9 70.4 52.05 65.45 A: First find what date is today Formal Fallacies 56.4 56.4 64.76 74.39 T: Translate to Prolog and add prolog engine</p><p>Table 15: Improving ART and free-form CoT via self-consistency and human-in-the-loop feedback on library tasks. (*) indicates that human-in-the-loop improvement was done over automatically generated CoT reasoning for these tasks.</p><p>their prompt to generate answers in the output space, which is a fair comparison with ART.</p><p>Hence, the results reported in Table <ref type="table">2</ref> and Table 3 may differ from the results reported in <ref type="bibr" target="#b28">(Suzgun et al., 2022)</ref> • <ref type="bibr" target="#b13">(Khot et al., 2022)</ref>: Decomposed prompting for list reveral and kth letter comaparison.</p><p>• <ref type="bibr" target="#b23">(Press et al., 2022)</ref>: Decomposed multi-step QA for musique.</p><p>• <ref type="bibr" target="#b4">(Chen et al., 2022)</ref>: Program-of-though:</p><p>Promtps are designed to convert Arithmetic problems into code and execute them.</p><p>• <ref type="bibr" target="#b20">(Ouyang et al., 2022)</ref> Note that we only consider the highest reported text-davinci-002 or code-davinci-002 results from this paper to compare with ART.</p><p>• <ref type="bibr" target="#b3">(Chen et al., 2021)</ref>: Codex</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.5 Human Feedback</head><p>We present feedback provided by humans for five BigBench tasks.</p><p>• Table <ref type="table">16</ref> for reasoning about colored objects, where code is edited introduces a consistent data structure to represent the input.</p><p>• Table <ref type="table" target="#tab_13">17</ref> for physics, where substeps is introduced that prompt for given physical quantities, required quantity and a physics formula that connects them together.</p><p>• Table <ref type="table" target="#tab_6">18</ref> for temporal sequences, where substeps are introduced that go over all options one by one to determine whether the subject in the input is busy with an activity at those times.</p><p>• Table <ref type="table" target="#tab_16">19</ref> for tracking shuffled objects, where code is edited introduces a consistent data structure to represent the input and swap logic is corrected.</p><p>• Table <ref type="table">20</ref> for unscrambling english words, where code is edited in step 2 to get correct permutations and a new tool is defined in step 3 to lookup the english dictionary and return permutations that are actual words. In Table <ref type="table">15</ref>, we present human feedback results for training tasks in the task library.</p><p>Reasoning about colored objects Before Input: On the nightstand, there are two silver textbooks and three silver cat toys. If I remove all the cat toys from the nightstand, how many fuchsia things remain on it? Q1: [generate python code] write down the arithmetic or algebra equations as python code, storing the answer as 'ans' 1: num_of_silver_textbooks = 2 num_of_silver_cat_toys = 3 num_of_fuchsia_things = num_of_silver_textbooks num_of_things_on_nightstand = num_of_silver_textbooks + num_of_silver_cat_toys ans = num_of_things_on_nightstand -num_of_silver_cat_toys print(ans) Q2: [code execute] Execute the python code and get the value of "ans" 2: 2 Q3: [EOQ] Ans: 2 After Input: On the nightstand, there are two silver textbooks and three silver cat toys. If I remove all the cat toys from the nightstand, how many fuchsia things remain on it? Q1: [generate python code] Write python code to find if I remove all the cat toys from the nightstand, how many fuchsia things remain on it #1: color_object_count = [("silver", "textbooks", 2), ("silver", "cat toys", 3)] removed_objects = [("silver", "cat toys", 3)] def remove_objects(color_object_count, removed_objects): color_object_count_updated = [] for color, object, count in color_object_count: for color2, object2, count2 in removed_objects: if color == color2 and object == object2: count -= count2 color_object_count_updated.append <ref type="bibr">([color, object, count]</ref>) return color_object_count_updated color_object_count = remove_objects(color_object_count, removed_objects) ans = 0 for color, object, count in color_object_count: if color == "fuchsia": ans = count print(ans) Q2: [code execute] Execute the python snippet. #2: 0 Q3: [EOQ] Ans: <ref type="table">0</ref> Table 16: Human feedback: Reasoning about colored objects Physics Before Input: Identify the physics formula that would be most useful for finding the answer to each of the following word problems.A particle of mass 6.8 * 10 ^-5 g and charge 58 mC moves in a region of space where the electric field is uniform and is 7.2 N/C in the x direction and zero in the y and z direction. If the initial velocity of the particle is given by vy = 1.7 * 10 ^6 m/s, vx = vz = 0, what is the speed of the particle at 0.7 s? choice: F = m * a choice: v = dx / dt choice: E = q / ( * A * cos(θ)) choice: a = dv / dt Q1: [subquestion] Can this question be answered step-by-step? #1: Yes. Q2: [search] A particle of mass 6.8 * 10 ^-5 g and charge 58 mC moves in a region of space where the electric field is uniform and is 7.2 N/C in the x direction and zero in the y and z direction. If the initial velocity of the particle is given by vy = 1.7 * 10 ^6 m/s, vx = vz = 0, what is the speed of the particle at 0.7 s? #2: v = dx / dt A particle of mass 6.6 × 10-5 g and charge 22 mC moves in a region of space where the electric field is uniform and is 5.6 N/C in the x direction and zero ... Q3: <ref type="bibr">[compare]</ref> Which option is the answer in #2 most similar to? #3: v = dx / dt Q4: <ref type="bibr">[EOQ]</ref> Ans: v = dx / dt After Input: Identify the physics formula that would be most useful for finding the answer to each of the following word problems.A particle of mass 6.8 * 10 ^-5 g and charge 58 mC moves in a region of space where the electric field is uniform and is 7.2 N/C in the x direction and zero in the y and z direction. If the initial velocity of the particle is given by vy = 1.7 * 10 ^6 m/s, vx = vz = 0, what is the speed of the particle at 0.7 s? choice: F = m * a choice: v = dx / dt choice: E = q / ( * A * cos(θ)) choice: a = dv / dt Q1: <ref type="bibr">[subquestion]</ref> What quantity is being asked for in "A particle of mass 6.8 * 10 ^-5 g and charge 58 mC moves in a region of space where the electric field is uniform and is 7.2 N/C in the x direction and zero in the y and z direction. If the initial velocity of the particle is given by vy = 1.7 * 10 ^6 m/s, vx = vz = 0, what is the speed of the particle at 0.7 s" #1: speed of the particle Q2: [subquestion] What other information is given in "A particle of mass 6.8 * 10 ^-5 g and charge 58 mC moves in a region of space where the electric field is uniform and is 7.2 N/C in the x direction and zero in the y and z direction. If the initial velocity of the particle is given by vy = 1.7 * 10 ^6 m/s, vx = vz = 0, what is the speed of the particle at 0.7 s" #2: mass of particle (6.8 * 10 ^-5 g), charge(58 mC), electric field (7.2 N/C), initial velocity (vy = 1.7 * 10 ^6 m/s, vx = vz = 0) Q3: [search] Given mass of the particle, charge and initial velocity of particle, and electric field, what can we compute for the particle? Give the physics formula. #3: We can compute acceleration of the particle, as follows: a = (q/m) * E This formula is derived from the Lorentz force law, which states that the force (F) on a particle of charge q in an electric field E is given by the equation: F = ma = qE Q4: <ref type="bibr">[subquestion]</ref> What is the physics formula in the choices that is closest to F = ma = qE, a = (q/m) * E #4: F = m * a Q5: [EOQ] Ans: F = m * a We know that: Tiffany woke up at 6am. Jessica saw Tiffany waiting at the airport from 6am to 10am. William saw Tiffany attending class at the school from 12pm to 5pm. David saw Tiffany walking towards the Statue of Liberty from 5pm to 6pm. James saw Tiffany reading at the library from 6pm to 8pm. The swimming pool was closed after 8pm. Between what times could Tiffany have gone to the swimming pool? choice: 12pm to 5pm choice: 6pm to 8pm choice: 10am to 12pm choice: 6am to 10am Q1: [think step-by-step] #1: Let's think step-by-step. Tiffany went to the swimming pool today. We need to find out when she could have gone.</p><p>-Tiffany woke up at 6am.</p><p>-Jessica saw Tiffany waiting at the airport from 6am to 10am.</p><p>-William saw Tiffany attending class at the school from 12pm to 5pm.</p><p>-David saw Tiffany walking towards the Statue of Liberty from 5pm to 6pm.</p><p>-James saw Tiffany reading at the library from 6pm to 8pm.</p><p>-The swimming pool was closed after 8pm. The swimming pool was closed after 8pm, so Tiffany couldn't have gone at 6pm to 8pm. She was reading at the library from 6pm to 8pm, so she couldn't have gone at 10am to 12pm. She was waiting at the airport from 6am to 10am, so she couldn't have gone at 6am to 10am. That leaves 12pm to 5pm. So the answer is 12pm to 5pm. Q2: [EOQ] Ans: 12pm to 5pm After Q1: [subquestion] Is Tiffany free 12pm to 5pm? #1: No, she is attending classes at the school. Q2: [subquestion] Is Tiffany free 6pm to 8pm? #2: No, she is reading at the library. Q3: [subquestion] Is Tiffany free 10am to 12pm? #3: Yes, there is no other activity in her scehdule. Q4: [subquestion] Is Tiffany free 6am to 10am? #4: No, she is waiting at the airport. Q5: [subquestion] Is the swimming pool open from 10am to 12pm? #5: Yes, the swimming pool is open from 10am to 8pm. Q6: [get answer] In conclusion, when should she go to the swimming pool? #6: Tiffany should go to the swimming pool from 10am to 12pm. Q7: <ref type="bibr">[EOQ]</ref> Ans: 10am to 12pm</p><p>Table 18: Human feedback: Temporal sequences At the end of the game, Claire has the Q1: [generate python code] write down the arithmetic or algebra equations as python code, storing the answer as 'ans' #1: Alice = "pink" Bob = "white" Claire = "red" Dave = "purple" Eve = "yellow" Alice_and_Dave = [Alice, Dave] Claire_and_Eve = [Claire, Eve] Alice_and_Bob = [Alice, Bob] Dave_and_Claire = [Dave, Claire] Alice_and_Claire = [Alice, Claire] ans = Claire print(ans) Q2: [code execute] Execute the python code and get the value of "ans" #2: red Q3: [EOQ] Ans: red After Q1: [generate python code] write down the arithmetic or algebra equations as python code, storing the answer as 'ans' #1: players = ['Alice', 'Bob', 'Claire', 'Dave', 'Eve'] balls = ['pink', 'white', 'red', 'purple', 'yellow'] swap_list = [[0, 3], [2, 4], [0, 1], [3, 2], [0, 2]] for swap in swap_list: balls[swap[0]], balls[swap[1]] = balls[swap[1]], balls[swap[0]] ans = [players[i] + ' has a ' + balls[i] for i in range(5)] print(ans) Q2: [code execute] Execute the python code and get the value of "ans" #2: ['Alice has a pink', 'Bob has a purple', 'Claire has a white', 'Dave has a yellow', 'Eve has a red'] Q3: [subquestion] At the end, what color does Claire have? #3: white Q3: [EOQ] Ans: white ] What are the letters in "illoctnecos"? #1: ["i", "l", "l", "o", "c", "t", "n", "e", "c", "o", "s"] Q2: [string permutation] What are the possible permutations of the letters in #1? #2: ["i", "l", "l", "o", "c", "t", "n", "e", "c", "o", "s"], ["i", "l", "l", "o", "c", "t", "n", "e", "o", "c", "s"], ["i", "l", "l", "o", "c", "t", "e", "n", "c", "o", "s"], ["i", "l", "l", "o", "c", "t", "e", "n", "o", "c", "s"], ["i", "l", "l", "o", "c", "n", "t", "e", "c", "o", "s"], ... Q3: [string check] Among the permutations in #2, which one is an English word? #3: ["i", "l", "l", "o", "c", "t", "n", "e", "c", "o", "s"] Q4: [EOQ] Ans: ["i", "l", "l", "o", "c", "t", "n", "e", "c", "o", "s"] Word Unscrambling: After Q1: [string split] What are the letters in "illoctnecos"? #1: ["i", "l", "l", "o", "c", "t", "n", "e", "c", "o", "s"] Q2: [string permutation] What are the possible permutations of the letters in #1? #2: ["illoctnecos", "illoctneocs", "illoctenocs", "illoctencos", "illotnencos", ...] Q3: [word lookup] Among the permutations in #2, which one is an English word? #3: collections Q4: <ref type="bibr">[EOQ]</ref> Ans: collections</p><p>Table 20: Human feedback: Word Unscrambling</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><figDesc>• Code: Auto Debugging, Code Description • Search and question decomposition: Anachronims, Multi-step question answering (Musique), Hindu Knowledge, Known Unknown • Free-form reasoning: Formal fallacies, Hyperbation • String Operations: Kth letter concatenation, Language games, Date understanding</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>: InstructGPT • (Chung et al., 2022): PaLM language model.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><figDesc>, Bob, Claire, Dave, and Eve are playing a game. At the start of the game, they are each holding a ball: Alice has a pink ball, Bob has a white ball, Claire has a red ball, Dave has a purple ball, and Eve has a yellow ball. As the game progresses, pairs of players trade balls. First, Alice and Dave swap balls. Then, Claire and Eve swap balls. Then, Alice and Bob swap balls. Then, Dave and Claire swap balls. Finally, Alice and Claire swap balls.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 7 :</head><label>7</label><figDesc>Programs in the task library for tasks requiring string manipulation., you are given a task description and an input. Break the input down into subtasks in order to solve the task. You can generate python code to solve arithmetic and algebra equations in using functions from sympy.</figDesc><table><row><cell>from sympy import Symbol</cell></row><row><cell>from sympy import simplify</cell></row><row><cell>import math</cell></row><row><cell>from sympy import solve_it</cell></row><row><cell># solve_it(equations, variable): solving the equations and return the variable value.</cell></row><row><cell>Description: (Aqua-rat) Solve the following arithmetic problems on ratios and fractions, writing out intermediate arithmetic</cell></row><row><cell>calculations as python code. Store your result as a variable named 'ans'.</cell></row><row><cell>Input: In a flight of 600 km, an aircraft was slowed down due to bad weather. Its average speed for the trip was reduced by</cell></row><row><cell>200 km/hr and the time of flight increased by 30 minutes. The duration of the flight is: A)1 hour B)2 hours C)3 hours D)4</cell></row><row><cell>hours E)5 hours</cell></row><row><cell>Q1: [generate python code] write python code to solve the problem, using math and sympy.</cell></row><row><cell>#1:</cell></row><row><cell>duration = Symbol('duration', positive=True)</cell></row><row><cell>delay = 30 / 60</cell></row><row><cell>total_disntace = 600</cell></row><row><cell>original_speed = total_disntace / duration</cell></row><row><cell>reduced_speed = total_disntace / (duration + delay)</cell></row><row><cell>solution = solve_it(original_speed -reduced_speed -200, duration)</cell></row><row><cell>ans = solution[duration]</cell></row><row><cell>print(ans)</cell></row><row><cell>Q2: [code execute] Execute the python code in #1 and get the value of "ans"</cell></row><row><cell>#2:</cell></row><row><cell>1.0</cell></row><row><cell>Q3: [compare] Which of the options among A)1 hour B)2 hours C)3 hours D)4 hours E)5 hours is most similar to the answer?</cell></row><row><cell>#3: A</cell></row><row><cell>Q4: [EOQ]</cell></row><row><cell>Ans: A</cell></row><row><cell>--</cell></row><row><cell>ans'</cell></row><row><cell>#1:</cell></row><row><cell>total_eggs = 16</cell></row><row><cell>eaten_eggs = 3</cell></row><row><cell>baked_eggs = 4</cell></row><row><cell>sold_eggs = total_eggs -eaten_eggs -baked_eggs</cell></row><row><cell>dollars_per_egg = 2</cell></row><row><cell>ans = sold_eggs * dollars_per_egg</cell></row><row><cell>print(ans)</cell></row><row><cell>Q2: [code execute] Execute the python code in #1 and get the value of "ans"</cell></row><row><cell>#2: 18</cell></row><row><cell>Q3: [EOQ]</cell></row><row><cell>Ans:18</cell></row><row><cell>--</cell></row><row><cell>Description: (Grage school Math) Solve the following middle-school arithmetic problems, writing out intermediate arithmetic</cell></row><row><cell>calculations as python code. Store your result as a variable named 'ans'.</cell></row><row><cell>Input: Joseph and Getty went to buy ice creams, they together bought 36 ice creams. On the way back, Joseph ate 12 of the</cell></row><row><cell>ice creasm, and he has 2 ice creams left now.</cell></row><row><cell>Q1: [generate python code] write down the arithmetic or algebra equations as python code, storing the answer as 'ans'</cell></row><row><cell>#1:</cell></row><row><cell>num_ice_creams_bought_by_joseph = 2 + 12</cell></row><row><cell>total_ice_creams = 36</cell></row><row><cell>ans = total_ice_creams -num_ice_creams_bought_by_joseph</cell></row><row><cell>print(ans)</cell></row><row><cell>Q2: [code execute] Execute the python code in #1 and get the value of "ans"</cell></row><row><cell>#2: 22</cell></row><row><cell>Q3: [EOQ]</cell></row><row><cell>Ans: 22</cell></row><row><cell>--</cell></row><row><cell>Descripton: %s</cell></row><row><cell>Input: %s</cell></row><row><cell>Q1:</cell></row></table><note><p>.</p><p>Arithmetic</p><p>In these examplesDescription: (Elementary Math) Solve the following middle-school arithmetic problems, writing out intermediate arithmetic calculations as python code. Store your result as a variable named 'ans'. Input: Janet's ducks lay 16 eggs per day. She eats three for breakfast every morning and bakes muffins for her friends every day with four. She sells the remainder at the farmers' market daily for $2 per fresh duck egg. How much in dollars does she make every day at the farmers' market? Q1: [generate python code] write down the arithmetic or algebra equations as python code, storing the answer as '</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 8 :</head><label>8</label><figDesc>Programs in the task library for tasks requiring arithmetic operations., you are given a task description and an input. Break the input down into subtasks in order to solve the task. You can use search functions like Google search in one or more of your substeps, if there in insufficient information. Other functions like arithmetic and logical operations can also be used.</figDesc><table><row><cell>.</cell></row></table><note><p>Input: In the Mahabharata, Karna is cursed to forget the incantations needed to use which weapon? choice: Anjalikastra choice: Narayanastra choice: Agneyastra choice: Brahmastra Q1: [search] In the Mahabharata, Karna is cursed to forget the incantations needed to use which weapon? #1: As a result, he cursed Karna, saying that HIS MARTIAL SKILLS, including the use of BRAHMASTRA, would abandon him when he needed them most. Indra, the King of Gods, stung Karna in the form of a bee to get him cursed by Parshuram. Karna walked through the woods in despair, feeling dejected by the curse. A skilled &amp; devoted warrior...</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_7"><head>Table 9 :</head><label>9</label><figDesc>Programs in the task library for tasks requiring search for world knowledge.In these examples, you are given a task description and an input. Break the input down into subtasks in order to solve the task. You can use a python code generation and execution function in one or more of your substeps, if required. Other functions like arithmetic and logical operations can also be used. Description: (Auto Debugging) Debug the following code snippets by finding the answer or the error message.</figDesc><table><row><cell>Input:</cell></row><row><cell>"'</cell></row><row><cell>if x &lt; 5:</cell></row><row><cell>pass</cell></row><row><cell>"'</cell></row><row><cell>What error does this program surface?</cell></row><row><cell>Q1: [execute] Execute the following python code snippet.</cell></row><row><cell>if x &lt; 5:</cell></row><row><cell>pass</cell></row><row><cell>#1:</cell></row><row><cell>Traceback (most recent call last):</cell></row><row><cell>File "&lt;stdin&gt;", line 1, in &lt;module&gt;</cell></row><row><cell>NameError: name 'x' is not defined</cell></row><row><cell>Q2: [generate answer] What is the final error message?</cell></row><row><cell>#2: NameError: name 'x' is not defined</cell></row><row><cell>Q3: [EOQ]</cell></row><row><cell>Input:</cell></row><row><cell>Python code:</cell></row><row><cell>try:</cell></row><row><cell>n = int(input())</cell></row><row><cell>m = int(input())</cell></row><row><cell>integer_sum = int(n) + int(m)</cell></row><row><cell>print(integer_sum)</cell></row><row><cell>except:</cell></row><row><cell>print('error')</cell></row><row><cell>choice: prints number between 5 and 6</cell></row><row><cell>choice: try input and except error</cell></row><row><cell>choice: inputs the string 'try'</cell></row><row><cell>choice: prints sum of two input numbers only if they are integers otherwise raises error</cell></row><row><cell>Q1: [code generate] prints number between 5 and 6</cell></row><row><cell>#1:</cell></row><row><cell>import random</cell></row><row><cell>print(random.uniform(5,6))</cell></row><row><cell>Q2: [code generate] try input and except error</cell></row><row><cell>#2:</cell></row><row><cell>try:</cell></row><row><cell>file = open(file_name, "r")</cell></row><row><cell>data = file.read()</cell></row><row><cell>file.close()</cell></row><row><cell>except:</cell></row><row><cell>print('error')</cell></row><row><cell>Q3: [code generate] inputs the string 'try'</cell></row><row><cell>#3: print('try')</cell></row><row><cell>Q4: [code generate] prints sum of two input numbers only if they are integers otherwise raises error</cell></row><row><cell>#4:</cell></row><row><cell>#!/usr/bin/python</cell></row><row><cell>a=raw_input("enter first number: ")</cell></row><row><cell>b=raw_input("enter second number: ")</cell></row><row><cell>try:</cell></row><row><cell>sum=int(a)+int(b)</cell></row><row><cell>print "sum is: ",sum</cell></row><row><cell>except:</cell></row><row><cell>print "enter integer values only"</cell></row><row><cell>error</cell></row><row><cell>--</cell></row><row><cell>Descripton: %s</cell></row><row><cell>Input: %s</cell></row><row><cell>Q1:</cell></row></table><note><p>.</p><p>Code Generation and Editing Ans: NameError: name 'x' is not defined --Description: (Code description) Given a python code snippet, choose the option that is the best description of the code snippet.</p><p>Q5:[compare]  </p><p>Which of the generated code snippets are most like the original one? #5: prints sum of two input numbers only if they are integers otherwise raises error Q6:[EOQ]   </p><p>Ans: prints sum of two input numbers only if they are integers otherwise raises</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_9"><head>Table 12 :</head><label>12</label><figDesc>model for code generation and code editing. Arguments for both include the previous Comparing ART results on GPT3 (175B) model with two similar task selection strategies. LLM-based similarity is worse on average compared to just choosing the best task cluster.</figDesc><table><row><cell></cell><cell>Simple Text</cell><cell>CS</cell><cell>Strategy QA</cell><cell>Physics</cell><cell>Unit</cell><cell>Reasoning about</cell></row><row><cell></cell><cell>Editing</cell><cell>Algorithms</cell><cell></cell><cell cols="2">Questions Interpretation</cell><cell>colored objects</cell></row><row><cell>Best task cluster</cell><cell>27.65</cell><cell>88.11</cell><cell>66.44</cell><cell>20.37</cell><cell>53.99</cell><cell>64.34</cell></row><row><cell>LLM-based task sim.</cell><cell>38.30</cell><cell>83.71</cell><cell>60.39</cell><cell>14.06</cell><cell>43.56</cell><cell>62.00</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_10"><head>Table 14 :</head><label>14</label><figDesc>Code prefix appended before a code snippet prior to execution.</figDesc><table><row><cell>from sympy.solvers import solve</cell></row><row><cell>from sympy import Symbol, Eq, simplify</cell></row><row><cell>import math</cell></row><row><cell>import numpy as np</cell></row><row><cell>import cvxpy as cp</cell></row><row><cell>import statistics</cell></row><row><cell>def solve_it(equation, variable):</cell></row><row><cell>solution=solve(equation, variable, dict=True)</cell></row><row><cell>if not solution:</cell></row><row><cell>if isinstance(variable, list):</cell></row><row><cell>solution=v: None for v in variable</cell></row><row><cell>else:</cell></row><row><cell>solution=variable: None</cell></row><row><cell>return solution</cell></row><row><cell>else:</cell></row><row><cell>solution = solution[0]</cell></row><row><cell>return solution</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_13"><head>Table 17 :</head><label>17</label><figDesc>Human feedback: Physics Tiffany went to the swimming pool. Between what times could they have gone?</figDesc><table><row><cell>Temporal sequences</cell></row><row><cell>Before</cell></row><row><cell>Input: Today,</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_16"><head>Table 19 :</head><label>19</label><figDesc>Human feedback: Tracking shuffled objectsThe word illoctnecos is a scrambled version of the English word Q1: [string split</figDesc><table><row><cell>Tracking shuffled objects</cell></row><row><cell>Before</cell></row><row><cell>Input:</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Ask me anything: A simple strategy for prompting language models</title>
+		<author>
+			<persName><forename type="first">Simran</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Avanika</forename><surname>Narayan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurel</forename><forename type="middle">J</forename><surname>Mayee F Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Neel</forename><surname>Orr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kush</forename><surname>Guha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ines</forename><surname>Bhatia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frederic</forename><surname>Chami</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Sala</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ré</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.02441</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Prompting is programming: A query language for large language models</title>
+		<author>
+			<persName><forename type="first">Luca</forename><surname>Beurer-Kellner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Fischer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Vechev</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.06094</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Tom B Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Askell</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2005.14165</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henrique</forename><surname>Ponde De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harri</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Program of thoughts prompting: Disentangling computation from reasoning for numerical reasoning tasks</title>
+		<author>
+			<persName><forename type="first">Wenhu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueguang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">W</forename><surname>Cohen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.12588</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaurav</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Barham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyung</forename><forename type="middle">Won</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Gehrmann</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.02311</idno>
+		<title level="m">Palm: Scaling language modeling with pathways</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Chung</forename><surname>Hyung Won</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shayne</forename><surname>Longpre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barret</forename><surname>Zoph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Fedus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename></persName>
+		</author>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Scaling instruction-finetuned language models</title>
+		<author>
+			<persName><forename type="first">Mostafa</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siddhartha</forename><surname>Dehghani</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Brahma</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.11416</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.14168</idno>
+		<title level="m">Training verifiers to solve math word problems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dheeru</forename><surname>Dua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shivanshu</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sameer</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matt</forename><surname>Gardner</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.04092</idno>
+		<title level="m">Successive prompting for decomposing complex questions</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamie</forename><surname>Callan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.10435</idno>
+		<title level="m">Pal: Program-aided language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mantas</forename><surname>Mazeika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2009.03300</idno>
+		<title level="m">Measuring massive multitask language understanding</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Khashabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sewon</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oyvind</forename><surname>Tafjord</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2005.00700</idno>
+		<title level="m">Unifiedqa: Crossing format boundaries with a single qa system</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Decomposed prompting: A modular approach for solving complex tasks</title>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harsh</forename><surname>Trivedi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Finlayson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Richardson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.02406</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Takeshi</forename><surname>Kojima</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shane</forename><surname>Shixiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Machel</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutaka</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusuke</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Iwasawa</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.11916</idno>
+		<title level="m">Large language models are zero-shot reasoners</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Internet-augmented dialogue generation</title>
+		<author>
+			<persName><forename type="first">Mojtaba</forename><surname>Komeili</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kurt</forename><surname>Shuster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2022.acl-long.579</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 60th Annual Meeting of the Association for Computational Linguistics<address><addrLine>Dublin, Ireland</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="8460" to="8478" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Internetaugmented language models through few-shot prompting for open-domain question answering</title>
+		<author>
+			<persName><forename type="first">Angeliki</forename><surname>Lazaridou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elena</forename><surname>Gribovskaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wojciech</forename><surname>Stokowiec</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolai</forename><surname>Grigorev</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.05115</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Few-shot parameter-efficient finetuning is better and cheaper than in-context learning</title>
+		<author>
+			<persName><forename type="first">Haokun</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Derek</forename><surname>Tam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammed</forename><surname>Muqeeth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jay</forename><surname>Mohta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tenghao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Raffel</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.05638</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Cross-task generalization via natural language crowdsourcing instructions</title>
+		<author>
+			<persName><forename type="first">Swaroop</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Khashabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chitta</forename><surname>Baral</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2104.08773</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suchir</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christina</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shantanu</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Saunders</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2112.09332</idno>
+		<title level="m">Webgpt: Browser-assisted questionanswering with human feedback</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carroll</forename><forename type="middle">L</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katarina</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.02155</idno>
+		<title level="m">Training language models to follow instructions with human feedback</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Parisi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Fiedel</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.12255</idno>
+		<title level="m">Talm: Tool augmented language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Are NLP models really able to solve simple math word problems?</title>
+		<author>
+			<persName><forename type="first">Arkil</forename><surname>Patel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Satwik</forename><surname>Bhattamishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Navin</forename><surname>Goyal</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2021.naacl-main.168</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2021 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</title>
+		<meeting>the 2021 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</meeting>
+		<imprint>
+			<publisher>Online. Association for Computational Linguistics</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="2080" to="2094" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muru</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sewon</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ludwig</forename><surname>Schmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03350</idno>
+		<title level="m">Measuring and narrowing the compositionality gap in language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Multitask prompted training enables zero-shot task generalization</title>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Sanh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Albert</forename><surname>Webson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Raffel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><forename type="middle">H</forename><surname>Bach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lintang</forename><surname>Sutawika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zaid</forename><surname>Alyafeai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Chaffin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arnaud</forename><surname>Stiegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teven</forename><surname>Le Scao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arun</forename><surname>Raja</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.08207</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberta</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.04761</idno>
+		<title level="m">Nicola Cancedda, and Thomas Scialom. 2023. Toolformer: Language models can teach themselves to use tools</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Language models that seek for knowledge: Modular search &amp; generation for dialogue and prompt completion</title>
+		<author>
+			<persName><forename type="first">Kurt</forename><surname>Shuster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mojtaba</forename><surname>Komeili</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leonard</forename><surname>Adolphs</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Roller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Szlam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.13224</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Beyond the imitation game: Quantifying and extrapolating the capabilities of language models</title>
+		<author>
+			<persName><forename type="first">Aarohi</forename><surname>Srivastava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Rastogi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abu</forename><surname>Awal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Md</forename><surname>Shoeb</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abubakar</forename><surname>Abid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Fisch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Adam R Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Santoro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adrià</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Garriga-Alonso</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2206.04615</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Challenging big-bench tasks and whether chain-of-thought can solve them</title>
+		<author>
+			<persName><forename type="first">Mirac</forename><surname>Suzgun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Gehrmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyung</forename><forename type="middle">Won</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><forename type="middle">H</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.09261</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">Romal</forename><surname>Thoppilan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">De</forename><surname>Freitas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamie</forename><surname>Hall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Apoorv</forename><surname>Kulshreshtha</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Heng-Tze</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alicia</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Taylor</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leslie</forename><surname>Bos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Du</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.08239</idno>
+		<title level="m">Lamda: Language models for dialog applications</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Self-consistency improves chain of thought reasoning in language models</title>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.11171</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Vincent</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kelvin</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adams</forename><forename type="middle">Wei</forename><surname>Guu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Lester</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">M</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc V</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Le</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2109.01652</idno>
+		<title level="m">Finetuned language models are zero-shot learners</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.11903</idno>
+		<title level="m">Chain of thought prompting elicits reasoning in large language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><forename type="middle">H</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">An explanation of in-context learning as implicit bayesian inference</title>
+		<author>
+			<persName><forename type="first">Sang</forename><surname>Michael Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditi</forename><surname>Raghunathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tengyu</forename><surname>Ma</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2111.02080</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Automatic chain of thought prompting in large language models</title>
+		<author>
+			<persName><forename type="first">Zhuosheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aston</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Smola</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03493</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Least-to-most prompting enables complex reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Bousquet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.10625</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

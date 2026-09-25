@@ -1,0 +1,1267 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Are Retrials All You Need? Enhancing Large Language Model Reasoning Without Verbalized Feedback</title>
+				<funder ref="#_Yvyr9je">
+					<orgName type="full">Novo Nordisk Foundation</orgName>
+				</funder>
+				<funder ref="#_sJ65wRw">
+					<orgName type="full">EU Horizon 2020</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Nearchos</forename><surname>Potamitis</surname></persName>
+							<email>nearchos.potamitis@cs.au.dk</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Aarhus University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Akhil</forename><surname>Arora</surname></persName>
+							<email>akhil.arora@cs.au.dk</email>
+							<affiliation key="aff1">
+								<orgName type="institution">Aarhus University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Are Retrials All You Need? Enhancing Large Language Model Reasoning Without Verbalized Feedback</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">1182F2616D3150AD138A981C907B3FA2</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:01+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Recent advancements in large language models (LLMs) have catalyzed the development of general-purpose autonomous agents, demonstrating remarkable performance in complex reasoning tasks across various domains. This surge has spurred the evolution of a plethora of prompt-based reasoning frameworks. A recent focus has been on iterative reasoning strategies that refine outputs through self-evaluation and verbalized feedback. However, these strategies require additional computational complexity to enable models to recognize and correct their mistakes, leading to a significant increase in their cost. In this work, we introduce the concept of "retrials without feedback", an embarrassingly simple yet powerful mechanism for enhancing reasoning frameworks by allowing LLMs to retry problem-solving attempts upon identifying incorrect answers. Unlike conventional iterative refinement methods, our method does not require explicit self-reflection or verbalized feedback, simplifying the refinement process. Our findings indicate that simpler retrial-based approaches often outperform more sophisticated reasoning frameworks, suggesting that the benefits of complex methods may not always justify their computational costs. By challenging the prevailing assumption that more intricate reasoning strategies inherently lead to better performance, our work offers new insights into how simpler, more efficient approaches can achieve optimal results. So, are retrials all you need?</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>With strong reasoning and problem-solving abilities, large language models (LLMs) <ref type="bibr" target="#b3">(Brown et al., 2020)</ref> such as GPT-4 <ref type="bibr">(Achiam et al., 2024;</ref><ref type="bibr" target="#b13">OpenAI and et al., 2024)</ref>, LLaMA <ref type="bibr">(Touvron et al., 2023a,b;</ref><ref type="bibr" target="#b6">Grattafiori et al., 2024)</ref>, and PaLM <ref type="bibr" target="#b1">(Anil et al., 2023)</ref>, have sparked a new-found interest in building general-purpose autonomous agents. LLMbased agents have portrayed excellent performance on reasoning <ref type="bibr" target="#b4">(Cobbe et al., 2021)</ref> and knowledgeintensive tasks <ref type="bibr" target="#b26">(West et al., 2009)</ref>, often requiring interactions with complex environments, such as playing complex video games <ref type="bibr" target="#b5">(Fan et al., 2022)</ref>, performing web navigation <ref type="bibr" target="#b28">(Yao et al., 2022)</ref>, or enabling tool-use <ref type="bibr" target="#b16">(Schick et al., 2023)</ref>.</p><p>Naturally, the rise of LLM-based agents has contributed to the prosperity of prompt-based reasoning frameworks <ref type="bibr" target="#b25">(Wei et al., 2022;</ref><ref type="bibr" target="#b24">Wang et al., 2023;</ref><ref type="bibr" target="#b2">Besta et al., 2024;</ref><ref type="bibr" target="#b17">Sel et al., 2024;</ref><ref type="bibr" target="#b27">Yang et al., 2024;</ref><ref type="bibr" target="#b29">Yao et al., 2024;</ref><ref type="bibr" target="#b32">Zhou et al., 2024;</ref><ref type="bibr" target="#b18">Shinn et al., 2023;</ref><ref type="bibr" target="#b30">Yao et al., 2023;</ref><ref type="bibr" target="#b15">Potamitis et al., 2024)</ref> that further enhance the problem-solving and reasoning abilities of LLMs.</p><p>Iterative refinement and its challenges. A burgeoning area of research in this field involves the exploration of iterative reasoning strategies that refine and improve responses through self-evaluation. Methods such as Self-Refine <ref type="bibr" target="#b11">(Madaan et al., 2023)</ref> and Reflexion <ref type="bibr" target="#b18">(Shinn et al., 2023)</ref> employ explicit verbalized feedback to guide an LLM in correcting its mistakes and refining its outputs. While effective, these approaches add an additional layer of complexity, requiring the model to both recognize its own errors and articulate useful self-correction strategies. Moreover, owing to an incremental increase in the context window size, verbalized feedback monotonically increases the cost for every subsequent iteration of the overall reasoning pipeline, thereby rendering iterative refinementbased methods exorbitantly expensive. For instance, with GPT-4 as the base model, RAFA <ref type="bibr" target="#b10">(Liu et al., 2024)</ref>, the state-of-the-art refinement strategy, requires a whopping ≃ 600$ on the Game of 24 benchmark task <ref type="bibr" target="#b29">(Yao et al., 2024)</ref> comprising just 100 examples in the test set.</p><p>Present work. In this paper, we introduce the concept of "retrials without feedback", an embarrassingly simple yet effective mechanism that enhances reasoning frameworks by allowing them to retry a problem-solving attempt whenever an incorrect answer is identified. Unlike Reflexion <ref type="bibr" target="#b18">(Shinn et al., 2023)</ref>, which relies on explicit self-generated feedback, retrials operate without requiring verbalized introspection: an incorrect answer simply triggers another attempt until the correct solution is found or a predefined computational budget is exhausted.</p><p>Our results show that under the retrial mechanism, simpler methods such as chain-ofthoughts <ref type="bibr" target="#b25">(Wei et al., 2022)</ref> often outperform more sophisticated reasoning frameworks such as treeof-thoughts <ref type="bibr" target="#b29">(Yao et al., 2024)</ref> or Reflexion <ref type="bibr" target="#b18">(Shinn et al., 2023)</ref>. This suggests that, when given the opportunity to retry, the added complexity of sophisticated reasoning frameworks and self-reflective approaches may not always justify their computational cost. This raises a fundamental question: Are retrials all you need? By reframing the evaluation of reasoning strategies through the lens of cost efficiency, our work challenges the assumption that more intricate frameworks necessarily lead to better performance and highlights the importance of reconsidering optimization strategies for reasoning with LLMs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related Work</head><p>In this section, we review works that overlap closely with our study Prompt-based reasoning. Recent research focuses on developing strategies to enhance the reasoning capabilities of LLMs. Few-shot prompting employs demonstrations of high-quality input/output samples to exploit the eagerness of the LLMs to imitate patterns seen in their context window <ref type="bibr" target="#b3">(Brown et al., 2020)</ref>. Algorithm of thoughts (AoT) <ref type="bibr" target="#b17">(Sel et al., 2024)</ref>, goes a step further by including algorithmic examples within the prompt to propel the LLM through algorithmic reasoning pathways. Chain-of-Thought (CoT) prompting <ref type="bibr" target="#b12">(Nye et al., 2021;</ref><ref type="bibr" target="#b25">Wei et al., 2022;</ref><ref type="bibr" target="#b9">Kojima et al., 2022)</ref> as well as other variants such as Decomposed Prompting <ref type="bibr" target="#b8">(Khot et al., 2023)</ref> and Least-to-Most <ref type="bibr" target="#b33">(Zhou et al., 2023)</ref> guide LLMs to decompose a complex question into a sequence of thoughts and then synthesize an answer by resolving them methodically. It has been shown that Self-Consistency (CoT-SC) <ref type="bibr" target="#b23">(Wang et al., 2022)</ref> can be used to augment such methods by generating multiple thought sequences and then selecting the most accurate answer through majority voting. Recent metaprompting techniques <ref type="bibr" target="#b20">(Suzgun and Kalai, 2024)</ref> employ a uniform, task-independent prompting framework across multiple tasks, enabling a single LLM to iteratively refine its responses and dynamically adapt to diverse input queries. The Buffer of Thoughts (BoT) <ref type="bibr" target="#b27">(Yang et al., 2024)</ref> framework extracts task-specific information, uses it to retrieve relevant thought templates from its meta-buffer, and then instantiates them with more task-specific reasoning structures before continuing with the reasoning process.</p><p>Refinement. Closed-loop approaches that allow an LLM to interact with an external environment can help in choosing and potentially revising an action. Notable examples are ReAct <ref type="bibr" target="#b30">(Yao et al., 2023)</ref>, RE-FINER <ref type="bibr" target="#b14">(Paul et al., 2023)</ref> and Self-Refine <ref type="bibr" target="#b11">(Madaan et al., 2023)</ref>. Reflexion <ref type="bibr" target="#b18">(Shinn et al., 2023)</ref> provides further linguistic feedback based on previous attempts while AdaPlanner <ref type="bibr" target="#b19">(Sun et al., 2023)</ref> also incorporates positive and negative feedback of an individual trajectory. Reason for future, act for now (RAFA) <ref type="bibr" target="#b10">(Liu et al., 2024)</ref> develops further by planning a trajectory, gathering feedback for the potential planned actions, and then revising the trajectory based on the feedback.</p><p>Tree search. Thoughts are individual ideas or steps in reasoning, and when connected together, they can be modeled as a tree data structure. Tree search algorithms can then be used to explore a tree of thoughts and optimize the search for a final answer. In "Tree of Thoughts" (ToT), the authors utilize a value function that compares different branches to describe both DFS and BFS flavors of a guided tree-search <ref type="bibr" target="#b29">(Yao et al., 2024)</ref>. The closely related "Graph of Thoughts" (GoT) approach relaxes the assumption of a strict tree structure <ref type="bibr" target="#b2">(Besta et al., 2024)</ref>. Reasoning via Planning (RAP) <ref type="bibr" target="#b7">(Hao et al., 2023)</ref> augments LLMs with a world model and employs Monte Carlo Tree Search (MCTS)based planning to reduce the search complexity. Language Agent Tree Search (LATS) <ref type="bibr" target="#b32">(Zhou et al., 2024)</ref> extends this concept by leveraging environment interactions, thereby eliminating the need for a world model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Experiments</head><p>In this section, we provide details on the benchmarks and the different types of analyses that we performed for our experiments. Please refer to Appendix A for more information regarding the reasoning strategies used in this study. For additional results, please see Appendix B. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Benchmark tasks</head><p>Game of 24. Game of 24 is a mathematical puzzle, where four numbers are given, and the objective is to form an arithmetic expression that equals 24 using each number exactly once. The benchmark data consists of 1362 puzzles. Following ToT <ref type="bibr" target="#b29">(Yao et al., 2024)</ref>, we use the puzzles indexed 901-1000 as the test set. To evaluate the quality of the methods we use success rate, that is, the percentage of solved puzzles. For efficiency, we use cost (in US$).</p><p>HumanEval. HumanEval is a programming puzzle that measures functional correctness for synthesizing programs from natural language docstrings. Following Reflexion <ref type="bibr" target="#b18">(Shinn et al., 2023)</ref>, we evaluate the methods on 161 Python programs. We use the accuracy evaluation pass@1 to measure the quality of the benchmark. For efficiency, we use cost (in US$).</p><p>HotpotQA. HotpotQA <ref type="bibr" target="#b31">(Zhilin et al., 2018)</ref> is a large-scale question-answering dataset designed to evaluate multi-hop reasoning. Multi-step methods such as ToT, are allowed to use an interactive API environment which allows the agent to search for documents and look up specific information within them. Following previous methods <ref type="bibr" target="#b32">(Zhou et al., 2024;</ref><ref type="bibr" target="#b18">Shinn et al., 2023)</ref> we evaluate on 100 randomly selected samples of their choice. We measure the quality of the answer based on whether there is an exact match (EM), given an oracle answer. For efficiency, we use cost (in US$),</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Experiment setup</head><p>Baselines. We analyze the impact of retrials on four prompting strategies: (1) Standard IO prompting, (2) CoT <ref type="bibr" target="#b25">(Wei et al., 2022)</ref>, (3) ToT <ref type="bibr" target="#b29">(Yao et al., 2024)</ref>, and (4) Reflexion <ref type="bibr" target="#b18">(Shinn et al., 2023)</ref>.</p><p>Base model. We use GPT-4o-mini <ref type="bibr" target="#b13">(OpenAI and et al., 2024)</ref> and LLaMA-3.3-70B <ref type="bibr" target="#b6">(Grattafiori et al., 2024)</ref> as the base models.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Analysis</head><p>Cost and Number of Retrials Analysis. This experiment aims to evaluate the effectiveness of different methods under a constrained budget. Each method follows an iterative approach, attempting to solve all of the samples in the first trial. Unsolved samples are re-tried in subsequent trials until either the budget is exhausted or of them all are solved. If the budget runs out during an iteration, the method halts immediately. To investigate cost-effectiveness we present the quality and cost for GPT-4o-mini in Fig. <ref type="figure" target="#fig_0">1</ref>. The corresponding plot for LLama 3.3 70B can be found in the appendix (Fig. <ref type="figure" target="#fig_3">4</ref>). To also display sample efficiency, we plot quality and number of trials.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Temperature Analysis.</head><p>To better understand the cost-effectiveness of each method, we repeated the previous experiments using different temperature values. Due to budget and time restrictions, we only conduct this analysis for Game of 24 across the CoT and ToT methods. The results can be found in Fig. <ref type="figure" target="#fig_1">2</ref> for GPT-4o-mini and Fig. <ref type="figure" target="#fig_2">3</ref> for Llama-3.3-70B.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Main results</head><p>Cost efficiency. Our results demonstrate that simple methods such as IO and CoT prompting are significantly more efficient than complex reasoning approaches such as ToT <ref type="bibr" target="#b29">(Yao et al., 2024)</ref> or Reflexion <ref type="bibr" target="#b18">(Shinn et al., 2023)</ref>. Specifically, across all benchmarks and models, CoT prompting consistently outperforms alternative methods, often by a considerable margin. In fact, for Game of 24, CoT achieved a 94% success rate: a result that methods such as <ref type="bibr" target="#b10">(Liu et al., 2024;</ref><ref type="bibr" target="#b29">Yao et al., 2024)</ref> would need multiple hundreds of dollars (≃ 600$) to achieve on GPT-4.</p><p>Cost efficiency appears to be influenced not only by the method employed but also by the specific task. For instance, in the HumanEval and Hot-potQA tasks, both CoT and IO methods reach a performance plateau earlier, whereas, in the Game of 24 task, the efficiency peak is more gradual. In addition, the base model plays a crucial role in performance disparities. This is particularly evident in the quality gap between GPT-4o-mini and Llama-3.3-70B in the Game of 24 and HotpotQA benchmarks. While the two methods exhibit comparable performance with the former model, CoT substantially outperforms IO in the latter. These findings suggest that base models with stronger inherent reasoning capabilities (e.g. GPT-4o-mini) can simultaneously enhance the cost-quality tradeoff of simple methods such as IO prompting.</p><p>Temperature analysis. For GPT-4o-mini (Fig. <ref type="figure" target="#fig_1">2</ref>), we can clearly see that a higher temperature value results in a better success rate. This is clearly visible for CoT as the gap between each temperature result is significantly wide. Furthermore, we can even see that for a temperature value of 1.0 the experiment already achieves 100% accuracy at half of the allocated budget. For ToT, this is also predominantly true. A possible reason why this is not as evident in the latter case is that multi-query methods such as ToT, often introduce complex prompting schemes that are affected in arbitrary ways by an increase in the temperature values.</p><p>5 Discussion and Concluding Insights Summary of Findings. Our results in Figs. <ref type="figure" target="#fig_0">1</ref> and <ref type="figure" target="#fig_3">4</ref> have shown that methods such as Chain of Thought are more cost-efficient than complex reasoning strategies on a variety of models and tasks. In fact, for some tasks, we have achieved state-ofthe-art quality performance with minimal resources in terms of cost and model capabilities. Based on the results we have also shown that the costefficiency of a method is affected not only by the task but by the model as well. Finally, we have shown that the performance of the retrial concept can be improved even further by properly tuning the model's temperature Future work. In the future, we would like to extend our results by showcasing the behavior of the methods when allowing an even bigger budget. For the case of HumanEval, it is already apparent that Reflexion and Tree of Thoughts will surpass the other methods if allowed for more budget. Even though this does not go against our claims regarding cost-efficiency, we would like to investigate further and showcase the full picture. Additionally, we aim to explore methods that leverage the occurrence of retrials to further optimize reasoning processes. Specifically, we seek to develop techniques that can exploit the iterative nature of retrials to improve efficiency, potentially reducing the number of attempts needed to reach a correct solution. Finally, our method uses trivial deterministic verifiers to decide whether an answer has been found and in this case, no retry is needed. We would aim to extend our method to tasks where there's not a trivial deterministic verifier to validate the answer.</p><p>Overall, we hope that our work will inspire further research into the role of retrials in cost-efficient reasoning and the broader optimization of reasoning frameworks for LLM-based problem-solving</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitations</head><p>The main limitation of our work is that it cannot be applied to tasks where the answer cannot be directly verified. For example, in the game of 24, the goal is to find a mathematical formula that evaluates to 24 given some input numbers. Once a formula is found, checking whether it equals 24 is straightforward. Similarly, in HumanEval, an answer is verified based on whether the generated function passes specific tests. This allows us to stop retrying a puzzle once a correct answer has been found. However, in cases similar to HotpotQA, the correct answer is hidden and only used for evaluation, making direct verification impossible during the solving process. As discussed in our future work, we aim to extend our method to tasks where answers cannot be deterministically verified in a trivial manner.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Methods</head><p>Input-Output (IO). The simplest prompting style which uses the LLM to directly generate an output, with no intermediate steps.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Chain-of-Thought (CoT).</head><p>Solves the problem step by step by decomposing it into a sequence of thoughts <ref type="bibr" target="#b25">(Wei et al., 2022)</ref>.</p><p>Reflexion. Generates linguistic feedback that is utilized during subsequent runs <ref type="bibr" target="#b18">(Shinn et al., 2023)</ref>.</p><p>Tree-of-Thoughts (ToT). Decomposes the problem into multiple chain of thoughts, organized in a tree structure. Thought evaluation and search traversal algorithms are utilized to solve the problem <ref type="bibr" target="#b29">(Yao et al., 2024)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Additional results</head><p>Cost analysis. In Fig. <ref type="figure" target="#fig_3">4</ref>, we assess the costeffectiveness of various prompting methods using the LLaMA 3.3 70B model. Similar to the results observed with GPT-4o-mini, both IO and CoT prompting strategies demonstrate significantly higher cost-efficiency. Notably, CoT maintains a substantial lead in tasks such as Game of 24 and HumanEval. However, for HotpotQA, the ToT approach slightly outperforms CoT.</p><p>Retrial analysis.. In Figs. <ref type="figure" target="#fig_4">5</ref> and <ref type="figure" target="#fig_5">6</ref>, we evaluate the performance of each method as a function of the number of re-trials, under a fixed budget constraint. For Game of 24 and HotpotQA, ToT and Reflexion exhibit greater sample efficiency, achieving strong performance with relatively few re-trials. However, IO and CoT ultimately outperform them as the number of re-trials increases. In contrast, for HumanEval, IO and CoT are already more sampleefficient from the outset.</p><p>Temperature analysis. In Fig . <ref type="figure" target="#fig_2">3</ref>, we present the cost-effectiveness of CoT and ToT prompting for LLaMA 3.3 70B across varying temperature settings, under the same constrained budget as before. Unlike the results observed with GPT-4omini (Fig. <ref type="figure" target="#fig_1">2</ref>), the performance trends here have not yet plateaued. We hypothesize that this is due to LLaMA 3.3 70B being approximately three times more expensive than GPT-4o-mini, placing the experiment in its early stages and limiting the conclusiveness of the results. In future work, we plan to increase the budget across all experiments to further investigate this behavior.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Implementation Details</head><p>Platforms. GPT models were were accessed through the <ref type="url" target="https://platform.openai.com/docs/overview">OpenAI API</ref> while thhe utilization of the Llama models was facilitated by the <ref type="url" target="https://docs.together.ai/docs/introduction">TogetherAI  API</ref>.</p><p>Model checkpoints and prices. To compute the costs of our experiments we used the current model prices indicated OpenAI and Together AI, accordingly to the model. The specific models snapshot we used, along with their respective prices are presented in Table <ref type="table">1</ref>. US$ per 1M prompt tokens US$ Per 1M completion tokens gpt-4o-mini 0.15 0.60 LLaMA-3.3-70B 0.88 0.88</p><p>Table 1: Model snapshot prices. OpenAI and TogetherAI prices for each model used, during the implementation of the project.   </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Comparing the cost-quality trade-off of IO, CoT, ToT, and Reflexion using GPT-4o-mini as the base model. Within the indicated budget, simpler methods outperform more complex ones while remaining cost-efficient.</figDesc><graphic coords="3,80.84,65.20,430.86,157.51" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Comparing the cost-quality trade-off of CoT and ToT across different temperature levels using GPT-4omini as the base model. For CoT success rate is strictly increasing as temperature increases and so does for ToT but not strictly.</figDesc><graphic coords="4,92.18,65.20,408.20,182.48" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Comparing the cost-quality trade-off of CoT and ToT, using Llama-3.3-70B as the base model, across different temperature levels.</figDesc><graphic coords="7,70.87,604.97,226.78,101.38" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Comparing the cost-quality trade-off of IO, CoT, ToT, and Reflexion using Llama-3.3-70B as the base model. Within the indicated budget, simpler methods have similar or better performance complex ones while remaining cost-efficient.</figDesc><graphic coords="8,71.77,370.50,449.02,164.34" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Comparing the sample-quality trade-off of IO, CoT, ToT, and Reflexion using GPT-4o-mini as the base model. Within the indicated budget, simpler methods outperform more complex ones while they remain sample-efficient only for the case of the HumanEval task.</figDesc><graphic coords="8,71.77,568.50,449.01,164.15" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 6 :</head><label>6</label><figDesc>Figure6: Comparing the sample-quality trade-off of IO, CoT, ToT, and Reflexion using Llama-3.3-70B as the base model. Within the indicated budget, simpler methods have better or similar performance than complex ones while they remain sample-efficient only for the case of the HumanEval task.</figDesc></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgements</head><p>We thank <rs type="person">Chris Schwiegelshohn</rs> and <rs type="person">Niket Tandon</rs> for insightful discussions. Arora's lab is partly supported by grants from the <rs type="funder">Novo Nordisk Foundation</rs> (<rs type="grantNumber">NNF24OC0099109</rs>), the <rs type="institution">Pioneer Centre for AI</rs>, and <rs type="funder">EU Horizon 2020</rs> (<rs type="grantNumber">101168951</rs>).</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_Yvyr9je">
+					<idno type="grant-number">NNF24OC0099109</idno>
+				</org>
+				<org type="funding" xml:id="_sJ65wRw">
+					<idno type="grant-number">101168951</idno>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Adler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lama</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilge</forename><surname>Akkaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florencia</forename><surname>Leoni Aleman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Janko</forename><surname>Altenschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Altman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.08774</idno>
+		<title level="m">Shyamal Anadkat, et al. 2024. Gpt-4 technical report</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Anil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">M</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Orhan</forename><surname>Firat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melvin</forename><surname>Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitry</forename><surname>Lepikhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandre</forename><surname>Passos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siamak</forename><surname>Shakeri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emanuel</forename><surname>Taropa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paige</forename><surname>Bailey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhifeng</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.10403</idno>
+		<title level="m">Palm 2 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Graph of thoughts: Solving elaborate problems with large language models</title>
+		<author>
+			<persName><forename type="first">Maciej</forename><surname>Besta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nils</forename><surname>Blach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ales</forename><surname>Kubicek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Gerstenberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michal</forename><surname>Podstawski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukas</forename><surname>Gianinazzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joanna</forename><surname>Gajda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomasz</forename><surname>Lehmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hubert</forename><surname>Niewiadomski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Nyczyk</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="17682" to="17690" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.14168</idno>
+		<title level="m">Training verifiers to solve math word problems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Minedojo: Building open-ended embodied agents with internet-scale knowledge</title>
+		<author>
+			<persName><forename type="first">Linxi</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanzhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Mandlekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuncong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoyi</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>De-An</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuke</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anima</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Anandkumar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS: Datasets and Benchmarks Track</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">The llama 3 herd of models</title>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Grattafiori</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.21783</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Reasoning with language model is planning with world model</title>
+		<author>
+			<persName><forename type="first">Shibo</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haodi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">Jiahua</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daisy</forename><forename type="middle">Zhe</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiting</forename><surname>Hu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Decomposed prompting: A modular approach for solving complex tasks</title>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harsh</forename><surname>Trivedi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Finlayson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Richardson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Large language models are zero-shot reasoners</title>
+		<author>
+			<persName><forename type="first">Takeshi</forename><surname>Kojima</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">(</forename><surname>Shixiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">)</forename><surname>Shane</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Machel</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutaka</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusuke</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Iwasawa</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="22199" to="22213" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Reason for future, act for now: A principled architecture for autonomous LLM agents</title>
+		<author>
+			<persName><forename type="first">Zhihan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shenao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongyi</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuqi</forename><surname>Ke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoran</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niket</forename><surname>Tandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prakhar</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Skyler</forename><surname>Hallinan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Wiegreffe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouha</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shrimai</forename><surname>Prabhumoye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.17651</idno>
+		<title level="m">Self-refine: Iterative refinement with self-feedback</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Show your work: Scratchpads for intermediate computation with language models</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Maxwell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anders</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guy</forename><surname>Johan Andreassen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Gur-Ari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Bieber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aitor</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Lewkowycz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Luan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Augustus</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Odena</surname></persName>
+		</author>
+		<idno>CoRR, abs/2112.00114</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Gpt-4o system card</title>
+		<author>
+			<persName><forename type="first">Hurst</forename><surname>Openai</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.21276</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Debjit</forename><surname>Paul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mete</forename><surname>Ismayilzada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxime</forename><surname>Peyrard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beatriz</forename><surname>Borges</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Bosselut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>West</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boi</forename><surname>Faltings</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.01904</idno>
+		<title level="m">Refiner: Reasoning feedback on intermediate representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Fleet of agents: Coordinated problem solving with large language models</title>
+		<author>
+			<persName><forename type="first">Nearchos</forename><surname>Potamitis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lars</forename><surname>Klein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roland</forename><surname>Aydin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caglar</forename><surname>Gulcehre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>West</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akhil</forename><surname>Arora</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.06691</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Toolformer: Language models can teach themselves to use tools</title>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Dessi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberta</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicola</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Scialom</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>In NeurIPS</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Algorithm of thoughts: Enhancing exploration of ideas in large language models</title>
+		<author>
+			<persName><forename type="first">Bilgehan</forename><surname>Sel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmad</forename><surname>Tawaha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vanshaj</forename><surname>Khattar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoxi</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Jin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Reflexion: language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="8634" to="8652" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Adaplanner: Adaptive planning from feedback with language models</title>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingkai</forename><surname>Kong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="58202" to="58245" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mirac</forename><surname>Suzgun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Tauman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kalai</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.12954</idno>
+		<title level="m">Meta-prompting: Enhancing language models with task-agnostic scaffolding</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Faisal Azhar, et al. 2023a. Llama: Open and efficient foundation language models</title>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thibaut</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gautier</forename><surname>Izacard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Martinet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marie-Anne</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothée</forename><surname>Lacroix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baptiste</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Hambro</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2302.13971</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">2023b. Llama 2: Open foundation and fine-tuned chat models</title>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><forename type="middle">R</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Albert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amjad</forename><surname>Almahairi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasmine</forename><surname>Babaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolay</forename><surname>Bashlykov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soumya</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prajjwal</forename><surname>Bhargava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shruti</forename><surname>Bhosale</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.09288</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Self-consistency improves chain of thought reasoning in language models</title>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.11171</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Self-consistency improves chain of thought reasoning in language models</title>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><forename type="middle">H</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Quoc V Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+		<editor>NeurIPS</editor>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="24824" to="24837" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Wikispeedia: An online game for inferring semantic distances between concepts</title>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>West</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joelle</forename><surname>Pineau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Doina</forename><surname>Precup</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IJCAI</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="1598" to="1603" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Buffer of thoughts: Thoughtaugmented reasoning with large language models</title>
+		<author>
+			<persName><forename type="first">Ling</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaochen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianjun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyi</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minkai</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wentao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Cui</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Webshop: Towards scalable realworld web interaction with grounded language agents</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Howard</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="20744" to="20757" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Tree of thoughts: Deliberate problem solving with large language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<publisher>NeurIPS</publisher>
+			<biblScope unit="page">36</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">ReAct: Synergizing Reasoning and Acting in Language Models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Karthik R Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Hotpotqa: A dataset for diverse, explainable multi-hop question answering</title>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Zhilin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhang</forename><surname>Saizheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bengio</forename><surname>Yoshua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cohen</forename><surname>William</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Salakhutdinov</forename><surname>Ruslan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/d18-1259</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2018 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Language agent tree search unifies reasoning, acting, and planning in language models</title>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michal</forename><surname>Shlapentokh-Rothman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haohan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu-Xiong</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Least-to-most prompting enables complex reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claire</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Bousquet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><forename type="middle">H</forename><surname>Quoc V Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

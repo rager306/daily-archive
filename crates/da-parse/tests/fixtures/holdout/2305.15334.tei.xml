@@ -1,0 +1,1731 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Gorilla: Large Language Model Connected with Massive APIs</title>
+				<funder>
+					<orgName type="full">VMware</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2023-05-24">24 May 2023</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Shishir</forename><forename type="middle">G</forename><surname>Patil</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Microsoft Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Tianjun</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Microsoft Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xin</forename><surname>Wang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Microsoft Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Microsoft Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">U</forename><forename type="middle">C</forename><surname>Berkeley</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Microsoft Research</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Gorilla: Large Language Model Connected with Massive APIs</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2023-05-24">24 May 2023</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">A3BB11D46F669249ED7AF39D98038A30</idno>
+					<idno type="arXiv">arXiv:2305.15334v1[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:30+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large Language Models (LLMs) have seen an impressive wave of advances recently, with models now excelling in a variety of tasks, such as mathematical reasoning and program synthesis. However, their potential to effectively use tools via API calls remains unfulfilled. This is a challenging task even for today's state-ofthe-art LLMs such as GPT-4, largely due to their inability to generate accurate input arguments and their tendency to hallucinate the wrong usage of an API call. We release Gorilla, a finetuned LLaMA-based model that surpasses the performance of GPT-4 on writing API calls. When combined with a document retriever, Gorilla demonstrates a strong capability to adapt to test-time document changes, enabling flexible user updates or version changes. It also substantially mitigates the issue of hallucination, commonly encountered when prompting LLMs directly. To evaluate the model's ability, we introduce APIBench, a comprehensive dataset consisting of HuggingFace, TorchHub, and TensorHub APIs. The successful integration of the retrieval system with Gorilla demonstrates the potential for LLMs to use tools more accurately, keep up with frequently updated documentation, and consequently increase the reliability and applicability of their outputs. Gorilla's code, model, data, and demo are available at <ref type="url" target="https://gorilla.cs.berkeley.edu">https://gorilla.cs.berkeley.edu</ref> </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>* Equal contribution.</head><p>Preprint. Under review.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Recent advances in large language models (LLMs) <ref type="bibr" target="#b9">[10,</ref><ref type="bibr" target="#b4">5,</ref><ref type="bibr" target="#b31">32,</ref><ref type="bibr" target="#b5">6,</ref><ref type="bibr" target="#b28">29,</ref><ref type="bibr" target="#b29">30]</ref> have enabled significant new capabilities including natural dialogue, mathematical reasoning, and program synthesis. However, despite these advances, LLMs are still fundamentally limited by the information they can store in a fixed set of weights and the things they can compute using a static computation graph and limited context. Furthermore, as the world changes, LLMs require retraining to update their knowledge and reasoning capabilities.</p><p>By empowering LLMs to use tools <ref type="bibr" target="#b32">[33]</ref>, we can grant access to vastly larger and changing knowledge bases and accomplish complex computational tasks. By providing access to search technologies and databases, <ref type="bibr" target="#b25">[26,</ref><ref type="bibr" target="#b38">39,</ref><ref type="bibr" target="#b36">37]</ref> demonstrated that we can augment LLMs to address a significantly larger and more dynamic knowledge space. Similarly, by providing access to computational tools, <ref type="bibr" target="#b38">[39,</ref><ref type="bibr" target="#b1">2]</ref> demonstrated that LLMs can accomplish complex computational tasks. Consequently, leading LLM providers <ref type="bibr" target="#b28">[29]</ref>, have started to integrate plugins to allow LLMs to invoke external tools through APIs. This transition from a small set of hand-coded tools, to the ability to invoke a vast space of changing cloud APIs could transform LLMs into the primary interface to computing infrastructure and the web. Tasks ranging from booking an entire vacation to hosting a conference, could become as simple as talking to an LLM that has access to the flight, car rental, hotel, catering, and entertainment web APIs. However, much of the prior work <ref type="bibr" target="#b34">[35,</ref><ref type="bibr" target="#b23">24]</ref> integrating tools into LLMs considered a small well documented set of APIs that can be easily injected into the prompt.</p><p>GPT-4 &lt;domain&gt;: Speech-to-Text &lt;api_provider&gt;: TorchHub &lt;code&gt;: asr_model = torch.hub.load( 'snakers4/silero-models', 'asr', source='local') result = asr_model.transcribe( audio_path) Claude &lt;domain&gt;: Audio-Translation &lt;api_provider&gt;: Pytorch &lt;code&gt;: import torchaudio translation = Torchaudio.pipelines. WAV2VEC2_ASR_PIPELINE( "audio.wav") Gorilla &lt;domain&gt;: Speech-to-Text &lt;api_provider&gt;: TorchHub &lt;code&gt;: asr_model = torch.hub.load( 'snakers4/silero-models', 'silero_sst') result = asr_model.transcribe( audio_path)</p><p>Hallucinate! Wrong library! Good to go! Prompt: Help me find an API to convert the spoken language in a recorded audio to text using Torch Hub.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Figure 1: Examples of API calls.</head><p>Example API calls generated by GPT-4 <ref type="bibr" target="#b28">[29]</ref>, Claude <ref type="bibr" target="#b2">[3]</ref>, and Gorilla for the given prompt. In this example, GPT-4 presents a model that doesn't exist, and Claude picks an incorrect library. In contrast, our Gorilla model can identify the task correctly and suggest a fully-qualified API call.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B e t t e r</head><p>Figure <ref type="figure">2</ref>: Accuracy (vs) hallucination in four settings, that is, zero-shot (i.e., without any retriever), and with retrievers. BM25 and GPT are commonly used retrievers and the oracle retriever returns relevant documents at 100%, indicating an upper bound. Higher in the graph (higher accuracy) and to the left is better (lower hallucination). Across the entire dataset, our model, Gorilla, improves accuracy while reducing hallucination.</p><p>Supporting a web scale collection of potentially millions of changing APIs requires rethinking our approach to how we integrate tools. It is not longer possible to describe the full set of APIs in a single context. Many of the APIs will have overlapping functionality with nuanced limitations and constraints. Simply evaluating LLMs in this new setting requires new benchmarks.</p><p>In this paper, we explore the use of self-instruct fine-tuning and retrieval to enable LLMs to accurately select from a large, overlapping, and changing set tools expressed using their APIs and API documentation. We construct, APIBench, a large corpus of APIs with complex and often overlapping functionality by scraping ML APIs (models) from public model hubs. We choose three major model hubs for dataset construction: TorchHub, TensorHub and HuggingFace. We exhaustively include every API call in TorchHub (94 API calls) and TensorHub (696 API calls); For HuggingFace, since the models come in a large number and lots of the models don't have a specification, we choose the most downloaded 20 models per task category (in a total of 925). We also generate 10 synthetic user question prompts per API using Self-Instruct <ref type="bibr" target="#b41">[42]</ref>. Thus, each entry in the dataset becomes an instruction reference API pair. We adopt a common AST sub-tree matching technique to evaluate the functional correctness of the generated API. We first parse the generated code into an AST tree, then find a sub-tree whose root node is the API call that we care about (e.g., torch.hub.load) and use it to index our dataset. We check the functional correctness and hallucination problem for the LLMs, reporting the corresponding accuracy.</p><p>We then finetune Gorilla, a LLaMA-7B-based model with document retrieval using our dataset. We find that Gorilla significantly outperforms GPT-4 in terms of API functionality accuracy as well as reducing hallucination errors. We show an example output in Fig. <ref type="figure">1</ref>. Further, our retrieval-aware training of Gorilla enables the model to adapt to changes in the API documentation. Finally, we demonstrate Gorilla's ability to understand and reason about constraints.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related Work</head><p>Large Language Models Recent strides in the field of LLMs have renovated many downstream domains <ref type="bibr" target="#b9">[10,</ref><ref type="bibr" target="#b39">40,</ref><ref type="bibr" target="#b47">48,</ref><ref type="bibr" target="#b46">47]</ref>, not only in traditional natural language processing tasks but also in program synthesis. Many of these advances are achieved by augmenting pre-trained LLMs by prompting <ref type="bibr" target="#b43">[44,</ref><ref type="bibr" target="#b13">14]</ref> and instruction fine-tuning <ref type="bibr" target="#b10">[11,</ref><ref type="bibr" target="#b30">31,</ref><ref type="bibr" target="#b42">43,</ref><ref type="bibr" target="#b14">15]</ref>. Recent open-sourced models like LLaMa <ref type="bibr" target="#b39">[40]</ref>, Alpaca <ref type="bibr" target="#b37">[38]</ref>, and Vicuna <ref type="bibr" target="#b8">[9]</ref> have furthered the understanding of LLMs and facilitated their experimentation. While our approach, Gorilla, incorporates techniques akin to those mentioned, its primary emphasis is on enhancing the LLMs' ability to utilize millions of tools, as opposed to refining their conversational skills. Additionally, we pioneer the study of fine-tuning a base model by supplementing it with information retrieval -a first, to the best of our knowledge.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Tool Usage</head><p>The discussion of tool usage within LLMs has seen an upsurge, with models like Toolformer taking the lead <ref type="bibr" target="#b32">[33,</ref><ref type="bibr" target="#b18">19,</ref><ref type="bibr" target="#b20">21,</ref><ref type="bibr" target="#b25">26]</ref>. Tools often incorporated include web-browsing <ref type="bibr" target="#b33">[34]</ref>, calculators <ref type="bibr" target="#b11">[12,</ref><ref type="bibr" target="#b38">39]</ref>, translation systems <ref type="bibr" target="#b38">[39]</ref>, and Python interpreters <ref type="bibr" target="#b13">[14]</ref>. While these efforts can be seen as preliminary explorations of marrying LLMs with tool usage, they generally focus on specific tools. Our paper, in contrast, aims to explore a vast array of tools (i.e., API calls) in an open-ended fashion, potentially covering a wide range of applications.</p><p>With the recent launch of Toolformer <ref type="bibr" target="#b32">[33]</ref> and GPT-4 <ref type="bibr" target="#b28">[29]</ref>, the importance of API calls has been highlighted, encouraging many works in employing API calls as tooling <ref type="bibr" target="#b34">[35,</ref><ref type="bibr" target="#b23">24]</ref>. Moreover, the application of API calls in robotics has been explored to some extent <ref type="bibr" target="#b40">[41,</ref><ref type="bibr" target="#b0">1]</ref>. However, these works primarily aim at showcasing the potential of "prompting" LLMs rather than establishing a systematic method for evaluation and training (including fine-tuning). Our work, on the other hand, concentrates on systematic evaluation and building a pipeline for future use.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LLMs for Program Synthesis</head><p>Harnessing LLMs for program synthesis has historically been a challenging task <ref type="bibr" target="#b22">[23,</ref><ref type="bibr" target="#b6">7,</ref><ref type="bibr" target="#b44">45,</ref><ref type="bibr" target="#b15">16,</ref><ref type="bibr" target="#b12">13,</ref><ref type="bibr" target="#b19">20]</ref>. Researchers have proposed an array of strategies to prompt LLMs to perform better in coding tasks, including in-context learning <ref type="bibr" target="#b43">[44,</ref><ref type="bibr" target="#b17">18,</ref><ref type="bibr" target="#b6">7]</ref>, task decomposition <ref type="bibr" target="#b16">[17,</ref><ref type="bibr" target="#b45">46]</ref>, and self-debugging <ref type="bibr" target="#b7">[8,</ref><ref type="bibr" target="#b35">36]</ref>. Besides prompting, there have also been efforts to pretrain language models specifically for code generation <ref type="bibr" target="#b27">[28,</ref><ref type="bibr" target="#b21">22,</ref><ref type="bibr" target="#b26">27]</ref>.</p><p>However, these strategies focus on prompting large language models or pre-training them for general program synthesis. In our research, in contrast, we focus on a much restricted domain: the synthesis of linear programs using API calls. General program synthesis, not only is complex, but is also hard to verify and evaluate. API calls, on the other hand, function more like tool usage. This allows the LLM to significantly expand its capabilities without grappling with low-level implementation details.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Methodology</head><p>In this section, we describe APIBench, a comprehensive benchmark constructed from TorchHub, TensorHub, and HuggingFace API Model Cards. We begin by outlining the process of collecting the API dataset and how we generated instruction-answer pairs. We then introduce Gorilla, a novel training paradigm with a information-retriever incorporated into the training and inference pipelines. Finally, we present our AST tree matching evaluation metric.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Dataset Collection</head><p>To collect the dataset, we meticulously recorded all online model cards for HuggingFace's "The Model Hub", PyTorch Hub, and TensorFlow Hub Models. Throughout the rest of the paper, we call these HuggingFace, Torch Hub, and TensorFlow Hub respectively for brevity.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>API Documentation</head><p>The HuggingFace platform hosts and servers about 203,681 models. However, many of them have poor documentation, lack dependencies, have no information in their model card, etc. To filter these out, we pick the top 20 models from each domain. We consider 7 domains in multimodal data, <ref type="bibr" target="#b7">8</ref> in CV, 12 in NLP, 5 in Audio, 2 in tabular data, and 2 in reinforcement learning. Post filtering, we got a total of 925 models from HuggingFace. TensorFlow Hub is versioned into v1 and v2. The latest version (v2) has 801 models in total, and we process all of them. Post filtering out models, whose mode cards had little to no information, we are left with 626 models. Similar to Dataset curation: 1,645 API calls. 94 from Torch Hub (exhaustive), 626 from TensorFlow Hub v2 (exhaustive) and 925 from HuggingFace (Top 20 in each domain). Self-instruct with in-context examples to generate 16,450 {instruction,API} pairs This is then used to train Gorilla-7B Cat Cat Cat API: torch.hub.load(…) API Database "I want to see some cats dancing in celebration!" Information Retriever Input: ###Task: Generate image from text ###Reference API: StableDiffusionPipeline.from_ pretrained (…) API:StableDiffusionPipelin e.from_pretrained(stabilit yai/stable-diffusion-2-1) Zero-shot Execution Results! GORILLA GORILLA TensorFlow Hub, we get 95 models from Torch Hub. We then converted the model cards for each of these 1,645 API calls into a json object with the following fields: {domain, framework, functionality, api_name, api_call, api_arguments, environment_requirements, example_code, performance, and description.}. We provide more information in the Appendix. These fields were chose to generalize beyond the API calls within ML domain, to other domains, includin RESTful API calls.</p><p>Instruction Generation Guided by the self-instruct paradigm <ref type="bibr" target="#b41">[42]</ref>, we employed GPT-4 to generate synthetic instruction data. We provided three in-context examples, along with a reference API documentation, and tasked the model with generating real-world use cases that call upon the API.</p><p>We specifically instructed the model to refrain from using any API names or hints when creating instructions. We constructed six examples (Instruction-API pairs) for each of the three model hubs. These 18 points, were the only hand-generated or modified data. For each of our 1,645 API datapoints, we sample 3 of 6 corresponding instruction examples to generate a total of 10 instruction-api pairs as demonstrated in Figure <ref type="figure" target="#fig_0">3</ref>. We would like to highlight that we only need to employ GPT-4 to generate the instructions and this can be swapped with open-source alternatives such as LLaMA, Alpaca, etc.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Gorilla</head><p>Our model Gorilla, is retrieve-aware finetuned LLaMA-7B model, specifically for API calls. As shown in Fig <ref type="figure" target="#fig_0">3</ref>, we employ self-instruct to generate {instruction, API} pairs. To fine-tune LLaMA, we convert this to a user-agent chat-style conversation, where each data-point is a conversation with one round each for the user and the agent. We then perform standard instruction finetuning on the base LLaMA-7B model. For our experiments, we train Gorilla with and without the retriever.</p><p>API Call with Constraints API calls often come with inherent constraints. These constraints necessitate that the LLM not only comprehend the functionality of the API call but also categorize the calls according to different constraint parameters. This requirement introduces an additional layer of complexity to the process, demanding a more nuanced understanding from the LLM. Specifically, for machine learning API calls, two common sets of constraints are: parameter size and a lower bound on accuracy. Consider, for instance, the following prompt: "Invoke an image classification model that uses less than 10M parameters, but maintains an ImageNet accuracy of at least 70%". Such a prompt presents a substantial challenge for the LLM to accurately interpret and respond to. Not only must the LLM understand the user's functional description, but it also needs to reason about the various constraints embedded within the request. This challenge underlines the intricate demands placed on LLMs in real-world API calls. It is not sufficient for the model to merely comprehend the basic functionality of an API call; it must also be capable of navigating the complex landscape of constraints that accompany such calls. These observations necessitate the need to fine-tune an LLM for APIs.</p><p>Retriever-Aware training For training with retriever, the instruction-tuned dataset, also has an additional "Use this API documentation for reference: &lt;retrieved_API_doc_JSON&gt;" appended to the user prompt. Through this, we aim to teach the LLM to parse the second half of the question to answer the first half. We demonstrate that this a) makes the LLM adapt to test-time changes in API documentation, and b) improves performance from in-context learning, and finally c) show that it reduces hallucination error.</p><p>Surprisingly, we find that augmenting a LLM with retrieval, does not always lead to improved performance, and can at-times hurt performance. We share more insights along with details in Sec 4.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Gorilla Inference</head><p>During Inference, the user provides the prompt in natural language (Fig: <ref type="figure" target="#fig_0">3</ref>). This can be for a simple task (e.g, "I would like to identify the objects in an image"), or they can specify a vague goal, (.e.g, "I am going to the zoo, and would like to track animals"). Gorilla, similar to training, can be used for inference in two modes: zero-shot and with retrieval. In zero-shot, this prompt (with NO further prompt tuning) is fed to the Gorilla LLM model when then returns the API call that will help in accomplishing the task and/or goal. In retrieval mode, the retriever (either of BM25 or GPT-Index) first retrieves the most up-to-date API documentation stored in the API Database. This is then concatenated to the user prompt along with the message Use this API documentation for reference: before feeding it to Gorilla. The output of Gorilla is an API to be invoked. Besides the concatenation as described, we do NO further prompt tuning in our system. While we do have a system to execute these APIs, that is not a focus of this paper.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Verifying APIs</head><p>Inductive program synthesis, where a program is synthesized to satisfy test cases, has found success in several avenues <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b24">25]</ref>. However, test cases fall short when evaluating API calls, as it is often hard to verify the semantic correctness of the code. For example, consider the task of classifying an image. There are over 40 different models that can be used for the task. Even if we were to narrow down to a single family of Densenet, there are four different configurations possible. Hence, there exist multiple correct answers and it is hard to tell if the API being used is functionally equivalent to the reference API by unit tests. Thus, to evaluate the performance of our model, we compare their functional equivalence using the dataset we collected. To trace which API in the dataset is the LLM calling, we adopt the AST tree-matching strategy. Since we only consider one API call in this paper, checking if the AST of the candidate API call is a sub-tree of the reference API call reveals which API is being used in the dataset.</p><p>Identifying and even defining hallucinations can be challenging. We use the AST matching process to directly identify the hallucinations. We define a hallucination as an API call that is not a sub-tree of any API in the database -invoking an entirely imagined tool. This form of hallucination is distinct from invoking an API incorrectly which we instead define as an error.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>AST Sub-Tree Matching</head><p>We perform AST sub-tree matching to identify which API in our dataset is the LLM calling. Since each API call can have many arguments, we need to match on each of these arguments. Further, since, Python allows for default arguments, for each API, we define which arguments to match in our database. For example, we check repo_or_dir and model arguments in our function call. In this way, we can easily check if the argument matches the reference API or not. Please refer to Fig. <ref type="figure" target="#fig_1">4</ref> for more details. In this example, Gorilla returns a torch API call. We first build the tree, and verify that it matches a subtree in our dataset along nodes torch.hub.load, pytorch/vision, and densenet121. But, we don't check for match along leaf node pretrained = True since that is an optional python argument.</p><p>torch utils hub Tensor model_zoo load repo: pytorch/vision model: densenet121 model: densenet161 model: densenet201 pretrained: True pretrained: False repo: huggingface/ pytorch-transformers torch.hub.load('pytorch/vision:v0.10.0', 'densenet121', pretrained=True) torch hub load pytorch/vision densenet121 pretrained = True On the left is an API call returned by Gorilla. We first build the associated API tree. We then compare this to our dataset, to see if the API dataset has a subtree match. In the above example, the matching subtree is highlighted in brown, signifying that the API call is indeed correct. Pretrained=True is an optional argument.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Evaluation</head><p>We carried out an array of experiments on our collected dataset, benchmarking our model Gorilla with other models, and exploring how different retrieval methods may impact the performance of the model in making API calls. We then demonstrate that Gorilla can easily adapt to test-time changes in API documentation. In addition, we assess Gorilla's ability to reason about API calls under constraints. Lastly, we examined how integrating different retrieval methods during training influences the model's final performance.</p><p>Baselines Primarily, we compare Gorilla with state-of-the-art language models in a zero-shot setting.</p><p>The models under consideration include: GPT-4 by OpenAI, we use the gpt-4-0314 checkpoint; GPT-3.5-turbo with the gpt-3.5-turbo-0301 checkpoint, both of which are RLHF-tuned model specifically designed for conversation; Claude with claude-v1 checkpoint, a language model by Anthropic, renowned for its lengthy context capabilities; LLaMA-7B, a large language model by Meta and the finest open-source model to date.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Retrievers</head><p>The term Zero-shot (abbreviated as 0-shot in tables) refers to scenarios where no retriever is used. The sole input to the model is the user's natural language prompt. For BM25, we consider each API as a separate document. During retrieval, we use the user's query to search the index and fetch the most relevant (top-1) API. This API is concatenated with the user's prompt to query the LLMs. Similarly, GPT-Index refers to the retrieval model text-davinci-003 from OpenAI. Like BM25, each API call is indexed as an individual document, and the most relevant document, given a user query, is retrieved and appended to the user prompt. Lastly, we include an Oracle retriever, which serves two purposes: first, to identify the potential for performance improvement through more efficient retrievers, and second, to assist users who know which API to use but may need to help invoking it. In all cases, when a retriever is used, it is appended to the user's prompt as follows: &lt;user_prompt&gt; Use this API documentation for reference: &lt;retrieved_API_doc_JSON&gt;. The dataset for these evaluations is detailed in Sec 3. We emphasize that we have maintained a holdout test set on which we report our findings. The holdout test set was created by dividing the self-instruct dataset's instruction, API pairs into training and testing sets.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">AST Accuracy on API call</head><p>We first demonstrate the results for the AST accuracy for different models. We present the results in Tab. 1. We test each model for different retriever settings defined above. We report the overall accuracy, the error by hallucination and the error by selecting wrong API call. Note that for TorchHub and TensorHub, we evaluate all the models using AST tree accuracy score. However, for HuggingFace, since the dataset is not exhaustive, for all the models except Gorilla, we only check if they can provide the correct domain names. So this problem reduces to picking one of the multiple choices.</p><p>Finetuning without Retrieval In Tab. 1 we show that lightly fine-tuned Gorilla gets the state-ofthe-art performance zero-shot over all the models, 20.43% better than GPT-4 and 10.75% better than ChatGPT. When compared to other open-source models LLAMA, the improvement is as big as 83%. his suggests quantitatively, that finetuning is better than retrieval, at-least in our scope.</p><p>In addition, we found that finetuning without retriever and putting ground truth retriever in evaluation time rarely helps the performance: 0.88% worse in TensorHub and 0.97% better in HuggingFace. If we put BM25 or GPT-Index as retriever, results will be significantly dropped: 21.50% in Torch Hub and 47.57% in HuggingFace. The result illustrates that adding a non-optimal retriever at test time will sometime misguide the model and result in more errors. We will discuss an interesting ablation on how finetuning with the retriever will help the performance in the next paragraph. Finetuning with Retrieval We now discuss an interesting experiment on how finetuning language with retriever incorporated is helping the performance. The settings for this experiment are finetuning the base LLAMA with the prompt (instruction generated), reference API document (from goldentruth oracle), and the example output generated by GPT-4. In Tab. 2, we can see that incorporating ground truth retriever in the finetuning pipeline achieves significantly better results 12.37% better than training without retriever in Torch Hub and 23.46% better in HuggingFace. However, we found that at evaluation time, current retrievers still have a big gap between the ground truth retriever: using GPT-Index at evaluation results in 29.20% accuracy degradation, and using BM25 results in a 52.27% accuracy degradation. Nevertheless, we can still conclude that with a better retriever, finetuning USER: I want to automatically remove the background from an input image &lt;Retrieval: ..fcn_resnet101..&gt; GORILLA: api_call: "torch.hub.load('pytorch/vision', 'fcn_resnet101', pretrained=True)" USER: I want to automatically remove the background from an input image. &lt;Retrieval: ..NVIDIA/DeepLearningExamples:torchhub..&gt; GORILLA:</p><p>api_call: "torch.hub.load('NVIDIA / DeepLearningExamples:torchhub ', 'fcn_resnet50', pretrained=True)" USER: I want to automatically remove the background from an input image. &lt;Retrieval: ..fcn_resnet50..&gt; GORILLA:</p><p>api_call: "torch.hub.load('pytorch/vision', 'fcn_resnet50', pretrained=True)"</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Default Response</head><p>Update the model Update the model repository with retriever is still a better method to adopt while in another scenario, when a good retriever is not available, zero-shot finetuning might be the preferred choice. Hallucination with LLM One phenomenon we observe is that zero-shot prompting with LLMs (GPT-4/GPT-3.5) to call APIs results in dire hallucination errors. These errors, while diverse, commonly manifest in erroneous behavior such as the model invoking the "Auto-Model.from_pretrained(dir_name)" command with arbitrary GitHub repository names. Surprisingly, we also found that in TorchHub, HuggingFace and TensorFlow Hub, GPT-3.5 has less hallucination errors than GPT-4. This finding is also consistent for the settings when various retrieving methods are provided: 0-shot, BM25, GPT-Index and the oracle. This might suggest that RLHF plays a central role in turning the model to be truthful. Additional examples and discussion are in Appendix.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Test-Time Documentation Change</head><p>The rapidly evolving nature of API documentation presents a significant challenge for the application of LLMs in this field. These documents are often updated at a frequency that outpaces the retraining or fine-tuning schedule of LLMs, making these models particularly brittle to changes in the information they are designed to process. This mismatch in update frequency can lead to a decline in the utility and reliability of LLMs over time.</p><p>However, with the introduction of Gorilla's retriever-aware training, we can readily adapt to changes in API documentation. This novel approach allows the model to remain updated and relevant, even as the API documentation it relies on undergoes modifications. This is a pivotal advancement in the field, as it ensures that the LLM maintains its efficacy and accuracy over time, providing reliable outputs irrespective of changes in the underlying documentation.</p><p>For instance, consider the scenario illustrated in Figure <ref type="figure" target="#fig_3">6</ref>, where the training of Gorilla has allowed it to react effectively to changes in APIs. This includes alterations such as upgrading the FCN's ResNet-50 backbone to ResNet-101, as demonstrated in the second column of the figure. This capability ensures that the LLM remains relevant and accurate even as the underlying models and systems undergo upgrades and improvements. Furthermore, the third column in Figure <ref type="figure" target="#fig_3">6</ref> shows how Gorilla adapts to changes in the model registry from pytorch/vision to NVIDIA/DeepLearningExamples:torchhub. This reflects the model's ability to adjust to shifts in API sources, which is vital as organizations may change their preferred model registries over time.</p><p>In summary, Gorilla's ability to adapt to test-time changes in API documentation offers numerous benefits. It maintains its accuracy and relevance over time, adapts to the rapid pace of updates in API documentation, and adjusts to modifications in underlying models and systems. This makes it a robust and reliable tool for API calls, significantly enhancing its practical utility.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">API Call with Constraints</head><p>We now focus on the language model's capability of understanding constraints. For any given task, which API call to invoke is typically a tradeoff between a multitude of factors. In the case of RESTFul APIs, it could be the cost of each invocation ($), and the latency of response (ms), among others. Similarly, within the scope of ML APIs, it is desirable for Gorilla to respect constraints such as accuracy, number of learnable parameters in the model, the size on disk, peak memory consumption, FLOPS, etc. We present the underlying ablation study evaluating the ability of different models in zero-shot and with retrievers settings to respect a given accuracy constraint. This setting is best understood with an example. If the user were to ask for an Image classification model that achieves at least 80% top-1 accuracy on the Imagenet dataset, then while both are classification models hosted by Torch Hub, ResNeXt-101 32x16d with a top-1 accuracy of 84.2% would be the right model whose API to call and not, say, MobileNetV2 which has a top-1 accuracy of 71.88%. For Table <ref type="table" target="#tab_2">3</ref>, we filtered a subset of the Torch Hub dataset that had accuracy defined for at least onedataset in its model card (65.26% of TorchHub dataset in Table <ref type="table" target="#tab_0">1</ref>). We notice that with constraints, understandably, the accuracy drops across all models, with and without a retriever. Gorilla is able to match performance with the best-performing model GPT-3.5 when using retrievals (BM25, GPT-Index) and has the highest accuracy in the Zero-shot case. This highlights Gorilla's ability to navigate APIs while considering the trade-offs between different constraints.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>LLMs are swiftly gaining popularity across diverse domains. In our study, we spotlight techniques designed to enhance the LLM's ability to accurately identify the appropriate API for a specific task-a significant but often overlooked aspect in the advancement of this technology. Since APIs function as a universal language enabling diverse systems to communicate effectively, their correct usage can boost the ability of LLMs to interact with tools in the wider world. In this paper, we propose Gorilla, a new novel pipeline for finetuning LLMs to call APIs. The finetuned model's performance surpasses prompting the state-of-the-art LLM (GPT-4) in three massive datasets we collected. Gorilla generates reliable API calls to ML models without hallucination, demonstrates an impressive capability to adapt to test-time API usage changes, and can satisfy constraints while picking APIs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Limitations &amp; Social Impacts</head><p>With the goal of wanting to have a challenging dataset, we chose ML APIs, given their functional similarity. The potential downside to APIs that focus on the ML domain, is their propensity to produce biased predictions if trained on skewed data, potentially disadvantaging certain sub-groups.</p><p>To counter this concern and foster a deeper understanding of these APIs, we are releasing our extensive dataset, consisting of over 11,000 instruction-API pairs. This resource will serve the wider community as a valuable tool for studying and benchmarking existing APIs, contributing to a more fair and optimized usage of machine learning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8">Appendix</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8.1">Dataset Details</head><p>Our dataset is multi-faceted, comprising three distinct domains: Torch Hub, Tensor Hub, and HuggingFace. Each entry within this dataset is rich in detail, carrying critical pieces of information that further illuminate the nature of the data. Delving deeper into the specifics of each domain, Torch Hub provides 95 APIs. The second domain, Tensor Hub, is more expansive with a total of 696 APIs. Finally, the most extensive of them all, HuggingFace, comprises 925 APIs.</p><p>To enhance the value and utility of our dataset, we've undertaken an additional initiative. With each API, we have generated a set of 10 unique instructions. These instructions, carefully crafted and meticulously tailored, serve as a guide for both training and evaluation. This initiative ensures that every API is not just represented in our dataset, but is also comprehensively understood and effectively utilizable.</p><p>In essence, our dataset is more than just a collection of APIs across three domains. It is a comprehensive resource, carefully structured and enriched with added layers of guidance and evaluation parameters.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Domain Classification</head><p>The unique domain names encompassed within our dataset are illustrated in Figure <ref type="figure" target="#fig_4">7</ref>. The dataset consists of three sources with a diverse range of domains: Torch Hub houses 6 domains, Tensor Hub accommodates a much broader selection with 57 domains, while HuggingFace incorporates 37 domains. To exemplify the structure and nature of our dataset, we invite you to refer to the domain names represented in Figure <ref type="figure">8</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>API Call Task</head><p>In this task, we test the model's capability to generate a single line of code, either in a zero-shot fashion or by leveraging an API reference. Primarily designed for evaluation purposes, this task effectively gauges the model's proficiency in identifying and utilizing the appropriate API call.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>API Provider Component</head><p>This facet relates to the provision of the programming language. In this context, the API provider plays a vital role as it serves as a foundation upon which APIs are built and executed.</p><p>Explanation Element This component offers valuable insights into the rationale behind the usage of a particular API, detailing how it aligns with the prescribed requirements. Furthermore, when certain constraints are imposed, this segment also incorporates those limitations. Thus, the explanation element serves a dual purpose, offering a deep understanding of API selection, as well as the constraints that might influence such a selection. This balanced approach ensures a comprehensive understanding of the API usage within the given context.</p><p>Code Example code for accomplishing the task. We de-prioritize this as we haven't tested the execution result of the code. We leave this for future works, but make this data available in-case others want to build on it.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8.2">Gorilla Details</head><p>We provide all the training details for Gorilla in this section. This includes how we divide up the training, evaluation dataset, training hyperparameters for Gorilla.</p><p>Data For HuggingFace, we devise the entire dataset into 90% training and 10% evaluation. For Torch Hub and Tensor Hub, we devise the data in to 80% training and 20% testing.</p><p>Training We train Gorillafor 5 epochs with the 2e-5 learning rate with cosine decay. The details are provide in Tab. 4. We finetune it on 8xA100 with 40G memory each.</p><p>Torch Hub domain names: Classification, Semantic Segmentation, Object Detection, Audio Separation, Video Classification, Text-to-Speech Tensor Hub domain names: text-sequence-alignment, text-embedding, text-languagemodel, text-preprocessing, text-classification, text-generation, text-question-answering, textretrieval-question-answering, text-segmentation, text-to-mel, image-classification, image-  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>feature-vector, image-object-detection, image-segmentation, image-generator, image-posedetection, image-rnn-agent, image-augmentation, image-classifier, image-style-transfer, image-aesthetic-quality, image-depth-estimation, image-super-resolution, image-deblurring, image-extrapolation, image-text-recognition, image-dehazing, image-deraining, imageenhancemenmt, image-classification-logits, image-frame-interpolation, image-text-detection, image-denoising, image</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8.3">Performance Comparison</head><p>We provide a full comparison of each model's performance in this section. In Fig <ref type="figure">10</ref> and Fig. <ref type="figure" target="#fig_5">11</ref>, the full set of comparisons is provided. We see that especially in zero-shot case, Gorilla surpasses the GPT-4 and GPT-3.5 by a large margin. The GPT-4 and GPT-3.5 gets around 40% accuracy in Torch Hub and Tensor Hub, which are two structured API calls. Compared to that, HuggingFace is a more flexible and diverse Hub, as a result, the performance on HuggingFace is not as competitive.</p><p>### User: Our customer is a zoo and we want to help them detect movement of different animals. Write a python program in 1 to 2 lines to call API in TensorFlowHub. ### Assistant: &lt;domain&gt;: image-object-detection, &lt;api_call&gt;: detector = hub.load('<ref type="url" target="https://tfhub.dev/google/openimages_v4/ssd_mobilenet_v2/1">https://tfhub.dev/google/openimages_v4/ssd_mobilenet_v2/1</ref>'), &lt;api_provider&gt;: TensorFlow Hub, &lt;explanation&gt;: This API call loads the pre-trained Single Shot Detector (SSD) MobileNet V2 model from TensorFlow Hub, which has been trained on the Open Images v4 dataset. This model is used for object detection in images. Once loaded, you can pass an image (and an optional score threshold for detection confidence) to the detector to get back the detected objects along with their bounding boxes, class labels, and associated confidence scores. &lt;code&gt;: import tensorflow as tf; import tensorflow_hub as hub; # Load the SSD MobileNet V2 model; detector = hub.load('<ref type="url" target="https://tfhub.dev/google/openimages_v4/ssd_mobilenet_v2/1">https://tfhub.dev/google/openimages_v4/ssd_mobilenet_v2/1</ref>'); # Use the model to detect objects in an image (assuming 'image' is a TensorFlow tensor representing your image); result = detector(image, score_threshold=0.5) ### User: I am an engineer at Uber and I need to find a API that can classify pedestrians, cars, etc. from an image of the scene. Write a python program in 1 to 2 lines to call API in TorchHub. &lt;Reference API&gt;: {domain: Object Detection, framework: PyTorch, functionality: Traffic Object Detection, Drivable Area Segmentation, Lane Detection, api_name: HybridNets, api_call: torch.hub.load(repo_or_dir='datvuthanh/hybridnets', model='hybridnets', pretrained=True), api_arguments: repo_or_dir, model, pretrained, python_environment_requirements: Python&gt;=3.7, PyTorch&gt;=1.10, example_code: 'import torch; model = torch.hub.load('datvuthanh/hybridnets', 'hybridnets', pretrained=True); img = torch.randn(1,3,640,384); features, regression, classification, anchors, segmentation = model(img), performance: dataset: [name: BDD100K, accuracy: Traffic Object Detection: Recall (%): 92.8, mAP@0.5 (%): 77.3, Drivable Area Segmentation: Drivable mIoU (%): 90.5, Lane Line Detection: Accuracy (%): 85.4, Lane Line IoU (%): 31.6], description: HybridNets is an end2end perception network for multi-tasks. Our work focused on traffic object detection, drivable area segmentation and lane detection. HybridNets can run real-time on embedded systems, and obtains SOTA Object Detection, Lane Detection on BDD100K Dataset.} ### Assistant: &lt;domain&gt;: Object Detection, &lt;api_call&gt;: model = torch.hub.load('datvuthanh/hybridnets', 'hybridnets', pretrained=True), &lt;api_provider&gt;: PyTorch, &lt;explanation&gt;: Load the pretrained HybridNets model for object detection from PyTorch Hub to classify pedestrians, cars, etc. in an image of the scene, &lt;code&gt;: import torch; model = torch.hub.load('datvuthanh/hybridnets', 'hybridnets', pre-trained=True)</p><p>Figure <ref type="figure">8</ref>: Example of the Dataset: Two examples of the dataset, the above one is zero-shot (without information retrievers) and the bottom one is with information retriever.</p><p>generate_video = pipeline("text-to-video", model="your_model_name") vqa = pipeline("visual-question-answering", model="microsoft/clip-vqa-base", tokenizer="microsoft/clip-vqa-base") depth_estimator = pipeline("depth-estimation", model="intel-isl/MiDaS", tokenizer="intelisl/MiDaS") Figure <ref type="figure">9</ref>: Hallucination Examples: GPT-4 incurs serious hallucination errors in HuggingFace. We show a couple of examples in the figure.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8.3.1">Evaluation</head><p>For ease of evaluation, we manually cleaned up the dataset to make sure each API call domain only contains the valid call in the form of: API_name(API_arg 1 , API_arg 2 , ..., API_arg k )</p><p>Our framework allows the user to define any combination of the arguments to check. For Torch Hub, we check for the API name torch.hub.load with arguments repo_or_dir and model. For Tensor Hub, we check API name hub.KerasLayer and hub.load with argument handle. For HuggingFace, since there are many API function names, we don't list all of them here. One specific note is that we require the pretrained_model_name_or_path argument for all the calls except for pipeline. For pipeline, we don't require the pretrained_model_name_or_path argument since it automatically select a model for you once task is specified.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8.3.2">Hallucination</head><p>We found especially in HuggingFace, the GPT-4 model incurs serious hallucination problems. It would sometimes put a GitHub name that is not associated with the HuggingFace repository in to the domain of pretrained_model_name_or_path. Fig. <ref type="figure">9</ref> demonstrates some examples and we also observe that GPT-4 sometimes assumes the user have a local path to the model like your_model_name. This is greatly reduced by Gorilla as we see the hallucination error comparison in Tab. 1. </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Gorilla: A system for enabling LLMs to interact with APIs. The upper half represents the training procedure as described in Sec 3. This is the most exhaustive API data-set for ML to the best of our knowledge. During inference (lower half), Gorilla supports two modes -with retrieval, and zero-shot. In this example, it is able to suggest the right API call for generating the image from the user's natural language query.</figDesc><graphic coords="4,342.10,240.30,76.51,76.72" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: AST Sub-Tree Matching to evaluate API calls. On the left is an API call returned by Gorilla. We</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Accuracy with GPT-retriever. Gorilla outperforms on Torch Hub and Hugging-Face while matching performance on Tensorflow Hub for all existing SoTA LLMs -closed source, and open source.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Gorilla's retriever-aware training enables it to react to changes in the APIs. The second column demonstrates changes in model upgrading FCN's ResNet-50 backbone to ResNet-101. The third column demonstrate changes in model registry from pytorch/vision to NVIDIA/DeepLearningExamples:torchhub</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 7 :</head><label>7</label><figDesc>Figure7: Domain names: Domain names with the three dataset. Tensor Hub is the smallest dataset while the other two hubs contain many more models.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 11 :</head><label>11</label><figDesc>Figure 11: Accuracy vs Hallucination:We plot each model's performance on different configurations. We found that in the zero-shot setting, Gorilla has the most accuracy gain while maintaining good factual capability. When prompting with different retrievers, Gorilla is still capable to avoid the hallucination errors.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Evaluating LLMs on Torch Hub, HuggingFace, and Tensorflow Hub APIs</figDesc><table><row><cell>LLM (retriever)</cell><cell></cell><cell>TorchHub</cell><cell></cell><cell></cell><cell>HuggingFace</cell><cell></cell><cell cols="2">TensorFlow Hub</cell><cell></cell></row><row><cell></cell><cell>overall ↑</cell><cell>hallu ↓</cell><cell>err ↓</cell><cell>overall ↑</cell><cell>hallu ↓</cell><cell>err ↓</cell><cell>overall ↑</cell><cell>hallu ↓</cell><cell>err ↓</cell></row><row><cell>LLAMA (0-shot)</cell><cell>0</cell><cell>100</cell><cell>0</cell><cell>0.00</cell><cell>97.57</cell><cell>2.43</cell><cell>0</cell><cell>100</cell><cell>0</cell></row><row><cell>GPT-3.5 (0-shot)</cell><cell>48.38</cell><cell>18.81</cell><cell>32.79</cell><cell>16.81</cell><cell>35.73</cell><cell>47.46</cell><cell>41.75</cell><cell>47.88</cell><cell>10.36</cell></row><row><cell>GPT-4 (0-shot)</cell><cell>38.70</cell><cell>36.55</cell><cell>24.7</cell><cell>19.80</cell><cell>37.16</cell><cell>43.03</cell><cell>18.20</cell><cell>78.65</cell><cell>3.13</cell></row><row><cell>Claude (0-shot)</cell><cell>18.81</cell><cell>65.59</cell><cell>15.59</cell><cell>6.19</cell><cell>77.65</cell><cell>16.15</cell><cell>9.19</cell><cell>88.46</cell><cell>2.33</cell></row><row><cell>Gorilla (0-shot)</cell><cell>59.13</cell><cell>6.98</cell><cell>33.87</cell><cell>71.68</cell><cell>10.95</cell><cell>17.36</cell><cell>83.79</cell><cell>5.40</cell><cell>10.80</cell></row><row><cell>LLAMA (BM-25)</cell><cell>8.60</cell><cell>76.88</cell><cell>14.51</cell><cell>3.00</cell><cell>77.99</cell><cell>19.02</cell><cell>8.90</cell><cell>77.37</cell><cell>13.72</cell></row><row><cell>GPT-3.5 (BM-25)</cell><cell>38.17</cell><cell>6.98</cell><cell>54.83</cell><cell>17.26</cell><cell>8.30</cell><cell>74.44</cell><cell>54.16</cell><cell>3.64</cell><cell>42.18</cell></row><row><cell>GPT-4 (BM-25)</cell><cell>35.48</cell><cell>11.29</cell><cell>53.22</cell><cell>16.48</cell><cell>15.93</cell><cell>67.59</cell><cell>34.01</cell><cell>37.08</cell><cell>28.90</cell></row><row><cell>Claude (BM-25)</cell><cell>39.78</cell><cell>5.37</cell><cell>54.83</cell><cell>14.60</cell><cell>15.82</cell><cell>69.58</cell><cell>35.18</cell><cell>21.16</cell><cell>43.64</cell></row><row><cell>Gorilla (BM-25)</cell><cell>40.32</cell><cell>4.30</cell><cell>55.37</cell><cell>17.03</cell><cell>6.42</cell><cell>76.55</cell><cell>41.89</cell><cell>2.77</cell><cell>55.32</cell></row><row><cell>LLAMA (GPT-Index)</cell><cell>14.51</cell><cell>75.8</cell><cell>9.67</cell><cell>10.18</cell><cell>75.66</cell><cell>14.20</cell><cell>15.62</cell><cell>77.66</cell><cell>6.71</cell></row><row><cell>GPT-3.5 (GPT-Index)</cell><cell>60.21</cell><cell>1.61</cell><cell>38.17</cell><cell>29.08</cell><cell>7.85</cell><cell>44.80</cell><cell>65.59</cell><cell>3.79</cell><cell>30.50</cell></row><row><cell>GPT-4 (GPT-Index)</cell><cell>59.13</cell><cell>1.07</cell><cell>39.78</cell><cell>44.58</cell><cell>11.18</cell><cell>44.25</cell><cell>43.94</cell><cell>31.53</cell><cell>24.52</cell></row><row><cell>Claude (GPT-Index)</cell><cell>60.21</cell><cell>3.76</cell><cell>36.02</cell><cell>41.37</cell><cell>18.81</cell><cell>39.82</cell><cell>55.62</cell><cell>16.20</cell><cell>28.17</cell></row><row><cell>Gorilla (GPT-Index)</cell><cell>61.82</cell><cell>0</cell><cell>38.17</cell><cell>47.46</cell><cell>8.19</cell><cell>44.36</cell><cell>64.96</cell><cell>2.33</cell><cell>32.70</cell></row><row><cell>LLAMA (Oracle)</cell><cell>16.12</cell><cell>79.03</cell><cell>4.83</cell><cell>17.70</cell><cell>77.10</cell><cell>5.20</cell><cell>12.55</cell><cell>87.00</cell><cell>0.43</cell></row><row><cell>GPT-3.5 (Oracle)</cell><cell>66.31</cell><cell>1.60</cell><cell>32.08</cell><cell>89.71</cell><cell>6.64</cell><cell>3.65</cell><cell>95.03</cell><cell>0.29</cell><cell>4.67</cell></row><row><cell>GPT-4 (Oracle)</cell><cell>66.12</cell><cell>0.53</cell><cell>33.33</cell><cell>85.07</cell><cell>10.62</cell><cell>4.31</cell><cell>55.91</cell><cell>37.95</cell><cell>6.13</cell></row><row><cell>Claude (Oracle)</cell><cell>63.44</cell><cell>3.76</cell><cell>32.79</cell><cell>77.21</cell><cell>19.58</cell><cell>3.21</cell><cell>74.74</cell><cell>21.60</cell><cell>3.64</cell></row><row><cell>Gorilla (Oracle)</cell><cell>67.20</cell><cell>0</cell><cell>32.79</cell><cell>91.26</cell><cell>7.08</cell><cell>1.66</cell><cell>94.16</cell><cell>1.89</cell><cell>3.94</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Comparison of retrieval techniques</figDesc><table><row><cell></cell><cell></cell><cell cols="2">Gorilla without Retriever</cell><cell></cell><cell></cell><cell cols="2">Gorilla with Oracle retriever</cell><cell></cell></row><row><cell></cell><cell>zero-shot</cell><cell>BM25</cell><cell>GPT-Index</cell><cell>Oracle</cell><cell>zero-shot</cell><cell>BM25</cell><cell>GPT-Index</cell><cell>Oracle</cell></row><row><cell>Torch Hub (overall) ↑</cell><cell>59.13</cell><cell>37.63</cell><cell>60.21</cell><cell>54.83</cell><cell>0</cell><cell>40.32</cell><cell>61.82</cell><cell>67.20</cell></row><row><cell>HuggingFace (overall) ↑</cell><cell>71.68</cell><cell>11.28</cell><cell>28.10</cell><cell>45.58</cell><cell>0</cell><cell>17.04</cell><cell>47.46</cell><cell>91.26</cell></row><row><cell>TensorHub (overall) ↑</cell><cell>83.79</cell><cell>34.30</cell><cell>52.40</cell><cell>82.91</cell><cell>0</cell><cell>41.89</cell><cell>64.96</cell><cell>94.16</cell></row><row><cell>Torch Hub (Hallu) ↓</cell><cell>6.98</cell><cell>11.29</cell><cell>4.30</cell><cell>15.59</cell><cell>100</cell><cell>4.30</cell><cell>0</cell><cell>0</cell></row><row><cell>HuggingFace (Hallu) ↓</cell><cell>10.95</cell><cell>46.46</cell><cell>41.48</cell><cell>52.77</cell><cell>99.67</cell><cell>6.42</cell><cell>8.19</cell><cell>7.08</cell></row><row><cell>TensorHub (Hallu) ↓</cell><cell>5.40</cell><cell>20.43</cell><cell>19.70</cell><cell>13.28</cell><cell>100</cell><cell>2.77</cell><cell>2.33</cell><cell>1.89</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Evaluating LLMs on constraint-aware API invocations</figDesc><table><row><cell></cell><cell></cell><cell></cell><cell>GPT-3.5</cell><cell></cell><cell></cell><cell></cell><cell>GPT-4</cell><cell></cell><cell></cell><cell></cell><cell>Gorilla</cell></row><row><cell></cell><cell cols="12">0-shot BM25 GPT-Index Oracle 0-shot BM25 GPT-Index Oracle 0-shot BM25 GPT-Index Oracle</cell></row><row><cell cols="3">Torch Hub (overall) 73.94 62.67</cell><cell>81.69</cell><cell>80.98</cell><cell cols="2">62.67 56.33</cell><cell>71.11</cell><cell>69.01</cell><cell cols="2">71.83 57.04</cell><cell>71.83</cell><cell>78.16</cell></row><row><cell>Torch Hub (Hallu)</cell><cell cols="2">19.01 30.98</cell><cell>14.78</cell><cell>14.08</cell><cell cols="2">15.49 27.46</cell><cell>14.08</cell><cell>9.15</cell><cell cols="2">19.71 39.43</cell><cell>26.05</cell><cell>16.90</cell></row><row><cell>Torch Hub (err)</cell><cell>7.04</cell><cell>6.33</cell><cell>3.52</cell><cell>4.92</cell><cell cols="2">21.83 16.19</cell><cell>14.78</cell><cell>21.83</cell><cell>8.45</cell><cell>3.52</cell><cell>2.11</cell><cell>4.92</cell></row><row><cell>Accuracy const</cell><cell cols="2">43.66 33.80</cell><cell>33.09</cell><cell>69.01</cell><cell cols="2">43.66 29.57</cell><cell>29.57</cell><cell>59.15</cell><cell cols="2">47.88 30.28</cell><cell>26.76</cell><cell>67.60</cell></row><row><cell></cell><cell></cell><cell cols="2">LLAMA</cell><cell></cell><cell></cell><cell></cell><cell>Claude</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell cols="8">0-shot BM25 GPT-Index Oracle 0-shot BM25 GPT-Index Oracle</cell><cell></cell><cell></cell><cell></cell></row><row><cell>Torch Hub (overall)</cell><cell>0</cell><cell>8.45</cell><cell>11.97</cell><cell>19.71</cell><cell cols="2">29.92 81.69</cell><cell>82.39</cell><cell>81.69</cell><cell></cell><cell></cell><cell></cell></row><row><cell>Torch Hub (Hallu)</cell><cell>100</cell><cell>91.54</cell><cell>88.02</cell><cell>78.87</cell><cell cols="2">67.25 16.19</cell><cell>15.49</cell><cell>13.38</cell><cell></cell><cell></cell><cell></cell></row><row><cell>Torch Hub (err)</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>1.4</cell><cell>2.81</cell><cell>2.11</cell><cell>2.11</cell><cell>4.92</cell><cell></cell><cell></cell><cell></cell></row><row><cell>Accuracy const</cell><cell>0</cell><cell>6.33</cell><cell>3.52</cell><cell>17.60</cell><cell cols="2">17.25 29.57</cell><cell>31.69</cell><cell>69.71</cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 :</head><label>4</label><figDesc>Hyperparameters for training Gorilla</figDesc><table><row><cell>Hyperparameter Name</cell><cell>Value</cell></row><row><cell>learning rate</cell><cell>2e-5</cell></row><row><cell>batch size</cell><cell>64</cell></row><row><cell>epochs</cell><cell>5</cell></row><row><cell>warmup ratio</cell><cell>0.03</cell></row><row><cell>weight decay</cell><cell>0</cell></row><row><cell>max seq length</cell><cell>2048</cell></row></table></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head n="7">Acknowledgement</head><p>This research is supported in part by gifts to <rs type="affiliation">UC Berkley Sky Computing Lab from Astronomer, Google, IBM, Intel, Lacework, Microsoft, Nexla, Samsung SDS, Uber</rs>, and <rs type="funder">VMware</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0" /><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 10 :</head><label>10</label><figDesc>Performance: We plot each model's performance on different configurations. We see that Gorilla performs extremely well in the zero-shot setting. While even when the oracle answer is given, Gorilla is still the best.</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Cortes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Herzog</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.01691</idno>
+		<title level="m">Do as i can, not as i say: Grounding language in robotic affordances</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Giving bert a calculator: Finding operations and arguments with reading comprehension</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Andor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Pitler</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1909.00109</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">H.-C</forename><surname>Anthropic</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<pubPlace>Claude</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Autopandas: neuralbacked generators for program synthesis</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Bavishi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lemieux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Fox</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Sen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Stoica</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proceedings of the ACM on Programming Languages</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page" from="1" to="27" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Askell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bubeck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Chandrasekaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Eldan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gehrke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Horvitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Kamar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">T</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lundberg</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.12712</idno>
+		<title level="m">Sparks of artificial general intelligence: Early experiments with gpt-4</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">P D O</forename><surname>Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Brockman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.05128</idno>
+		<title level="m">Teaching large language models to self-debug</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">W.-L</forename><surname>Chiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Stoica</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">P</forename><surname>Xing</surname></persName>
+		</author>
+		<title level="m">Vicuna: An open-source chatbot impressing gpt-4 with 90%* chatgpt quality</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Barham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">W</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gehrmann</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.02311</idno>
+		<title level="m">Palm: Scaling language modeling with pathways</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">W</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Longpre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zoph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Fedus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Dehghani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Brahma</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.11416</idno>
+		<title level="m">Scaling instruction-finetuned language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">K</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Nakano</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.14168</idno>
+		<title level="m">Training verifiers to solve math word problems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Robustfill: Neural program learning under noisy i/o</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Uesato</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bhupatiraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A.-R</forename><surname>Mohamed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Kohli</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on machine learning</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="990" to="998" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">L</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Callan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Neubig</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.10435</idno>
+		<title level="m">Pal: Program-aided language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Opt-iml: Scaling language model instruction meta learning through the lens of generalization</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Iyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">V</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Pasunuru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Mihaylov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Simig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Shuster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">S</forename><surname>Koura</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.12017</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Jigsaw: Large language models meet program synthesis</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Vaidyanath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Iyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Natarajan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Parthasarathy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Rajamani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Sharma</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 44th International Conference on Software Engineering</title>
+		<meeting>the 44th International Conference on Software Engineering</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="1219" to="1231" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Language models can solve computer tasks</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Baldi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mcaleer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.17491</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kojima</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">S</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Iwasawa</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.11916</idno>
+		<title level="m">Large language models are zero-shot reasoners</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Komeili</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Shuster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Weston</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.07566</idno>
+		<title level="m">Internet-augmented dialogue generation</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">M.-A</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Roziere</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Chanussot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Lample</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2006.03511</idno>
+		<title level="m">Unsupervised translation of programming languages</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Internet-augmented language models through few-shot prompting for open-domain question answering</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lazaridou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Gribovskaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Stokowiec</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Grigorev</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.05115</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">R</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">B</forename><surname>Allal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kocetkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Mou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Marone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Akiki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chim</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.06161</idno>
+		<title level="m">Starcoder: may the source be with you! arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Competition-level code generation with alphacode</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Leblond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Eccles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Keeling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Gimeno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dal Lago</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Science</title>
+		<imprint>
+			<biblScope unit="volume">378</biblScope>
+			<biblScope unit="issue">6624</biblScope>
+			<biblScope unit="page" from="1092" to="1097" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.16434</idno>
+		<title level="m">Taskmatrix. ai: Completing tasks by connecting foundation models with millions of apis</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">A machine learning framework for programming by example</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Menon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Tamuz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gulwani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Lampson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kalai</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="187" to="195" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">R</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Saunders</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2112.09332</idno>
+		<title level="m">Webgpt: Browser-assisted question-answering with human feedback</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">E</forename><surname>Nijkamp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hayashi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.02309</idno>
+		<title level="m">Codegen2: Lessons for training llms on programming and natural languages</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">E</forename><surname>Nijkamp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hayashi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xiong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.13474</idno>
+		<title level="m">Codegen: An open large language model for code with multi-turn program synthesis</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<title level="m">Gpt-4 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<ptr target="https://openai.com/blog/chatgpt" />
+		<title level="m">OpenAI and</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note>Chatgpt</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Multitask prompted training enables zero-shot task generalization</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Sanh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Webson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Raffel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">H</forename><surname>Bach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Sutawika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Alyafeai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chaffin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Stiegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">L</forename><surname>Scao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Raja</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.08207</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">L</forename><surname>Scao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Akiki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Pavlick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ilić</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hesslow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Castagné</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">S</forename><surname>Luccioni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Yvon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Gallé</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.05100</idno>
+		<title level="m">Bloom: A 176b-parameter open-access multilingual language model</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Scialom</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.04761</idno>
+		<title level="m">Toolformer: Language models can teach themselves to use tools</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Exploiting cloze questions for few shot text classification and natural language inference</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Schütze</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2001.07676</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhuang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.17580</idno>
+		<title level="m">Hugginggpt: Solving ai tasks with chatgpt and its friends in huggingface</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Reflexion: an autonomous agent with dynamic memory and self-reflection</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Labash</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gopinath</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.11366</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Blenderbot 3: a deployed conversational agent that continually learns to responsibly engage</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Shuster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Komeili</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">M</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Roller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lane</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2208.03188</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<author>
+			<persName><forename type="first">R</forename><surname>Taori</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Gulrajani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dubois</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Guestrin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">B</forename><surname>Hashimoto</surname></persName>
+		</author>
+		<ptr target="https://github.com/tatsu-lab/stanford_alpaca" />
+		<title level="m">Stanford alpaca: An instruction-following llama model</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">R</forename><surname>Thoppilan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>De Freitas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kulshreshtha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H.-T</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Bos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Du</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.08239</idno>
+		<title level="m">Lamda: Language models for dialog applications</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<author>
+			<persName><forename type="first">H</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Izacard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Martinet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-A</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lacroix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Azhar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.13971</idno>
+		<title level="m">Llama: Open and efficient foundation language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Vemprala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Bonatti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bucker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kapoor</surname></persName>
+		</author>
+		<title level="m">Chatgpt for robotics: Design principles and model abilities</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Kordi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Khashabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.10560</idno>
+		<title level="m">Self-instruct: Aligning language model with self generated instructions</title>
+		<imprint>
+			<date type="published" when="2022">2022a</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Super-naturalinstructions: Generalization via declarative instructions on 1600+ nlp tasks</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Alipoormolabashi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Kordi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mirzaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Naik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ashok</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">S</forename><surname>Dhanasekaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Arunkumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Stap</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2022 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2022">2022b</date>
+			<biblScope unit="page" from="5085" to="5109" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.11903</idno>
+		<title level="m">Chain of thought prompting elicits reasoning in large language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">A systematic evaluation of large language models of code</title>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Neubig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">J</forename><surname>Hellendoorn</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 6th ACM SIGPLAN International Symposium on Machine Programming</title>
+		<meeting>the 6th ACM SIGPLAN International Symposium on Machine Programming</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="1" to="10" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03629</idno>
+		<title level="m">React: Synergizing reasoning and acting in language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xia</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.02414</idno>
+		<title level="m">Glm-130b: An open bilingual pre-trained model</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Roller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Artetxe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Dewan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Diab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">V</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.01068</idno>
+		<title level="m">Opt: Open pre-trained transformer language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

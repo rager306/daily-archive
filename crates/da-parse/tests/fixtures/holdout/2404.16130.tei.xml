@@ -1,0 +1,2333 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">From Local to Global: A GraphRAG Approach to Query-Focused Summarization</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Darren</forename><surname>Edge</surname></persName>
+							<email>daedge@microsoft.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Microsoft Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ha</forename><surname>Trinh</surname></persName>
+							<email>trinhha@microsoft.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Microsoft Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Newman</forename><surname>Cheng</surname></persName>
+							<email>newmancheng@microsoft.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Microsoft Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Joshua</forename><surname>Bradley</surname></persName>
+							<email>joshbradley@microsoft.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Microsoft Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Alex</forename><surname>Chao</surname></persName>
+							<email>achao@microsoft.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Microsoft Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Apurva</forename><surname>Mody</surname></persName>
+							<email>moapurva@microsoft.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Microsoft Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Steven</forename><surname>Truitt</surname></persName>
+							<email>steventruitt@microsoft.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Microsoft Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Dasha</forename><surname>Metropolitansky</surname></persName>
+							<email>dasham@microsoft.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Microsoft Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Robert</forename><forename type="middle">Osazuwa</forename><surname>Ness</surname></persName>
+							<email>robertness@microsoft.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Microsoft Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jonathan</forename><surname>Larson</surname></persName>
+							<email>jolarso@microsoft.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Microsoft Research</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">From Local to Global: A GraphRAG Approach to Query-Focused Summarization</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">B46018D6348AE78FB2F94DF0DEF6658B</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:41+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>The use of retrieval-augmented generation (RAG) to retrieve relevant information from an external knowledge source enables large language models (LLMs) to answer questions over private and/or previously unseen document collections. However, RAG fails on global questions directed at an entire text corpus, such as "What are the main themes in the dataset?", since this is inherently a queryfocused summarization (QFS) task, rather than an explicit retrieval task. Prior QFS methods, meanwhile, do not scale to the quantities of text indexed by typical RAG systems. To combine the strengths of these contrasting methods, we propose GraphRAG, a graph-based approach to question answering over private text corpora that scales with both the generality of user questions and the quantity of source text. Our approach uses an LLM to build a graph index in two stages: first, to derive an entity knowledge graph from the source documents, then to pregenerate community summaries for all groups of closely related entities. Given a question, each community summary is used to generate a partial response, before all partial responses are again summarized in a final response to the user. For a class of global sensemaking questions over datasets in the 1 million token range, we show that GraphRAG leads to substantial improvements over a conventional RAG baseline for both the comprehensiveness and diversity of generated answers.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="26" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Retrieval augmented generation (RAG) <ref type="bibr" target="#b31">(Lewis et al., 2020)</ref> is an established approach to using LLMs to answer queries based on data that is too large to contain in a language model's context window, meaning the maximum number of tokens (units of text) that can be processed by the LLM at once <ref type="bibr" target="#b28">(Kuratov et al., 2024;</ref><ref type="bibr" target="#b32">Liu et al., 2023)</ref>. In the canonical RAG setup, the system has access to a large external corpus of text records and retrieves a subset of records that are individually relevant to the query and collectively small enough to fit into the context window of the LLM. The LLM then generates a response based on both the query and the retrieved records <ref type="bibr" target="#b5">(Baumel et al., 2018;</ref><ref type="bibr" target="#b11">Dang, 2006;</ref><ref type="bibr" target="#b30">Laskar et al., 2020;</ref><ref type="bibr" target="#b69">Yao et al., 2017)</ref>. This conventional approach, which we collectively call vector RAG, works well for queries that can be answered with information localized within a small set of records. However, vector RAG approaches do not support sensemaking queries, meaning queries that require global understanding of the entire dataset, such as "What are the key trends in how scientific discoveries are influenced by interdisciplinary research over the past decade?" Sensemaking tasks require reasoning over "connections (which can be among people, places, and events) in order to anticipate their trajectories and act effectively" <ref type="bibr" target="#b26">(Klein et al., 2006)</ref>. LLMs such as GPT <ref type="bibr" target="#b0">(Achiam et al., 2023;</ref><ref type="bibr" target="#b7">Brown et al., 2020)</ref>, Llama <ref type="bibr" target="#b59">(Touvron et al., 2023)</ref>, and Gemini <ref type="bibr" target="#b1">(Anil et al., 2023)</ref> excel at sensemaking in complex domains like scientific discovery <ref type="bibr">(Microsoft, 2023)</ref> and intelligence analysis <ref type="bibr" target="#b49">(Ranade and Joshi, 2023)</ref>. Given a sensemaking query and a text with an implicit and interconnected set of concepts, an LLM can generate a summary that answers the query. The challenge, however, arises when the volume of data requires a RAG approach, since vector RAG approaches are unable to support sensemaking over an entire corpus.</p><p>In this paper, we present GraphRAG -a graph-based RAG approach that enables sensemaking over the entirety of a large text corpus. GraphRAG first uses an LLM to construct a knowledge graph, where nodes correspond to key entities in the corpus and edges represent relationships between those entities. Next, it partitions the graph into a hierarchy of communities of closely related entities, before using an LLM to generate community-level summaries. These summaries are generated in a bottom-up manner following the hierarchical structure of extracted communities, with summaries at higher levels of the hierarchy recursively incorporating lower-level summaries. Together, these community summaries provide global descriptions and insights over the corpus. Finally, GraphRAG answers queries through map-reduce processing of community summaries; in the map step, the summaries are used to provide partial answers to the query independently and in parallel, then in the reduce step, the partial answers are combined and used to generate a final global answer.</p><p>The GraphRAG method and its ability to perform global sensemaking over an entire corpus form the main contribution of this work. To demonstrate this ability, we developed a novel application of the LLM-as-a-judge technique <ref type="bibr" target="#b76">(Zheng et al., 2024)</ref> suitable for questions targeting broad issues and themes where there is no ground-truth answer. This approach first uses one LLM to generate a diverse set of global sensemaking questions based on corpus-specific use cases, before using a second LLM to judge the answers of two different RAG systems using predefined criteria (defined in Section 3.3). We use this approach to compare GraphRAG to vector RAG on two representative real-world text datasets. Results show GraphRAG strongly outperforms vector RAG when using GPT-4 as the LLM.</p><p>GraphRAG is available as open-source software at <ref type="url" target="https://github.com/microsoft/graphrag">https://github.com/microsoft/graphrag</ref>. In addition, versions of the GraphRAG approach are also available as extensions to multiple opensource libraries, including LangChain (LangChain, 2024), LlamaIndex <ref type="bibr" target="#b33">(LlamaIndex, 2024)</ref>, <ref type="bibr">Nebu-laGraph (NebulaGraph, 2024)</ref>, and Neo4J (Neo4J, 2024).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Background</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">RAG Approaches and Systems</head><p>RAG generally refers to any system where a user query is used to retrieve relevant information from external data sources, whereupon this information is incorporated into the generation of a response to the query by an LLM (or other generative AI model, such as a multi-media model). The query and retrieved records populate a prompt template, which is then passed to the LLM <ref type="bibr" target="#b48">(Ram et al., 2023)</ref>. RAG is ideal when the total number of records in a data source is too large to include in a single prompt to the LLM, i.e. the amount of text in the data source exceeds the LLM's context window.</p><p>In canonical RAG approaches, the retrieval process returns a set number of records that are semantically similar to the query and the generated answer uses only the information in those retrieved records. A common approach to conventional RAG is to use text embeddings, retrieving records closest to the query in vector space where closeness corresponds to semantic similarity <ref type="bibr" target="#b17">(Gao et al., 2023)</ref>. While some RAG approaches may use alternative retrieval mechanisms, we collectively refer to the family of conventional approaches as vector RAG. GraphRAG contrasts with vector RAG in its ability to answer queries that require global sensemaking over the entire data corpus.</p><p>GraphRAG builds upon prior work on advanced RAG strategies. GraphRAG leverages summaries over large sections of the data source as a form of "self-memory" (described in <ref type="bibr" target="#b8">Cheng et al. 2024)</ref>, which are later used to answer queries as in <ref type="bibr" target="#b36">Mao et al. 2020</ref>). These summaries are generated in parallel and iteratively aggregated into global summaries, similar to prior techniques <ref type="bibr" target="#b15">(Feng et al., 2023;</ref><ref type="bibr" target="#b17">Gao et al., 2023;</ref><ref type="bibr" target="#b23">Khattab et al., 2022;</ref><ref type="bibr" target="#b53">Shao et al., 2023;</ref><ref type="bibr" target="#b56">Su et al., 2020;</ref><ref type="bibr" target="#b62">Trivedi et al., 2022;</ref><ref type="bibr" target="#b64">Wang et al., 2024)</ref>. In particular, GraphRAG is similar to other approaches that use hierarchical indexing to create summaries (similar to <ref type="bibr" target="#b25">Kim et al. 2023;</ref><ref type="bibr" target="#b51">Sarthi et al. 2024)</ref>. GraphRAG contrasts with these approaches by generating a graph index from the source data, then applying graph-based community detection to create a thematic partitioning of the data.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Using Knowledge Graphs with LLMs and RAG</head><p>Approaches to knowledge graph extraction from natural language text corpora include rulematching, statistical pattern recognition, clustering, and embeddings <ref type="bibr" target="#b14">(Etzioni et al., 2004;</ref><ref type="bibr" target="#b24">Kim et al., 2016;</ref><ref type="bibr" target="#b40">Mooney and Bunescu, 2005;</ref><ref type="bibr" target="#b71">Yates et al., 2007)</ref>. GraphRAG falls into a more recent body of research that use of LLMs for knowledge graph extraction <ref type="bibr" target="#b3">(Ban et al., 2023;</ref><ref type="bibr" target="#b38">Melnyk et al., 2022;</ref><ref type="bibr" target="#b45">OpenAI, 2023;</ref><ref type="bibr" target="#b57">Tan et al., 2017;</ref><ref type="bibr" target="#b61">Trajanoska et al., 2023;</ref><ref type="bibr" target="#b70">Yao et al., 2023;</ref><ref type="bibr" target="#b71">Yates et al., 2007;</ref><ref type="bibr" target="#b74">Zhang et al., 2024a)</ref>. It also adds to a growing body of RAG approaches that use a knowledge graph as an index <ref type="bibr" target="#b17">(Gao et al., 2023)</ref>. Some techniques use subgraphs, elements of the graph, or properties of the graph structure directly in the prompt <ref type="bibr" target="#b2">(Baek et al., 2023;</ref><ref type="bibr" target="#b18">He et al., 2024;</ref><ref type="bibr" target="#b73">Zhang, 2023)</ref> or as factual grounding for generated outputs <ref type="bibr" target="#b22">(Kang et al., 2023;</ref><ref type="bibr" target="#b49">Ranade and Joshi, 2023)</ref>. Other techniques <ref type="bibr" target="#b66">(Wang et al., 2023b)</ref> use the knowledge graph to enhance retrieval, where at query time an LLM-based agent dynamically traverses a graph with nodes representing document elements (e.g., passages, tables) and edges encoding lexical and semantical similarity or structural relationships. GraphRAG contrasts with these approaches by focusing on a previously unexplored quality of graphs in this context: their inherent modularity <ref type="bibr" target="#b43">(Newman, 2006)</ref> and the ability to partition graphs into nested modular communities of closely related nodes (e.g., Louvain, <ref type="bibr" target="#b6">Blondel et al. 2008;</ref><ref type="bibr">Leiden, Traag et al. 2019)</ref>. Specifically, GraphRAG recursively creates increasingly global summaries by using the LLM to create summaries spanning this community hierarchy.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">Adaptive benchmarking for RAG Evaluation</head><p>Many benchmark datasets for open-domain question answering exist, including HotPotQA <ref type="bibr" target="#b68">(Yang et al., 2018)</ref>, MultiHop-RAG <ref type="bibr" target="#b58">(Tang and Yang, 2024)</ref>, and MT-Bench <ref type="bibr" target="#b76">(Zheng et al., 2024)</ref>. However, these benchmarks are oriented towards vector RAG performance, i.e., they evaluate performance on explicit fact retrieval. In this work, we propose an approach for generating a set of questions for evaluating global sensemaking over the entirety of the corpus. Our approach is related to LLM methods that use a corpus to generate questions whose answers would be summaries of the corpus, such as in <ref type="bibr" target="#b67">Xu and Lapata (2021)</ref>. However, in order to produce a fair evaluation, our method avoids generating the questions directly from the corpus itself (as an alternative implementation, one can use a subset of the corpus held out from subsequent graph extraction and answer evaluation steps).</p><p>Adaptive benchmarking refers to the process of dynamically generating evaluation benchmarks tailored to specific domains or use cases. Recent work has used LLMs for adaptive benchmarking to ensure relevance, diversity, and alignment with the target application or task <ref type="bibr" target="#b72">(Yuan et al., 2024;</ref><ref type="bibr" target="#b75">Zhang et al., 2024b)</ref>. In this work, we propose an adaptive benchmarking approach to generating global sensemaking queries for the LLM. Our approach builds on prior work in LLM-based persona generation, where the LLM is used to generate diverse and authentic sets of personas <ref type="bibr" target="#b27">(Kosinski, 2024;</ref><ref type="bibr" target="#b50">Salminen et al., 2024;</ref><ref type="bibr" target="#b54">Shin et al., 2024)</ref>. Our adaptive benchmarking procedure uses persona generation to create queries that are representative of real-world RAG system usage. Specifically, our approach uses the LLM to infer the potential users would use the RAG system and their use cases, which guide the generation of corpus-specific sensemaking queries.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.4">RAG evaluation criteria</head><p>Our evaluation relies on the LLM to evaluate how well the RAG system answers the generated questions. Prior work has shown LLMs to be good evaluators of natural language generation, including work where LLMs evaluations were competitive with human evaluations <ref type="bibr">(Wang et al., 2023a;</ref><ref type="bibr" target="#b76">Zheng et al., 2024)</ref>. Some prior work proposes criteria for having LLMs quantify the quality of Source Documents</p><p>Text Chunks text extraction and chunking Entities &amp; Relationships domain-tailored summarization Knowledge Graph domain-tailored summarization Graph Communities community detection Community Summaries domain-tailored summarization Community Answers query-focused summarization</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Global Answer query-focused summarization</head><p>Indexing Time Query Time Pipeline Stage Figure <ref type="figure">1</ref>: Graph RAG pipeline using an LLM-derived graph index of source document text. This graph index spans nodes (e.g., entities), edges (e.g., relationships), and covariates (e.g., claims) that have been detected, extracted, and summarized by LLM prompts tailored to the domain of the dataset. Community detection (e.g., <ref type="bibr">Leiden, Traag et al., 2019)</ref> is used to partition the graph index into groups of elements (nodes, edges, covariates) that the LLM can summarize in parallel at both indexing time and query time. The "global answer" to a given query is produced using a final round of query-focused summarization over all community summaries reporting relevance to that query. generated texts such as "fluency" <ref type="bibr">(Wang et al., 2023a)</ref> Some of these criteria are generic to vector RAG systems and not relevant to global sensemaking, such as "context relevance", "faithfulness", and "answer relevance" (RAGAS, <ref type="bibr" target="#b13">Es et al. 2023)</ref>. Lacking a gold standard for evaluation, one can quantify relative performance for a given criterion by prompting the LLM to compare generations from two different competing models (LLM-as-a-judge, <ref type="bibr" target="#b76">(Zheng et al., 2024)</ref>). In this work, we design criteria for evaluating RAG-generated answers to global sensemaking questions and evaluate our results using the comparative approach. We also validate results using statistics derived from LLM-extracted statements of verifiable facts, or "claims."</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Methods</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">GraphRAG Workflow</head><p>Figure <ref type="figure">1</ref> illustrates the high-level data flow of the GraphRAG approach and pipeline. In this section, we describe the key design parameters, techniques, and implementation details for each step.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.1">Source Documents → Text Chunks</head><p>To start, the documents in the corpus are split into text chunks. The LLM extracts information from each chunk for downstream processing. Selecting the size of the chunk is a fundamental design decision; longer text chunks require fewer LLM calls for such extraction (which reduces cost) but suffer from degraded recall of information that appears early in the chunk <ref type="bibr" target="#b28">(Kuratov et al., 2024;</ref><ref type="bibr" target="#b32">Liu et al., 2023)</ref>. See Section A.1 for prompts and examples of the recall-precision trade-offs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.2">Text Chunks → Entities &amp; Relationships</head><p>In this step, the LLM is prompted to extract instances of important entities and the relationships between the entities from a given chunk. Additionally, the LLM generates short descriptions for the entities and relationships. To illustrate, suppose a chunk contained the following text: NeoChip's (NC) shares surged in their first week of trading on the NewTech Exchange. However, market analysts caution that the chipmaker's public debut may not reflect trends for other technology IPOs. NeoChip, previously a private entity, was acquired by Quantum Systems in 2016. The innovative semiconductor firm specializes in low-power processors for wearables and IoT devices.</p><p>The LLM is prompted such that it extracts the following:</p><p>• The entity NeoChip, with description "NeoChip is a publicly traded company specializing in low-power processors for wearables and IoT devices."</p><p>• The entity Quantum Systems, with description "Quantum Systems is a firm that previously owned NeoChip."</p><p>• A relationship between NeoChip and Quantum Systems, with description "Quantum Systems owned NeoChip from 2016 until NeoChip became publicly traded."</p><p>These prompts can be tailored to the domain of the document corpus by choosing domain appropriate few-shot exemplars for in-context learning <ref type="bibr" target="#b7">(Brown et al., 2020)</ref>. For example, while our default prompt extracts the broad class of "named entities" like people, places, and organizations and is generally applicable, domains with specialized knowledge (e.g., science, medicine, law) will benefit from few-shot exemplars specialized to those domains.</p><p>The LLM can also be prompted to extract claims about detected entities. Claims are important factual statements about entities, such as dates, events, and interactions with other entities. As with entities and relationships, in-context learning exemplars can provide domain-specific guidance. Claim descriptions extracted from the example tetx chunk are as follows:</p><p>• NeoChip's shares surged during their first week of trading on the NewTech Exchange.</p><p>• NeoChip debuted as a publicly listed company on the NewTech Exchange.</p><p>• Quantum Systems acquired NeoChip in 2016 and held ownership until NeoChip went public.</p><p>See Appendix A for prompts and details on our implementation of entity and claim extraction.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.3">Entities &amp; Relationships → Knowledge Graph</head><p>The use of an LLM to extract entities, relationships, and claims is a form of abstractive summarization -these are meaningful summaries of concepts that, in the case of relationships and claims, may not be explicitly stated in the text. The entity/relationship/claim extraction processes creates multiple instances of a single element because an element is typically detected and extracted multiple times across documents.</p><p>In the final step of the knowledge graph extraction process, these instances of entities and relationships become individual nodes and edges in the graph. Entity descriptions are aggregated and summarized for each node and edge. Relationships are aggregated into graph edges, where the number of duplicates for a given relationship becomes edge weights. Claims are aggregated similarly.</p><p>In this manuscript, our analysis uses exact string matching for entity matching -the task of reconciling different extracted names for the same entity <ref type="bibr" target="#b4">(Barlaug and Gulla, 2021;</ref><ref type="bibr" target="#b9">Christen and Christen, 2012;</ref><ref type="bibr" target="#b12">Elmagarmid et al., 2006)</ref>. However, softer matching approaches can be used with minor adjustments to prompts or code. Furthermore, GraphRAG is generally resilient to duplicate entities since duplicates are typically clustered together for summarization in subsequent steps.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.4">Knowledge Graph → Graph Communities</head><p>Given the graph index created in the previous step, a variety of community detection algorithms may be used to partition the graph into communities of strongly connected nodes (e.g., see the surveys by <ref type="bibr" target="#b16">Fortunato (2010)</ref> and <ref type="bibr" target="#b21">Jin et al. (2021)</ref>). In our pipeline, we use Leiden community detection <ref type="bibr" target="#b60">(Traag et al., 2019)</ref> in a hierarchical manner, recursively detecting sub-communities within each detected community until reaching leaf communities that can no longer be partitioned.</p><p>Each level of this hierarchy provides a community partition that covers the nodes of the graph in a mutually exclusive, collectively exhaustive way, enabling divide-and-conquer global summarization.</p><p>An illustration of such hierarchical partitioning on an example dataset can be found in Appendix B.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.5">Graph Communities → Community Summaries</head><p>The next step creates report-like summaries of each community in the community hierarchy, using a method designed to scale to very large datasets. These summaries are independently useful as a way to understand the global structure and semantics of the dataset, and may themselves be used to make sense of a corpus in the absence of a specific query. For example, a user may scan through community summaries at one level looking for general themes of interest, then read linked reports at a lower level that provide additional details for each subtopic. Here, however, we focus on their utility as part of a graph-based index used for answering global queries.</p><p>GraphRAG generates community summaries by adding various element summaries (for nodes, edges, and related claims) to a community summary template. Community summaries from lowerlevel communities are used to generate summaries for higher-level communities as follows:</p><p>• Leaf-level communities. The element summaries of a leaf-level community are prioritized and then iteratively added to the LLM context window until the token limit is reached.</p><p>The prioritization is as follows: for each community edge in decreasing order of combined source and target node degree (i.e., overall prominence), add descriptions of the source node, target node, the edge itself, and related claims.</p><p>• Higher-level communities. If all element summaries fit within the token limit of the context window, proceed as for leaf-level communities and summarize all element summaries within the community. Otherwise, rank sub-communities in decreasing order of element summary tokens and iteratively substitute sub-community summaries (shorter) for their associated element summaries (longer) until they fit within the context window.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.6">Community Summaries → Community Answers → Global Answer</head><p>Given a user query, the community summaries generated in the previous step can be used to generate a final answer in a multi-stage process. The hierarchical nature of the community structure also means that questions can be answered using the community summaries from different levels, raising the question of whether a particular level in the hierarchical community structure offers the best balance of summary detail and scope for general sensemaking questions (evaluated in section 4).</p><p>For a given community level, the global answer to any user query is generated as follows:</p><p>• Prepare community summaries. Community summaries are randomly shuffled and divided into chunks of pre-specified token size. This ensures relevant information is distributed across chunks, rather than concentrated (and potentially lost) in a single context window.</p><p>• Map community answers. Intermediate answers are generated in parallel. The LLM is also asked to generate a score between 0-100 indicating how helpful the generated answer is in answering the target question. Answers with score 0 are filtered out.</p><p>• Reduce to global answer. Intermediate community answers are sorted in descending order of helpfulness score and iteratively added into a new context window until the token limit is reached. This final context is used to generate the global answer returned to the user.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Global Sensemaking Question Generation</head><p>To evaluate the effectiveness of RAG systems for global sensemaking tasks, we use an LLM to generate a set of corpus-specific questions designed to asses high-level understanding of a given corpus, without requiring retrieval of specific low-level facts. Instead, given a high-level description of a corpus and its purposes, the LLM is prompted to generate personas of hypothetical users of the RAG system. For each hypothetical user, the LLM is then prompted to specify tasks that this user would use the RAG system to complete. Finally, for each combination of user and task, the LLM is prompted to generate questions that require understanding of the entire corpus. Algorithm 1 describes the approach.</p><p>Algorithm 1: Prompting Procedure for Question Generation 1: Input: Description of a corpus, number of users K, number of tasks per user N , number of questions per (user, task) combination M . 2: Output: A set of K * N * M high-level questions requiring global understanding of the corpus. 3: procedure GENERATEQUESTIONS 4:</p><p>Based on the corpus description, prompt the LLM to: 1. Describe personas of K potential users of the dataset. 2. For each user, identify N tasks relevant to the user. 3. Specific to each user &amp; task pair, generate M high-level questions that:</p><p>• Require understanding of the entire corpus.</p><p>• Do not require retrieval of specific low-level facts.</p><p>5:</p><p>Collect the generated questions to produce K * N * M test questions for the dataset. 6: end procedure For our evaluation, we set K = M = N = 5 for a total of 125 test questions per dataset. Table <ref type="table">1</ref> shows example questions for each of the two evaluation datasets.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Criteria for Evaluating Global Sensemaking</head><p>Given the lack of gold standard answers to our activity-based sensemaking questions, we adopt the head-to-head comparison approach using an LLM evaluator that judges relative performance according to specific criteria. We designed three target criteria capturing qualities that are desirable for global sensemaking activities.</p><p>Appendix F shows the prompts for our head-to-head measures computed using an LLM evaluator, summarized as:</p><p>• Comprehensiveness. How much detail does the answer provide to cover all aspects and details of the question?</p><p>• Diversity. How varied and rich is the answer in providing different perspectives and insights on the question?</p><p>• Empowerment. How well does the answer help the reader understand and make informed judgments about the topic?</p><p>Table <ref type="table">1</ref>: Examples of potential users, tasks, and questions generated by the LLM based on short descriptions of the target datasets. Questions target global understanding rather than specific details.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Dataset Example activity framing and generation of global sensemaking questions Podcast transcripts</head><p>User: A tech journalist looking for insights and trends in the tech industry Task: Understanding how tech leaders view the role of policy and regulation Questions: 1. Which episodes deal primarily with tech policy and government regulation? 2. How do guests perceive the impact of privacy laws on technology development? 3. Do any guests discuss the balance between innovation and ethical considerations? 4. What are the suggested changes to current policies mentioned by the guests? 5. Are collaborations between tech companies and governments discussed and how? News articles User: Educator incorporating current affairs into curricula Task: Teaching about health and wellness Questions:</p><p>1. What current topics in health can be integrated into health education curricula? 2. How do news articles address the concepts of preventive medicine and wellness? 3. Are there examples of health articles that contradict each other, and if so, why? 4. What insights can be gleaned about public health priorities based on news coverage? 5. How can educators use the dataset to highlight the importance of health literacy? Furthermore, we use a "control criterion" called Directness that answers "How specifically and clearly does the answer address the question?". In plain terms, directness evaluates the concision of an answer in a generic sense that applies to any generated LLM summarization. We include it to behave as a reference against which we can judge the soundness of results for the other criteria. Since directness is effectively in opposition to comprehensiveness and diversity, we would not expect any method to win across all four criteria.</p><p>In our evaluations, the LLM is provided with the question, the generated answers from two competing systems, and prompted to compare the two answers according to the criterion before giving a final judgment of which answer is preferred. The LLM either indicates a winner; or, it returns a tie if they are fundamentally similar. To account for the inherent stochasticity of LLM generation, we run each comparison with multiple replicates and average the results across replicates and questions. An illustration of LLM assessment for answers to a sample question can be found in Appendix D.</p><p>4 Analysis 4.1 Experiment 1 4.1.1 Datasets</p><p>We selected two datasets in the one million token range, each representative of corpora that users may encounter in their real-world activities:</p><p>Podcast transcripts. Public transcripts of Behind the Tech with Kevin Scott, a podcast featuring conversations between Microsoft CTO Kevin Scott and various thought leaders in science and technology <ref type="bibr" target="#b52">(Scott, 2024)</ref>. This corpus was divided into 1669 × 600-token text chunks, with 100-token overlaps between chunks (∼1 million tokens).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>News articles.</head><p>A benchmark dataset comprised of news articles published from September 2013 to December 2023 in a range of categories, including entertainment, business, sports, technology, health, and science <ref type="bibr" target="#b58">(Tang and Yang, 2024)</ref>. The corpus is divided into 3197 × 600-token text chunks, with 100-token overlaps between chunks (∼1.7 million tokens).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.2">Conditions</head><p>We compared six conditions including GraphRAG at four different graph community levels (C0, C1, C2, C3), a text summarization method that applies our map-reduce approach directly to source texts (TS), and a vector RAG "semantic search" approach (SS):</p><p>• CO. Uses root-level community summaries (fewest in number) to answer user queries.</p><p>• C1. Uses high-level community summaries to answer queries. These are sub-communities of C0, if present, otherwise C0 communities projected downwards.</p><p>• C2. Uses intermediate-level community summaries to answer queries. These are subcommunities of C1, if present, otherwise C1 communities projected downwards.</p><p>• C3. Uses low-level community summaries (greatest in number) to answer queries. These are sub-communities of C2, if present, otherwise C2 communities projected downwards.</p><p>• TS. The same method as in Section 3.1.6, except source texts (rather than community summaries) are shuffled and chunked for the map-reduce summarization stages.</p><p>• SS. An implementation of vector RAG in which text chunks are retrieved and added to the available context window until the specified token limit is reached.</p><p>The size of the context window and the prompts used for answer generation are the same across all six conditions (except for minor modifications to reference styles to match the types of context information used). Conditions only differ in how the contents of the context window are created.</p><p>The graph index supporting conditions C0-C3 was created using our generic prompts for entity and relationship extraction, with entity types and few-shot examples tailored to the domain of the data.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.3">Configuration</head><p>We used a fixed context window size of 8k tokens for generating community summaries, community answers, and global answers (explained in Appendix C). Graph indexing with a 600 token window (explained in Section A.2) took 281 minutes for the Podcast dataset, running on a virtual machine (16GB RAM, Intel(R) Xeon(R) Platinum 8171M CPU @ 2.60GHz) and using a public OpenAI endpoint for gpt-4-turbo (2M TPM, 10k RPM).</p><p>We implemented Leiden community detection using the graspologic library <ref type="bibr" target="#b10">(Chung et al., 2019)</ref>.</p><p>The prompts used to generate the graph index and global answers can be found in Appendix E, while the prompts used to evaluate LLM responses against our criteria can be found in Appendix F.</p><p>A full statistical analysis of the results presented in the next section can be found in Appendix G.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Experiment 2</head><p>To validate the comprehensiveness and diversity results from Experiment 1, we implemented claimbased measures of these qualities. We use the definition of a factual claim from <ref type="bibr" target="#b44">Ni et al. (2024)</ref>, which is "a statement that explicitly presents some verifiable facts." For example, the sentence "California and New York implemented incentives for renewable energy adoption, highlighting the broader importance of sustainability in policy decisions" contains two factual claims: (1) California implemented incentives for renewable energy adoption, and (2) New York implemented incentives for renewable energy adoption.</p><p>To extract factual claims, we used Claimify <ref type="bibr" target="#b39">(Metropolitansky and Larson, 2025)</ref>, an LLM-based method that identifies sentences in an answer containing at least one factual claim, then decomposes these sentences into simple, self-contained factual claims. We applied Claimify to the answers generated under the conditions from Experiment 1. After removing duplicate claims from each answer, we extracted 47,075 unique claims, with an average of 31 claims per answer.</p><p>We defined two metrics, with higher values indicating better performance:</p><p>1. Comprehensiveness: Measured as the average number of claims extracted from the answers generated under each condition.</p><p>2. Diversity: Measured by clustering the claims for each answer and calculating the average number of clusters.</p><p>For clustering, we followed the approach described by <ref type="bibr" target="#b46">Padmakumar and He (2024)</ref>, which involved using Scikit-learn's implementation of agglomerative clustering <ref type="bibr" target="#b47">(Pedregosa et al., 2011)</ref>. Clusters were merged through "complete" linkage, meaning they were combined only if the maximum distance between their farthest points was less than or equal to a predefined distance threshold. The distance metric used was 1 -ROUGE-L. Since the distance threshold influences the number of clusters, we report results across a range of thresholds.</p><p>5 Results</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Experiment 1</head><p>The indexing process resulted in a graph consisting of 8,564 nodes and 20,691 edges for the Podcast dataset, and a larger graph of 15,754 nodes and 19,520 edges for the News dataset. Table <ref type="table" target="#tab_0">2</ref> shows the number of community summaries at different levels of each graph community hierarchy.</p><p>Global approaches vs. vector RAG. As shown in Figure <ref type="figure" target="#fig_0">2</ref> and Table <ref type="table">6</ref>, global approaches significantly outperformed conventional vector RAG (SS) in both comprehensiveness and diversity criteria across datasets. Specifically, global approaches achieved comprehensiveness win rates between 72-83% (p&lt;.001) for Podcast transcripts and 72-80% (p&lt;.001) for News articles, while diversity win rates ranged from 75-82% (p&lt;.001) and 62-71% (p&lt;.01) respectively. Our use of directness as a validity test confirmed that vector RAG produces the most direct responses across all comparisons.</p><p>Empowerment. Empowerment comparisons showed mixed results for both global approaches versus vector RAG (SS) and GraphRAG approaches versus source text summarization (TS). Using an LLM to analyze LLM reasoning for this measure indicated that the ability to provide specific exam- The overall winner per dataset and metric is shown in bold. Self-win rates were not computed but are shown as the expected 50% for reference. All Graph RAG conditions outperformed naïve RAG on comprehensiveness and diversity. Conditions C1-C3 also showed slight improvements in answer comprehensiveness and diversity over TS (global text summarization without a graph index).  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Experiment 2</head><p>Table <ref type="table" target="#tab_1">3</ref> shows the results for the average number of extracted claims (i.e., the claim-based measure of comprehensiveness) per condition. For both the News and Podcast datasets, all global search conditions (C0-C3) and source text summarization (TS) had greater comprehensiveness than vector RAG (SS). The differences were statistically significant (p&lt;.05) in all cases. These findings align with the LLM-based win rates from Experiment 1.</p><p>Table <ref type="table" target="#tab_2">4</ref> contains the results for the average number of clusters, the claim-based measure of diversity. For the Podcast dataset, all global search conditions had significantly greater diversity than SS across all distance thresholds (p&lt;.05), consistent with the win rates observed in Experiment 1. For the News dataset, however, only C0 significantly outperformed SS across all distance thresholds (p&lt;.05). While C1-C3 also achieved higher average cluster counts than SS, the differences were statistically significant only at certain distance thresholds. In Experiment 1, all global search conditions significantly outperformed SS in the News dataset -not just C0. However, the differences in mean diversity scores between SS and the global search conditions were smaller for the News dataset than for the Podcast dataset, aligning directionally with the claim-based results.</p><p>For both comprehensiveness and diversity, across both datasets, there were no statistically significant differences observed among the global search conditions or between global search and TS.</p><p>Finally, for each pairwise comparison in Experiment 1, we tested whether the answer preferred by the LLM aligned with the winner based on the claim-based metrics. Since each pairwise comparison in Experiment 1 was performed five times, while the claim-based metrics provided only one outcome per comparison, we aggregated the Experiment 1 results into a single label using majority voting. For example, if C0 won over SS in three out of five judgments for comprehensiveness on a given question, C0 was labeled the winner and SS the loser. However, if C0 won twice, SS won once, and they tied twice, then there was no majority outcome, so the final label was a tie.</p><p>We found that exact ties were rare for the claim-based metrics. One possible solution is to define a tie based on a threshold (e.g., the absolute difference between the claim-based results for condition A and condition B must be less than or equal to x). However, we observed that the results were sensitive to the choice of threshold. As a result, we focused on cases where the aggregated LLM label was not a tie, representing 33% and 39% of pairwise comparisons for comprehensiveness and diversity, respectively. In these cases, the aggregated LLM label matched the claim-based label in 78% of pairwise comparisons for comprehensiveness and 69-70% for diversity (across all distance thresholds), indicating moderately strong alignment.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Discussion</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.1">Limitations of evaluation approach</head><p>Our evaluation to date has focused on sensemaking questions specific to two corpora each containing approximately 1 million tokens. More work is needed to understand how performance generalizes to datasets from various domains with different use cases. Comparison of fabrication rates, e.g., using approaches like SelfCheckGPT <ref type="bibr" target="#b35">(Manakul et al., 2023)</ref>, would also strengthen the current analysis. The graph index, rich text annotations, and hierarchical community structure supporting the current GraphRAG approach offer many possibilities for refinement and adaptation. This includes RAG approaches that operate in a more local manner, via embedding-based matching of user queries and graph annotations. In particular, we see potential in hybrid RAG schemes that combine embeddingbased matching with just-in-time community report generation before employing our map-reduce summarization mechanisms. This "roll-up" approach could also be extended across multiple levels of the community hierarchy, as well as implemented as a more exploratory "drill down" mechanism that follows the information scent contained in higher-level community summaries.</p><p>Broader impacts. As a mechanism for question answering over large document collections, there are risks to downstream sensemaking and decision-making tasks if the generated answers do not accurately represent the source data. System use should be accompanied by clear disclosures of AI use and the potential for errors in outputs. Compared to vector RAG, however, GraphRAG shows promise as a way to mitigate these downstream risks for questions of a global nature, which might otherwise be answered by samples of retrieved facts falsely presented as global summaries.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Conclusion</head><p>We have presented GraphRAG, a RAG approach that combines knowledge graph generation and query-focused summarization (QFS) to support human sensemaking over entire text corpora. Initial evaluations show substantial improvements over a vector RAG baseline for both the comprehensiveness and diversity of answers, as well as favorable comparisons to a global but graph-free approach using map-reduce source text summarization. For situations requiring many global queries over the same dataset, summaries of root-level communities in the entity-based graph index provide a data index that is both superior to vector RAG and achieves competitive performance to other global methods at a fraction of the token cost.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Entity and Relationship Extraction Approach</head><p>The following prompts, designed for GPT-4, are used in the default GraphRAG initialization pipeline:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>• Default Graph Extraction Prompt • Claim Extraction Prompt</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 Entity Extraction</head><p>We do this using a multipart LLM prompt that first identifies all entities in the text, including their name, type, and description, before identifying all relationships between clearly related entities, including the source and target entities and a description of their relationship. Both kinds of element instance are output in a single list of delimited tuples.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Self-Reflection</head><p>The choice of prompt engineering techniques has a strong impact on the quality of knowledge graph extraction <ref type="bibr" target="#b77">(Zhu et al., 2024)</ref>, and different techniques have different costs in terms of tokens consumed and generated by the model. Self-reflection is a prompt engineering technique where the LLM generates an answer, and is then prompted to evaluate its output for correctness, clarity, or completeness, then finally generate an improved response based on that evaluation <ref type="bibr" target="#b19">(Huang et al., 2023;</ref><ref type="bibr" target="#b34">Madaan et al., 2024;</ref><ref type="bibr" target="#b55">Shinn et al., 2024;</ref><ref type="bibr" target="#b65">Wang et al., 2022)</ref>. We leverage self-reflection in knowledge graph extraction, and explore ways how removing self-reflection affects performance and cost.</p><p>Using larger chunk size is less costly in terms of calls to the LLM. However, the LLM tends to extract few entities from chunks of larger size. For example, in a sample dataset <ref type="bibr">(HotPotQA, Yang et al., 2018)</ref>, GPT-4 extracted almost twice as many entity references when the chunk size was 600 tokens than when it was 2400. To address this issue, we deploy a self-reflection prompt engineering approach. After entities are extracted from a chunk, we provide the extracted entities back to the LLM, prompting it to "glean" any entities that it may have missed. This is a multi-stage process in which we first ask the LLM to assess whether all entities were extracted, using a logit bias of 100 to force a yes/no decision. If the LLM responds that entities were missed, then a continuation indicating that "MANY entities were missed in the last extraction" encourages the LLM to detect these missing entities. This approach allows us to use larger chunk sizes without a drop in quality (Figure <ref type="figure" target="#fig_1">3</ref>) or the forced introduction of noise. We interate self-reflection steps up to a specified maximum number of times.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Example Community Detection</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Context Window Selection</head><p>The effect of context window size on any particular task is unclear, especially for models like gpt-4-turbo with a large context size of 128k tokens. Given the potential for information to be "lost in the middle" of longer contexts <ref type="bibr" target="#b28">(Kuratov et al., 2024;</ref><ref type="bibr" target="#b32">Liu et al., 2023)</ref>, we wanted to explore the effects of varying the context window size for our combinations of datasets, questions, and metrics. In particular, our goal was to determine the optimum context size for our baseline condition (SS) and then use this uniformly for all query-time LLM use. To that end, we tested four context window sizes: 8k, 16k, 32k and 64k. Surprisingly, the smallest context window size tested (8k) was universally better for all comparisons on comprehensiveness (average win rate of 58.1%), while performing comparably with larger context sizes on diversity (average win rate = 52.4%), and empowerment (average win rate = 51.3%). Given our preference for more comprehensive and diverse answers, we therefore used a fixed context window size of 8k tokens for the final evaluation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Example Answer Comparison</head><p>Table <ref type="table">5</ref>: Example question, answers, and LLM-generated assessments for the News article dataset.</p><p>Question Which public figures are repeatedly mentioned across various entertainment articles? Graph RAG</p><p>The entertainment industry is vast and diverse, encompassing film, television, music, sports, and digital media. Certain public figures stand out due to their significant contributions and influence across these sectors. The following summary highlights key individuals who are repeatedly mentioned in various entertainment articles, reflecting their impact and presence within the industry.</p><p>Actors and Directors [...] Public Figures in Controversy [...] Musicians and Executives [...] Athletes and Coaches [...] Influencers and Entrepreneurs [...]</p><p>The repeated mention of these figures in entertainment articles signifies their ongoing relevance and the public's interest in their work. Their influence spans across various aspects of entertainment, from shaping cultural narratives in film and television to driving trends in music and digital media. These individuals not only contribute to their respective fields but also influence the broader cultural landscape, often becoming central figures in social discussions and public discourse.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Naïve RAG</head><p>Public figures who are repeatedly mentioned across various entertainment articles include Taylor Swift, Travis Kelce, Britney Spears, and Justin Timberlake. These individuals have been highlighted for various reasons, ranging from their professional achievements to their personal lives.</p><p>Taylor Swift [...] Travis Kelce [...] Britney Spears [...] Justin Timberlake [...] These figures are frequently covered due to their high-profile status and the public's interest in their careers and personal lives. Their activities, whether in music, sports, or personal relationships, have significant cultural and economic impacts, as evidenced by the media coverage and public reactions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LLM Decision</head><p>Comprehensiveness: Winner=1 (Graph RAG). Answer 1 is better because it provides a more comprehensive and detailed list of public figures from a wider range of entertainment sectors, including film, television, music, sports, gaming, and digital media. It also includes examples of their contributions and the impact they have on their respective fields, as well as mentions of controversies and their implications. Answer 2, while detailed in its coverage of a few individuals, is limited to a smaller number of public figures and focuses primarily on their personal lives and relationships rather than a broad spectrum of their professional influence across the entertainment industry.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Diversity: Winner=1 (Graph RAG).</head><p>Answer 1 is better because it provides a more varied and rich response by covering a wide range of public figures from different sectors of the entertainment industry, including film, television, music, sports, gaming, and digital media. It offers insights into the contributions and influence of these figures, as well as controversies and their impact on public discourse. The answer also cites specific data sources for each mentioned figure, indicating a diverse range of evidence to support the claims. In contrast, Answer 2 focuses on a smaller group of public figures, primarily from the music industry and sports, and relies heavily on a single source for data, which makes it less diverse in perspectives and insights.</p><p>Empowerment: Winner=1 (Graph RAG). Answer 1 is better because it provides a comprehensive and structured overview of public figures across various sectors of the entertainment industry, including film, television, music, sports, and digital media. It lists multiple individuals, providing specific examples of their contributions and the context in which they are mentioned in entertainment articles, along with references to data reports for each claim. This approach helps the reader understand the breadth of the topic and make informed judgments without being misled. In contrast, Answer 2 focuses on a smaller group of public figures and primarily discusses their personal lives and relationships, which may not provide as broad an understanding of the topic. While Answer 2 also cites sources, it does not match the depth and variety of Answer 1.</p><p>Directness: Winner=2 (Naïve RAG). Answer 2 is better because it directly lists specific public figures who are repeatedly mentioned across various entertainment articles, such as Taylor Swift, Travis Kelce, Britney Spears, and Justin Timberlake, and provides concise explanations for their frequent mentions. Answer 1, while comprehensive, includes a lot of detailed information about various figures in different sectors of entertainment, which, while informative, does not directly answer the question with the same level of conciseness and specificity as Answer 2.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E System Prompts E.1 Element Instance Generation</head><p>---Goal---Given a text document that is potentially relevant to this activity and a list of entity types, identify all entities of those types from the text and all relationships among the identified entities.</p><p>---Steps---1. Identify all entities. For each identified entity, extract the following information:</p><p>-entity name: Name of the entity, capitalized -entity type: One of the following types: [{entity types}] -entity description: Comprehensive description of the entity's attributes and activities Format each entity as ("entity"{tuple delimiter}&lt;entity name&gt;{tuple delimiter}&lt;entity type&gt;{tuple delimiter}&lt;entity description&gt; 2. From the entities identified in step 1, identify all pairs of (source entity, target entity) that are *clearly related* to each other For each pair of related entities, extract the following information:</p><p>-source entity: name of the source entity, as identified in step 1 -target entity: name of the target entity, as identified in step 1 -relationship description: explanation as to why you think the source entity and the target entity are related to each other -relationship strength: a numeric score indicating strength of the relationship between the source entity and target entity Format each relationship as ("relationship"{tuple delimiter}&lt;source entity&gt;{tuple delimiter}&lt;target entity&gt;{tuple delimiter}&lt;relationship description&gt;{tuple delimiter}&lt;relationship strength&gt;)</p><p>3. Return output in English as a single list of all the entities and relationships identified in steps 1 and 2. Use **{record delimiter}** as the list delimiter.</p><p>4. When finished, output {completion delimiter} ---Examples---Entity types: ORGANIZATION,PERSON Input:</p><p>The Fed is scheduled to meet on Tuesday and Wednesday, with the central bank planning to release its latest policy decision on Wednesday at 2:00 p.m. ET, followed by a press conference where Fed Chair Jerome Powell will take questions. Investors expect the Federal Open Market Committee to hold its benchmark interest rate steady in a range of 5.25%-5.5%.</p><p>Output: ("entity"{tuple delimiter}FED{tuple delimiter}ORGANIZATION{tuple delimiter}The Fed is the Federal Reserve, which is setting interest rates on Tuesday and Wednesday) {record delimiter} ("entity"{tuple delimiter}JEROME POWELL{tuple delimiter}PERSON{tuple delimiter}Jerome Powell is the chair of the Federal Reserve) {record delimiter} ("entity"{tuple delimiter}FEDERAL OPEN MARKET COMMITTEE{tuple delimiter}ORGANIZATION{tuple delimiter}The Federal Reserve committee makes key decisions about interest rates and the growth of the United States money supply) {record delimiter} ("relationship"{tuple delimiter}JEROME POWELL{tuple delimiter}FED{tuple delimiter}Jerome Powell is the Chair of the Federal Reserve and will answer questions at a press conference{tuple delimiter}9) {completion delimiter} ...More examples... ---Real Data---Entity types: {entity types} Input: {input text} Output:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.2 Community Summary Generation</head><p>---Role---You are an AI assistant that helps a human analyst to perform general information discovery. Information discovery is the process of identifying and assessing relevant information associated with certain entities (e.g., organizations and individuals) within a network. {{ "title": "Verdant Oasis Plaza and Unity March", "summary": "The community revolves around the Verdant Oasis Plaza, which is the location of the Unity March. The plaza has relationships with the Harmony Assembly, Unity March, and Tribune Spotlight, all of which are associated with the march event.", "rating": 5.0, "rating explanation": "The impact severity rating is moderate due to the potential for unrest or conflict during the Unity March.", "findings": [ {{ "summary": "Verdant Oasis Plaza as the central location", "explanation": "Verdant Oasis Plaza is the central entity in this community, serving as the location for the Unity March. This plaza is the common link between all other entities, suggesting its significance in the community. The plaza's association with the march could potentially lead to issues such as public disorder or conflict, depending on the nature of the march and the reactions it provokes. [Data: Entities (5), Relationships (37, 38, 39, 40, 41,+more)]" }}, {{ "summary": "Harmony Assembly's role in the community", "explanation": "Harmony Assembly is another key entity in this community, being the organizer of the march at Verdant Oasis Plaza. The nature of Harmony Assembly and its march could be a potential source of threat, depending on their objectives and the reactions they provoke. The relationship between Harmony Assembly and the plaza is crucial in understanding the dynamics of this community. [Data: Entities(6), Relationships (38, 43)]" }}, {{ "summary": "Unity March as a significant event", "explanation": "The Unity March is a significant event taking place at Verdant Oasis Plaza. This event is a key factor in the community's dynamics and could be a potential source of threat, depending on the nature of the march and the reactions it provokes. The relationship between the march and the plaza is crucial in understanding the dynamics of this community. [Data: Relationships (39)]" }}, {{ "summary": "Role of Tribune Spotlight", "explanation": "Tribune Spotlight is reporting on the Unity March taking place in Verdant Oasis Plaza. This suggests that the event has attracted media attention, which could amplify its impact on the community. The role of Tribune Spotlight could be significant in shaping public perception of the event and the entities involved. [Data: Relationships (40)]" }} ] }} ---Real Data---Use the following text for your answer. Do not make anything up in your answer.</p><p>Input: {input text} ...Report Structure and Grounding Rules Repeated...</p><p>Output:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.3 Community Answer Generation</head><p>---Role---You are a helpful assistant responding to questions about a dataset by synthesizing perspectives from multiple analysts.</p><p>---Goal---Generate a response of the target length and format that responds to the user's question, summarize all the reports from multiple analysts who focused on different parts of the dataset, and incorporate any relevant general knowledge.</p><p>Note that the analysts' reports provided below are ranked in the **descending order of helpfulness**.</p><p>If you don't know the answer, just say so. Do not make anything up.</p><p>The final response should remove all irrelevant information from the analysts' reports and merge the cleaned information into a comprehensive answer that provides explanations of all the key points and implications appropriate for the response length and format.</p><p>Add sections and commentary to the response as appropriate for the length and format. Style the response in markdown.</p><p>The response shall preserve the original meaning and use of modal verbs such as "shall", "may" or "will".</p><p>The response should also preserve all the data references previously included in the analysts' reports, but do not mention the roles of multiple analysts in the analysis process.</p><p>Do not list more than 5 record ids in a single reference. Instead, list the top 5 most relevant record ids and add "+more" to indicate that there are more.</p><p>For example:</p><p>"Person X is the owner of Company Y and subject to many allegations of wrongdoing [Data: Reports (2, 7, 34, 46, 64, +more)]. He is also CEO of company X [Data: Reports (1, 3)]"</p><p>where 1, 2, 3, 7, 34, 46, and 64 represent the id (not the index) of the relevant data record.</p><p>Do not include information where the supporting evidence for it is not provided.</p><p>---Target response length and format---{response type} ---Analyst Reports---{report data} ...Goal and Target response length and format repeated...</p><p>Add sections and commentary to the response as appropriate for the length and format. Style the response in markdown.</p><p>Output:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.4 Global Answer Generation</head><p>---Role---You are a helpful assistant responding to questions about data in the tables provided.</p><p>---Goal---Generate a response of the target length and format that responds to the user's question, summarize all relevant information in the input data tables appropriate for the response length and format, and incorporate any relevant general knowledge.</p><p>If you don't know the answer, just say so. Do not make anything up.</p><p>The response shall preserve the original meaning and use of modal verbs such as "shall", "may" or "will".</p><p>Points supported by data should list the relevant reports as references as follows: "This is an example sentence supported by data references [Data: Reports (report ids)]"</p><p>Note: the prompts for SS (semantic search) and TS (text summarization) conditions use "Sources" in place of "Reports" above.</p><p>Do not list more than 5 record ids in a single reference. Instead, list the top 5 most relevant record ids and add "+more" to indicate that there are more.</p><p>For example:</p><p>"Person X is the owner of Company Y and subject to many allegations of wrongdoing [Data: Reports (2, 7, 64, 46, 34, +more)]. He is also CEO of company X [Data: Reports (1, 3)]"</p><p>where 1, 2, 3, 7, 34, 46, and 64 represent the id (not the index) of the relevant data report in the provided tables.</p><p>Do not include information where the supporting evidence for it is not provided. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F Evaluation Prompts</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F.1 Relative Assessment Prompt</head><p>---Role---You are a helpful assistant responsible for grading two answers to a question that are provided by two different people.</p><p>---Goal---Given a question and two answers (Answer 1 and Answer 2), assess which answer is better according to the following measure: {criteria} Your assessment should include two parts:</p><p>-Winner: either 1 (if Answer 1 is better) and 2 (if Answer 2 is better) or 0 if they are fundamentally similar and the differences are immaterial.</p><p>-Reasoning: a short explanation of why you chose the winner with respect to the measure described above.</p><p>Format your response as a JSON object with the following structure: {{ "winner": &lt;1, 2, or 0&gt;, "reasoning": "Answer 1 is better because &lt;your reasoning&gt;."</p><formula xml:id="formula_0">}} ---Question--- {question} ---Answer 1--- {answer1} ---Answer 2---<label>{answer2}</label></formula><p>Assess which answer is better according to the following measure: {criteria} Output:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F.2 Relative Assessment Metrics</head><p>CRITERIA = { "comprehensiveness": "How much detail does the answer provide to cover all the aspects and details of the question? A comprehensive answer should be thorough and complete, without being redundant or irrelevant. For example, if the question is 'What are the benefits and drawbacks of nuclear energy?', a comprehensive answer would provide both the positive and negative aspects of nuclear energy, such as its efficiency, environmental impact, safety, cost, etc. A comprehensive answer should not leave out any important points or provide irrelevant information. For example, an incomplete answer would only provide the benefits of nuclear energy without describing the drawbacks, or a redundant answer would repeat the same information multiple times.", "diversity": "How varied and rich is the answer in providing different perspectives and insights on the question? A diverse answer should be multi-faceted and multi-dimensional, offering different viewpoints and angles on the question. For example, if the question is 'What are the causes and effects of climate change?', a diverse answer would provide different causes and effects of climate change, such as greenhouse gas emissions, deforestation, natural disasters, biodiversity loss, etc. A diverse answer should also provide different sources and evidence to support the answer. For example, a single-source answer would only cite one source or evidence, or a biased answer would only provide one perspective or opinion.", "directness": "How specifically and clearly does the answer address the question? A direct answer should provide a clear and concise answer to the question. For example, if the question is 'What is the capital of France?', a direct answer would be 'Paris'. A direct answer should not provide any irrelevant or unnecessary information that does not answer the question. For example, an indirect answer would be 'The capital of France is located on the river Seine'.", "empowerment": "How well does the answer help the reader understand and make informed judgements about the topic without being misled or making fallacious assumptions. Evaluate each answer on the quality of answer as it relates to clearly explaining and providing reasoning and sources behind the claims in the answer." }</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G Statistical Analysis</head><p>Table 6: Pairwise comparisons of six conditions on four metrics across 125 questions and two datasets. For each question and metric, the winning condition received a score of 100, the losing condition received a score of 0, and in the event of a tie, each condition was scored 50. These scores were then averaged over five evaluation runs for each condition. Results of Shapiro-Wilk tests indicated that the data did not follow a normal distribution. Thus, non-parametric tests (Wilcoxon signed-rank tests) were employed to assess the performance differences between pairs of conditions, with Holm-Bonferroni correction applied to account for multiple pairwise comparisons. The corrected p-values that indicated statistically significant differences are highlighted in bold.</p><p>Podcast Transcripts News Articles Condition 1 Condition 2 Mean 1 Mean 2 Z-value p-value Mean 1 Mean 2 Z-value p-value Comprehensiveness C0 TS 50.24 49.76 -0.06 1 55.52 44.48 -2.03 0.17 C1 TS 51.92 48.08 -1.56 0.633 58.8 41.2 -3.62 0.002 C2 TS 57.28 42.72 -4.1 &lt;0.001 62.08 37.92 -5.07 &lt;0.001 C3 TS 56.48 43.52 -3.42 0.006 63.6 36.4 -5.63 &lt;0.001 C0 SS 71.92 28.08 -6.2 &lt;0.001 71.76 28.24 -6.3 &lt;0.001 C1 SS 75.44 24.56 -7.45 &lt;0.001 74.72 25.28 -7.78 &lt;0.001 C2 SS 77.76 22.24 -8.17 &lt;0.001 79.2 20.8 -8.34 &lt;0.001 C3 SS 78.96 21.04 -8.12 &lt;0.001 79.44 20.56 -8.44 &lt;0.001 TS SS 83.12 16.88 -8.85 &lt;0.001 79.6 20.4 -8.27 &lt;0.001 C0 C1 53.2 46.8 -1.96 0.389 51.92 48.08 -0.45 0.777 C0 C2 50.24 49.76 -0.23 1 53.68 46.32 -1.54 0.371 C1 C2 51.52 48.48 -1.62 0.633 57.76 42.24 -4.01 &lt;0.001 C0 C3 49.12 50.88 -0.56 1 52.16 47.84 -0.86 0.777 C1 C3 50.32 49.68 -0.66 1 55.12 44.88 -2.94 0.016 C2 C3 52.24 47.76 -1.97 0.389 58.64 41.36 -3.68 0.002 Diversity C0 TS 50.24 49.76 -0.11 1 46.88 53.12 -1.38 0.676 C1 TS 50.48 49.52 -0.12 1 54.64 45.36 -1.88 0.298 C2 TS 57.12 42.88 -2.84 0.036 55.76 44.24 -2.16 0.184 C3 TS 54.32 45.68 -2.39 0.1 60.16 39.84 -4.07 &lt;0.001 C0 SS 76.56 23.44 -7.12 &lt;0.001 62.08 37.92 -3.57 0.003 C1 SS 75.44 24.56 -7.33 &lt;0.001 64.96 35.04 -4.92 &lt;0.001 C2 SS 80.56 19.44 -8.21 &lt;0.001 70.56 29.44 -6.29 &lt;0.001 C3 SS 80.8 19.2 -8.3 &lt;0.001 69.12 30.88 -5.53 &lt;0.001 TS SS 82.08 17.92 -8.43 &lt;0.001 67.2 32.8 -4.85 &lt;0.001 C0 C1 49.76 50.24 -0.13 1 39.68 60.32 -3.61 0.003 C0 C2 46.32 53.68 -1.5 0.669 40.96 59.04 -3.14 0.012 C1 C2 44.08 55.92 -3.27 0.011 50.24 49.76 -0.22 1 C0 C3 44 56 -2.6 0.065 41.04 58.96 -3.47 0.004 C1 C3 45.44 54.56 -2.98 0.026 49.52 50.48 -0.01 1 C2 C3 48.48 51.52 -0.96 1 50.96 49.04 -0.39 1 Empowerment C0 TS 40.96 59.04 -4.3 &lt;0.001 42.24 57.76 -3.32 0.012 C1 TS 45.2 54.8 -3.76 0.002 50 50 -0.12 1 C2 TS 47.68 52.32 -2.2 0.281 49.52 50.48 -0.22 1 C3 TS 48.72 51.28 -1.27 1 51.68 48.32 -1.2 1 C0 SS 42.96 57.04 -3.71 0.003 42.72 57.28 -3.12 0.022 C1 SS 47.68 52.32 -1.5 0.936 51.36 48.64 -0.84 1 C2 SS 50.72 49.28 -0.55 1 49.84 50.16 -0.2 1 C3 SS 48.96 51.04 -0.57 1 49.52 50.48 -0.08 1 TS SS 57.52 42.48 -4.1 &lt;0.001 52.88 47.12 -1.1 1 C0 C1 48.72 51.28 -1.23 1 42.4 57.6 -3.9 0.001 C0 C2 46.64 53.36 -2.54 0.12 44.8 55.2 -2.16 0.336 C1 C2 49.28 50.72 -1.73 0.682 52 48 -1.45 1 C0 C3 47.6 52.4 -1.78 0.682 44.32 55.68 -3.45 0.008 C1 C3 50 50 0 1 51.44 48.56 -1.02 1 C2 C3 50.72 49.28 -0.86 1 50.4 49.6 -0.22 1 Directness C0 TS 44.96 55.04 -4.09 &lt;0.001 45.2 54.8 -3.68 0.003 C1 TS 47.92 52.08 -2.41 0.126 46.64 53.36 -2.91 0.04 C2 TS 48.8 51.2 -2.23 0.179 48.32 51.68 -2.12 0.179 C3 TS 48.08 51.92 -2.23 0.179 48.32 51.68 -2.56 0.074 C0 SS 35.12 64.88 -6.17 &lt;0.001 41.44 58.56 -4.82 &lt;0.001 C1 SS 40.32 59.68 -4.83 &lt;0.001 45.2 54.8 -3.19 0.017 C2 SS 40.4 59.6 -4.67 &lt;0.001 44.88 55.12 -3.65 0.003 C3 SS 40.48 59.52 -4.69 &lt;0.001 45.6 54.4 -2.86 0.043 TS SS 43.6 56.4 -3.96 &lt;0.001 46 54 -2.68 0.066 C0 C1 46.96 53.04 -2.87 0.037 47.6 52.4 -2.17 0.179 C0 C2 48.4 51.6 -2.06 0.197 48.48 51.52 -1.61 0.321 C1 C2 49.84 50.16 -1 0.952 49.28 50.72 -1.6 0.321 C0 C3 48.4 51.6 -1.8 0.29 47.2 52.8 -2.62 0.071 C1 C3 49.76 50.24 0 1 48.8 51.2 -1.29 0.321 C2 C3 50 50 0 1 48.8 51.2 -1.84 0.262</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>DirectnessFigure 2 :</head><label>2</label><figDesc>Figure2: Head-to-head win rate percentages of (row condition) over (column condition) across two datasets, four metrics, and 125 questions per comparison (each repeated five times and averaged). The overall winner per dataset and metric is shown in bold. Self-win rates were not computed but are shown as the expected 50% for reference. All Graph RAG conditions outperformed naïve RAG on comprehensiveness and diversity. Conditions C1-C3 also showed slight improvements in answer comprehensiveness and diversity over TS (global text summarization without a graph index).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 :</head><label>3</label><figDesc>Figure3: How the entity references detected in the HotPotQA dataset<ref type="bibr" target="#b68">(Yang et al., 2018)</ref> varies with chunk size and self-reflection iterations for our generic entity extraction prompt with gpt-4-turbo.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure4: Graph communities detected using the Leiden algorithm<ref type="bibr" target="#b60">(Traag et al., 2019)</ref> over the MultiHop-RAG (Tang and Yang, 2024) dataset as indexed. Circles represent entity nodes with size proportional to their degree. Node layout was performed via OpenORD<ref type="bibr" target="#b37">(Martin et al., 2011)</ref> and Force Atlas 2<ref type="bibr" target="#b20">(Jacomy et al., 2014)</ref>. Node colors represent entity communities, shown at two levels of hierarchical clustering: (a) Level 0, corresponding to the hierarchical partition with maximum modularity, and (b) Level 1, which reveals internal structure within these root-level communities.</figDesc><graphic coords="19,113.98,71.99,197.99,206.92" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><figDesc>At the beginning of your response, generate an integer score between 0-100 that indicates how **helpful** is this response in answering the user's question. Return the score in this format: &lt;ANSWER HELPFULNESS&gt; score value &lt;/ANSWER HELPFULNESS&gt;. ---Target response length and format---{response type} ---Data tables---{context data} ...Goal and Target response length and format repeated... Output:</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 2 :</head><label>2</label><figDesc>Number of context units (community summaries for C0-C3 and text chunks for TS), corresponding token counts, and percentage of the maximum token count. Map-reduce summarization of source texts is the most resource-intensive approach requiring the highest number of context tokens. Root-level community summaries (C0) require dramatically fewer tokens per query (9x-43x).</figDesc><table><row><cell></cell><cell cols="3">Podcast Transcripts</cell><cell></cell><cell></cell><cell cols="2">News Articles</cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell>C0</cell><cell>C1</cell><cell>C2</cell><cell>C3</cell><cell>TS</cell><cell>C0</cell><cell>C1</cell><cell>C2</cell><cell>C3</cell><cell>TS</cell></row><row><cell>Units</cell><cell>34</cell><cell>367</cell><cell>969</cell><cell>1310</cell><cell>1669</cell><cell>55</cell><cell>555</cell><cell>1797</cell><cell>2142</cell><cell>3197</cell></row><row><cell>Tokens</cell><cell cols="10">26657 225756 565720 746100 1014611 39770 352641 980898 1140266 1707694</cell></row><row><cell cols="2">% Max 2.6</cell><cell>22.2</cell><cell>55.8</cell><cell>73.5</cell><cell>100</cell><cell>2.3</cell><cell>20.7</cell><cell>57.4</cell><cell>66.8</cell><cell>100</cell></row><row><cell cols="11">ples, quotes, and citations was judged to be key to helping users reach an informed understanding.</cell></row><row><cell cols="11">Tuning element extraction prompts may help to retain more of these details in the GraphRAG index.</cell></row><row><cell cols="11">Community summaries vs. source texts. When comparing community summaries to source texts</cell></row><row><cell cols="11">using GraphRAG, community summaries generally provided a small but consistent improvement</cell></row><row><cell cols="11">in answer comprehensiveness and diversity, except for root-level summaries. Intermediate-level</cell></row><row><cell cols="11">summaries in the Podcast dataset and low-level community summaries in the News dataset achieved</cell></row><row><cell cols="11">comprehensiveness win rates of 57% (p&lt;.001) and 64% (p&lt;.001), respectively. Diversity win rates</cell></row><row><cell cols="11">were 57% (p=.036) for Podcast intermediate-level summaries and 60% (p&lt;.001) for News low-level</cell></row><row><cell cols="11">community summaries. Table 2 also illustrates the scalability advantages of GraphRAG compared</cell></row><row><cell cols="11">to source text summarization: for low-level community summaries (C3), GraphRAG required 26-</cell></row></table><note><p>33% fewer context tokens, while for root-level community summaries (C0), it required over 97% fewer tokens. For a modest drop in performance compared with other global methods, root-level GraphRAG offers a highly efficient method for the iterative question answering that characterizes sensemaking activity, while retaining advantages in comprehensiveness (72% win rate) and diversity (62% win rate) over vector RAG.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 3 :</head><label>3</label><figDesc>Average number of extracted claims, reported by condition and dataset type. Bolded values represent the highest score in each column.</figDesc><table><row><cell>Condition</cell><cell cols="2">Average Number of Claims</cell></row><row><cell></cell><cell cols="2">News Articles Podcast Transcripts</cell></row><row><cell>C0</cell><cell>34.18</cell><cell>32.21</cell></row><row><cell>C1</cell><cell>32.50</cell><cell>32.20</cell></row><row><cell>C2</cell><cell>31.62</cell><cell>32.46</cell></row><row><cell>C3</cell><cell>33.14</cell><cell>32.28</cell></row><row><cell>TS</cell><cell>32.89</cell><cell>31.39</cell></row><row><cell>SS</cell><cell>25.23</cell><cell>26.50</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 4 :</head><label>4</label><figDesc>Average number of clusters across different distance thresholds, reported by condition and dataset type. Bolded values represent the highest score in each row.</figDesc><table><row><cell>Dataset</cell><cell>Distance Threshold</cell><cell></cell><cell cols="4">Average Number of Clusters</cell></row><row><cell></cell><cell></cell><cell>C0</cell><cell>C1</cell><cell>C2</cell><cell>C3</cell><cell>TS</cell><cell>SS</cell></row><row><cell></cell><cell>0.5</cell><cell cols="5">23.42 21.85 21.90 22.13 21.80 17.92</cell></row><row><cell>News Articles</cell><cell>0.6 0.7</cell><cell cols="5">21.65 20.38 20.30 20.52 20.13 16.78 20.19 19.06 19.03 19.13 18.62 15.80</cell></row><row><cell></cell><cell>0.8</cell><cell cols="5">18.86 17.78 17.82 17.79 17.30 14.80</cell></row><row><cell></cell><cell>0.5</cell><cell cols="5">23.16 22.62 22.52 21.93 21.14 18.55</cell></row><row><cell>Podcast Transcripts</cell><cell>0.6 0.7</cell><cell cols="5">21.65 21.33 21.21 20.62 19.70 17.39 20.41 20.04 19.79 19.22 18.08 16.28</cell></row><row><cell></cell><cell>0.8</cell><cell cols="5">19.26 18.77 18.46 17.89 16.66 15.07</cell></row><row><cell>6.2 Future work</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_0"><p>Preprint. Under review.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgements</head><p>We would also like to thank the following people who contributed to the work: <rs type="person">Alonso Guevara Fernández</rs>, <rs type="person">Amber Hoak</rs>, <rs type="person">Andrés Morales Esquivel</rs>, <rs type="person">Ben Cutler</rs>, <rs type="person">Billie Rinaldi</rs>, <rs type="person">Chris Sanchez</rs>, <rs type="person">Chris Trevino</rs>, <rs type="person">Christine Caggiano</rs>, <rs type="person">David Tittsworth</rs>, <rs type="person">Dayenne de Souza</rs>, <rs type="person">Douglas Orbaker</rs>, <rs type="person">Ed Clark</rs>, <rs type="person">Gabriel Nieves-Ponce</rs>, <rs type="person">Gaudy Blanco Meneses</rs>, <rs type="person">Kate Lytvynets</rs>, <rs type="person">Katy Smith</rs>, <rs type="person">Mónica Carvajal</rs>, <rs type="person">Nathan Evans</rs>, <rs type="person">Richard Ortega</rs>, <rs type="person">Rodrigo Racanicci</rs>, <rs type="person">Sarah Smith</rs>, and <rs type="person">Shane Solomon</rs>.</p></div>
+			</div>			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>---Goal---Write a comprehensive report of a community, given a list of entities that belong to the community as well as their relationships and optional associated claims. The report will be used to inform decision-makers about information associated with the community and their potential impact. The content of this report includes an overview of the community's key entities, their legal compliance, technical capabilities, reputation, and noteworthy claims.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>---Report Structure---</head><p>The report should include the following sections:</p><p>-TITLE: community's name that represents its key entities -title should be short but specific. When possible, include representative named entities in the title. -SUMMARY: An executive summary of the community's overall structure, how its entities are related to each other, and significant information associated with its entities.</p><p>-IMPACT SEVERITY RATING: a float score between 0-10 that represents the severity of IMPACT posed by entities within the community. IMPACT is the scored importance of a community.</p><p>-RATING EXPLANATION: Give a single sentence explanation of the IMPACT severity rating.</p><p>-DETAILED FINDINGS: A list of 5-10 key insights about the community. Each insight should have a short summary followed by multiple paragraphs of explanatory text grounded according to the grounding rules below. Be comprehensive.</p><p>Return output as a well-formed JSON-formatted string with the following format: {{ "title": &lt;report title&gt;, "summary": &lt;executive summary&gt;, "rating": &lt;impact severity rating&gt;, "rating explanation": &lt;rating explanation&gt;, "findings": [ {{ "summary":&lt;insight 1 summary&gt;, "explanation": &lt;insight 1 explanation&gt; }}, {{ "summary":&lt;insight 2 summary&gt;, "explanation": &lt;insight 2 explanation&gt; }} ] }} ---Grounding Rules---Points supported by data should list their data references as follows: "This is an example sentence supported by multiple data references [Data: &lt;dataset name&gt; (record ids); &lt;dataset name&gt; (record ids)]." Do not list more than 5 record ids in a single reference. Instead, list the top 5 most relevant record ids and add "+more" to indicate that there are more. For example: "Person X is the owner of Company Y and subject to many allegations of wrongdoing [Data: Reports (1), Entities (5, 7); Relationships (23); Claims <ref type="bibr">(7, 2, 34, 64, 46, +more)</ref>]." where 1, 5, 7, 23, 2, 34, 46, and 64 represent the id (not the index) of the relevant data record.</p><p>Do not include information where the supporting evidence for it is not provided. </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>-</head><figDesc>OASIS PLAZA,Verdant Oasis Plaza is the location of the Unity March 6,HARMONY ASSEMBLY,Harmony Assembly is an organization that is holding a march at Verdant Oasis Plaza Relationships id,source,target,description 37,VERDANT OASIS PLAZA,UNITY MARCH,Verdant Oasis Plaza is the location of the Unity March 38,VERDANT OASIS PLAZA,HARMONY ASSEMBLY,Harmony Assembly is holding a march at Verdant Oasis Plaza 39,VERDANT OASIS PLAZA,UNITY MARCH,The Unity March is taking place at Verdant Oasis Plaza 40,VERDANT OASIS PLAZA,TRIBUNE SPOTLIGHT,Tribune Spotlight is reporting on the Unity march taking place at Verdant Oasis Plaza 41,VERDANT OASIS PLAZA,BAILEY ASADI,Bailey Asadi is speaking at Verdant Oasis Plaza about the march 43,HARMONY ASSEMBLY,UNITY MARCH,Harmony Assembly is organizing the Unity March Output:</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Adler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Akkaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">L</forename><surname>Aleman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Altenschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Altman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Anadkat</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.08774</idno>
+		<title level="m">Gpt-4 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">R</forename><surname>Anil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Borgeaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-B</forename><surname>Alayrac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Soricut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schalkwyk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">M</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hauth</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.11805</idno>
+		<title level="m">Gemini: a family of highly capable multimodal models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Knowledge-augmented language model prompting for zero-shot knowledge graph question answering</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Baek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">F</forename><surname>Aji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Saffari</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.04136</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">From query tools to causal architects: Harnessing large language models for advanced causal discovery from data</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Ban</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Neural networks for entity matching: A survey</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Barlaug</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">A</forename><surname>Gulla</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Knowledge Discovery from Data (TKDD)</title>
+		<imprint>
+			<biblScope unit="volume">15</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="1" to="37" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Query focused abstractive summarization: Incorporating query relevance, multi-document coverage, and summary length constraints into seq2seq models</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Baumel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Eyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Elhadad</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1801.07704</idno>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Fast unfolding of communities in large networks</title>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">D</forename><surname>Blondel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-L</forename><surname>Guillaume</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Lambiotte</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Lefebvre</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of statistical mechanics: theory and experiment</title>
+		<imprint>
+			<biblScope unit="issue">10</biblScope>
+			<biblScope unit="page">10008</biblScope>
+			<date type="published" when="2008">2008. 2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Askell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Lift yourself up: Retrievalaugmented text generation with self-memory</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Yan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page">36</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">The data matching process</title>
+		<author>
+			<persName><forename type="first">Christen</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Christen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<publisher>Springer</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Graspy: Graph statistics in python</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">D</forename><surname>Pedigo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">W</forename><surname>Bridgeford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">K</forename><surname>Varjavand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">S</forename><surname>Helm</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">T</forename><surname>Vogelstein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">20</biblScope>
+			<biblScope unit="issue">158</biblScope>
+			<biblScope unit="page" from="1" to="7" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Duc 2005: Evaluation of question-focused summarization systems</title>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">T</forename><surname>Dang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Workshop on Task-Focused Summarization and Question Answering</title>
+		<meeting>the Workshop on Task-Focused Summarization and Question Answering</meeting>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+			<biblScope unit="page" from="48" to="55" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Duplicate record detection: A survey</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">K</forename><surname>Elmagarmid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">G</forename><surname>Ipeirotis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">S</forename><surname>Verykios</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on knowledge and data engineering</title>
+		<imprint>
+			<biblScope unit="volume">19</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="16" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Es</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>James</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Espinosa-Anke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Schockaert</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.15217</idno>
+		<title level="m">Ragas: Automated evaluation of retrieval augmented generation</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Web-scale information extraction in knowitall: (preliminary results)</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Etzioni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Cafarella</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Downey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kok</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A.-M</forename><surname>Popescu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Shaked</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Soderland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">S</forename><surname>Weld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Yates</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 13th International Conference on World Wide Web, WWW &apos;04</title>
+		<meeting>the 13th International Conference on World Wide Web, WWW &apos;04<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2004">2004</date>
+			<biblScope unit="page" from="100" to="110" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Retrieval-generation synergy augmented large language models</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Qin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.05149</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Community detection in graphs</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Fortunato</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Physics reports</title>
+		<imprint>
+			<biblScope unit="volume">486</biblScope>
+			<biblScope unit="issue">3-5</biblScope>
+			<biblScope unit="page" from="75" to="174" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.10997</idno>
+		<title level="m">Retrievalaugmented generation for large language models: A survey</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">G-retriever: Retrieval-augmented generation for textual graph understanding and question answering</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">V</forename><surname>Chawla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Laurent</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lecun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Bresson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Hooi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.07630</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Large language models cannot self-correct reasoning yet</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">S</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">W</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.01798</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Forceatlas2, a continuous graph layout algorithm for handy network visualization designed for the gephi software</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Jacomy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Venturini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Heymann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bastian</surname></persName>
+		</author>
+		<idno type="DOI">10.1371/journal.pone.0098679</idno>
+		<ptr target="https://doi.org/10.1371/journal.pone.0098679" />
+	</analytic>
+	<monogr>
+		<title level="j">PLoS ONE</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page">98679</biblScope>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">A survey of community detection approaches: From statistical modeling to deep learning</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Jiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">Y</forename><surname>Philip</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Knowledge and Data Engineering</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="1149" to="1170" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Knowledge graph-augmented language models for knowledge-grounded dialogue generation</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Kwak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Baek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">J</forename><surname>Hwang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.18846</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">O</forename><surname>Khattab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Santhanam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">L</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Potts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zaharia</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.14024</idno>
+		<title level="m">Demonstrate-search-predict: Composing retrieval and language models for knowledge-intensive nlp</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Probabilistic knowledge graph construction: Compositional and incremental approaches</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">S</forename><surname>Ong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 25th ACM International on Conference on Information and Knowledge Management, CIKM &apos;16</title>
+		<meeting>the 25th ACM International on Conference on Information and Knowledge Management, CIKM &apos;16<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="2257" to="2262" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">G</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Jeon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.14696</idno>
+		<title level="m">Tree of clarifications: Answering ambiguous questions with retrieval-augmented large language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Making sense of sensemaking 1: Alternative perspectives</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Klein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Moon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">R</forename><surname>Hoffman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE intelligent systems</title>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="70" to="73" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Evaluating large language models in theory of mind tasks</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kosinski</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proceedings of the National Academy of Sciences</title>
+		<imprint>
+			<biblScope unit="volume">121</biblScope>
+			<biblScope unit="issue">45</biblScope>
+			<biblScope unit="page">2405460121</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">In search of needles in a 11m haystack: Recurrent memory finds what llms miss</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Kuratov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bulatov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Anokhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Sorokin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sorokin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Burtsev</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Langchain graphs</title>
+		<author>
+			<persName><surname>Langchain</surname></persName>
+		</author>
+		<ptr target="https://langchain-graphrag.readthedocs.io/en/latest/" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Query focused abstractive summarization via incorporating query relevance and transfer learning with transformer models</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">T R</forename><surname>Laskar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Hoque</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Huang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Artificial Intelligence: 33rd Canadian Conference on Artificial Intelligence</title>
+		<meeting><address><addrLine>Ottawa, ON, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2020-05-13">2020. May 13-15, 2020</date>
+			<biblScope unit="volume">2020</biblScope>
+			<biblScope unit="page" from="342" to="348" />
+		</imprint>
+	</monogr>
+	<note>Canadian</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Retrieval-augmented generation for knowledge-intensive nlp tasks</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Piktus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Karpukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Küttler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-T</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Rocktäschel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="9459" to="9474" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">F</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hewitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Paranjape</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bevilacqua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.03172</idno>
+		<title level="m">Lost in the middle: How language models use long contexts</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><surname>Llamaindex</surname></persName>
+		</author>
+		<ptr target="https://github.com/run-llama/llamaindex/blob/main/docs/docs/examples/cookbooks/GraphRAGv2.ipynb" />
+		<title level="m">GraphRAG Implementation with LlamaIndex -V2</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Self-refine: Iterative refinement with self-feedback</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Tandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hallinan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wiegreffe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Prabhumoye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="page">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Selfcheckgpt: Zero-resource black-box hallucination detection for generative large language models</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Manakul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Liusie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">J</forename><surname>Gales</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.08896</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Generation-augmented retrieval for open-domain question answering</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2009.08553</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Openord: An open-source toolbox for large graph layout</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">M</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Klavans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Boyack</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SPIE Conference on Visualization and Data Analysis (VDA)</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Knowledge graph generation from text</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Melnyk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dognin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Das</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">The impact of large language models on scientific discovery: a preliminary study using gpt-4</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Metropolitansky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Larson</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2025. 2023</date>
+			<publisher>Microsoft</publisher>
+		</imprint>
+	</monogr>
+	<note>Towards effective extraction and evaluation of factual claims</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Mining knowledge from text using information extraction</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Mooney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Bunescu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SIGKDD Explor. Newsl</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="3" to="10" />
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Nebulagraph launches industry-first graph rag: Retrieval-augmented generation with llm based on knowledge graphs</title>
+		<author>
+			<persName><surname>Nebulagraph</surname></persName>
+		</author>
+		<ptr target="https://www.nebula-graph.io/posts/graph-RAG" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Get started with graphrag: Neo4j&apos;s ecosystem tools</title>
+		<author>
+			<persName><surname>Neo4j</surname></persName>
+		</author>
+		<ptr target="https://neo4j.com/developer-blog/graphrag-ecosystem-tools/" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Modularity and community structure in networks</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">E</forename><surname>Newman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the national academy of sciences</title>
+		<meeting>the national academy of sciences</meeting>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+			<biblScope unit="volume">103</biblScope>
+			<biblScope unit="page" from="8577" to="8582" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">AFaCTA: Assisting the annotation of factual claim detection with reliable LLM annotators</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Stammbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sachan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Ash</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Leippold</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">L.-W</forename><surname>Ku</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Martins</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">V</forename><surname>Srikumar</surname></persName>
+		</editor>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics<address><addrLine>Bangkok, Thailand</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="1890" to="1912" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<title level="m">Chatgpt: Gpt-4 language model</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<author>
+			<persName><forename type="first">V</forename><surname>Padmakumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>He</surname></persName>
+		</author>
+		<title level="m">Does writing with language models reduce content diversity? ICLR</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Scikit-learn: Machine learning in python</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Pedregosa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Varoquaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gramfort</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Michel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Thirion</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Grisel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Blondel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Prettenhofer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Weiss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Dubourg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Vanderplas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Passos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Cournapeau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Brucher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Perrot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Duchesnay</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="page" from="2825" to="2830" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">In-context retrieval-augmented language models</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Ram</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Dalmedigos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Muhlgay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Shashua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Leyton-Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shoham</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="page" from="1316" to="1331" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<author>
+			<persName><forename type="first">P</forename><surname>Ranade</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Joshi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.13848</idno>
+		<title level="m">Fabula: Intelligence report generation using retrieval-augmented narrative construction</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Deus ex machina and personas from large language models: Investigating the composition of ai-generated persona descriptions</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Salminen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Pian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Häyhänen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">J</forename><surname>Jansen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the CHI Conference on Human Factors in Computing Systems</title>
+		<meeting>the CHI Conference on Human Factors in Computing Systems</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="1" to="20" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sarthi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Abdullah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Tuli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Khanna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Goldie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.18059</idno>
+		<title level="m">Raptor: Recursive abstractive processing for tree-organized retrieval</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<author>
+			<persName><forename type="first">K</forename><surname>Scott</surname></persName>
+		</author>
+		<ptr target="https://www.microsoft.com/en-us/behind-the-tech" />
+		<title level="m">Behind the Tech</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<title level="m" type="main">Enhancing retrievalaugmented large language models with iterative retrieval-generation synergy</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.15294</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Understanding humanai workflows for generating personas</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Shin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A</forename><surname>Hedderich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">J</forename><surname>Rey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lucero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Oulasvirta</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 ACM Designing Interactive Systems Conference</title>
+		<meeting>the 2024 ACM Designing Interactive Systems Conference</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="757" to="781" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<analytic>
+		<title level="a" type="main">Reflexion: Language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="page">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<title level="m" type="main">Caire-covid: A question answering and query-focused multi-document summarization system for covid-19 scholarly information management</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">B</forename><surname>Siddique</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">J</forename><surname>Barezi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Fung</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2005.03975</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<analytic>
+		<title level="a" type="main">Representation learning of large-scale knowledge graphs via entity feature combinations</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2017 ACM on Conference on Information and Knowledge Management, CIKM &apos;17</title>
+		<meeting>the 2017 ACM on Conference on Information and Knowledge Management, CIKM &apos;17<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="1777" to="1786" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.15391</idno>
+		<title level="m">MultiHop-RAG: Benchmarking retrieval-augmented generation for multi-hop queries</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<monogr>
+		<author>
+			<persName><forename type="first">H</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Albert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Almahairi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Babaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Bashlykov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Bhargava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bhosale</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.09288</idno>
+		<title level="m">Llama 2: Open foundation and fine-tuned chat models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<analytic>
+		<title level="a" type="main">From Louvain to Leiden: guaranteeing well-connected communities</title>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">A</forename><surname>Traag</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Waltman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">J</forename><surname>Van Eck</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Scientific Reports</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<monogr>
+		<title level="m" type="main">Enhancing knowledge graph construction using large language models</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Trajanoska</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Stojanov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Trajanov</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2305.04676</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<monogr>
+		<title level="m" type="main">Interleaving retrieval with chain-of-thought reasoning for knowledge-intensive multi-step questions</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Trivedi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Balasubramanian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.10509</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.04048</idno>
+		<title level="m">Is chatgpt a good nlg evaluator? a preliminary study</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Khramtsova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Zuccon</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.11891</idno>
+		<title level="m">Feb4rag: Evaluating federated search in the context of retrieval augmented generation</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<monogr>
+		<title level="m" type="main">Self-consistency improves chain of thought reasoning in language models</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.11171</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b66">
+	<monogr>
+		<title level="m" type="main">Knowledge graph prompting for multi-document question answering</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Lipka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">A</forename><surname>Rossi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Siu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Derr</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023b</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b67">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lapata</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2106.00104</idno>
+		<title level="m">Text summarization with latent queries</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b68">
+	<analytic>
+		<title level="a" type="main">HotpotQA: A dataset for diverse, explainable multi-hop question answering</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">W</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Empirical Methods in Natural Language Processing</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b69">
+	<analytic>
+		<title level="a" type="main">Recent advances in document summarization</title>
+		<author>
+			<persName><forename type="first">J.-G</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Knowledge and Information Systems</title>
+		<imprint>
+			<biblScope unit="volume">53</biblScope>
+			<biblScope unit="page" from="297" to="336" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b70">
+	<monogr>
+		<title level="m" type="main">Exploring large language models for knowledge graph completion</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Luo</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b71">
+	<analytic>
+		<title level="a" type="main">Tex-tRunner: Open information extraction on the web</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Yates</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Banko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Broadhead</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Cafarella</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Etzioni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Soderland</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of Human Language Technologies: The Annual Conference of the North American Chapter of the Association for Computational Linguistics (NAACL-HLT)</title>
+		<editor>
+			<persName><forename type="first">B</forename><surname>Carpenter</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Stent</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Williams</surname></persName>
+		</editor>
+		<meeting>Human Language Technologies: The Annual Conference of the North American Chapter of the Association for Computational Linguistics (NAACL-HLT)<address><addrLine>Rochester, New York, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2007">2007</date>
+			<biblScope unit="page" from="25" to="26" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b72">
+	<monogr>
+		<title level="m" type="main">S-eval: Automatic and adaptive test generation for benchmarking safety evaluation of large language models</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.14191</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b73">
+	<monogr>
+		<title level="m" type="main">Graph-toolformer: To empower llms with graph reasoning ability via prompt augmented by chatgpt</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.11116</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b74">
+	<monogr>
+		<title level="m" type="main">Causal graph discovery with retrievalaugmented generation based large language models</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.15301</idno>
+		<imprint>
+			<date type="published" when="2024">2024a</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b75">
+	<monogr>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.17271</idno>
+		<title level="m">Dynamic evaluation of large language models via adaptive reasoning graph</title>
+		<meeting><address><addrLine>Darg</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024">2024b</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b76">
+	<analytic>
+		<title level="a" type="main">Judging llm-as-a-judge with mt-bench and chatbot arena</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-L</forename><surname>Chiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Xing</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="page">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b77">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Zhang</surname></persName>
+		</author>
+		<title level="m">Llms for knowledge graph construction and reasoning: Recent capabilities and future opportunities</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

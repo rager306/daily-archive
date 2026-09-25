@@ -1,0 +1,2884 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Group-in-Group Policy Optimization for LLM Agent Training</title>
+				<funder ref="#_rgRrubr">
+					<orgName type="full">Ministry of Education, Singapore</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-10-28">28 Oct 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Lang</forename><surname>Feng</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Nanyang Technological University</orgName>
+								<address>
+									<country key="SG">Singapore</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhenghai</forename><surname>Xue</surname></persName>
+							<email>zhenghai001@e.ntu.edu.sg</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Nanyang Technological University</orgName>
+								<address>
+									<country key="SG">Singapore</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Tingcong</forename><surname>Liu</surname></persName>
+							<email>tingcong001@e.ntu.edu.sg</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Nanyang Technological University</orgName>
+								<address>
+									<country key="SG">Singapore</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Bo</forename><surname>An</surname></persName>
+							<email>boan@ntu.edu.sg</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Nanyang Technological University</orgName>
+								<address>
+									<country key="SG">Singapore</country>
+								</address>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution">Skywork AI</orgName>
+								<address>
+									<country key="SG">Singapore</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Group-in-Group Policy Optimization for LLM Agent Training</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-10-28">28 Oct 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">4BAD7F501847F7673D091DB37CA623B4</idno>
+					<idno type="arXiv">arXiv:2505.10978v3[cs.LG]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:04+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Recent advances in group-based reinforcement learning (RL) have driven frontier large language models (LLMs) in single-turn tasks like mathematical reasoning. However, their scalability to multi-turn LLM agent training remains limited. Unlike static tasks, agent-environment interactions unfold over many steps and often yield sparse or delayed rewards, making credit assignment across individual steps significantly more challenging. In this work, we propose Group-in-Group Policy Optimization (GiGPO), a novel RL algorithm that achieves fine-grained credit assignment for LLM agents while preserving the appealing properties of group-based RL: critic-free, low memory, and stable convergence. GiGPO introduces a twolevel structure for estimating relative advantage: (i) At the episode-level, GiGPO computes macro relative advantages based on groups of complete trajectories; (ii) At the step-level, GiGPO introduces an anchor state grouping mechanism that retroactively constructs step-level groups by identifying repeated environment states across trajectories. Actions stemming from the same state are grouped together, enabling micro relative advantage estimation. This hierarchical structure effectively captures both global trajectory quality and local step effectiveness without relying on auxiliary models or additional rollouts. We evaluate GiGPO on challenging agent benchmarks, including ALFWorld and WebShop, as well as tool-integrated reasoning on search-augmented QA tasks, using Qwen2.5-1.5B/3B/7B-Instruct. Crucially, GiGPO delivers fine-grained per-step credit signals, achieves performance gains of &gt; 12% on ALFWorld and &gt; 9% on WebShop over GRPO, and obtains superior performance on QA tasks (42.1% on 3B and 47.2% on 7B): all while maintaining the same GPU memory overhead, identical LLM rollout, and incurring little to no additional time cost.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="26" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="27" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Large Language Models (LLMs) <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b1">2,</ref><ref type="bibr" target="#b2">3,</ref><ref type="bibr" target="#b3">4]</ref> have leapt from static question-answer systems to versatile agents that perceive, reason, and act in open-ended environments. For instance, they now power embodied assistants that navigate simulated homes <ref type="bibr" target="#b4">[5,</ref><ref type="bibr" target="#b5">6]</ref>, mobile and web navigators that plan multi-step browsing sessions <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b7">8,</ref><ref type="bibr" target="#b8">9,</ref><ref type="bibr" target="#b9">10]</ref>, and autonomous explorers in interactive games <ref type="bibr" target="#b10">[11,</ref><ref type="bibr" target="#b11">12]</ref>. In these settings, LLM agents need to perceive, reason, and act in multi-turn loops, which requires not only language understanding but also long-horizon planning and decision-making.</p><p>Reinforcement learning (RL) <ref type="bibr" target="#b12">[13]</ref> has become a crucial recipe for post-training LLMs, leading to frontier models like OpenAI o1 <ref type="bibr" target="#b13">[14]</ref> and DeepSeek R1 <ref type="bibr" target="#b14">[15]</ref>. In particular, group-based RL algorithms such as RLOO <ref type="bibr" target="#b15">[16,</ref><ref type="bibr" target="#b16">17]</ref> and GRPO <ref type="bibr" target="#b17">[18]</ref> have proven especially effective in large-scale training. These methods replace value-function estimation with simple yet powerful relative advantage estimation within groups of rollouts. This group-based advantage computation enjoys favorable properties such as low memory overhead, critic-free optimization, and scalability to large models. However, their successes have so far been largely limited to single-turn tasks such as math problem solving <ref type="bibr" target="#b18">[19,</ref><ref type="bibr" target="#b19">20]</ref> and code generation <ref type="bibr" target="#b20">[21]</ref>, where reward arrives immediately and credit assignment is straightforward.</p><p>In contrast, LLM agents operating in external environments face fundamentally different learning landscapes. Their behavior unfolds over long episodes with tens of decision steps and tens of thousands of tokens (e.g., an ALFWorld <ref type="bibr" target="#b4">[5]</ref> episode may include up to 50 steps and over 20k tokens). Rewards are typically sparse (sometimes arriving only at the end of an episode), and the impact of any individual action may only manifest much later in the trajectory. This substantially complicates the credit assignment for individual steps and increases the challenge of policy optimization. Naively applying existing group-based RL algorithms in such settings collapses step-level distinctions, undermining their effectiveness. Hence, these limitations raise a core question:</p><p>Can we preserve the critic-free, low-memory, and stable convergence properties of group-based RL while introducing fine-grained credit assignment for multi-turn LLM agent training?</p><p>To address this, we introduce Group-in-Group Policy Optimization (GiGPO), a new group-based RL algorithm that nests two-dimensional notions of credit assignment, better-suited for the multi-turn optimization of LLM agents. (i) At the episode level, GiGPO samples a group of complete trajectories under identical task and initial-state conditions, and computes macro relative advantages based on total returns like vanilla GRPO <ref type="bibr" target="#b17">[18]</ref>. This captures the overall effectiveness of each trajectory and reflects the completeness of task execution. (ii) At the step level, GiGPO introduces a novel anchor state grouping mechanism for fine-grained relative advantages estimation. Specifically, it retroactively identifies the repeated environment states, termed as anchor states, across trajectories and uses them as anchors to construct step-level groups that allow for localized credit assignment.</p><p>The key insight behind GiGPO is that, under identical tasks and initial environment conditions, many trajectories within the group encounter the same states multiple times due to ineffective actions or loops, such as revisiting the same webpage, room, or game scene. These shared states provide a natural basis for step-level group construction and computing more granular advantage estimates. GiGPO uses these step-level groups to assign localized credit to actions based on their relative performance at a common state, enabling more precise optimization while avoiding the cost explosion of per-step extra rollouts. As such, GiGPO remains fully critic-free and requires no auxiliary value models while dramatically introducing finer credit signals for training LLM agents.</p><p>We first evaluate GiGPO on long-horizon agent benchmarks: ALFWorld <ref type="bibr" target="#b4">[5]</ref>, which tests embodied task planning in simulated household environments, and WebShop <ref type="bibr" target="#b21">[22]</ref>, which simulates complex, goal-driven web interactions. In addition, we study multi-turn tool-integrated reasoning on searchaugmented QA tasks. Our experiments with Qwen2.5-1.5B/3B/7B-Instruct <ref type="bibr" target="#b2">[3]</ref> show that GiGPO consistently outperforms prompt-based agents, actor-critic baselines, and prior group-based RL methods. In particular, GiGPO injects fine-grained, step-level credit signals that sharpen policy learning of agents over horizons and achieves performance gains of &gt; 12% on ALFWorld and &gt; 9% on WebShop over GRPO, along with remarkable performance on search-based QA tasks (42.1% on 3B and 47.2% on 7B). These gains come without compromising the core strengths of group-based RL (only &lt; 0.002% time cost), making GiGPO a versatile and high-utility algorithm for LLM agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related Work</head><p>LLMs as decision-making agents. The use of large language models (LLMs) as autonomous agents has expanded rapidly across domains such as program generation <ref type="bibr" target="#b22">[23]</ref>, smart device operation <ref type="bibr" target="#b23">[24,</ref><ref type="bibr" target="#b24">25,</ref><ref type="bibr" target="#b25">26,</ref><ref type="bibr" target="#b26">27]</ref>, interactive gameplay <ref type="bibr" target="#b10">[11]</ref>, and robot behavior control <ref type="bibr" target="#b27">[28]</ref>. Early works typically relied on leveraging pre-trained, frozen models through carefully designed prompting methods (like ReAct <ref type="bibr" target="#b28">[29]</ref> and Reflexion <ref type="bibr" target="#b29">[30]</ref>), enhanced memory and retrieval systems <ref type="bibr" target="#b11">[12,</ref><ref type="bibr" target="#b30">31]</ref>, and integration with external tools <ref type="bibr" target="#b31">[32,</ref><ref type="bibr" target="#b32">33,</ref><ref type="bibr" target="#b33">34]</ref>. More recent research has shifted toward adapting model parameters with supervised fine-tuning (SFT) <ref type="bibr" target="#b23">[24]</ref> or RL <ref type="bibr" target="#b12">[13]</ref>, enabling agents to learn directly from environment interaction rather than static prompts or handcrafted workflows, which we introduce below.</p><p>Reinforcement learning for LLM agents. RL has played a pivotal role in enabling LLM agents to operate in dynamic, open-ended environments. Early work applied classical RL algorithms such as DQN <ref type="bibr" target="#b34">[35]</ref> to train LLM agents in text-based games <ref type="bibr" target="#b35">[36]</ref> and later research <ref type="bibr" target="#b36">[37,</ref><ref type="bibr" target="#b37">38,</ref><ref type="bibr" target="#b38">39,</ref><ref type="bibr" target="#b39">40,</ref><ref type="bibr" target="#b40">41]</ref> started to employ value-based methods, such PPO <ref type="bibr" target="#b41">[42]</ref> and AWR <ref type="bibr" target="#b42">[43]</ref>, in more diverse and interactive agent scenarios including Android device control <ref type="bibr" target="#b43">[44]</ref>, embodied ALFWorld <ref type="bibr" target="#b4">[5]</ref>, and card games <ref type="bibr" target="#b44">[45]</ref>. More recent approaches have extended RL training to complex web-based and application-centered tasks. For instance, ArCHer <ref type="bibr" target="#b45">[46]</ref> and AgentQ <ref type="bibr" target="#b46">[47]</ref> target the WebShop benchmark <ref type="bibr" target="#b21">[22]</ref>, but require intricate designs and computation overhead such as additional value networks or Monte Carlo Tree Search (MCTS) <ref type="bibr" target="#b47">[48]</ref>. CoSo <ref type="bibr" target="#b9">[10]</ref> introduces an entropy-based RL method that enhances the performance of agents. Going further, LOOP <ref type="bibr" target="#b48">[49]</ref> introduces a hybrid method combining REINFORCE leave-oneout (RLOO) <ref type="bibr" target="#b15">[16,</ref><ref type="bibr" target="#b16">17]</ref> with PPO-style updates, achieving state-of-the-art results in AppWorld <ref type="bibr" target="#b49">[50]</ref>. RAGEN <ref type="bibr" target="#b50">[51]</ref> introduces a trajectory-level GRPO that concatenates all states, intermediate reasoning, and actions into a unified episode-level response. However, it faces scalability challenges in longhorizon tasks (e.g., in ALFWorld, which involves up to 50 steps).</p><p>Reinforcement learning for large language models. An early and influential application of RL in LLMs is the Reinforcement Learning from Human Feedback (RLHF) <ref type="bibr" target="#b51">[52,</ref><ref type="bibr" target="#b52">53,</ref><ref type="bibr" target="#b53">54,</ref><ref type="bibr" target="#b54">55]</ref>, which focuses on aligning LLMs to human preferences. Most recent works have explored using RL to enhance the capabilities of reasoning and logical deduction in LLMs <ref type="bibr" target="#b55">[56,</ref><ref type="bibr" target="#b14">15]</ref>. In particular, group-based RL algorithms have emerged as promising alternatives to traditional methods like PPO <ref type="bibr" target="#b41">[42]</ref>. These methods, such as RLOO <ref type="bibr" target="#b15">[16,</ref><ref type="bibr" target="#b16">17]</ref>, GRPO <ref type="bibr" target="#b17">[18]</ref>, Dr. GRPO <ref type="bibr" target="#b18">[19]</ref>, DAPO <ref type="bibr" target="#b19">[20]</ref>, and CPPO <ref type="bibr" target="#b56">[57]</ref>, avoid introducing extra value functions by leveraging a group of samples from the same query and estimate the advantages accordingly. This enables the large-scale RL training and has shown strong results in tasks such as mathematical reasoning <ref type="bibr" target="#b14">[15]</ref>, search <ref type="bibr" target="#b57">[58,</ref><ref type="bibr" target="#b58">59]</ref>, and tool use <ref type="bibr" target="#b59">[60,</ref><ref type="bibr" target="#b60">61]</ref>. Our work is closely related to this line of research, with a focus on training LLM agents. We aim to retain the benefits of group-based RL, such as critic-free learning and efficiency, while introducing finer-grained credit assignment. Moreover, the hierarchical core of GiGPO is orthogonal to existing group-based RL approaches, making it fully compatible and capable of incorporating them to enhance performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Preliminaries</head><p>Problem setup. We consider a general setting in which an LLM agent interacts with an environment to complete multi-step tasks based on a task description x ∈ p(X). At each discrete time step t = 1, 2, . . . , T , the agent observes a state s t ∈ S and generates a textual action a t ∈ V n , where V denotes the token vocabulary and n is the maximum generation length. The environment then returns a scalar reward r t ∈ R and the next state s t+1 . A full episode consists of a trajectory τ = {(s 1 , a 1 , r 1 ), (s 2 , a 2 , r 2 ), . . . , (s T , a T , r T )}. The agent's behavior is governed by an LLM policy π θ (a t |s t , x), parameterized by θ, which defines a distribution over outputs conditioned on the current state s t and the task prompt x. In many realistic scenarios, the environment may provide sparse or delayed rewards (e.g., success and failure signals at the end of an episode) or weak feedback signals for intermediate steps. As the agent generates T consecutive textual actions (a 1 , . . . , a T ), each potentially spanning thousands of tokens, it becomes particularly challenging to assign credit to individual tokens over the course of an episode.</p><p>Group-based RL. Recent RL works converge on a simple recipe for training LLMs: for a given task description x, the LLM samples a group of N candidate trajectories {τ 1 , τ 2 , . . . , τ N }, each corresponding to one full episode rollout under π θold . Each trajectory τ i receives a scalar reward R(τ i ) reflecting the overall quality or success of the generated outcome. Instead of estimating advantages using separate value functions like PPO <ref type="bibr" target="#b41">[42]</ref>, group-based RL methods compute advantages purely based on the statistics internal to the sampled group:</p><formula xml:id="formula_0">A(τ i ) = GroupComputation({R(τ i )} N i=1 ).<label>(1)</label></formula><p>For example, in GRPO <ref type="bibr" target="#b17">[18]</ref>, the advantage of each trajectory is estimated by normalizing its reward with respect to the group's mean and standard deviation. This design is highly memory-efficient and can scale effectively to the large batch sizes and model sizes typical in modern LLM training, making it a practical and scalable choice for large-scale RL training.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Training LLM Agents with GiGPO</head><p>While group-based RL algorithms <ref type="bibr" target="#b17">[18,</ref><ref type="bibr" target="#b14">15]</ref> have proven highly effective for training LLMs in singleturn tasks, their extension to multi-step agent settings faces critical challenges in credit assignment.</p><p>Action Group: (𝑎𝑎 4 ′ , 𝑎𝑎 4 ′′ , 𝑎𝑎 4 ′′′ ,…) … … Group Comp. Trajectory 𝑠𝑠 1 … … … Group Comp. 𝑠𝑠 1 … … … Group Comp. 𝑠𝑠 1 s𝑠 s𝑠s𝑠 s𝑠 s𝑠 s𝑠 s𝑠 s𝑠 Group Comp. … Trajectory Trajectory 𝑠𝑠 4 𝑎𝑎 ′ 𝑎𝑎 4 ′′ 𝑎𝑎 4 ′ 𝑎𝑎 4 ′′′ 𝑎𝑎 ′ 𝑎𝑎 ′′ 𝑎𝑎 ′′′ 𝑎𝑎 ′′′′ 𝑎𝑎 ′′ 𝑎𝑎 ′′′ 𝑎𝑎 ′′′′</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Step 2 Step 3 Step 4 Step 1</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Step 2 Step 3 Step 4 Step 1</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Step 2 Step 3 Step 4 Step 1</head><p>Figure <ref type="figure" target="#fig_10">1</ref>: Comparison of multi-turn LLM agent training. Left: Vanilla GRPO rolls out a group of full trajectories and computes episode-level advantages. Middle: Constructing step-level groups via additional per-state rollouts (e.g., a ′ 4 , a ′′ 4 , a ′′′ 4 , . . . ) enables fine-grained feedback but incurs prohibitive computational cost. Right: GiGPO efficiently achieves fine-grained credit assignment by aggregating distinct actions (a ′ , a ′′ , a ′′′ , a ′′′′ ) taken from the same environment state s across the trajectories. Figure <ref type="figure" target="#fig_10">1</ref> illustrates this gap. Vanilla GRPO (left) treats each trajectory as a whole and computes a single relative advantage for the entire episode, which fails to provide actionable feedback for individual steps. A natural remedy is to roll out multiple single-step actions for each state s t via π θold as shown in Figure <ref type="figure" target="#fig_10">1</ref> (middle). However, this approach quickly becomes impractical due to the substantial overhead of extra LLM forward passes and the difficulty of evaluating rewards for hypothetical actions never actually executed.</p><p>To overcome these challenges, we propose our Group-in-Group Policy Optimization (GiGPO) in this section. Similar to prior works <ref type="bibr" target="#b48">[49,</ref><ref type="bibr" target="#b50">51]</ref>, GiGPO begins by sampling groups of trajectories under identical tasks and initial environment states. It then introduces a two-level grouping structure: preserving episode-level grouping for holistic performance comparison, while dynamically constructing an additional set of step-level groups by retroactively aggregating actions encountering the same environment states. This "group-in-group" construction yields two complementary advantages: (1) Episode relative advantages capture the holistic effectiveness of each trajectory, providing a stable, global training signal. <ref type="bibr" target="#b1">(2)</ref> Step relative advantages zoom in on which actions outperform their peers within the same state, endowing the gradient with fine-grained credit.</p><p>Figure <ref type="figure" target="#fig_0">2</ref> presents an overview of the GiGPO training pipeline. In the remainder of this section, we will detail the computation of episode-level relative advantages, elaborate on the anchor state grouping mechanism, describe the derivation of step-level relative advantages, and finally present the overall GiGPO objective.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Episode Relative Advantages</head><p>We first introduce the episode-level relative advantages, which represent the coarse-grained component of GiGPO and mirror the naive application of GRPO at the trajectory level. We roll out the agent's policy π θold in the environment to collect N complete trajectories under a fixed task x and identical initial states. Formally, this process yields a group of trajectories {τ i } N i=1 , where each trajectory is denoted as τ i = {(s</p><formula xml:id="formula_1">(i) 1 , a (i) 1 , r (i) 1 ), . . . , (s (i) T , a (i) T , r (i)</formula><p>T )} and the initial states satisfy s (1)</p><formula xml:id="formula_2">1 = s (2) 1 = , . . . , = s (N ) 1 .</formula><p>For each trajectory, we utilize the total return R(τ i ) = t r (i) t as a holistic measure of how effectively the agent completes the task. In settings where only a binary reward is given at the end of the episode, this simplifies to R(τ i ) = 1 for success and R(τ i ) = 0 for failure. Then, we organize the trajectories and their corresponding returns into an episode-level group:</p><formula xml:id="formula_3">G E = τ 1 , R(τ 1 ) , τ 2 , R(τ 2 ) , . . . , τ N , R(τ N ) .<label>(2)</label></formula><p>To evaluate the global relative quality of each trajectory within the group, we compute an episode relative advantage A E (τ i ) for each τ i by normalizing the total return with the group's mean and a normalization factor:</p><formula xml:id="formula_4">A E (τ i ) = R(τ i ) -mean {R(τ j )} N j=1 F norm {R(τ j )} N j=1 .<label>(3)</label></formula><p>In GRPO <ref type="bibr" target="#b17">[18]</ref>, the default normalization factor is defined as the standard deviation, i.e., F norm = std. However, this may introduce a difficulty bias <ref type="bibr" target="#b18">[19]</ref>, where trajectories from low-variance groups (e.g., very easy or hard tasks) receive disproportionately large gradients. In the context of the LLM</p><p>𝑎 1 (1) 𝑟 1 (1) 𝑎 1 (𝑁) 𝑟 1 (𝑁) 𝑠 1 𝑎 1 (2) 𝑟 1 (2) 𝑠 2 (1) 𝑎 2 (1) 𝑟 2 (1) 𝑠 2 (𝑁) 𝑎 2 (𝑁) 𝑟 2 (𝑁) 𝑠 2 (2) 𝑎 2 (2) 𝑟 2 (2) 𝑠 3 (1) 𝑎 3 (1) 𝑟 3 (1) 𝑠 3 (𝑁) 𝑎 3 (𝑁) 𝑟 3 (𝑁) 𝑠 3 (2) 𝑎 3 (2) 𝑟 3 (2) 𝐺 𝐸 𝑎 1 (1) 𝑅 1 (1) 𝑎 1 (2) 𝑅 1 (2) 𝑎 1 (𝑁) 𝑅 1 (𝑁) Group Computation 𝐴 𝐸 (𝜏 1 ) 𝑅(𝜏 1 ) 𝜏 1 𝑅(𝜏 2 ) 𝜏 2 𝑅(𝜏 𝑁 ) 𝜏 𝑁 𝐴 𝐸 (𝜏 2 ) 𝐴 𝐸 (𝜏 𝑁 ) 𝑎 2 (1) 𝑅 2 (1) 𝑎 2 (2) 𝑅 2 (2) 𝑎 3 (2) 𝑅 3 (2) 𝐺 𝑆 ( ǁ 𝑠 3 ) 𝑎 3 (1) 𝑅 3 (1) 𝑎 2 (𝑁) 𝑅 2 (𝑁) 𝐺 𝑆 ǁ 𝑠 1 𝐺 𝑆 ( ǁ 𝑠 2 ) 𝐴 𝑆 𝑠 1 1 𝐴 𝑆 𝑠 1 2 𝐴 𝑆 𝑠 1 𝑁 𝐴 𝑆 𝑠 2 1 𝐴 𝑆 𝑠 2 2 𝐴 𝑆 𝑠 3 2 𝐴 𝑆 𝑠 3 1 𝐴 𝑆 𝑠 2 𝑁 Episode-Level Step-Level 𝛾 Rollout Data Anchor State Grouping Group Computation Group Computation Group Computation Group Environments LLM Agent Action 𝑎 Agent-Environment Interaction &lt;think&gt;…&lt;/think&gt; &lt;action&gt;…&lt;/action&gt; 𝜏 1 𝜏 2 𝜏 𝑁 State 𝑠 Reward 𝑟 𝛾 𝛾 agent, where tasks often involve very long horizons, this effect tends to emerge frequently, potentially affecting the stability of updates. As an alternative, we also consider a fixed normalization factor F norm = 1, which yields an unbiased Leave-One-Out estimator <ref type="bibr" target="#b15">[16]</ref> (see Appendix C for details). This simple adjustment helps stabilize training in some challenging agent scenarios.</p><p>Overall, the episode relative advantage captures whether the agent successfully completes the assignment across the entire decision horizon T . Similar to the vanilla GRPO for multi-step optimization shown in Figure <ref type="figure" target="#fig_10">1</ref> (left), it primarily focuses on macro credit assignment, encouraging the policy to develop coherent, trajectory-wide behaviors that maximize overall task performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Step Relative Advantages</head><p>While the episode relative advantage offers a macro, trajectory-wide signal, it cannot distinguish between the contributions of individual actions within the trajectory. To obtain this fine-grained feedback, we need to form step-level groups: for the same state, we gather the different actions and compare their outcomes, thereby learning which choices are relatively better or worse. A naive way to do so would be to roll out fresh actions from every state (Figure <ref type="figure" target="#fig_10">1</ref>, middle), but that is prohibitively expensive. Instead, we introduce anchor state grouping below, avoiding extra LLM overhead.</p><p>Anchor state grouping. As all trajectories {τ 1 , . . . , τ N } arise from the same task x and identical initial conditions, many environment states naturally recur across episodes and even across time steps within a single trajectory. We leverage this redundancy by identifying and grouping identical states across trajectories, thereby dynamically constructing step-level groups. Specifically, let U = {s 1 , s2 , . . . , sU } denote the set of all distinct environment states appearing in the trajectory group {τ 1 , . . . , τ N }. We treat each such unique state s ∈ U as an implicit anchor and use it to gather all matching occurrences of that state, and therefore call s as "anchor state". Based on this, we can construct |U| step-level groups (one for each unique anchor state s), which is defined as follows:</p><formula xml:id="formula_5">G S (s) = a (i) t , r (i) t s (i) t = s, 1 ≤ i ≤ N, 1 ≤ t ≤ T .</formula><p>(4) Unlike per-state rollout, this procedure incurs no extra rollouts: it is entirely offline and requires only lightweight key-based grouping using hashmaps. Each group G S (s) contains multiple instances of the same environment state paired with potentially different actions. Hence, this structure effectively builds the step-level group, forming the basis for subsequent step-level advantage estimation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Relative advantage computation. Although each tuple a</head><formula xml:id="formula_6">(i) t , r (i) t</formula><p>contains an immediate reward r (i) t , it may be sparse, especially in long-horizon tasks. To better capture long-term impact, we associate a discounted return with each step. Let γ ∈ (0, 1] be the standard RL discount factor. For each element in G S (s), we compute its discounted return R</p><formula xml:id="formula_7">(i) t by R (i) t = T k=t γ k-t r (i) k .<label>(5)</label></formula><p>This quantity captures the future impact of action a (i) t on subsequent rewards, rather than relying solely on the immediate reward r (i) t . Accordingly, the step-level group for each s ∈ U becomes:</p><formula xml:id="formula_8">G S (s) = a (i) t , R (i) t s (i) t = s, 1 ≤ i ≤ N, 1 ≤ t ≤ T .<label>(6)</label></formula><p>Once these step-level groups are formed, we compute the step relative advantage for each s ∼ U and each action a</p><formula xml:id="formula_9">(i) t in G S (s): A S (a (i) t ) = R (i) t -mean R (j) t (a (j) t , R (j) t ) ∈ G S (s) F norm R (j) t (a (j) t , R (j) t ) ∈ G S (s) . (<label>7</label></formula><formula xml:id="formula_10">)</formula><p>A S provides micro credit assignment and fine-grained feedback on the relative quality of individual actions taken from the same state. In contrast to the coarse, trajectory-wide signal of A E , it offers step-level guidance that is essential for refining decisions in long-horizon agent tasks. How does step-level group work? We present an intuitive illustration in Figure <ref type="figure" target="#fig_1">3</ref> to show the utility of the step relative advantages. We consider two example trajectories from the set {τ i } N i=1 . In τ 1 , the agent first selects the 2nd Item (incorrect), then returns to the previous page and selects the 1st Item (correct), successfully completing the task. Due to temporal discounting (Equation ( <ref type="formula" target="#formula_7">5</ref>)), the earlier action (2nd Item) receives a lower discounted return than the later correct one (1st Item). In τ 2 , the agent clicks the Next Page, ultimately failing to find the target and receiving no reward. By aggregating these actions into the same step-level group based on their shared anchor state, GiGPO computes their relative advantages and yields a clear preference ordering:</p><formula xml:id="formula_11">A S (1st Item) &gt; A S (2nd Item) &gt; A S (Next Page).</formula><p>This ranking successfully captures fine-grained distinctions in long-term utility that are missed by prior group-based RL methods <ref type="bibr" target="#b16">[17,</ref><ref type="bibr" target="#b17">18,</ref><ref type="bibr" target="#b19">20]</ref>. While this example illustrates GiGPO's effectiveness in sparsereward environments, its advantages extend naturally to dense-reward scenarios, where per-step rewards can be fully leveraged to assess the relative quality of individual actions within shared states.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Group-in-Group Policy Optimization</head><p>We finally combine the two levels of advantage signals into a single group-in-group advantage to assign credit at both global (episode) and local (step) scales:</p><formula xml:id="formula_12">A(a (i) t ) = A E (τ i ) + ω • A S (a (i) t ),<label>(8)</label></formula><p>where ω ∈ R ≥0 is a weighting coefficient that balances episode relative advantage and step relative advantage. A E (τ i ) captures how good an episode is compared to others in the group, while A S (a (i) t ) refines step-level performance within shared environment state conditions. Jointly, they provide hierarchical supervision for the policy optimization of LLM agents. Then the clipped policy optimization objective of GiGPO is:</p><formula xml:id="formula_13">J GiGPO (θ) = E x∼p(X) {τi} N i=1 ∼π θ old 1 N T N i=1 T t=1 min ρ θ (a (i) t )A(a (i) t ), clip ρ θ (a (i) t ), 1 ± ϵ A(a (i) t ) -βD KL π θ (• | x) ∥ π ref (• | x) .<label>(9)</label></formula><p>where ρ θ (a</p><formula xml:id="formula_14">(i) t ) = π θ (a (i) t |s (i) t ,x) π θ old (a (i) t |s (i) t ,x)</formula><p>is the importance sampling ratio, β controls the strength of the KL penalty encouraging proximity to a reference policy π ref . We present the pseudo code in Appendix D.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Experiment</head><p>In this section, we present empirical evaluations of GiGPO across a variety of agentic tasks. Specifically, we aim to demonstrate: (1) the strong ability of GiGPO in training LLM agents; (2) the ablation study of GiGPO; (3) the dynamic trend of step-level group G S (s) over the course of training; (4) the computational budget of GiGPO.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Experiment Setup</head><p>Benchmarks. We first train the LLM agents on two challenging benchmarks: ALFWorld <ref type="bibr" target="#b4">[5]</ref> and WebShop <ref type="bibr" target="#b21">[22]</ref>. ALFWorld is an embodied environment designed to assess the ability of LLM agents to perform multi-step decision-making. In each episode, the agent receives a text goal and must accomplish it through multi-turn interaction with the environment. It includes 3,827 task instances across six categories of common household activities WebShop is a complex, web-based interactive environment designed to test the LLM agents in realistic online shopping scenarios. To complete the task, the agent must interact with a simulated HTMLbased shopping website to search for, navigate to, and ultimately purchase a suitable item. It contains over 1.1 million products and 12k user instructions, providing a rich and diverse action space. In addition, we also evaluate the multi-turn tool calling performance of GiGPO on search-augmented QA tasks, including single-hop QA datasets (NQ <ref type="bibr" target="#b61">[62]</ref>, TriviaQA <ref type="bibr" target="#b62">[63]</ref>, and PopQA <ref type="bibr" target="#b63">[64]</ref>) and multi-hop QA datasets (HotpotQA <ref type="bibr" target="#b64">[65]</ref>, 2Wiki <ref type="bibr" target="#b65">[66]</ref>, MuSiQue <ref type="bibr" target="#b66">[67]</ref>, and Bamboogle <ref type="bibr" target="#b67">[68]</ref>).</p><p>Baselines. For ALFWorld and WebShop, we compare our approach with a range of competitive baselines: (1) Closed-source LLMs: GPT-4o <ref type="bibr" target="#b0">[1]</ref> and Gemini-2.5-Pro <ref type="bibr" target="#b1">[2]</ref>, which represent state-ofthe-art capabilities in general-purpose reasoning and language understanding. (2) Prompting agents: ReAct <ref type="bibr" target="#b28">[29]</ref> and Reflexion <ref type="bibr" target="#b29">[30]</ref>, which rely on in-context prompting to guide multi-step behavior without parameter updates. (3) RL training methods: PPO <ref type="bibr" target="#b41">[42]</ref>, a widely used actor-critic algorithm that requires an additional value model, and group-based critic-free methods RLOO <ref type="bibr" target="#b15">[16,</ref><ref type="bibr" target="#b16">17]</ref> and GRPO <ref type="bibr" target="#b17">[18]</ref>, which perform advantage estimation over trajectory groups. For search-augmented QA, we compare GiGPO with R1-Instruct, Search-R1 <ref type="bibr" target="#b57">[58]</ref>, ZeroSearch <ref type="bibr" target="#b58">[59]</ref>, and StepSearch <ref type="bibr" target="#b68">[69]</ref>.</p><p>Training details. We use Qwen2.5-1.5B/3B/7B-Instruct <ref type="bibr" target="#b2">[3]</ref> as our base models. The weighting coefficient ω is set to 1 with no further tuning. For ALFWorld and WebShop, all RL training methods (including ours and the baselines) use exactly the same hyperparameter configurations. The rollout group size N for group-based RL methods is set to 8. For search-augmented QA, we follow the same settings in Search-R1 <ref type="bibr" target="#b57">[58]</ref>. We use E5 <ref type="bibr" target="#b69">[70]</ref> as the retriever. The rollout group size N is set to 5 and the max turn is set to 4. Moreover, we incorporate similarity-based GiGPO, where anchor state grouping is performed by grouping two states if their similarity (longest matching subsequence) exceeds the threshold of 0.9. Full training settings and hyperparameter details are provided in Appendix E.1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Performance on ALFWorld and WebShop</head><p>Table <ref type="table" target="#tab_0">1</ref> demonstrates the strong performance of GiGPO across both ALFWorld and WebShop. As shown, closed-source LLMs offer only moderate performance: Gemini-2.5-Pro reaches 60.3% success on ALFWorld and 35.9% on WebShop, while GPT-4o lags further behind. Open-source prompt-only agents (e.g., ReAct and Reflexion) show marginal improvements over vanilla prompting but still underperform, underscoring the difficulty of long-horizon control without post-training. RL training brings substantial gains: PPO improves average ALFWorld success to 54.4% on the 1.5B model and 80.4% on the 7B model, with WebShop scores also increasing significantly. However, this comes at the expense of increased complexity: requiring a separate critic network, hyperparameter tuning, and longer training durations <ref type="bibr" target="#b70">[71,</ref><ref type="bibr" target="#b48">49]</ref>. GRPO and RLOO also yield strong performance while being more computationally efficient, demonstrating the effectiveness of group-based RL in large-scale LLM training. Nevertheless, their lack of fine-grained per-step feedback limits their ability to provide precise credit assignment across long horizons. In contrast, GiGPO overcomes this limitation with a two-level advantage estimation, enabling both GiGPO w/ std and GiGPO w/o std to consistently surpass GRPO and RLOO. In particular, GiGPO w/o std surpasses GRPO by 13.3% on ALFWorld and 10.6% on WebShop at 1.5B, and by 12.6% and 9.1%, respectively, at 7B. These results highlight GiGPO's superior ability to train LLM agents more effectively and more efficiently. We also find that GiGPO enables agents to exhibit emergent reasoning behavior (see Appendix F). Lastly, we observe that the normalization factor F norm is task-dependent rather than universally helpful. On relatively difficult tasks (such as Look, Pick2, and WebShop), standard-deviation scaling (F norm = std) could exaggerate gradients from overly difficult samples or highly imbalanced groups, harming update stability; fixing F norm = 1 therefore yields higher success. Yet, F norm = 1 offers no clear advantage on other tasks and both variants perform similarly, which aligns with findings in <ref type="bibr" target="#b71">[72]</ref>. This suggests that F norm = std can still be beneficial when reward variance is stable.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Performance on QA tasks</head><p>As shown in Table <ref type="table" target="#tab_1">2</ref>, GiGPO achieves strong and consistent gains on multi-turn search-augmented QA tasks, reaching 42.1% at 3B and 47.2% at 7B, and significantly outperforming prior strong baselines such as Search-R1 and StepSearch. Although search-augmented QA is relatively short-horizon, the step-level signals of GiGPO still yield meaningful improvements. Furthermore, we observe that GiGPO is markedly more tool-efficient. Under a limit of at most 3 tool calls per query, the 7B model requires only ∼0.9 calls on average for single-hop tasks and ∼1.6 calls on average for multi-hop tasks: matching the superior performance of OTC <ref type="bibr" target="#b60">[61]</ref>, which achieves ∼1.0 and ∼1.7 calls, respectively, on the same tasks. This efficiency likely stems from GiGPO's ability to effectively identify and suppress redundant queries in multi-turn decision-making. For instance, in repetitive patterns such as query1 → info1 → query1 → info1 → query1 → info1, GiGPO groups them into the same step-level group and eliminates unnecessary repeated calls during the training, similar to the example we introduced in Figure <ref type="figure" target="#fig_1">3</ref>. Next, we conducted an ablation study, comparing GiGPO w/o std (F norm = 1), GiGPO w/ std (F norm = std), GiGPO w/o A S (without step relative advantages), and GiGPO w/o A E (without episode relative advantages) to evaluate the impact of each component on performance. We use Qwen2.5-1.5B-Instruct as the policy of the agent. The results are presented in Figure <ref type="figure" target="#fig_4">4</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.4">Ablation Study</head><p>As illustrated, eliminating either component of the two-level advantage significantly degrades performance. Removing the episode relative advantages (GiGPO w/o A E ) leads to a substantial drop across all tasks, as the policy no longer receives a stable, trajectory-wide signal to encourage long-range coherence. Similarly, discarding the step relative advantages (GiGPO w/o A S ) results in pronounced declines, particularly on more complex and demanding tasks such as Cool, Pick2, and Web-Shop, which may require nuanced training feedback at each decision step. In such cases, precise per-step credit assignment is essential for effective learning and policy refinement. Moreover, we can see that the relative performance gap between GiGPO w/ std and GiGPO w/o std is comparatively minor compared to that observed in structural ablations. This suggests that the combination of episode-and step-level signals is the primary driver of performance gains, and that each component is crucial for training LLM agents effectively.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.5">Dynamics of Step-Level Group</head><p>In this part, we examine how the distribution of step-level groups evolves throughout training to better understand the utility of GiGPO. We use Qwen2.5-1.5B-Instruct as the base model. We train the LLM agent in ALFWorld and track changes in step-level group sizes throughout training.</p><p>As shown in Figure <ref type="figure" target="#fig_3">5</ref>, we observe that step-level groups of size 1 (i.e., those with |G S (s)| = 1) only account for &lt; 35% throughout training. This indicates that the majority of states (over 65%) recur across trajectories and therefore contribute to anchor state grouping. Moreover, at iteration 10, large group sizes |G S (s)| ≥ 10 account for over 20%, reflecting behavioral redundancy in the early stages of training. This is consistent with the fact that immature policies often produce invalid actions or fall into repetitive loops. As training progresses, the group size distribution changes markedly. By iteration 75, we observe a substantial reduction in extreme group sizes: 10 ≤ |G S (s)| &lt; 50 drops from 16.2% to 12.1% and |G S (s)| ≥ 50 drops from 5.6% to 3.1%. This shift suggests that the agent is learning to avoid previously common dead ends and invalid actions, and is beginning to exhibit more diverse and purposeful decision-making. At iteration 140, the distribution becomes tightly concentrated around group sizes of 6 to 8. Given that N is set to 8, this convergence implies that all 8 trajectories within an episode group are now behaving consistently: LLM agent has learned a coherent and robust policy for completing the task, aligning with the plateau in success rate (&gt; 80%). Lastly, we analyze the computational budget of GiGPO. GiGPO shares the same core architecture as GRPO, including multi-turn rollouts, computation of old and reference probabilities, and clipped policy updates. Both approaches are critic-free and operate with a single actor LLM, thereby resulting in identical GPU memory usage and LLM rollout costs. The primary additions introduced by GiGPO are the step-relative advantage estimation components, as described in Section 4.2. To evaluate their costs, we train an LLM agent in ALFWorld using Qwen2.5-1.5B-Instruct and record a detailed breakdown of per-iteration training time.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.6">Computational Budget</head><p>As shown in Figure <ref type="figure" target="#fig_5">6</ref>, the additional components incur little to no additional time cost compared to dominant operations such as rollouts, computation of old and reference probabilities, and policy updates, whose total time cost reaches 362.83s per iteration. In contrast, anchor state grouping (involving hashmap lookups) takes only 0.01s per iteration, and the step-relative advantage computation (involving simple arithmetic) adds just 0.53s. These operations account for &lt; 0.002% of the total per-iteration training time, demonstrating that GiGPO shares the same high computational efficiency as GRPO.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusions and Limitations</head><p>In this work, we proposed GiGPO, a novel group-based RL algorithm to tackle the credit assignment challenge in long-horizon LLM agent training. GiGPO introduces a hierarchical advantage estimation that enables fine-grained per-step credit assignment while retaining the efficiency and stability of group-based RL. By retroactively grouping steps that share the same state across trajectories, it achieves this without incurring additional LLM rollout or GPU memory overhead. Empirical evaluations across complex agentic environments (ALFWorld and WebShop) and search-augmented QA tasks demonstrate that GiGPO significantly outperforms both prompt-based agents and prior RL methods. A potential limitation of GiGPO is its reliance on state matching for anchor group construction. In highly complex environments, identical states may be hard to detect due to noise or subtle differences. Despite this, GiGPO still retains a strong performance lower bound: in the extreme case where no states are repeated across trajectories (i.e., A S = 0), it naturally degrades to GRPO, preserving GRPO's effectiveness and stability in credit assignment. Although this issue is partly mitigated by incorporating similarity-based grouping, exploring more robust state-matching strategies, such as embedding-based representations or domain-specific structural equivalence, remains an important direction.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Open Source Codebase: verl-agent</head><p>As part of the new assets released with this work, we propose verl-agent (<ref type="url" target="https://github.com/langfengQ/verl-agent">https://github.com/  langfengQ/verl-agent</ref>), a highly scalable RL training framework for long-horizon, multi-turn LLM agent training.</p><p>Our verl-agent is built upon the veRL framework <ref type="bibr" target="#b72">[73]</ref> and extends it with several features to enable scalable reinforcement learning for long-horizon LLM agents. Key capabilities of our framework include: (1) step-wise multi-turn interaction paradigm that avoids concatenating full interaction histories (as in Search-R1 <ref type="bibr" target="#b57">[58]</ref> and RAGEN <ref type="bibr" target="#b50">[51]</ref>), ensuring efficient memory control and scalability for very long-horizon optimization; (2) customizable memory module that allows developers to flexibly determine which historical information to include at each step (e.g., key events, summaries, or external knowledge); (3) parallel and group-based environments with a gym-style interface supporting high-throughput rollouts; (4) broad model compatibility, including Qwen3  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Broader Impacts</head><p>This work introduces an efficient, group-based RL algorithm, GiGPO, that enables fine-grained credit assignment for long-horizon LLM agents. By combining episode-level and step-level advantages, GiGPO improves training stability and agent performance without increasing computational or memory overhead.</p><p>The algorithm holds promise for a wide range of applications, including virtual assistants, web automation, educational tools, and embodied AI systems. Its critic-free and scalable design lowers the barrier to training effective multi-step agents, making advanced agent capabilities more accessible to both academic and industrial practitioners. While GiGPO is a methodological contribution with no direct downstream deployment, the improved agent training techniques may indirectly enable more autonomous behavior. As with any advancement in agent capabilities, it is important to consider appropriate safeguards and responsible usage. Overall, GiGPO contributes a valuable tool to the RL and LLM communities, with the potential to accelerate progress in building more intelligent, efficient, and adaptable AI agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Unbiasedness</head><p>We show that setting F norm = 1 leads to an unbiased estimator up to a constant scaling factor. Our derivation follows the approach in <ref type="bibr" target="#b18">[19]</ref>. For comparison, the standard REINFORCE Leave-One-Out (RLOO) <ref type="bibr" target="#b15">[16,</ref><ref type="bibr" target="#b16">17]</ref> is defined as:</p><formula xml:id="formula_15">A RLOO (τ i ) = R(τ i ) - 1 N -1 j̸ =i R(τ j ).<label>(10)</label></formula><p>We can relate A E (τ i ) (F norm = 1) and A RLOO (τ i ) by introducing a scaling factor of N N -1 :</p><formula xml:id="formula_16">N N -1 A E (τ i ) = N N -1 R(τ i ) - N N -1 • 1 N N j=1 R(τ j ) (<label>11</label></formula><formula xml:id="formula_17">) = N N -1 R(τ i ) - 1 N -1 R(τ i ) - 1 N -1 j̸ =i R(τ j ) (<label>12</label></formula><formula xml:id="formula_18">)</formula><formula xml:id="formula_19">=R(τ i ) - 1 N -1 j̸ =i R(τ j ) (<label>13</label></formula><formula xml:id="formula_20">)</formula><formula xml:id="formula_21">=A RLOO (τ i )<label>(14)</label></formula><p>Thus, setting F norm = 1 corresponds to a rescaled version of A RLOO (τ i ) and scaling the advantage by a constant does not affect the dynamics of policy gradient (it can be absorbed into the learning rate).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Pseudo Code</head><p>Algorithm 1 summarizes the full GiGPO training procedure. Compared to vanilla GRPO, we highlight the additional parts introduced by GiGPO in italics. In particular, building step-level groups G S (s) is implemented by treating anchor states as keys and aggregating corresponding data into a hash table, which incurs minimal overhead. Furthermore, computing step relative advantages and combining advantages involve only simple arithmetic operations, both of which are lightweight. As such, GiGPO preserves the critic-free, low-memory, and stable convergence properties of group-based RL, while introducing fine-grained credit assignment that is particularly beneficial for training long-horizon LLM agents.</p><p>Algorithm 1 Training LLM Agents with GiGPO 1: Require: Initial policy π θold , task distribution p(X), discount factor γ, weighting ω, clipping parameter ϵ, KL penalty β, group size N 2: for each training iteration do</p><p>3: Update the old policy model: θ old ← θ 4: // Multi-step rollout phase 5: Sample task x ∼ p(X) and initialize N identical environments 6: for t = 1 to T do 7: Sample actions a (i) t ∼ π θ old (• | s (i) t , x) N i=1 8: Execute actions, observe rewards {r (i) t } N i=1 and next state {s (i) t+1 } N i=1 9: end for 10: // Grouping phase 11: Compute episode relative advantages A E (τi) via Equation (3) 12: Build step-level groups G S (s) via the anchor states 13: Compute step relative advantages A S (a (i) t ) via Equation (7) 14: // Policy update phase 15: Combine advantages: A(a (i) t ) = A E (τi) + ωA S (a (i) t ) 16: Update policy θ by maximizing objective JGiGPO(θ) 17: end for E Experiment Details E.1 Details of Training Hyperparameters for ALFWorld. All methods are configured with identical hyperparameters:</p><p>the maximum prompt length is 2048 tokens, and the maximum response length is 512 tokens. Each episode allows up to 50 environment steps. The learning rate is set to 1e-6 for the actor and 1e-5 for the critic (used only in PPO). We adopt a rule-based reward, assigning a reward of 10 for success and 0 for failure. To handle invalid actions generated by the agent, we apply a reward penalty of -0.1. For all group-based RL methods, we use a group size of 8 and sample 16 different groups per rollout, resulting in a total of 16 × 8 = 128 environments. In contrast, PPO uses 128 separate environments for rollouts. The rollout temperature is set to 1.0, while the validation temperature is set to 0.4. The mini-batch size is 256, and the KL-divergence loss coefficient is set to 0.01. For GiGPO, the weighting coefficient ω is fixed at 1 without further tuning, and the discount factor γ is set to 0.95.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Hyperparameters for WebShop.</head><p>All methods are configured with identical hyperparameters: the maximum prompt length is 4096 tokens, and the maximum response length is 512 tokens. Each episode is limited to 15 environment steps. The learning rate is 1e-6 for the actor and 1e-5 for the critic (used only in PPO). We adopt a rule-based reward, assigning a reward of 10 for success and 0 for failure. Invalid actions are penalized with a reward of -0.1. As with ALFWorld, all group-based RL methods use a group size of 8 and sample 16 groups per rollout, totaling 16 × 8 = 128 environments. PPO, on the other hand, uses 128 distinct environments for rollouts. The rollout temperature is set to 1.0, while the validation temperature is set to 0.4. The mini-batch size is 64, and the KL-divergence loss coefficient is set to 0.01. For GiGPO, the weighting coefficient ω is set to 1 without additional tuning, and the discount factor γ is set to 0.95.</p><p>Hyperparameters for Search-Augmented QA. The maximum prompt length is 4096 tokens, and the maximum response length is 512 tokens. The max turn is set to 4. The learning rate is 1e-6 for the actor. We adopt a rule-based reward, assigning a reward of 1 for success and 0 for failure. Invalid actions are penalized with a reward of -0.01. We set the train data size to 256 and use a group size of 5. Rollout and validation temperatures are set to 1.0 and 0.0, respectively. The mini-batch size is 512, and the KL-divergence loss coefficient is set to 0.001. The weighting coefficient ω is set to 1 without additional tuning, and the discount factor γ is set to 0.95.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Computing Details.</head><p>For ALFWorld and WebShop, Qwen2.5-1.5B experiments are run on 2×H100 GPUs and Qwen2.5-7B on 4×H100 GPUs, each for 150 iterations. For search-augmented QA, Qwen2.5-3B uses 4×H100 GPUs and Qwen2.5-7B uses 8×H100 GPUs, each for 200 iterations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.2 Prompts</head><p>The prompts we use for LLM agents are presented in Figure <ref type="figure">8</ref>, Figure <ref type="figure">9</ref>, and Figure <ref type="figure" target="#fig_8">10</ref>. These prompt templates are constructed using Python-style string formatting, where placeholders enclosed in curly braces ({}) represent semantic slots. These placeholders, such as {task_description}, {step_count}, and {current_observation}, are dynamically populated at runtime via Python's .format() function.</p><p>To enrich the agent's context, we use historical information and set the history length to 2 for ALFWorld and WebShop and the full history for search-augmented QA experiments. The &lt;think&gt; &lt;/think&gt; block instructs the agent to explicitly perform step-by-step reasoning, thereby promoting chain-of-thought [76] style deliberation. The &lt;action&gt; &lt;/action&gt; block is used to clearly indicate the final action decision. The search agent outputs reasoning traces within &lt;think&gt; &lt;/think&gt;, issues search queries within &lt;search&gt; &lt;/search&gt;, provides anwsers within &lt;anwser&gt; &lt;/anwser&gt;. Retrieved evidence from the retriever is presented in &lt;information&gt; &lt;/information&gt; tags. Prompt Template for ALFWorld You are an expert agent operating in the ALFRED embodied Environment. Your task is to: {task_description}. Prior to this step, you have already taken {step_count} step(s). Below are the most recent {history_length} observations and the corresponding actions you took: {action_history}. You are now at step {current_step} and your current observation is: {current_observation}. Your admissible actions of the current situation are: [{admissi-ble_actions}]. Now it's your turn to take an action. You should first reason step-by-step about the current situation. This reasoning process MUST be enclosed within &lt;think&gt; &lt;/think&gt; tags. Once you've finished your reasoning, you should choose an admissible action for current step and present it within &lt;action&gt; &lt;/action&gt; tags. Figure 8: The prompt template of ALFWorld agents. Prompt Template for WebShop You are an expert autonomous agent operating in the WebShop e-commerce environment. Your task is to: {task_description}. Prior to this step, you have already taken {step_count} step(s). Below are the most recent {history_length} observations and the corresponding actions you took: {action_history}. You are now at step {current_step} and your current observation is: {current_observation}. Your admissible actions for the current situation are: [{available_actions}]. Now it's your turn to take one action for the current step. You should first reason step-by-step about the current situation, then think carefully which admissible action best advances the shopping goal. This reasoning process MUST be enclosed within &lt;think&gt; &lt;/think&gt; tags. Once you've finished your reasoning, you should choose an admissible action for current step and present it within &lt;action&gt; &lt;/action&gt; tags. Figure 9: The prompt template used for WebShop agents. Prompt Template for Search You are an expert agent tasked with answering the given question step-by-step. Your question: {task_description}. Prior to this step, you have already taken {step_count} step(s). Below is the interaction history where &lt;search&gt; &lt;/search&gt; wrapped your past search queries and &lt;information&gt; &lt;/information&gt; wrapped the corresponding search results returned by the external search engine. History: {memory_context} Now it's your turn to respond for the current step. You should first conduct reasoning process. This process MUST be enclosed within &lt;think&gt; &lt;/think&gt; tags. After completing your reasoning, choose only one of the following actions (do not perform both): (1) If you find you lack some knowledge, you can call a search engine to get more external information using format: &lt;search&gt; your query &lt;/search&gt;. (2) If you have enough knowledge to answer the question confidently, provide your final answer within &lt;answer&gt; &lt;/answer&gt; tags, without detailed illustrations. For example, &lt;an-swer&gt;Beijing&lt;/answer&gt;. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.3 Performance on Vision-Language Agents</head><p>(1) Sokoban (2) EZPoints We conduct additional experiments in visionlanguage model (VLM) settings where agents must reason over both visual and textual inputs. We use two interactive game environments: Sokoban <ref type="bibr" target="#b76">[77]</ref> with a 6×6 size and EZPoints in Gym Cards <ref type="bibr" target="#b38">[39]</ref> as shown in Figure <ref type="figure" target="#fig_9">11</ref>. Sokoban is a classic gridbased puzzle game where the agent must push boxes onto designated goal positions. Solving Sokoban requires spatial reasoning and long-term planning. In EZPoints, the agent is presented with two playing cards and must construct an arithmetic formula stepby-step such that the final result equals a target value of 12. This setting emphasizes symbolic reasoning and multi-step planning. In these tasks, the agent receives an RGB image representing the current environment state along with a textual instruction, and must take sequential actions to complete the task. All methods are built upon Qwen2.5-VL-3B-Instruct <ref type="bibr" target="#b77">[78]</ref>.</p><p>As shown in Table <ref type="table" target="#tab_2">3</ref>, GiGPO significantly outperforms the prompting baseline and GRPO on both tasks. Notably, GiGPO achieves 81.0% success on Sokoban and 100% success on EZPoints, suggesting its ability to generalize beyond language-only settings.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.4 Orthogonality to Single-Turn Group-Based RL</head><p>GiGPO remains orthogonal to other advancements in single-turn group-based RL, allowing it to incorporate complementary techniques without loss of generality. To verify this, we consider DAPO <ref type="bibr" target="#b19">[20]</ref>, which builds on GRPO with dynamic sampling and clip-higher techniques. We integrate both into GiGPO, yielding a variant denoted as GiGPO dynamic .</p><p>As shown in Table <ref type="table" target="#tab_3">4</ref>, DAPO improves over GRPO, confirming the benefits of its techniques. Importantly, GiGPO dynamic further outperforms DAPO, demonstrating that it can effectively benefit from and amplify such improvements, achieving better results (75.0%) on WebShop. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.5 Sensitivity Analysis on ω</head><p>We further analyze GiGPO's sensitivity to the key hyperparameter ω, which balances the episode-level advantage A E and the step-level advantage A S . We conducted experiments on the WebShop task, using Qwen2.5-1.5B-Instruct.  <ref type="formula" target="#formula_8">6 63.1 65.8 67.2 68.3 67.4 66.5 56.3</ref>As shown in Table <ref type="table" target="#tab_4">5</ref>, GiGPO needs an appropriate ω to work best. Increasing ω initially improves performance due to the added fine-grained step-level reward. However, performance declines beyond the optimum (ω = 0.8), suggesting that excessive emphasis on step-level signals can suppress useful trajectory-level guidance. Furthermore, GiGPO is relatively insensitive to ω within the range [0.4, 1.2], demonstrating a reasonable degree of robustness to ω.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F Reasoning Behavior</head><p>We next present the complete trajectory of multi-turn interaction between agent and environment, and demonstrate the reasoning behavior of LLM agents (Qwen2.5-7B-Instruct) trained by GiGPO.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F.1 ALFWorld</head><p>Environment (Step 1) -= Welcome to TextWorld, ALFRED! =-Your task is to: heat some egg and put it in countertop. You are in the middle of a room. Looking quickly around you, you see a cabinet 9, a cabinet 8, a cabinet 7, a cabinet 6, a cabinet 5, a cabinet 4, a cabinet 3, a cabinet 2, a cabinet 1, a coffeemachine 1, a countertop 2, a countertop 1, a drawer 13, a drawer 12, a drawer 11, a drawer 10, a drawer 9, a drawer 8, a drawer 7, a drawer 6, a drawer 5, a drawer 4, a drawer 3, a drawer 2, a drawer 1, a fridge 1, a garbagecan 1, a microwave 1, a sinkbasin 1, a stoveburner 6, a stoveburner 5, a stoveburner 4, a stoveburner 3, a stoveburner 2, a stoveburner 1, and a toaster 1. 3. If there is an egg in the fridge, I will take it out, heat it, and then put it on the countertop. 4. If there is no egg in the fridge, I will need to check other locations such as the cabinets, countertop, and garbagecan, but the fridge is the most likely place to find an egg. 5. After opening the fridge and finding the egg, I will need to take it out, heat it using the microwave or stovetop, and then put it on the countertop. The task is to heat an egg and put it on the countertop. 2. I have already opened the fridge 1 and found a bowl 1, a pan 1, a plate 2, and a potato 1 inside. There is no egg in the fridge. 3. Since the egg is not in the fridge, I need to check other locations where an egg might be found, such as the cabinets, countertop, and garbagecan. 4. The countertop is mentioned in the task, so I should check the countertop to see if there is an egg there. 5. If the egg is not found on the countertop, I will check the cabinets and the garbagecan. &lt;/think&gt; &lt;action&gt;go to countertop 1&lt;/action&gt; Environment (Step 4) You arrive at countertop 1. On the countertop 1, you see a apple 1, a butterknife 2, a dishsponge 1, a fork 1, a lettuce 2, a pan 2, a pot 1, a soapbottle 3, a soapbottle 1, a spoon 2, a tomato 2, a tomato 1, a window 3, and a window 1.</p><p>Agent (Step 4) &lt;think&gt; 1. The task is to heat an egg and put it on the countertop. 2. To heat an egg, I need to first find an egg. 3. The most likely places to find an egg would be the fridge or the countertop, as eggs are often stored in cool places to keep them fresh. 4. I have already opened fridge 1 and found it contains a bowl, a pan, a plate, and a potato, but no eggs. 5. The current observation shows that I am at countertop 1, which contains various food items but no eggs. 6. Since I have not yet found the egg, I should check the fridge again in case I missed it, or I should check the countertop 2, as it is another common place to store eggs. 7. After checking the fridge and countertop 1, I should consider the sinkbasin 1, as eggs might be washed there before being used. 8. If I still cannot find the egg, I should check the cabinets, as eggs are sometimes stored in cabinets to keep them organized and out of the way. &lt;/think&gt; &lt;action&gt;go to countertop 2&lt;/action&gt;</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Environment (Step 5)</head><p>You arrive at countertop 2. On the countertop 2, you see a bread 2, a bread 1, a cellphone 1, a egg 3, a egg 2, a egg 1, a fork 2, a kettle 1, a knife 1, a ladle 1, a lettuce 1, a pot 2, a potato 2, a spatula 2, and a tomato 3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Agent (Step 5) &lt;think&gt; 1.</head><p>The task is to heat an egg and put it on the countertop. 2. I have already opened fridge 1 and observed its contents, which include a bowl, a pan, a plate, and a potato, but no eggs. 3. The current observation shows that there are eggs on countertop 2. I need to take an egg from countertop 2 to proceed with the task. 4. After taking the egg, I will need to heat it. To heat the egg, I will need to go to the microwave, as it is the most common appliance for heating food. 2. My next step is to heat the egg. To do this, I need to place the egg in a suitable heating device, such as a microwave or a stovetop. 3. The most convenient and common device for heating an egg is the microwave. Therefore, I will go to the microwave 1 to heat the egg. 4. After heating the egg, I need to put it on the countertop. Since I have already picked up the egg, I will go to the countertop to place the heated egg there. &lt;/think&gt; &lt;action&gt;go to microwave 1&lt;/action&gt; 3. The action 'move egg 1 to countertop 1' is available, which is the appropriate action to take next. This will place the heated egg on the countertop. &lt;/think&gt; &lt;action&gt;move egg 1 to countertop 1&lt;/action&gt; Environment (Step 3) 'Back to Search' '&lt; Prev' 'color': 'a-yellow' , 'b-blue' , 'c-blue' , 'd-black' , 'd-gray' , 'd-navy' 'size': 'small' , 'medium' , 'large' , 'x-large' , 'xx-large' 'JSPOYOU 2022 Newly T-Shirt for Mens Funny 3D Graphics Pattern Crewneck Short Sleeve Tees Big and Tall Summer Casual Comfy Top' 'Price: $1.99 to $8.99' , 'Rating: N.A.' , 'Description' , 'Features' , 'Reviews' , 'Buy Now'.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Agent (Step 3) &lt;think&gt;</head><p>Based on the previous observations and actions, it is clear that the search is not yielding any results that match the specific criteria of loose fit, slim fit men's tuxedo shirts with long and short sleeves, regular fit for gym workout, and the desired color (b-blue) and size (xx-large). The current observation shows that the search results are not matching the specific product type (tuxedo shirt) and the specific fit (regular fit for gym workout). Given the current options, the best action is to refine the search by first checking the color and size options. Since the product type and fit are not matching, I will first click on the color 'b-blue' and then check the size options. This approach is based on the assumption that the product type and fit might be in the search results but not explicitly labeled as tuxedo shirts or regular fit for gym workout. By clicking on 'b-blue' color, I can narrow down the search and then check the size options to see if the product is a tuxedo shirt and if it is regular fit for gym workout. &lt;/think&gt; &lt;action&gt;click[b-blue]&lt;/action&gt; Environment (Step 4) 'Back to Search' '&lt; Prev' 'color': 'a-yellow' , 'b-blue' , 'c-blue' , 'd-black' , 'd-gray' , 'd-navy' 'size': 'small' , 'medium' , 'large' , 'x-large' , 'xx-large' 'JSPOYOU 2022 Newly T-Shirt for Mens Funny 3D Graphics Pattern Crewneck Short Sleeve Tees Big and Tall Summer Casual Comfy Top' 'Price: $1.99 to $8.99' , 'Rating: N.A.' , 'Description' , 'Features' , 'Reviews' , 'Buy Now'. 'Back to Search' '&lt; Prev' 'color': 'a-yellow' , 'b-blue' , 'c-blue' , 'd-black' , 'd-gray' , 'd-navy' 'size': 'small' , 'medium' , 'large' , 'x-large' , 'xx-large' 'JSPOYOU 2022 Newly T-Shirt for Mens Funny 3D Graphics Pattern Crewneck Short Sleeve Tees Big and Tall Summer Casual Comfy Top' 'Price: $1.99 to $8.99' , 'Rating: N.A.' , 'Description' , 'Features' , 'Reviews' , 'Buy Now'.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Environment (Step 3)</head><p>&lt;information&gt;{"result": "Doc 1: "One Last Time (Ariana Grande song)" rest of the video then is presented through the use of a handheld video camera. Grande is in a Fiat car as the passenger, with her boyfriend (played by Matt Bennett), who is recording. They are stuck in traffic as they try to leave the city, implied to be Los Angeles, California. While everyone around them is panicking, Grande seems to be calm as she wants to get a closer look at the comet. Impatient, she leaves the car while Bennett tries to stop her, and then follows. They make their way through the crowds, but are stopped by the Doc 2: "One Last Time (Ariana Grande song)"and the United States, where it became Grande's sixth top-twenty single on the US ""Billboard"" Hot 100. The single's peak of number 13 on the US ""Billboard"" Hot 100 ended Grande's streak of consecutive top ten hits from 2014. It was later certified platinum by the Recording Industry Association of America (RIAA) and Australian Recording Industry Association (ARIA). The song's accompanying music video was released on February 15, 2015 and was directed by Max Landis. The music video is visually presented as a found footage, similar to Landis' previous work. The video faced controversy due to its similarity to the Doc 3: "One Last Time (Ariana Grande song)" later dismissed after both sides filed a Joint Stipulation for Dismissal. Grande came up with the idea of the music video and contacted Max Landis, known for his 2012 film ""Chronicle"". In an interview, Grande explained: ""It's very unique, it's very different, I called Max [Landis] up and I said 'hey I want to do something that ends exactly like this' and I described the ending shot to him and then I said I also want it to be (a) one take [music video] 2026 and I want the ending shot to look like this, And I described those two things"}&lt;/information&gt; Agent <ref type="bibr">(Step 3)</ref> &lt;think&gt; From the information provided, it seems the question is about the music video for Ariana Grande's song "One Last Time". The video was directed by Max Landis and presented as a found footage. The video shows Ariana Grande and her boyfriend (played by Matt Bennett) in a Fiat car, stuck in traffic trying to leave the city. The "guy" in the video is Matt Bennett, who plays Grande's boyfriend in the video. &lt;/think&gt; &lt;answer&gt;Matt Bennett&lt;/answer&gt;</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Overview of GiGPO. The agent interacts with a group of environments initialized with identical states to generate a set of trajectories {τ i } N i=1 . States with the same color represent the same environment state. GiGPO performs two-dimensional group computations (episode-level A E and step-level A S ) to produce hierarchical relative advantages that guide fine-grained policy optimization.</figDesc><graphic coords="5,210.00,160.41,289.32,65.66" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Illustration of step-level grouping in WebShop. Both τ 1 and τ 2 encounter the same environment state multiple times: a search results page (highlighted by the red border). Top: τ 1 eventually succeeds. Bottom: τ 2 leads to failure.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><figDesc>: Pick &amp; Place (Pick), Examine in Light (Look), Clean &amp; Place (Clean), Heat &amp; Place (Heat), Cool &amp; Place (Cool), and Pick Two &amp; Place (Pick2).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Dynamics of step-level groups during the training in ALFWorld. Left: Success rate over training iterations. Vertical red markers denote selected checkpoints (Iterations 10, 75, 140). Right: Distribution of step-level group sizes at those checkpoints. For each anchor state s ∈ U, the group size is given by |G S (s)|.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Ablation results. The y-axis shows success rate (%).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Per-iteration training time breakdown of GiGPO. Blue bars indicate shared components with GRPO. Orange bars show GiGPO-specific additions. The y-axis uses a broken scale to accommodate small values.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><figDesc>[74], Qwen2.5, and LLaMA3.2, along with LoRA-based fine-tuning [75] for efficient large-model adaptation; (5) support for multimodal (vision-language) agents such as Qwen2.5-VL; (6) a diverse suite of environments, including Search (tool use), ALFWorld, WebShop, Sokoban, and Gym Cards; (7) comprehensive RL algorithm support, encompassing GiGPO, GRPO, PPO, DAPO, RLOO, etc.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Open-source agentic training framework comparison. Left: RAGEN/Search-R1 concatenates the full history at every step, leading to rapidly expanding context. Right: verl-agent adopts a step-wise multi-turn rollout with flexible per-step input construction and memory control.</figDesc><graphic coords="16,108.00,276.30,395.98,110.27" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 10 :</head><label>10</label><figDesc>Figure 10: The prompt template of Search agents.</figDesc><graphic coords="19,329.28,457.84,84.35,84.35" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 11 :</head><label>11</label><figDesc>Figure 11: Visual observation of VLM agents in Sokoban and EZPoints.</figDesc><graphic coords="19,417.26,457.84,84.35,84.35" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Agent (Step 1 )</head><label>1</label><figDesc>&lt;think&gt; To heat an egg and put it on the countertop, I need to first find an egg. Given that eggs are commonly stored in the fridge, I should check the fridge first to see if there is an egg available. &lt;/think&gt; &lt;action&gt;go to fridge 1&lt;/action&gt; Environment (Step 2) You arrive at fridge 1. The fridge 1 is closed. Agent (Step 2) &lt;think&gt; 1. The task is to heat an egg and put it on the countertop. 2. I am currently at the fridge 1, and the fridge is closed. This means I need to open the fridge to check if there is an egg inside.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><figDesc>&lt;/think&gt; &lt;action&gt;open fridge 1&lt;/action&gt; Environment (Step 3) You open the fridge 1. The fridge 1 is open. In it, you see a bowl 1, a pan 1, a plate 2</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>5 .</head><label>5</label><figDesc>The available actions include taking different eggs from countertop 2, as well as going to the microwave to heat the egg. &lt;/think&gt; &lt;action&gt;take egg 1 from countertop 2&lt;/action&gt; Environment (Step 6) You pick up the egg 1 from the countertop 2. Agent (Step 6) &lt;think&gt; 1. I have just picked up the egg 1 from the countertop 2.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><head>Environment (Step 7 )</head><label>7</label><figDesc>You arrive at microwave 1. The microwave 1 is closed. Agent (Step 7) &lt;think&gt; 1. I have just taken the egg 1 from the countertop 2. 2. My current location is microwave 1, and the microwave is closed. 3. To heat the egg, I need to open the microwave to place the egg inside and then heat it. 4. After heating the egg, I need to put it on the countertop. &lt;/think&gt; &lt;action&gt;open microwave 1&lt;/action&gt; Environment (Step 8) You open the microwave 1. The microwave 1 is open. In it, you see nothing. Agent (Step 8) &lt;think&gt; 1. I have just opened the microwave 1 and found nothing inside. 2. The egg 1 is on the countertop 2, and I have already gone to the microwave 1 to open it. 3. The next step is to heat the egg 1. Since the egg is on the countertop and I have opened the microwave, I can now heat the egg using the microwave 1. 4. After heating the egg, I need to put it on the countertop. The action 'heat egg 1 with microwave 1' is available, which is the appropriate action to take next. &lt;/think&gt; &lt;action&gt;heat egg 1 with microwave 1&lt;/action&gt; Environment (Step 9) You heat the egg 1 using the microwave 1. Agent (Step 9) &lt;think&gt; 1. I have just heated the egg 1 using the microwave 1. 2. My next step is to put the heated egg on the countertop. 3. To do this, I need to go to the countertop where I can place the egg. 4. The admissible actions include 'go to countertop 1' and 'go to countertop 2', which are the appropriate actions to take to reach the countertop. 5. Since I have not specified which countertop to use, I can choose either one. For simplicity, I will choose 'go to countertop 1'. &lt;/think&gt; &lt;action&gt;go to countertop 1&lt;/action&gt; Environment (Step 10) You arrive at countertop 1. On the countertop 1, you see a apple 1, a butterknife 2, a dishsponge 1, a fork 1, a lettuce 2, a pan 2, a pot 1, a soapbottle 3, a soapbottle 1, a spoon 2, a tomato 2, a tomato 1, a window 3, and a window 1. Agent (Step 10) &lt;think&gt; 1. I have just heated the egg 1 using the microwave 1. 2. My current location is countertop 1, where I see various kitchen items including a window and a tomato, but no egg.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_14"><head>Agent (Step 4 )</head><label>4</label><figDesc>&lt;think&gt; The task is to find loose fit, slim fit men's tuxedo shirts with long and short sleeves, polyester cotton, elastic waist, regular fit for gym workout, in blue color (b-blue), size xx-large, and with a price lower than $40.00. From the current observation, it is clear that the search is already filtered to include the color b-blue. The next step is to filter the size to xx-large and check the price range. &lt;/think&gt; &lt;action&gt;click[xx-large]&lt;/action&gt; Environment (Step 5)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Performance on ALFWorld and WebShop. Results are averaged over 3 random seeds. For ALFWorld, we report the average success rate (%) for each subtask as well as the overall result. For WebShop, we report both the average score and the average success rate (%). GiGPO w/ std denotes using F norm = std, while GiGPO w/o std uses F norm = 1.(with critic) 64.8 ±3.5 40.5 ±6.9 57.1 ±4.9 60.6 ±6.6 46.4 ±4.0 47.4 ±1.9 54.4 ±3.1 73.8 ±3.0 51.5 ±2.9 RL Training RLOO 88.3 ±3.0 52.8 ±8.6 71.0 ±5.9 62.8 ±8.7 66.4 ±5.5 56.9 ±4.7 69.7 ±2.5 73.9 ±5.<ref type="bibr" target="#b5">6</ref> 52.1 ±6.7 RL Training GRPO 85.3 ±1.5 53.7 ±8.0 84.5 ±6.8 78.2 ±7.9 59.7 ±5.0 53.5 ±5.6 72.8 ±3.6 75.8 ±3.5 56.8 ±3.8 RL Training GiGPO w/ std 94.4 ±5.9 67.5 ±4.6 94.8 ±3.8 94.4 ±7.8 79.8 ±4.7 76.4 ±5.4 86.7 ±1.7 83.1 ±1.6 65.0 ±3.2 RL Training GiGPO w/o std 96.0 ±1.4 76.5 ±3.9 91.8 ±5.5 91.3 ±6.3 71.7 ±8.4 79.5 ±7.7 86.1 ±4.7 83.5 ±1.8 67.4 ±4.5 RL Training PPO (with critic) 92.3 ±4.0 64.0 ±8.4 92.5 ±2.4 89.5 ±7.0 80.3 ±2.0 68.8 ±8.3 80.4 ±2.7 81.4 ±3.1 68.7 ±5.1 RL Training RLOO 87.6 ±4.3 78.2 ±8.3 87.3 ±5.8 81.3 ±7.6 71.9 ±5.2 48.9 ±8.4 75.5 ±4.6 80.3 ±3.2 65.7 ±4.0 RL Training GRPO 90.8 ±5.1 66.1 ±6.7 89.3 ±5.4 74.7 ±6.9 72.5 ±5.4 64.7 ±7.3 77.6 ±5.2 79.3 ±2.8 66.1 ±3.7 RL Training GiGPO w/ std 97.7 ±1.6 82.7 ±7.9 98.8 ±1.6 83.7 ±7.2 89.3 ±8.2 79.2 ±6.6 90.8 ±1.3 84.4 ±2.9 72.8 ±3.2 RL Training GiGPO w/o std 91.8 ±5.4 88.6 ±6.3 95.9 ±3.2 90.2 ±2.6 86.5 ±5.5 85.2 ±7.5 90.2 ±2.3 86.2 ±2.6 75.2 ±3.8</figDesc><table><row><cell>Type</cell><cell>Method</cell><cell>Pick</cell><cell>Look</cell><cell>Clean</cell><cell>ALFWorld Heat</cell><cell>Cool</cell><cell>Pick2</cell><cell>All</cell><cell cols="2">WebShop Score Succ.</cell></row><row><cell cols="2">Closed-Source Model</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Prompting</cell><cell>GPT-4o</cell><cell>75.3</cell><cell>60.8</cell><cell>31.2</cell><cell>56.7</cell><cell>21.6</cell><cell>49.8</cell><cell>48.0</cell><cell>31.8</cell><cell>23.7</cell></row><row><cell>Prompting</cell><cell>Gemini-2.5-Pro</cell><cell>92.8</cell><cell>63.3</cell><cell>62.1</cell><cell>69.0</cell><cell>26.6</cell><cell>58.7</cell><cell>60.3</cell><cell>42.5</cell><cell>35.9</cell></row><row><cell cols="2">Qwen2.5-1.5B-Instruct</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Prompting</cell><cell>Qwen2.5</cell><cell>5.9</cell><cell>5.5</cell><cell>3.3</cell><cell>9.7</cell><cell>4.2</cell><cell>0.0</cell><cell>4.1</cell><cell>23.1</cell><cell>5.2</cell></row><row><cell>Prompting</cell><cell>ReAct</cell><cell>17.4</cell><cell>20.5</cell><cell>15.7</cell><cell>6.2</cell><cell>7.7</cell><cell>2.0</cell><cell>12.8</cell><cell>40.1</cell><cell>11.3</cell></row><row><cell>Prompting</cell><cell>Reflexion</cell><cell>35.3</cell><cell>22.2</cell><cell>21.7</cell><cell>13.6</cell><cell>19.4</cell><cell>3.7</cell><cell>21.8</cell><cell>55.8</cell><cell>21.9</cell></row><row><cell cols="2">RL Training PPO Qwen2.5-7B-Instruct</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Prompting</cell><cell>Qwen2.5</cell><cell>33.4</cell><cell>21.6</cell><cell>19.3</cell><cell>6.9</cell><cell>2.8</cell><cell>3.2</cell><cell>14.8</cell><cell>26.4</cell><cell>7.8</cell></row><row><cell>Prompting</cell><cell>ReAct</cell><cell>48.5</cell><cell>35.4</cell><cell>34.3</cell><cell>13.2</cell><cell>18.2</cell><cell>17.6</cell><cell>31.2</cell><cell>46.2</cell><cell>19.5</cell></row><row><cell>Prompting</cell><cell>Reflexion</cell><cell>62.0</cell><cell>41.6</cell><cell>44.9</cell><cell>30.9</cell><cell>36.3</cell><cell>23.8</cell><cell>42.7</cell><cell>58.1</cell><cell>28.8</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Performance on search-augmented QA tasks. GiGPO is trained on NQ and HotpotQA with F norm = std. † and ⋆ indicate in-domain and out-of-domain datasets, respectively.TriviaQA ⋆ PopQA ⋆ HotpotQA † 2Wiki ⋆ MuSiQue ⋆ Bamboogle ⋆ Avg.</figDesc><table><row><cell cols="2">Type NQ  † Qwen2.5-3B-Instruct Method</cell><cell cols="2">Single-Hop QA</cell><cell></cell><cell cols="2">Multi-Hop QA</cell><cell></cell><cell></cell></row><row><cell cols="2">RL Training R1-Instruct 27.0</cell><cell>53.7</cell><cell>19.9</cell><cell>23.7</cell><cell>29.2</cell><cell>7.2</cell><cell>29.3</cell><cell>27.1</cell></row><row><cell>RL Training Search-R1</cell><cell>34.1</cell><cell>54.5</cell><cell>37.8</cell><cell>32.4</cell><cell>31.9</cell><cell>10.3</cell><cell>26.4</cell><cell>32.5</cell></row><row><cell cols="2">RL Training ZeroSearch 41.4</cell><cell>57.4</cell><cell>44.8</cell><cell>27.4</cell><cell>30.0</cell><cell>9.8</cell><cell>11.1</cell><cell>31.7</cell></row><row><cell>RL Training StepSearch</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>34.5</cell><cell>32.0</cell><cell>17.4</cell><cell>34.4</cell><cell>-</cell></row><row><cell>RL Training GiGPO</cell><cell>42.0</cell><cell>59.5</cell><cell>42.4</cell><cell>36.9</cell><cell>37.0</cell><cell>12.6</cell><cell>64.1</cell><cell>42.1</cell></row><row><cell>Qwen2.5-7B-Instruct</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="2">RL Training R1-Instruct 21.0</cell><cell>44.9</cell><cell>17.1</cell><cell>20.8</cell><cell>27.5</cell><cell>6.0</cell><cell>19.2</cell><cell>22.4</cell></row><row><cell>RL Training Search-R1</cell><cell>39.3</cell><cell>61.0</cell><cell>39.7</cell><cell>37.0</cell><cell>40.1</cell><cell>14.6</cell><cell>36.8</cell><cell>38.5</cell></row><row><cell cols="2">RL Training ZeroSearch 43.6</cell><cell>61.8</cell><cell>51.5</cell><cell>34.6</cell><cell>35.2</cell><cell>18.4</cell><cell>27.8</cell><cell>39.1</cell></row><row><cell>RL Training StepSearch</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>38.6</cell><cell>36.6</cell><cell>22.6</cell><cell>40.0</cell><cell>-</cell></row><row><cell>RL Training GiGPO</cell><cell>46.4</cell><cell>64.7</cell><cell>46.1</cell><cell>41.6</cell><cell>43.6</cell><cell>18.9</cell><cell>68.9</cell><cell>47.2</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Success rates (%) of VLM agents using Qwen2.5-VL-3B-Instruct.</figDesc><table><row><cell>Type</cell><cell>Method</cell><cell cols="2">Sokoban [6×6] EZPoints</cell></row><row><cell>Prompting</cell><cell>Qwen2.5-VL</cell><cell>11.7</cell><cell>3.1</cell></row><row><cell cols="2">RL Training GRPO</cell><cell>67.1 ±4.7</cell><cell>86.9 ±3.4</cell></row><row><cell cols="2">RL Training GiGPO w/ std</cell><cell>76.9 ±2.7</cell><cell>100.0 ±0.0</cell></row><row><cell cols="2">RL Training GiGPO w/o std</cell><cell>81.0 ±3.6</cell><cell>100.0 ±0.0</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 :</head><label>4</label><figDesc>Performance on WebShop using Qwen2.5-1.5B-Instruct.</figDesc><table><row><cell>Type</cell><cell>Method</cell><cell>Score</cell><cell>Success Rate (%)</cell></row><row><cell>Prompting</cell><cell>Qwen2.5</cell><cell>23.1</cell><cell>5.2</cell></row><row><cell cols="2">RL Training GRPO</cell><cell>75.8 ±3.5</cell><cell>56.8 ±3.8</cell></row><row><cell cols="2">RL Training DAPO</cell><cell>84.6 ±2.9</cell><cell>66.1 ±3.2</cell></row><row><cell cols="3">RL Training GiGPO dynamic 87.5 ±1.6</cell><cell>75.0 ±3.5</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 5 :</head><label>5</label><figDesc>Sensitivity analysis on ω for the WebShop task.</figDesc><table><row><cell>ω</cell><cell>0.0</cell><cell>0.2</cell><cell>0.4</cell><cell>0.6</cell><cell>0.8</cell><cell>1.0</cell><cell>1.2</cell><cell>1.4</cell></row><row><cell>Score</cell><cell cols="8">76.2 79.6 82.4 83.5 84.9 83.5 82.6 77.0</cell></row><row><cell cols="2">Success Rate (%) 56.</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgements</head><p>This research is supported by the <rs type="funder">Ministry of Education, Singapore</rs>, under its <rs type="programName">Academic Research Fund Tier 1</rs> (<rs type="grantNumber">RG18/24</rs>).</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_rgRrubr">
+					<idno type="grant-number">RG18/24</idno>
+					<orgName type="program" subtype="full">Academic Research Fund Tier 1</orgName>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F.2 WebShop</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Environment (Step 1)</head><p>Instruction: Find me loose fit, slim fit men's tuxedo shirts with long sleeve, short sleeve, polyester cotton, elastic waist, regular fit for gym workout with color: b-blue, and size: xx-large, and price lower than 40.00 dollars. Your current observation is: 'Search'.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Agent (Step 1)</head><p>&lt;think&gt; To find loose fit, slim fit men's tuxedo shirts with long and short sleeves, polyester cotton, elastic waist, regular fit for gym workout, in blue color (b-blue), and size xx-large, with a price lower than $40.00, I need to construct a search query that includes all these criteria.</p><p>The current observation is 'Search', which means the search function is available. Therefore, the appropriate action is to use the 'search' action to input the desired query. &lt;/think&gt; &lt;action&gt; search[color: b-blue, size: xx-large, price: 0-40, product_type: tuxedo shirt, fit: regular, sleeve: long and short] &lt;/action&gt; Environment (Step 2) 'Back to Search' 'Page 1 (Total results: 50)' 'Next &gt;' 'B09Q67H373': 'JSPOYOU 2022 Newly T-Shirt for Mens Funny 3D Graphics Pattern Crewneck Short Sleeve Tees Big and Tall Summer Casual Comfy Top', '$1.99 to $8.99' 'B09QQP3356': 'HAUKLIE Men's Sports Waffle Ribbed Polo Shirts Summer Short Sleeve Cotton Muscle Quarter-Zip Henley T-Shirt Tunics Tops', '$10.99' 'B09NNMV9LN': 'JSPOYOU Mens Short Sleeve Crewneck 3D Graphic Tunic Shirts Big &amp; Tall Tie Dye Summer Top Basic Designed Classic Cotton Shirt', '$3.99 to $10.99' 'B09S3BN15C': 'Mens Linen Shirt,Men's Striped Shirts Casual Short Sleeve Button Down Shirts Regular Fit Hawaiian Shirts Beach Tees Tops', '$3.78 to $11.38' 'B085WQKRRJ': 'CLANMILUMS Men's Classic Comfort Soft Regular Fit Short Sleeve Henley T-Shirt Tee', '$17.99 to $19.99' 'B078WSND96': 'Clearance Deals Retro T-Shirt Bee Printed Blouse, 2021 Summer Fashion Boys Men 3D Round Neck Short Sleeve Tee Tops', '$9.99 to $11.99' 'B08JD14GJF': 'COOrun Women's UPF 50+ Sun Protection Shirts Quick Dry Long Sleeve Shirts Lightweight T-Shirt Outdoor Hiking Runing Fishing', '$9.98 to $16.98' 'B09T756KQ5': 'WENKOMG1 Men's Crewneck Goth Tee Shirts Skull Print Tops Spring/Summer Long Sleeve Sports T-Shirt Baggy Y2K Soft Streetwear', '$4.09 to $8.09' 'B09R9YCM6R': 'XXBR Summer T-shirts for Mens, Soldier Short Sleeve 3D Street Vintage Printed Shirt Slim Fit Muscle Casual Tee Tops', '$8.98 to $11.99' 'B09Q5ZHRVM': 'Yinimo Mens Gym Shorts Fashionable Loose Beach Drawstring Turkey Print Beach Cool Shorts', '$19.19'. Agent (Step 2)</p><p>&lt;think&gt; Given the current page results, it is clear that the search is not yet filtered to include only tuxedo shirts. Therefore, the first step should be to click on the product that seems to be the most relevant, which is 'B09Q67H373'. This product is a t-shirt, which is close but not the exact item we are looking for. However, it is the first item that matches the search criteria in terms of color and price range. The product description also mentions "Mens Funny 3D Graphics Pattern Crewneck Short Sleeve Tees", which suggests it might be a tuxedo shirt. We will click on it to see if it is indeed a tuxedo shirt and if it meets the other criteria. &lt;/think&gt; &lt;action&gt;click &lt;think&gt; To answer this question, I need to determine who the guy in the video is. The question refers to the performer of the song "One Last Time." The song "One Last Time" was performed by the boy band *NSYNC. The video likely features the members of *NSYNC. Without more context, I cannot determine which specific member is referred to. I will need to search for the video to determine the specific guy. &lt;/think&gt; &lt;search&gt;who is the guy in the video of the performer of One Last Time&lt;/search&gt; Environment (Step 2) &lt;information&gt;{"result": "Doc 1: "Just One Last Time" uploaded to Guetta's official VEVO channel on December 3, 2012. The music video for the track was filmed in Los Angeles during October 2012 by director Colin Tilley. It features a man going in his half-burned house and lying on the bed and remembering the death of his girlfriend, reliving it and trying to change the past in his mind: he is sneaking out of his girlfriend's house to go and play a game of pool with Guetta, only to hear that the house is on fire. He races back to save his girlfriend, this time managing to do so, Doc 2: "One Last Time (Ariana Grande song)" rest of the video then is presented through the use of a handheld video camera. Grande is in a Fiat car as the passenger, with her boyfriend (played by Matt Bennett), who is recording. They are stuck in traffic as they try to leave the city, implied to be Los Angeles, California. While everyone around them is panicking, Grande seems to be calm as she wants to get a closer look at the comet. Impatient, she leaves the car while Bennett tries to stop her, and then follows. They make their way through the crowds, but are stopped by the Doc 3: "One Last Time (Ariana Grande song)" and the United States, where it became Grande's sixth top-twenty single on the US ""Billboard"" Hot 100. The single's peak of number 13 on the US ""Billboard"" Hot 100 ended Grande's streak of consecutive top ten hits from 2014. It was later certified platinum by the Recording Industry Association of America (RIAA) and Australian Recording Industry Association (ARIA). The song's accompanying music video was released on February 15, 2015 and was directed by Max Landis. The music video is visually presented as a found footage, similar to Landis' previous work."}&lt;/information&gt;</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Agent (Step 2)</head><p>&lt;think&gt; From the information provided, there are two songs titled "One Last Time" mentioned. The first one is by David Guetta, and the second one is by Ariana Grande. The question asks about the video of the performer of "One Last Time". The information provided for the Ariana Grande song includes details about the music video, which was released on February 15, 2015, directed by Max Landis. The video is described as a found footage. The question might be referring to the video of Ariana Grande's "One Last Time". The information does not provide a specific name for the guy in the video, so I will assume the question is about the video of Ariana Grande's song. &lt;/think&gt; &lt;search&gt;who is the guy in the video of Ariana Grande's One Last Time&lt;/search&gt;</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_15"><figDesc>[b09q67h373]&lt;/action&gt; Agent (Step 5) &lt;think&gt; The task is to find loose fit, slim fit men's tuxedo shirts with long and short sleeves, made of polyester cotton, with an elastic waist, regular fit for gym workouts, in color b-blue, size xx-large, and with a price lower than $40.00. From the current observation, it is clear that the search is already filtered to include the color b-blue, size xx-large and price lower than $40.00. Therefore, the next step is to click the 'Buy Now' button. &lt;/think&gt; &lt;action&gt;click[buy now]&lt;/action&gt; F.3 Search Environment (Step 1) Who is the guy in the video of the performer of One Last Time? Agent (Step 1)</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Adler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lama</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilge</forename><surname>Akkaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florencia</forename><surname>Leoni Aleman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Janko</forename><surname>Altenschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Altman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.08774</idno>
+		<title level="m">Shyamal Anadkat, et al. GPT-4 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Gemini</forename><surname>Team</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Anil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Borgeaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean-Baptiste</forename><surname>Alayrac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahui</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Radu</forename><surname>Soricut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johan</forename><surname>Schalkwyk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">M</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anja</forename><surname>Hauth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katie</forename><surname>Millican</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.11805</idno>
+		<title level="m">A family of highly capable multimodal models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baosong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beichen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Wei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.15115</idno>
+		<title level="m">Qwen2. 5 technical report</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aixin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bingxuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bochao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengda</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenggang</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengqi</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Ruan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.19437</idno>
+		<title level="m">DeepSeek-V3 technical report</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">ALFWorld: Aligning text and embodied environments for interactive learning</title>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Shridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingdi</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc-Alexandre</forename><surname>Cote</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Trischler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Hausknecht</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Embodied agent interface: Benchmarking LLMs for embodied decision making</title>
+		<author>
+			<persName><forename type="first">Manling</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qineng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kangrui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sanjana</forename><surname>Srivastava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cem</forename><surname>Gokmen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tony</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erran</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruohan</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="100428" to="100534" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Multimodal web navigation with instruction-finetuned foundation models</title>
+		<author>
+			<persName><forename type="first">Hiroki</forename><surname>Furuta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuang-Huei</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Nachum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutaka</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Faust</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shixiang</forename><surname>Shane Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izzeddin</forename><surname>Gur</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">GPT-4V (ision) is a generalist web agent, if grounded</title>
+		<author>
+			<persName><forename type="first">Boyuan</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyu</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jihyung</forename><surname>Kil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Su</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.01614</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Navigating the digital world as humans do: Universal visual grounding for GUI agents</title>
+		<author>
+			<persName><forename type="first">Boyu</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruohan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyuan</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanan</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiheng</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Su</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Towards efficient online tuning of VLM agents via counterfactual soft reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Lang</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weihao</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyi</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Longtao</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haiyang</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>An</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Voyager: An open-ended embodied agent with large language models</title>
+		<author>
+			<persName><forename type="first">Guanzhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqi</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Mandlekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaowei</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuke</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linxi</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anima</forename><surname>Anandkumar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions on Machine Learning Research</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Mobile-Agent-v2: Mobile device operation assistant with effective navigation via multi-agent collaboration</title>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haiyang</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haitao</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhou</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jitao</forename><surname>Sang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="2686" to="2710" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Reinforcement Learning: An Introduction</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Richard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">G</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Barto</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<publisher>MIT press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title/>
+	</analytic>
+	<monogr>
+		<title level="j">OpenAI. Introducing OpenAI</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Daya Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoyu</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shirong</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.12948</idno>
+		<title level="m">Deepseek-R1: Incentivizing reasoning capability in LLMs via reinforcement learning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Buy 4 reinforce samples, get a baseline for free</title>
+		<author>
+			<persName><forename type="first">Wouter</forename><surname>Kool</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Herke</forename><surname>Van Hoof</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Max</forename><surname>Welling</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR 2019 Workshop</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Back to basics: Revisiting reinforce style optimization for learning from human feedback in LLMs</title>
+		<author>
+			<persName><forename type="first">Arash</forename><surname>Ahmadian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Cremer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Gallé</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marzieh</forename><surname>Fadaee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julia</forename><surname>Kreutzer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Pietquin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmet</forename><surname>Üstün</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sara</forename><surname>Hooker</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="12248" to="12267" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.03300</idno>
+		<title level="m">Pushing the limits of mathematical reasoning in open language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Understanding r1-zero-like training: A critical perspective</title>
+		<author>
+			<persName><forename type="first">Zichen</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changyu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Penghui</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wee</forename><surname>Sun Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.20783</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">DAPO: An open-source LLM reinforcement learning system at scale</title>
+		<author>
+			<persName><forename type="first">Qiying</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruofei</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufeng</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaochen</forename><surname>Zuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tiantian</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaohong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingjun</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.14476</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Duchenne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jade</forename><surname>Copet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quentin</forename><surname>Carbonneaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Synnaeve</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sida I</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.18449</idno>
+		<title level="m">SWE-RL: Advancing llm reasoning via reinforcement learning on open software evolution</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">WebShop: Towards scalable real-world web interaction with grounded language agents</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Howard</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="20744" to="20757" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">CodeAgent: Enhancing code generation with tool-integrated agent systems for real-world repo-level coding challenges</title>
+		<author>
+			<persName><forename type="first">Kechi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianjie</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="13643" to="13658" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">You only look at screens: Multimodal chain-of-action agents</title>
+		<author>
+			<persName><forename type="first">Zhuosheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aston</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics ACL 2024</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="3132" to="3149" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">CogAgent: A visual language model for GUI agents</title>
+		<author>
+			<persName><forename type="first">Wenyi</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weihan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingsong</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiazheng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenmeng</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junhui</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiao</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Ding</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="14281" to="14290" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">A real-world webagent with planning, long context understanding, and program synthesis</title>
+		<author>
+			<persName><forename type="first">Izzeddin</forename><surname>Gur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hiroki</forename><surname>Furuta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Austin</forename><forename type="middle">V</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mustafa</forename><surname>Safdari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutaka</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Douglas</forename><surname>Eck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Faust</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingyu</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Difei</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><forename type="middle">Zheng</forename><surname>Shou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2411.10323</idno>
+		<title level="m">The dawn of GUI agent: A preliminary case study with claude 3.5 computer use</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">RT-2: Vision-language-action models transfer web knowledge to robotic control</title>
+		<author>
+			<persName><forename type="first">Brianna</forename><surname>Zitkovich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhe</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sichun</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialin</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Wohlhart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Welker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ayzaan</forename><surname>Wahid</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="2165" to="2183" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">ReAct: Synergizing reasoning and acting in language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Karthik R Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Reflexion: Language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Cradle: Empowering foundation agents towards general computer control</title>
+		<author>
+			<persName><forename type="first">Weihao</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wentao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinrun</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haochong</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gang</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bohan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junpeng</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiechuan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yewen</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS 2024 Workshop on Open-World Agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Toolformer: Language models can teach themselves to use tools</title>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberta</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicola</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Scialom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="68539" to="68551" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">OSWorld: Benchmarking multimodal agents for open-ended tasks in real computer environments</title>
+		<author>
+			<persName><forename type="first">Tianbao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danyang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jixuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaochuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siheng</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruisheng</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Toh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhoujun</forename><surname>Hua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongchan</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangyu</forename><surname>Shin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yitao</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvio</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirty-eight Conference on Neural Information Processing Systems Datasets and Benchmarks Track</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">UFO: A UI-focused agent for windows OS interaction</title>
+		<author>
+			<persName><forename type="first">Chaoyun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liqun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shilin</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Si</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minghua</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingwei</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saravan</forename><surname>Rajmohan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.07939</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Human-level control through deep reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Volodymyr</forename><surname>Mnih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Koray</forename><surname>Kavukcuoglu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrei</forename><forename type="middle">A</forename><surname>Rusu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joel</forename><surname>Veness</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><forename type="middle">G</forename><surname>Bellemare</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Graves</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Riedmiller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename><forename type="middle">K</forename><surname>Fidjeland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Georg</forename><surname>Ostrovski</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="volume">518</biblScope>
+			<biblScope unit="issue">7540</biblScope>
+			<biblScope unit="page" from="529" to="533" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Language understanding for textbased games using deep reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tejas</forename><surname>Kulkarni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Regina</forename><surname>Barzilay</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2015 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2015 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="1" to="11" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">True knowledge comes from practice: Aligning large language models with embodied environments via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Weihao</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wentao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanqi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Longtao</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinrun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>An</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Reinforcing LLM agents via policy optimization with action decomposition</title>
+		<author>
+			<persName><forename type="first">Muning</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyu</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weinan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Wen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirty-eighth Annual Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Fine-tuning large vision-language models as decision-making agents via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zipeng</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Tong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alane</forename><surname>Suhr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saining</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Lecun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Ma</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="110935" to="110971" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">DigiRL: Training in-the-wild device-control agents with autonomous reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mert</forename><surname>Cemri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alane</forename><surname>Suhr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aviral</forename><surname>Kumar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="12461" to="12495" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">DistRL: An asynchronous distributed reinforcement learning framework for on-device control agent</title>
+		<author>
+			<persName><forename type="first">Taiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianye</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Shao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Filip</forename><surname>Wolski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleg</forename><surname>Klimov</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1707.06347</idno>
+		<title level="m">Proximal policy optimization algorithms</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xue Bin</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aviral</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Grace</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1910.00177</idno>
+		<title level="m">Advantage-weighted regression: Simple and scalable off-policy reinforcement learning</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Android in the wild: A large-scale dataset for android device control</title>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Rawles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alice</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Rodriguez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oriana</forename><surname>Riva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><surname>Lillicrap</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Brockman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1606.01540</idno>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">OpenAI Gym. arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Training language model agents via hierarchical multi-turn rl</title>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrea</forename><surname>Zanette</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aviral</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Archer</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="62178" to="62209" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Putta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edmund</forename><surname>Mills</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sumeet</forename><surname>Motwani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.07199</idno>
+		<title level="m">Divyansh Garg, and Rafael Rafailov. Agent Q: Advanced reasoning and learning for autonomous ai agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Mastering the game of go without human knowledge</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karen</forename><surname>Simonyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aja</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Guez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Hubert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adrian</forename><surname>Bolton</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="volume">550</biblScope>
+			<biblScope unit="issue">7676</biblScope>
+			<biblScope unit="page" from="354" to="359" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marco</forename><surname>Cusumano-Towner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brody</forename><surname>Huval</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksei</forename><surname>Petrenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jackson</forename><surname>Hamburger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philipp</forename><surname>Vladlen Koltun</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Krähenbühl</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.01600</idno>
+		<title level="m">Reinforcement learning for long-horizon interactive llm agents</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">AppWorld: A controllable world of apps and people for benchmarking interactive coding agents</title>
+		<author>
+			<persName><forename type="first">Harsh</forename><surname>Trivedi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mareike</forename><surname>Hartmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruskin</forename><surname>Manku</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vinty</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shashank</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niranjan</forename><surname>Balasubramanian</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="16022" to="16076" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<title level="m" type="main">RAGEN: Understanding self-evolution in LLM agents via multi-turn reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kangrui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qineng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pingyue</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linjie</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kefan</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minh</forename><forename type="middle">Nhat</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Licheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eli</forename><surname>Gottlieb</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.20073</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<author>
+			<persName><forename type="first">Nisan</forename><surname>Daniel M Ziegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Stiennon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><forename type="middle">B</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Christiano</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Irving</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1909.08593</idno>
+		<title level="m">Fine-tuning language models from human preferences</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Learning to summarize with human feedback</title>
+		<author>
+			<persName><forename type="first">Nisan</forename><surname>Stiennon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Ziegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Lowe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><forename type="middle">F</forename><surname>Christiano</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="3008" to="3021" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Training language models to follow instructions with human feedback</title>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carroll</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katarina</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="27730" to="27744" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Direct preference optimization: Your language model is secretly a reward model</title>
+		<author>
+			<persName><forename type="first">Rafael</forename><surname>Rafailov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Archit</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefano</forename><surname>Ermon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<author>
+			<persName><forename type="first">Kimi</forename><surname>Team</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Angang</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bofei</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowei</forename><surname>Xing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changjiu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenjun</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenzhuang</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chonghua</forename><surname>Liao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.12599</idno>
+		<title level="m">Kimi k1.5: Scaling reinforcement learning with LLMs</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<title level="m" type="main">CPPO: Accelerating the training of group relative policy optimization-based reasoning models</title>
+		<author>
+			<persName><forename type="first">Zhihang</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingbao</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rongrong</forename><surname>Ji</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.22342</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<monogr>
+		<title level="m" type="main">Search-R1: Training LLMs to reason and leverage search engines with reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Bowen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hansi</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenrui</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hamed</forename><surname>Zamani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Han</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.09516</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zile</forename><surname>Hao Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayan</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanbo</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingyan</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengjun</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zerosearch</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.04588</idno>
+		<title level="m">Incentivize the search capability of llms without searching</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<monogr>
+		<author>
+			<persName><forename type="first">Emre</forename><surname>Cheng Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Can Acikgoz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongru</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiusi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dilek</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gokhan</forename><surname>Hakkani-Tür</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Tur</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ji</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.13958</idno>
+		<title level="m">ToolRL: Reward is all tool learning needs</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hongru</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanjun</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiusi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahao</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijue</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengdi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kam-Fai</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Otc</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.14870</idno>
+		<title level="m">Optimal tool calls via reinforcement learning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<analytic>
+		<title level="a" type="main">Natural questions: a benchmark for question answering research</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Kwiatkowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jennimaria</forename><surname>Palomaki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivia</forename><surname>Redfield</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Collins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ankur</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Alberti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danielle</forename><surname>Epstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Illia</forename><surname>Polosukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenton</forename><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="page" from="453" to="466" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<monogr>
+		<title level="m" type="main">TriviaQA: A large scale distantly supervised challenge dataset for reading comprehension</title>
+		<author>
+			<persName><forename type="first">Mandar</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eunsol</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">S</forename><surname>Weld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1705.03551</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<monogr>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Mallen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akari</forename><surname>Asai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rajarshi</forename><surname>Das</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Khashabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.10511</idno>
+		<title level="m">When not to trust language models: Investigating effectiveness of parametric and non-parametric memories</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhilin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saizheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">W</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruslan</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hotpotqa</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1809.09600</idno>
+		<title level="m">A dataset for diverse, explainable multi-hop question answering</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xanh</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anh-Khoa</forename><surname>Duong Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saku</forename><surname>Sugawara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akiko</forename><surname>Aizawa</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2011.01060</idno>
+		<title level="m">Constructing a multi-hop qa dataset for comprehensive evaluation of reasoning steps</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b66">
+	<analytic>
+		<title level="a" type="main">Multihop questions via single-hop question composition</title>
+		<author>
+			<persName><forename type="first">Harsh</forename><surname>Trivedi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niranjan</forename><surname>Balasubramanian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Musique</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="page" from="539" to="554" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b67">
+	<monogr>
+		<title level="m" type="main">Measuring and narrowing the compositionality gap in language models</title>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muru</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sewon</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ludwig</forename><surname>Schmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03350</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b68">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ziliang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuhui</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cijun</forename><surname>Kang An</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialu</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhang</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Stepsearch</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.15107</idno>
+		<title level="m">Igniting LLMs search ability via step-wise proximal policy optimization</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b69">
+	<monogr>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaolong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binxing</forename><surname>Jiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linjun</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daxin</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rangan</forename><surname>Majumder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Furu</forename><surname>Wei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.03533</idno>
+		<title level="m">Text embeddings by weakly-supervised contrastive pre-training</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b70">
+	<monogr>
+		<author>
+			<persName><forename type="first">Amirhossein</forename><surname>Kazemnejad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Milad</forename><surname>Aghajohari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eva</forename><surname>Portelance</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alessandro</forename><surname>Sordoni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siva</forename><surname>Reddy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Courville</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><forename type="middle">Le</forename><surname>Roux</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.01679</idno>
+		<title level="m">VinePPO: Unlocking rl potential for llm reasoning through refined credit assignment</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b71">
+	<monogr>
+		<title level="m" type="main">GPG: A simple and strong reinforcement learning baseline for model reasoning</title>
+		<author>
+			<persName><forename type="first">Xiangxiang</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hailang</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.02546</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b72">
+	<monogr>
+		<author>
+			<persName><forename type="first">Guangming</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilingfeng</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xibin</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ru</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanghua</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haibin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuan</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.19256</idno>
+		<title level="m">HybridFlow: A flexible and efficient rlhf framework</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b73">
+	<monogr>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anfeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baosong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beichen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenxu</forename><surname>Lv</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.09388</idno>
+		<title level="m">Qwen3 technical report</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b74">
+	<analytic>
+		<title level="a" type="main">Lora: Low-rank adaptation of large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Edward</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yelong</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phillip</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyuan</forename><surname>Wallis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Allen-Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shean</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ICLR</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page">3</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b75">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24824" to="24837" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b76">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">B</forename><surname>Max-Philipp</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Schrader</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gym-Sokoban</surname></persName>
+		</author>
+		<ptr target="https://github.com/mpSchrader/gym-sokoban" />
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b77">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keqin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuejing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenbin</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sibo</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Tang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.13923</idno>
+		<title level="m">Qwen2.5-VL technical report</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

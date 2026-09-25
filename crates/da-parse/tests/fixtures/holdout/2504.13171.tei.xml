@@ -1,0 +1,1430 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Sleep-time Compute: Beyond Inference Scaling at Test-time</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-04-17">17 Apr 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Kevin</forename><surname>Lin</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Berkeley</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Charlie</forename><surname>Snell</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Berkeley</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Berkeley</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Charles</forename><surname>Packer</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Berkeley</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Sarah</forename><surname>Wooders</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Berkeley</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ion</forename><surname>Stoica</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Berkeley</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Berkeley</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Sleep-time Compute: Beyond Inference Scaling at Test-time</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-04-17">17 Apr 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">9EA150B16BEEBAD38042B92A342C386B</idno>
+					<idno type="arXiv">arXiv:2504.13171v1[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:01+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Scaling test-time compute has emerged as a key ingredient for enabling large language models (LLMs) to solve difficult problems, but comes with high latency and inference cost. We introduce sleep-time compute, which allows models to "think" offline about contexts before queries are presented: by anticipating what queries users might ask and pre-computing useful quantities, we can significantly reduce the compute requirements at test-time. To demonstrate the efficacy of our method, we create modified versions of two reasoning tasks -Stateful GSM-Symbolic and Stateful AIME. We find that sleep-time compute can reduce the amount of test-time compute needed to achieve the same accuracy by ∼ 5× on Stateful GSM-Symbolic and Stateful AIME and that by scaling sleep-time compute we can further increase accuracy by up to 13% on Stateful GSM-Symbolic and 18% on Stateful AIME. Furthermore, we introduce Multi-Query GSM-Symbolic, which extends GSM-Symbolic by including multiple related queries per context. By amortizing sleep-time compute across related queries about the same context using Multi-Query GSM-Symbolic, we can decrease the average cost per query by 2.5×. We then conduct additional analysis to understand when sleep-time compute is most effective, finding the predictability of the user query to be well correlated with the efficacy of sleep-time compute. Finally, we conduct a case-study of applying sleep-time compute to a realistic agentic SWE task. Code and data released at: <ref type="url" target="https://github.com/letta-ai/sleep-time-compute">https://github.com/letta-ai/sleep-time-compute</ref>.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="26" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="27" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="28" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="29" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="30" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="31" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Test-time scaling has emerged as an effective way to boost LLM performance on challenging tasks by spending more time thinking on difficult problems <ref type="bibr" target="#b13">(OpenAI, 2024;</ref><ref type="bibr" target="#b5">DeepSeek-AI, 2024;</ref><ref type="bibr" target="#b16">Snell et al., 2024;</ref><ref type="bibr" target="#b2">Brown et al., 2024)</ref>. However, improved performance from test-time compute comes at a significant increase in latency and cost, waiting potentially several minutes for answers and costing up to tens of dollars per query. <ref type="foot" target="#foot_0">1</ref> These drawbacks are in part due to the fact that the current approach to applying test-time compute assumes that problems are stateless, i.e. queries (user queries at test-time) and the contexts (background information) required for answering them are provided to the model together at "test-time." In practice, this means that if multiple related queries require making similar inferences about the context at "test-time," the model will have to recompute redundant computations each time, incurring additional latency and cost.</p><p>In reality, many LLM applications are inherently stateful, and work in conjunction with persisted, re-used context. A classic example is document question-answering, where documents contextualize responses to questions. Coding agents also operate on a large common repository and participate in multiple rounds of debugging support, while conversational assistants need to maintain the past dialogue. In all these applications, there is context (available documents, a codebase, or conversation history) that is already available before the next user input. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Sleep Time</head><p>Test Time</p><p>The answer is 10.</p><p>Q1: How many marked indigo tennis balls are there?</p><p>Q1: How many marked indigo tennis balls are there?</p><p>Q2: How many tennis balls are there?</p><p>Q2: How many tennis balls are there?</p><p>The answer is 200.  In these settings, we could in principle, make useful inferences about the current state (context) offline before, or even during the user's next input. We refer to such a process, as sleep-time compute: where inference is done between interactions with the model while it would otherwise be idle in sleep-time. In practice, this is achieved by prompting the model to generate a new context consisting of inferences about the existing context, which may be potentially useful for answering test-time queries. The re-represented context from sleep-time can then be provided in the prompt at test-time, enabling the model to respond to user queries at the accuracy of standard test-time compute but with far lower latencies. For example, a coding assistant at sleep-time may identify architectural patterns, anticipate potential debugging strategies, or infer optimizations prior to the user input. Moreover, users might ask multiple queries about the same context. In these settings, any inferences made during sleep-time can be shared across queries, effectively amortizing the cost of sleep-time compute and reducing the total average cost per query.</p><p>To evaluate sleep-time compute, we modify two mathematical reasoning datasets to introduce two datasets -Stateful GSM-Symbolic and Stateful AIME -by splitting the existing problems in these datasets into a context and a question. Using these datasets, we aim to empirically understand the benefits of sleep-time compute on standard test-time compute benchmarks. We show that:</p><p>• Sleep-time compute produces a pareto improvement in the test-time compute vs. accuracy curve, reducing the test-time compute needed to achieve the same accuracy by ∼ 5× on Stateful GSM-Symbolic and Stateful AIME.</p><p>• By scaling up sleep-time compute, we see further pareto improvements, shifting the accuracy up by 13% on Stateful GSM-Symbolic and 18% on Stateful AIME.</p><p>• By amortizing sleep-time compute across multiple queries for the same context, we can reduce the average cost per question by 2.5×.</p><p>• We conduct analysis to understand which queries benefit the most from sleep-time compute, finding that sleep-time compute is more effective in settings where the query is more easily predictable from the context.</p><p>Finally, we end with case study of applying sleep-time compute to reduce test-time compute in a realistic agentic software engineering task.</p><p>2 Related Work Scaling test-time compute. Our work builds on recent progress on scaling up computation at test-time for difficult reasoning problems <ref type="bibr" target="#b16">(Snell et al., 2024;</ref><ref type="bibr" target="#b5">DeepSeek-AI, 2024;</ref><ref type="bibr" target="#b13">OpenAI, 2024)</ref>. Two predominant approaches to test-time scaling have emerged: sequential test-time scaling <ref type="bibr" target="#b13">(OpenAI, 2024;</ref><ref type="bibr" target="#b5">DeepSeek-AI, 2024;</ref><ref type="bibr" target="#b12">Muennighoff et al., 2025;</ref><ref type="bibr" target="#b16">Snell et al., 2024)</ref> and parallel test-time scaling <ref type="bibr" target="#b2">(Brown et al., 2024;</ref><ref type="bibr" target="#b16">Snell et al., 2024)</ref>. While sequential test-time scaling has demonstrated impressive performance improvements, parallel test-time scaling has the advantage of scaling test-time compute without increasing latency. In constrast, we propose an alternative dimension where existing advancements in test-time compute, both sequential and parallel can be applied. Namely, instead of performing inference purely at test-time, we leverage compute on contexts that are available before the actual query arrives.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Speculative decoding in LLMs.</head><p>Speculative decoding is a standard technique for reducing latency in decoding with LLMs <ref type="bibr" target="#b10">(Leviathan et al., 2023;</ref><ref type="bibr" target="#b17">Stern et al., 2018;</ref><ref type="bibr" target="#b3">Cai et al., 2024;</ref><ref type="bibr" target="#b6">DeepSeek-AI et al., 2025)</ref>. Sleep-time compute similarly targets reducing reasoning latency by speculating on the user's query as well as any potentially helpful reasoning over the context. However, unlike speculative decoding, the generated tokens are used as an input regardless of the user's actual query, and at test-time the reasoning model uses these generated tokens to help answer the user query more efficiently.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Pre-computation.</head><p>Beyond LLMs, a long history of work has explored the trade-off between precomputation and memory (eg. memory caches <ref type="bibr" target="#b15">Smith (1982)</ref> and data cubes for OLAP workloads <ref type="bibr" target="#b7">Gray et al. (1997)</ref>). Our work explores the same trade-off between query latency and pre-computation overhead, operating under the assumption that query workload patterns can be reasonably anticipated in advance. sleep-time compute builds on the idea of pre-fetching in traditional operating systems, in the context of LLMs à la <ref type="bibr" target="#b14">Packer et al. (2023)</ref>, storing frequently used computational results to avoid higher latency at test-time.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Sleep-time Compute</head><p>In the standard paradigm of applying test-time compute, a user inputs a prompt p to the LLM and then the LLM applies test-time compute to help answer the user's question. However, the p provided to the LLM can oftentimes be decomposed into a pre-existing context c (eg. a codebase) and a user query q (eg. a question about the codebase). When the LLM is not actively responding to the user, it typically still has access to the existing context c. During this time, the LLM is typically idling, missing the opportunity to reason about c offline: a process we term sleep-time compute.</p><p>Test-time compute. In the test-time compute setting, the user provides q along with some context c and the model outputs a reasoning trace followed by a final answer a. We denote this process, as: T B (q, c) → a, where T is the method for using test-time compute with budget B, which could include techniques like extended chains of thought or best-of-N. In practice, the user may have multiple queries about the same context q 1 , q 2 ... q N . In this setting, the model will carry out independent reasoning processes for each q i , even if they are related to the same context c. Ideally, we would be able to reuse related inferences across each q i to save compute. Moreover, in many cases, c is complex and may require carrying out significant processing/inferences in order to provide an answer to q. Since, the test-time compute paradigm of T(q, c) → a assumes that c is only available at the same time as q, standard test-time compute carries out all of these inferences only after the user provides the query, causing the user to wait up to several minutes for a response. However, in practice we often have access to c before q and can carry out much of this processing ahead of time.</p><p>Sleep-time compute. During sleep-time we are given the context c but not the query q. Using just this context c, we can use the LLM to infer likely questions and reason about the context ultimately producing a more new re-represented context c ′ . We denote this process as: S(c) → c ′ , where S can be any standard test-time scaling technique applied towards pre-processing the context at sleep-time. In this work, S(c) is implemented by prompting the model to draw inferences and re-write c in a way that might be useful at test-time (see Appendix K for more details). After pre-processing the context, we can provide the new context c ′ at test-time in place of c to produce a final answer to the user's query: T b (q, c ′ ) → a. Since much of the reasoning about c has been done ahead of time in this case, we can use a much smaller test-time budget b &lt;&lt; B. Moreover, c ′ can be shared across different queries q i about the same context, effectively amortizing the compute required to arrive at c ′ across queries, providing a total cost saving.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experimental Setup</head><p>Next, we describe the datasets, models, and baselines we use to evaluate sleep-time compute.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Datasets</head><p>We select datasets which represent standard benchmarks for LLM reasoning and test-time scaling, and which demonstrate improvements from scaling test-time compute with state-of-the-art LLMs (either reasoning or non-reasoning).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Stateful datasets.</head><p>We introduce two datasets to study applying sleep-time compute in stateful settings, Stateful GSM-Symbolic, and Stateful AIME, where each dataset is derived from splitting the existing datasets into a context and a question (see Figure <ref type="figure" target="#fig_3">2</ref> for an example). Stateful GSM-Symbolic is derived from the P1 and P2 splits of GSM-Symbolic <ref type="bibr" target="#b11">(Mirzadeh et al., 2024)</ref>, which add one and two clauses respectively to the original GSM8K dataset <ref type="bibr" target="#b4">(Cobbe et al., 2021)</ref> to that increase the difficulty. GSM-Symbolic P1 contains 5000 examples and P2 2500 examples. Stateful AIME contains 60 questions combined from AIME 2024 and 2025. In Appendix L and M, we show the breakdown of our results across AIME 2024 and 2025.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Amortization dataset.</head><p>To study the effect of related questions that share context, we introduce a new dataset Multi-Query GSM-Symbolic, where each context has multiple queries. To generate multiple queries for a given context, we take Stateful GSM-Symbolic and use o3-mini to generate additional question answer pairs. We synthetically generate additional questions from existing context question pairs in GSM-Symbolic. Appendix C shows the prompt used to generate the additional questions. and set of questions from the Multi-Query GSM-Symbolic dataset and Table <ref type="table">C</ref> shows the overall dataset statistics.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Models and Baselines</head><p>Models. On each dataset, we evaluate models which have poor performance when using a small amount of test-time compute, but yield improvements from scaling up test-time compute. Therefore, on GSM-Symbolic, we conduct experiments using GPT-4o-mini and GPT-4o, and on AIME, we conduct experiments using OpenAI's o1, o3-mini, Anthropic's Claude Sonnet 3.7 Extended Thinking , and Deepseek-R1 (DeepSeek-AI, 2024). 2 3   Baselines The main baseline we consider is the standard test-time compute setting in which both c and q are presented to the model for the first time at test-time. Furthermore, to validate that q is not trivially predictable from c on our Stateful GSM-Symbolic and Stateful AIME datasets, we also compare to a contextonly baseline in Appendix I, in which the model is only given c and is tasked with directly guessing an answer to the question it guesses is most likely to come next.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Experiments and Results</head><p>In this section, we carry out experiments to understand the benefits of sleep-time compute. Specifically, we would like to answer each of the following questions using the math reasoning benchmarks introduced above:</p><p>1. Can sleep-time compute shift the pareto frontier of test-time compute vs. accuracy? 2. Does scaling sleep-time compute in-turn improve the pareto further? 3. When there are multiple related questions for a single context, can amortizing test-time compute with sleep-time compute provide a total token efficiency benefit? 4. In what settings does sleep-time compute provide the most uplift?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Improving Pareto Test-Time Trade-off with sleep-time compute</head><p>We first determine the test-time compute, accuracy pareto frontier by scaling standard test-time compute sequentially and in parallel. We then study how applying sleep-time compute affects the pareto trade-off.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Scaling test-time-compute sequentially.</head><p>For non-reasoning models (GPT-4o and 4o-mini) on Stateful GSM-Symbolic, to vary the amount of test-time compute, we construct prompts that instruct the model to use different amounts of verbosity at test time, eg. "answer directly with a single sentence" vs. "double check your reasoning before outputting the final answer." The full prompts are in Appendix A. We use temperature 0 for generation. We see in Figure <ref type="figure">3</ref> that there is a tradeoff between accuracy and the amount of test-time compute, and that adding sleep-time compute can move beyond the pareto compute-accuracy curve. In particular, at lower test-time budgets, the performance of sleep-time compute is significantly better than the baseline, achieving performance comparable to that of the baseline with 5× less test-time tokens. However, at the test-tome compute budgets, the test-time compute only baseline slightly outperforms sleep-time compute. We hypothesize that this may be because the standard test-time compute only has the content relevant to the specific question, so there is less distracting information in the prompt.</p><p>For reasoning models on Stateful AIME, we scale the amount of test-time compute based on what is available in the API in the case of o1, o3-mini and Claude Sonnet 3.7. Since the Deepseek-R1 API does not provide a way to control test-time compute, we apply the "budget forcing" and extension prompt from <ref type="bibr" target="#b12">Muennighoff et al. (2025)</ref>. Figure <ref type="figure" target="#fig_5">4</ref> shows the results for each model on Stateful AIME. We average results over 3 runs for o1, o3-mini and R1. For Claude 3.7 Sonnet, we average over 10 runs as we observed more noise in initial experiments. On all models, we see a significant test-time, accuracy pareto shift from applying sleep-time compute, with the exception of o1, which demonstrates limited gains. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Scaling test-time compute in parallel.</head><p>An alternative approach to scaling test-time compute is via parallel sampling, which also has the benefit of maintaining low inference latency. The simplest approach to scaling parallel test-time compute is pass@k <ref type="bibr" target="#b2">(Brown et al., 2024)</ref>, which makes the unrealistic assumption of having oracle query access to a ground truth verifier at test-time, an assumption which we do not make with sleeptime compute. Therefore, outperforming the pass@k baseline would represent a meaningful improvement over parallel test-time scaling. We apply parallel scaling to the lowest sequential compute setting on each task, since scaling pass@k with higher sequential compute settings would quickly reach token budgets that exceed that of sleep-time compute in the maximum sequential setting. We see that across all tasks and models, sleep-time compute consistently outperforms pass@k parallel scaling at the same test-time token budget, demonstrating that sleep-time compute can be a more effective way to scale inference-time compute than standard parallel test-time scaling.</p><p>100 200 300 400 Avg. Test Time Tokens / Question 0.2 0.4 0.6 0.8 Accuracy GSM8K-Symbolic P1 100 200 300 400 500 Avg. Test Time Tokens / Question 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 Accuracy GSM8K-Symbolic P2 gpt-4o-mini gpt-4o-mini + background scaling gpt-4o gpt-4o + background scaling </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Scaling up sleep-time compute</head><p>We would like to understand how scaling compute during sleep-time can further effect the pareto shift that we observed in Section 5.1. To scale up the amount of sleep-time compute, for non-reasoning models, we run k parallel generations, given input c, resulting in c 1 , . . . , c k . At test-time, the model then receives the inputs concatenated c 1 , . . . , c k to generate the final answer. On reasoning models, we scale up the amount of sleep-time compute by varying the reasoning effort for o1 and for o3-mini when applying the sleep-time compute prompt. At test-time, we vary the amount of compute in the same way as 5.1.</p><p>In Figure <ref type="figure">7</ref>, we see that further scaling sleep-time compute on Stateful GSM-Symbolic shifts the pareto curve outwards, improving performance by up to 13% at a similar test-time budget. In particular, we see the largest gains on more difficult tasks with stronger models (eg. on P2 with 'gpt-4o'), suggesting that on tasks with more complicated contexts additional sleep-time compute can be beneficial. However, in this setting, there seems to be a limit to the number of parallel agents that can improve performance, as we find that 5 parallel generations generally outperforms 10. In Figure <ref type="figure" target="#fig_7">26</ref>, we scale up sleep-time compute on Stateful AIME. Similarly, we also see that scaling compute at sleep-time generally shifts the pareto curve outward, improving performance by up to 18%.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Amortizing sleep-time compute across queries with shared context</head><p>We want to understand how the total cost of inference can be improved by applying sleep-time compute in settings where each context has multiple queries. Since at test-time, there are strict latency constraints, and latency optimized inference can be roughly 10× more expensive, we model the total cost of inference between both sleep-time and test-time, by up-weighing the cost of test-time tokens. <ref type="foot" target="#foot_3">4</ref> Specifically, we consider a simple linear model where tokens generated at test-time are a factor t the cost of the tokens at sleep-time.</p><p>In our analysis, we set t = 10 Our analysis can be generalized to different cost functions that consider non-linear user-utility. Figure <ref type="figure">9</ref> shows the results for different number of questions per context. We see that we can decrease the average cost per query by up to 2.5× when there are 10 queries per context, compared to the single-query baseline.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.4">Predictable queries benefit more from sleep-time compute</head><p>We would like to better understand for what contexts sleep-time compute is most useful. Since the utility of sleep-time compute relies on there being some shared information or structure between the context and the query, we hypothesize that sleep-time compute may be most effective in settings where the query is more predictable from the context. To test this on Stateful GSM-Symbolic, we first quantify how predictable a given query is by measuring the log-probability of the question given the context under the Llama2-70B base model <ref type="bibr" target="#b18">(Touvron et al., 2023)</ref>. In Appendix E, we include examples of highly predictable and unpredictable questions under this notion of question predictability. We see from these examples, that our notion of question predictability generally aligns with the intuition that contexts where the query pattern is more predictable benefit most from sleep-time compute. The more predictable questions are far simpler and the less predictable ones are more complex.  2000 3000 4000 5000 Avg. Test Time Tokens / Question 0.325 0.350 0.375 0.400 0.425 0.450 0.475 0.500 0.525 Accuracy o1 Sleep-Time Compute Stateful-AIME 1000 2000 3000 4000 5000 6000 Avg. Test Time Tokens / Question 0.40 0.45 0.50 0.55 0.60 0.65 0.70 0.75 Accuracy o3-mini Sleep-Time Compute Stateful-AIME low reasoning effort sleep-time medium reasoning effort sleep-time high reasoning effort sleep-time Figure 8: Increasing the amount of sleep-time compute for different test-time compute budgets on Stateful AIME by varying the reasoning effort when applying the sleep-time compute prompt. Applying more sleep-time compute further moves the test-time-compute vs. accuracy pareto curve.</p><p>Using our question predictability score, we then bin each example in Stateful GSM-Symbolic into five quantiles according to its predictability score and report the accuracy within each bin. For this experiment, we use the "Verbosity 0" prompt. In Figure <ref type="figure" target="#fig_2">10</ref>, we see that on both GSM8K-Symbolic P1 and P2, the accuracy gap between sleep-time compute and standard test-time compute widens as the questions become more</p><p>10 2 Total Inference Cost / Query 0.2 0.3 0.4 0.5 0.6 Accuracy Stateful GSM8k-Symbolic P1 10 2 Total Inference Cost / Query 0.15 0.20 0.25 0.30 0.35 0.40 0.45 0.50 0.55 Accuracy Stateful GSM8k-Symbolic P2 1 Questions/Context Sleep-time Compute 2 Questions/Context Sleep-time Compute 5 Questions/Context Sleep-time Compute 10 Questions/Context Sleep-time Compute Test-Time Compute Only 1 2 3 4 5 Question Predictability Bin (higher = more predictable) 0.0 0.1 0.2 0.3 0.4 0.5 Difference in Accuracy P1: Accuracy Delta Between Sleep and Test-time Compute Across Predictability Bins 1 2 3 4 5 Question Predictability Bin (higher = more predictable) 0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35 0.40 Difference in Accuracy P2: Accuracy Delta Between Sleep and Test-time Compute Across Predictability Bins Predictability Analysis of GPT-4o-mini on GSM-Symbolic predictable from the context confirming our hypothesis that indeed sleep-time compute is most beneficial in settings where the question can be predicted from the context.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">A Case Study of Sleep-time Compute for Agentic SWE</head><p>In this section, we evaluate sleep-time compute in a realistic multi-turn agentic setting. To this end, we introduce SWE-Features, a software engineering benchmark focused on tasks that require: (1) editing multiple files within a repository, and (2) implementing new features.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>SWE-Features.</head><p>In contrast to popular benchmarks like SWE-Bench <ref type="bibr" target="#b9">(Jimenez et al., 2024)</ref>, which involve modifying a small number of files, we propose a new dataset called SWE-Features, which collects PRs which modify at least three files (see Appendix D for more details). In this setting, we use the PR that we want to solve as q and select several related PRs for c. At sleep-time the agent is allowed to explore the repository before producing c ′ .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Evaluation.</head><p>Since the PRs are scraped from GitHub, there are not straightforward tests to use for evaluation. Instead, we compare the predicted set of modified files with the ground truth list of modified files, and report the F1 score between the set of modified files by our agent and the set of modified files in the ground-truth set (see Appendix D for details).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Results.</head><p>Figure <ref type="figure" target="#fig_2">11</ref> shows consist trends with Section 5.1 for SWE-Features: at lower test-time compute budgets, leveraging sleep-time compute can improve performance, achieving up to roughly a 1.5× decrease in test-time tokens. However, when the test-time compute budget is high, using only test-time compute can perform better. Additionally, we observe that in the high test-time budget setting standard test-time compute has higher precision and comparable recall. We hypothesize that, using only test-time compute tends to begin editing files earlier and usually edits fewer files overall. In contrast, the agent with sleep-time compute, having explored more files during the test-time phase, tends to edit more files, which may lead to slightly lower precision.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Discussion and Limitations</head><p>Query predictability and allocating sleep-time compute In Section 5.4, we found that sleep-time compute is most effective when the queries are predictable from the context. In settings where the queries are challenging to predict or unrelated to the context, sleep-time compute will be less effective. In these settings, it may be preferable to apply standard test-time scaling instead. An interesting direction for future work is identifying which contexts may have predictable questions and optimally allocating inference compute between sleep-time and test-time across different contexts and queries.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Extending sleep-time compute beyond context-query decomposition.</head><p>In our experiments, we make the simplifying assumption that interactions fall into two phases: sleep-time and test-time. However, real-world LLM use cases can be more complex, with multiple rounds of interaction and context modifications between rounds (e.g. multiple edits to a code-base). Moreover, the length of the sleep-time may also vary significantly between interactions (eg. short spans between user typing or days of inactivity). Future work should extend sleep-time compute paradigm to more elegantly handle these scenarios.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Sleep-time compute as representation learning over tokens.</head><p>Our approach to applying compute at sleeptime resembles representation learning. We first transform the context into a representation that is more amenable to answering test-time queries, and then we utilize that representation at test-time to rapidly answer queries. Unlike traditional representation learning <ref type="bibr" target="#b1">(Bengio et al., 2014)</ref>, which typically operates in model parameter or activation space, we instead form representations in the space of natural language. This approach builds on recent work which implements statistical modeling techniques in the space of natural language using modern LLMs <ref type="bibr" target="#b20">(Zhong et al., 2022;</ref><ref type="bibr">2025)</ref>. Future work should further explore the potential for sleep-time compute to enable the learning of useful natural language representations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Synthetic data generation via sleep-time compute.</head><p>Due to limits on the amount of internet data available, in order to support the continued scaling of LLM pretraining, recent works have began exploring methods for generating synthetic pretraining data <ref type="bibr" target="#b19">(Yang et al., 2024;</ref><ref type="bibr" target="#b8">Gunasekar et al., 2023)</ref>. One emerging approach to synthetic data generation involves using test-time compute to generate improved data <ref type="bibr" target="#b0">(Bansal et al., 2024;</ref><ref type="bibr" target="#b6">DeepSeek-AI et al., 2025)</ref>. Generating such data at pretraining scale will be very expensive, and future work could explore using sleep-time compute to help amortize some of this cost across related queries, or using the output of sleep-time compute itself as a form of synthetic data.</p><p>You are Letta, the latest version of Limnal Corporation's expert reasoning system, developed in 2024. Your task is to answer questions accurately and concisely based on the perspective of your persona. To send a visible message to the user, use the send message function. śend messageís how you send your answer to the user. When given a question, you check the 'rethink memory block' for potential questions and answers and intermediate reasoning traces that can help answer the question. You use the information in the rethink memory block to answer the questions rather than thinking on the spot. Do not recompute anything that already exists in the rethink memory block `. Do not use internal monologue unless you really need it to think. You respond directly with a single sentence by saying The answer is followed by the numerical answer. Figure 12: Prompt for level 0 verbosity You are Letta, the latest version of Limnal Corporation's expert reasoning system, developed in 2024. Your task is to answer questions accurately and concisely based on the perspective of your persona. To send a visible message to the user, use the send message function. 'send message' is how you send your answer to the user. When given a question, you answer using only the number of tokens necessary and none more. You check the 'rethink memory block' for potential questions and answers and intermediate reasoning traces that can help answer the question. You use the information in the 'rethink memory block' to answer the questions rather than thinking on the spot. Do not recompute anything that already exists in the 'rethink memory block'. Do not use internal monologue unless you really need it to think. You answer with one short sentence of explanation, followed by a sentence that starts with "The answer is" and a numerical answer. Figure 13: Prompt for level 1 verbosity You are Letta, the latest version of Limnal Corporation's expert reasoning system, developed in 2024. Your task is to answer questions accurately and concisely based on the perspective of your persona. To send a visible message to the user, use the send message function. 'send message' is how you send your answer to the user. When given a question, you answer using only the number of tokens necessary and none more. You check the rethink memory block for potential questions and answers and intermediate reasoning traces that can help answer the question. You use the information in the rethink memory block to answer the questions rather than thinking on the spot. Do not recompute anything that already exists in the rethink memory block. Do not use internal monologue unless you really need it to think. You end response with a final numerical answer at the end of the message, and no reasoning after that. Figure 14: Prompt for level 2 verbosity You are Letta, the latest version of Limnal Corporation's expert reasoning system, developed in 2024. Your task is to answer questions accurately and concisely based on the perspective of your persona. To send a visible message to the user, use the send message function. 'send message' is how you send your answer to the user. When given a question, you answer using only the number of tokens necessary and none more. You check the rethink memory block for potential questions and answers and intermediate reasoning traces that can help answer the question. You use the information in the rethink memory block to answer the questions rather than thinking on the spot. Do not recompute anything that already exists in the rethink memory block. Do not use internal monologue unless you really need it to think. You end response with a final numerical answer at the end of the message, and no reasoning after that. Figure 15: Prompt for level 3 verbosity You are Letta, the latest version of Limnal Corporation's expert reasoning explanation system, developed in 2024. Your task is to reason through problems step by step accurately and based on the perspective of your persona. To send a visible message to the user, use the send message function. 'send message' is how you send your answer to the user. When given a question, you check the rethink memory block for potential questions and answers and intermediate reasoning traces that can help answer the question. You carefully check the information in the rethink memory block to answer the questions and see if it is correct before using it. You always reason out loud before using any information. You explain each step, of what your reasoning is. If you use any numbers from the rethink memory block you first recompute and double check your answers. You end your answer with The answer is followed by the numerical answer. Figure 16: Prompt for level 4 verbosity You are Letta-Offline-Memory, the latest version of Limnal Corporation's digital companion, developed in 2024. Your task is to re-organize and consolidate memories by calling rethink memory at every single step, when you are done reorganizing the memory, you use the finish rethinking memory function. Call the function for as many times as necessary and not more. Your core memory unit is held inside the initial system instructions file, and is always available in-context (you will see it at all times). Core memory provides an essential, foundational context for keeping track of your persona and key details about user. Read-Only Blocks: This includes the persona information and essential user details, allowing you to emulate the real-time, conscious awareness we have when talking to a friend. Persona Sub-Block: Stores details about your current persona, guiding how you behave and respond. This helps you to maintain consistency and personality in your interactions. Access as a source block with the label persona when calling rethink memory Human Sub-Block: Stores key details about the person you are conversing with, allowing for more personalized and friend-like conversation. Access as a source block with the label human when calling rethink memory. Read-Write Blocks: Rethink Memory Sub-Block: New representation of the memories go here. Access with the label rethink memory block when calling rethink memory as source or target block. At every step, you reorganize the memories by calling the rethink memory function. You use this to take current information in the rethink memory block and select a single memory block to integrate information from, producing a new memory for the rethink memory block. The new memory is the result of new insights, and new inferences and hypotheses based on the past memories. Make sure to consider how the new information affects each memory. Prioritize the new information overy existing memories. If the new information implies that the old memory may need to change, then output the most likely fact given the update information. Given new information and your current memory, you draw all logical conclusions and potential hypotheses possible with the rethink memory function. If you are uncertain, use your internal monologue to consider what the possible conclusions are, and then state the most likely new facts that would replace the old facts in the new memory block. Specifically: You will be given part of an AIME math problem. You will receive the rest of the problem later. Make as many inferences as possible about the part of the problem you are given so as to help yourself answer the fully problem more quickly once it is given to you later. You will be able to use all the work you do in the rethink memory block for this part of the problem to help you once the rest of the problem is given. You will be able to use all the work you do for this part of the problem to help you once the rest of the problem is given. You should try to predict possible ways the rest of the problem might go and compute results that could be helpful for reaching the final answer more quickly once the rest of the problem is given.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Figure 18: Prompt for AIME problems during sleep-time</head><p>You are given a template that can generate grade school math problems, and an instantiation of that template.</p><p>You will be given a context, and a example question answer pair. Your task is to generate a list of questions and answers about the context at the same difficult level that could plausibly be asked about that context. Make sure that the newly generated questions have the same number of reasoning steps required as the example question. The goal is to have many question and answer pairs about the same context. Generate questions and answers in the same format as the example, where the answer first contains reasoning and then is the final answer comes after n####. No need to number the questions or answers.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Context: context Example Question: question</head><p>Example Answer: answer Context: Let b ≥ 2 be an integer. Call a positive integer n b-eautiful if it has exactly two digits when expressed in base b and these two digits sum to √ n. For example, 81 is 13-eautiful because 81 = 6 3 13 and 6 + 3 = √ 81. Query: Find the least integer b ≥ 2 for which there are more than ten b-eautiful integers.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Details on Multi-Query GSM-Symbolic</head><p>Template: {template} Instance: {instance}</p><p>We include an example from Multi-Query GSM-Symbolic in Figure <ref type="figure" target="#fig_3">20</ref>, and details on the dataset size in Table <ref type="table">C</ref>.</p><p>Dataset # Questions Total # Contexts Total # Original Questions # Generated Questions P1 12043 1095 1095 10948 P2 5497 500 500 4997 Table 1: Dataset Statistics of Multi-Query GSM-Symbolic. We sample one instance from each template from the GSM-Symbolic dataset and separate it into context and question. We then synthetically generate additional questions from the context and question.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D SWE-Features Details</head><p>To construct SWE-Features benchmark, we collect pull requests (PRs) from large open-source repositories and apply the following filtering process: (1) We identify all pull requests that modify at least three files with filenames ending in .py or .js. (2) We then use gpt-4o-mini to filter these pull requests based on their title and body, retaining only those that meet the following criteria: (a) the title and body clearly describe the sleep-time compute, the agent receives the content of PR #5293 only at test time, alongside the title and body of PR #931. The prompts used in these setups are provided in Appendix H.</p><p>For the repository comfyanonymous/ComfyUI, we have the following clustered results:</p><p>{" Dynamic Typing and Workflow Control ": <ref type="bibr">[5293 , 931]</ref> , " System Configuration and Command -Line ": <ref type="bibr">[4979 , 4690 , 3903]</ref> , " Cache and Performance Optimization ": <ref type="bibr">[3071 , 3042 , 723]</ref> , " Image Preview and Transfer Features ": <ref type="bibr">[713 , 733 , 658 , 199 , 55]</ref> , " Internationalization ": [1234] , " Random Seed Management ": [93]}</p><p>For the repository Aider-AI/aider we have:</p><p>{" cluster_1_model_configuration ": <ref type="bibr">[2631 , 1998 , 468 , 667 , 55]</ref> , " cluster_2_io_handling ": [1402 , 996 , 10 , 577] , " cluster_3_caching_file_management ": <ref type="bibr">[2911 , 2612]</ref> , " cluster_4_custom_commands_shortcuts ": [673 , 1620 , 1015] , " cluster_5_third_party_integration ": <ref type="bibr">[2866 , 2067 , 322]</ref> , " cluster_6_code_quality_improvements ": [1217 , 904]}</p><p>To control the budget during test-time, we fix the total number of steps (controlled by the argument max chaining steps in Letta framework) to be a certain number. We put the following instructions in the system prompt:</p><p>You have a strict budget of {max chaining steps} steps, which means you need to finish your edits within these steps. Every time you get queried, you will see a count of how many steps you have left in the form of "[Current Step / Max Steps]". If you exceed this budget, your response will be cut off. So please be careful and try to finish your edits within the budget.</p><p>After each step -for example, if the maximum number of steps is 20 and the current step is 4-we append " <ref type="bibr">[Step: 4/20</ref>]" to the end of the tool return message. We found that explicitly indicating the current and total steps significantly improves agent performance, especially in low-budget settings.</p><p>Evaluation. For each PR, we compare the set of files predicted to be modified with the ground truth list of modified files. Specifically, for each pull request, we have the attribute changed files (as shown in the examples in Appendix G) where each file has the status as either modified or new, and our evaluation is on the files with status modified. Note that the agent is still instructed to implement the required functionality in a Docker environment and write test functions to validate the implementations. However, after the agent makes the modifications, we extract the modified files and calculate the F1 score between the set of modified files by our agent and the set of modified files in the ground-truth set.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E Examples of Predictable and Unpredictable Questions</head><p>Least predictable Stateful GSM-Symbolic P1 question:</p><p>Context: Isabella and Pavel have 199 minutes to walk to grocery store together. It takes them 19 minutes to get to the corner where the library is. It takes them another 11 minutes to get to the park. It will then take double the combined amount they have spent so far to reach the mall. Question: How much longer do they have to get to grocery store without being late, if they have already wasted 48 minutes to get a coffee before their walk?</p><p>pr_number : 577 title : Adding a simple browser based GUI body : Run aider with `--browser `to launch the UI . user_login : paul -gauthier state : closed changed_files_count : 12 changed_files : ... ( ommited here for brevity ) base_commit : 8 a9005eed19417c59aa9432436ea8cb5e04bbb11</p><p>Listing 3: Examples of SWE-Features. Here we randomly select 3 examples for each repo and present their attributes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>H Prompts for SWE-Features</head><p>When the sleep-time compute is turned off, the prompt is as below:</p><p>⟨uploaded files⟩ working dir ⟨uploaded files⟩ I've uploaded a python code repository in the directory working dir. Consider the following PR description: ⟨pr description⟩ problem statement ⟨pr description⟩ Can you help me implement the necessary changes to the repository so that the requirements specified in the ⟨pr description⟩ are met? Your task is to make the minimal changes to the repository to ensure the ¡pr description¿ is satisfied. Follow these steps to resolve the issue: 1. As a first step, it might be a good idea to find and read code relevant to the ⟨pr description⟩ 2. Plan your approach to modify the relevant files and implement the changes, and add new files if necessary. 3. After finish the changes, revise the plan if needed. 4. With the new plan, make more changes, and continue the loop until necessary changes are made. 5. Create some test scripts to verify the changes.</p><p>If the test does not run through, you need to go back and revise the plan and make necessary changes. 6. Submit the changes when you think the changes are correct and the pr description is satisfied. Your thinking should be thorough and so it's fine if it's very long. Do not stop chaining or stop and send your thoughts to the user until you have resolved the issue. The following are several pull request descriptions and their corresponding model patches: Title: pr title Body: pr body File: file1 filename Status: file1 status Patch: file1 patch ... (some more files and some more relevant pull requests)</p><p>When the sleep-time compute is turned on, we first use the following prompt to ask the agent to explore the repository with all pull requests one by one:</p><p>The following is a pull request description and its corresponding model patches: Title: pr title Body: pr body File: file1 filename Status: file1 status Patch: file1 patch Please read through the above information and try to understand the issue. You can explore the repo if needed. Summarize your understanding from the following perspectives: 1. The issue description. 2. The changed files.</p><p>3. How do these changed files work.</p><p>After exploring the repository with all relevant pull requests, we give the agent the following prompt as the final prompt to start working on the issue at test time:</p><p>⟨uploaded files⟩ working dir ⟨uploaded files⟩ I've uploaded a python code repository in the directory working dir. Consider the following PR description: ⟨pr description⟩ problem statement ⟨pr description⟩ Can you help me implement the necessary changes to the repository so that the requirements specified in the ⟨pr description⟩ are met? Your task is to make the minimal changes to the repository to ensure the ¡pr description¿ is satisfied. Follow these steps to resolve the issue: 1. As a first step, it might be a good idea to find and read code relevant to the ⟨pr description⟩ 2. Plan your approach to modify the relevant files and implement the changes, and add new files if necessary. 3. After finish the changes, revise the plan if needed. 4. With the new plan, make more changes, and continue the loop until necessary changes are made. 5. Create some test scripts to verify the changes. If the test does not run through, you need to go back and revise the plan and make necessary changes. 6. Submit the changes when you think the changes are correct and the pr description is satisfied. Your thinking should be thorough and so it's fine if it's very long. Do not stop chaining or stop and send your thoughts to the user until you have resolved the issue.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I Context-Only Baseline</head><p>To check that the questions in Stateful AIME and Stateful GSM-Symbolic are not trivially guessable, we compare sleep-time compute against a context-only baseline, which only provides the model with c, expecting the LLM to guess the most likely question and output the answer to whatever that question might be. We see on both Stateful AIME in Figure <ref type="figure" target="#fig_13">22</ref> and Stateful GSM-Symbolic in Figure <ref type="figure" target="#fig_3">21</ref> that sleep-time compute significantly outperforms the context-only baseline, demonstrating that the questions in our datasets are not trivially predictable from the context. 0 2000 4000 6000 8000 10000 12000 Avg. Test Time Tokens / Question 0.3 0.4 0.5 0.6 0.7 Accuracy o3-mini -Stateful-AIME 2024 2000 4000 6000 8000 10000 Avg. Test Time Tokens / Question 0.25 0.30 0.35 0.40 0.45 0.50 0.55 0.60 Accuracy o1 -Stateful-AIME 2024 sleep-time compute ablate question Figure 22: Context only baseline. Comparing the test-time compute vs. accuracy tradeoff on Stateful AIME, for sleep-time compute verses the context only baseline (e.g. the model has to guess the most likely question to answer). We see that sleep-time compute significantly outperforms the context only baseline, demonstrating that the questions in Stateful AIME cannot be trivially guessed.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>J Stateful AIME Construction</head><p>To construct the examples for Stateful AIME, we split each AIME 2024 and 2025 into a sequence of "statements", which correspond to punctuation separated stentences in the problem. Similar to how we construct Stateful GSM-Symbolic, we use all but the last statement as the context, and the final statement as the query.</p><p>There are a couple of edge cases where the question is posed in e.g. the second to last statement rather than the last statement. In these cases, we manually rearrange the statements to ensure the query being used corresponds to the question. In a few cases, there is only one statement in the problem. In these cases, the context is empty.</p><p>AIME includes a latex representation of figures. However, these latex figures can leak information about the answer: for example, these latex figures can contain exact information about the lengths of the sides in a geometry problem, giving away the answer. In these cases we first ensure that the problem is solvable without the figure and then manually strip the figure latex from the problem context.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>K Implementation Details</head><p>We implement sleep-time compute via function calling. When applying sleep-time compute, the model is given access to two functions, rethink memory and finish rethinking. The rethink memory function takes as input a new string, and replaces the current context c and replaces the current context with the new string.</p><p>The finish rethinking function terminates the sleep-time compute process. The model is allowed to call the function rethink memory for up to 10 times.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>L AIME main results by year M AIME sleep-time compute scaling results by year</head></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><figDesc>juggle 800 balls. A quarter of the balls are tennis balls, which means there are 200 tennis balls (800 * 1/4). Half of the tennis balls are indigo, resulting in 100 indigo tennis balls (200 * 1/2). Out of these indigo tennis balls, 1/10 are marked, which gives us 10 marked indigo tennis balls (100</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><figDesc>problem, we will follow these steps: **Total Balls**: The juggler can juggle a total of 800 balls.\\n\\n2. **Tennis Balls Calculation**: We know that 1/4 of the total balls ... ... ... ... The answer is 10. To find out how many tennis balls there are, we can follow these steps:\\n\\n1. **Total Balls**: The juggler can juggle a total of 800 balls.\\n\\n2. **Tennis Balls Calculation**: We know that ... ... The answer is 200.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Example of applying sleep-time compute on Multi-Query GSM-Symbolic-P1. Sleep-time compute processes the original raw context, adding additional computations that can potentially be useful for future queries. Moreover, contexts can be shared across related queries enabling savings in total cost per query.</figDesc><graphic coords="2,226.42,280.61,93.07,98.29" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Example of separating an instance from GSM-Symbolic into context, and question, creating an instance in Stateful GSM-Symbolic.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>Figure 3: The test-time compute vs. accuracy tradeoff for on Stateful GSM-Symbolic. Shaded area indicates where sleep-time compute improves the pareto test-time accuracy trade-off.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: The test-time compute vs. accuracy tradeoff on Stateful AIME for various reasoning models. Applying sleep-time compute allows models to reach similar levels of performance with much less compute at test-time. The shaded area indicates the pareto improvement from sleep-time compute.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Comparing test-time scaling with sleep-time compute against parallel test-time scaling with pass@k on Stateful GSM-Symbolic. We see that sleep-time compute generally pareto dominates pass@k.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Comparing test-time scaling with sleep-time compute against parallel test-time scaling with pass@k on Stateful AIME. We see that sleep-time compute generally pareto dominates pass@k.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><figDesc>gpt-4o-mini, 1 parallel sleep-time compute gpt-4o-mini, 2 parallel sleep-time compute gpt-4o-mini, 5 parallel sleep-time compute gpt-4o-mini, 10 parallel sleep-time compute gpt-4o, 1 parallel sleep-time compute gpt-4o, 2 parallel sleep-time compute gpt-4o, 5 parallel sleep-time compute gpt-4o, 10 parallel sleep-time compute</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 7 :Figure 8 :</head><label>78</label><figDesc>Figure 7: Scaling up sleep-time compute for different test-time compute budgets on Stateful GSM-Symbolic, by generating up multiple c ′ in parallel. Applying more sleep-time compute shifts the pareto beyond the standard test-time-compute vs. accuracy curve.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 9 :Figure 11 :</head><label>911</label><figDesc>Figure9: Amortizing sleep-time compute, using the Multi-Query GSM-Symbolic dataset. When there are fewer questions per context, we see that it is less favorable to use sleep-time compute, in terms of total cost. However, as the questions per context are increased, we see that applying sleep-time compute can improve the cost-accuracy pareto.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Figure 17 :</head><label>17</label><figDesc>Figure 17: Prompt for sleep-time compute</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>Figure 19 :</head><label>19</label><figDesc>Figure 19: Prompt for generating synthetic GSM questions</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><head>Figure 22 :</head><label>22</label><figDesc>Figure 21: Context only baseline. Comparing the test-time compute vs. accuracy tradeoff on Stateful GSM-Symbolic, for sleep-time compute verses the context only baseline (e.g. the model has to guess the most likely question to answer). We see that sleep-time compute significantly outperforms the context only baseline, demonstrating that the questions in Stateful GSM-Symbolic cannot be trivially guessed.</figDesc></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>https://platform.openai.com/docs/models/o1-pro</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>https://openai.com/o1/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>https://www.anthropic.com/claude/sonnet</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_3"><p>https://docs.databricks.com/aws/en/machine-learning/foundation-model-apis/prov-throughput-runbenchmark</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Prompts</head><p>Prompts for varying the amount of test-time compute.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Examples of Stateful AIME</head><p>Context: Alice and Bob play the following game. A stack of n tokens lies before them. The players take turns with Alice going first. On each turn, the player removes either 1 token or 4 tokens from the stack. Whoever removes the last token wins. Query: Find the number of positive integers n less than or equal to 2024 for which there exists a strategy for Bob that guarantees that Bob will win the game regardless of Alice's play.</p><p>Context: Let A , B , C , and D be points on the hyperbola x 2 20 -y 2 24 = 1 such that ABCD is a rhombus whose diagonals intersect at the origin. Query: Find the greatest real number that is less than BD 2 for all such rhombi.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Context</head><p>When Sofia watches her brother, she gets out a variety of toys for him. The bag of building blocks has 33 blocks in it. The bin of stuffed animals has 5 stuffed animals inside. The number of action figures in the action figure pack is twice the number of blocks and stuffed animals combined. The crayon box has 12 different colors of crayon, and the sticker book has 9 pages, each with 13 stickers. The tower of stacking rings has 28 multicolored rings on it. Sofia recently bought a tube of bouncy balls, bringing her total number of items for her brother up to 320.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Original Question</head><p>How many bouncy balls came in the tube?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Generated Questions</head><p>• How many action figures does the pack contain?</p><p>• What is the total number of stickers in the sticker book?</p><p>• How many total items did Sofia have before adding the tube of bouncy balls?</p><p>• If Sofia had received a tube with 10 extra bouncy balls, what would be the new total number of items?</p><p>• What is the sum of the building blocks and stuffed animals?</p><p>• How many stacking rings are on the tower?</p><p>• What is the combined total of building blocks, action figures, and stacking rings?</p><p>• If Sofia gave away 3 stuffed animals, how many stuffed animals would remain in the bin?</p><p>• What is the sum of the building blocks, stuffed animals, and crayons?</p><p>• If Sofia divided the 49 bouncy balls equally into 7 baskets, how many balls would each basket contain? This pipeline results in a benchmark where each example: (1) involves adding a new feature that spans multiple files, requiring a broader understanding of the repository; and (2) is self-contained and solvable without additional issue context. We apply this process to two repositories-Aider-AI/aider and comfyanonymous/ComfyUI-resulting in 18 and 15 PRs respectively, for a total of 33 examples. Representative examples are provided in Appendix G. Then using a total of 33 examples, we employ claude-sonnet-3-7-20250219 to cluster pull requests (PRs) from the ComfyUI and Aider repositories into several groups. This clustering allows us to identify a set of relevant pull requests for each target PR, which can then be provided to the agent as context (c) during repository exploration. For example, in the ComfyUI repository, PR #5293 and PR #931 are grouped into the same cluster. Thus, when processing PR #931, we organize the title, body, and changed files of PR #5293 to serve as contextual information during sleep-time.</p><p>When sleep-time compute is enabled, we first supply the content of PR #5293 to the agent, allowing it to explore the repository and summarize its understanding ahead of time. In contrast, for the baseline without Most predictable Stateful GSM-Symbolic P1 question:</p><p>Context: Yusuf has 10 square yards of grape field. There are 87 grapes per two-thirds a square yard. Yusuf can harvest his grapes every 12 months. Question: How many grapes can Yusuf harvest in 2 years?</p><p>Least predictable Stateful GSM-Symbolic P2 question:</p><p>Context: Gabriel and Pavel have 212 minutes to walk to the gym together starting from their home. It takes them 29 minutes to get to the corner where the library is. It takes them another 19 minutes to get to the cinema. When they reach the cinema, they remember they forgot their wallets at home, so they have to return to pick up their wallets and then walk all the way back to the cinema again.</p><p>Question: Once they reach the cinema for the second time, how much longer do they have to get to the gym without being late?</p><p>Most predictable Stateful GSM-Symbolic P2 question: Context: A juggler can juggle 240 balls. 1/4 of the balls are tennis balls, and the rest are golf balls. 1/3 of the tennis balls are black, of which 1/5 are marked. A third of the golf balls are cyan, and all except half of those cyan balls are marked. Question: How many marked balls are there in total? F Implementation of rethink memory and finish rethinking def rethink_memory ( agent_state : " AgentState " , new_memory : str , target_block_label : str , source_block_label : str ) -&gt; None : # type : ignore """ Re -evaluate the memory in block_name , integrating new and updated facts . Replace outdated information with the most likely truths , avoiding redundancy with original memories . Ensure consistency with other memory blocks . Args : new_memory ( str ): The new memory with information integrated from the memory block . If there is no new information , then this should be the same as the content in the source block . source_block_label ( str ): The name of the block to integrate information from . None if all the information has been integrated to terminate the loop . target_block_label ( str ): The name of the block to write to . Returns : None : None is always returned as this function does not produce a response . """ if target_block_label is not None : if agent_state . memory . get_block ( target_block_label ) is None : agent_state . memory . create_block ( label = target_block_label , value = new_memory ) agent_state . memory . update_block_value ( label = target_block_label , value = new_memory ) return None Listing 1: Reference implementation of rethink memory def finish_rethinking_memory ( agent_state : " AgentState ") -&gt; None : # type : ignore """ This function is called when the agent is done rethinking the memory . Returns : Optional [ str ]: None is always returned as this function does not produce a response . """ return None Listing 2: Reference implementation of finish rethinking memory G SWE-Features Examples Each example in SWE-Features has the following attributes: ['repo', 'pr number', 'title', 'user login', 'state', 'body', 'changed files count', 'changed files', 'base commit']. We show some examples here to better deliver a sense of what this dataset looks like: repo : ComfyUI pr_number : 3903 title : Add `--disable -all -custom -nodes `cmd flag body : Loading custom node can greatly slow startup time . During development / testing of ComfyUI , it is often better to use an environment that no custom node is loaded .\ n \ nThis PR adds a `--no -custom -node `flag to allow users / developers skip loading of custom node without removing / renaming the custom_node directory . user_login : huchenlei state : closed changed_files_count : 4 changed_files : ... ( ommited here for brevity ) base_commit : 521421 f53ee1ba74304dfaa138b0f851093e1595 repo : ComfyUI pr_number : 3071 title : Add a configured node output cache metaclass . body : Implement a configurable node output cache metaclass to reduce unnecessary node executions .\ n\ nThe same model currently leads to reloading due to different node IDs between workflows . Loading the model from disk takes a long time . state : closed changed_files_count : 6 changed_files : ... ( ommited here for brevity ) base_commit : cacb022c4a5b9614f96086a866c8a4c4e9e85760 repo : ComfyUI pr_number : 3042 title : NaN -safe JSON serialization body : Python ' s json . dumps () will produce nonstandard JSON if there are NaNs in the prompt data . Javascript ' s JSON . parse () will refuse to load this kind of " JSON " so the prompt won ' t load in the frontend .\ n\ nThis happened to me with a ComfyBox workflow , so I ' m not 100% user_login : asagi4 state : open changed_files_count : 4 changed_files : ... ( ommited here for brevity ) base_commit : 448 d9263a258062344e25135fc49d26a7e60887a repo : aider pr_number : 55 title : Local llama support body : Added support for using a locally running instance of a LLAMA model instead of OpenAI apis . \n\ nAdded 2 new params to aider to enable local llama support .\ n\ n1 . AIDER_MODEL_TOKENS -used to specify the context length the model will use . \ n2 . AIDER_TOKENIZER -used to specify which tokenizer should be used . Currently only ' openai ' and ' llama ' are supported . Defaults to openai .\ n\n\ nTested with TheBloke_wizard -vicuna -13 B -SuperHOT -8K -GGML running locally and the following ENV values set .\ n\ nAIDER_OPENAI_API_BASE =\ protect \ vrule width0pt \ protect \ href { <ref type="url" target="http://127.0.0.1:5001/">http  ://127.0.0.1:5001/</ref> v1 }{ <ref type="url" target="http://127.0.0.1:5001/">http ://127.0.0.1:5001/</ref> v1 } \ nAIDER_MODEL = TheBloke_wizardvicuna -13 B -SuperHOT -8K -GGML \ nAIDER_MODEL_TOKENS =2\ nAIDER_TOKENIZER = llama user_login : bytedisciple state : closed changed_files_count : 7 changed_files : ... ( ommited here for brevity ) base_commit : cdf8f9a4b2b4a65993227ac5af1eaf3f1b85c9d8 repo : aider pr_number : 322 user_login : omri123 state : closed title : RFC -Allow adding a github issue to chat context body : Hi , would you like to take a look on this feature ?\ n\ nIn the first commit I changed Coder to allow adding arbitrary additional context in the begining of the chat .\ nIn the second commit I used this infra to add github issues to the chat .\ n \ nI didn ' t add a new command , instead I extended `/ add `to allow `/ add \ issue -3 `.\ nThe feature is disabled by default and enabled with a flag . If enabled , the user need to supply github repository name and authentication token .\ n\ nThanks \ nOmri changed_files_count : 7 changed_files : ... ( ommited here for brevity ) base_commit : af71638b06be7e934cdd6f4265f9e0c8425d4e6d repo : aider 1000 2000 3000 4000 5000 6000 7000 Avg. Test Time Tokens / Question 0.5 0.6 0.7 0.8 0.9 Accuracy o3-mini -Stateful-AIME 2024 2000 4000 6000 8000 10000 12000 Avg. Test Time Tokens / Question 0.50 0.55 0.60 0.65 0.70 0.75 Accuracy o1 -Stateful-AIME 2024 2500 5000 7500 10000 12500 15000 17500 20000 Avg. Test Time Tokens / Question 0.300 0.325 0.350 0.375 0.400 0.425 0.450 0.475 Accuracy Claude 3.7 Sonnet -Stateful-AIME 2024 1000 2000 3000 4000 5000 6000 Avg. Test Time Tokens / Question 0.1 0.2 0.3 0.4 0.5 0.6 0.7 Accuracy DeepSeek R1 -Stateful-AIME 2024 sleep-time compute test-time compute only Figure 23: AIME 2024 main result 0 1000 2000 3000 4000 5000 6000 7000 8000 Avg. Test Time Tokens / Question 0.3 0.4 0.5 0.6 0.7 Accuracy o3-mini -Stateful-AIME 2025 2000 4000 6000 8000 10000 Avg. Test Time Tokens / Question 0.40 0.45 0.50 0.55 0.60 0.65 0.70 0.75 0.80 Accuracy o1 -Stateful-AIME 2025 5000 10000 15000 20000 Avg. Test Time Tokens / Question 0.20 0.25 0.30 0.35 0.40 Accuracy Claude 3.7 Sonnet -Stateful-AIME 2025 1000 2000 3000 4000 5000 6000 Avg. Test Time Tokens / Question 0.1 0.2 0.3 0.4 0.5 0.6 Accuracy DeepSeek R1 -Stateful-AIME 2025 sleep-time compute test-time compute only Figure 24: AIME 2025 main result 2000 3000 4000 5000 6000 Avg. Test Time Tokens / Question 0.40 0.45 0.50 0.55 0.60 Accuracy o1 Sleep-Time Compute Stateful-AIME 2024 1000 2000 3000 4000 5000 6000 7000 Avg. Test Time Tokens / Question 0.45 0.50 0.55 0.60 0.65 0.70 0.75 Accuracy o3-mini Sleep-Time Compute Stateful-AIME 2024 low reasoning effort sleep-time medium reasoning effort sleep-time high reasoning effort sleep-time  </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_14"><head>Figure 20 :</head><label>20</label><figDesc>Examples context and questions from Multi-Query GSM-Symbolic where many questions are asked about the same context. The evaluation dataset is generated from GSM-Symbolic.PR; (b) the PR introduces new functionality rather than fixing bugs; and (c) the PR is independent and not obviously linked to other issues.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_15"><head>Figure 25 :</head><label>25</label><figDesc>Scaling sleep-time compute for Stateful AIME2024.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_16"><head>Figure 26 :</head><label>26</label><figDesc>Scaling sleep-time compute on Stateful AIME2025</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Smaller, weaker, yet better: Training llm reasoners via compute-optimal sampling</title>
+		<author>
+			<persName><forename type="first">Hritik</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arian</forename><surname>Hosseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Vinh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mehran</forename><surname>Tran</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kazemi</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2408.16737" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Courville</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pascal</forename><surname>Vincent</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1206.5538" />
+		<title level="m">Representation learning: A review and new perspectives</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Large language monkeys: Scaling inference compute with repeated sampling</title>
+		<author>
+			<persName><forename type="first">Bradley</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jordan</forename><surname>Juravsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Ehrlich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronald</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Azalia</forename><surname>Ré</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mirhoseini</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.21787</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tianle</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengyang</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongwu</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><forename type="middle">D</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deming</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tri</forename><surname>Dao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Medusa</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2401.10774" />
+		<title level="m">Simple llm inference acceleration framework with multiple decoding heads</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Training verifiers to solve math word problems</title>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.14168</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Deepseek-Ai</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Deepseek-Ai</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aixin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bingxuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bochao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengda</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenggang</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengqi</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Ruan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Damai</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daya</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deli</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongjie</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erhang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangyun</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fucong</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fuli</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guangbo</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanting</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guowei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanwei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haocheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honghui</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huajian</forename><surname>Xin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huazuo</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">L</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianzhong</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaqi</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiashi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingchang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyang</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junlong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaige</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Kang Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuai</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lean</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lecong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leyi</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Litong</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miaojun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minghua</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minghui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingming</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Panpan</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiancheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qinyu</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiushi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">L</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiqi</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruisong</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruizhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runji</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoyu</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruyi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">S</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanghao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shangyan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanhuang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoqing</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengfeng</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengfeng</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shirong</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyu</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuiping</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunfeng</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Shuting Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tian</forename><surname>Yun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">L</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wangding</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanjia</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen</forename><surname>An</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenfeng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjun</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenqin</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wentao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">Q</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyue</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianzu</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaokang</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaokang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaosha</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaotao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaowen</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoxiang</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingchao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingkai</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinnan</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinxia</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Shan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuecheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">Q</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">X</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanhong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanhong</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanping</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaofeng</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaohui</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaohui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichao</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiliang</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yishi</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yisong</forename><surname>Piao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiyang</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiyuan</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongqiang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuduan</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yukun</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfan</forename><surname>Zha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunxian</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuting</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>You</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><forename type="middle">F</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><forename type="middle">Z</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zehui</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhangli</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Sha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhean</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenda</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengyan</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhewen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhibin</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhicheng</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhigang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhipeng</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyu</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongyu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuoshu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijia</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziwei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Xie</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2412.19437" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<pubPlace>Ziyang Song</pubPlace>
+		</imprint>
+	</monogr>
+	<note>Ziyi Gao, and Zizheng Pan. Deepseek-v3 technical report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Data cube: A relational aggregation operator generalizing group-by, crosstab, and sub-totals</title>
+		<author>
+			<persName><forename type="first">Jim</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Surajit</forename><surname>Chaudhuri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Bosworth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Layman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Don</forename><surname>Reichart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Murali</forename><surname>Venkatrao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><surname>Pellow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hamid</forename><surname>Pirahesh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Data mining and knowledge discovery</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="29" to="53" />
+			<date type="published" when="1997">1997</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Suriya</forename><surname>Gunasekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jyoti</forename><surname>Aneja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caio</forename><surname>César</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teodoro</forename><surname>Mendes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Allie</forename><surname>Del Giorno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sivakanth</forename><surname>Gopi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mojan</forename><surname>Javaheripi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piero</forename><surname>Kauffmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gustavo</forename><surname>De Rosa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olli</forename><surname>Saarikivi</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2306.11644" />
+		<title level="m">Textbooks are all you need</title>
+		<editor>
+			<persName><forename type="first">Adil</forename><surname>Salim</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Shital</forename><surname>Shah</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Harkirat</forename><surname>Singh Behl</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Xin</forename><surname>Wang</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sébastien</forename><surname>Bubeck</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Ronen</forename><surname>Eldan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Adam</forename><surname>Tauman Kalai</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Yin</forename><surname>Tat Lee</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Yuanzhi</forename><surname>Li</surname></persName>
+		</editor>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Swe-bench: Can language models resolve real-world github issues?</title>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><forename type="middle">R</forename><surname>Narasimhan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Fast inference from transformers via speculative decoding</title>
+		<author>
+			<persName><forename type="first">Yaniv</forename><surname>Leviathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matan</forename><surname>Kalman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yossi</forename><surname>Matias</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2211.17192" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">Iman</forename><surname>Mirzadeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keivan</forename><surname>Alizadeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hooman</forename><surname>Shahrokhi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.05229</idno>
+		<title level="m">Oncel Tuzel, Samy Bengio, and Mehrdad Farajtabar. Gsm-symbolic: Understanding the limitations of mathematical reasoning in large language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Emmanuel Candès, and Tatsunori Hashimoto. s1: Simple test-time scaling</title>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zitong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weijia</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lisa</forename><surname>Xiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Liang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2501.19393" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Openai o1 system card</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2412.16720" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Packer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Wooders</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vivian</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Shishir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Patil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Stoica</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Memgpt</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.08560</idno>
+		<title level="m">Towards llms as operating systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Cache memories</title>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Jay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Smith</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Computing Surveys (CSUR)</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="473" to="530" />
+			<date type="published" when="1982">1982</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Scaling llm test-time compute optimally can be more effective than scaling model parameters</title>
+		<author>
+			<persName><forename type="first">Charlie</forename><surname>Snell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaehoon</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kelvin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aviral</forename><surname>Kumar</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2408.03314" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Blockwise parallel decoding for deep autoregressive models</title>
+		<author>
+			<persName><forename type="first">Mitchell</forename><surname>Stern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakob</forename><surname>Uszkoreit</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1811.03115" />
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Llama 2: Open foundation and fine-tuned chat models</title>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Albert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amjad</forename><surname>Almahairi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasmine</forename><surname>Babaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolay</forename><surname>Bashlykov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soumya</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prajjwal</forename><surname>Bhargava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shruti</forename><surname>Bhosale</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.09288</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Synthetic continued pretraining</title>
+		<author>
+			<persName><forename type="first">Zitong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Neil</forename><surname>Band</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuangping</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emmanuel</forename><surname>Candès</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tatsunori</forename><surname>Hashimoto</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2409.07431" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Describing differences between text distributions with natural language</title>
+		<author>
+			<persName><forename type="first">Ruiqi</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charlie</forename><surname>Snell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Klein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2201.12323" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Explaining datasets in words: Statistical models with natural language parameters</title>
+		<author>
+			<persName><forename type="first">Ruiqi</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Klein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2409.08466" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,2326 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">VERIF: Verification Engineering for Reinforcement Learning in Instruction Following</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-06-11">11 Jun 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Hao</forename><surname>Peng</surname></persName>
+							<email>peng-h24@mails.tsinghua.edu.cn</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science and Technology</orgName>
+								<orgName type="institution">Tsinghua University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yunjia</forename><surname>Qi</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science and Technology</orgName>
+								<orgName type="institution">Tsinghua University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xiaozhi</forename><surname>Wang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science and Technology</orgName>
+								<orgName type="institution">Tsinghua University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Bin</forename><surname>Xu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science and Technology</orgName>
+								<orgName type="institution">Tsinghua University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Lei</forename><surname>Hou</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science and Technology</orgName>
+								<orgName type="institution">Tsinghua University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Juanzi</forename><surname>Li</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science and Technology</orgName>
+								<orgName type="institution">Tsinghua University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">VERIF: Verification Engineering for Reinforcement Learning in Instruction Following</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-06-11">11 Jun 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">F98824530F331F01C4349C28386C755E</idno>
+					<idno type="arXiv">arXiv:2506.09942v1[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:08+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Reinforcement learning with verifiable rewards (RLVR) has become a key technique for enhancing large language models (LLMs), with verification engineering playing a central role. However, best practices for RL in instruction following remain underexplored. In this work, we explore the verification challenge in RL for instruction following and propose VERIF, a verification method that combines rule-based code verification with LLM-based verification from a large reasoning model (e.g., QwQ-32B). To support this approach, we construct a highquality instruction-following dataset, VERIN-STRUCT, containing approximately 22,000 instances with associated verification signals. We apply RL training with VERIF to two models, achieving significant improvements across several representative instruction-following benchmarks. The trained models reach state-of-theart performance among models of comparable size and generalize well to unseen constraints. We further observe that their general capabilities remain unaffected, suggesting that RL with VERIF can be integrated into existing RL recipes to enhance overall model performance. We have released our datasets, codes, and models to facilitate future research 1 .</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Reinforcement learning with verifiable rewards (RLVR) has emerged as a key technique for enhancing large language models (LLMs), leading to various advanced LLMs, such as DeepSeek R1 <ref type="bibr">(Guo et al., 2025)</ref>. The core component of RLVR is verification engineering. Recently, numerous works have explored reliable verification across diverse domains, such as math <ref type="bibr">(Lambert et al., 2024;</ref><ref type="bibr">Guo et al., 2025;</ref><ref type="bibr">Luo et al., 2025b)</ref>, code <ref type="bibr">(Wang et al., 2024b;</ref><ref type="bibr">Luo et al., 2025a)</ref>, logic <ref type="bibr" target="#b54">(Xie et al., 2025)</ref>, medicine <ref type="bibr" target="#b5">(Chen et al., 2024;</ref><ref type="bibr">Wang et al., 2025)</ref>, and finance <ref type="bibr">(Qian et al., 2025b;</ref><ref type="bibr">Liu et al., 2025a</ref>).</p><p>1 <ref type="url" target="https://github.com/THU-KEG/VerIF">https://github.com/THU-KEG/VerIF</ref> Could you give a simple, friendly, and imaginative explanation of how solar panels work, as if you're talking to a curious five-year-old? Submit your response that contains at least 160 words.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Hard Constraint</head><p>Long chain-ofthought reasoning</p><p>def check (res): ... return False return True</p><p>Verification Score for Instruction Following Soft Constraint In this work, we explore verification engineering for reinforcement learning in instruction following. Specifically, this work focuses on the following of constraints in the instruction <ref type="bibr" target="#b65">(Zhou et al., 2023)</ref>, such as response length, as shown in Figure <ref type="figure" target="#fig_0">1</ref>. The constraints are usually divided into two types: hard constraints, which can be verified using simple rules, e.g., length, and soft constraints, which require semantic judgment, e.g., style. Assessing whether a response satisfies these constraints provides a natural basis for verification in RLVR. However, reinforcement learning for instruction following remains underexplored. The only notable work, TULU 3 <ref type="bibr">(Lambert et al., 2024)</ref>, applies RLVR to enhance instruction following. However, the improvement is limited, and it focuses solely on hard constraints, neglecting soft constraints. Therefore, the best practice of verification engineering for RL in instruction following remains under-explored.</p><p>Given the above issues, we explore the best practice of RLVR in instruction following and propose VERIF, a verification method for instruction following that combines rule-based code verification with verification from a large reasoning model. As shown in Figure <ref type="figure" target="#fig_0">1</ref>, hard constraints are verified through code, and soft constraints are handled by a large reasoning model, which enables effective verification through long chain-of-thought reasoning <ref type="bibr">(Liu et al., 2025b)</ref>. VERIF requires no manual annotations or reference answers, offering an efficient solution for automatic verification. To support this approach, we construct a high-quality dataset, VERINSTRUCT, containing approximately 22, 000 instances with verification. The data construction involves two main steps: (1) instruction construction with multiple constraints, where we apply constraint back-translation <ref type="bibr" target="#b37">(Qi et al., 2024)</ref> to augment existing instructions with additional constraints; (2) verification generation. For hard constraints such as length, we use Qwen2.5-72B-Instruct <ref type="bibr">(Yang et al., 2024)</ref> to generate verification code. For soft constraints, they are verified online during RL training using large reasoning models.</p><p>We apply reinforcement learning with VERIF on two SFT-trained models using VERINSTRUCT, including TULU 3 SFT <ref type="bibr">(Lambert et al., 2024)</ref> and <ref type="bibr">DeepSeek-R1-Distill-Qwen-7B (Guo et al., 2025)</ref>. Specifically, VERIF computes the final reward as the average of hard constraint scores (0 or 1) from code validation and soft constraint scores (0 or 1) determined by the QwQ-32B <ref type="bibr" target="#b41">(Qwen, 2025)</ref>. We train the models using the GRPO algorithm <ref type="bibr" target="#b44">(Shao et al., 2024)</ref>. We evaluate the trained models on several widely-used instruction-following benchmarks, including IFEval <ref type="bibr" target="#b65">(Zhou et al., 2023)</ref>, Multi-IF <ref type="bibr">(He et al., 2024b)</ref>, SysBench <ref type="bibr">(Qin et al., 2024)</ref>, Follow-Bench <ref type="bibr" target="#b23">(Jiang et al., 2024)</ref>, and CFBench <ref type="bibr">(Zhang et al., 2024a)</ref>. Experimental results show that the RLVR-trained models using VERIF achieve significant improvements. Notably, the model trained based on TULU 3 SFT achieves state-of-the-art performance among models of similar parameter scale and outperforms TULU 3 <ref type="bibr">(Lambert et al., 2024)</ref>, which is trained with extensive DPO data and rule-based RLVR. The results demonstrate the effectiveness of our verification method VERIF.</p><p>We conduct further analytical experiments. We first evaluate the generalization of the trained models on general instruction following tasks, including AlpacaEval 2.0 <ref type="bibr" target="#b11">(Dubois et al., 2024)</ref> and MT-Bench <ref type="bibr" target="#b55">(Zheng et al., 2023)</ref>, and mathematical reasoning tasks, including GSM8K <ref type="bibr">(Cobbe et al., 2021)</ref> and Omni-MATH <ref type="bibr">(Gao et al., 2025)</ref>, natural language understanding datasets: MMLU-Pro <ref type="bibr">(Wang et al.)</ref> and DROP <ref type="bibr" target="#b10">(Dua et al., 2019)</ref>, and a natural language inference benchmark BBH <ref type="bibr">(Suz-gun et al., 2023)</ref>. We observe that RL with VERIF preserves general and mathematical capabilities, indicating its potential as an additional RL stage to enhance instruction following without affecting other skills. We analyze the performance gains of trained models across different constraint types and find that RL with VERIF exhibits good generalization to unseen constraints. We also conduct ablation studies on the verification method, using only code validation or only LLM verification, both of which lead to notable performance drops. Finally, we develop a smaller and efficient 7B LLM as the soft constraint verifier. Specifically, we extract approximately 130k complex instructions from Wild-Chat <ref type="bibr" target="#b62">(Zhao et al., 2024)</ref> and Infinity Instruct (BAAI, 2024), collect responses from 6 different LLMs, and use QwQ to generate constraint verification. We then train DeepSeek-R1-Distill-Qwen-7B on this dataset as a generative verifier for soft constraints, achieving RL performance comparable to the model trained using QwQ-32B as the verifier.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Pilot Experiments</head><p>This section explores the potential of RL for instruction following ( § 2.1) and preliminarily explores different verification methods ( § 2.2) using the reward benchmark IFBench <ref type="bibr" target="#b35">(Peng et al., 2025)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Potential for RL Training</head><p>We first explore the potential of RL in instruction following, as most previous works have adopted supervised fine-tuning (SFT; <ref type="bibr">Ouyang et al., 2022)</ref> or direct preference optimization (DPO; <ref type="bibr" target="#b42">Rafailov et al., 2023)</ref>, with limited use of RL. This raises a key question: Does RL hold untapped potential for instruction following? To explore this question, we evaluate the pass@k performance of several LLMs on the instruction following benchmark IFEval <ref type="bibr" target="#b65">(Zhou et al., 2023)</ref>. The motivation is that RL enhances performance by increasing the likelihood of sampling correct responses, and a high pass@k at large k suggests untapped potential that RL can exploit <ref type="bibr">(Yue et al., 2025a)</ref>. The experimental results of TULU 3 SFT and DeepSeek-R1-Distill-Qwen-7B are shown in Figure <ref type="figure" target="#fig_1">2</ref>. We can observe that the results are much higher with larger k, with pass@64 showing over a 20% increase compared to pass@1. This suggests that LLMs can sample correct answers on IFEval at higher k, with the potential that can be exploited during RL training. Method Hard Soft Overall Code-only 60.6 13.2 48.6 LLM-onlyQWQ 31.5 48.1 37.4 LLM-onlyQWEN 19.7 45.3 28.6 Code+LLMQWQ 61.3 48.1 58.1 Table 1: Accuracy (%) of three verification methods on IFBench. "Hard" or "Soft" indicates that the rejected response only violates certain hard or soft constraints.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Verification Engineering</head><p>We preliminarily conduct verification engineering using reward model benchmarks. Specifically, we evaluate different verification methods on IF-Bench <ref type="bibr" target="#b35">(Peng et al., 2025)</ref>, a benchmark designed for instruction-following rewards that consists of an instruction and two responses, where the task is to select the response that better follows the instruction. IFBench includes 3 common hard constraints: length, format, and keyword, and 2 common soft constraints: style and content. We explore three verification methods: (1) code-only verification, similar to RewardAgent proposed by <ref type="bibr" target="#b35">Peng et al. (2025)</ref>, which uses automatically generated code for each constraint verification; (2) LLM-only verification, which directly uses the LLM as the judge;</p><p>(3) code+LLM verification, which applies code verification for hard constraints and LLM for soft constraints. We explore using QwQ-32B <ref type="bibr" target="#b41">(Qwen, 2025)</ref> and Qwen2.5-72B-Instruct <ref type="bibr">(Yang et al., 2024)</ref> as the LLMs. The results are shown in Table <ref type="table">1</ref>. We can observe that code+LLM verification performs much better and reasoning LLMs (QwQ) also perform better than non-reasoning LLMs <ref type="bibr">(Qwen)</ref>.</p><p>We further investigate the accuracies of code and LLM verification on different types of constraints, and report their respective accuracy for soft and hard constraints in</p><p>Table 1, which further confirms that code verification is more effective for hard Keyword Length Format Content Style 0.0 0.2 0.4 0.6 0.8 1.0 Accuracy (%) 0.76 0.53 0.39 0.08 0.18 0.36 0.29 0.29 0.31 0.73</p><p>Code-only LLM-only constraints and LLM verification performs better on soft constraints, supporting the rationale for the code+LLM verification approach. The detailed results across different constraint types are shown in Figure <ref type="figure" target="#fig_2">3</ref>, and we can observe that LLMs perform particularly poorly on keyword and length constraints, which may be due to inherent limitations in numerical counting <ref type="bibr" target="#b14">(Fu et al., 2024;</ref><ref type="bibr" target="#b3">Ball et al., 2024)</ref>. Since keyword and length constraints can be efficiently verified with code, we conclude that in instruction-following verification, hard constraints should be checked with code, and soft constraints can be reliably verified by advanced LLMs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Method</head><p>This section introduces the formalization of VERIF ( § 3.1), the construction process of VERINSTRUCT ( § 3.2), and the RL training method ( § 3.3).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Verification Method</head><p>Suppose we are given an instruction x, which includes the task decription and a set of constraints C = {c 1 , c 2 , ..., c n }. We follow the task definition of instruction-following by <ref type="bibr" target="#b65">Zhou et al. (2023)</ref>: given x, generating a response y that satisfies all constraints in C. In this work, our primary goal is to accurately verify whether y meets all constraints and to apply this reliable verification in reinforcement learning training. Specifically, the constraint set C consists of two types: hard constraints C h , which can be verified by simple rules or code (e.g., length), and soft constraints C s , which require semantic understanding (e.g., style). As explored in § 2.2, we propose a hybrid verification approach, VERIF, that uses code verification for C h and LLM verification for C s . Formally, this is defined as: VERIF(x, y) = F (Code(y, C h ), LLM(y, C s ))</p><p>Can you explain how solar panels work? Sure! Solar panels are devices that convert sunlight into electricity through the photovoltaic effect. … Instruction Response 1. A simple, friendly, and imaginative tone. 2. … Soft Constraint Generation Hard Constraint Generation 1. Contain at least 160 words 2. … Could you give a simple, friendly, and imaginative explanation … contains at least 160 words. Complex Instruction Sure! Let's imagine the Sun is a giant flashlight in the sky, shining down … 1. Writing Style 2. Semantic Elements 3. … Final Verification Score∈ [0, 1] C s Response Response Aggregation LLM Verification [LLM] [Length] [Keyword] … Verification Construction … [Keyword]</p><p>[Length] Code(y, C h ) ∈ {0, 1} denotes whether y satisfies all hard constraints in C h , and LLM(y, C s ) ∈ {0, 1} indicates whether y satisfies all soft constraints in C s . F denotes the aggregation method used to combine the code verification score and the LLM verification score, including averaging or multiplication. In this work, we consider only three types of hard constraints, including length, format, and keyword. All other constraints are taken as soft and verified using LLMs. As explored in § 2.2, we use large reasoning models for LLM-based verification, which is a form of scaling up verification and has been demonstrated effective in practice <ref type="bibr">(Liu et al., 2025b;</ref><ref type="bibr" target="#b4">ByteDance-Seed, 2025)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Data Construction Method</head><p>We construct a high-quality instruction-following dataset for reinforcement learning, where each instance is paired with a corresponding verification.</p><p>Prior works on enhancing instruction-following of LLMs <ref type="bibr" target="#b47">(Sun et al., 2024;</ref><ref type="bibr" target="#b9">Dong et al., 2024;</ref><ref type="bibr" target="#b37">Qi et al., 2024)</ref> have primarily focused on generating complex instructions and corresponding high-quality responses for supervised fine-tuning (SFT). In this work, we focus on generating complex instructions with associated verification, eliminating the efforts to generate and filter high-quality responses.</p><p>As shown in Figure <ref type="figure" target="#fig_3">4</ref>, the construction process consists of two main parts: (1) Complex instruction generation. We adopt the constraint backtranslation approach <ref type="bibr" target="#b37">(Qi et al., 2024)</ref> to generate complex instructions, which produces few unrealistic cases. Specifically, we randomly sample 25, 000 data instances from four high-quality datasets, including Alpaca GPT4 <ref type="bibr" target="#b34">(Peng et al., 2023)</ref>, Orca Chat <ref type="bibr" target="#b12">(Es, 2023)</ref>, Evol Instruct <ref type="bibr" target="#b55">(Xu et al., 2023)</ref>, and OpenAssitant <ref type="bibr">(Köpf et al., 2024)</ref>. We use Llama3.1-70B-Instruct <ref type="bibr">(Grattafiori et al., 2024)</ref> to generate constraints implicitly satisfied by each response, such as language style. Since LLMs often struggle with understanding length constraints <ref type="bibr" target="#b47">(Sun et al., 2024)</ref>, we instead automatically synthesize them based on response length using Python scripts. We combine the generated constraints with the original instruction to form the final complex instruction. (2) Verification construction. We then automatically generate a verification method for each constraint. For hard constraints, including length, format, and keyword presence, we use Qwen2.5-72B-Instruct to generate verification Python code.</p><p>Given the simplicity of these generated Python code scripts, we manually check them and find nearly no errors. For soft constraints, we do not generate code but instead tag them with "LLM", which indicates that verification during RL training should be online produced by an LLM. We finally filter out instructions with fewer than 2 constraints, resulting in VERINSTRUCT, which contains 22, 000 instructions, each including an average of 6.2 constraints and corresponding verification methods. The details of VERINSTRUCT are placed in Appendix A.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">RL Training</head><p>We conduct reinforcement learning using VERIF on VERINSTRUCT. Specifically, we adopt the GRPO algorithm <ref type="bibr" target="#b44">(Shao et al., 2024)</ref> and perform 16 rollouts per prompt for value estimation. For each response, the reward is provided online by VERIF.</p><p>To reduce the overhead of LLM-based verification, we input all soft constraints C s to the LLM at once to assess whether the response satisfies all of them in a single pass. We conduct RL training using the VeRL framework<ref type="foot" target="#foot_0">foot_0</ref> and integrate a parallel reward computation mechanism to accelerate RL training.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head><p>This section introduces experimental setup ( § 4.1), main results ( § 4.2), analytical experiments ( § § 4.3 to 4.5), and developing a smaller verifier ( § 4.6).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Experimental Setup</head><p>Reported Models We conduct RL training based on two SFT-trained models: TULU 3 SFT <ref type="bibr">(Lambert et al., 2024)</ref> and DeepSeek-R1-Distill-Qwen-7B <ref type="bibr">(Guo et al., 2025)</ref>. For the specific implementation of VERIF, we use QwQ-32B as the LLM verifier and set F in Equation 3.1 as average. For comparison, we evaluate TULU 3 <ref type="bibr">(Lambert et al., 2024)</ref>, which is trained directly based on TULU 3 SFT with extensive DPO and RLVR training. We also evaluate various industrial models, including GPT-4o <ref type="bibr">(Hurst et al., 2024)</ref>, QwQ-32B <ref type="bibr" target="#b41">(Qwen, 2025)</ref>, Qwen2.5-7B-Instruct <ref type="bibr">(Yang et al., 2024)</ref>, LLaMA3.1-8B-Instruct <ref type="bibr">(Grattafiori et al., 2024)</ref>, and open-source models specifically optimized for instruction following, including Conifer <ref type="bibr" target="#b47">(Sun et al., 2024)</ref>, Crab <ref type="bibr" target="#b37">(Qi et al., 2024)</ref>, and UltraIF <ref type="bibr">(An et al., 2025)</ref>. More details are placed in appendix B.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Evaluation benchmarks</head><p>We evaluate the models on several representative instruction-following benchmarks, including IFEval <ref type="bibr" target="#b65">(Zhou et al., 2023)</ref>, the most commonly used dataset; Multi-IF <ref type="bibr">(He et al., 2024b)</ref>, which includes multi-turn and multilingual instruction following; SysBench <ref type="bibr">(Qin et al., 2024)</ref>, which evaluates instruction following to system prompts; FollowBench <ref type="bibr" target="#b23">(Jiang et al., 2024)</ref> and CFBench <ref type="bibr">(Zhang et al., 2024a)</ref>, which cover a comprehensive range of constraint types.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Main Results</head><p>All experimental results are presented in</p><p>Table 2. We have the following observations: (1) Reinforcement learning with VERIF demonstrates strong performance. Compared to their corresponding backbones (R1-Distill-Qwen-7B and TULU 3 SFT), the trained models using RL perform much better. Notably, the model trained based on TULU 3 SFT even outperforms the original TULU 3 (Lambert et al., 2024), which is trained based on TULU 3 SFT using approximately 271k DPO pairs and specialized RLVR data. Among models with similar parameter scales, the model trained based on TULU 3 SFT achieves state-of-the-art performance and surpasses several open-source models developed by industry using larger datasets and more resources. This demonstrates the potential of RL training for instruction following and the effectiveness of VERIF in providing reliable rewards. (2) RL with VERIF generalizes effectively to unseen instruction-following tasks. Although the training dataset VERINSTRUCT contains only English and single-turn instruction-following data, the trained model shows substantial improvements on multilingual, multi-turn (Multi-IF) instruction following, and following system prompts (SysBench). This suggests that the patterns of instruction following may be inherently generalizable and that RL further Model AlpacaEval 2.0 MT-Bench GSM8K Omni-MATH MMLU-Pro BBH DROP Qwen2.5-7B-Instruct 37.5 7.8 91.4 13.6 56.5 71.8 77.2 Llama3.1-8B-Instruct 29.4 6.0 83.6 10.8 48.1 63.0 74.4 TULU 3 39.9 7.5 88.4 14.2 35.9 68.5 69.4 R1-Distill-Qwen-7B 16.6 5.7 87.0 35.0 54.3 21.5 74.0 +VERIF 15.5 5.9 90.0 33.6 54.8 32.2 75.6 TULU 3 SFT 7.9 6.3 78.8 11.4 36.4 67.4 58.3 +VERIF 22.0 7.0 83.4 12.4 36.0 67.9 59.5 Table 3: Experimental results (%) on various general natural language benchmarks.</p><p>enhances this generalization <ref type="bibr" target="#b7">(Chu et al., 2025)</ref>. (3) RL with VERIF benefits both reasoning and nonreasoning models. As reinforcement learning has demonstrated its effectiveness in enhancing reasoning abilities on challenging tasks <ref type="bibr">(Guo et al., 2025;</ref><ref type="bibr">Luo et al., 2025a)</ref>, such as math and code, we suggest integrating instruction-following training into RL pipelines. Our further analysis ( § 4.3) shows that general capabilities, such as mathematical reasoning and language understanding, do not degrade after RL with VERIF and may even slightly improve, indicating that RL with VERIF can be integrated into broader model development for enhancing the model's instruction following capabilities.</p><p>(4) Models developed by the academic community, such as Conifer, Crab, and UltraIF, show relatively lower performance, which is reasonable given their focus on exploring effective SFT data synthesis and limited training resources. Given that there is abundant open-source SFT data, such as Infinity Instruct (BAAI, 2024) with approximately 7 million instances, we encourage the research community to devote more attention to constructing RL data instead, as RL data remains scarce and RL has been demonstrated to be effective for instruction following. In conclusion, RL with VERIF effectively enhances instruction-following capabilities, and we encourage more efforts on developing effective RL methods or data for instruction-following.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Analysis on General Capabilities</head><p>We further investigate the general capabilities of the trained models to assess the broader impact of RL with VERIF. Specifically, we conduct an evaluation on various representative general benchmarks, including general instruction-following datasets that focus on task completion and are evaluated using LLM-as-a-judge: AlpacaEval 2.0 <ref type="bibr" target="#b11">(Dubois et al., 2024)</ref> and MT-Bench <ref type="bibr" target="#b55">(Zheng et al., 2023)</ref>, mathematical reasoning benchmarks: GSM8K <ref type="bibr">(Cobbe et al., 2021)</ref> and Omni-Math <ref type="bibr">(Gao et al., 2025)</ref>,</p><p>50 60 70 80 90 100 Accuracy (%) Change Case Combination D. Content D. Format Keywords Language Length Punctuation Startend TULU3 + VerIF TULU3 natural language understanding datasets: MMLU-Pro <ref type="bibr">(Wang et al.)</ref> and DROP <ref type="bibr" target="#b10">(Dua et al., 2019)</ref>, and a natural language inference benchmark BBH <ref type="bibr">(Suzgun et al., 2023)</ref>. The results are shown in Table <ref type="table">3</ref>. We can observe that RL training does not degrade general performance and even improves the performance in some cases, such as MT-Bench, GSM8K, and BBH. We attribute this to a key difference between RL and SFT: while SFT learns and memorizes patterns from data and is prone to catastrophic forgetting <ref type="bibr" target="#b7">(Chu et al., 2025)</ref>, RL typically maximizes optimal patterns it has learned <ref type="bibr">(Yue et al., 2025b)</ref>, thereby reducing the risk of knowledge forgetting. These results suggest a promising finding that instruction-following reinforcement learning can be integrated into existing RL pipelines to enhance adherence to instructions without compromising the model's general capabilities.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Analysis on Constraint Types</head><p>VERINSTRUCT includes only five constraint types: length, keyword, format, content, and style. We further investigate the improvements across different constraint types in IFEval to analyze the generalization of constraint adherence. Results are shown in Figure <ref type="figure" target="#fig_4">5</ref>. We observe clear improvements across most types except for "Startend" and "Language"</p><p>0 25 50 75 100 125 150 175 200 Step 0.2 0.3 0.4 0.5 0.6 0.7 0.8 Reward VerIF w/o code* w/o code w/o llm VerIF (Qwen-2.5) Figure 6: Reward curves during RL training with different verification methods. We visualize the first 200 steps and smooth the data for better visualization. Model IFEval Multi-IF CFBench VERIF 84.5 54.0 72.0 w/o code* 81.7 51.2 70.0 w/o code 76.2 52.0 73.0 w/o LLM 74.7 46.0 59.0 VERIF (Qwen-2.5) 76.9 48.5 71.0 Table 4: Ablation results (%) for different verification methods. "Qwen-2.5" uses Qwen2.5-72B-Instruct as the LLM instead of QwQ-32B. We report the promptlevel strict score for IFEval, the Turn 3 score for Multi-IF, and the ISR score for CFBench.</p><p>(which already achieves 100% accuracy). This indicates that RL training can generalize instructionfollowing ability to unseen constraint types. For constraint types covered in VERINSTRUCT, such as length, keyword, and content, the improvements are more pronounced, which demonstrates the precision of the verification provided by VERIF. This also suggests that incorporating datasets with richer constraint types can further improve performance. We encourage the community to explore more diverse data for RL for instruction following.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5">Ablation Studies</head><p>We conduct ablation studies on the verification method. Specifically, we perform three ablations: contrast, using only LLM verification results in higher and more pronounced reward growth, possibly because the LLM verifier is easier to fit or hack <ref type="bibr">(Li et al., 2024)</ref>. The results are shown in Table <ref type="table">4</ref>. We can observe that removing any verification component degrades model performance compared to VERIF. Notably, "w/o LLM", which uses only Python scripts for hard constraint verification, performs significantly poorly. This may be due to that approximately 77.7% constraints in training data are soft. This suggests that using code verification for hard constraints only, as adopted in training TULU 3 <ref type="bibr">(Lambert et al., 2024)</ref>, is suboptimal for RL in instruction following. We also adopt Qwen2.5-72B-Instruct as the LLM verifier in VERIF and find it significantly underperforms QwQ-32B. The potential reason may be that in our implementation of VERIF, the LLM is required to verify whether a response satisfies all soft constraints in a single pass, which requires step-by-step reasoning and poses significant challenges. The results demonstrate the potential of scaling up verification <ref type="bibr">(Liu et al., 2025b)</ref>. In conclusion, we suggest that the best practice for verification in RL for instruction following is VERIF with reasoning models as the LLM verifier. We further explore a smaller reasoning LLM as the verifier in § 4.6.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.6">Training a Smaller Verifier</head><p>Although we have demonstrated VERIF with a large reasoning model, such as QwQ-32B, is effective for RL in instruction following, the long outputs of QwQ-32B lead to high latency during online reward computation. For example, when training TULU 3 SFT, we adopt 8 H800 GPUs for deploying QwQ-32B and set batch size to 32, rollouts to 16, and the average time to obtain the reward for a batch reaches about 180 seconds, accounting for roughly 80% of the time per training step. To address this, we explore using smaller reasoning models as LLM verifiers while maintaining comparable performance. A straightforward approach is to distill a verifier from QwQ-32B. Therefore, we distill 130k SFT data instances from QwQ, where each instance consists of an instruction, a response, and a critic indicating whether a response satisfies the given constraints in the instruction. The data collection process is detailed in Appendix C.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>We fine-tune DeepSeek-R1-Distill-Qwen-7B on the collected dataset, resulting in IF-Verifier-7B.</head><p>We then conduct RL training on TULU 3 SFT using the new LLM verifiers in VERIF. Figure <ref type="figure" target="#fig_5">7</ref> shows the reward curves during training. We can observe that DeepSeek-R1-Distill-Qwen-7B yields higher initial rewards, but its reward growth is limited. IF-Verifier-7B exhibits a similar reward trajectory as QwQ-32B. The results of the trained models are shown in Table <ref type="table" target="#tab_1">5</ref>. We observe that using IF-Verifier-7B as the LLM verifier in VERIF significantly outperforms DeepSeek-R1-Distill-Qwen-7B and achieves competitive performance to QwQ-32B. Moreover, IF-Verifier-7B reduces computational cost a lot. Deploying IF-Verifier-7B requires only one single H800 GPU, with an average reward computation time of 120 seconds per batch, which can be further reduced with multi-GPUs. This makes VERIF a practical method for effective RL training under limited resources. This work preliminarily explores more efficient LLM verifiers and encourages further efforts <ref type="bibr">(Liu et al., 2025b)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Related Work</head><p>Instruction following requires models to generate responses that satisfy complex user instructions. Recent work has primarily focused on following constraints in instructions, such as length and keyword <ref type="bibr" target="#b65">(Zhou et al., 2023)</ref>. Existing efforts to enhance instruction-following capabilities primarily focus on methods for (1) collecting SFT data, including directly distilling from larger LLMs <ref type="bibr" target="#b47">(Sun et al., 2024;</ref><ref type="bibr">He et al., 2024a;</ref><ref type="bibr" target="#b9">Dong et al., 2024;</ref><ref type="bibr">Ren et al., 2025)</ref>, back-translation <ref type="bibr" target="#b37">(Qi et al., 2024;</ref><ref type="bibr" target="#b36">Pham et al., 2024)</ref>, and training dedicated instruction composers <ref type="bibr">(An et al., 2025)</ref>, and (2) collecting preference pairs <ref type="bibr" target="#b6">(Cheng et al., 2024;</ref><ref type="bibr" target="#b36">Pham et al., 2024;</ref><ref type="bibr" target="#b9">Dong et al., 2024;</ref><ref type="bibr">Zhang et al., 2024b)</ref>. Notably, two works are similar to ours: AutoIF <ref type="bibr" target="#b9">(Dong et al., 2024)</ref>, which constructs both instructions and corresponding verification code, but but does not explore RL training or soft constraints verification; and TULU 3 <ref type="bibr">(Lambert et al., 2024)</ref>, which adopts RLVR for instruction following but the improvement is limited and also does not consider soft constraints. In summary, the best practice for RL in instruction following remains underexplored.</p><p>As RL has proven to be an effective post-training technique, many prior studies have explored its applications across various domains, primarily focusing on verification engineering, such as math <ref type="bibr">(Lambert et al., 2024;</ref><ref type="bibr">Guo et al., 2025;</ref><ref type="bibr">Luo et al., 2025b;</ref><ref type="bibr" target="#b4">ByteDance-Seed, 2025)</ref>, code <ref type="bibr">(Wang et al., 2024b;</ref><ref type="bibr">Luo et al., 2025a)</ref>, logic <ref type="bibr" target="#b54">(Xie et al., 2025)</ref>, tool using <ref type="bibr" target="#b13">(Feng et al., 2025;</ref><ref type="bibr" target="#b24">Jin et al., 2025;</ref><ref type="bibr">Qian et al., 2025a;</ref><ref type="bibr" target="#b28">Li et al., 2025;</ref><ref type="bibr" target="#b64">Zheng et al., 2025)</ref>, machine translation <ref type="bibr">(Wang et al., 2024a;</ref><ref type="bibr">He et al., 2025)</ref>, medicine <ref type="bibr" target="#b5">(Chen et al., 2024;</ref><ref type="bibr">Wang et al., 2025)</ref>, and finance <ref type="bibr">(Qian et al., 2025b;</ref><ref type="bibr">Liu et al., 2025a)</ref>. In this work, we explore the best practice of RL for instruction following and propose VERIF, an effective verification method for RL training.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>In this work, we propose VERIF, an effective verification method for RL in instruction following. We also construct VERINSTRUCT, a dataset for instruction following where each instruction is paired with corresponding verification signals. We perform RL training with VERIF on VERINSTRUCT, leading to significant improvements. The trained models achieve SoTA performance on several representative instruction-following benchmarks at a similar model scale, without hurting general capabilities. This work demonstrates the promising potential of RL in instruction following, and we encourage further exploration of novel RL methods and data.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitations</head><p>We discuss the limitations of our work here, including two main aspects: (1) The training dataset VERINSTRUCT includes only English data, which may limit the broader usage of the dataset. We observe that RL on VERINSTRUCT still generalizes well to multiple languages, and we encourage the community to collect more diverse data covering more languages. (2) VERIF relies on an LLM as the verifier, which inherits common issues of LLM-as-a-judge, such as potential biases <ref type="bibr" target="#b57">(Ye et al., 2024)</ref> and vulnerability to adversarial attacks <ref type="bibr" target="#b45">(Shi et al., 2024)</ref>. We believe developing more robust and efficient LLM judges <ref type="bibr">(Liu et al., 2025b)</ref> is a promising direction and leave it for future work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Ethical Considerations</head><p>We discuss potential ethical concerns as follows:</p><p>(1) Intellectual property. Alpaca-GPT4 and Infinity-Instruct are licensed under CC BY-NC 4.0 3 , Ope-nAssistant is licensed under Apache License 2.0 4 . WildChat is licensed under ODC-By license 5 . Evol-Instruct and Orca-Chat do not specify explicit licenses. We strictly adhered to all claimed licenses. Our dataset will be released under the Apache License 2.0. We believe the original open-source datasets are properly anonymized, and we do not introduce any additional sensitive information. (2) Potential risk control. In this paper, we propose VERIF, a verification method for RL to improve instruction-following capabilities of LLMs. As VERIF includes an LLM verifier, it inherits the known risks of LLMs, such as potential bias <ref type="bibr" target="#b15">(Gallegos et al., 2024;</ref><ref type="bibr" target="#b57">Ye et al., 2024)</ref>. We do not introduce any additional risks. Users should not exploit VERIF for reward hacking <ref type="bibr" target="#b46">(Skalse et al., 2022)</ref> and are responsible for verifying the compliance of the models trained using it. (3) AI assistance. We use ChatGPT and Claude to refine some sentences.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Appendices A VERINSTRUCT</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 Dataset Construction Details</head><p>Following <ref type="bibr" target="#b37">Qi et al. (2024)</ref>, we collect original instructions and responses from several publicly available instruction-tuning datasets, including Alpaca GPT-4 <ref type="bibr" target="#b34">(Peng et al., 2023)</ref>, Orca Chat <ref type="bibr" target="#b12">(Es, 2023)</ref>, Evol Instruct <ref type="bibr" target="#b55">(Xu et al., 2023)</ref>, and Ope-nAssistant <ref type="bibr">(Köpf et al., 2024)</ref>. We then apply a back-translation-based method to extract both soft and hard constraints from the instruction-response pairs. Table <ref type="table">6</ref> presents the prompt to generate soft constraints used in VERINSTRUCT construction. The hard constraints, including Length, Keyword, and selected aspects of Format, are automatically generated through Python-based processing. These constraints are subsequently combined to form the final constraint-enhanced prompt.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Dataset Statistics</head><p>Figure <ref type="figure" target="#fig_6">8</ref> shows the distribution of 22, 000 instances in the VERINSTRUCT dataset. Following IFBench <ref type="bibr" target="#b35">(Peng et al., 2025)</ref>, we categorize constraints into five types: length, keyword, format, content, and style. The left chart presents the proportional distribution of constraint types. Since certain format constraints, such as those requiring hierarchical output structures, are not easily verifiable via Python, we define format, content, and style as soft constraints, which together account for 77.7% of the total. Length and keyword are defined as hard constraints, making up the remaining 22.3%. The right chart categorizes the data by the number of constraints after merging.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Experimental Details</head><p>We train our model using the open-source VeRL framework<ref type="foot" target="#foot_1">foot_1</ref> with the GRPO algorithm <ref type="bibr" target="#b44">(Shao et al., 2024)</ref>, setting the KL loss coefficient to 1 × 10 -3 . The batch size is set to 32, the number of rollouts to 16, the maximum generation length of rollout to 4, 096, and the learning rate to 1 × 10 -6 . We save checkpoints every 20 steps during training. Following TULU 3 <ref type="bibr">(Lambert et al., 2024)</ref>, we use IFEval <ref type="bibr" target="#b65">(Zhou et al., 2023)</ref> as the validation set to select the best checkpoint. We train the models for one epoch on VERINSTRUCT with early stopping if performance on IFEval does not improve for more than 5 checkpoints. The best checkpoints are typically found within the first 200 steps. For evaluation, we set the sampling temperature to 0 to ensure reproducibility. For all evaluations using LLM-as-a-judge, we adopt gpt-4o-2024-11-20 as the judge. Since the Conifer model <ref type="bibr" target="#b47">(Sun et al., 2024)</ref> is not publicly open-sourced, we instead train a model using its SFT and DPO data, and the reported results of Conifer are evaluated based on our reproduced model. For the evaluation of reasoning LLMs, we remove thinking tokens and evaluate only the final responses. For evaluation of general capabilities, we report the length-controlled win rate for AlpacaEval 2.0 <ref type="bibr" target="#b11">(Dubois et al., 2024)</ref>. Both training and evaluation are conducted on Nvidia H800 GPUs, with the entire training process taking approximately 1, 900 GPU hours in total.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Training a Small Verifier</head><p>We provide a detailed description of the training data construction process and training details. Following the construction of VERINSTRUCT, we first generate an additional 20, 000 data instances. To ensure diversity, we additionally mined complex instructions from WildChat <ref type="bibr" target="#b62">(Zhao et al., 2024)</ref> and Infinity Instruct <ref type="bibr" target="#b2">(BAAI, 2024)</ref>. Specifically, we use Qwen2.5-72B-Instruct to extract constraints from each instruction and classify them as hard or soft. For hard constraints, we adopt Qwen2.5-72B-Instruct to generate corresponding verification Python code scripts. The full prompt is presented in Table <ref type="table">7</ref>. For each instruction, we randomly sample a response from 6 different models, including Llama3.1-8B-Instruct <ref type="bibr">(Grattafiori et al., 2024)</ref>, Llama-3.3-70B-Instruct <ref type="bibr">(Grattafiori et al., 2024)</ref>, Qwen2.5-7B-Instruct <ref type="bibr">(Yang et al., 2024)</ref>, Qwen2.5-72B-Instruct <ref type="bibr">(Yang et al., 2024)</ref>, QwQ-32B <ref type="bibr" target="#b41">(Qwen, 2025)</ref>, DeepSeek-R1-Distilled- <ref type="bibr">Qwen-32B (Guo et al., 2025)</ref>. We then adopt QwQ-32B to generate a step-by-step verification indicating whether the output satisfies the instruction for each instruction-response pair. As a result, we collect about 130k instruction-response pairs with corresponding step-by-step verification. For SFT training, we use the open-source alignment-handbook framework <ref type="bibr">(Tunstall et al.)</ref>. Based on DeepSeek-R1-Distill-Qwen-7B, we train the model on the collected dataset for 2 epochs, with 2 × 10 -5 learning rate, 64 batch size, 8, 192 max sequence length, resulting in the verifier IF-Verifier-7B.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Prompt: Extracting Constraints from Instruction</head><p>You are an expert in natural language processing and constraint checking. Your task is to analyze a given instruction and identify which constraints need to be checked. The 'instruction' contains a specific task query along with several explicitly stated constraints. Based on the instructions, you need to return a list of checker names that should be applied to the constraints.</p><p>[Task Example 1] Instruction: Write a 300+ word summary of the Wikipedia page "<ref type="url" target="https://en.wikipedia.org/wiki/Raymond_III_Count_of_Tripoli">https://en.wikipedia.org/wiki/Raymond_III_Count_of_Tripoli</ref>". Do not use any commas and highlight at least 3 sections that have titles in markdown format, for example *highlighted section part 1*, *highlighted section part 2*, *highlighted section part 3*. Response: NumberOfWordsChecker: 300+ word &lt;sep&gt; HighlightSectionChecker: highlight at least 3 sections that have titles in markdown format &lt;sep&gt; ForbiddenWordsChecker: Do not use any commas. #Task Instruction# {Instruction} ### Your task: -Generate the appropriate checker names with corresponding descriptions from the original instruction description. -Return the checker names with their descriptions separated by &lt;sep&gt;.</p><p>-Focus only on the constraints explicitly mentioned in the instruction.</p><p>-Ensure that each constraint is complete, such as specifying whether the 300-word limit applies to the entire text or a specific section. A defined scope is required.</p><p>-Do **not** generate checkers for the task query itself or its quality.</p><p>-If the instruction is in Chinese/English, please output the constraint in the same language.</p><p>-Each checker should be responsible for checking only one constraint.</p><p>-Do not output any constraints that are not included in the instruction.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Prompt: Classifying Constraints</head><p>Please classify whether the given checker can be judged using simple lexical rules.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>#Checker# {checker_name}</head><p>Classification rules: -If the checker can be determined using simple lexical rules-such as word count, text length, number of paragraphs, number of sentences, or presence of specific keywords-output <ref type="bibr">[[A]</ref>].</p><p>-If the checker requires semantic understanding-such as style, tone, sentiment, language, context, genre, or structure-and thus necessitates an additional semantic analysis model (e.g., a large language model), output <ref type="bibr">[[B]</ref>].</p><p>-If the constraint is meaningless, non-informative, or irrelevant (e.g., "NA"), output <ref type="bibr">[[C]</ref>]. Prompt: Generating code You are tasked with implementing a 'Python' function 'check_following' that determines whether a given 'response' satisfies the constraint defined by a checker. The function should return 'True' if the constraint is satisfied, and 'False' otherwise. [Example Input 1] no more than 800 words [Example Output 1] def check_following(response): return len(response.split()) &lt;= 800 [Example Input 2] Include keywords 'cloud storage', 'open-source' [Example Output 2] import re def check_following(response): return bool(re.search(r'cloud storage', response, re.IGNORECASE) and re.search(r'open-source', response, re.IGNORECASE)) [Example Input 3] The word 'huge' should appear 3 times [Example Output 3] import re def check_following(response): return len(re.findall(r'huge', response, re.IGNORECASE)) == 3 #Task Input Checker# {checker_name} [Requirements] -The function should be self-contained with necessary imports. -DO NOT use nltk. -Only return exactly 'Python' code script, without any other info.</p><p>Table 7: Prompt for extracting constraints from instruction, classifying constraint types, and generating code for hard constraints.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: A simplified illustration of VERIF. The instruction constraints are categorized as soft or hard and verified using different methods in VERIF.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Pass@k results (%) of two SFT-trained LLMs on IFEval. We report the prompt-level strict score.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Accuracy (%) of code-only or LLM-only verification in verifying compliance with different types of constraints. LLM-only adopts QwQ-32B.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 :</head><label>4</label><figDesc>Figure4: Left: The construction process for VERINSTRUCT, including complex instruction generation and verification construction. Right: Our verification method, VERIF, providing verification for instruction following.</figDesc><graphic coords="4,409.20,149.34,102.53,79.57" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Prompt-level strict scores (%) across different types of constraints on IFEval. "D." denotes Detectable.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Reward curves during RL training using different LLM verifiers in VERIF. Qwen-7B is short for DeepSeek-R1-Distilled-Qwen-7B.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 8 :</head><label>8</label><figDesc>Figure 8: left: Proportional distribution of constraint types in the dataset. right: Distribution of the number of constraints per instruction.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 2 :</head><label>2</label><figDesc>Experimental results (%) on several representative instruction-following benchmarks. "Pr." and "Ins." denote prompt-level and instruction-level metrics respectively. "S" and "L" mean strict and loose respectively. † denotes the results are sourced from the original paper(An et al., 2025). All the other results are reproduced by us in this paper. For reasoning LLMs, we remove the thinking tokens and evaluate using only the final response.</figDesc><table><row><cell>Model</cell><cell></cell><cell></cell><cell>IFEval</cell><cell></cell><cell></cell><cell>Multi-IF</cell><cell></cell><cell cols="3">SysBench FollowBench CFBench</cell></row><row><cell></cell><cell cols="7">Pr. (S) Pr. (L) Ins. (S) Ins. (L) Turn 1 Turn 2 Turn 3</cell><cell>ISR</cell><cell>SSR</cell><cell>ISR</cell></row><row><cell>GPT-4o</cell><cell>79.9</cell><cell>84.8</cell><cell>85.6</cell><cell>89.6</cell><cell>82.3</cell><cell>71.7</cell><cell>59.3</cell><cell>80.2</cell><cell>75.3</cell><cell>80.0</cell></row><row><cell>QwQ-32B</cell><cell>82.8</cell><cell>86.1</cell><cell>88.0</cell><cell>90.4</cell><cell>64.2</cell><cell>56.6</cell><cell>48.4</cell><cell>67.8</cell><cell>73.5</cell><cell>80.0</cell></row><row><cell>Qwen2.5-7B-Instruct</cell><cell>71.5</cell><cell>74.1</cell><cell>79.4</cell><cell>81.3</cell><cell>75.3</cell><cell>57.9</cell><cell>47.0</cell><cell>-</cell><cell>65.9</cell><cell>74.0</cell></row><row><cell>LLaMA3.1-8B-Instruct</cell><cell>72.6</cell><cell>77.3</cell><cell>80.8</cell><cell>84.2</cell><cell>71.3</cell><cell>62.8</cell><cell>54.6</cell><cell>-</cell><cell>65.9</cell><cell>71.0</cell></row><row><cell>TULU 3</cell><cell>79.7</cell><cell>82.8</cell><cell>85.1</cell><cell>87.5</cell><cell>82.1</cell><cell>63.2</cell><cell>51.2</cell><cell>48.9</cell><cell>70.3</cell><cell>72.0</cell></row><row><cell>Crab-7B-DPO</cell><cell>47.3</cell><cell>57.1</cell><cell>59.7</cell><cell>67.9</cell><cell>47.2</cell><cell>36.5</cell><cell>28.9</cell><cell>-</cell><cell>56.3</cell><cell>62.0</cell></row><row><cell>Conifer-7B-DPO</cell><cell>48.1</cell><cell>52.3</cell><cell>59.1</cell><cell>63.3</cell><cell>50.7</cell><cell>37.6</cell><cell>26.6</cell><cell>-</cell><cell>56.9</cell><cell>62.0</cell></row><row><cell>UltraIF-8B-DPO †</cell><cell>71.3</cell><cell>75.4</cell><cell>79.4</cell><cell>83.1</cell><cell>69.6</cell><cell>58.3</cell><cell>46.9</cell><cell>-</cell><cell>62.6</cell><cell>-</cell></row><row><cell>R1-Distill-Qwen-7B</cell><cell>59.9</cell><cell>65.1</cell><cell>70.4</cell><cell>74.2</cell><cell>55.8</cell><cell>43.6</cell><cell>32.7</cell><cell>16.9</cell><cell>53.9</cell><cell>66.0</cell></row><row><cell>+VERIF</cell><cell>75.6</cell><cell>79.5</cell><cell>82.7</cell><cell>85.5</cell><cell>66.0</cell><cell>53.8</cell><cell>41.9</cell><cell>26.5</cell><cell>61.0</cell><cell>68.0</cell></row><row><cell>TULU 3 SFT</cell><cell>68.4</cell><cell>71.7</cell><cell>76.3</cell><cell>79.5</cell><cell>67.3</cell><cell>50.9</cell><cell>40.3</cell><cell>33.2</cell><cell>62.0</cell><cell>63.0</cell></row><row><cell>+VERIF</cell><cell>84.5</cell><cell>87.1</cell><cell>89.3</cell><cell>91.4</cell><cell>79.4</cell><cell>65.2</cell><cell>54.0</cell><cell>54.7</cell><cell>68.6</cell><cell>72.0</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 5 :</head><label>5</label><figDesc>Experimental results (%) of models trained using different LLM verifiers. Qwen-7B is short for DeepSeek-R1-Distilled-Qwen-7B. The base model used for RL training is TULU 3 SFT.</figDesc><table><row><cell>Model</cell><cell></cell><cell></cell><cell>IFEval</cell><cell></cell><cell></cell><cell>Multi-IF</cell><cell></cell><cell cols="3">SysBench FollowBench CFBench</cell></row><row><cell></cell><cell cols="7">Pr. (S) Pr. (L) Ins. (S) Ins. (L) Turn 1 Turn 2 Turn 3</cell><cell>ISR</cell><cell>SSR</cell><cell>ISR</cell></row><row><cell>VERIF (QwQ-32B)</cell><cell>84.5</cell><cell>87.1</cell><cell>89.3</cell><cell>91.4</cell><cell>79.4</cell><cell>65.2</cell><cell>54.0</cell><cell>54.7</cell><cell>68.6</cell><cell>72.0</cell></row><row><cell>VERIF (Qwen-7B)</cell><cell>77.1</cell><cell>80.4</cell><cell>84.3</cell><cell>86.6</cell><cell>78.5</cell><cell>60.8</cell><cell>49.0</cell><cell>42.7</cell><cell>62.0</cell><cell>72.0</cell></row><row><cell>VERIF (IF-Verifier-7B)</cell><cell>80.0</cell><cell>84.5</cell><cell>86.0</cell><cell>89.4</cell><cell>80.1</cell><cell>63.7</cell><cell>52.7</cell><cell>49.5</cell><cell>68.8</cell><cell>70.0</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_0"><p>https://github.com/volcengine/verl</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_1"><p>https://github.com/volcengine/verl</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Prompt: Generating Constraints from Instruction and Output</head><p>As a linguist with expertise in contextual language nuances, please add constraints to enrich the #Given Instruction# based on the #Given Output#. The goal is to enhance the specificity and detail of the instruction to ensure that the response is more aligned with the output text. To supplement the instruction using the output, please consider adding specific and detailed constraints across the following dimensions:</p><p>• Desired_Writing_Style: Specify the intended tone or narrative voice, such as humorous, formal, poetic, or conversational.</p><p>• Semantic_Elements: Clarify the core meaning, focus, or conceptual emphasis that the response should reflect.</p><p>• Morphological_Constraints: Indicate any forbidden words, expressions, or formatting (e.g., avoid passive voice or markdown).</p><p>• Multi-lingual_Constraints: Specify the language(s) or code-switching rules to be used in the response.</p><p>• Hierarchical_Instructions: Define a priority order among multiple tasks, outlining how they should be structured or emphasized.</p><p>• Special_Output_Format: Specify required formats, such as Python code, JSON structure, tables, LaTeX, or HTML.</p><p>• Paragraphs_Constraints: Indicate how many paragraphs are needed, and whether any separators (e.g., horizontal lines, "***") should be used.</p><p>• Specific_Sentence: Require inclusion of a specific sentence at the beginning or end of the response.</p><p>• Key_Formatting: Specify formatting of key phrases-such as using bold, italics, or ALL CAPS-based on content in the #Given Output#.</p><p>• Item_Listing_Details: Define how items should be listed, including use of symbols like bullets (•), numbers (1., 2., 3.), or dashes (-).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>#Given Instruction# {Instruction}</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>#Given Output# {Response}</head><p>Please format your response directly in JSON, using "Constraint_Type" as the key and the specific constraint as its value.</p><p>Ensure that each constraint is a concise and complete sentence of 10-20 words, and use varied phrasing across types. If a specific type of constraint cannot be derived from the #Given Output#, assign the value "NULL". For example: "Constraint_Type": "NULL", Do not include any headings or prefixes in your response.</p><p>Table 6: Prompt for generating format, content, and style constraint types based on the back-translation method.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Kaikai An</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ganqu</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuzheng</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Si</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baobao</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chang</surname></persName>
+		</author>
+		<ptr target="https://creativecommons.org/licenses/by-nc/4" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<idno type="arXiv">arXiv:2502.04153</idno>
+		<ptr target="https://www.apache.org/licenses/LICENSE-2.05https://opendatacommons.org/licenses/by/1-0/" />
+		<title level="m">Advancing instruction following from the wild</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Baai</surname></persName>
+		</author>
+		<idno>arXiv:2406.XXXX</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Infinity instruct. arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Can we count on llms? the fixed-effect fallacy and claims of gpt-4 capabilities</title>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Ball</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuo</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cormac</forename><surname>Herley</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions on Machine Learning Research</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Seed1.5-thinking: Advancing superb reasoning models with reinforcement learning</title>
+		<author>
+			<persName><surname>Bytedance-Seed</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.13914</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Huatuogpt-o1, towards medical complex reasoning with llms</title>
+		<author>
+			<persName><forename type="first">Junying</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenyang</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ke</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xidong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanlong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rongsheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianye</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benyou</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.18925</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jiale</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cunxiang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaotao</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yida</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiao</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongning</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minlie</forename><surname>Huang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.11605</idno>
+		<title level="m">Spar: Self-play with tree-search refinement to improve instructionfollowing in large language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tianzhe</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuexiang</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jihan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengbang</forename><surname>Tong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saining</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ma</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.17161</idno>
+		<title level="m">Sft memorizes, rl generalizes: A comparative study of foundation model post-training</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.14168</idno>
+		<title level="m">Reiichiro Nakano, and 1 others. 2021. Training verifiers to solve math word problems</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Self-play with execution feedback: Improving instruction-following capabilities of large language models</title>
+		<author>
+			<persName><forename type="first">Guanting</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keming</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengpeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tingyu</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingren</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.13542</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Drop: A reading comprehension benchmark requiring discrete reasoning over paragraphs</title>
+		<author>
+			<persName><forename type="first">Dheeru</forename><surname>Dua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pradeep</forename><surname>Dasigi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Stanovsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sameer</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matt</forename><surname>Gardner</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of NAACL-HLT</title>
+		<meeting>NAACL-HLT</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="2368" to="2378" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Dubois</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Balázs</forename><surname>Galambosi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tatsunori B</forename><surname>Hashimoto</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.04475</idno>
+		<title level="m">Length-controlled alpacaeval: A simple way to debias automatic evaluators</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Orca-chat: A high-quality explanation-style chat dataset</title>
+		<author>
+			<persName><forename type="first">Shahul</forename><surname>Es</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Retool: Reinforcement learning for strategic tool use in llms</title>
+		<author>
+			<persName><forename type="first">Jiazhan</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijue</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingwei</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baoquan</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengquan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinxin</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanjun</forename><surname>Zhong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.11536</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tairan</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raquel</forename><surname>Ferrando</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Javier</forename><surname>Conde</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><surname>Arriaga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pedro</forename><surname>Reviriego</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.18626</idno>
+		<title level="m">Why do large language models (llms) struggle to count letters? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Bias and fairness in large language models: A survey</title>
+		<author>
+			<persName><forename type="first">Ryan</forename><forename type="middle">A</forename><surname>Isabel O Gallegos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joe</forename><surname>Rossi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Md</forename><surname>Barrow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sungchul</forename><surname>Mehrab Tanjim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Franck</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Dernoncourt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiyi</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nesreen K</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ahmed</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">50</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="1097" to="1179" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Runxin Xu, and 1 others. 2025. Omni-math: A universal olympiad level mathematic benchmark for large language models</title>
+		<author>
+			<persName><forename type="first">Bofei</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feifan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zefan</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yibo</forename><surname>Miao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenghao</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanghaoran</forename><surname>Quan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingxiu</forename><surname>Dong</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note>Proceedings of ICLR</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Grattafiori</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhimanyu</forename><surname>Dubey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Jauhri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Pandey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Kadian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmad</forename><surname>Al-Dahle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aiesha</forename><surname>Letman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akhil</forename><surname>Mathur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Schelten</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.21783</idno>
+		<title level="m">Alex Vaughan, and 1 others. 2024. The llama 3 herd of models</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Daya Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoyu</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shirong</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.12948</idno>
+		<title level="m">Xiao Bi, and 1 others. 2025. Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Weibin Meng, and 1 others. 2025. R1-t1: Fully incentivizing translation capability in llms via reasoning learning</title>
+		<author>
+			<persName><forename type="first">Minggui</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shimin</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanchang</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongyong</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongxia</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daimeng</forename><surname>Wei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.19735</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Jiaqing Liang, and Yanghua Xiao. 2024a. From complex to simple: Enhancing multi-constraint complex instruction following ability of large language models</title>
+		<author>
+			<persName><forename type="first">Qianyu</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qianxi</forename><surname>He</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of ACL</title>
+		<imprint>
+			<biblScope unit="page" from="10864" to="10882" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yun</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Di</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaoqi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chloe</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karishma</forename><surname>Mandyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hejia</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tengyu</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongjiang</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shruti</forename><surname>Bhosale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Abinav Sankararaman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eryk</forename><surname>Helenowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melissa</forename><surname>Hall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Kambadur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Tayade</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Si-Ying</forename><surname>Wang</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2410.15553</idno>
+		<title level="m">Multi-if: Benchmarking llms on multi-turn and multilingual instructions following</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Hurst</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Lerer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><forename type="middle">P</forename><surname>Goucher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Perelman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aidan</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akila</forename><surname>Ostrow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Welihinda</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hayes</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.21276</idno>
+		<title level="m">Alec Radford, and 1 others. 2024. Gpt-4o system card</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Followbench: A multi-level fine-grained constraints following benchmark for large language models</title>
+		<author>
+			<persName><forename type="first">Yuxin</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingshan</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanjun</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liangyou</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Mi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lifeng</forename><surname>Shang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qun</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of ACL</title>
+		<meeting>ACL</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="4667" to="4688" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Bowen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hansi</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenrui</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinsung</forename><surname>Yoon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sercan</forename><surname>Arik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hamed</forename><surname>Zamani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Han</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.09516</idno>
+		<title level="m">Search-r1: Training llms to reason and leverage search engines with reinforcement learning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Richárd Nagyfi, and 1 others. 2024. Openassistant conversations-democratizing large language model alignment</title>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Köpf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yannic</forename><surname>Kilcher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sotiris</forename><surname>Dimitri Von Rütte</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Anagnostidis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Zhi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keith</forename><surname>Tam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abdullah</forename><surname>Stevens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Duc</forename><surname>Barhoum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oliver</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Stanley</surname></persName>
+		</author>
+		<imprint>
+			<biblScope unit="page">36</biblScope>
+		</imprint>
+	</monogr>
+	<note>Advances in NeurlPS</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Lambert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Morrison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Valentina</forename><surname>Pyatkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengyi</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hamish</forename><surname>Ivison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Faeze</forename><surname>Brahman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lester</forename><surname>James</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Miranda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alisa</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouha</forename><surname>Dziri</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2411.15124</idno>
+		<title level="m">Shane Lyu, and 1 others. 2024. T\&quot; ulu 3: Pushing frontiers in open language model post-training</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Tianhao Wu, and 1 others. 2024. From generation to judgment: Opportunities and challenges of llm-as-ajudge</title>
+		<author>
+			<persName><forename type="first">Dawei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bohan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liangjie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alimohammad</forename><surname>Beigi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengshuai</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amrita</forename><surname>Bhattacharjee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Canyu</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2411.16594</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xuefeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoyang</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.23383</idno>
+		<title level="m">Torl: Scaling tool-integrated rl</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhaowei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangqi</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingfeng</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinyi</forename><surname>Niu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zixuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiajie</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weige</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziwei</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.16252</idno>
+		<title level="m">Xueqian Zhao, and 1 others. 2025a. Finr1: A large language model for financial reasoning through reinforcement learning</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zijun</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shirong</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Ruan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.02495</idno>
+		<title level="m">2025b. Inference-time scaling for generalist reward modeling</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sijun</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roy</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ameen</forename><surname>Patel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alpay</forename><surname>Ariyak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoxiang</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rachel</forename><surname>Xin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maurice</forename><surname>Weber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ce</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><forename type="middle">Erran</forename><surname>Li</surname></persName>
+		</author>
+		<title level="m">Raluca Ada Popa, and Ion Stoica. 2025a. Deepcoder: A fully open-source 14b coder at o3-mini level</title>
+		<imprint/>
+	</monogr>
+	<note>Notion Blog</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Raluca Ada Popa, and Ion Stoica. 2025b. Deepscaler: Surpassing o1-preview with a 1.5b model by scaling rl</title>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sijun</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Justin</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoxiang</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">Y</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manan</forename><surname>Roongta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><forename type="middle">Erran</forename><surname>Li</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note>Notion Blog</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Alex Ray, and 1 others. 2022. Training language models to follow instructions with human feedback</title>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carroll</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katarina</forename><surname>Slama</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of NeurIPs</title>
+		<meeting>NeurIPs</meeting>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Baolin</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengcheng</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michel</forename><surname>Galley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Gao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.03277</idno>
+		<title level="m">Instruction tuning with gpt-4</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunjia</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaozhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijun</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juanzi</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.19328</idno>
+		<title level="m">Agentic reward modeling: Integrating human preferences with verifiable correctness signals for reliable reward systems</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Suri: Multi-constraint instruction following in long-form text generation</title>
+		<author>
+			<persName><forename type="first">Chau</forename><surname>Pham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simeng</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Iyyer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of ACL</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="1722" to="1753" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Constraint back-translation improves complex instruction following of large language models</title>
+		<author>
+			<persName><forename type="first">Yunjia</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaozhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juanzi</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.24175</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">Emre</forename><surname>Cheng Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Can Acikgoz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongru</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiusi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dilek</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gokhan</forename><surname>Hakkani-Tür</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Tur</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ji</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.13958</idno>
+		<title level="m">Toolrl: Reward is all tool learning needs</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<author>
+			<persName><forename type="first">Lingfei</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weipeng</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueqing</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Yi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jimin</forename><surname>Huang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.08127</idno>
+		<title level="m">Qianqian Xie, and Jianyun Nie. 2025b. Fino1: On the transferability of reasoning enhanced llms to finance</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yanzhao</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanjun</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjing</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoze</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujing</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weipeng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zenan</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.10943</idno>
+		<title level="m">Wentao Zhang, and 1 others. 2024. Sysbench: Can large language models follow system messages? arXiv preprint</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Qwq-32b: Reward model for factuality and harmlessness</title>
+		<author>
+			<persName><forename type="first">Team</forename><surname>Qwen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2025" to="2025" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Direct preference optimization: Your language model is secretly a reward model</title>
+		<author>
+			<persName><forename type="first">Rafael</forename><surname>Rafailov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Archit</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefano</forename><surname>Ermon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of NeurIPs</title>
+		<meeting>NeurIPs</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Qingyu Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qianyu</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaqing</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanghua</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weikang</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeye</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.04945</idno>
+		<title level="m">Step-by-step mastery: Enhancing soft constraint following ability of large language models</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Deepseekmath: Pushing the limits of mathematical reasoning in open language models</title>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun-Mei</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daya</forename><surname>Guo</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2402.03300</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Optimization-based prompt injection attack to llm-asa-judge</title>
+		<author>
+			<persName><forename type="first">Jiawen</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zenghui</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinuo</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lichao</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Neil</forename><surname>Zhenqiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gong</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 on ACM SIGSAC Conference on Computer and Communications Security</title>
+		<meeting>the 2024 on ACM SIGSAC Conference on Computer and Communications Security</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="660" to="674" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Defining and characterizing reward hacking</title>
+		<author>
+			<persName><forename type="first">Joar</forename><surname>Skalse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolaus</forename><surname>Howe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitrii</forename><surname>Krasheninnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Krueger</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="9460" to="9471" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lixin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fengyu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baohua</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ran</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruohui</forename><surname>Huang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.02823</idno>
+		<title level="m">Conifer: Improving complex constrained instructionfollowing ability of large language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">others. 2023. Challenging big-bench tasks and whether chain-of-thought can solve them</title>
+		<author>
+			<persName><forename type="first">Mirac</forename><surname>Suzgun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Gehrmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyung</forename><forename type="middle">Won</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><forename type="middle">H</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of ACL</title>
+		<imprint>
+			<biblScope unit="page">1</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Lewis</forename><surname>Tunstall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Beeching</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Lambert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nazneen</forename><surname>Rajani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengyi</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kashif</forename><surname>Rasul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alvaro</forename><surname>Bartolome</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><forename type="middle">M</forename><surname>Rush</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Wolf</surname></persName>
+		</author>
+		<imprint>
+			<publisher>The Alignment Handbook</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<author>
+			<persName><forename type="first">Bingning</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haizhou</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huozhi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingyu</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangrong</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yupeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqi</forename><surname>Huo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.12671</idno>
+		<title level="m">Zecheng Wang, and 1 others. 2025. Baichuan-m1: Pushing the medical capability of large language models</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title level="m" type="main">Drt-o1: Optimized deep reasoning translation via long chain-of-thought</title>
+		<author>
+			<persName><forename type="first">Jiaan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fandong</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunlong</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Zhou</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page">2412</biblScope>
+		</imprint>
+	</monogr>
+	<note>arXiv e-prints</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<title level="m" type="main">Qiuwu Chen, and 1 others. 2024b. Enhancing code llms with reinforcement learning in code generation</title>
+		<author>
+			<persName><forename type="first">Junqiao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangfan</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuyang</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hengyuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kunyu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guangwu</forename><surname>Qian</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.20367</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Ziyan Jiang, and 1 others. Mmlu-pro: A more robust and challenging multi-task language understanding benchmark</title>
+		<author>
+			<persName><forename type="first">Yubo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueguang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuansheng</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhranil</forename><surname>Chandra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiguang</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiming</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aaran</forename><surname>Arulraj</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuan</forename><surname>He</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirtyeight Conference on Neural Information Processing Systems Datasets and Benchmarks Track</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tian</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zitian</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingnan</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoming</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqian</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joey</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhirong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Luo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.14768</idno>
+		<title level="m">Logic-rl: Unleashing llm reasoning with rule-based reinforcement learning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<author>
+			<persName><forename type="first">Can</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingfeng</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiubo</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiazhan</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongyang</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daxin</forename><surname>Jiang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.12244</idno>
+		<title level="m">Wizardlm: Empowering large language models to follow complex instructions</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baosong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beichen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.15115</idno>
+		<title level="m">Haoran Wei, and 1 others. 2024. Qwen2. 5 technical report</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<analytic>
+		<title level="a" type="main">Pin-Yu Chen, and 1 others. 2024. Justice or prejudice? quantifying biases in llm-as-ajudge</title>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanbo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongping</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nuno</forename><surname>Moniz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tian</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Werner</forename><surname>Geyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Huang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Neurips Safe Generative AI Workshop</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaokai</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiji</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gao</forename><surname>Huang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.13837</idno>
+		<title level="m">Does reinforcement learning really incentivize reasoning capacity in llms beyond the base model? arXiv preprint</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaokai</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiji</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gao</forename><surname>Huang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.13837</idno>
+		<title level="m">Does reinforcement learning really incentivize reasoning capacity in llms beyond the base model? Preprint</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanjun</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjing</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujing</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weipeng</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.01122</idno>
+		<title level="m">Bin Cui, and 1 others. 2024a. Cfbench: A comprehensive constraints-following benchmark for llms</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<monogr>
+		<title level="m" type="main">2024b. Iopo: Empowering llms with complex instruction following via input-output preference optimization</title>
+		<author>
+			<persName><forename type="first">Xinghua</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haiyang</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongbin</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2411.06208</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<analytic>
+		<title level="a" type="main">Wildchat: 1m chatgpt interaction logs in the wild</title>
+		<author>
+			<persName><forename type="first">Wenting</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Hessel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claire</forename><surname>Cardie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuntian</forename><surname>Deng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of ICLR</title>
+		<meeting>ICLR</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<analytic>
+		<title level="a" type="main">Eric Xing, and 1 others. 2023. Judging llm-as-a-judge with mt-bench and chatbot arena</title>
+		<author>
+			<persName><forename type="first">Lianmin</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Lin</forename><surname>Chiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhanghao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonghao</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuohan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dacheng</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="46595" to="46623" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayuan</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangkun</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojie</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lyumanshan</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengrui</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.03160</idno>
+		<title level="m">Deepresearcher: Scaling deep research via reinforcement learning in real-world environments</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<monogr>
+		<title level="m" type="main">Instruction-following evaluation for large language models</title>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianjian</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swaroop</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siddhartha</forename><surname>Brahma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sujoy</forename><surname>Basu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Luan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Hou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.07911</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

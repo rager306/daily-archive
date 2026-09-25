@@ -1,0 +1,927 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Reflection-Based Memory For Web navigation Agents</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-06-02">2 Jun 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Ruhana</forename><surname>Azam</surname></persName>
+							<email>razam2@illinois.edu</email>
+						</author>
+						<author>
+							<persName><forename type="first">Aditya</forename><surname>Vempaty</surname></persName>
+							<email>aditya@emergence.ai</email>
+						</author>
+						<author>
+							<persName><forename type="first">Ashish</forename><surname>Jagmohan</surname></persName>
+							<email>ashish@emergence.ai</email>
+						</author>
+						<title level="a" type="main">Reflection-Based Memory For Web navigation Agents</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-06-02">2 Jun 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">306A4C7AAEEC6E80CB0258EBEAF16AF4</idno>
+					<idno type="arXiv">arXiv:2506.02158v1[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:07+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Web navigation agents have made significant progress, yet current systems operate with no memory of past experiences -leading to repeated mistakes and an inability to learn from previous interactions. We introduce Reflection-Augment Planning (ReAP), a web navigation system to leverage both successful and failed past experiences using self-reflections. Our method improves baseline results by 11 points overall and 29 points on previously failed tasks. These findings demonstrate that reflections can transfer to different web navigation tasks.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>As language models have rapidly improved, so has the performance of agents that can tackle digital tasks such as web navigation <ref type="bibr" target="#b23">(Zhou et al., 2023;</ref><ref type="bibr" target="#b17">Sodhi et al., 2024;</ref><ref type="bibr">Akkil et al., 2025)</ref>. Current web navigation systems are built by leveraging fixed data sets used for fine-tuning <ref type="bibr" target="#b15">(Shen et al., 2024;</ref><ref type="bibr" target="#b12">Murty et al., 2024;</ref><ref type="bibr" target="#b6">Fu et al., 2024)</ref> or in-context learning <ref type="bibr" target="#b23">(Zhou et al., 2023;</ref><ref type="bibr" target="#b12">Murty et al., 2024)</ref>. Although these methods have shown promising benefits, these agents still fail to iteratively improve over their life cycle. For example, when asked to find me a recipe on Allrecipes.com with 5 stars, these systems repeatedly attempt to use a star filter that does not exist on the website. Recent works have attempted to resolve these issues by storing prior trajectories <ref type="bibr" target="#b10">(Lutz et al., 2024;</ref><ref type="bibr" target="#b14">Sarch et al., 2025)</ref>. In-Context Abstraction Learning (ICAL) addresses this challenge by iteratively improving in-context examples <ref type="bibr" target="#b14">(Sarch et al., 2025)</ref>, while AgentWork-Flow parses prior trajectory sub-goals and stores them as an ongoing memory system <ref type="bibr">(Wang et al., 2024b)</ref>. Other work, WILBUR <ref type="bibr" target="#b10">(Lutz et al., 2024)</ref>, stores summaries of any prior trajectories into the agent's memory.</p><p>We propose Reflection-Augmented Planning (ReAP), which stores reflections from prior experiences and retrieves relevant ones for new tasks.</p><p>Unlike prior work, ReAP focuses on key insights rather the complete workflow, allowing us to effectively leverage successful and failed experiences.</p><p>In our paper, we test a web-agent's ability to leverage reflection on previously performed tasks and novel tasks. Our method demonstrates a 11point performance increase on tasks the agent hasn't performed before, without additional training. Our findings demonstrate that simple key insights, rather than complete trajectory examples, sufficiently enhance agent performance and transfer effectively across diverse web tasks.</p><p>2 Related Work Memory Augmented-Generation Augmenting language models with external memory has reduced hallucinations and improved generation reliability across various applications <ref type="bibr" target="#b9">(Lewis et al., 2020;</ref><ref type="bibr" target="#b3">Borgeaud et al., 2022;</ref><ref type="bibr">Wang et al., 2024a)</ref>. Recent work has focused on not only storing documents or prior agent histories, but also condensed information in the form of high-level insights or the reasoning process. <ref type="bibr" target="#b18">(Suzgun et al., 2025)</ref> demonstrates performance gains by maintaining a document of insights and strategies. Related approaches include Thought-Retriever <ref type="bibr" target="#b5">(Feng et al., 2024)</ref>, which logs models' chain-of-thought from past queries, and Buffer-of-Thoughts <ref type="bibr">(Yang et al., 2024b)</ref>, which distills high-level "thought templates" from problem-solving processes. Among these, ReAP is conceptually most similar to <ref type="bibr" target="#b18">(Suzgun et al., 2025)</ref>, though our work explicitly uses reflections towards web navigation.</p><p>Self-Reflection Self-reflection has significantly enhanced model performance across sequential decision-making tasks <ref type="bibr" target="#b16">(Shinn et al., 2023;</ref><ref type="bibr" target="#b11">Madaan et al., 2023;</ref><ref type="bibr" target="#b7">Gou et al., 2024;</ref><ref type="bibr">An et al., 2024)</ref>, enabling systems to identify errors and refine their strategies. Recent studies have demonstrated its particular effectiveness for web navigation agents <ref type="bibr" target="#b13">(Pan et al., 2024;</ref><ref type="bibr" target="#b2">Azam et al., 2024;</ref><ref type="bibr">Yang et al., 2024a)</ref>. Our work builds upon these findings by implementing a persistent memory system that captures and leverages reflective insights across multiple sessions and different tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">ReAP Method</head><p>The Reflection-Augmented Planning (ReAP) system operates as a specialized retrieval mechanism where the knowledge base contains reflections that help the agent perform more effectively.</p><p>The memory stores key-value pairs representing previously encountered trajectories. Keys contain user tasks (e.g., Search for a recipe with "chicken breast" and "quinoa" under 30 minutes on Allrecipes), while values store reflections gained during navigation (e.g., Allrecipes.com does not have a filter for preparation time).</p><p>The ranking model selects relevant reflections for a newly given task. It uses embeddings of the current task and entries in the knowledge base to rank the relevance of each reflection to the new task.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">The Pipeline</head><p>Algorithm 1 presents our two-phase ReAP pipeline. First, we build a memory index with trajectory reflections R(τ j ) embedded using text embeddings. During inference, we retrieve the k = 5 most relevant reflections using cosine similarity and incorporate them into the agent's prompt.</p><formula xml:id="formula_0">Algorithm 1 ReAP Pipeline 1: function BUILDMEMORY(D train ) 2: R ← ∅ 3: for (t j , τ j ) ∈ D train do 4: R ← R ∪ {(t j , R(τ j ), Embed(t j ))} 5: end for 6: return R 7: end function 8: function REAPPROMPT(t i , R) 9: q ← Embed(t i ) ▷ Embed current task 10: {K 1 , ..., K k } ← Retrieve(q, R, k) 11: return Agent(t i ⊕ K 1 ⊕ • • • ⊕ K k ) 12: end function</formula><p>Details about our embedding model and similarity metrics can be found in Appendix C. Next we present the different implementations of R testing in our evaluations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Knowledge Types in ReAP</head><p>The reflection process in the ReAP system enables the agent to analyze its performance and learn from prior web navigation experience. We test three different methods that leverage both positive and negative prior experiences:</p><p>• One-shot &amp; Reward Label: Directly inserts the trajectory and reward, e.g., (s 1 , a 1 , s 2 , a 2 , . . . , r).</p><p>• Summary &amp; Reward Label: Prompts an LLM to produce a high-level summary of the plan, reward, and reason for failure.</p><p>• Web-Reflection &amp; Reward Label: These reflections follow the components below:</p><p>1. Positive Reinforcement: Which steps helped accomplish the plan? 2. Limited Functionality: Were there any limitations in the site's capabilities? 3. Shortcuts: Can the task be completed more efficiently? 4. Backtracking/Challenges: Where did the prior plan fail or require rerouting? 5. Feedback: Suggestions for improving an unsuccessful plan.</p><p>The exact prompts can be found in Appendix A.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Hypothesis 1: ReAP can improve the agent's ability to redo prior tasks</head><p>In this section, we test whether the ReAP system can improve an agent's performance on previously attempted tasks. WebArena is a simulated web environment containing shopping, mapping, Reddit, and GitLab interfaces that allows for standardized evaluation of web navigation agents. For this experiment, we use a set of 70 WebArena tasks <ref type="bibr" target="#b23">(Zhou et al., 2023)</ref> and provide the agent with a single trajectory rollout for each task. The knowledge base contains trajectories from a vanilla run of our base agent, AgentOccam <ref type="bibr">(Yang et al., 2024a)</ref>, which uses gpt-4o-2024-08-06. We set the temperature to 0 and top-p to 0.5 to increase determinism. Additional details on the model's configuration can be found in Appendix B.1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Success Rate (SR)</head><p>To evaluate the effectiveness of the ReAP system in the context of similar tasks, we measured SR across multiple knowledge retrieval conditions. We compared baseline agent performance against the three aforementioned variants. The baseline results presented are from our rerun of AgentOccam. The results in Figure <ref type="figure" target="#fig_0">1</ref> reveal several important findings about reflection-based prompting:</p><p>• Overall SR improvement: All reflection methods increased the agent's performance over the baseline by +5 points.</p><p>• Learning from failure: Notably, agents improve by +20 points on previously failed tasks when provided reflections from previously failed trajectories. This demonstrates that reflections can prevent prior failure points.</p><p>• Some Negative Transfer: For previously successful tasks, none of the reflection methods achieved perfect success rates, with even the best methods (Summary and Reflection) only reaching 84% SR. This indicates some negative transfer and suggests that ReAP works better for tasks that were previously difficult, although ReAP still maintains fairly high SR overall.</p><p>These results strongly support our hypothesis that ReAP systems can enhance an agent's ability to redo tasks, regardless of whether the previous attempt was successful.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Cost Analysis</head><p>Beyond improving the success rate, ReAP significantly reduces the cost of running web navigation models. The number of steps is reduced by 15.4% overall (from 11.92 to 10.08 with Reflection). Moreover, since failed tasks tend to produce long trajectories (average of 14.94 steps for the base agent), our method reduced the number of steps taken on these tasks by 25.0% (to 11.20 steps).</p><p>We observed that the ReAP agent significantly reduced the need for re-prompting. The agent is reprompted when invalid actions are generated. This can increase the token count. Due to this reduction in re-prompts and the overall decrease in steps, we observed substantial token and time reductions with certain approaches-particularly Summary, which cuts token usage by approximately 74% (from 221k to 58k total tokens) and execution time by 51% (from 682s to 334s). Overall, different ReAP approaches offer various tradeoffs when executing seen tasks. Summary provided the best token-count efficiency while Reflection offering the best SR while reducing the step count.</p><p>5 Hypothesis 2: ReAP improves performance when similar tasks have been executed before</p><p>In this section, we show that the ReAP method extends beyond verbatim task repetition to facilitate transfer learning between similar tasks. To evaluate our hypothesis, we used the publicly available AgentOccam <ref type="bibr">(Yang et al., 2024a)</ref> trajectories for WebArena, dividing them into an 80-20 train-test split. We populated our knowledge base with reflections generated from the 80% training trajectories and evaluated performance on the remaining 20% of tasks. For each test task, we retrieved the top-5 reflections using cosine similarity and incorporated them into the agent's prompt. Appendix C provides further details on the semantic similarity measure used.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Success Rates</head><p>Figure <ref type="figure" target="#fig_1">2</ref> illustrates performance improvements across different knowledge conditions. This plot shows the results for tasks that were previously failed or succeeded by the baseline agent-indicating which tasks had been historically difficult or easy. The results in Figure <ref type="figure" target="#fig_1">2</ref> reveal several important findings about knowledge transfer between similar tasks:</p><p>• Overall Improvement in SR: All knowledge types improved over the baseline, with Oneshot achieving a 6 point improvement, while Summary and Reflection showing a 11 point improvement.</p><p>• Reflections benefit difficult tasks: Most performance gains come from previously failed trajectories (28 points), demonstrating that reflections from similar tasks can effectively transfer and help solve challenging cases that the baseline agent could not complete.</p><p>Our agent shows an improvement of 11 points over the baseline, demonstrating that the ReAP system can effectively enhance task performance on similar-but distinct-tasks. These results show that ReAP enables effective knowledge transfer, improving the agent's general capabilities. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Cost Analysis</head><p>As in Section 4, we find that ReAP reduces task execution cost while improving SR. The number of steps is reduced by 29.1% overall compared to the baseline, with a particularly notable reduction of 37.1% in steps taken on previously failed tasks. Again, we observed that our approach significantly reduced the need for re-prompting, leading to a reduction in token usage. The reflection method in particular demonstrated the greatest efficiency gains, requiring only 83k total tokens compared to 221k for the baseline. Overall, our agent achieved substantial reductions in both steps and prompt tokens, with the reflection approach lowering steps by 29.1%.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>ReAP significantly improves web navigation tasks, increasing success rates by +11 points and decreasing the average number of steps by 34.7%, thereby reducing the cost of running such agents. These results highlight a key finding: ReAP enables effective knowledge transfer between similar but distinct tasks, enhancing overall agent performance without requiring additional training. We hope that these advances in reflection-based memory will help make web agents more practical for everyday use by reducing errors and operational costs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Ethics Statement</head><p>Our web agent research could be misused to harvest sensitive data, bypass authentication systems, and automate fraud across websites. Malicious actors could exploit these tools to violate terms of service through mass scraping, credential stuffing, or denial-of-service attacks. Any deployment of automated web agents inherently risks digital ecosystem disruption through unintended traffic patterns or circumvention of anti-bot measures. We intend to further this research for beneficial applications and discourage implementation of our methods for malicious purposes that violate privacy, security, or digital system integrity.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitation</head><p>The primary limitation of this study is our evaluation being bounded to the WebArena benchmark. While WebArena offers a controlled environment for benchmarking, extending evaluation to more real-life benchmarks such as Mind2Web <ref type="bibr" target="#b4">(Deng et al., 2023)</ref> and WebVoyager <ref type="bibr" target="#b8">(He et al., 2024)</ref> would provide a more realistic assessment of ReAP. However, WebVoyager requires human annotators and Mind2Web's automated evaluation system operates at approximately 85% accuracy. Our resource limitations do not allow for human annotations, thus our benchmarks are limited. Another limitation is our experiments focused on a single base-agent. Examining ReAP's performance with open-source models would enhance accessibility for researchers with varied computational resources. Future research replicating our methodology across diverse models and benchmarks would strengthen our findings.</p><p>OBJECTIVE : { objective } 5 6 SUCCESSFUL ?: { is_success } 7 8 SUMMARY GUIDELINES : 9 -What did the agent attempt to do ? 10 -If successful , what were the key actions that worked ? 11 -If unsuccessful , where did it go wrong and why ? 12 -What parts of the environment were especially tricky ? 13 -What should future agents be aware of on this type of website ? 14 15 TRAJECTORY SNAPSHOT : { trajectory } A.1.2 Web-Reflection Prompt 1 You are analyzing a prior web navigation episode from an autonomous agent . Your goal is to output strategic advice and lessons learned to help an inexperienced agent perform better on similar websites or task in the future . Please answer the following based on the trajectory and objective shown : 1. Useful Subgoals : Which subgoals were necessary to accomplish the overall plan and sucessfully accomplished ? For each sucessfully accomplished subgoal , what actions were taken to accomplish this ? 2. Backtracking &amp; Unexpected Challenges Faced : It 's possible that there unexpected challenged while executing the objective . This can lead to unnecessary steps taken while executing the objective . If there was any backtracking , can you provide advice on how the backtracked steps can be avoided and how the task can be accomplished directly ? Please do not provide any advice which you did not witness in the given trajectory . 3. Limited Functionalities Learned : Based on the trajectory , the agent may have learned there are certain capabilities not possible on certain websites (i.e. allrecipes . com has no option to filter recipes by rating ). If any , what limitations does this current website have ? 4. Shortcuts Suggestions : Can you suggest any shortcuts for accomplishing the objective with fewer steps ? Please only provide shortcuts you are certain are possible on the given website . If any shortcuts are suggested , please write them in a list . 5. Other Feedback : If the prior plan did not work , where did the agent go wrong ? Please be specific . Do you have any tips which can help a inexperience agent avoid making the same mistake (s)? Please write out answers is if you are speaking directly to the inexperience web navigation agent . Note the agent cannot see the full trajectory that you are viewing , so please answer accordingly . In each category , provide the answers as a bullet point list . Please do not call the agent an inexperienced --that is rude .</p><p>Table <ref type="table">3</ref>: Success rates (SR) on 37 WebArena tasks with various temperature and top-p settings.</p><p>For both One-shot and Reflection approaches, more deterministic settings led to improved overall performance. The deterministic Reflection approach achieved the highest success rate (0.51) and perfect performance (1.00) on positive examples. This suggests that lower temperature values help agents better adhere to the trajectory information provided in prompts, improving their ability to follow demonstrated paths during task execution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2 Site-Specific Success Rates</head><p>In this section, we examine site-specific success rates for the results presented in Sections 4-5.</p><p>For previously seen tasks (Figure <ref type="figure">3</ref>), we observe mixed results across websites. Map interfaces show substantial improvement with Reflection (30.7 points), while Reddit tasks demonstrate a notable performance decrease (22.2 points). Overall, Reflection achieves a modest 5.0 points improvement for previously seen tasks.</p><p>Figure <ref type="figure">3</ref>: Success rate across 70 WebArena tasks, grouped by site, leveraging reflection for previously seen tasks (results from Section 4).</p><p>Figure <ref type="figure">4</ref>: Success rate across 70 WebArena tasks, grouped by site, leveraging reflection for previously unseen tasks (results from Section 5).</p><p>For unseen tasks (Figure <ref type="figure">4</ref>), improvements are more consistent across sites. Reflection outperforms the baseline by double-digit margins on most websites: 14.2 points for gitlab, 23.1 points for map, 12.6 points for shopping, and 14.3 points for shopping_admin. Only reddit shows a performance decrease (11.1 points). These findings demonstrate that ReAP consistently benefits novel tasks across diverse web environments. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Semantic Similarity for Task Retrieval</head><p>We retrieve relevant examples using semantic similarity between task instructions. Our method computes cosine similarity between task embeddings, where each task is represented as: "Go to {start_url}, {intent}" (e.g., Go to MAP, Which US states border Illinois?). The primary goal is to assign high similarity scores to semantically related tasks.</p><p>We evaluate several embedding models: the domain-specific llama8b-nnetnav-wa <ref type="bibr" target="#b12">(Murty et al., 2024)</ref>, the general-purpose gte-Qwen2-7B-instruct, OpenAI's text-embedding-3 models (large/small), and the lightweight all-MiniLM-L6-v2. We were able to run local models on a Quadro RTX 8000 with 48GB of VRAM. A visualization of task embeddings over the full WebArena dataset is shown in Figure <ref type="figure">5</ref>.</p><p>Ideally, tasks from the same website should share similar workflows and thus cluster together in the embedding space. Figure <ref type="figure">5</ref> shows that smaller models such as text-embedding-3-small and all-MiniLM-L6-v2 struggle to make this separation-particularly between shopping and shopping_admin tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1 Semantic Similarity Measure</head><p>We evaluated embeddings on a set of 30 WebArena tasks, with a focus on distinguishing closely related categories (e.g., shopping vs. shopping_admin).</p><p>Figures 6-10 show cosine similarity matrices between task embeddings. From these visualizations, we observe that llama8b-nnetnav-wa (Figure <ref type="figure" target="#fig_4">7</ref>) struggles to separate shopping from shopping_admin compared to larger models like gte-Qwen2-7B-instruct and text-embedding-3-large.</p><p>We select gte-Qwen2-7B-instruct as our embedding model for experiments in Section 5. While it shows some difficulty distinguishing shopping and shopping_admin, Figure <ref type="figure">4</ref> shows that it can still retrieve helpful reflections. Notably, it contributes to an improvement of +12 points on both task categories.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Data and Code Usage</head><p>This work builds upon two key open-source codebases: WebArena <ref type="bibr" target="#b23">(Zhou et al., 2023)</ref> and Agen-tOccam <ref type="bibr">(Yang et al., 2024a)</ref>, both of which are available under the Apache 2.0 License<ref type="foot" target="#foot_2">foot_2</ref> . In accordance with this license, we utilized WebArena as our evaluation environment and employed Agen-tOccam as our baseline agent.     </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Success rate of 70 WebArena tasks. Results are split based on if the reflection was from a previously successful or unsuccessful trajectory.</figDesc><graphic coords="3,70.87,138.40,218.26,140.97" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Success rate of 70 WebArena tasks. Results are split based on whether the baseline method succeeded or failed each task.</figDesc><graphic coords="4,70.87,263.52,218.26,140.97" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><figDesc>Figure 5: t-SNE visualization of task embeddings for WebArena tasks across different models.</figDesc><graphic coords="9,154.77,205.75,136.07,112.22" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Cosine similarity heatmap for gte-Qwen2-7B-instruct embeddings across WebArena task categories.</figDesc><graphic coords="10,127.56,95.20,340.16,269.33" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Cosine similarity heatmap for llama8b-nnetnav-wa, showing weaker separation between closely related categories.</figDesc><graphic coords="10,127.56,443.10,340.16,269.71" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 8 :</head><label>8</label><figDesc>Figure 8: Cosine similarity heatmap for text-embedding-3-large across WebArena task categories.</figDesc><graphic coords="11,127.56,98.10,340.16,269.71" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 9 :</head><label>9</label><figDesc>Figure9: Cosine similarity heatmap for text-embedding-3-small across WebArena task categories.</figDesc><graphic coords="11,127.56,452.16,340.16,269.71" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 10 :</head><label>10</label><figDesc>Figure 10: Cosine similarity heatmap for all-MiniLM-L6-v2 across WebArena task categories.</figDesc><graphic coords="12,127.56,275.32,340.16,269.33" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Overall Performance (70 WebArena tasks) Knowledge Total Tok. Prompt Tok. Tct (s) Steps</figDesc><table><row><cell>N/A</cell><cell>221k</cell><cell>202k</cell><cell>682 11.92</cell></row><row><cell>One-shot</cell><cell>247k</cell><cell>236k</cell><cell>515 10.45</cell></row><row><cell>Summary</cell><cell>58k</cell><cell>54k</cell><cell>334 11.27</cell></row><row><cell>Reflection</cell><cell>225k</cell><cell>205k</cell><cell>556 10.08</cell></row><row><cell></cell><cell cols="2">Positive Examples Only</cell><cell></cell></row><row><cell>N/A</cell><cell>217k</cell><cell>194k</cell><cell>576 7.68</cell></row><row><cell>One-shot</cell><cell>243k</cell><cell>225k</cell><cell>572 6.60</cell></row><row><cell>Summary</cell><cell>42k</cell><cell>39k</cell><cell>275 9.12</cell></row><row><cell>Reflection</cell><cell>40k</cell><cell>37k</cell><cell>258 8.52</cell></row><row><cell></cell><cell cols="2">Negative Examples Only</cell><cell></cell></row><row><cell>N/A</cell><cell>224k</cell><cell>208k</cell><cell>757 14.94</cell></row><row><cell>One-shot</cell><cell>250k</cell><cell>243k</cell><cell>475 13.20</cell></row><row><cell>Summary</cell><cell>69k</cell><cell>65k</cell><cell>376 12.80</cell></row><row><cell>Reflection</cell><cell>358k</cell><cell>324k</cell><cell>770 11.20</cell></row></table><note><p>Average cost for executing AgentOccam-Judge on 70 WebArena tasks using different knowledge types.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Average cost for executing AgentOccam-Judge on 70 WebArena tasks using different knowledge types.</figDesc><table><row><cell cols="4">Overall Performance (70 WebArena tasks)</cell></row><row><cell cols="4">Knowledge Total Tok. Prompt Tok. Tct (s) Steps</cell></row><row><cell>N/A (Our)</cell><cell>221k</cell><cell>202k</cell><cell>682 11.92</cell></row><row><cell>One-shot</cell><cell>770k</cell><cell>759k</cell><cell>424 9.88</cell></row><row><cell>Summary</cell><cell>151k</cell><cell>147k</cell><cell>372 9.55</cell></row><row><cell>Reflection</cell><cell>83k</cell><cell>80k</cell><cell>327 8.45</cell></row><row><cell></cell><cell cols="2">Positive Examples Only</cell><cell></cell></row><row><cell>N/A (Our)</cell><cell>217k</cell><cell>194k</cell><cell>576 7.68</cell></row><row><cell>One-shot</cell><cell>314k</cell><cell>311k</cell><cell>271 7.60</cell></row><row><cell>Summary</cell><cell>71k</cell><cell>68k</cell><cell>239 7.48</cell></row><row><cell>Reflection</cell><cell>70k</cell><cell>67k</cell><cell>258 7.12</cell></row><row><cell></cell><cell cols="2">Negative Examples Only</cell><cell></cell></row><row><cell>N/A (Our)</cell><cell>224k</cell><cell>208k</cell><cell>757 14.94</cell></row><row><cell>One-shot</cell><cell>1095k</cell><cell>1079k</cell><cell>533 11.51</cell></row><row><cell>Summary</cell><cell>208k</cell><cell>203k</cell><cell>467 11.03</cell></row><row><cell>Reflection</cell><cell>92k</cell><cell>89k</cell><cell>377 9.40</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_0"><p></p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="7" xml:id="foot_1"><p></p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_2"><p>https://www.apache.org/licenses/LICENSE-2.0</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Prompt Templates by Knowledge Type</head><p>A.1 Knowledge-Extraction Prompts A.1.1 Summary Prompt 1 You are summarizing a prior web navigation episode from an autonomous agent . 2 Please answer the following based on the trajectory . Write out answers coherently as if you are passing along this information to an inexperience web navigation agent . OBJECTIVE : { objective } 16 17 SUCCESSFUL ?: { is_success } 18 TRAJECTORY SNAPSHOT : { trajectory } A.2 Agent's Objective Prompt A.2.1 With Prior Example 1</p><p>Here are some examples of prior web interactions . Each example shows the task , the steps taken , and the outcome .  2 Example { task_id }: 3 Task : { objective } 4 Outcome : { was_success } 5 Key Learnings : { reflect_str }</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Additional Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1 Temperature Effect</head><p>Our experiments show that adjusting temperature and top-p parameters impacts agent performance under the ReAP method. We evaluated performance across 37 WebArena tasks, comparing stochastic settings (temperature = 0.5, top-p = 0.95) with more deterministic ones (temperature = 0, topp = 0.5).</p><p>Reflection Type All Pos. Neg. Our Baseline 0.32 --One-shot (Stochastic) 0.28 0.67 0.11 One-shot (Deterministic) 0.47 0.92 0.28 Summary (Stochastic) 0.36 0.78 0.16 Summary (Deterministic) 0.47 1.00 0.16 Reflect (Stochastic) 0.36 0.78 0.16 Reflect (Deterministic) 0.51 1.00 0.28</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>1</head><figDesc>Here are some information from prior web interactions and their outcome .</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>1</head><figDesc>Here are some tips from prior web interactions and their outcome .</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Deepak</forename><surname>Akkil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruhana</forename><surname>Azam</surname></persName>
+		</author>
+		<title level="m">Tamer Abuelsaad, Prasenjit Dey, Aditya Vempaty, Ashish Jagmohan, and Ravi Kokku. 2025. Agent-e: From autonomous web navigation to foundational design principles in agentic systems</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zexiong</forename><surname>Shengnan An</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeqi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nanning</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian-Guang</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chen</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2310.20689</idno>
+		<title level="m">Learning From Mistakes Makes LLM Better Reasoner</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Multimodal Auto Validation For Self-Refinement in Web Agents</title>
+		<author>
+			<persName><forename type="first">Ruhana</forename><surname>Azam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tamer</forename><surname>Abuelsaad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Vempaty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Jagmohan</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2410.00689</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Improving language models by retrieving from trillions of tokens</title>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Borgeaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Mensch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jordan</forename><surname>Hoffmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Trevor</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eliza</forename><surname>Rutherford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katie</forename><surname>Millican</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Van Den Driessche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean-Baptiste</forename><surname>Lespiau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bogdan</forename><surname>Damoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aidan</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diego</forename><surname>De Las</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aurelia</forename><surname>Casas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Guy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roman</forename><surname>Menick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Ring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saffron</forename><surname>Hennigan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Loren</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Maggiore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Albin</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Cassirer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michela</forename><surname>Brock</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Paganini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oriol</forename><surname>Irving</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Vinyals</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karen</forename><surname>Osindero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><forename type="middle">W</forename><surname>Simonyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erich</forename><surname>Rae</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurent</forename><surname>Elsen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sifre</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 39th International Conference on Machine Learning</title>
+		<meeting>the 39th International Conference on Machine Learning</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">162</biblScope>
+			<biblScope unit="page" from="2206" to="2240" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyuan</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><surname>Stevens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boshi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Su</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Mind</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengrui</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanyu</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxuan</forename><surname>You</surname></persName>
+		</author>
+		<title level="m">Thought-retriever: Don&apos;t just retrieve raw data</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note>retrieve thoughts</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">AutoGuide: Automated Generation and Selection of Context-Aware Guidelines for Large Language Model Agents</title>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong-Ki</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaekyeom</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sungryull</forename><surname>Sohn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lajanugen</forename><surname>Logeswaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyunghoon</forename><surname>Bae</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honglak</forename><surname>Lee</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2403.08978</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhibin</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yeyun</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yelong</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujiu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2305.11738</idno>
+		<title level="m">CRITIC: Large Language Models Can Self-Correct with Tool-Interactive Critiquing</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hongliang</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenlin</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaixin</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenzhong</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+		</author>
+		<title level="m">Webvoyager: Building an end-toend web agent with large multimodal models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Retrieval-augmented generation for knowledgeintensive NLP tasks</title>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Piktus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladimir</forename><surname>Karpukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heinrich</forename><surname>Küttler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Rocktäschel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Riedel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Douwe</forename><surname>Kiela</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="9459" to="9774" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Wilbur: Adaptive in-context learning for robust and accurate web agents</title>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Lutz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arth</forename><surname>Bohra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manvel</forename><surname>Saroyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Artem</forename><surname>Harutyunyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Giovanni</forename><surname>Campagna</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.05902</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niket</forename><surname>Tandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prakhar</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Skyler</forename><surname>Hallinan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Wiegreffe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouha</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shrimai</forename><surname>Prabhumoye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shashank</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bodhisattwa</forename><surname>Prasad Majumder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katherine</forename><surname>Hermann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Welleck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amir</forename><surname>Yazdanbakhsh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2303.17651</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Self-Refine: Iterative Refinement with Self-Feedback</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Nnetnav: Unsupervised learning of browser agents through environment interaction in the wild</title>
+		<author>
+			<persName><forename type="first">Shikhar</forename><surname>Murty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dzmitry</forename><surname>Bahdanau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Scaling Self-Improving Foundation Models without Human Supervision</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Autonomous Evaluation and Refinement of Digital Agents</title>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Tomlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alane</forename><surname>Suhr</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2404.06474</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Sarch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lawrence</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><forename type="middle">J</forename><surname>Tarr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">W</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenneth</forename><surname>Marino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katerina</forename><surname>Fragkiadaki</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2406.14596</idno>
+		<title level="m">VLM Agents Generate Their Own Memories: Distilling Experience into Embodied Programs of Thought</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Ishan Amlekar, Mouad Hadji, Aaron Podolny, and Ameet Talwalkar</title>
+		<author>
+			<persName><forename type="first">Junhong</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Atishay</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zedian</forename><surname>Xiao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2411.15004</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Scribeagent: Towards specialized web agents using production-scale workflow data</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Berman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2303.11366</idno>
+		<title level="m">Reflexion: Language Agents with Verbal Reinforcement Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">Paloma</forename><surname>Sodhi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">R K</forename><surname>Branavan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoav</forename><surname>Artzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Mcdonald</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2310.03720</idno>
+		<title level="m">SteP: Stacked LLM Policies for Web Actions</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mirac</forename><surname>Suzgun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mert</forename><surname>Yuksekgonul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Bianchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Jurafsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Zou</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2504.07952</idno>
+		<title level="m">Dynamic Cheatsheet: Test-Time Learning with Adaptive Memory</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiusi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoming</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingfeng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyu</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xian</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingbo</forename><surname>Shang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Mcauley</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2402.04624</idno>
+		<idno type="arXiv">arXiv:2402.04624</idno>
+		<title level="m">MEMORYLLM: Towards Self-Updatable Large Language Models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Zora</forename><surname>Zhiruo</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">Daniel Fried, and Graham Neubig. 2024b. Agent Workflow Memory</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename></persName>
+			<affiliation>
+				<orgName type="collaboration">Daniel Fried, and Graham Neubig. 2024b. Agent Workflow Memory</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayuan</forename><surname>Mao</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">Daniel Fried, and Graham Neubig. 2024b. Agent Workflow Memory</orgName>
+			</affiliation>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2409.07429</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ke</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sapana</forename><surname>Chaudhary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rasool</forename><surname>Fakoor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pratik</forename><surname>Chaudhari</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.13825</idno>
+		<title level="m">George Karypis, and Huzefa Rangwala. 2024a. Agentoccam: A simple yet strong baseline for llm-based web agents</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ling</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaochen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianjun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyi</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minkai</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wentao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2406.04271</idno>
+		<title level="m">and Bin Cui. 2024b. Buffer of Thoughts: Thought-Augmented Reasoning with Large Language Models</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuhui</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abishek</forename><surname>Sridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianyi</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.13854</idno>
+		<title level="m">Webarena: A realistic web environment for building autonomous agents</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

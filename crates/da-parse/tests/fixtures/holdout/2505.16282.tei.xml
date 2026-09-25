@@ -1,0 +1,1168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">ARPO: End-to-End Policy Optimization for GUI Agents with Experience Replay</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-05-22">22 May 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Fanbin</forename><surname>Lu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">The Chinese University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhisheng</forename><surname>Zhong</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">The Chinese University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Shu</forename><surname>Liu</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Chi-Wing</forename><surname>Fu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">The Chinese University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jiaya</forename><surname>Jia</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Hong Kong University of Science and Technology VLM Agent Observations</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hong</forename><surname>Kong</surname></persName>
+						</author>
+						<title level="a" type="main">ARPO: End-to-End Policy Optimization for GUI Agents with Experience Replay</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-05-22">22 May 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">15213839FE9861A0597A659F56A35B6C</idno>
+					<idno type="arXiv">arXiv:2505.16282v1[cs.CV]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:05+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reward</head><p>Policy Gradient (a) End-to-end GUI agent. (b) Task completion rate. (c) Training rewards.</p><p>Figure 1: Agentic Replay Policy Optimization (ARPO) enables effective end-to-end policy optimization for GUI agents. (a) Our vision-language agent processes long-horizon visual observations and interaction histories to generate sequential actions and receive policy gradients from sparse, delayed rewards. (b) ARPO significantly boosts in-domain task success rates compared to baseline and GRPO-only training. (c) Average training reward steadily increases, demonstrating improved policy learning and sample efficiency in complex GUI environments.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Among various agent types, GUI agents that interact with the computer screen through vision-based perception and action have been of long-standing interest <ref type="bibr" target="#b1">[2,</ref><ref type="bibr" target="#b15">16,</ref><ref type="bibr" target="#b3">4]</ref>. Most prior work relies on supervised fine-tuning (SFT) on large-scale trajectory data. These agents are typically trained through SFT on large-scale trajectory datasets, where the model learns to imitate human behavior by predicting the next action based on the current screenshot and interaction history. However, these agents lack the ability to self-correct and suffer from error accumulation in the working trajectory.</p><p>To address these limitations, we explore reinforcement learning (RL) in GUI agent training. In contrast to single-turn RL or static reward optimization, we adopt Group Relative Policy Optimization (GRPO) <ref type="bibr" target="#b4">[5]</ref>, a recent variant of PPO <ref type="bibr" target="#b17">[18]</ref> that eliminates the need for a value function and estimates token-level advantages from group-wise reward normalization. GRPO has demonstrated promising results in mathematical reasoning <ref type="bibr" target="#b18">[19]</ref> and tool-use agent <ref type="bibr" target="#b14">[15]</ref>. It is a natural fit for training visionlanguage agents due to its ability to handle long sequences and multiple modalities with improved efficiency.</p><p>This paper tackles the challenge of end-to-end policy optimization for GUI agents, with a particular focus on multi-turn, multi-modal agent design, see Fig. <ref type="figure">1a</ref>. Our goal is to maximize the rule-based reward from the environment over entire trajectories using GRPO. However, GUI environments typically offer sparse and delayed reward signals: agents receive feedback only upon task completion, and many complex tasks may yield no reward at all during early training phases. Moreover, the cost of rollouts in real desktop environments is non-trivial. GUI interaction involves operating system-level delays, which significantly slow down the data collection process. To overcome these obstacles, we develop a scalable distributed rollout system that enables parallel interaction with real desktop environments, such as OSWorld <ref type="bibr" target="#b24">[25]</ref>. By batching inference across environments, we reduce latency and make efficient use of GPU resources, thus facilitating rollout collection at scale.</p><p>To further enhance training stability and sample efficiency, we introduce a task selection strategy that filters for those capable of producing successful rollouts under baseline agents. This curated subset enhances signal quality during early training and accelerates convergence. We further introduce an experience replay buffer tailored to GUI agent learning. This buffer stores successful trajectories on a per-task basis and dynamically injects them into GRPO training groups when all sampled rollouts in a group fail. The inclusion of at least one high-reward trajectory within each group ensures meaningful reward variance, which is critical for computing token-level advantages.</p><p>We conduct extensive evaluations on the OSWorld benchmark and observe that reinforcement learning effectively improves agent performance. We also find an interesting fact that RL training delivers strong gains on in-domain tasks, but hardly benefits out-of-domain agentic tasks.</p><p>Our contributions are summarized as follows:</p><p>• We propose an end-to-end policy optimization approach for training a GUI agent in challenging multi-turn, multi-modal environments using GRPO.</p><p>• We demonstrate that careful selection of training tasks is critical for maintaining reward diversity and ensuring stable policy optimization.</p><p>• We propose an experience replay buffer that retains successful trajectories, enhancing sample efficiency and stabilizing training in sparse-reward settings.</p><p>• We find that reinforcement learning substantially improves agent performance on in-domain tasks, while offering moderate generalization improvements to out-of-domain agentic tasks.</p><p>2 Related Works GUI Agents. Recent advances in multimodal models have led to significant progress in GUI and web-based automation. SeeClick <ref type="bibr" target="#b1">[2]</ref> and ScreenAgent <ref type="bibr" target="#b13">[14]</ref> utilize large vision-language models (VLMs) with visual input processing to perform interactive tasks on user interfaces. Building on this, OmniAct <ref type="bibr" target="#b8">[9]</ref> introduces a benchmark that focuses on generating executable actions from visually grounded natural language instructions. CogAgent <ref type="bibr" target="#b5">[6]</ref> and UI-Tars <ref type="bibr" target="#b15">[16]</ref> extend pretraining with large-scale web and desktop interface data, enhancing screen understanding and agent behavior. GUI-R1 <ref type="bibr" target="#b23">[24]</ref> explores reinforcement learning to improve UI grounding in VLM-based agents. However, directly optimizing policy models for GUI agents in an end-to-end policy optimization way remains unexplored in current research.</p><p>Reinforcement Learning for Agents. Rule-based reinforcement learning (RL) has proven effective in fine-tuning large language models (LLMs) across a range of domains. OpenAI's o1 <ref type="bibr" target="#b7">[8]</ref> and DeepSeek-R1 <ref type="bibr" target="#b4">[5]</ref> demonstrate strong performance in tasks such as mathematical reasoning <ref type="bibr" target="#b18">[19]</ref>, code generation <ref type="bibr" target="#b10">[11]</ref>, and multi-modal inference <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b11">12]</ref> through structured reward signals. ToolRL <ref type="bibr" target="#b14">[15]</ref> extends this paradigm by introducing RL-based training for LLM agents that interact with external tools. Sweet-RL <ref type="bibr" target="#b28">[29]</ref> introduces a multi-turn DPO framework to enhance long-horizon language agent behaviors. RAGEN <ref type="bibr" target="#b20">[21]</ref> further advances multi-turn RL by applying it in live, rule-based environments for self-evolving agent training.</p><p>Despite these advancements, most existing work focuses on symbolic tasks or static tool use. Applying reinforcement learning to vision-language agents operating in dynamic, multimodal GUI environments remains a challenging task. In particular, this work aims to leverage rule-based rewards from live desktop environments for end-to-end policy optimization in multi-turn GUI agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Method</head><p>In this section, we first provide a brief introduction to the preliminaries of Group Relative Policy Optimization (GRPO). Then, we describe the architecture and training procedure of our GUI agent. The agent builds upon vision-language models (VLMs), enhanced with longer context windows and longer image, action chains. These modifications are essential for training complex GUI tasks with end-to-end reinforcement learning algorithms like GRPO.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Preliminary</head><p>Group Relative Policy Optimization (GRPO) <ref type="bibr" target="#b18">[19]</ref> is a reinforcement learning algorithm designed to optimize language models efficiently without requiring an explicit value function or critic. GRPO modifies the standard Proximal Policy Optimization (PPO) objective by computing token-level advantages based on group-normalized rewards, making it particularly suitable for LLMs.</p><p>Given a batch of G responses {o i } G i=1 from a query q, each consisting of a sequence of tokens o i = (o i (1), ..., o i (T )), the GRPO objective is defined as:</p><formula xml:id="formula_0">J GRPO (θ) = 1 G G i=1 1 |o i | |oi| t=1 min π θ (o i (t)|o i,&lt;t ) π old (o i (t)|o i,&lt;t ) Âi,t , clip π θ (o i (t)|o i,&lt;t ) π old (o i (t)|o i,&lt;t ) , 1 -ε, 1 + ε Âi,t ,</formula><p>where Âi,t is the group-normalized advantage for token t in response o i , computed as: Âi,t = r i -µ σ , with r i the total reward of o i , and µ, σ, the mean and standard deviation of rewards in the group.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Multi-turn GUI Agent</head><p>Unlike single-turn reinforcement learning, GUI agents are required to perform multi-turn reasoning and decision-making, interacting with dynamic environments that provide visual feedback. We adopt a Markov Decision Process (MDP) framework, where each agent trajectory comprises a sequence of screenshot observations s t , mouse and keyboard actions a t , and a scalar reward r in the end of the trajectory. The agent policy π θ is optimized to maximize the rewards:</p><formula xml:id="formula_1">τ = {s t , a t } t=0,1,••• ,T -1 , where a t ∼ P θ {s i , a i } i&lt;t .<label>(1)</label></formula><p>Our GUI agent is built upon the UI-Tars <ref type="bibr" target="#b15">[16]</ref> framework and the Qwen2.5-VL architecture <ref type="bibr" target="#b0">[1]</ref>. To predict the next action a t the model tokenizes the entire history of screenshots and corresponding actions into the input context of the VLM model.</p><p>Our design results in a VLM model with at most 15 images input and 64K model context length to correctly process an entire GUI trajectory with 1080P resolution. Unlike prior short-context GUI agents <ref type="bibr" target="#b1">[2,</ref><ref type="bibr" target="#b3">4,</ref><ref type="bibr" target="#b25">26]</ref>, which truncate the trajectory and only process the most recent one or two screenshots, our approach leverages the full trajectory history, enabling the model to reason over long-term dependencies and optimize performance across the entire interaction sequence.</p><formula xml:id="formula_2">𝑠 ! ! 𝑠 " ! 𝑠 ! #$" 𝑠 " #$" 𝑎 ! ! 𝑎 ! #$" 𝜏 ! 𝜏 " 𝜏 #$" Distributed Environments ⋯ ⋮ ⋮ ⋮ ⋮ 𝑎 &amp; #$" ⋯ 𝑎 &amp; ! 𝜏 ' 𝑟 ' 𝑟 #$" 𝑟 ! ⋮ Replay Buffer 𝑠 ! # 𝑠 " # 𝑎 ! # 𝑎 &amp; # ⋯ 𝑖𝑓 𝜎 𝑟 ! = 0</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>CoT for GUI Agents</head><p>To enhance the reasoning capabilities of VLM agents, we integrate the Chain-of-Thought (CoT) prompting technique <ref type="bibr" target="#b21">[22]</ref> into our action generation process. Each action a t is composed of:</p><p>• A thinking part, which represents the agent's internal reasoning.</p><p>• A solution part, which executes the resulting action. This design allows the agent to perform more accurate and interpretable decision-making.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Action Space Definition</head><p>Our GUI agent adopts the action space defined in UI-Tars <ref type="bibr" target="#b15">[16]</ref>, including the following primitive operations:</p><p>• LEFT_CLICK, RIGHT_CLICK, SCROLL • TYPE_TEXT, PRESS_HOTKEY In addition to these, several meta-actions are used to manage the agent's workflow:</p><p>• WAIT: Pause and observe the environment.</p><p>• FINISH: Successfully complete the task.</p><p>• FAIL: Indicate task failure.</p><p>• CALL_USER: Request human intervention.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Distributed Trajectory Rollout</head><p>Training GUI agents through reinforcement learning requires scalable and efficient trajectory collection across rich, interactive desktop environments. To meet this need, we design a distributed trajectory rollout strategy tailored for parallel interaction with live environments, such as OSWorld <ref type="bibr" target="#b24">[25]</ref>.</p><p>We establish a set of rollout workers. Each worker consists of an interactive environment paired with a GUI agent that maintains a history of screenshots and corresponding actions, denoted as (s t , a t ).</p><p>Each rollout worker continuously captures screenshots of the current GUI environment and transmits them to a centralized language model inference server powered by VLLM <ref type="bibr" target="#b9">[10]</ref>. The policy model processes these batched visual observations in parallel, predicting the next action for all environments simultaneously.</p><p>Unlike math <ref type="bibr" target="#b18">[19]</ref> or tool-use <ref type="bibr" target="#b14">[15]</ref> environments, interaction with live GUIs like OSWorld incurs non-trivial latency due to OS-level delays. Parallel trajectory rollout allows for efficient utilization of GPU resources on the inference server and minimizes the per-step decision latency.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">End-to-End Policy Optimization with GRPO</head><p>We adopt GRPO <ref type="bibr" target="#b18">[19]</ref> as our reinforcement learning algorithm to train vision-based GUI agents. GRPO eliminates the need for a value function by leveraging group-wise reward normalization to compute token-level advantages. This property makes it well-suited for training VLM agents with multiple image inputs and extended context length.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reward Design.</head><p>To effectively guide policy optimization, we design a structured reward function incorporating both task-level success and action format correctness.</p><p>• Trajectory Reward: For each task, we have a scalar trajectory-level reward r t , based on task completion. A reward of r t = 1 is assigned if the agent successfully completes the task as defined by the OSWorld <ref type="bibr" target="#b24">[25]</ref>, and r i = 0 otherwise. This binary reward provides a high-level training signal to encourage successful multi-turn planning and execution.</p><p>• Action Format Reward: During rollout, each response from the VLM agent is parsed into discrete actions. If a response fails to conform to the required action schema and cannot be parsed, we assign a penalty of r f = -1. This encourages the model to generate syntactically valid and executable actions.</p><p>Training Objective. We treat GUI interaction as a multi-turn MDP, where the agent observes a sequence of screenshots s t and generates actions a t to complete a task instruction x ∈ D. The trajectory τ = (s 0 , a 0 , . . . , a n ) is encoded by a VLM agent with extended context, enabling longhorizon reasoning over multiple steps and observations. Our training objective is to maximize the expected reward over tasks and trajectories:</p><formula xml:id="formula_3">max θ E x∼D, τ ∼π θ [r t (x, τ ) + r f (x, τ )].<label>(2)</label></formula><p>We optimize this objective using GRPO, which estimates token-level advantages via group-normalized trajectory rewards, allowing efficient and scalable training without a value function.</p><p>Valuable Tasks Selection for GRPO. Despite recent progress in the variants of GRPO <ref type="bibr" target="#b27">[28]</ref>, the task of training GUI agents remains difficult, particularly due to the sparse reward signals associated with complex desktop environments like OSWorld <ref type="bibr" target="#b24">[25]</ref>. Many tasks in this benchmark are not reliably solvable by current state-of-the-art agents <ref type="bibr" target="#b15">[16,</ref><ref type="bibr" target="#b3">4]</ref>, even when given multiple attempts. As a result, these tasks generate limited feedback during rollouts, which can hinder effective policy optimization training for GRPO.</p><p>To improve the sampling efficiency, we introduce a task filtering procedure to identify a subset of "valuable" tasks, those capable of producing successful trajectories under a baseline agent. Specifically, we evaluate each task in OSWorld using the UI-Tars-1.5 model, performing 16 rollouts per task. A task is retained in the GRPO training set if the agent completes it successfully in at least one of these attempts. This method yields a curated set of 128 tasks that are more amenable to early-stage learning, allowing the policy optimization to benefit from informative reward signals.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.5">Experience Replay Buffer</head><p>Dynamic Sampling <ref type="bibr" target="#b27">[28]</ref> has been proposed to improve the sample efficiency of GRPO by removing training groups in which all rewards are uniform. In such cases, the computed token-level advantages are zero across the group, resulting in vanishing gradients and slowed convergence. However, this strategy becomes less effective in GUI interaction settings due to two primary challenges: the high cost of obtaining trajectories and the infrequency of successful rollouts.</p><p>Unlike mathematical reasoning tasks, which typically follow well-defined logical chains, GUI-based tasks sometimes require a certain amount of exploratory interactions with the environment, resulting in sparse reward signals. Therefore, successful trajectories are rare but especially informative. Preserving and reusing them is critical for the training progress.</p><p>To address this, we introduce an experience replay buffer that caches successful trajectories on a per-task basis. During training, if an entire GRPO training group consists of only failed trajectories (i.e., all with zero reward), we randomly replace one of them with a previously stored successful trajectory from the buffer for the corresponding task. This guarantees that, as long as the agent has successfully completed a task once, its training group in the later training process will include at least one rollout with a non-zero reward signal, as illustrated in Fig. <ref type="figure" target="#fig_0">2</ref>. The buffer is updated dynamically during rollout. To prevent the stored samples from diverging too significantly from the current policy, we impose a fixed-size limit on the buffer and evict the oldest entries when full.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Implementation Details</head><p>Training Details. We use the 7B UI-Tars-1.5 model <ref type="bibr" target="#b15">[16]</ref> as the base and conduct training using the VERL framework <ref type="bibr" target="#b19">[20]</ref>. For trajectory rollout, we set up 256 parallel virtual environments and the rollout number for each task is 8. A total of 128 tasks are sampled from the OSWorld benchmark, according to the strategy described in Sec. 3.4, and training is performed over 15 epochs. Rollouts are conducted with a batch size of 32 and a temperature of 1.0 to encourage exploration. For policy optimization, we use the AdamW optimizer <ref type="bibr" target="#b12">[13]</ref> with a learning rate of 1×10 -6 and a mini-batch size of 8 per device. The gradient accumulation number is 4. Following DAPO <ref type="bibr" target="#b27">[28]</ref>, we set the clipping parameters to ϵ low = 0.2 and ϵ high = 0.3 to balance exploration and exploitation. During evaluation, the temperature is lowered to 0.6 for more stable performance. We remove the KL divergence loss to remove the need for the reference model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Datasets and Benchmarks.</head><p>We evaluate our method on the OSWorld benchmark <ref type="bibr" target="#b24">[25]</ref>, a recently proposed real-computer environment designed for evaluating multimodal agents on open-ended GUI tasks. OSWorld contains 369 tasks across diverse domains such as office productivity, web browsing, system management, and multi-app workflows. Each task is executed within virtual machines using real applications and evaluated via execution-based scripts. The benchmark supports full GUI interaction with mouse and keyboard actions, enabling rigorous assessment of multi-turn vision-based agents in realistic desktop environments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Evaluation Metrics.</head><p>We follow the standard rule-based evaluation protocol defined in OS-World <ref type="bibr" target="#b24">[25]</ref>. Each agent trajectory receives a scalar reward between 0 and 1.0 from the environment. We notice that previous works <ref type="bibr" target="#b15">[16]</ref> replace the last action with a FAIL action when the maximum step number is reached in a rollout. While this approach may prevent unstable or endlessly running behaviors during evaluation, it will hack the rewards of the real impossible tasks defined in the benchmark. To provide a more accurate assessment of agent capabilities for RL, we introduce a stricter evaluation protocol that prohibits final action replacement, denoted as OSWorld Hard.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Experimental Results</head><p>We evaluate the performance of our ARPO method on the OSWorld benchmark <ref type="bibr" target="#b24">[25]</ref>, comparing it against several recent GUI agents. As shown in Table <ref type="table" target="#tab_0">1</ref>, our approach achieves the highest success rates across both evaluation settings. Specifically, applying ARPO to the UI-Tars-1.5 base model results in a success rate of 29.9% on the standard OSWorld setting and 23.8% on the stricter OSWorld Hard variant-improving upon the original UI-Tars-1.5 model by 6.4% and 5.6%, respectively. These results highlight the effectiveness of reinforcement learning with GRPO and structured experience replay in enhancing multi-turn GUI decision-making. Additionally, ARPO shows consistent gains across earlier model versions; for example, UI-Tars-7B-DPO improves from 15.6% to 20.4% with ARPO. All the models are tested with a maximum step number limit of 15 for a single trajectory. Figure <ref type="figure">3</ref>: Ablation study of the replay buffer. Figure <ref type="figure">4</ref>: Ablation study for GRPO and ARPO indomain and out-of-domain RL training tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Ablation on the Replay Buffer</head><p>We evaluate the impact of the experience replay buffer by comparing training trajectories with and without its use, as shown in Fig. <ref type="figure">3</ref>. The model equipped with the replay buffer begins to outperform the baseline around Step 30 and maintains a consistent advantage throughout the remainder of training. This improvement is attributed to the buffer's ability to retain successful trajectories. This gain is largely due to the buffer's ability to retain high-reward trajectories from earlier stages, which serve as strong learning signals in later updates. By maintaining reward diversity within GRPO groups and non-zero advantages, the replay buffer supports more stable optimization and accelerates convergence. By the end of training, the model with replay achieves a higher average trajectory reward (0.75 vs. 0.65), demonstrating that leveraging past successes substantially improves both sample efficiency and overall policy performance in sparse-reward GUI environments.</p><p>The benefits of the replay buffer extend beyond reward curves. As shown in Fig. <ref type="figure">4</ref>, the in-domain task success rate climbs from 68.8% with GRPO to 81.25% with ARPO, a 12.5% absolute improvement. This substantial gain highlights the replay buffer's critical role in enhancing policy generalization and downstream performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Does RL training generalize well to OOD GUI agent tasks?</head><p>To assess the generalization ability of RL training, we evaluate model performance on both in-domain and out-of-domain (OOD) tasks. Specifically, we select 32 tasks from the training task set for reinforcement learning, using the remaining 96 as OOD tasks. As shown in Fig. <ref type="figure">4</ref>, reinforcement learning substantially improves in-domain accuracy: GRPO achieves 68.8% and ARPO reaches 81.25%, compared to 43.8% for the base UI-Tars-1.5 model. However, on OOD tasks, gains are more modest. UI-Tars-1.5 achieves 55.2%, while GRPO slightly underperforms at 52.08%. ARPO, however, recovers generalization capability, scoring 56.3%, slightly above the base model, indicating that structured trajectory grouping and replay mitigate overfitting. Overall, while reinforcement  learning effectively improves the in-domain success rate of VLM agents, strong generalization still depends on broader task diversity, carefully designed reward signals, and larger-scale training compute.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5">Valuable Task Selection for GRPO Training</head><p>As outlined in Sec. 3.4, we adopt a task selection strategy for GRPO training by filtering out tasks that consistently fail to provide meaningful reward signals. To evaluate the impact of this approach, we conduct an ablation study comparing GRPO performance when trained on a curated subset of 128 valuable tasks versus the full task set. As illustrated in Fig. <ref type="figure" target="#fig_2">5a</ref>, training on the selected subset leads to significantly higher average trajectory rewards and faster convergence speed from the early stages of training.</p><p>Fig. <ref type="figure" target="#fig_2">5b</ref> shows that the standard deviation of rewards within GRPO groups is consistently higher when training on the curated task set. This increased variance is critical for GRPO, which relies on within-group reward diversity to compute token-level advantages. In contrast, training on the full task set results in flatter reward distributions with reduced variance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.6">Comparison with Offline Preference Optimization</head><p>In Fig. <ref type="figure" target="#fig_3">6</ref>, we compare the performance between GRPO and offline preference optimization algorithms. For a fair comparison, all methods are trained on the same task set with an equal number of rollouts. We compare GRPO with reject sampling, DPO <ref type="bibr" target="#b16">[17]</ref>, and KTO <ref type="bibr" target="#b2">[3]</ref>. For reject sampling, we take only the positive trajectory for SFT training. For DPO, we randomly sample a positive and a negative trajectory per task to create paired training data. For KTO, we threshold the scalar rewards at 0.5 to generate binary labels for training.</p><p>ARPO achieves the highest score (27.3%), followed by GRPO (26.0%), both outperforming preference-based methods by a significant margin. Among the baselines, KTO performs best (24.6%), while DPO and Reject Sampling lag behind at 22.4% and 21.8% , respectively. These results suggest that direct trajectory-level optimization with rule-based rewards provides stronger learning signals than offline preference modeling. The added experience replay in ARPO further enhances stability and sample efficiency in sparse-reward GUI settings.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.7">Rollout Efficiency Analysis</head><p>Fig. <ref type="figure">7</ref> shows that increasing the number of parallel environments significantly improves training efficiency. We show the rollout time for a single batch of trajectories (in minutes) and the total time to sample all trajectories in an epoch (in hours), respectively. As the batch size increases, although the rollout time per batch grows from 3 minutes (8 environments) to 19 minutes (256 environments), the total time per epoch drops sharply from over 6 hours to just around 1.2 hours.  Task: Help me change the 2 in "H2O" to a subscript. Thought: I just accidentally clicked the wrong button and changed the "2" in H2O to a superscript, which is not what we wanted. Let me press Ctrl+Z to undo that mistake and start over. Action #3: hotkey(key='ctrl z') Thought: I just selected the "2" in H2O, and now I need to locate the subscript button on the toolbar. It should be in that row of formatting tools, and clicking it will change this number into a subscript. Action #2: click(start_box='(863,149)') Thought: I noticed that there is a subscript feature in the toolbar, which is exactly what I need. To change the "2" in H2O to a subscript, I first need to select that "2." So now, I will use my mouse to click and drag from the position of the first "H" all the way to where the "O" is located. This way, I can accurately select just that middle number. Action #1: drag(start_box='(689,493)', end_box='(710,495)') Figure 8: Trajectory showing the ARPO-trained agent correcting a misclick error.</p><p>This speedup stems from two main factors: (1) Larger batches allow the VLLM server to perform more efficient GPU inference, and (2) OS-level delays in GUI environments are overlapped for all parallel environments. As a result, scaling to 256 environments enables high-throughput rollouts, making RL training in real desktop settings much more practical.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.8">Qualitative Analysis: Self-Correction Behavior in GUI Agent</head><p>Figure <ref type="figure">8</ref> illustrates a trajectory where the ARPO-trained agent demonstrates self-corrective behavior. Initially, it selects the superscript button instead of the subscript button. It realizes the mistake by observing the current screen and decides to use the Ctrl-Z hotkey to revert the previous operation. Notably, the success rate for the specific before and after ARPO are 25% vs. 62.5%.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>In this work, we present a reinforcement learning approach for training GUI agents using visionlanguage models enhanced with longer input context and multi-turn, multi-modal screenshot processing. By introducing ARPO, a variant of GRPO tailored for GUI agents, we demonstrate that rule-based reward signals can effectively guide end-to-end policy optimization in complex GUI environments. Our experiments show that careful task selection significantly improves learning stability and reward variance.</p><p>This study highlights the potential of combining multimodal understanding with reinforcement learning to enable more adaptive and capable GUI agents. Future directions include expanding the task set to cover a broader range of real-world applications, extending the context length of agents further to support more sophisticated trial-and-error behaviors, and investigating the use of learned reward models to autonomously evaluate trajectories, reducing reliance on manually crafted reward functions.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :</head><label>2</label><figDesc>Figure2: Illustration of the reinforcement learning procedure for our multi-turn GUI agent. For a single task, we use n parallel environments and perform rollouts to collect trajectories and rewards {τ i , r i } i=0,1,••• ,n-1 in the environments. If all the rewards are zero, we fetch a positive trajectory τ + from the replay buffer to avoid gradient vanishing.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><figDesc>(a) Training rewards. (b) Reward variance during RL training.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Training performance comparison for RL training with selected subset and full set.</figDesc><graphic coords="8,296.07,61.50,225.23,149.93" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Comparisons with offline preference optimization methods.</figDesc><graphic coords="9,108.14,72.00,193.69,116.26" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 7 :Figure 8 :</head><label>78</label><figDesc>Figure 7: Rollout Efficiency.</figDesc><graphic coords="9,310.09,72.00,193.69,116.26" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>OSWorld evaluation performance for GUI Agents. All models are evaluated at a maximum execution length of 15. We provide numerical results for two metrics: OSWorld and OSWorld Hard</figDesc><table><row><cell>Model</cell><cell>GPT-4o</cell><cell>OSWorld</cell><cell>OSWorld Hard</cell></row><row><cell>Aria-UI [27]</cell><cell>✓</cell><cell>15.2%</cell><cell>-</cell></row><row><cell>Aguvis-7B [26]</cell><cell>✓</cell><cell>14.8%</cell><cell>-</cell></row><row><cell>Aguvis-72B [26]</cell><cell>✓</cell><cell>17.0%</cell><cell>-</cell></row><row><cell>OS-Atlas-7B [23]</cell><cell>✓</cell><cell>14.6%</cell><cell>-</cell></row><row><cell>UI-Tars-7B-DPO</cell><cell></cell><cell>15.6%</cell><cell>11.3%</cell></row><row><cell>UI-Tars-7B-DPO + GRPO</cell><cell></cell><cell>18.3% (+2.7%)</cell><cell>16.4% (+5.1%)</cell></row><row><cell>UI-Tars-7B-DPO + ARPO</cell><cell></cell><cell>20.4% (+4.8%)</cell><cell>18.0% (+6.7%)</cell></row><row><cell>UI-Tars-7B-1.5</cell><cell></cell><cell>23.5%</cell><cell>18.2%</cell></row><row><cell>UI-Tars-7B-1.5 + GPRO</cell><cell></cell><cell>26.0% (+2.5%)</cell><cell>20.9% (+2.7%)</cell></row><row><cell>UI-Tars-7B-1.5 + ARPO</cell><cell></cell><cell>29.9% (+6.4%)</cell><cell>23.8% (+5.6%)</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keqin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuejing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenbin</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sibo</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Tang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.13923</idno>
+		<title level="m">Qwen2. 5-vl technical report</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Kanzhi</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiushi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yougang</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangzhi</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yantao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianbing</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyong</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.10935</idno>
+		<title level="m">Seeclick: Harnessing gui grounding for advanced visual gui agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page">4</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">Kawin</forename><surname>Ethayarajh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Winnie</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Jurafsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Douwe</forename><surname>Kiela</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kto</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.01306</idno>
+		<title level="m">Model alignment as prospect theoretic optimization</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Boyu</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruohan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyuan</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanan</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiheng</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Su</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.05243</idno>
+		<title level="m">Navigating the digital world as humans do: Universal visual grounding for gui agents</title>
+		<imprint>
+			<date type="published" when="2005">2024. 2, 4, 5</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Daya Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoyu</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shirong</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.12948</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page">3</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Cogagent: A visual language model for gui agents</title>
+		<author>
+			<persName><forename type="first">Wenyi</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weihan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingsong</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiazheng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenmeng</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junhui</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiao</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Ding</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="14281" to="14290" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Wenxuan</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bohan</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijie</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaosheng</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheyu</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaohui</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.06749</idno>
+		<title level="m">Vision-r1: Incentivizing reasoning capability in multimodal large language models</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Jaech</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Kalai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Lerer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Richardson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmed</forename><surname>El-Kishky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aiden</forename><surname>Low</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Helyar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksander</forename><surname>Madry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Beutel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Carney</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.16720</idno>
+		<title level="m">Openai o1 system card</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Omniact: A dataset and benchmark for enabling multimodal generalist autonomous agents for desktop and web</title>
+		<author>
+			<persName><forename type="first">Raghav</forename><surname>Kapoor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Parag</forename><surname>Yash</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melisa</forename><surname>Butala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Russak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kiran</forename><surname>Yu Koh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Waseem</forename><surname>Kamble</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruslan</forename><surname>Alshikh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Salakhutdinov</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.17553</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Efficient memory management for large language model serving with pagedattention</title>
+		<author>
+			<persName><forename type="first">Woosuk</forename><surname>Kwon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuohan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lianmin</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cody</forename><forename type="middle">Hao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Stoica</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 29th Symposium on Operating Systems Principles</title>
+		<meeting>the 29th Symposium on Operating Systems Principles</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="611" to="626" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.18470</idno>
+		<title level="m">Code-r1: Reproducing r1 for code with reliable rewards</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Seg-zero: Reasoningchain guided segmentation via cognitive reinforcement</title>
+		<author>
+			<persName><forename type="first">Yuqi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bohao</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhisheng</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihao</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fanbin</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaya</forename><surname>Jia</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.06520</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Loshchilov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><surname>Hutter</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1711.05101</idno>
+		<title level="m">Decoupled weight decay regularization</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Runliang</forename><surname>Niu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jindong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiqi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yali</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiyu</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueyuan</forename><surname>Leng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">He</forename><surname>Kong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.07945</idno>
+		<title level="m">Screenagent: A vision language model-driven computer control agent</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Emre</forename><surname>Cheng Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Can Acikgoz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongru</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiusi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dilek</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gokhan</forename><surname>Hakkani-Tür</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Tur</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ji</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.13958</idno>
+		<title level="m">Toolrl: Reward is all tool learning needs</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page">5</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Ui-tars: Pioneering automated gui interaction with native agents</title>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yining</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoming</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shihao</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shizuo</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junda</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunxin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijue</forename><surname>Huang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.12326</idno>
+		<imprint>
+			<date type="published" when="2006">2025. 2, 3, 4, 5, 6</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Direct preference optimization: Your language model is secretly a reward model</title>
+		<author>
+			<persName><forename type="first">Rafael</forename><surname>Rafailov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Archit</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefano</forename><surname>Ermon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page" from="53728" to="53741" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Filip</forename><surname>Wolski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleg</forename><surname>Klimov</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1707.06347</idno>
+		<title level="m">Proximal policy optimization algorithms</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Deepseekmath: Pushing the limits of mathematical reasoning in open language models</title>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2402.03300.2" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page">5</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">Guangming</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilingfeng</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xibin</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ru</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanghua</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haibin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuan</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.19256</idno>
+		<title level="m">Hybridflow: A flexible and efficient rlhf framework</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Ragen: Understanding self-evolution in llm agents via multi-turn reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kangrui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qineng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pingyue</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linjie</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kefan</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minh</forename><forename type="middle">Nhat</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Licheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eli</forename><surname>Gottlieb</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.20073</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="24824" to="24837" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Os-atlas: A foundation action model for generalist gui agents</title>
+		<author>
+			<persName><forename type="first">Zhiyong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenyu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangzhi</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yian</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiushi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengyou</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kanzhi</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zichen</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liheng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><forename type="middle">Pu</forename><surname>Liang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.23218</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Gui-r1: A generalist r1-style vision-language action model for gui agents</title>
+		<author>
+			<persName><forename type="first">Xiaobo</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Run</forename><surname>Luo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.10458</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Osworld: Benchmarking multimodal agents for open-ended tasks in real computer environments</title>
+		<author>
+			<persName><forename type="first">Tianbao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danyang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jixuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaochuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siheng</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruisheng</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Toh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhoujun</forename><surname>Hua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongchan</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangyu</forename><surname>Shin</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="52040" to="52094" />
+			<date type="published" when="2006">2024. 2, 4, 5, 6</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yiheng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zekun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junli</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dunjie</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianbao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amrita</forename><surname>Saha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Doyen</forename><surname>Sahoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.04454</idno>
+		<title level="m">Aguvis: Unified pure vision agents for autonomous gui interaction</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="page">7</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuhao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongxu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyang</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junnan</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.16256</idno>
+		<title level="m">Aria-ui: Visual grounding for gui instructions</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Dapo: An open-source llm reinforcement learning system at scale</title>
+		<author>
+			<persName><forename type="first">Qiying</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruofei</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufeng</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaochen</forename><surname>Zuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tiantian</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaohong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingjun</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.14476</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="page">6</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Sweet-rl: Training multi-turn llm agents on collaborative reasoning tasks</title>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Song</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuandong</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sainbayar</forename><surname>Sukhbaatar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xian</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.15478</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

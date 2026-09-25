@@ -1,0 +1,1960 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">DARS: Dynamic Action Re-Sampling to Enhance Coding Agent Performance by Adaptive Tree Traversal</title>
+				<funder ref="#_tfRrCdJ">
+					<orgName type="full">Machine Learning Cluster of Excellence</orgName>
+				</funder>
+				<funder ref="#_bGDJzDX">
+					<orgName type="full">German Federal Ministry of Education and Research (BMBF)</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Vaibhav</forename><surname>Aggarwal</surname></persName>
+							<email>vaibhav_a@ee.iitr.ac.in</email>
+							<affiliation key="aff0">
+								<orgName type="institution">MPI-IS &amp; University of Toronto</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><surname>Sprinklr</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">MPI-IS &amp; University of Toronto</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ojasv</forename><surname>Kamal</surname></persName>
+							<email>kamalojasv2000@gmail.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">MPI-IS &amp; University of Toronto</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Mirelo</forename><surname>Ai</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">MPI-IS &amp; University of Toronto</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Abhinav</forename><surname>Japesh</surname></persName>
+							<email>akjapesh@gmail.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">MPI-IS &amp; University of Toronto</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhijing</forename><surname>Jin</surname></persName>
+							<email>zjin@cs.toronto.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">MPI-IS &amp; University of Toronto</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">DARS: Dynamic Action Re-Sampling to Enhance Coding Agent Performance by Adaptive Tree Traversal</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">823D77D5DCFC2FFC3D0B66627F8B2EA9</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:58+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large Language Models (LLMs) have revolutionized various domains, including natural language processing, data analysis, and software development, by enabling automation. In software engineering, LLM-powered coding agents have garnered significant attention due to their potential to automate complex development tasks, assist in debugging, and enhance productivity. However, existing approaches often struggle with sub-optimal decision-making, requiring either extensive manual intervention or inefficient compute scaling strategies. To improve coding agent performance, we present Dynamic Action Re-Sampling (DARS), a novel inference time compute scaling approach for coding agents, that is faster and more effective at recovering from sub-optimal decisions compared to baselines. While traditional agents either follow linear trajectories or rely on random sampling for scaling compute, our approach DARS works by branching out a trajectory at certain key decision points by taking an alternative action given the history of the trajectory and execution feedback of the previous attempt from that point. We evaluate our approach on SWE-Bench Lite benchmark, demonstrating that this scaling strategy achieves a pass@k score of 55% with Claude 3.5 Sonnet V2. Our framework achieves a pass@1 rate of 47%, outperforming state-of-the-art (SOTA) opensource frameworks. 1 * Co-first author.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="26" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="27" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="28" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="29" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="30" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="31" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="32" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="33" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="34" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="35" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="36" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="37" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="38" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="39" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="40" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="41" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="42" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="43" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="44" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="45" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="46" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="47" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="48" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Software engineering (SWE) has become increasingly critical in modern technology development, with developers spending countless hours writing, reviewing, and maintaining code, creating an urgent need for automation to improve productivity <ref type="bibr">(Wang et al., 2024d)</ref>. Large language models (LLMs) have emerged as promising tools for automating various software engineering tasks, with breakthrough works like SWE-bench <ref type="bibr" target="#b16">(Jimenez et al., 2023)</ref> establishing evaluation frameworks and datasets, leading to widespread adoption of tools such as <ref type="bibr">Yang et al. (2024b)</ref>; <ref type="bibr">Wang et al. (2024c)</ref>.</p><p>There are three primary approaches to developing SWE agents based on LLMs. The first follows a sequential ReAct <ref type="bibr" target="#b50">(Yao et al., 2022)</ref> loop, where agents such as SWE-Agent <ref type="bibr">(Yang et al., 2024b)</ref> and OpenDevin <ref type="bibr">(Wang et al., 2024c)</ref> interact with development tools and incorporate execution feedback to refine their predictions. The second approach generates multiple candidate solutions using temperature-based sampling and then selects the best one through ranking <ref type="bibr" target="#b4">(Arora et al., 2024)</ref> or majority voting <ref type="bibr">(Xia et al., 2024)</ref>. The third approach, exemplified by SWE-Search <ref type="bibr" target="#b3">(Antoniades et al., 2024)</ref>, leverages Monte Carlo Tree Search (MCTS) <ref type="bibr" target="#b18">(Kocsis and Szepesvári, 2006)</ref> to systematically explore the solution space.</p><p>However, each method has limitations: (1) Sequential agents struggle to recover from suboptimal decisions due to context length constraints <ref type="bibr" target="#b20">(Kuratov et al., 2024;</ref><ref type="bibr" target="#b24">Li et al., 2024)</ref>. (2) Multi-solution approaches lack efficient mechanisms for knowledge sharing between independently generated solutions. (3) Tree search methods, such as SWE-Search <ref type="bibr" target="#b3">(Antoniades et al., 2024)</ref>, rely on scalar value functions and suffer from slow execution speeds, making them less effective for long-horizon planning.</p><p>To address these challenges, we propose Dynamic Action Re-Sampling (DARS), which enhances coding agents by dynamically re-sampling actions based on prior execution results. Instead of generating multiple independent trajectories, DARS selectively branches at key decision points, using a depth-first strategy to fully explore a trajectory before branching. This offers two advan-tages: a) Long Horizon Feedback: Our experiments show improved pass@1 rates 3 by providing complete trajectory feedback before branching. b) Efficiency: Depth-first search reduces memory overhead by reusing the current environment state without simulating future states. Finally, we introduce a trajectory selection pipeline leveraging proprietary and preference-optimized models to identify the most promising solution <ref type="bibr" target="#b17">(Kim et al., 2024)</ref>.</p><p>Across the experiments, our DARS method achieves up to 47% pass@1 rate, which is opensource SOTA performance on the SWE-Bench Lite benchmark <ref type="bibr" target="#b16">(Jimenez et al., 2023)</ref>.</p><p>In conclusion, the main contributions of our approach are as follows:</p><p>1. We introduce DARS, an inference-time compute scaling method for coding agents that rapidly recovers from suboptimal decisions, achieving an open source SOTA pass@1 rate of 47% on the SWE-Bench Lite benchmark. 2. We propose a patch preference data generation and supervised fine-tuning pipeline to select the most promising solution among multiple attempts. 3. We release our complete codebase, a 500Mtoken execution feedback critique dataset, model checkpoints (7B, 14B, and 32B), and a trajectory analysis tool to support future research.</p><p>2 Related Work LLM Agents for Software Engineering. Large Language Model (LLM) agents have been increasingly employed to automate software engineering tasks such as bug fixing and code generation. These agents integrate tools for code editing, search, navigation, and execution <ref type="bibr">(Yang et al., 2024b)</ref>. Enhancements in this domain include diff-based editing <ref type="bibr" target="#b0">(Aider, 2024)</ref>, execution with Jupyter and web search capabilities <ref type="bibr">(Wang et al., 2024c)</ref>, and optimized repository search <ref type="bibr" target="#b0">(Aider, 2024;</ref><ref type="bibr">Zhang et al., 2024c;</ref><ref type="bibr" target="#b29">Ouyang et al., 2024;</ref><ref type="bibr" target="#b28">Orwall, 2024)</ref>. Some approaches further modularize functionalities to improve efficiency <ref type="bibr">(Xia et al., 2024;</ref><ref type="bibr" target="#b4">Arora et al., 2024)</ref>.</p><p>Recent studies have explored generating multiple solutions to enhance accuracy. For instance, <ref type="bibr" target="#b7">Brown et al. (2024)</ref> demonstrated that sampling 250 solutions can increase accuracy by 250%. However, methods like those proposed by <ref type="bibr">Xia et al. (2024)</ref> and <ref type="bibr" target="#b4">Arora et al. (2024)</ref> rely on inefficient random sampling. To address this, <ref type="bibr" target="#b3">Antoniades et al. (2024)</ref> introduced an approach that improves efficiency through Monte Carlo Tree Search (MCTS) <ref type="bibr" target="#b18">(Kocsis and Szepesvári, 2006;</ref><ref type="bibr" target="#b8">Coulom, 2007)</ref>, balancing computational resources with scalar rewards and textual feedback. Despite these advancements, their reliance on retrospective feedback limits early guidance, and frequent environment resets can slow execution.</p><p>DARS improves efficiency by branching only at critical decisions and providing long-horizon feedback, reducing resets and accelerating execution.</p><p>We discuss about Inference Time Compute Scaling and LLM as Code Reviewers in Appendix A.1</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Our DARS Method</head><p>The main motivation behind DARS is to enhance the agent's ability to recover and learn from suboptimal decisions by taking alternative actions while minimizing redundancy. However, errors also scale with scaling trajectories, therefore, we optimize our backbone SWE-Agent first by improving its editing capabilities and adding various actions to it. We then identify the most promising action types by optimizing the trade-off between increase in resolve rate and increase in cost due to branching the trajectory at that point. We define this process of branching the tree as expansion. We finally select the most promising trajectory from all the attempts. We go over the details of each of these steps in the following sections.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Improving the Base SWE Agent</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.1">Editing Capabilities</head><p>We build on the SWE-Agent <ref type="bibr">(Yang et al., 2024b)</ref> which uses a ReAct loop to iteratively generate a thought and an action and receive feedback from the sandbox environment. By default, the agent uses a whole style of editing where it needs to generate the start and end line numbers of the edit followed by the content of edit. This type of edit often results in numerous syntax and semantic errors (see Section A.3), as the agent fails to account for both the targeted and adjacent code, leading to issues such as indentation errors. We enhance the editing process using Aider <ref type="bibr" target="#b0">(Aider, 2024)</ref>, a diffbased tool. In this approach, the agent generates both the content to be replaced and its replacement. Additionally, to facilitate content addition without replacement, Aider introduces two new actions: append and insert.</p><p>Append adds content at the end of a file, while</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Generate</head><p>Figure <ref type="figure" target="#fig_2">1</ref>: Overview of our DARS scaling method. DARS processes issue-related information and generates multiple patches using the Expansion mechanism. These patches are then evaluated by our Reviewer LLM, which assigns scores based on predefined Score Rubrics, ultimately selecting the best patch for output.</p><p>Insert requires a line number and the content to be inserted at that specific location. This approach compels the model to better consider the existing code. Moreover, we enhance the editing process by having the agent output both the to_replace and replace_with contents, each followed by a $ character to properly escape special characters (e.g., newlines, quotes) as described in Section A.14.1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.2">New Actions</head><p>In addition to editing, we introduce several new actions to enhance each of the three stages of our bug-fixing process. We add the following actions to the agent: Execute Server. The sandbox environment limits the execution of iterative or long-running scripts. To address this, we add the execute server action with persistent memory. Instead of retrieving code output directly, the agent uses get_logs to access execution logs. This action is especially effective during the reproduction stage for efficiently replicating bugs (see Section A.14.1). Execute IPython. This action enables the agent to run Python code within an IPython environment, streamlining bug reproduction by eliminating the need to create, write, and execute a separate file.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Search Repo.</head><p>Search repo command uses a cached RepoGraph <ref type="bibr" target="#b29">(Ouyang et al., 2024)</ref>-a hierarchical structure where nodes represent code definitions and edges represent dependencies between them. By utilizing sub-graph retrieval algorithms, RepoGraph extracts ego-graphs <ref type="bibr" target="#b15">(Hu et al., 2024)</ref> centered around specific keywords. This action allows the agent to search for a specific keyword in the repo and get all the files with corresponding line numbers where the keyword is present, to aid in precise bug localization. Undo Edit. Often times, the agent makes a mistake in the edit and needs to undo it. However, due to inherent limitations of editing abilities of the agent, the agent sometimes outputs syntactically incorrect code which degrades its reasoning <ref type="bibr" target="#b20">(Kuratov et al., 2024)</ref> capabilities and takes up its computational budget. This action allows the agent to directly undo the last edit efficiently <ref type="bibr">(Anthropic, 2024b)</ref> </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">DARS Scaling</head><p>DARS begins by completing a trajectory in a depthfirst manner while storing key decision nodes in a priority queue, sorted in ascending order by node depth. Once the current trajectory reaches a terminal state-either by a submit command (see A.14.1) or upon reaching a predefined maximum depth-these nodes are expanded. During expansion, we sample k alternative actions and select the best one. We define key decision points as those actions that significantly enhance the resolve rate at minimal cost. As shown in Table <ref type="table" target="#tab_5">13</ref>, expanding the trajectory at edit actions is particularly effective. This approach allows the agent to learn from previous mistakes and recover from suboptimal decisions, which is crucial for long-horizon tasks like programming. Finally, if no branch submits code before reaching the maximum depth, the code is auto-submitted. Issues that fail to execute the expected trajectory due to runtime errors or other anomalies within the SWE-Agent environment are re-run.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.1">Branching Strategy</head><p>The main improvement in DARS lies in the avoidance of branching out trajectory at all actions, which costs exponential compute and its redundancy leads to a low accuracy for the trajectory selection pipeline. We use a causal analysis in Table 13 to identify four key actions with the largest causal impact on the model performance: edit, append, create, and submit and further perform qualitative analysis in Appendix A.12 to understand the reasons behind the results. Create. Reproduction scripts are essential for debugging. Insufficient details can hinder their effectiveness and lead to incorrect fixes. By first localizing and analyzing the relevant code, the model improves bug resolution.</p><p>A key issue is that models often fail to refine reproduction scripts during bug fixing. While some cases improve, others show overconfidence, with flawed scripts being repeated. Prioritizing localization is crucial for accurate reproduction.</p><p>The create action differs from append in reproduction scripts. Though both evaluate and fix bugs, append actions generally produce better scripts. Models are often biased by previous actions, making only minor script changes instead of exploring new paths. Early sampling of solutions during create allows better exploration (see ref 10).</p><p>Should issue localization always precede reproduction? Not always. Early localization can bypass reproduction, leading to weaker solutions or misinterpretations of the bug, as shown in Figure <ref type="figure" target="#fig_9">11</ref>.</p><p>Reproducing the bug first enables a clearer understanding and more accurate fixes. Append. The append action improves reproduction scripts by refining previous attempts, ensuring tests sufficiently verify code edits (see 13)</p><p>Runtime errors arise when the model lacks codebase or environment knowledge, hindering issue reproduction and exhausting its reasoning context. Expansion in append actions mitigates this by accelerating the reproduction phase, reducing turns needed for localization. This allows more iterations for editing and testing, improving bug resolution. The benefit occurs in two ways: direct bug identification during expansion or improved reproduction scripts enabling better localization. (see 14) Edit. The agent sometimes generates semantically incorrect code, leading to an edit-Python loop. As context length grows, its reasoning weakens, trapping it in an unproductive cycle without a clear exit (see 15)</p><p>The agent frequently produces code with basic syntax errors, such as mismatched parentheses or incorrect indentation, leading to a cycle of repetitive fixes. Due to reasoning flaws, it often gets stuck applying the same ineffective edits-such as repeatedly adding a closing bracket-even when the fix has already failed (see 16). Submit. While the model can fix bugs, it sometimes introduces regressions. To prevent this, it should verify changes by running tests and refining edits based on results. Expansion in this action prompts the model to reassess its fixes and correct issues before submission. For example, in the following case, the model fixes a bug but introduces a regression. By reevaluating its changes, it catches and resolves the issue (see 12).</p><p>We further cut down the redundancy by considering second-degree expansions. The above actions namely create, append, edit, and submit usually occur in the same order. The higher the action in the tree, the higher the impact of expanding the tree at that action. Therefore, if a branch is expanded at create, we only expand the tree at append, edit, and submit the next time. Similarly, a branch expanded at edit is only expanded at submit the next time. We follow this rule with an exception in the case of append, since empirically it has found that this has led to a high resolve rate for the extra cost incurred. Finally, for each branch, we put a cap on the number of expansions of each type to prevent the tree from growing exponentially.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.2">Expansion Strategy</head><p>We use a depth-first strategy to explore the current trajectory before branching out, which has two main advantages: Speed and Long-Horizon Feedback. After reaching a terminal condition, we continue from the node with the lowest depth in the priority queue. In Figure <ref type="figure" target="#fig_7">8</ref>, we find that lowest depth-first is the most effective strategy, as the flexibility to explore decreases with node depth.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Best Trajectory Selection</head><p>After the agent has generated multiple trajectories, we select the most promising trajectory from all the attempts in two stages namely trajectory pruning and trajectory selection. We begin by cleaning the patches submitted by each trajectory by removing any bug reproduction files from it. We then prune any redundant trajectories which lead to the same cleaned patch. In the second stage, we use offthe-shelf open and close source models as well as our custom supervised-fine-tuned models to choose the best trajectory based on custom rubrics namely reproduction, fix, and potential to introduce new bugs motivated by <ref type="bibr" target="#b17">(Kim et al., 2024)</ref>. Patch Preparation. We begin with cleaning the patches by removing everything except the bug fix part. This includes removing the bug reproduction script, readme / documentation changes, pycache files etc. We then generate critiques for each patch based on the three rubrics namely reproduction, fix, and potential to introduce new bugs. To ground the predictions of the model, we use the execution output obtained from running the tests after applying the patch. Patch Sampling. For a given issue, based on the distribution of number of patches generated by DARS for that issue, we sample all combinations of patches from 2 to 6 patches. We further do a fine-grained sampling of negative patches by dividing all the negative patches in buckets based on the combinations of tests that fail after applying the patch, to get a balanced dataset. For positive patches, we sample from the set of all the positive patches if there are any. For cases where there are no positive patches, we just use the ground truth patch.</p><p>4 Experimental Setup</p><p>4.1 DARS Scaling Dataset. We use the SWE-Bench Lite benchmark, a widely used subset of the SWE-Bench dataset (Jimenez et al., 2023). It comprises 300 GitHub Framework Base Model Pass@1 SWE-Agent GPT-4o 18.3 SWE-Agent Claude 3.5 Sonnet V2 23.0 Moatless Tools GPT-4o 24.7 Aider GPT-4o &amp; Claude 3 Opus 26.3 Moatless Tools Claude 3.5 Sonnet V2 38.3 MASAI GPT-4o 27.3 Agentless-1.5 GPT-4o 27.3 Moatless Tools Claude 3.5 V2 38.3 Agentless-1.5 Claude-3.5 V2 40.7 OpenHands CodeAct v2.1 41.7 SWE-Search GPT-4o 31.0 Kodu-v1 Claude-3.5 Sonnet V2 44.7 DARS (Ours) Claude 3.5 Sonnet + Deepseek R1 47.0 Table <ref type="table">1</ref>: Comparative analysis of various software engineering agents' performance on SWE-Bench Lite dataset. We present results only for the language models that were used by the respective authors, as evaluating every possible combination of models and frameworks is highly resource-intensive.</p><p>issues from 12 real-world software projects, each containing an issue report and the corresponding codebase.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>7B 14B 32B</head><p>Vanilla FT Vanilla FT Vanilla FT R1 GPT-4o 33.0 33.3 35.7 37.0 36.0 36.7 37.0 Gemini-1.5-pro 26.3 26.3 27.0 27.7 29.7 29.0 33.0 Gemini-2.0-flash 26.7 27.0 26.3 27.7 28.0 28.7 28.3 Claude 3.5 Sonnet 35.7 38.7 39.7 41.7 41.3 42.0 47.0</p><p>Table 2: Performance Comparison across 7B, 14B, and 32B parameter DeepSeek R1 Distill Qwen reviewer models Evaluation Metrics. We evaluate model performance using multiple metrics. Resolve Rate (Pass@1) measures the fraction of instances fixed on the first attempt, while Pass@k represents the expected success rate within k attempts. To assess efficiency, we track the Average Cost per Instance (in dollars) and the Cost Scaling Factor, which compares scaled resource costs to the base agent. Lastly, we record the Number of Attempts required for a successful fix. Method Overall Pass@1 Precision Complete 10 9 0.51 5 look aheads 5 2 0.54 10 look aheads 8 5 0.68 Path Summary 9 5 0.54 Only Sibling Action 8 5 0.72 Table 3: Variation of performance with horizon of context during expansion.</p><p>Baselines. We test our approach against various SWE agents including SWE-Agent <ref type="bibr">(Yang et al., 2024b)</ref>, Moatless Tools <ref type="bibr" target="#b28">(Orwall, 2024)</ref>, and Open-Hands <ref type="bibr">(Wang et al., 2024c)</ref>, MASAI <ref type="bibr" target="#b4">(Arora et al., 2024)</ref>, Large Language Monkeys <ref type="bibr" target="#b7">(Brown et al., 2024)</ref>, Agentless <ref type="bibr">(Xia et al., 2024)</ref>, and SWE-Search <ref type="bibr" target="#b3">(Antoniades et al., 2024)</ref>. In terms of LLMs, we test our approach with various models including GPT-4o (OpenAI, 2025), Claude 3.5 Sonnet V2 <ref type="bibr">(Anthropic, 2024a)</ref>, Gemini 2.0 Flash, and Gemini 1.5 Pro <ref type="bibr" target="#b38">(Team et al., 2023)</ref>.</p><p>Hyperparameters. The DARS algorithm relies on several key hyperparameters. Num Expansions is set to 2, defining the number of expansions per decision point, while Expansion Temperature (0.8) controls the sampling temperature for alternative actions. The algorithm runs for 300 iterations (Num Iterations), with a maximum branch depth of 50 (Max Branch Depth). Action limits are defined by Expansion Limit Edit, Append, Submit, and Create, each set to 1 which caps the number of times those actions can be expanded within a branch. Num Expansion Sampling (3) specifies the number of sampled actions per expansion, and Num Lookahead (50) determines how many steps from previous trajectory are considered during tree expansion.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Model Training</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Dataset.</head><p>We use Nebius's trajectory dataset <ref type="bibr" target="#b5">(Badertdinov et al., 2024)</ref>, comprising 80K trajectories from 3K unique issues across 1,077 opensource software repositories. These issues are entirely disjoint from SWE-Bench Lite. After cleaning and filtering redundant patches, we obtain 42K unique patches (7.3K positive, 34.7K negative), with 837 unique issues correctly solved. Using GPT-4o (OpenAI, 2025), we generate critiques for all patches, leading to 150K training examples containing approximately 500M tokens. Model Setup. We fine-tune open-weight LLMs on the generated dataset. The model architecture follows Qwen 2.0 <ref type="bibr">(Yang et al., 2024a)</ref>, a Mixtureof-Experts (MoE) model utilizing Rotary Positional Embeddings <ref type="bibr" target="#b37">(Su et al., 2024)</ref>, SwiGLU <ref type="bibr" target="#b10">(Dauphin et al., 2017)</ref> activation, QKV bias <ref type="bibr" target="#b36">(Su, 2023)</ref> for attention, and RMSNorm <ref type="bibr" target="#b16">(Jiang et al., 2024)</ref> normalization. Training Setup. We use Deepseek's Distilled Qwen-2.5 <ref type="bibr">(et al., 2025)</ref> checkpoint as the base model for 7B, 14B, and 32B parameter variants, fine-tuning them with 8 H100 GPUs. Training is distributed via DeepSpeed <ref type="bibr" target="#b1">(Aminabadi et al., 2022)</ref>, with LoRA <ref type="bibr" target="#b14">(Hu et al., 2021)</ref> adapters for memory efficiency and FlashAttention 2 <ref type="bibr" target="#b9">(Dao, 2023)</ref> for acceleration.</p><p>We conduct a learning rate sweep over 1e-6, 5e-6, and 1e-5, selecting optimal values for the 32B, 14B, and 7B models, respectively. The batch size is set to 48 for 7B/14B models and 32 for 32B. Training runs for 1 epoch over the dataset with a max sequence length of 14K tokens, a warmup of 100 steps, and weight decay of 0.0.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LoRA Configuration:</head><p>We use rank r = 8, alpha = 32, and a dropout rate of 0.1.</p><p>Optimization: We apply AdamW <ref type="bibr" target="#b23">(Loshchilov and Hutter, 2019)</ref> with a cosine learning rate scheduler, BF16 mixed precision, and ZeRO stage 3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reviewer Model Inference.</head><p>We infer all pre-trained and fine-tuned reviewer models using vLLM <ref type="bibr" target="#b21">(Kwon et al., 2023)</ref>. A temperature sweep over 0, 0.5, and 0.6 is performed, as recommended by Deepseek authors. We set a top-p of 0.95.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Experiments</head><p>In this section, we first demonstrate the performance of our DARS model against various baselines, and then explore two key research questions (RQs) to analyze various aspects of its optimality.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Overall Performance</head><p>In this section, we compare the performance of our approach against various baselines and models. We summarize the results in Table <ref type="table">1</ref>. We find that our approach achieves a pass@1 rate of 47.0% with Claude 3.5 V2 Sonnet and Deepseek R1 as Reviewer which is the open-source SOTA performance on the SWE-Bench Lite benchmark at the time of this submission. <ref type="foot" target="#foot_0">2</ref> We further compare various vanilla and fine-tuned models reviewer in Table <ref type="table">2</ref>. We see an average increase of 2.6% across fine-tuned models with maximum increase of 4.15 % in case of the 14B model. However, 40% of examples have perfect precision (all the patches are correct), which diminishes the gain in performance due to fine-tuning. We compare the accuracy of all the reviewers for trajectories generated by various models after removing such examples in Table <ref type="table" target="#tab_1">6</ref> 5.2 RQ1: How efficient is the compute scaling of DARS?</p><p>The goal of this research question is to evaluate the efficiency of DARS in terms of compute scaling and its impact on solution quality. Specifi- Table 5: Comparison of effectiveness and efficiency of SWE-Agent, Improved SWE-Agent, and DARS</p><p>cally, we report the cost-vs-reward trade-off by analyzing key efficiency metrics such as cost scaling factor, accuracy per attempt, number of attempts, coverage, and precision. Our findings indicate that DARS achieves the most optimal cost scaling while maintaining high coverage and precision, outperforming baselines in redundancy reduction. Notably, while Large Language Monkeys achieve the highest coverage, this comes at an impractical compute cost, making DARS the more feasible approach.</p><p>Methodology. We compare the performance vs. Results. Table <ref type="table" target="#tab_0">4</ref> summarizes our findings. While DARS ranks second to Large Language Monkeys in terms of coverage improvement per attempt, the latter achieves this by scaling compute by a factor of 250, which is infeasible in real-world scenarios. Additionally, DARS exhibits significantly higher precision, enhancing the effectiveness of the trajectory selection pipeline. We also observe that hindsight feedback is less effective, as completely random sampling methods like MASAI outperform search-based approaches like SWE-Search in coverage improvement.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">RQ2: How important is long-horizon planning?</head><p>The goal of this research question is to assess the impact of long-horizon planning on the performance of DARS in coding tasks. Specifically, we report how varying the lookahead value affects the agent's ability to generate effective patches. Our findings show that increasing the lookahead value improves solution coverage, with the complete trajectory approach achieving the highest success rate. However, certain lookahead strategies, such as sibling action expansion, exhibit high precision while suffering from limited adaptability. Methodology. We investigate the importance of long-horizon planning by varying the lookahead value, which determines how many steps from the previous trajectory are considered during tree expansion. We evaluate five configurations: (a) 0lookahead (random sampling), (b) 5-lookahead, (c) 10-lookahead, (d) complete trajectory, and (e) summarized trajectory. Additionally, we test the sibling action expansion, where only sibling actions are provided without any lookahead. The experiment is conducted on 20 randomly selected issues.</p><p>Results. Table <ref type="table">3</ref> summarizes our findings. We observe a strong correlation between lookahead depth and solution coverage. The complete trajectory approach achieves the highest success rate, resolving 10 out of 20 issues (50%), while the summarized variant reaches a 45% success rate (9/20). This highlights the importance of maintaining full trajectory context for effective problem-solving.</p><p>Although the sibling action approach yields high precision, this result is skewed by a small subset of cases where it performed exceptionally well. In contrast, the complete trajectory method, despite lower precision, demonstrates superior Pass@1 accuracy-aligning with DARS's objective of generating diverse and effective patches.</p><p>The single lookahead approach resolves two fewer issues than the complete trajectory method, primarily due to trajectory depth limitations. This issue arises in cases where the agent falls into bugfixing and reproduction loops (edit-python loops), repeatedly encountering the same obstacles without historical context.</p><p>The 5-lookahead configuration performs the worst, as the restricted context provides only phasespecific errors (e.g., reproduction phase errors in append expansions, bug-fixing errors in edit expansions) without access to prior trajectory outcomes. This lack of context hinders the model's reasoning and decision-making capabilities.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Ablation Studies</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.1">Improved SWE-Agent</head><p>We evaluate our enhanced SWE-Agent, featuring advanced editing capabilities and new actions, against the base model on the SWE-Bench Lite benchmark. As shown in Table <ref type="table">5</ref>, the improved SWE-Agent achieves an average 14.7% higher resolve rate across all models while maintaining a similar cost per instance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.2">DARS Stage Analysis</head><p>This section presents deep insights into individual stages of DARS and their performance. There are two key stages in DARS: multi trajectory gener- Here ∞ corresponds to submission of all the patches generated for an issue.</p><p>Original Filtered Model Cov #Att Prec #Att Prec GPT-4o 43.33 8.00 0.70 4.00 0.71 Gem 1.5P 39.00 8.21 0.62 6.23 0.61 Gem 2.0F 36.00 6.34 0.64 3.77 0.61 Claude 3.5S 55 10.07 0.71 6.62 0.72 Table 7: This table presents the initial coverage, Number of Attempts (#Att), and Precision (Prec) before (Original) and after patch filtering (Filtered) stage. ation, best trajectory selection which further has two stages namely trajectory pruning and trajectory selection for various models and summarize the results in Table 7. We first analyze the recall and precision for multi trajectory generation to understand the effect of compute scaling on performance and redundancy for each model. We then analyze the capabilities of various models in final trajectory selection tested on the trajectories generated by Claude 3.5 Sonnet in Table 6.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.3">Coverage vs k</head><p>In previous sections, we analyzed pass@1 or pass@k. Here, we study coverage versus k by prompting our reviewer model for the top k patches (with k = 1, 3, 5; see Figure <ref type="figure" target="#fig_1">2</ref>). Notably, at k = 5, the coverage nearly reaches its maximum.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Conclusion</head><p>We introduced DARS, a novel method that resamples actions at key decision points to recover from suboptimal choices more effectively than linear or random sampling. On the SWE-Bench Lite benchmark, DARS achieves a state-of-the-art pass@1 rate of 47% with Claude 3.5 Sonnet V2. We release our code, datasets, and models to support further research.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitations</head><p>We currently allocate compute using a static method with fixed depth and no early stopping, which limits our efficiency. A reward model (similar to MCTS) could evaluate and prioritize promising paths, enabling smarter exploration and early stopping decisions. While BFS might seem intuitive, its inefficiency with limited lookaheads and path history makes it impractical. We propose to implement absolute path scoring to guide exploration depth and stopping decisions, while maintaining an upper depth limit.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Ethical Considerations</head><p>The use of Large Language Models (LLMs) in software engineering carries security and ethical risks. To mitigate these, DARS executes all LMgenerated code in isolated, ephemeral environments to prevent unintended system modifications. We employ a structured verification pipeline to reduce biased or unsafe outputs and ensure adherence to best coding practices. While AI-driven automation can be misused, we release our work under responsible AI guidelines and encourage safeguards against malicious applications. Our code, datasets, and models are open-source to promote transparency and responsible AI research. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Appendix</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Agent Performance Across Repositories</head><p>This section analyzes model performance across different repositories using the SWE-Bench Lite benchmark. Our goal is to identify biases in how models handle code from various sources.</p><p>We summarize our findings in Figure <ref type="figure" target="#fig_3">3</ref> and observe that models perform best on Seaborn and Requests, achieving 65-75% accuracy, while scientific computing libraries (e.g., sympy, xarray, SciKitlearn) and web frameworks (e.g., Flask, Django) show moderate performance (40-60%). In contrast, Astropy and Sphinx consistently rank lowest (30-40%), indicating that models struggle more with specialized scientific tools and documentation systems than with visualization and HTTP client libraries.</p><p>These findings highlight domain-specific variations in model effectiveness, guiding improvements in generalization across repositories.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3 Improved Editing</head><p>We compare the performance of the agent when it uses the whole style of editing and the diff style of editing. We analyze the number of various types of syntactic errors committed by the agent while editing the code in both the styles of editing. We perform our analysis across two models namely Gemini 2.0 Flash and Gemini 1.5 Pro. Here No Match error pertains to the situation in diff editing where the text to be replaced does not match text in the file. File Error occurs when the model tries to  make an edit when no file is opened. Syntax Error is thrown by the linter in cases like indentation error or erroneous variable referencing. Finally, Content Error occurs in case of diff editing, when the agent provides the new content in edit, append, or insert command as an empty string or provides the content to replace and new content as the same string.</p><p>We summarize the results in Table <ref type="table" target="#tab_2">8</ref>. In both the styles of editing, the major source of errors is syntax errors. We find that the diff style of editing leads to 1% less errors compared to the whole style of editing. However, this effect is much more pronounced in terms of semantics as diff style achieves 36% higher pass@1 rate.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.4 Localization Analysis</head><p>We analyze the ability of the agent to correctly localize the bug in the codebase. We find the overlap between the predicted location and the actual location based on the git patch of the proposed solution vs the actual solution patch and calculate the percentage of correct localizations. We summarize the results in Table <ref type="table" target="#tab_3">9</ref>. Average correct localization across all models is 72.3 %, which shows that the agent is usually able to correctly localize the bug in the codebase.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.5 Variation of Performance with Max Depth and Number of Iterations</head><p>We analyze the optimality of two key search hyperparameters: max depth and number of iterations.</p><p>We simulate the trajectories of our agent for different values of these hyperparameters and analyze the coverage of the agent for each value.</p><p>We summarize the results in Figure <ref type="figure" target="#fig_4">4</ref> and Figure <ref type="figure" target="#fig_5">5</ref> for variation with depth and iterations respectively. We find that both the curves show a decaying trend with increasing values of the hyperparameters and saturate for our values of 50 and 300 for max depth and number of iterations respectively which shows that our values are optimal for the agent. A.6 Issues vs Models Model-Specific Issue Resolution. Venn diagram of resolved issues by model. Each model can solve a handful of unique instances. We summarize the results in Figure 6. Figure 6: Venn diagram of resolved issues by model. Each model can solve a handful of unique instances.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.7 Left-Right Branch Analysis</head><p>We study the effectiveness of our expansions by comparing the depths of branches before and after expansion, focusing on cases where both the left and right branches reach a conclusion, meaning they terminate when the agent returns a submit action. Additionally, we analyze how different expansion paths lead to conclusions by comparing two scenarios: (1) when the right-side expansion successfully reaches a conclusion while the left-side fails to do so, and (2) when the left-side expansion reaches a conclusion while the right-side does not. We summarize our findings in Table <ref type="table">11</ref> and Table <ref type="table" target="#tab_4">10</ref>.</p><p>Submit expansions rarely achieve convergence, which is anticipated given their terminal position in the sequence. To accurately assess the efficacy of Submit expansions, an increased maximum depth threshold specifically for Submit operations would be necessary. Create expansions demonstrate significant effectiveness in reaching conclusions, sug-gesting that initial localization strategies can facilitate convergence in specific scenarios. Expansions in edit and append operations successfully break edit-python iteration cycles, leading to more efficient conclusion paths. Analysis reveals a consistent pattern where dual-path conclusions and right-path iterations exhibit lower counts compared to left-path iterations, aligning with the hypothesis that expansions reduce errors. However, append operations demonstrate elevated average iterations because the model now creates a more comprehensive testing script that involves additional editing and validation steps, resulting in increased overall depth 17. Contrary to expectations, in edit, create, and append expansion operations, left-path expansions frequently achieve conclusions while right-path expansions do not. For edit and append: The model creates a more complicated reproduction script which leads to an error, which the model is not able to to resolve 19. In create, the agent finds it easy to locate the issue after reproduction. While, in the expanded branch, could not localize it 18. Another reason for this pattern is that the agent sometimes submits prematurely (often after reproduction). In the right path, it recognizes this mistake and corrects it. Table 11: Comparison of action path depths before and after expansion</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.8 Error Scaling Analysis</head><p>In this section, we present the scaling of various error types as we scale compute. We summarize the results in Table <ref type="table">12</ref>. A.9 How to effectively expand the tree?</p><p>Understanding how to expand the search tree efficiently is crucial for balancing computational cost and solution quality in our coding agent. We investigate this research question to determine which actions should be prioritized for branching and in what order they should be expanded. Specifically, we report the trade-off between branching cost and resolution rate for different actions, as well as the impact of various branching strategies on search efficiency. Our findings show that branching at key actions like edit, create, and append leads to the highest resolve rates, and that a Lowest Depth First approach improves early-stage exploration but converges with other strategies over time. Finally we understand the compute-performance trade-off of number of expansions for each expansion type in a branch.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.9.1 Action Selection Methodology.</head><p>We analyze the computational cost vs resolve rate trade-off of branching various actions in the trajectory. We first run the agent to expand at eight different actions namely search_dir, insert, search_file, open, goto, find_file, append, and edit. We then perform a causal analysis to determine the most promising actions by comparing decrease in resolve rate and number of iterations for each action. We then analyze the impact of branching at different actions on the performance of the agent.</p><p>Results. We find that branching at actions that are typically used in the reproduction and fix stages like edit, create, append leads to the highest resolve rate. We summarize the results in Table <ref type="table" target="#tab_5">13</ref>.</p><p>A.9.2 Order of Action Selection Methodology. We explore various strategies to expand the tree at different actions. We use the runs in the previous section and simulate strategies pertaining to the order of branching at different actions. We experiment with three different strategies namely First In First Out (FIFO), Last In First Out (LIFO), and Lowest Depth First. We plot the coverage vs number of iterations curve for each strategy to determine the most promising strategy.</p><p>Results. In Figure <ref type="figure" target="#fig_7">8</ref> we find that the Lowest Depth First strategy early on as it promotes exploration at the lower depths of the tree. This allows the agent to explore more possibilities and make better decisions. But if the agent is run for long enough, all the strategies converge to the same point as all the possible states are explored eventually. A.9.3 Number of Expansion Types Per Branch Methodology.</p><p>We investigate the computeperformance trade-off associated with multiple expansions of the same type within a branch. For each expansion type, we allow k expansions within a branch, where k ranges from 1 to 4. Our analysis measures two key metrics: the relative increase in node count (representing computational cost) and the resolution rate. We plot the ratio of computational cost increase to performance improvement against k to determine the optimal number of expansions. Results. As shown in Figure <ref type="figure" target="#fig_6">7</ref>, for all action types except "open," the cost-performance ratio increases with k, indicating that computational costs grow more rapidly than performance gains. This suggests that performing more than one expansion of the same type per branch is computationally inefficient. For the "open" action type, the initial cost-performance ratio is prohibitively high, making even a single expansion impractical.</p><p>A.10 How to effectively select the best trajectory?</p><p>Optimizing our agent requires effective tree expansion, trajectory selection, and action evaluation. Due to computational constraints and LLM context limitations, we adopt a structured approach to improve efficiency.</p><p>We first analyze tree expansion, studying how different actions-edit, append, create, and submit-impact coverage and performance. Next, we tackle trajectory selection, implementing a twostage pipeline: filtering to remove irrelevant information and ranking to identify the best trajectory. We compare pairwise and global ranking methods across different filtering configurations. Finally, we quantify the impact of expansion actions, isolating their contributions to coverage, accuracy, and efficiency.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.10.1 Trajectory Content Filtering</head><p>A trajectory contains several components like command descriptions, various actions and their thoughts, observations to each action etc., not all of which are relevant to determine if a particular trajectory is would solve the bug. Therefore, we experiment with various components of the trajectory to determine the best combination. Methodology. Based on the three key stages of the bug fixing process -Reproduction, Localization, and Fix, we identify certain key components of the trajectory that are relevant to each of these stages. These components include the reproduction script, the edited files, the output after running the reproduction script, and the final patch. We then experiment with various combinations of these components to determine the best combination.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.10.2 Trajectory Ranking Methodology.</head><p>To find the best trajectory, we experiment with two different ranking methods: pairwise knockout ranking and global ranking. In pairwise knockout ranking, we compare each pair of trajectories and eliminate the one that is worse until we are left one. In global ranking, we rank all the trajectories based on our rubricks. Results. We summarize the results of the trajectory ranking in Table <ref type="table" target="#tab_0">14</ref> for each type of filtering pipeline and ranking strategy. We find that only the final patch is the most effective component to determine the best trajectory. This result is significant for two reasons. First, it makes our trajectory selection model applicable to any coding agents as a git patch is a common output format for all agents. Moreover, it also makes the trajectory selection pipeline more efficient as it only needs to consider the final patch to determine the best trajectory.</p><p>Combination Pairwise Ranking Global Ranking RS + EF + RO + FP 30.67 33.00 RS + EF + FP 30.67 33.67 RS + RO + FP 30.67 33.67 RS + FP 30.67 34.00 FP 30.67 34.67 Table 14: Performance comparison of different scoring combinations using pairwise and global ranking methods. The combinations use the following components: RS (Final reproduction scripts), EF (Final edited files), RO (Final reproduction output), and FP (Final Patch).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.11 Contribution of expansion in each Action</head><p>We quantify the contribution of each action in the trajectory to the final performance of the agent. We analyze the performance of the agent by simulating expansions for certain combinations of actions and studying its variation with the coverage. We summarize the results in</p><p>Table 15. We can see that edit actions (edit and append) and reproduction actions (create) lead to the highest increase in performance. While expansion in submit command leads to minimal increase in performance, it does not lead to much redundancy either. While append leads to highest solve rate, it also leads to highest cost. Edit and create actions lead to a good balance between performance and cost. Exp Actions Cov Avg Iter Acc # Att Pre Edit, Append, Submit, Create 54.7 194 81 10.72 0.72 Edit, Append, Create 54.3 177 46 0.72 0.72 Append, Create 51.0 146 35 0.70 0.70 Edit, Create 49.3 81 23 0.70 0.70 Edit, Append 47.6 96 23 0.70 0.70 Append 42.7 80 22 0.66 0.66 Create 41.3 51 12 0.66 0.66 Edit 39.3 44 12 0.66 0.66 No Expansion 31.0 27 11 0.57 0.57 Table 15: Performance of DARS for various combination of expansion actions (Exp Actions). We compare across several metrics such as coverage (Cov), average number of iterations across issues (Avg Iter), accuracy of reviewer model (Acc), average number of attempts (# Att), and precision (Pre)</p><p>In the previous analysis, we focus on the contributions of different combinations of expansion actions on the final coverage. However, in the analysis, the results depend on all the actions in the combination. To de-couple the effect of each expansion type, we perform another analysis where, for each expansion action, we contrast the number of cases where a) the branch before expansion does not resolve the issue, but the branch after expansion does, b) the branch before the expansion resolve the issue but the branch after the expansion does not resolve the issue, and c) both branches resolve the issue. We summarize our results in Figure <ref type="figure">9</ref>. We can still see that majority of expansions are lead to solutions on both branches which shows that our approach still has a considerable amount of redundancy. We see highest efficiency for edit and append expansions and lowest for submit ex-pansions.</p><p>60.4% 21.3% 18.4% 60% 21.9% 18.1% 70.1% 17.1% 12.8% 95.6% 3.4% Append Submit Edit Create Figure 9: These figures present the proportions marked by • for the cases where the branch before expansion does not resolve the issue, but the branch after expansion does, • for the cases where the branch before the expansion resolve the issue but the branch after the expansion does not resolve the issue, and • for the cases where both branches resolve the issue. A.12 Expansion Qualitative Analysis Before Expansion +import matplotlib.pyplot as plt +from matplotlib.colors import LogNorm +import numpy as np +print("Starting test script...") +# Create test data with known values +img = np.logspace(0, 4, 50*50).reshape(50, 50) +print(f"Image range: {img.min():.2f} to {img.max():.2f}") +fig, ax = plt.subplots(1, 1) +plot = ax.imshow(img, cmap='gray') +cb = fig.colorbar(plot, ax=ax) +print("Initial plot created, now changing norm...") +plot.norm = LogNorm(vmin=img.min(), vmax=img.max()) +print(f"New norm created with vmin={img.min():.2f}, vmax={img.max():.2f}") +print("Attempting update_normal...") +cb.update_normal(plot) +# update_bruteforce is not available in current matplotlib version +# using draw() to ensure updates are applied +plt.draw() +print("Verifying colorbar norm...") +print(f"Plot norm type: {type(plot.norm)}") +print(f"Colorbar norm type: {type(cb.norm)}") +print(f"Plot norm range: {plot.norm.vmin:.2f} to {plot.norm.vmax:.2f}") +print(f"Colorbar norm range: {cb.norm.vmin:.2f} to {cb.norm.vmax:.2f}") +print("Test completed successfully if norms match") +plt.show( After Expansion +import matplotlib.pyplot as plt +from matplotlib.colors import LogNorm +import numpy as np +img = 10**np.random.normal(1, 1, size=(50, 50)) +fig, ax = plt.subplots(1, 1) +plot = ax.imshow(img, cmap='gray') +cb = fig.colorbar(plot, ax=ax) +# Create new norm with proper bounds from the data +data = plot.get_array() +new_norm = LogNorm(vmin=data.min(), vmax=data.max()) +plot.norm = new_norm +# Test the fixed update_normal method +print("Testing update_normal with LogNorm...") +cb.update_normal(plot) # should now work correctly with the new norm +plt.savefig("test_output.png") +print("Test completed successfully") </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>After Expansion Before Expansion</head><p>+from sympy import MatrixSymbol, init_printing, pprint +from sympy.abc import n +init_printing() +# Create matrix symbols +x = MatrixSymbol("x", n, n) +y = MatrixSymbol("y*", n, n) +# Try to pretty print their sum +print("Attempting to pretty print x + y:") +pprint(x + y) +print("Script completed successfully.") +from sympy.abc import n +# Test cases +tests = [ + MatrixSymbol("x", n, n) + MatrixSymbol("y*", n, n), + -MatrixSymbol("x", n, n) + MatrixSymbol("y*", n, n), + MatrixSymbol("x", n, n) -MatrixSymbol("y*", n, n) +] +for i, expr in enumerate(tests, 1): + print(f"\nTest {i}:") + try: + print("Expression:") + pprint(expr) + except Exception as e: + print(f"Error occurred: {type(e).__name__}") + print(f"Error message: {str(e)}") +print("\nScript completed.") </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Before Expansion</head><p>Test Patch:</p><p>+from sympy import MatrixSymbol, init_printing, pprint +from sympy.abc import n +init_printing() +# Create matrix symbols +x = MatrixSymbol("x", n, n) +y = MatrixSymbol("y*", n, n) +# Try to pretty print their sum +print("Attempting to pretty print x + y:") +pprint(x + y) +print("Script completed successfully.")</p><p>Fix Patch: @@ -501,10 +501,13 @@ def _f(rv): if not (rv.is_Pow and rv.base.func == f): return rv -if (rv.exp &lt; 0) == True: -return rv -if (rv.exp &gt; max) == True: + if rv.exp.is_complex: return rv + if rv.exp.is_real: + if (rv.exp &lt; 0) == True: + return rv + if (rv.exp &gt; max) == True: After Expansion Test Patch: +from sympy import * +from sympy.simplify.fu import TR6 + +def test_powers(): + x = Symbol("x") + print("Testing various power cases...") + # Test complex power + print("\n1. Complex power:") + result = TR6(cos(x)**I) + print("cos(x)**I =", result) + + # Test original cases + print("\n2. Regular cases:") + print("cos(x)**2 =", TR6(cos(x)**2)) + print("cos(x)**4 =", TR6(cos(x)**4)) + print("cos(x)**(-2) =", TR6(cos(x)**(-2))) + +if __name__ == "__main__": + test_powers() Fix Patch: @@ -501,9 +501,16 @@ def _f(rv): if not (rv.is_Pow and rv.base.func == f): return rv -if (rv.exp &lt; 0) == True: + # First handle complex non-real exponents + if rv.exp.is_complex and not rv.exp.is_real: return rv -if (rv.exp &gt; max) == True: + # Then handle real exponents with proper error handling + try: + if (rv.exp &lt; 0) == True: + return rv + if (rv.exp &gt; max) == True: + return rv + except TypeError: # catches invalid comparison of complex numbers return rv if rv.exp == 2: return h(g(rv.base.args[0])**2) Figure 12: Re-evaluating the trajectory after submitting leads to the model finding out about certain corner cases and fixing them After Expansion Before Expansion Expansion Analysis Action: append $'from django.db import models from collections import namedtuple from django.test import TestCase class TestModel(models.Model): value = models.IntegerField() Range = namedtuple("Range", ["near", "far"]) print("Setting up test...") try: # Create a range with named tuple range_tuple = Range(near=1, far=10) from django.db.models.sql.query import Query query = Query(TestModel) result = query.resolve_lookup_value(range_tuple) print("ERROR: Expected to fail but didn't") except TypeError as e: if "missing 1 required positional argument: 'far'" in str(e): print("Successfully reproduced the error: ", str(e)) else: print("Unexpected error:", str(e))' THOUGHT 1. Previous Action Summary: -Created a test script to reproduce named tuple handling issue in Django -Implemented basic Django settings configuration -Successfully demonstrated the fix works with a simple test case 2. Key Issues: -Test only covers basic case with a single named tuple -No edge cases or complex scenarios tested -No validation of SQL query generation -Minimal error handling 3. Potential Improvements: -Add multiple named tuple types with different field counts -Test nested named tuples -Verify behavior with empty/None values -Include SQL query validation -Test with actual database operations 4. Impact on Trajectory: -More comprehensive testing would provide better confidence -SQL validation would ensure query correctness -Edge cases would prevent future regressions DISCUSSION I'll create an enhanced version of the test script that includes more comprehensive testing scenarios. This version will test multiple named tuple types, nested structures, and verify SQL query generation. Action: append $'import os import sys from collections import namedtuple from django.conf import settings from django.db import models # Configure minimal Django settings settings.configure( DEBUG=True, DATABASES={ "default": { "ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:", } }, INSTALLED_APPS=["django.contrib.contenttypes"], ) import django django.setup() # Create a test model class TestModel(models.Model): value = models.IntegerField() class Meta: app_label = "test_app" # Create a named tuple Range = namedtuple("Range", ["near", "far"]) Figure 13 After Expansion Before Expansion Reproduction Analysis Action: search_repo "URLResolver" Action: open django/urls/resolvers.py Action: search_file "to_python" django/urls/resolters.py Action: search_file "to_python" django/urls/resolvers.py Action: goto 260</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>THOUGHT</head><p>The error output shows that we've successfully reproduced the issue. The problem occurs in the URL resolver when handling Http404 exceptions from path converters. Let's look at the relevant code in Django's URL resolver. Based on the traceback, we need to examine 'djangourlsresolvers.py' around line 260 where the converter's 'to_python' method is called.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Action:</head><p>open django/urls/resolvers.py 260 Figure <ref type="figure" target="#fig_4">14</ref>: Append expansion leads to better reproduction script which leads to better localization.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>After Expansion Before Expansion Expansion Analysis</head><p>Action: edit $"from django.db import models\nfrom django.conf import settings ..." $"from django.db import models ..."</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Thought:</head><p>The error indicates that the Django app registry is not properly initialized before defining the model. I'll fix this by ensuring the Django setup is completed before defining the `SimpleModel` class.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Action: python reproduce_delete_issue.py</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Thought:</head><p>The script has been updated to properly initialize Django before defining the model. I'll now execute the script again to verify if the fix works as intended.</p><p>Action: edit $"from django.db import models\nfrom django.conf import settings ..." $"from django.db import models ..."</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Thought:</head><p>The error indicates that the database table for the `SimpleModel` class has not been created. This is because the database schema was not migrated. I'll fix this by adding the necessary migration steps to create the table before running the test.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Action: python reproduce_delete_issue.py</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Thought:</head><p>The script has been updated to include database migration steps. I'll now execute the script again to verify if the fix works as intended.</p><formula xml:id="formula_0">Action: edit $' INSTALLED_APPS=["__main__"],' $' INSTALLED_APPS=["__main__", "django.contrib.contenttypes"],' Thought:</formula><p>The error persists because the migrations are being created but not applied correctly. This might be due to the `INSTALLED_APPS` configuration or the way the migration commands are being executed. I'll explicitly include the `SimpleModel` in the migration process by ensuring the app registry is properly initialized and the migrations are applied correctly. . . . . .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Thought</head><p>The previous action attempted to address issues with Django's app label and migration paths by setting a custom AppConfig and adjusting the `INSTALLED_APPS` to include `reproduce_delete_issue.MainAppConfig`. However, the attempt to migrate the database still fails with the error `"App '__main__' does not have migrations."` ### Key Issues: 1. The `app_label` for the `SimpleModel` class is still set to `"__main__"`, which might not align with the configuration changes (e.g., `reproduce_delete_issue.MainAppConfig`). 2. Even though migrations were generated and moved to the `__main__/migrations/` folder, Django still fails to recognize them, likely due to mismatched configurations between the app label and the migration path. 3. The custom `AppConfig` `name = "__main__"` might not align with Django's expectations for a valid app name. ### Improvements: 1. Update the `app_label` in the `Meta` class of `SimpleModel` to match the updated app configuration (`reproduce_delete_issue`). 2. Adjust the `AppConfig` name to use `"reproduce_delete_issue"` instead of `"__main__"`. 3. Ensure the migration folder structure (`reproduce_delete_issue/migrations`) and the `app_label` are aligned correctly. ### Potential Impact: These changes should allow Django to properly recognize the app and its migrations, enabling successful migration and resolution of the issue. DISCUSSION I will update the `app_label` in the `Meta` class of `SimpleModel` to match the updated app configuration (`reproduce_delete_issue`) and adjust the `AppConfig` name to ensure alignment with Django's expectations.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>After Expansion Before Expansion</head><p>Expansion Analysis Action: edit $"'invalid': _("'%(value)s' value has an invalid format. It must be in [DD] [HH:[MM:]]ss[.uuuuuu] format.")" $"'invalid': _(\"'%(value)s' value has an invalid format. It must be in [DD] [[HH:]MM:]ss[.uuuuuu] format.\")" Observation: [No exact match found in /django__django/django/db/models/fields/__init__.py. Did you mean: ``` 'invalid': _("'%(value)s' value has an invalid format. It must be in " ``` ] . . . . .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>THOUGHT</head><p>The repeated syntax errors indicate that the `$"..."` notation is not being interpreted correctly. I'll switch to using `$'...'` notation, which is the correct format for escaping special characters like parentheses and quotes. Additionally, I'll include the exact continuation line to ensure the `to_replace` string matches the source code.</p><p>Action: edit $"'invalid': _("'%(value)s' value has an invalid format. It must be in [DD] [HH:[MM:]]ss[.uuuuuu] format.")" $"'invalid': _(\"'%(value)s' value has an invalid format. It must be in [DD] [[HH:]MM:]ss[.uuuuuu] format.\")" Observation: [File updated (edited at line 1589). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.] Action: python reproduce.py Thought: Now let's run the script again to see if we can reproduce the issue. This should show us the error where the view function is receiving too many arguments. Action: search_repo "URLResolver" Thought: Perfect! We've successfully reproduced the issue. The error shows that our view function is receiving 3 arguments when it expects only 1 or 2. This is happening because Django is trying to pass both the matched groups and named groups from the URL pattern. Let's search the repository to find where URL pattern matching is handled. Action: open django/urls/resolvers.py Thought: DISCUSSION Let's look at the URL resolver code in django/urls/resolvers.py since that's where the URL pattern matching is handled. We'll open this file to understand how the arguments are being passed to the view. Action: find_file "urls.py" django Thought: Since this issue is related to URL pattern handling and view functions, we should look in the core URL handling code in Django. The error occurs when Django is trying to pass arguments to a view function, so we should look in the URL resolver or view handling code. Let's search for relevant files in the django directory. Action: search_repo "get_response" Thought: The issue seems to be related to how Django handles view function arguments from URLs. Let's search for code that handles view function calls using search_repo to find relevant functions. Action: search_repo "wrapped_callback" Thought: Let's search more specifically for code that handles view function calls. Since the error is about argument handling in views, let's search for "wrapped_callback" which was mentioned in the error trace. Action: find_file "resolvers.py" django Thought: The issue appears to be in how Django handles optional URL parameters. Let's look at the URL resolver code since that's where the `callback_args` and `callback_kwargs` are being created. Let's search for the URL resolver code. . . . Figure 18: The agent finds it easy to locate the issue after reproduction. While, in the expanded branch, could not localize it. Action: python reproduce.py Thought: Now let's run the script again to see if we can reproduce the issue. This should show us the error where the view function is receiving too many arguments. Action: search_repo "URLResolver" Thought: Perfect! We've successfully reproduced the issue. The error shows that our view function is receiving 3 arguments when it expects only 1 or 2. This is happening because Django is trying to pass both the matched groups and named groups from the URL pattern. Let's search the repository to find where URL pattern matching is handled. Action: open django/urls/resolvers.py Thought: DISCUSSION Let's look at the URL resolver code in django/urls/resolvers.py since that's where the URL pattern matching is handled. We'll open this file to understand how the arguments are being passed to the view. Action: find_file "urls.py" django Thought: Since this issue is related to URL pattern handling and view functions, we should look in the core URL handling code in Django. The error occurs when Django is trying to pass arguments to a view function, so we should look in the URL resolver or view handling code. Let's search for relevant files in the django directory. Action:</p><p>search_repo "get_response"</p><p>Thought:</p><p>The issue seems to be related to how Django handles view function arguments from URLs. Let's search for code that handles view function calls using search_repo to find relevant functions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Action:</head><p>search_repo "wrapped_callback"</p><p>Thought:</p><p>Let's search more specifically for code that handles view function calls. Since the error is about argument handling in views, let's search for "wrapped_callback" which was mentioned in the error trace.</p><p>Action: find_file "resolvers.py" django</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Thought:</head><p>The issue appears to be in how Django handles optional URL parameters. Let's look at the URL resolver code since that's where the `callback_args` and `callback_kwargs` are being created. Let's search for the URL resolver code. . . .</p><p>Figure <ref type="figure" target="#fig_2">19</ref>: The model creates a more complicated reproduction script which leads to an error, which the model is not able to to resolve. Figure 21: Problem Statement Node Figure 22: System Node Figure 23: User Node Figure 24: Assistant Node Figure 25: Assistant Node A.14 Prompts A.14.1 Backbone Agent Prompts This is the system prompt for the backbone agent. This contains the abstract commands, their usage and general guidelines for the agent. The agent is expected to follow these commands to interact with the environment and solve the issues in the repository.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.13 Trajectory Analysis Tool</head><p>System Prompt SETTING: You are an autonomous programmer working in a command-line interface with a special file editor. Your task is to solve issues within a repository by analyzing, editing, and testing code. Available Commands: &lt;command_docs&gt; open: docstring: opens the file at the given path in the editor. If line_number is provided, the window will be move to include that line signature: open &lt;path&gt; [&lt;line_number&gt;] arguments: -path (string) [required]: the path to the file to open -line_number (integer) [optional]: the line number to move the window to (if not provided, the window will start at the top of the file) goto: docstring: moves the window to show &lt;line_number&gt; signature: goto &lt;line_number&gt; arguments: -line_number (integer) [required]: the line number to move the window to scroll_down: docstring: moves the window down 100 lines signature: scroll_down scroll_up: docstring: moves the window down 100 lines signature: scroll_up create: docstring: creates and opens a new file with the given name signature: create &lt;filename&gt; arguments: -filename (string) [required]: the name of the file to create submit: docstring: submits your current code and terminates the session signature: submit search_dir: docstring: searches for search_term in all files in dir. If dir is not provided, searches in the current directory signature: search_dir &lt;search_term&gt; [&lt;dir&gt;] arguments: -search_term (string) [required]: the term to search for -dir (string) [optional]: the directory to search in (if not provided, searches in the current directory) search_file: docstring: searches for search_term in file. If file is not provided, searches in the current open file signature: search_file &lt;search_term&gt; [&lt;file&gt;] arguments: -search_term (string) [required]: the term to search for -file (string) [optional]: the file to search in (if not provided, searches in the current open file) find_file: docstring: finds all files with the given name in dir. If dir is not provided, searches in the current directory signature: find_file &lt;file_name&gt; [&lt;dir&gt;] arguments: -file_name (string) [required]: the name of the file to search for -dir (string) [optional]: the directory to search in (if not provided, searches in the current directory) edit: docstring: Replaces occurrence of $&lt;to_replace&gt; with $&lt;new_content&gt; in the currently open file. signature: edit $&lt;to_replace&gt; $&lt;new_content&gt; arguments: -to_replace (string) [required]: The text to be replaced in the file. -new_content (string) [required]: The new text to replace with. undo_edit: docstring: Reverts the last edit made to the specified file. If no file is provided, reverts the last edit on the currently open file. signature: undo_edit [file_path] arguments: -file_path (string) [optional]: The path to the file to undo the last edit for. insert: docstring: Inserts $&lt;content&gt; at the given &lt;line_number&gt; in the currently open file. signature: insert &lt;line_number&gt; $&lt;content&gt; arguments: -line_number (int) [required]: The line number where the content should be inserted. -content (string) [required]: The content to insert at the specified line number. append: docstring: Appends $&lt;content&gt; to the end of the currently open file. signature: append $&lt;content&gt; arguments: -content (string) [required]: The content to append to the end of the file. execute_ipython: docstring: Executes Python code in a persistent cell, returning its output. Variables persist between executions. signature: execute_ipython $&lt;code&gt; arguments: -code (string) [required]: Python code to execute in the cell. execute_server: docstring: To run long-lived processes such as server or daemon. It runs the command in the background and provides a log of the output. signature: execute_server &lt;command&gt; arguments: -command (string) [required]: Bash command to execute in the shell. search_repo: docstring: searches in the current repository with a specific function or class, and returns the def and ref relations for the search term. signature: search_repo &lt;search_term&gt; arguments: -search_term (string) [required]: function or class to look for in the repository. &lt;/command_docs&gt; General Guidelines: 1. One command at a time: Always execute a single command and wait for feedback before proceeding. 2. Proper indentation: When editing files, ensure correct indentation for each line. 3. File awareness: Pay attention to the currently open file and working directory. 4. Search functionality: Use search_repo command to gather information when needed. 5. For interactive sessions: Start it using execute_server command. You need to format your output using two fields; discussion and command. Your output should always include one discussion and one command field EXACTLY as in the following example: DISCUSSION First I'll start by using ls to see what files are in the current directory. Then maybe we can look at some relevant files to see what they look like.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ls -a</head><p>The following is the first user prompt for the agent. This prompt is used to describe the issue to the agent and provides special instructions regarding the use of various commands described in the system prompt.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Tool Instructions instance_template:</head><p>Here's the issue you need to address, as described in the PR: &lt;pr_description&gt; {issue} &lt;/pr_description&gt; You're in the repository's root directory. Can you help me implement the necessary changes to the repository so that the requirements specified in the &lt;pr_description&gt; are met? Start by creating a minimal script to replicate and verify the bug described in the issue. Ensure the bug is reproducible before making any changes. After implementing a fix, use the same script to confirm the issue is resolved. Include debugging messages, like print("Script completed successfully."), to indicate successful execution. The script should be focused on verification and ensuring no new errors are introduced. Your task is to make the minimal changes to non-tests files to ensure the &lt;pr_description&gt; is satisfied. If a command fails, do not repeat it. It will not work the second time unless you modify it. Always adapt or use a different command. Note: Please give only single tool call in a single step. Follow these steps to resolve the issue:</p><p>1. Explore the repository structure to familiarize yourself with its layout.</p><p>2. Create a script to reproduce the error and execute it using the BashTool.</p><p>3. Edit the source code to resolve the issue, making minimal changes. 4. Rerun your reproduce script to confirm the error is fixed. 5. Consider edge cases and ensure your fix handles them.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Important Instructions for Command Usage:</head><p>1. File Navigation:</p><p>• Always be aware of the currently open file and the current working directory.</p><p>• The currently open file might be in a different directory than the working directory.</p><p>• Some commands, like 'create', may change the current open file.</p><p>• For efficient navigation to specific lines (e.g., line 583), use 'goto' instead of multiple scroll_down commands.</p><p>2. Code Editing Commands (edit, append, insert):</p><p>• If the assistant would like to add the line ' print(x)', it must fully write the line out, with all leading spaces before the code! • Prefix content with $ to ensure the string is treated as a literal, avoiding the need for escape characters.</p><p>• Use $'...' Notation: Always use $'...' for strings in edit, append, and insert commands to correctly interpret escape sequences like \n.</p><p>• Avoid $"..." as it treats escape sequences literally.</p><p>• To add characters like \n or \t as literal strings within code, use double backslashes.</p><p>• Escape single or double quotes within code as \' or \".</p><p>• Line numbers are for reference only-do not include them in content for edit, append, or insert commands.</p><p>3. Edit Command:</p><p>• The to_replace argument must exactly match the existing source code.</p><p>• Select the minimal number of lines necessary to uniquely identify the content.</p><p>• Prefix to_replace and new_content with $.</p><p>• Ensure new_content includes correct indentation.</p><p>• To remove lines, set new_content to an empty string.</p><p>• Note that to_replace and new_content must be different.</p><p>4. Insert Command:</p><p>• Specify the exact line number for insertion.</p><p>• This command will not modify content before or after the specified line.</p><p>5. Append Command:</p><p>• Use append to add content to the end of a file.</p><p>• This is ideal after a create_file command.</p><p>6. Search Command:</p><p>• search_repo searches the current repository for specified functions or classes.</p><p>• It provides definition (def) and reference (ref) relationships for the search term.</p><p>• search_term is the function or class name to search for.</p><p>7. Execute_server Command:</p><p>• Use the execute_server command to run a server or process in the background.</p><p>• Usage: execute_server 'Your_Command'. Make sure to use quotes.</p><p>• execute_server get_logs: Retrieves the last 100 lines of the server / process logs.</p><p>• execute_server stop: Stops the background Bash server process.</p><p>(Open file: {open_file}) (Current directory: {working_dir}) bash-$</p><p>Here is a demonstration prompt for the backbone agent. This prompt is used to demonstrate the correct usage of the commands and the interface to the agent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Demonstration Template</head><p>Here is a demonstration of how to correctly accomplish this task. It is included to show you how to correctly use the interface. You do not need to follow exactly what is done in the demonstration.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>---DEMONSTRATION ---We're currently solving the following issue within our repository.</head><p>Here's the issue text: ISSUE: Fix: TimeDelta Precision Errors Use microsecond integer arithmetic to fix high precision timedelta errors.</p><p>Fixes #1865 Let's first start by reproducing the results of the issue. The issue includes some example code for reproduction, which we can use. We'll create a new file called `reproduce.py`and paste the example code into it. ``` create reproduce.py ``` [File: /marshmallow-code__marshmallow/reproduce.py (1 lines total)] 1: (Open file: /marshmallow-code__marshmallow/reproduce.py) (Current directory: /marshmallow-code__marshmallow) bash-$ Now let's paste in the example code from the issue.\n ``` append $'from marshmallow.fields import TimeDelta\nfrom datetime import timedelta\n\ntd_field = TimeDelta(precision="milliseconds")\n\nobj = dict()\nobj["td_field"] = timedelta(milliseconds=345)\n\n print(td_field.serialize("td_field", obj))' ``` [File: /marshmallow-code__marshmallow/reproduce.py (9 lines total after edit)] (this is the beginning of the file) 1:from marshmallow.fields import TimeDelta 2:from datetime import timedelta 3: 4:td_field = TimeDelta(precision="milliseconds") 5: 6:obj = dict() 7:obj["td_field"] = timedelta(milliseconds=345) 8: 9:print(td_field.serialize("td_field", obj)) (this is the end of the file) [File updated (edited at line 1). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.] (Open file: /marshmallow-code__marshmallow/reproduce.py) (Current directory: /marshmallow-code__marshmallow) bash-$ Now let's run the code to see if we see the same output as the issue.\n ``` python reproduce.py ``` 344 (Open file: /marshmallow-code__marshmallow/reproduce.py) (Current directory: /marshmallow-code__marshmallow) bash-$ We are indeed seeing the same output as the issue.The issue suggests that we should look at line 1474 of the `fields.py`file to see if there is a rounding issue. Let's open the `fields.py`file and navigate to line 1474 to see the relevant code. First we should find the `fields.py`file in the repository. It is likely to be in the `src/marshmallow`directory, but we should check to be sure.</p><p>\n ``` ls -F ``` AUTHORS.rst CHANGELOG.rst CODE_OF_CONDUCT.md CONTRIBUTING.rst LICENSE MANIFEST.in NOTICE README.rst RELEASING.md azure-pipelines.yml docs/ examples/ performance/ pyproject.toml reproduce.py setup.cfg setup.py src/ tests/ tox.ini (Open file: /marshmallow-code__marshmallow/reproduce.py)</p><p>(Current directory: /marshmallow-code__marshmallow) bash-$ It looks like the `src`directory is present, which suggests that the `fields.py`file is likely to be in the `src`directory. Let's use find_file to see where it is.\n ``` find_file "fields.py" src ``` Found 1 matches for "fields.py" in /marshmallow-code__marshmallow/src: /marshmallow-code__marshmallow/src/marshmallow/fields.py (Open file: /marshmallow-code__marshmallow/reproduce.py) (Current directory: /marshmallow-code__marshmallow) bash-$ It looks like the `fields.py`file is present in the `./src/marshmallow/`directory. The issue also points to a specific URL with line number 1474. We should navigate to that line in fields.py to see the relevant code for the `TimeDelta`serialization.\n ``` directly.\n ``` python reproduce.py ``` 345 (Open file: /marshmallow-code__marshmallow/src/marshmallow/fields.py) (Current directory: /marshmallow-code__marshmallow) bash-$ The output has changed from 344 to 345, which suggests that the rounding issue has been fixed. Let's remove the reproduce.py file since it is no longer needed.\n ``` rm reproduce.py ``` Your command ran successfully and did not produce any output. (Open file: /marshmallow-code__marshmallow/src/marshmallow/fields.py) (Current directory: /marshmallow-code__marshmallow) bash-$ rm doesn't have any output when it deletes successfully, so that must have worked. Now that we have fixed the issue, we should submit our changes to the code base. Let's submit the changes using the `submit` command.\n ``` submit ``` ---END OF DEMONSTRATION ---Here is a template for the next step prompt. Observations from the environment are provided to the agent using this template.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Next Step Template</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>{observation} (Open file: {open_file}) (Current directory: {working_dir}) bash-$</head><p>This template is used to indicate that the last command the agent executed was successful and did not produce any output.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Next Step no Output Template</head><p>Your command ran successfully and did not produce any output. (Open file: {open_file}) (Current directory: {working_dir}) bash-$ This template is specifically tailored for the search_repo command. It is used to display the search results to the agent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Search Results</head><p>Your command ran successfully and produced the following related functions/classes for {search_term}: For each item, `fname`denotes the source file, `line` denotes the line number, `kind`means whether it is definition or reference, and `info`contains the specific content. {codegraph_context} (Open file: {open_file}) (Current directory: {working_dir}) bash-$ You are about to submit the changes. Have you double-checked that your changes don't affect other test cases or have any unintended consequences or completely fix the issue? Please review once more before submitting.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Create Expansion Template</head><p>Before trying to reproduce the bug, let's first try to localize the issue, we can test the issue after the fix.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Critic Prompt Template</head><p>You are an AI system tasked with selecting the best alternative action to replace a previously executed action in a process or workflow. Your goal is to evaluate the given alternatives and choose the most effective replacement.</p><p>Here is the previously executed action: &lt;previous_action&gt; {previous_action} &lt;/previous_action&gt; Here is the list of alternative actions to consider: &lt;alternative_actions&gt; {actions} &lt;/alternative_actions&gt; Instructions: 1. Evaluate each action in the list of alternative actions based on the following criteria:</p><p>a. It must be different from the previous action. b. It should replace the previous action, not be implemented after it. c. It should be more effective than the previous action.</p><p>2. Analyze each action inside &lt;action_analysis&gt; tags, following this structure:</p><p>-List each action with a number.</p><p>-For each action, explicitly state whether it meets each of the three criteria.</p><p>-Provide a brief explanation for why the action does or doesn't meet each criterion.</p><p>-If the action meets all criteria, give it a numerical effectiveness score (1-10).</p><p>3. After evaluating all actions, select the best one that meets all the criteria and is the most effective replacement for the previous action.</p><p>4. Provide the index of the best action using &lt;best_action_index&gt; tags starting from 0.</p><p>Example output format: &lt;action_analysis&gt; [All actions analysis one by one] &lt;/action_analysis&gt; &lt;best_action_index&gt;[Your selected best action index]&lt;/best_action_index&gt;</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.14.3 Trajectory Selection Prompts</head><p>This prompt is used to get the best patch among all the patches generated by the agent. It two rubrics to evaluate the patches and select the best one.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Patch Analysis Guidelines</head><p>SETTING: You are an expert software engineering evaluator analyzing patches for GitHub issues. Your task is to evaluate and select the most effective solution patch. Evaluation Criteria:</p><p>1. Bug Fixing Score (0-2): 0: Incorrect changes that won't fix the issue 1: Partially correct changes (might fix some cases) 2: Correct changes that fully fix the issue 2. Regression Risk (0-2):</p><p>0: High regression risk 1: Moderate regression risk 2: Low regression risk Analysis Format: &lt;patch_analysis&gt; &lt;patch_number&gt;[Number]&lt;/patch_number&gt; &lt;bug_fixing_analysis&gt; [Analysis of fix approach] &lt;score&gt;[0-2]&lt;/score&gt; &lt;/bug_fixing_analysis&gt; &lt;regression_risk_analysis&gt; [Analysis of risks] &lt;score&gt;[0-2]&lt;/score&gt; &lt;/regression_risk_analysis&gt; &lt;/patch_analysis&gt; Key Considerations: 1. Core issue resolution effectiveness 2. Potential regression impacts 3. Edge case handling 4. Implementation quality Your analysis should include: • Detailed patch changes evaluation • Side-by-side comparison • Edge case consideration • Independent assessment Final Output Format: &lt;best_patch&gt;[Selected patch number]&lt;/best_patch&gt; This prompt is used to critique a generated patch based on the output of running test cases after applying the patch. Critique Generation Template SETTING: You are an expert software engineer evaluating a proposed patch for a GitHub issue. Your task is to analyze and critique the effectiveness of the solution. Evaluation Steps: 1. Examine patch content in: &lt;patch&gt;[patch content]&lt;/patch&gt; 2. Review issue details in: &lt;github_issue&gt;[issue description]&lt;/github_issue&gt; 3. Consider patch status in: &lt;patch_status&gt;[status details]&lt;/patch_status&gt; 4. Apply scoring criteria: Bug Fixing Score (0-2): 0: Incorrect changes 1: Partially correct changes 2: Correct changes Regression Risk (0-2): 0: High regression risk 1: Moderate regression risk 2: Low regression risk 5. Review test results in: &lt;bug_fixing_tests&gt;[test results]&lt;/bug_fixing_tests&gt; &lt;regression_risk_tests&gt;[risk results]&lt;/regression_risk_tests&gt; Analysis Format: &lt;evaluation&gt; [Detailed analysis including: -Relevant patch/issue quotes -Solution explanation -Effectiveness assessment -Risk-benefit analysis] &lt;/evaluation&gt; Critique Format: &lt;critique&gt; [Concise (&lt;100 words) summary focusing on: -Key effectiveness points -Critical impact factors Note: Positive for solved status, negative for unsolved status] &lt;/critique&gt; Important Notes: • Avoid mentioning specific test names • Maintain clear, focused language • Analyze as if status and test results were unknown • Keep critique concise and impactful</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><figDesc>cost trade-off of DARS against various baselines that scale compute at inference time. The evaluation is conducted through five key efficiency metrics: (a) cost scaling factor, (b) accuracy per attempt, (c) number of attempts, (d) coverage of the solution set, and (e) precision of the solution set.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: This figure presents coverage variation vs k.Here ∞ corresponds to submission of all the patches generated for an issue.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>A. 1</head><label>1</label><figDesc>More Related WorksInference Time Compute Scaling. Scaling compute at inference time has been shown to enhance LLM performance across various tasks. For instance,<ref type="bibr" target="#b33">Silver et al. (2016</ref><ref type="bibr" target="#b34">Silver et al. ( , 2017) )</ref> improve decisionmaking by searching game states before selecting a move. Similarly, LLM-focused approachesWei  et  al. (2023); Tian et al. (2024); Nye et al. (2021); Kojima et al. (2022) enhance reasoning by sampling additional tokens. Graph-based methods Yao et al. (2024); Besta et al. (2024); Luo et al. (2024); Zhang et al. (2024a); Qi et al. (2024) further optimize planning and exploration of the solution space, enabling more structured and efficient problemsolving. LLMs as Code Reviewers. LLMs have demonstrated strong judgment capabilities Son et al. (2024); Tsvilodub et al. (2024); Ankner et al. (2024). Some approaches leverage LLMs directly to generate critiques and feedback Wang et al. (2024b); Kim et al. (2024). However, in structured domains like coding and math, feedback can be sampled from the environment, as seen in Wang et al. (2024a); Guan et al. (2025), where LLMs are augmented with external feedback to improve critique generation. This feedback is then used to train models to act as reviewers for selecting optimal solutions. Two primary training strategies exist: supervised fine-tuning Tsvilodub et al. (2024); Ankner et al. (2024); Wang et al. (2024a); Zhang et al. (2024b); Mitra et al. (2024) and reinforcement learning methods such as Direct Preference Optimization Rafailov et al. (2024) and Proximal Policy Optimization Schulman et al. (2017), used by Wu et al. (2024); Gehring et al. (2024).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Repo-wise coverage of for each model</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Variation of coverage with maximum branch depth</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Variation of coverage vs number of iterations</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 7 :</head><label>7</label><figDesc>Figure7: Percent increase in number of iterations per percent increase in resolve rate vs number of expansions in a branch.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 8 :</head><label>8</label><figDesc>Figure 8: Variation of coverage of traversal strategies with iterations</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 10 :</head><label>10</label><figDesc>Figure 10: Improved reproduction script due to create expansion</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 11 :</head><label>11</label><figDesc>Figure 11: Poor reproduction script because the model misunderstands the bug when localizing the issue before reproducing it</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>[</head><figDesc>File updated (edited at line 1589). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Figure 15 :</head><label>15</label><figDesc>Figure 15: Expanding in edit helps the model break out of edit-python loop.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>Figure 16 :</head><label>16</label><figDesc>Figure16: Model often hallucinates by repeatedly outputting the same action. The model realizes that during expansion and fixes it.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><head>Figure 20 :Figure</head><label>20</label><figDesc>Figure 20: Overview of the entire trajectory</figDesc><graphic coords="27,70.87,94.02,453.54,283.66" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_14"><graphic coords="28,70.87,106.93,453.54,272.96" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_15"><graphic coords="28,70.87,482.15,453.54,232.47" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_16"><graphic coords="29,70.87,114.02,453.54,271.80" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 4 :</head><label>4</label><figDesc>Compute Scaling Efficiency comparison across various frameworks and metrics. Here Single Rollout represents the performance of the agent when a single trajectory is generated.</figDesc><table><row><cell>Framework</cell><cell>Model</cell><cell cols="7">Cost Scaling Factor # Attempts Single Rollout Coverage ∆ Precision</cell></row><row><cell>Agentless</cell><cell>GPT-4o</cell><cell></cell><cell>-</cell><cell>40</cell><cell>-</cell><cell>42</cell><cell>-</cell><cell>-</cell></row><row><cell>MASAI</cell><cell>GPT-4o</cell><cell></cell><cell>-</cell><cell>5</cell><cell>23</cell><cell>35</cell><cell>34.28</cell><cell>-</cell></row><row><cell cols="3">Large Language Monkeys DeepSeek-Coder</cell><cell>250</cell><cell>250</cell><cell>15.9</cell><cell>56</cell><cell>71</cell><cell>14</cell></row><row><cell>SWE-Search</cell><cell>GPT-4o</cell><cell></cell><cell>14.00</cell><cell>5.00</cell><cell>25.70</cell><cell cols="3">34.00 24.41 20.00</cell></row><row><cell>DARS (Ours)</cell><cell>GPT-4o</cell><cell></cell><cell>7.60</cell><cell>5</cell><cell>21.67</cell><cell cols="3">43.34 50.00 75.00</cell></row><row><cell></cell><cell></cell><cell>SWE-Agent</cell><cell></cell><cell cols="2">Improved SWE-Agent</cell><cell cols="2">DARS</cell></row><row><cell>Model</cell><cell cols="7">Resolve Rate (%) Cost ($) Resolve Rate (%) Cost ($) Score Cost ($)</cell></row><row><cell>Gemini 1.5 pro</cell><cell></cell><cell>14.33</cell><cell>0.56</cell><cell>18.67</cell><cell>0.58</cell><cell>33.00</cell><cell>9.85</cell></row><row><cell>Gemini 2.0 flash</cell><cell></cell><cell>16.33</cell><cell>0.05</cell><cell>15.67</cell><cell>0.06</cell><cell>28.33</cell><cell>0.70</cell></row><row><cell>GPT-4o</cell><cell></cell><cell>18.33</cell><cell>0.89</cell><cell>21.67</cell><cell>0.80</cell><cell>37.0</cell><cell>7.92</cell></row><row><cell cols="2">Claude 3.5 Sonnet V2</cell><cell>-</cell><cell>-</cell><cell>32.67</cell><cell>1.61</cell><cell>47</cell><cell>12.24</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 6 :</head><label>6</label><figDesc>This table presents the classification accuracy of various reviewer models for trajectories generated by different models. To depict the true potential of reviewer models, we remove the cases, where all the patches for generated for a given issue resolve the issue.</figDesc><table><row><cell>Reviewers</cell><cell>GPT-4o</cell><cell>Gemini 1.5 Pro</cell><cell>Gemini 2.0 Flash</cell><cell>Claude 3.5 Sonnet</cell></row><row><cell>Closed Source</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>GPT-4o</cell><cell cols="2">62.12 48.19</cell><cell>50.00</cell><cell>51.02</cell></row><row><cell>Open Source</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>R1</cell><cell cols="2">71.64 78.31</cell><cell>64.06</cell><cell>74.49</cell></row><row><cell cols="3">R1-Distill-7B 53.73 54.22</cell><cell>56.25</cell><cell>41.84</cell></row><row><cell cols="3">R1-Distill-14B 65.67 56.63</cell><cell>54.69</cell><cell>54.08</cell></row><row><cell cols="3">R1-Distill-32B 67.16 66.27</cell><cell>62.50</cell><cell>59.18</cell></row><row><cell>Fine-tuned</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">R1-Distill-7B 55.22 54.22</cell><cell>57.81</cell><cell>51.02</cell></row><row><cell cols="3">R1-Distill-14B 71.64 59.04</cell><cell>60.94</cell><cell>60.20</cell></row><row><cell cols="3">R1-Distill-32B 70.15 63.86</cell><cell>65.62</cell><cell>61.22</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 8 :</head><label>8</label><figDesc>Comparison of various types of syntactical errors committed in whole and diff setting.</figDesc><table><row><cell></cell><cell cols="4">GPT-4o-mini Gemini 1.5 (Pro)</cell></row><row><cell></cell><cell cols="3">Whole Diff Whole</cell><cell>Diff</cell></row><row><cell>Total Edits</cell><cell cols="3">11,931 8,507 3,605</cell><cell>4,113</cell></row><row><cell cols="4">Success Samples 4,905 3,090 1,995</cell><cell>2,590</cell></row><row><cell cols="4">Success Rate (%) 41.1 36.3 55.3</cell><cell>62.9</cell></row><row><cell>Error Types</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>No Match</cell><cell>0</cell><cell>1,159</cell><cell>0</cell><cell>655</cell></row><row><cell>Content Error</cell><cell>0</cell><cell>1,640</cell><cell>0</cell><cell>143</cell></row><row><cell>Syntax Error</cell><cell cols="3">7,003 2,600 1,610</cell><cell>706</cell></row><row><cell>File Error</cell><cell>0</cell><cell>18</cell><cell>0</cell><cell>19</cell></row><row><cell>Pass@1 (%)</cell><cell>7</cell><cell cols="2">8.67 14.38</cell><cell>21.44</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 9 :</head><label>9</label><figDesc>Various models' ability to correctly localize issues.</figDesc><table><row><cell>Model</cell><cell>Correct Localization (%)</cell></row><row><cell>GPT-4o</cell><cell>74.37</cell></row><row><cell>Claude 3.5 Sonnet</cell><cell>80.70</cell></row><row><cell>Gemini 2.0 Flash</cell><cell>69.44</cell></row><row><cell>Gemini 1.5 Pro</cell><cell>64.82</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 10 :</head><label>10</label><figDesc>Comparison of path reaches by action type.Here, before and after expansion pertain to cases where conclusion is only reached before and after expansion respectively</figDesc><table><row><cell>Action</cell><cell cols="3">After Expansion Before Expansion</cell></row><row><cell>Edit</cell><cell>32</cell><cell></cell><cell>39</cell></row><row><cell>Create</cell><cell>41</cell><cell></cell><cell>27</cell></row><row><cell>Append</cell><cell>34</cell><cell></cell><cell>36</cell></row><row><cell>Submit</cell><cell>-</cell><cell></cell><cell>24</cell></row><row><cell>Action</cell><cell></cell><cell>Avg Dep Bef Exp</cell><cell>Avg Dep Aft Exp</cell></row><row><cell>Edit</cell><cell></cell><cell>21.2</cell><cell>20.8</cell></row><row><cell>Create</cell><cell></cell><cell>22.4</cell><cell>21.4</cell></row><row><cell cols="2">Append</cell><cell>22.1</cell><cell>22.6</cell></row><row><cell>Submit</cell><cell></cell><cell>16.9</cell><cell>22.1</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 13 :</head><label>13</label><figDesc>Compute-coverage trade-off of expanding in various actions. Here Avg Iter pertains to average number of iterations across issues which indicates the amount of compute spent in that issue.</figDesc><table><row><cell cols="2">Action Type Error Types</cell><cell>SWE Agent</cell><cell>DARS</cell></row><row><cell></cell><cell>File Not Found</cell><cell>108</cell></row><row><cell>Search</cell><cell>Syntax Error</cell><cell>0</cell></row><row><cell>File</cell><cell>Success</cell><cell>727</cell></row><row><cell></cell><cell>Directory Error</cell><cell>132</cell></row><row><cell>Create</cell><cell>File Exists</cell><cell>4</cell></row><row><cell></cell><cell>Success</cell><cell>361</cell></row><row><cell>Append</cell><cell>Content Error File Error</cell><cell>0 0</cell></row><row><cell></cell><cell>Syntax Error</cell><cell>9</cell></row><row><cell></cell><cell>Success</cell><cell>359</cell></row><row><cell></cell><cell>No Match</cell><cell>382</cell></row><row><cell>Edit</cell><cell>Content Error Syntax Error</cell><cell>367 422</cell></row><row><cell></cell><cell>File Error</cell><cell>150</cell></row><row><cell></cell><cell>Success</cell><cell>1296</cell></row><row><cell>Search</cell><cell>Syntax Error</cell><cell>74</cell></row><row><cell>Repo</cell><cell>Success</cell><cell>528</cell></row><row><cell></cell><cell>Dir Not Found</cell><cell>4</cell></row><row><cell>Search</cell><cell>Syntax Error</cell><cell>3</cell></row><row><cell>Dir</cell><cell>Success</cell><cell>114</cell></row><row><cell>Find File</cell><cell cols="2">Dir Not Found No Match Found 32 8 Success 63</cell></row><row><cell>Insert</cell><cell>Syntax Error Success</cell><cell>30 114</cell></row><row><cell>Execute IPython</cell><cell cols="2">Connection Error 8 Response Error 44 Success 40</cell></row><row><cell>Execute</cell><cell>Server Error</cell><cell>3</cell></row><row><cell>Server</cell><cell>Success</cell><cell>131</cell></row><row><cell>Undo</cell><cell>No Edit Made</cell><cell>5</cell></row><row><cell>Edit</cell><cell>Success</cell><cell>0</cell></row><row><cell cols="4">Table 12: Error scaling comparison between SWE-</cell></row><row><cell>Agent and DARS</cell><cell></cell><cell></cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_0"><p>Deepseek R1 family of models often fail to generate the solution in the desired format, therefore, we use GPT-4o to parse the outputs in such cases.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgment</head><p>We thank <rs type="person">Gopal Dev</rs> and <rs type="person">Apoorva Vashisth</rs> for reviewing parts of the paper. We also thank <rs type="person">Vincent Berenz</rs> and <rs type="person">Jojumon Kavalan</rs> for setting up our GPU access at <rs type="institution">Max Planck Institute</rs>.</p><p>This material is based in part upon work supported by the <rs type="funder">German Federal Ministry of Education and Research (BMBF)</rs>: <rs type="person">Tübingen AI Center</rs>, FKZ: <rs type="grantNumber">01IS18039B</rs>; by the <rs type="funder">Machine Learning Cluster of Excellence</rs>, EXC number 2064/1 -Project number <rs type="grantNumber">390727645</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_bGDJzDX">
+					<idno type="grant-number">01IS18039B</idno>
+				</org>
+				<org type="funding" xml:id="_tfRrCdJ">
+					<idno type="grant-number">390727645</idno>
+				</org>
+			</listOrg>
+
+			<div type="availability">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>† Co-supervision. 1  Our codes are at <ref type="url" target="https://github.com/darsagent/DARS-Agent">https://github.com/darsagent/  DARS-Agent</ref>, datasets and models at <ref type="url" target="https://huggingface.co/AGENTDARS">https://huggingface.  co/AGENTDARS</ref>, and a demo of our trajectory analysis tool at <ref type="url" target="https://darsagent.github.io/DARS-Agent/">https://darsagent.github.io/DARS-Agent/</ref> </p></div>
+			</div>
+
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Thought:</head><p>The previous script focused on two test cases but could be more comprehensive in testing edge cases and different types of expressions. The current test cases show that our fix for the alignment works in simple cases, but we should also test: 1. More complex nested sums 2. Sums with different types of terms (products, powers, etc.) 3. Multiple sums in sequence 4. Cases with parentheses and without 5. Different types of expressions added to sums</p><p>The current trajectory shows that we've improved the alignment by adjusting baselines, but we should verify this works consistently across all cases. DISCUSSION I'll create a more comprehensive test script that covers additional cases including nested sums, multiple terms, and different expression types. This will help ensure our fix works universally.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Action python reproduce.py</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Thought:</head><p>Let's run our test script again to see if the alignment has been improved with our changes. The modification adjusts the baseline for simple terms (Mul and Symbol) to better align with the sum.</p><p>Action: edit $' prettyF.baseline = max_upper + sign_height//2\n if isinstance(expr.function, Add):\n prettyF.baseline = prettyF.baseline + 1' $' prettyF.baseline = max_upper + sign_height//2\n if isinstance(expr.function, Add):\n # Adjust baseline based on expression height\n h = prettyF.height()\n if h &gt; 2:\n prettyF.baseline = (h + sign_height)//2' Thought: Looking at the output, we can see that our change has improved some cases but not all. The alignment is still not perfect. Let's try a different approach by adjusting the baseline calculation based on the height of the expression. We'll modify the code to take into account both the sum's height and the expression's complexity. Action: edit $' # change F baseline so it centers on the sign\n base_adjust = d -(prettyF.height()//2 -prettyF.baseline) -adjustment\n if isinstance(expr.function, Add):\n base_adjust -= 1 # Lower Add expressions slightly\n prettyF.baseline -= base_adjust\n first = False' $' # change F baseline so it centers on the sign\n base_adjust = d -(prettyF.height()//2 -prettyF.baseline) -adjustment\n if isinstance(expr.function, Add):\n base_adjust -= 2 # Lower Add expressions more\n prettyF.baseline -= base_adjust\n first = False' Thought: Looking at the output, we've made good progress. The alignment is better in most cases, but we still need to handle the final baseline adjustment differently. Let's modify both adjustments to work together better: Action: submit Thought: Looking at the output, we've achieved good alignment in all test cases. The changes have successfully addressed the alignment issues: 1. Test case 1: Simple sum + constant -Perfect alignment 2. Test case 2: Sum + product -Well aligned 3. Test case 3: Nested sums + constant -Properly aligned 4. Test case 4: Multiple sums + constant -Good alignment between sums and terms 5. Test case 5: Sum of polynomial + product -Much better alignment with parenthesized expression The combination of our adjustments: -Different baseline adjustments for parenthesized vs. non-parenthesized expressions -Coordinated initial and final baseline calculations -Proper handling of Add expressions has successfully resolved the alignment issues described in the PR. Let's submit our changes.</p><p>Figure <ref type="figure">17</ref>: Model Produces a more comprehensive test script after expansion leading to more steps in the expanded branch.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><surname>Aider</surname></persName>
+		</author>
+		<ptr target="https://aider.chat/2024/05/22/swe-bench-lite.html" />
+		<title level="m">Swe-bench lite</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note>date of access</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Deepspeed inference: Enabling efficient inference of transformer models at unprecedented scale</title>
+		<author>
+			<persName><forename type="first">Reza</forename><surname>Yazdani Aminabadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samyam</forename><surname>Rajbhandari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minjia</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ammar</forename><surname>Ahmad Awan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Du</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elton</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Rasley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaden</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olatunji</forename><surname>Ruwase</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiong</forename><surname>He</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2207.00032</idno>
+		<idno>arXiv:2408.11791</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Critique-out-loud reward models</title>
+		<editor>
+			<persName><forename type="first">Zachary</forename><surname>Ankner</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Mansheej</forename><surname>Paul</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Brandon</forename><surname>Cui</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Jonathan</forename><forename type="middle">D</forename><surname>Chang</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Prithviraj</forename><surname>Ammanabrolu</surname></persName>
+		</editor>
+		<imprint>
+			<date type="published" when="2022">2022. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Anthropic quickstarts</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://github.com/anthropics/anthropic-quickstarts" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Antonis</forename><surname>Antoniades</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Albert</forename><surname>Örwall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxi</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anirudh</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.20285</idno>
+		<title level="m">Swesearch: Enhancing software agents with monte carlo tree search and iterative refinement</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Daman</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Atharv</forename><surname>Sonwane</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nalin</forename><surname>Wadhwa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhav</forename><surname>Mehrotra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saiteja</forename><surname>Utpala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ramakrishna</forename><surname>Bairi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Kanade</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nagarajan</forename><surname>Natarajan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.11638</idno>
+		<title level="m">Masai: Modular architecture for software-engineering ai agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Scaling data collection for training software engineering agents</title>
+		<author>
+			<persName><forename type="first">Ibragim</forename><surname>Badertdinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Trofimova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Anapolskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Abramov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karina</forename><surname>Zainullina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Golubev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Polezhaev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daria</forename><surname>Litvintseva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Karasik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Filipp</forename><surname>Fisin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Skvortsov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxim</forename><surname>Nekrashevich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anton</forename><surname>Shevtsov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boris</forename><surname>Yangel</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note>Nebius blog</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Graph of thoughts: Solving elaborate problems with large language models</title>
+		<author>
+			<persName><forename type="first">Maciej</forename><surname>Besta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nils</forename><surname>Blach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ales</forename><surname>Kubicek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Gerstenberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michal</forename><surname>Podstawski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukas</forename><surname>Gianinazzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joanna</forename><surname>Gajda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomasz</forename><surname>Lehmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hubert</forename><surname>Niewiadomski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Nyczyk</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page" from="17682" to="17690" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Bradley</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jordan</forename><surname>Juravsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Ehrlich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronald</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Azalia</forename><surname>Ré</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mirhoseini</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.21787</idno>
+		<title level="m">Large language monkeys: Scaling inference compute with repeated sampling</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Efficient selectivity and backup operators in monte-carlo tree search</title>
+		<author>
+			<persName><forename type="first">Rémi</forename><surname>Coulom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Computers and Games</title>
+		<meeting><address><addrLine>Berlin, Heidelberg; Berlin Heidelberg</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2007">2007</date>
+			<biblScope unit="page" from="72" to="83" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Flashattention-2: Faster attention with better parallelism and work partitioning</title>
+		<author>
+			<persName><forename type="first">Tri</forename><surname>Dao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.08691</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Language modeling with gated convolutional networks</title>
+		<author>
+			<persName><forename type="first">Angela</forename><surname>Yann N Dauphin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Auli</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Grangier</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on machine learning</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="933" to="941" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Deepseek-Ai</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.12948</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Rlef: Grounding code llms in execution feedback with reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Gehring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kunhao</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jade</forename><surname>Copet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vegard</forename><surname>Mella</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Taco</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Synnaeve</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.02089</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">2025. rstar-math: Small llms can master math reasoning with self-evolved deep thinking</title>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><forename type="middle">Lyna</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Shang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Youran</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mao</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.04519</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Lora: Low-rank adaptation of large language models</title>
+		<author>
+			<persName><forename type="first">Edward</forename><forename type="middle">J</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yelong</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phillip</forename><surname>Wallis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyuan</forename><surname>Allen-Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shean</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2106.09685</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Grag: Graph retrievalaugmented generation</title>
+		<author>
+			<persName><forename type="first">Yuntong</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihan</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Ling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Zhao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.16506</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Pre-rmsnorm and pre-crmsnorm transformers: equivalent and efficient pre-ln transformers. Advances in Neural Information Processing Systems</title>
+		<author>
+			<persName><forename type="first">Zixuan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaqi</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanqing</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">;</forename><surname>Carlos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Pei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.06770</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Swe-bench: Can language models resolve real-world github issues? arXiv preprint</title>
+		<imprint>
+			<publisher>Ofir Press, and Karthik Narasimhan</publisher>
+			<date type="published" when="2023">2024. 2023</date>
+			<biblScope unit="volume">36</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Prometheus 2: An open source language model specialized in evaluating other language models</title>
+		<author>
+			<persName><forename type="first">Seungone</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juyoung</forename><surname>Suk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shayne</forename><surname>Longpre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Yuchen Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamin</forename><surname>Shin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Welleck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moontae</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyungjae</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minjoon</forename><surname>Seo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.01535</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Bandit based monte-carlo planning</title>
+		<author>
+			<persName><forename type="first">Levente</forename><surname>Kocsis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Csaba</forename><surname>Szepesvári</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Machine Learning: ECML 2006</title>
+		<meeting><address><addrLine>Berlin, Heidelberg; Berlin Heidelberg</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2006">2006</date>
+			<biblScope unit="page" from="282" to="293" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Large language models are zero-shot reasoners</title>
+		<author>
+			<persName><forename type="first">Takeshi</forename><surname>Kojima</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shane</forename><surname>Shixiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Machel</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutaka</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusuke</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Iwasawa</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="22199" to="22213" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Kuratov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aydar</forename><surname>Bulatov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Petr</forename><surname>Anokhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ivan</forename><surname>Rodkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitry</forename><surname>Sorokin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Artyom</forename><surname>Sorokin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikhail</forename><surname>Burtsev</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.10149</idno>
+		<title level="m">Babilong: Testing the limits of llms with long context reasoning-in-a-haystack</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Efficient memory management for large language model serving with pagedattention</title>
+		<author>
+			<persName><forename type="first">Woosuk</forename><surname>Kwon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuohan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lianmin</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cody</forename><forename type="middle">Hao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Stoica</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 29th Symposium on Operating Systems Principles</title>
+		<meeting>the 29th Symposium on Operating Systems Principles</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="611" to="626" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tianle</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quy</forename><surname>Duc Do</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhu</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.02060</idno>
+		<title level="m">Long-context llms struggle with long in-context learning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Decoupled weight decay regularization</title>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Loshchilov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><surname>Hutter</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1711.05101</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Improve mathematical reasoning in language models by automated process supervision</title>
+		<author>
+			<persName><forename type="first">Liangchen</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinxiao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rosanne</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samrat</forename><surname>Phatale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harsh</forename><surname>Lara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunxuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiao</forename><surname>Sun</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.06592</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Arindam</forename><surname>Mitra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luciano</forename><surname>Del Corro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guoqing</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shweti</forename><surname>Mahajan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dany</forename><surname>Rouhana</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andres</forename><surname>Codas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yadong</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Ge</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olga</forename><surname>Vrousgos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Corby</forename><surname>Rosset</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.03502</idno>
+		<title level="m">Agentinstruct: Toward generative teaching with agentic flows</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Show your work: Scratchpads for intermediate computation with language models</title>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anders</forename><surname>Johan Andreassen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guy</forename><surname>Gur-Ari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Bieber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aitor</forename><surname>Lewkowycz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Luan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Augustus</forename><surname>Odena</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2112.00114</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2025" to="2026" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Orwall</surname></persName>
+		</author>
+		<ptr target="https://github.com/aorwall/moatless-tools" />
+		<title level="m">moatless-tools</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">Siru</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaixin</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilin</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengzhao</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.14684</idno>
+		<title level="m">Repograph: Enhancing ai software engineering with repository-level code graph</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Mutual reasoning makes smaller llms stronger problem-solvers</title>
+		<author>
+			<persName><forename type="first">Zhenting</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingyuan</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahang</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><forename type="middle">Lyna</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mao</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.06195</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Direct preference optimization: Your language model is secretly a reward model</title>
+		<author>
+			<persName><forename type="first">Rafael</forename><surname>Rafailov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Archit</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefano</forename><surname>Ermon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page">36</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Filip</forename><surname>Wolski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleg</forename><surname>Klimov</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1707.06347</idno>
+		<title level="m">Proximal policy optimization algorithms</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Mastering the game of go with deep neural networks and tree search</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aja</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><forename type="middle">J</forename><surname>Maddison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Guez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurent</forename><surname>Sifre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Van Den</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Driessche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Veda</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Panneershelvam</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lanctot</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">nature</title>
+		<imprint>
+			<biblScope unit="volume">529</biblScope>
+			<biblScope unit="issue">7587</biblScope>
+			<biblScope unit="page" from="484" to="489" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Mastering chess and shogi by self-play with a general reinforcement learning algorithm</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Hubert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Guez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Lanctot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurent</forename><surname>Sifre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dharshan</forename><surname>Kumaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thore</forename><surname>Graepel</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1712.01815</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">Guijin</forename><surname>Son</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyunwoo</forename><surname>Ko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hoyoung</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yewon</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Seunghyeok</forename><surname>Hong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.11239</idno>
+		<title level="m">Llm-as-a-judge &amp; reward model: What they can and cannot do</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Rope + bias = better length extrapolation</title>
+		<author>
+			<persName><forename type="first">Jianlin</forename><surname>Su</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Roformer: Enhanced transformer with rotary position embedding</title>
+		<author>
+			<persName><forename type="first">Jianlin</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Murtadha</forename><surname>Ahmed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengfeng</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen</forename><surname>Bo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfeng</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Neurocomputing</title>
+		<imprint>
+			<biblScope unit="volume">568</biblScope>
+			<biblScope unit="page">127063</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">Gemini</forename><surname>Team</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Anil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Borgeaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean-Baptiste</forename><surname>Alayrac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahui</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Radu</forename><surname>Soricut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johan</forename><surname>Schalkwyk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">M</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anja</forename><surname>Hauth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katie</forename><surname>Millican</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.11805</idno>
+		<title level="m">Gemini: a family of highly capable multimodal models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Toward selfimprovement of llms via imagination, searching, and criticizing</title>
+		<author>
+			<persName><forename type="first">Ye</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baolin</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linfeng</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lifeng</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haitao</forename><surname>Mi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.12253</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Towards neuro-symbolic models of language cognition: Llms as proposers and evaluators</title>
+		<author>
+			<persName><forename type="first">Polina</forename><surname>Tsvilodub</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fausto</forename><surname>Carcassi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Franke</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">2024a. Genx: Mastering code and test generation with execution feedback</title>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yafei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haonan</forename><surname>Lu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.13464</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<author>
+			<persName><forename type="first">Peifeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Austin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.14664</idno>
+		<title level="m">Caiming Xiong, and Shafiq Joty. 2024b. Direct judgement preference optimization</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boxuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchen</forename><surname>Zhuge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yueqi</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaskirat</forename><surname>Singh</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.16741</idno>
+		<title level="m">Opendevin: An open platform for ai software developers as generalist agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yanlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanjun</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanxian</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ensheng</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiachi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchi</forename><surname>Ma</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.09030</idno>
+		<title level="m">Qianxiang Wang, and Zibin Zheng. 2024d. Agents in software engineering: Survey, landscape, and vision</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.11903</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Thinking llms: General instruction following with thought generation</title>
+		<author>
+			<persName><forename type="first">Tianhao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Janice</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhe</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiantao</forename><surname>Jiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sainbayar</forename><surname>Sukhbaatar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.10630</idno>
+		<idno>arXiv:2407.01489</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Chunqiu Steven Xia, Yinlin Deng, Soren Dunn, and Lingming Zhang. 2024. Agentless: Demystifying llm-based software engineering agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baosong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beichen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Wei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.15115</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>et al. 2024a. Qwen2. 5 technical report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kilian</forename><surname>Lieret</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.15793</idno>
+		<title level="m">Swe-agent: Agent-computer interfaces enable automated software engineering</title>
+		<imprint>
+			<publisher>Karthik Narasimhan, and Ofir Press</publisher>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Tree of thoughts: Deliberate problem solving with large language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="page">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03629</idno>
+		<title level="m">React: Synergizing reasoning and acting in language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title level="m" type="main">2024a. Accessing gpt-4 level mathematical olympiad solutions via monte carlo tree self-refine with llama-3 8b</title>
+		<author>
+			<persName><forename type="first">Di</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiatong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoshui</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongzhan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqiang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanli</forename><surname>Ouyang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.07394</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<author>
+			<persName><forename type="first">Lunjun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arian</forename><surname>Hosseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hritik</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mehran</forename><surname>Kazemi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aviral</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Agarwal</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.15240</idno>
+		<title level="m">Generative verifiers: Reward modeling as next-token prediction</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<analytic>
+		<title level="a" type="main">1537: ) from error 1538: if isinstance(self.value_field, Nested): 1539: self.only = self.value_field.only 1540: self.exclude = self.value_field.exclude 1541: 1542: def _bind_to_schema(self, field_name, schema): 1543: super()._bind_to_schema(field_name, schema) 1544: if self.value_field: 1545: self.value_field = copy.deepcopy(self.value_field) 1546: self.value_field._bind_to_schema(field_name, self) 1547: if isinstance(self.value_field, Nested): 1548: self.value_field.only = self.only 1549: self.value_field.exclude = self.exclude 1550: if self.key_field: 1551: self.key_field = copy.deepcopy(self.key_field) 1552: self.key_field._bind_to_schema(field_name, self) 1553: 1554: def _serialize(self, value, attr, obj, **kwargs): 1555: if value is None: 1556: return None 1557: if not self.value_field and not self</title>
+		<author>
+			<persName><forename type="first">Yuntong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haifeng</forename><surname>Ruan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyu</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhik</forename><surname>Roychoudhury</surname></persName>
+		</author>
+		<idno>1501: 1502: .. versionadded:: 3.0.0rc4 1503: &quot;&quot;&quot; 1504: 1505: mapping_type = dict 1506: 1507: #: Default error messages. 1508: default_error_messages = {&quot;invalid</idno>
+		<ptr target="/marshmallow-code__marshmallow/src/marshmallow/fields.py" />
+	</analytic>
+	<monogr>
+		<title level="m">None, 1514: **kwargs, 1515: ): 1516: super().__init__(**kwargs) 1517: if keys is None: 1518: self.key_field = None 1519: else: 1520: try: 1521: self.key_field = resolve_field_instance(keys) 1522: except FieldInstanceResolutionError as error: 1523: raise ValueError( 1524: &apos;&quot;keys&quot; must be a subclass or instance of &apos; 1525: &quot;marshmallow.base.FieldABC</title>
+		<imprint>
+			<date type="published" when="1997">2024. 1997</date>
+			<biblScope unit="volume">1493</biblScope>
+			<biblScope unit="page" from="1592" to="1604" />
+		</imprint>
+	</monogr>
+	<note>lines total)] (1458 more lines above Autonomous program improvement : if precision not in units: 1463: msg = &apos;The precision must be {} or &quot;{} value.total_seconds( / base_unit.total_seconds( _serialize(self, value, attr, obj, **kwargs): 1472: if value is None: 1473: return None 1474: base_unit = dt.timedelta(**{self.precision: 1}) 1475: return int Proceedings of the 33rd ACM SIGSOFT International Symposium on Software Testing and Analysis When the structure of nested data is not known, you may omit the 1500: `keys`and `values`arguments to prevent content validation Not a valid mapping type } 1509: 1510: def __init__( 1511: self, 1512: keys: typing.Optional[typing.Union[Field, type]] = None, 1513: values: typing.Optional[typing.Union[Field, type : :param keys: A field class or instance for dict keys. 1495: :param values: A field class or instance for dict values. 1496: :param kwargs: The same keyword arguments that :class:`Field` receives from error 1527: 1528: if values is None: 1529: self.value_field = None 1530: else: 1531: try: 1532: self.value_field = resolve_field_instance(values) 1533: except FieldInstanceResolutionError as error: 1534: raise ValueError( 1535: &apos;&quot;values&quot; must be a subclass or instance of &apos; 1536: &quot;marshmallow.base.FieldABC 1476: 1477: def _deserialize(self, value, attr, data, **kwargs): 1478: try: 1479: value = int(value) 1480: except (TypeError, ValueError) as error: 1481: raise self.make_error(&quot;invalid&quot;) from error 1482: 1483: kwargs = {self.precision: value} 1484: 1485: try: 1486: return dt.timedelta(**kwargs) 1487: except OverflowError as error: 1488: raise self.make_error(&quot;invalid&quot;) from error 1489: 1490: 1491:class Mapping(Field): 1492: &quot;&quot;&quot;An abstract class for objects with key-value pairs key_field: 1558: return self.mapping_type(value) (439 more lines below Open file Current directory: /marshmallow-code__marshmallow bash-$ We are now looking at the relevant section of the `fields.py`file where the TimeDelta`serialization occurs. The issue suggests that there is a rounding problem near line 1474. The current implementation uses integer division which truncates the decimal part and can lead to incorrect rounding on line 1475.To fix this issue, we should ensure that the division results in a float, and then round the result to the nearest integer before converting it to an int. This should preserve the milliseconds precision as expected. Let&apos;s make the necessary edit to the code.\n ``` edit $&apos; return int(value.total_seconds( / base_unit.total_seconds(</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">$' Return</forename><surname>Int</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note>round(value.total_seconds(</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<analytic>
+		<title level="a" type="main">def __init__(self, precision: str = SECONDS, **kwargs): 1451: precision = precision.lower() 1452: units = ( 1453: self.DAYS, 1454: self.SECONDS, 1455: self.MICROSECONDS, 1456: self.MILLISECONDS, 1457: self.MINUTES, 1458: self.HOURS, 1459: self.WEEKS, 1460: ) 1461: 1462: if precision not in units: 1463: msg = &apos;The precision must be {} or &quot;{}&quot;.&apos;.format( 1464: &quot;, &quot;.join([f&apos;&quot;{each}&quot;&apos; for each in units</title>
+		<idno>1501: 1502: .. versionadded:: 3.0.0rc4 1503</idno>
+		<ptr target="/marshmallow-code__marshmallow/src/marshmallow/fields.py" />
+	</analytic>
+	<monogr>
+		<title level="m">return dt.timedelta(**kwargs) 1487: except OverflowError as error: 1488: raise self.make_error(&quot;invalid&quot;) from error 1489: 1490: 1491:class Mapping(Field): 1492: &quot;&quot;&quot;An abstract class for objects with key-value pairs. 1493: 1494: :param keys: A field class or instance for dict keys. 1495: :param values: A field class or instance for dict values. 1496: :param kwargs: The same keyword arguments that :class:`Field` receives</title>
+		<imprint>
+			<date type="published" when="1524">1997. 1524</date>
+		</imprint>
+	</monogr>
+	<note>lines total after edit)] (1424 more lines above) 1425: 1426: :param precision: Influences how the integer is interpreted during 1427: (de)serialization. Must be &apos;days hours&apos; or &apos;weeks&apos;. 1429: :param kwargs The same keyword arguments that :class:`Field` receives Not a valid period of time 1447: &quot;format&quot;: &quot;{input!r} cannot be formatted as a timedelta Always serializes to an integer value to avoid rounding errors = &quot;minutes&quot; 1441: HOURS = &quot;hours&quot; 1442: WEEKS = &quot;weeks&quot; 1443: 1444: #: Default error messages. 1445: default_error_messages = { 1446: &quot;invalid round(value.total_seconds( / base_unit.total_seconds( def _deserialize(self, value, attr, data, **kwargs): 1478: try: 1479: value = int(value) 1480: except (TypeError, ValueError) as error: 1481: raise self.make_error __init__(**kwargs) 1470: 1471: def _serialize(self, value, attr, obj, **kwargs): 1472: if value is None: 1473: return None 1474: base_unit = dt.timedelta(**{self.precision: 1}) 1475: return int : When the structure of nested data is not known, you may 1500: omit the `keys`and `values`arguments to prevent content validation 1504: 1505: mapping_type = dict 1506: 1507: #: Default error messages. 1508: default_error_messages = {&quot;invalid Not a valid mapping type.&quot;} 1509: 1510: def __init__( 1511: self, 1512: keys: typing.Optional[typing.Union[Field, type None, 1513: values: typing.Optional[typing.Union Field, type None, 1514: **kwargs, 1515: ): 1516: super().__init__(**kwargs) 1517: if keys is None: 1518: self.key_field = None 1519: else: 1520: try: 1521: self.key_field = resolve_field_instance(keys) 1522: except FieldInstanceResolutionError as error: 1523: raise ValueError must be a subclass or instance of &apos; 1525: &quot;marshmallow.base.FieldABC.&quot; (472 more lines below File updated (edited at line 1475 Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc) Edit the file again if necessary.] (Open file Current directory: /marshmallow-code__marshmallow) bash-$ The code has been updated to use the `round`function, which should fix the rounding issue. Before submitting the changes, it would be prudent to run the reproduce.py code again to ensure that this change has the desired effect. I see that &quot;Current directory&quot; is still `/marshmallow-code__marshmallow`, so we can just run `reproduce.py</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

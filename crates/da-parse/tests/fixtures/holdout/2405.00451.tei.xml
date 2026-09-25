@@ -1,0 +1,2501 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Monte Carlo Tree Search Boosts Reasoning via Iterative Preference Learning</title>
+				<funder ref="#_VQUEGJg">
+					<orgName type="full">National Supercomputing Centre</orgName>
+					<orgName type="abbreviated">NSCC</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-06-17">17 Jun 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Yuxi</forename><surname>Xie</surname></persName>
+							<email>xieyuxi@u.nus.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">National University of Singapore</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Anirudh</forename><surname>Goyal</surname></persName>
+							<email>anirudhgoyal9119@gmail.com</email>
+						</author>
+						<author>
+							<persName><forename type="first">Wenyue</forename><surname>Zheng</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">National University of Singapore</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Min-Yen</forename><surname>Kan</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">National University of Singapore</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Timothy</forename><surname>Lillicrap</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Google DeepMind</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Kenji</forename><surname>Kawaguchi</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">National University of Singapore</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Michael</forename><surname>Shieh</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">National University of Singapore</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Monte</forename><forename type="middle">Carlo</forename><surname>Tree Search</surname></persName>
+						</author>
+						<title level="a" type="main">Monte Carlo Tree Search Boosts Reasoning via Iterative Preference Learning</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-06-17">17 Jun 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">57D3DA46E946989BA0DD4397AD369809</idno>
+					<idno type="arXiv">arXiv:2405.00451v2[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:41+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>We introduce an approach aimed at enhancing the reasoning capabilities of Large Language Models (LLMs) through an iterative preference learning process inspired by the successful strategy employed by AlphaZero. Our work leverages Monte Carlo Tree Search (MCTS) to iteratively collect preference data, utilizing its look-ahead ability to break down instance-level rewards into more granular step-level signals. To enhance consistency in intermediate steps, we combine outcome validation and stepwise self-evaluation, continually updating the quality assessment of newly generated data. The proposed algorithm employs Direct Preference Optimization (DPO) to update the LLM policy using this newly generated step-level preference data. Theoretical analysis reveals the importance of using on-policy sampled data for successful self-improving. Extensive evaluations on various arithmetic and commonsense reasoning tasks demonstrate remarkable performance improvements over existing models. For instance, our approach outperforms the Mistral-7B Supervised Fine-Tuning (SFT) baseline on GSM8K, MATH, and ARC-C, with substantial increases in accuracy to 81.8% (+5.9%), 34.7% (+5.8%), and 76.4% (+15.8%), respectively. Additionally, our research delves into the training and inference compute tradeoff, providing insights into how our method effectively maximizes performance gains. Our code is publicly available at <ref type="url" target="https://github.com/YuxiXie/MCTS-DPO">https://github.com/YuxiXie/MCTS-DPO</ref>.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Development of Large Language Models (LLMs), has seen a pivotal shift towards aligning these models more closely with human values and preferences <ref type="bibr" target="#b38">(Stiennon et al., 2020;</ref><ref type="bibr" target="#b29">Ouyang et al., 2022;</ref><ref type="bibr">Bai et al., 2022a)</ref>. A critical aspect of this process involves the utilization of preference data. There are two prevailing methodologies for incorporating this data: the first entails the construction of a reward model based on preferences, which is then integrated into a Reinforcement Learning (RL) framework to update the policy <ref type="bibr" target="#b6">(Christiano et al., 2017;</ref><ref type="bibr">Bai et al., 2022b)</ref>; the second, more stable and scalable method, directly applies preferences to update the model's policy <ref type="bibr" target="#b32">(Rafailov et al., 2023)</ref>.</p><p>In this context, the concept of "iterative" development is a key, especially when contrasted with the conventional Reinforcement Learning from Human Feedback (RLHF) paradigm <ref type="bibr" target="#b6">(Christiano et al., 2017;</ref><ref type="bibr" target="#b38">Stiennon et al., 2020;</ref><ref type="bibr" target="#b29">Ouyang et al., 2022;</ref><ref type="bibr">Bai et al., 2022a)</ref>, where the reward model is often trained offline and remains static. An iterative approach proposes a dynamic and continuous refinement process <ref type="bibr" target="#b55">(Zelikman et al., 2022;</ref><ref type="bibr" target="#b12">Gülçehre et al., 2023;</ref><ref type="bibr" target="#b16">Huang et al., 2023;</ref><ref type="bibr" target="#b54">Yuan et al., 2024)</ref>. It involves a cycle that begins with the current policy, progresses through the collection and analysis of data to generate new preference data, and uses this data to update the policy. This Each iteration of our framework (on the left) consists of two stages: MCTS to collect step-level preferences and preference learning to update the policy. Specifically, we use action values Q estimated by MCTS to assign the preferences, where steps of higher and lower Q values will be labeled as positive and negative data, respectively. The scale of Q is visualized in the colormap. We show the advantage of the online manner in our iterative learning framework using the validation accuracy curves as training progresses on the right. The performance of ARC-C validation illustrates the effectiveness and efficiency of our proposed method compared to its offline variant.</p><p>approach underlines the importance of ongoing adaptation in LLMs, highlighting the potential for these models to become more attuned to the complexities of human decision-making and reasoning.</p><p>A compelling illustration of the success of such an iterative approach can be seen in the case of Alp-haZero <ref type="bibr" target="#b37">(Silver et al., 2017)</ref> for its superhuman performance across various domains, which combines the strengths of neural networks, RL techniques, and Monte Carlo Tree Search (MCTS) <ref type="bibr" target="#b9">(Coulom, 2006;</ref><ref type="bibr" target="#b20">Kocsis and Szepesvári, 2006)</ref>. The integration of MCTS as a policy improvement operator that transforms the current policy into an improved policy <ref type="bibr" target="#b11">(Grill et al., 2020)</ref>. The effectiveness of AlphaZero underscores the potential of combining these advanced techniques in LLMs. By integrating MCTS into the iterative process of policy development, it is plausible to achieve significant strides in LLMs, particularly in the realm of reasoning and decision-making aligned with human-like preferences <ref type="bibr" target="#b58">(Zhu et al., 2023;</ref><ref type="bibr" target="#b13">Hao et al., 2023)</ref>.</p><p>The integration of MCTS in collecting preference data to improve the current policy iteratively is nuanced and demands careful consideration. One primary challenge lies in determining the appropriate granularity for applying MCTS. Conventionally, preference data is collected at the instance level. The instance-level approach employs sparse supervision, which can lose important information and may not optimally leverage the potential of MCTS in improving the LLMs <ref type="bibr" target="#b47">(Wu et al., 2023)</ref>. Another challenge is the reliance of MCTS on a critic or a learned reward function. This function is crucial for providing meaningful feedback on different rollouts generated by MCTS, thus guiding the policy improvement process <ref type="bibr">(Liu et al., 2023a)</ref>.</p><p>Addressing this granularity issue, evidence from LLM research indicates the superiority of processlevel or stepwise evaluations over instance-level ones <ref type="bibr" target="#b23">(Lightman et al., 2023;</ref><ref type="bibr" target="#b57">Li et al., 2023;</ref><ref type="bibr" target="#b49">Xie et al., 2023;</ref><ref type="bibr" target="#b50">Yao et al., 2023)</ref>. Our approach utilizes MCTS rollouts for step-level guidance, aligning with a more granular application of MCTS. Moreover, we employ self-evaluation, where the model assesses its outputs, fostering a more efficient policy improvement pipeline by acting as both policy and critic <ref type="bibr" target="#b19">(Kadavath et al., 2022;</ref><ref type="bibr" target="#b49">Xie et al., 2023)</ref>. This method streamlines the process and ensures more cohesive policy updates, aligning with the iterative nature of policy enhancement and potentially leading to more robust and aligned LLMs.</p><p>To summarize, we propose an algorithm based on Monte Carlo Tree Search (MCTS) that breaks down the instance-level preference signals into step-level. MCTS allows us to use the current LLM policy to generate preference data instead of a predetermined set of human preference data, enabling the LLM to receive real-time training signals. During training, we generate sequences of text on the fly and label the preference via MCTS based on feedback from self-evaluation (Figure <ref type="figure" target="#fig_0">1</ref>). To update the LLM policy using the preference data, we use Direct Preference Optimization (DPO) <ref type="bibr" target="#b32">(Rafailov et al., 2023)</ref>. We extensively evaluate the proposed approach on various arithmetic and commonsense reasoning tasks and observe significant performance improvements. For instance, the proposed approach outperforms the Mistral-7B SFT baseline by 81.8% (+5.9%), 34.7% (+5.8%), and 76.4% (+15.8%) on GSM8K, MATH, and SciQ, respectively. Further analysis of the training and test compute tradeoff shows that our method can effectively push the performance gains in a more efficient way compared to sampling-only approaches.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Algorithm 1 . MCTS-Enhanced Iterative Preference Learning.</head><p>Given an initial policy π θ (0) = π sft , our algorithm iteratively conducts step-level preference data sampling via MCTS and preference learning via DPO to update the policy.</p><p>Input: DP : prompt dataset; q(• | x): MCTS sampling strategy that constructs a tree-structured set of possible responses given a prompt x, where qπ represents that the strategy is based on the policy π for both response generation and self-evaluation; ℓi(x, yw, y l ; θ): loss function of preference learning at the i-th iteration, where the corresponding sampling policy is π (i) ; M : number of iterations; B: number of samples per iteration; T : average number of steps per sample Train π θ on DP using step-level preference learning. for i = 1 to M do π (i) ← π θ ← π θ (i-1) Sample a batch of B samples from DP as D Collect a batch of preferences Di = { {(x j , y</p><formula xml:id="formula_0">(j,t) l , y (j,t) l )| T t=1 }| B j=1 s.t. x j ∼ D (i) P , y (j,t) w ̸ = y (j,t) w ∼ qπ θ (• | x j ) }, where y (j,t) w and y (j,t) l</formula><p>is the nodes at depth t, with the highest and lowest Q values, respectively, among all the children nodes of their parent node. /* Preference Learning for Policy Improvement */ Optimize θ by minimizing J(θ) = E (x,yw ,y l )∼D i ℓi(x, yw, y l ; θ).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Obtain the updated policy π θ</head><formula xml:id="formula_1">(i) end for π θ ← π θ (M ) Output: Policy π θ</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">MCTS-Enhanced Iterative Preference Learning</head><p>In this paper, we introduce an approach for improving LLM reasoning, centered around an iterative preference learning process. The proposed method begins with an initial policy π θ (0) , and a dataset of prompts D P . Each iteration i involves selecting a batch of prompts from D P , from which the model, guided by its current policy π θ (i-1) , generates potential responses for each prompt. We then apply a set of dynamically evolving reward criteria to extract preference data D i from these responses. The model's policy is subsequently tuned using this preference data, leading to an updated policy π θ (i) , for the next iteration. This cycle of sampling, response generation, preference extraction, and policy tuning is repeated, allowing for continuous self-improvement and alignment with evolving preferences. In addressing the critical aspects of this methodology, two key challenges emerge: the effective collection of preference data and the process of updating the policy post-collection.</p><p>We draw upon the concept that MCTS can act as an approximate policy improvement operator, transforming the current policy into an improved one. Our work leverages MCTS to iteratively collect preference data, utilizing its look-ahead ability to break down instance-level rewards into more granular step-level signals. To enhance consistency in intermediate steps, we incorporate stepwise self-evaluation, continually updating the quality assessment of newly generated data. This process, as depicted in Figure <ref type="figure" target="#fig_0">1</ref>, enables MCTS to balance quality exploitation and diversity exploration during preference data sampling at each iteration. Detailed in section 2.1, our approach utilizes MCTS for step-level preference data collection. Once this data is collected, the policy is updated using DPO, as outlined in section 2.2. Our method can be viewed as an online version of DPO, where the updated policy is iteratively employed to collect preferences via MCTS. Our methodology, thus, not only addresses the challenges in preference data collection and policy updating but also introduces a dynamic, iterative framework that significantly enhances LLM reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">MCTS for Step-Level Preference</head><p>To transform instance-level rewards into granular, step-level signals, we dissect the reasoning process into discrete steps, each represented by a token sequence. We define the state at step t, s t , as the prefix of the reasoning chain, with the addition of a new reasoning step a transitioning the state to s t+1 , where s t+1 is the concatenation of s t and a. Utilizing the model's current policy π θ , we sample candidate steps from its probability distribution π θ (a | x, s t )<ref type="foot" target="#foot_0">foot_0</ref> , with x being the task's input prompt. MCTS serves as an approximate policy improvement operator by leveraging its look-ahead capability to predict the expected future reward. This prediction is refined through stepwise selfevaluation <ref type="bibr" target="#b19">(Kadavath et al., 2022;</ref><ref type="bibr" target="#b49">Xie et al., 2023)</ref>, enhancing process consistency and decision accuracy. The tree-structured search supports a balance between exploring diverse possibilities and exploiting promising paths, essential for navigating the vast search space in LLM reasoning.</p><p>The MCTS process begins from a root node, s 0 , as the sentence start or incomplete response, and unfolds in three iterative stages: selection, expansion, and backup, which we detail further.</p><p>Select. The objective of this phase is to identify nodes that balance search quality and computational efficiency. The selection is guided by two key variables: Q(s t , a), the value of taking action a in state s t , and N (s t ), the visitation frequency of state s t . These variables are crucial for updating the search strategy, as explained in the backup section. To navigate the trade-off between exploring new nodes and exploiting visited ones, we employ the Predictor + Upper Confidence bounds applied to Trees (PUCT) <ref type="bibr" target="#b35">(Rosin, 2011)</ref>. At node s t , the choice of the subsequent node follows the formula:</p><formula xml:id="formula_2">s t+1 * = arg max st Q(s t , a) + c puct • p(a | s t ) N (s t ) 1 + N (s t+1 )<label>(1)</label></formula><p>where p(a | s t ) = π θ (a | x, s t )/|a| λ denotes the policy π θ 's probability distribution for generating a step a, adjusted by a λ-weighted length penalty to prevent overly long reasoning chains.</p><p>Expand. Expansion occurs at a leaf node during the selection process to integrate new nodes and assess rewards. The reward r(s t , a) for executing step a in state s t is quantified by the reward difference between states R(s t ) and R(s t+1 ), highlighting the advantage of action a at s t . As defined in Eq. ( <ref type="formula" target="#formula_3">2</ref>), reward computation merges outcome correctness O with self-evaluation C. We assign the outcome correctness to be 1, -1, and 0 for correct terminal, incorrect terminal, and unfinished intermediate states, respectively. Following <ref type="bibr" target="#b49">Xie et al. (2023)</ref>, we define self-evaluation as Eq. ( <ref type="formula" target="#formula_4">3</ref>), where A denotes the confidence score in token-level probability for the option indicating correctness<ref type="foot" target="#foot_1">foot_1</ref> . Future rewards are anticipated by simulating upcoming scenarios through roll-outs, following the selection and expansion process until reaching a terminal state<ref type="foot" target="#foot_2">foot_2</ref> .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>R(s</head><formula xml:id="formula_3">t ) = O(s t ) + C(s t )<label>(2)</label></formula><formula xml:id="formula_4">C(s t ) = π θ (A | prompt eval , x, s t )<label>(3)</label></formula><p>Backup. Once a terminal state is reached, we carry out a bottom-up update from the terminal node back to the root. We update the visit count N , the state value V , and the transition value Q:</p><formula xml:id="formula_5">Q(s t , a) ← r(s t , a) + γV (s t+1 )<label>(4)</label></formula><formula xml:id="formula_6">V (s t ) ← a N (s t+1 )Q(s t , a)/ a N (s t+1 )<label>(5)</label></formula><p>N (s t ) ← N (s t ) + 1 (6) where γ is the discount for future state values.</p><p>For each step in the response generation, we conduct K iterations of MCTS to construct the search tree while updating Q values and visit counts N . To balance the diversity, quality, and efficiency of the tree construction, we initialize the search breadth as b 1 and anneal it to be a smaller b 2 &lt; b 1 for the subsequent steps. We use the result Q value corresponding to each candidate step to label its preference, where higher Q values indicate preferred next steps. For a result search tree of depth T , we obtain T pairs of step-level preference data. Specifically, we select the candidate steps of highest and lowest Q values as positive and negative samples at each tree depth, respectively. The parent node selected at each tree depth has the highest value calculated by multiplying its visit count and the range of its children nodes' visit counts, indicating both the quality and diversity of the generations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Iterative Preference Learning</head><p>Given the step-level preferences collected via MCTS, we tune the policy via DPO <ref type="bibr" target="#b32">(Rafailov et al., 2023)</ref>. Considering the noise in the preference labels determined by Q values, we employ the conservative version of DPO <ref type="bibr" target="#b28">(Mitchell, 2023)</ref> and use the visit counts simulated in MCTS to apply adaptive label smoothing on each preference pair. Using the shorthand h yw,y l</p><formula xml:id="formula_7">π θ = log π θ (yw|x) π ref (yw|x) - log π θ (y l |x) π ref (y l |x)</formula><p>, at the i-th iteration, given a batch of preference data D i sampled with the latest policy π θ (i-1) , we denote the policy objective ℓ i (θ) as follows:</p><formula xml:id="formula_8">ℓ i (θ) = -E (x,yw,y l )∼Di (1 -α x,yw,y l ) log σ(β h yw,y l π θ + α x,yw,y l log σ(-βh yw,y l π θ )<label>(7)</label></formula><p>where y w and y l represent the step-level preferred and dispreferred responses, respectively, and the hyperparameter β scales the KL constraint. Here, α x,yw,y l is a label smoothing variable calculated using the visit counts at the corresponding states of the preference data y w , y l in the search tree:</p><formula xml:id="formula_9">α x,yw,y l = 1 N (x, y w )/N (x, y l ) + 1<label>(8)</label></formula><p>where N (x, y w ) and N (x, y l ) represent the states taking the actions of generating y w and y l , respectively, from their previous state as input x.</p><p>After optimization, we obtain the updated policy π θ (i) and repeat the data collection process in Section 2.1 to iteratively update the LLM policy. We outline the full algorithm of our MCTSenhanced Iterative Preference Learning in Algorithm 1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Theoretical Analysis</head><p>Our approach can be viewed as an online version of DPO, where we iteratively use the updated policy to sample preferences via MCTS. In this section, we provide theoretical analysis to interpret the advantages of our online learning framework compared to the conventional alignment techniques that critically depend on offline preference data. We review the typical RLHF and DPO paradigms in Appendix B.</p><p>We now consider the following abstract formulation for clean theoretical insights to analyze our online setting of preference learning. Given a prompt x, there exist n possible suboptimal responses {ȳ 1 , . . . , ȳn } = Y and an optimal outcome y * . As specified in Equation 7, at the i-th iteration, a pair of responses (y, y ′ ) are sampled from some sampling policy π (i) without replacement so that y ̸ = y ′ as y ∼ π (i) (• | x) and y ′ ∼ π (i) (• | x, y). Then, these are labeled to be y w and y l according to the preference. Define Θ be a set of all global optimizers of the preference loss for all M iterations, i.e., for any θ ∈ Θ, ℓ i (θ) = 0 for all i ∈ {1, 2, • • • , M }. Similarly, let θ (i) be a parameter vector such that ℓ j (θ (i) ) = 0 for all j ∈ {1, 2, • • • , i -1} for i ≥ 1 whereas θ (0) is the initial parameter vector. This abstract formulation covers both the offline and online settings. The offline setting in previous works is obtained by setting π (i) = π for some fixed distribution π. The online setting is obtained by setting π (i) = π θ (i-1) where π θ (i-1) is the latest policy at beginning of the i-th iteration.</p><p>The following theorem shows that the offline setting can fail with high probability if the sampling policy π (i) differs too much from the current policy π θ (i-1) : Theorem 3.1 (Offline setting can fail with high probability). Let π be any distribution for which there exists ȳ ∈ Y such that π(ȳ | x), π(ȳ | x, y) ≤ ϵ for all y ∈ (Y \ ȳ) ∪ {y * } and π θ</p><formula xml:id="formula_10">(i-1) (ȳ | x) ≥ c for some i ∈ {1, 2, • • • , M }. Set π (i) = π for all i ∈ {1, 2, • • • , M }.</formula><p>Then, there exists θ ∈ Θ such that with probability at least 1 -2ϵM (over the samples of π (i) = π), the following holds:</p><formula xml:id="formula_11">π θ (y * | x) ≤ 1 -c.</formula><p>If the current policy and the sampling policy differ too much, it is possible that ϵ = 0 and c ≈ 1.0, for which Theorem 3.1 can conclude π θ (y * | x) ≈ 0 with probability 1 for any number of steps M . When ϵ ̸ = 0, the lower bound of the failure probability decreases towards zero as we increase M . Thus, it is important to make sure that ϵ ̸ = 0 and ϵ is not too low. This is achieved by using the online setting, i.e., π (i) = π θ (i) . Therefore, Theorem 3.1 motivates us to use the online setting. Theorem 3.2 confirms that we can indeed avoid this failure case in the online setting.</p><p>Theorem 3.2 (Online setting can avoid offline failure case). Let π (i) = π θ (i-1) . Then, for any θ ∈ Θ, it holds that π θ (y * | x) = 1 if M ≥ n + 1.</p><p>See Appendix B for the proofs of Theorems 3.1 and 3.2. As suggested by the theorems, a better sampling policy is to use both the latest policy and the optimal policy for preference sampling. However, since we cannot access the optimal policy π * in practice, we adopt online DPO via sampling from the latest policy π θ (i-1) . The key insight of our iterative preference learning approach is that online DPO is proven to enable us to converge to an optimal policy even if it is inaccessible to sample outputs. We provide further discussion and additional insights in Appendix B.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head><p>We evaluate the effectiveness of MCTS-enhanced iterative preference learning on arithmetic and commonsense reasoning tasks. We employ Mistral-7B <ref type="bibr" target="#b18">(Jiang et al., 2023)</ref> as the base pretrained model. We conduct supervised training using Arithmo<ref type="foot" target="#foot_3">foot_3</ref> which comprises approximately 540K mathematical and coding problems. Detailed information regarding the task formats, specific implementation procedures, and parameter settings of our experiments can be found in Appendix C.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Datasets.</head><p>We aim to demonstrate the effectiveness and versatility of our approach by focusing on two types of reasoning: arithmetic and commonsense reasoning. For arithmetic reasoning, we utilize two datasets: GSM8K <ref type="bibr" target="#b8">(Cobbe et al., 2021)</ref>, which consists of grade school math word problems, and MATH <ref type="bibr" target="#b15">(Hendrycks et al., 2021)</ref>, featuring challenging competition math problems. Specifically, in the GSM8K dataset, we assess both chain-of-thought (CoT) and program-of-thought (PoT) reasoning abilities. We integrate the training data from GSM8K and MATH to construct the prompt data for our preference learning framework, aligning with a subset of the Arithmo data used for Supervised Fine-Tuning (SFT). This approach allows us to evaluate whether our method enhances reasoning abilities on specific arithmetic tasks. For commonsense reasoning, we use four multiple-choice datasets: ARC (easy and challenge splits) <ref type="bibr" target="#b7">(Clark et al., 2018)</ref>, focusing on science exams; AI2Science (elementary and middle splits) <ref type="bibr" target="#b7">(Clark et al., 2018)</ref>, containing science questions from student assessments; OpenBookQA (OBQA) <ref type="bibr" target="#b27">(Mihaylov et al., 2018)</ref>, which involves open book exams requiring broad common knowledge; and CommonSenseQA (CSQA) <ref type="bibr" target="#b39">(Talmor et al., 2019)</ref>, featuring commonsense questions necessitating prior world knowledge. The diversity of these datasets, with different splits representing various grade levels, enables a comprehensive assessment of our method's generalizability in learning various reasoning tasks through self-distillation. Performance evaluation is conducted using the corresponding validation sets of each dataset. Furthermore, we employ an unseen evaluation using the validation set of an additional dataset, SciQ <ref type="bibr" target="#b46">(Welbl et al., 2017)</ref>, following the approach of <ref type="bibr">Liu et al. (2023b)</ref>, to test our model's ability to generalize to novel reasoning contexts.</p><p>Baselines. Our study involves a comparative evaluation of our method against several prominent approaches and fair comparison against variants including instance-level iterative preference learning and offline MCTS-enhanced learning. We use instance-level sampling as a counterpart of step-level preference collection via MCTS. For a fair comparison, we also apply self-evaluation and correctness assessment and control the number of samples under a comparable compute budget with MCTS in instance-level sampling. The offline version uses the initial policy for sampling rather than the updated one at each iteration.</p><p>We contrast our approach with the Self-Taught Reasoner (STaR) <ref type="bibr" target="#b55">(Zelikman et al., 2022)</ref>, an iterated learning model based on instance-level rationale generation, and Crystal <ref type="bibr">(Liu et al., 2023b)</ref>, an RLtuned model with a focus on knowledge introspection in commonsense reasoning. Considering the variation in base models used by these methods, we include comparisons with Direct Tuning, which entails fine-tuning base models directly bypassing chain-of-thought reasoning. In the context of arithmetic reasoning tasks, our analysis includes Language Model Self-Improvement (LMSI) <ref type="bibr" target="#b16">(Huang et al., 2023)</ref>, a self-training method using self-consistency to gather positive data, and Math-Shepherd <ref type="bibr">(Wang et al., 2023a)</ref>, which integrates process supervision within Proximal Policy Optimization (PPO). To account for differences in base models and experimental setups across these methods, we also present result performance of SFT models as baselines for each respective approach.</p><p>Table 1: Result comparison (accuracy %) on arithmetic tasks. We supervised fine-tune the base model Mistral-7B on Arithmo data, while Math-Shepherd <ref type="bibr">(Wang et al., 2023a)</ref> use MetaMATH <ref type="bibr">(Yu et al., 2023b)</ref> for SFT. We highlight the advantages of our approach via conceptual comparison with other methods, where NR, OG, OF, and NS represent "w/o Reward Model", "On-policy Generation", "Online Feedback", and "w/ Negative Samples".</p><p>Approach Base Model Conceptual Comparison GSM8K MATH NR OG OF NS LMSI PaLM-540B ✓ ✓ ✗ ✗ 73.5 -SFT (MetaMath) Mistral-7B ----77.7 28.2 Math-Shepherd ✗ ✓ ✗ ✓ 84.1 33.0 SFT (Arithmo) Mistral-7B ----75.9 28.9 MCTS Offline-DPO ✓ ✗ ✗ ✓ 79.9 31.9 Instance-level Online-DPO ✓ ✓ ✓ ✓ 79.7 32.9 Ours ✓ ✓ ✓ ✓ 80.7 32.2 Ours (w/ G.T.) ✓ ✓ ✓ ✓ 81.8 34.7 10 20 30 40 50 Training Data % 55 60 65 70 75 Accuracy 72.2 74.7 76.4 75.6 75.8 66.5 72.2 73.3 75.2 73.4 69.2 70.8 67.3 66.5 60.6 ARC-C Step-Level (Online) Instance-Level (Online) Step-Level (Offline) SFT Baseline Table 2: Result comparisons (accuracy %) on commonsense reasoning tasks. The results based on GPT-3-curie <ref type="bibr" target="#b5">(Brown et al., 2020)</ref> and T5 <ref type="bibr" target="#b33">(Raffel et al., 2020)</ref> are reported from <ref type="bibr">Liu et al. (2023b)</ref>.</p><p>For CSQA, we also include the GPT-J (Wang and Komatsuzaki, 2021) results reported by <ref type="bibr" target="#b55">Zelikman et al. (2022)</ref>. We follow <ref type="bibr">Liu et al. (2023b)</ref> to combine the training data of ARC, AI2Sci, OBQA, and CSQA for training , while STaR <ref type="bibr" target="#b55">(Zelikman et al., 2022)</ref> only use CSQA for training.</p><p>Approach Base Model Conceptual Comparison ARC-c AI2Sci-m CSQA SciQ Train Data Used (%) NR OG OF NS CoT Tuning GPT-3-curie (6.7B) ✓ ✗ ✗ ✗ --56.8 -100 Direct Tuning GPT-J (6B) ✓ ✗ ✗ ✗ --60.0 -100 STaR ✓ ✓ ✓ ✗ --72.5 -86.7 Direct TUning T5-11B ✓ ✗ ✗ ✗ 72.9 84.0 82.0 83.2 100 Crystal ✗ ✓ ✓ ✓ 73.2 84.8 82.3 85.3 100 SFT Base (Arithmo) Mistral-7B ----60.6 70.9 54.1 80.8 -Direct Tuning ✓ ✗ ✗ ✗ 73.9 85.2 79.3 86.4 100 MCTS Offline-DPO ✓ ✗ ✗ ✓ 70.8 82.6 68.5 87.4 19.2 Instance-level Online-DPO ✓ ✓ ✓ ✓ 75.3 87.3 63.1 87.6 45.6 Ours ✓ ✓ ✓ ✓ 76.4 88.2 74.8 88.5 47.8</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Main Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Arithmetic Reasoning.</head><p>In Table <ref type="table">1</ref>, we present a comparative analysis of performance gains in arithmetic reasoning tasks. Our method demonstrates substantial improvements, notably on GSM8K, increasing from 75.9% → 81.8%, and on MATH, enhancing from 28.9% → 34.7%. When compared to Math-Shepherd, which also utilizes process supervision in preference learning, our approach achieves similar performance enhancements without the necessity of training separate reward or value networks. This suggests the potential of integrating trained reward model signals into our MCTS stage to further augment performance. Furthermore, we observe significant performance gain on MATH when incorporating the ground-truth solutions in the MCTS process for preference data collection, illustrating an effective way to refine the preference data quality with G.T. guidance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Commonsense Reasoning.</head><p>In Table <ref type="table">2</ref>, we report the performance on commonsense reasoning tasks, where our method shows consistent improvements. Notably, we achieve absolute accuracy increases of 2.5%, 3.0%, and 2.1% on ARC-Challenge (ARC-C), AI2Sci-Middle (AI2Sci-M), and SciQ, respectively, surpassing the results of direct tuning. However, in tasks like OBQA and CSQA, our method, focusing on intermediate reasoning refinement, is less efficient compared to direct tuning. Despite significant improvements over the Supervised Fine-Tuning (SFT) baseline (for instance, from 59.8% to 79.2% on OBQA, and from 54.1% to 74.8% on CSQA), the gains are modest relative to direct tuning. This discrepancy could be attributed to the base model's lack of specific knowledge, where eliciting intermediate reasoning chains may introduce increased uncertainty in model generations, leading to incorrect predictions. We delve deeper into this issue of hallucination and its implications in our qualitative analysis, as detailed in Section 4.2.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Further Analysis</head><p>Training-vs. Test-Time Compute Scaling. Our method integrates MCTS with preference learning, aiming to enhance both preference quality and policy reasoning via step-level alignment. We analyze the impact of training-time compute scaling versus increased inference-time sampling.</p><p>0 1 2 3 4 5 6 7 # Checkpoints 60 65 70 75 80 85 90 95 Pass Rate 72.2 73.6 74.7 75.1 76.4 75.8 76.2 60.6 79.7 86.9 90.0 91.3 92.4 93.3 94.1 71.9 80.6 86.6 89.3 91.7 92.9 93.5 ARC-C Iterative Learning (Pass@1) Iterative Learning (Cumulative) Sampling Only (Cumulative) SFT Baseline (Pass@1) 10 20 30 40 50 60 k 60 65 70 75 80 85 90 95 Accuracy 61.9 70.0 72.2 73.4 74.1 60.6 Sampling Only (SC@k) SFT Baseline (Pass@1) 0 1 2 3 4 5 6 7 # Checkpoints 80.0 82.5 85.0 87.5 90.0 92.5 95.0 97.5 100.0 Pass Rate 86.0 88.3 86.5 88.5 87.7 88.6 80.8 89.6 94.2 95.9 96.3 82.8 86.4 89.8 91.5 SciQ Iterative Learning (Pass@1) Iterative Learning (Cumulative) Sampling Only (Cumulative) SFT Baseline (Pass@1) 10 20 30 40 50 60 k 80.0 82.5 85.0 87.5 90.0 92.5 95.0 97.5 100.0 Accuracy 81.6 82.8 83.8 84.1 84.2 84.4 80.8 Sampling Only (SC@k) SFT Baseline (Pass@1) 0 2 4 6 8 10 # Checkpoints 30 35 40 45 50 55 60 65 Pass Rate 29.2 30.4 32.2 31.2 29.0 38.4 46.7 51.6 57.1 34.9 42.4 49.6 57.9 29.0 MATH Iterative Learning (Pass@1) Iterative Learning (Cumulative) Sampling Only (Cumulative) SFT Baseline (Pass@1) 4 5 6 7 8 9 10 k 30 35 40 45 50 55 60 65 Accuracy 30.0 31.5 32.2 33.3 34.2 35.1 29.0 Sampling Only (SC@k) SFT Baseline (Pass@1)</p><p>Figure <ref type="figure">3</ref>: Training-vs. Test-Time Compute Scaling on ARC-C, SciQ, and MATH evaluation sets.</p><p>The cumulative pass rate of our iterative learning method can be seen as the pass rate of an ensemble of different model checkpoints. We use greedy decoding to obtain the inference time performance of our method of iterative learning. We measure success by the pass rate, indicating the percentage of correctly elicited answers. Figure <ref type="figure">3</ref> displays the cumulative pass rate at each checkpoint, aggregating the pass rates up to that point. For test-time scaling, we increase the number of sampled reasoning chains. Additionally, we compare the inference performance of our checkpoints with a sampling-only method, self-consistency, to assess their potential performance ceilings. The pass rate curves on ARC-C, SciQ, and MATH datasets reveal that our MCTS-enhanced approach yields a higher training compute scaling exponent. This effect is particularly pronounced on the unseen SciQ dataset, highlighting our method's efficiency and effectiveness in enhancing specific reasoning abilities with broad applicability. Inference-time performance analysis shows higher performance upper bounds of our method on ARC-C and SciQ. For instance, while self-consistency on SciQ plateaus at around 84%, our framework pushes performance to 88.6%. However, on MATH, the sampling-only approach outperforms training compute scaling: more sampling consistently enhances performance beyond 35%, whereas post-training performance hovers around 32.2%. This observation suggests that in-domain SFT already aligns the model well with task-specific requirements.</p><p>Functions of Self-Evaluation Mechanism. As illustrated in Section 2.1, the self-evaluation score inherently revises the Q value estimation for subsequent preference data collection. In practice, we find that the ground-truth information, i.e., the "EXAMPLE ANSWER" in Table <ref type="table">6</ref>, is crucial to ensure the reliability of self-evaluation. We now compare the score distribution and discriminative abilities when including v.s. excluding this ground-truth information in Table <ref type="table" target="#tab_0">3</ref>. With this information , the accuracy of self-evaluation significantly improves across GSM8K, MATH, and ARC-C datasets.</p><p>Ablation Study. We ablate the impact of step-level supervision signals and the online learning aspect of our MCTS-based approach. Tables <ref type="table">1</ref> and <ref type="table">2</ref> shows performance comparisons across commonsense and arithmetic reasoning tasks under different settings. Our method, focusing on steplevel online preference learning, consistently outperforms both instance-level and offline approaches in commonsense reasoning. For example, we achieve 76.4% on ARC-C and 88.5% on SciQ, surpassing 70.8% and 87.4% of the offline variant, and 75.3% and 87.6% of the instance-level approach.</p><p>In arithmetic reasoning, performance differences among settings are less pronounced for challenging task such as MATH without the incorporation of ground-truth solutions (e.g., 32.2% for our method</p><p>ARC-C (step-level) ARC-C (instance-level) MATH (step-level) MATH (instance-level) MATH (step-level w/ G.T.) 0 20 40 60 80 100 Accuracy 60.6 60.6 29.0 29.0 29.0 76.4 75.3 32.2 32.9 35.4 94.4 89.2 81.2 87.9 97.9 Initial Model Trained Model G.T. Supervision Table <ref type="table">4</ref>: Qualitative Analysis of model outputs on OBQA, AI2Sci, and MATH. We highlight correct and incorrect keywords. The predicted answers on MATH are boxed , where our method solves the complex problem while SFT baseline failed to elicit a complete reasoning chain.</p><p>Task Inputs and Outputs Answer OBQA Question: As the rain forest is deforested the atmosphere will increase with:</p><p>(C) Answer Choices: (A) oxygen (B) nitrogen (C) carbon (D) rain SFT Baseline: As the rain forest is deforested the atmosphere will increase with carbon. The answer is C. Ours: When trees are cut down, the carbon stored in the trees is released into the atmosphere as carbon dioxide. This carbon dioxide then increases the carbon content of the atmosphere. Since carbon is the main ingredient in plant life, the increased carbon content of the atmosphere will lead to increased plant growth, which will lead to increased photosynthesis, which will lead to increased oxygen production. Therefore, oxygen is the gas that will increase in the atmosphere as the rain forest is deforested. The answer is: A.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>AI2Sci</head><p>Question: Which pair of instruments can be used to measure wind chill?</p><formula xml:id="formula_12">(D)</formula><p>Answer Choices: (A) barometer and wind vane (B) wind vane and anemometer (C) thermometer and barometer (D) anemometer and thermometer SFT Baseline: Wind chill is the effect of wind on the apparent temperature, it is the temperature that the human body feels due to the movement of air. It is an index of the discomfort felt by the human body due to low temperature and high wind speed. It is measured by an instrument called wind chill meter. The answer is B Ours: To measure wind chill, you would need an anemometer and a thermometer. The anemometer measures the wind speed, and the thermometer measures the temperature. Together, these two instruments can be used to calculate the wind chill factor. The answer is: D MATH Question: Let f (x) = x 7 + ax 3 + cx If f (5) = 3, then find f (-5).</p><p>-3</p><p>SFT Baseline: We know that f (5) = 5 7 + 5a + 5c = 3. We want to find f (-5), which is (-5) 7 + (-5a) +(-5c). Since (-5) 7 = -5 7 = -3, we have f (-5) = -3 -5a -5c. We can rewrite this as f (-5) = -3 -5(-3) -5c = -3 + 15 -5c = 12 -5c .</p><p>Ours: We know that f (5) = 5 7 + 5a + 5c = 3. Since f (x) is a polynomial, we can use the fact that f (-5) = (-5) 7 -5a -5c = -3 .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>MATH</head><p>Question: If f (c) = 3 2c-3 , find kn 2 lm when f -1 (c) × c × f (c) equals the simplified fraction kc+l mc+n , 9 where k, l, m, and n are integers.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>SFT Baseline: We start by finding f -1 (c).</head><p>To do this, we set f (c) = x and solve for c:</p><formula xml:id="formula_13">3 2c-3 = x, 2c -3 = 3 x , 2c = 3 x + 3, c = 3 x +3 2 .So f -1 (c) = 3 c +3 2c . Next, we substitute f -1 (c) into the expression f -1 (c) × c × f (c): 3 c +3 2c × c × 3 2c-3 Simplifying, we get: 3+3c 2c × 3 2c-3 9+9c 4c 2 -6c 9+9c 4c(c-1)</formula><p>We want this expression to be equal to kc+l mc+n , so we set them equal to each other and solve for k, l, m, and n: 9+9c 4c(c-1) = kc+l mc+n Cross-multiplying, we get: 9 + 9c = 4c(c -1)(kc + l) Expanding and simplifying, we get: 9 + 9c = 4c 2 k -4ck -4cl + l Rearranging terms, we get:</p><formula xml:id="formula_14">4c 2 k -4 Ours: We know that f (f -1 (c)) = c for all c in the domain of f -1 . So, f (f -1 (c)) = f (c) for all c in the domain of f -1 . Therefore, f (f -1 (c)) = f (c) implies f (c) = c for all c in the domain of f -1 . Since f (c) = 3 2c-3 , we have f (c) = c for all c in the domain of f -1 . This means that 2c -3 = c for all c in the domain of f -1 . Simplifying, we get c = 3 for all c in the domain of f -1 . Therefore, f -1 (c) = 3 for all c in the domain of f -1 . Now, we can substitute f -1 (c) = 3 into f -1 (c) × c × f (c) to get 3 × 3 × 3 2(3)-3 .</formula><p>Simplifying, we get 9 × 3 3 = 9. Therefore, kn 2 lm = 9</p><p>(w/o G.T.) vs. 31.9% and 32.9% for offline and instance-level on MATH). The comparable performance of offline learning aligns with our theoretical analysis that offline approaches can be effective when the initial policy is already well-tuned with high-quality, in-domain data. We further interpret how G.T. guidance integration to enhance the effectiveness of our framework in Figure <ref type="figure" target="#fig_3">4</ref>. With G.T. supervision, the accuracy of training signals improve significantly from 81.2% to 97.9%, leading to substantial performance gain on model performance. This also explains the similar performance (w/o G.T.) between corresponding using step-and instance-level supervision, where our step-level approach shows effectiveness in narrowing the gap between accuracies of corresponding supervisions.</p><p>Training Dynamics in Iterative Learning. As shown in Figure <ref type="figure" target="#fig_2">2</ref>, online learning exhibits cyclic performance fluctuations, with validation performance peaking before dipping. We conduct theoretical analysis on this in Appendix B and shows that continuous policy updates with the latest models can lead to periodic knowledge loss due to insufficient optimization in iterative updates. We further probe these phenomena qualitatively next.</p><p>Qualitative Analysis. Our qualitative analysis in Table <ref type="table">4</ref> examines the impact of step-level supervision on intermediate reasoning correctness across different tasks. In OBQA, the implementation of MCTS, as discussed in Section 4.1, often leads to longer reasoning chains. This can introduce errors in commonsense reasoning tasks, as seen in our OBQA example, where an extended chain results in an incorrect final prediction. Conversely, in the MATH dataset, our approach successfully guides the model to rectify mistakes and formulates accurate, extended reasoning chains, demonstrating its effectiveness in complex math word problems. This analysis underscores the need to balance reasoning chain length and logical coherence, particularly in tasks with higher uncertainty, such as commonsense reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Related Work</head><p>Various studies focus on self-improvement to exploit the model's capability. One line of work focuses on collecting high-quality positive data from model generations guided by static reward heuristic <ref type="bibr" target="#b55">(Zelikman et al., 2022;</ref><ref type="bibr" target="#b12">Gülçehre et al., 2023;</ref><ref type="bibr" target="#b31">Polu et al., 2023)</ref>. Recently, <ref type="bibr" target="#b54">Yuan et al. (2024)</ref> utilize the continuously updated LLM self-rewarding to collect both positive and negative data for preference learning. <ref type="bibr" target="#b10">Fu et al. (2023)</ref> adopt exploration strategy via rejection sampling to do online data collection for iterative preference learning. Different from prior works at instance-level alignment, we leverage MCTS as a policy improvement operator to iteratively facilitate step-level preference learning. We discuss additional related work in Appendix A.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>In this paper, we propose MCTS-enhanced iterative preference learning, utilizing MCTS as a policy improvement operator to enhance LLM alignment via step-level preference learning. MCTS balances quality exploitation and diversity exploration to produce high-quality training data, efficiently pushing the ceiling performance of the LLM on various reasoning tasks. Theoretical analysis shows that online sampling in our iterative learning framework is key to improving the LLM policy toward optimal alignment. We hope our proposed approach can inspire future research on LLM alignment from both data-centric and algorithm-improving aspects: to explore searching strategies and utilization of history data and policies to augment and diversify training examples; to strategically employ a tradeoff between offline and online learning to address the problem of cyclic performance change of the online learning framework as discussed in our theoretical analysis.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Related Work</head><p>Iterated Learning. Typical iterated learning operates in a multi-agent scenario, consisting of a loop where an apprentice self-plays, learns from expert feedback, and replaces the current expert for the new iteration <ref type="bibr" target="#b0">(Anthony et al., 2017)</ref>. <ref type="bibr" target="#b31">Polu et al. (2023)</ref> apply expert iteration on formal mathematical reasoning to conduct proof search interleaved with learning. <ref type="bibr" target="#b55">Zelikman et al. (2022)</ref> avoid the need for training a separate value function by directly assessing the final outcomes of reasoning to filter generated examples for iterated learning. Recently, <ref type="bibr" target="#b54">Yuan et al. (2024)</ref> leverage the technique of LLM-as-a-Judge <ref type="bibr" target="#b57">(Zheng et al., 2023)</ref> and introduce self-rewarding language models to improve LLM alignment with self-feedback. Differently, we combine the feedback of outcome assessment and LLM self-evaluation and further decompose them into fine-grained signals via MCTS for step-level iterative preference learning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Self-Training.</head><p>Self-training uses unlabeled data to improve model training by assigning pseudo labels from a learned labeler <ref type="bibr" target="#b17">(III, 1965;</ref><ref type="bibr" target="#b51">Yarowsky, 1995;</ref><ref type="bibr" target="#b48">Xie et al., 2020;</ref><ref type="bibr" target="#b14">He et al., 2020;</ref><ref type="bibr" target="#b30">Park et al., 2020;</ref><ref type="bibr">Zoph et al., 2020)</ref>. Preference Learning. The empirical achievements of LLMs have identified the benefits of RL techniques to better align with human preferences <ref type="bibr">(Touvron et al., 2023;</ref><ref type="bibr" target="#b38">Stiennon et al., 2020;</ref><ref type="bibr" target="#b29">Ouyang et al., 2022;</ref><ref type="bibr">Bai et al., 2022a)</ref>. The standard preference learning process learns a reward model to provide feedback in online RL <ref type="bibr" target="#b36">(Schulman et al., 2017)</ref>. Recently, a variety of studies avoid training separate reward or value networks by hindsight instruction relabeling <ref type="bibr" target="#b56">(Zhang et al., 2023)</ref>, direct preference optimization <ref type="bibr" target="#b32">(Rafailov et al., 2023)</ref> and LLM self-evaluation <ref type="bibr" target="#b34">(Ren et al., 2023)</ref>. We further explore automatic supervision with MCTS to collect step-level preferences by breaking down outcome correctness integrated with self-evaluation. Our approach enables the continual collection of better-quality data via iterative learning, mitigating the limit of preference data when using a frozen reward model or offline learning algorithms.</p><p>Guided Search for Reasoning. Recent works improve the LLM reasoning ability by eliciting the intermediate reasoning chain <ref type="bibr" target="#b45">(Wei et al., 2022)</ref> and breaking it down into multiple steps via searching <ref type="bibr" target="#b50">(Yao et al., 2023;</ref><ref type="bibr" target="#b13">Hao et al., 2023;</ref><ref type="bibr">Yu et al., 2023a)</ref>. The decomposition of the reasoning process has also been shown effective in reinforcement learning. <ref type="bibr" target="#b23">Lightman et al. (2023)</ref> and <ref type="bibr" target="#b57">Li et al. (2023)</ref> apply process supervision to train more reliable reward models than outcome supervision in mathematical reasoning <ref type="bibr" target="#b41">(Uesato et al., 2022)</ref>. <ref type="bibr">Wang et al. (2023a)</ref> reinforce LLMs step-by-step with process supervision data automatically collected via model sampling and annotation. We leverage the look-ahead ability of MCTS and integrate it with step-by-step self-evaluation to provide refined process supervision for reasoning. This improves the generalization ability of our framework to update the policy via real-time collected preferences iteratively.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Theoretical Analysis of Online DPO Preliminaries.</head><p>A typical alignment technique begins with a policy π sft (y | x) supervisedly fine-tuned on high-quality data from the target domain, where x and y are the prompt and the response, respectively. The SFT policy is used to sample pairs of responses (y1, y2) ∼ π sft (y | x) with prompts x, which will be further labeled as pairwise preference data yw ≻ y l | x, where yw and y l represent the preferred and dispreferred responses respectively. The standard RLHF paradigm trains a reward model <ref type="bibr" target="#b29">(Ouyang et al., 2022)</ref> on the preference data and employs PPO <ref type="bibr" target="#b36">(Schulman et al., 2017)</ref> to optimize the policy π θ with the feedback provided by the reward model, where π θ is also initialized to π sft in practice. DPO avoids fitting a reward model by optimizing the policy π θ using preferences directly.</p><p>Given a reward function r(x, y) and prompt distribution P, RLHF and DPO optimize the KL-constrained reward maximization objective as follows:</p><formula xml:id="formula_15">max π Ex∼P,y∼π[r(x, y)] -βDKL[π(y | x) ∥ π sft (y | x)]<label>(9)</label></formula><p>where β scales the strength of the KL constraint. Let the ground-truth reward function be r * , then <ref type="bibr" target="#b32">Rafailov et al. (2023)</ref> estimate the optimal policy π * by fitting the Bradley-Terry model (Bradley and Terry, 1952) on preference data:</p><formula xml:id="formula_16">p * (y1 ≻ y1 | x) = σ(r * (x, y1) -r * (x, y2)) = 1 1 + exp β log π * (y 2 |x) π sft (y 2 |x) -β log π * (y 1 |x) π sft (y 1 |x)<label>(10)</label></formula><p>As the maximum likelihood estimator (MLE) of the optimal policy requires preferences sampled from the target policy <ref type="bibr">(Liu et al., 2023c)</ref>, DPO uses a fixed, potentially optimal but unknown policy to collect preference data of good quality. This discrepancy can be a problem when the sampling policy differs dramatically from the current policy. Moreover, the absence of a reward model in DPO presents challenges in learning from additional policy-generated data that lacks explicit preference indicators. We further discuss the offline and online settings of DPO in Section 3.</p><p>Additional details on labeling outcomes. After a pair of outcomes (y</p><p>(i) , y ′(i) ) are sampled from some sampling policy π (i) , these are labeled to be y (i) w and y (i) l according to some preference density p. That is, Pr[(y</p><formula xml:id="formula_17">(i) w , y (i) l ) = (y (i) , y ′(i) )] = p(y (i) ≻ y ′(i) | x) and Pr[(y (i) w , y (i) l ) = (y ′(i) , y (i) )] = 1 -p(y (i) ≻ y ′(i) | x).</formula><p>For simplicity, a preference density is set to be p(y * ≻ ȳ | x) = 1 for every optima-suboptimal pairs (y * , ȳ) for all ȳ ∈ Y . We do not specify the preference density for other pairs, i.e., p(ȳ ≻ ȳ′ | x) is arbitrary for (ȳ, ȳ′ ) ∈ Y × Y .</p><p>Abstract formulation for both offline and online settings. Our abstract formulation covers both the offline and online settings. The offline setting in previous papers is obtained by setting π (i) to be a single distribution fixed over i ∈ {1, 2, • • • , M }, e.g., an initial policy, an optimal policy, or an empirical data distribution of a given preference data. In the case of the empirical data distribution, the preference density p is set to the function outputting only 0 or 1 to recover the given preference data. The online setting is obtained by setting π (i) = π θ (i-1) where π θ (i-1) is the latest policy at the beginning of the i-th iteration, i.e., for i ≥ 1, θ (i) satisfies ℓj(θ (i) ) = 0 for j ∈ {1, 2, • • • , i -1} and θ (0) is the initialization. Thus, we can analyze both offline and online settings with this abstract framework.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Proof of Theorem 3.1.</head><p>Proof. The intuition behind the proof of Theorem 3.1 is that the current policy π θ (i) may not be corrected if a fixed sampling policy π never samples a suboptimal output ȳ ∈ Y whose probability is high for the current policy π θ (i) . Let ȳ be the suboptimal output such that π(ȳ | x) ≤ ϵ and π θ (i) (ȳ | x) ≥ c for some i ∈ {1, 2, • • • , M }. Denote preferences sampled by policy π (i) as (y</p><formula xml:id="formula_18">(i) w , y (i) l ).</formula><p>From the definition of the logistic function, we can rewrite</p><formula xml:id="formula_19">ℓi(θ) = -log σ β log π θ (y (i) w | x) π ref (y (i) w | x) -β log π θ (y (i) l | x) π ref (y (i) l | x) = -log 1 1 + exp(β log π θ (y (i) l |x) π ref (y (i) l |x) -β log π θ (y (i) w |x) π ref (y (i) w |x) ) = -log exp(β log π θ (y (i) w |x) π ref (y (i) w |x) ) exp(β log π θ (y (i) w |x) π ref (y (i) w |x) ) + exp(β log π θ (y (i) l |x) π ref (y (i) l |x) ) = -log π θ (y (i) w |x) β π ref (y (i) w |x) β π θ (y (i) w |x) β π ref (y (i) w |x) β + π θ (y (i) l |x) β π ref (y (i) l |x) β = -log π θ (y (i) w | x) β π θ (y (i) w | x) β + π θ (y (i) l | x) β ( π ref (y (i) w |x) π ref (y (i) l |x) ) β .</formula><p>From this equation, we observe that ℓi(θ) can be minimized to be zero by minimizing π θ (y</p><formula xml:id="formula_20">(i) l | x) to be zero without maximizing π θ (y (i) w | x). That is, for any β &gt; 0, if π θ (y (i) l | x) = 0, ℓi(θ) = -log π θ (y (i) w | x) β π θ (y (i) w | x) β + 0 = -log 1 = 0.</formula><p>Thus, even if we sample y * with the optimal policy, ℓi(θ) can be minimized without maximizing π θ (y * | x) and minimizing π θ (ȳ|x) for ȳ ̸ = y Therefore, if ȳ is never sampled over m iterations, since the probabilities sums up to one, we have</p><formula xml:id="formula_21">π θ (y * | x) ≤ 1 -π θ (ȳ|x) ≤ 1 -c.</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Moreover,</head><p>Pr[ ȳ being never sampled over m iterations ] ≥ (1 -2ϵ) m ≥ 1 -2ϵm, where the last line follows Bernoulli's inequality. By combining the above two equations, it holds that</p><formula xml:id="formula_22">Pr[π θ (y * |x) ≤ 1 -c] ≥ 1 -2ϵM.</formula><p>Proof of Theorem 3.2.</p><p>Proof. From the proof of Theorem 3.1, we have</p><formula xml:id="formula_23">ℓi(θ) = -log π θ (y (i) w | x) β π θ (y (i) w | x) β + π θ (y (i) l | x) β ( π ref (y (i) w |x) π ref (y (i) l |x) ) β .</formula><p>For α ≥ 0 and β &gt; 0, the condition ℓi(θ) ≤ α implies that</p><formula xml:id="formula_24">-log π θ (y (i) w | x) β π θ (y (i) w | x) β + π θ (y (i) l | x) β ( π ref (y (i) w |x) π ref (y (i) l |x) ) β ≤ α ⇐⇒ π θ (y (i) w | x) β π θ (y (i) w | x) β + π θ (y (i) l | x) β ( π ref (y (i) w |x) π ref (y (i) l |x) ) β ≥ exp(-α) ⇐⇒ π θ (y (i) w | x) β ≥ exp(-α)π θ (y (i) w | x) β + exp(-α)π θ (y (i) l | x) β π ref (y (i) w | x) π ref (y (i) l |x) β ⇐⇒ π θ (y (i) w | x) β [1 -exp(-α)] ≥ π θ (y (i) l | x) β exp(-α) π ref (y (i) w | x) π ref (y (i) l | x) β ⇐⇒ π θ (y (i) w | x) β [1 -exp(-α)] ≥ π θ (y (i) l | x) β exp(-α) π ref (y (i) w | x) π ref (y (i) l | x) β ⇐⇒ π θ (y (i) w | x)(exp(α) -1) 1/β π ref (y (i) l | x) π ref (y (i) w | x) ≥ π θ (y (i) l | x).</formula><p>Since π θ (y</p><formula xml:id="formula_25">(i) w | x) ≤ 1, this implies that π θ (y (i) l | x) ≤ π θ (y (i) w | x)(exp(α) -1) 1/β π ref (y (i) l | x) π ref (y (i) w | x) ≤ (exp(α) -1) 1/β π ref (y (i) l | x) π ref (y (i) w | x) .</formula><p>Thus, while we can prove a similar statement for α &gt; 0 with this equation, we set α = 0 for this theorem for a cleaner insight, yielding the following: the condition ℓi(θ) ≤ 0 implies that π θ (y</p><formula xml:id="formula_26">(i) l | x) = 0.</formula><p>Since y (i) and y ′(i) are sampled from π θ (i) without replacement, this means that we have π θ (i+k) (y</p><formula xml:id="formula_27">(i) l</formula><p>| x) = 0 for all k ≥ 1 from the definition of π θ (i) : i.e., π θ (i) is the policy such that ℓj(θ (i) ) = 0 for all j = 1, . . . , i -1. Since π θ (i+k) is then used to sample y (i) and y ′(i) in the followings iterations for k ≥ 1, we will never sample this y (i) l again. Thus, at each iteration, we always sample pairs of y and y ′ such that these do not include an output judged to be not preferred in a previous iteration. This implies that at each iteration, we increase the number of suboptimal samples ȳ ∈ Y such that π θ (i) (ȳ | x) = 0. In other words, we have</p><formula xml:id="formula_28">|{ȳ ∈ Y | π θ (i) (ȳ | x) = 0} |≥ i -1. Thus, π θ (i) (y * | x) = 1 - n j=1 π θ (i) (ȳj | x) = 1 - j∈S π θ (i) (ȳj | x).</formula><p>where</p><formula xml:id="formula_29">|S| ≤ n + 1 -i. Therefore, π θ (i) (y * | x) = 1 when i ≥ n + 1.</formula><p>Additional discussion. We list the additional insights gained from the theoritical analysis.</p><p>• The proofs of Theorems 3.1-3.2 suggest that a better sampling policy is to use both the current policy and the optimal policy at the same time in the preference learning loss, i.e., sample y ∼ π * and y ′ ∼ π θ (i-1) . This avoids the failure case of Theorem 3.1 and improves the convergence speed in Theorem 3.2. However, since we cannot access the optimal policy π * in practice, Theorems 3.1-3.2 motivate online DPO. Online DPO is proven to enable us to converge to an optimal policy even if we cannot sample outputs from the optimal policy.</p><p>• The proofs of Theorems 3.1-3.2 suggest that if we can sample from the optimal policy, then we can also use the samples of the optimal policy with the negative log-likelihood loss -log π θ (y * | x) instead of DPO loss to avoid the failure case.</p><p>• The proofs of Theorems 3.1-3.2 suggest that in the online setting, we should minimize the DPO loss to a certain low degree per iteration, i.e., we should take several rounds of minimization of DPO loss per online iteration, instead of only taking one round of minimization per iteration. This is because the proofs of Theorems 3.1-3.2 show that we can get into the cyclic situation in the online setting if the DPO loss is not minimized sufficiently per iteration. For example, we can sample ȳ1 and ȳ2 in one iteration and ȳ2 and ȳ3 in another iteration where ȳ1 ≻ ȳ2 ≻ ȳ3. If the probability of sampling ȳ2 is not minimized sufficiently in the first iteration, it can be sampled again in the second iteration, where the probability of sampling ȳ2 can be increased as ȳ2 ≻ ȳ3. Then, this can repeat indefinitely. Thus, it is important to minimize DPO loss with several optimizer iterations per iteration.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Implementation Details</head><p>We use Mistral-7B as our base pre-trained model. The supervised fine-tuning and preference learning experiments are conducted with a maximum of 4 × 40GB GPUs (NVIDIA A100).</p><p>We choose the learning rates 5e-6 and 1e-6 for SFT and DPO training, respectively, with a cosine learning rate scheduler. The maximum sequence length of models is 512. We train the model with a batch size of 128 and 32 for SFT and DPO, respectively. For DPO, we follow the DPO paper to set the KL constraint parameter β as 0.1. Each sample in DPO is a set of step-level preference data decomposed by MCTS. We set the max length for each step as 64. The number of MCTS iterations is set as K = 5 for all tasks.</p><p>For arithmetic reasoning, we combine the problems in GSM8K and MATH training sets as the prompt data containing a total of 24K samples for preference learning. For each sample, we conduct MCTS with an initial breadth of b1 = 5 and decrease it to b2 = 3 for the subsequent steps, with a maximum search depth d = 4. It takes about 2 minutes per sample to collect the step-level preferences via MCTS. This requires about 30 A100 days of compute to train one whole epoch. In practice, we can adopt an early stop when the performance saturates, which usually only needs 30% of the training data.</p><p>For commonsense reasoning, we combine the training data of ARC, AI2Science, OBQA, and CSQA, which produces a total of 12K samples. As the model generations are more diversified on these tasks, we set the initial breadth as b1 = 4 and decrease it to b2 = 2 for subsequent steps. As the intermediate reasoning chains are relatively shorter than those in arithmetic reasoning, we set the maximum search depth d = 3. Likewise, we also adopt an early stop at around 50% of the training progress where the performance saturates.</p><p>Hyperparameter Tuning of MCTS. We compare the performance in commonsense reasoning when employing different searching breadths in MCTS. Table <ref type="table" target="#tab_1">5</ref> shows how different search heuristics impact learning performance. O2 produces better performance, highlighting the importance of increasing the search space at the beginning point of MCTS. One can efficiently reduce compute while maintaining good performance by using a small search space for the subsequent steps. For future work, we will explore the hyperparameter settings in MCTS, including the search breadth, depth, number of steps, and iteration time, to probe the cost-performance tradeoff of our MCTS-enhanced iterative learning framework. Table 6: Evaluation Prompt Template. The text underlined will be replaced with content from different examples.</p><p>QUESTION: Which of the following is an example of the formation of a mixture? Answer Choices: (A) rust forming on an iron nail (B) sugar crystals dissolving in water (C) sodium and chlorine forming table salt (D) hydrogen and oxygen reacting to produce water EXAMPLE ANSWER: The answer is (B) sugar crystals dissolving in water</p><formula xml:id="formula_30">PROPOSED SOLUTION:</formula><p>The formation of a mixture occurs when two or more substances are combined together without changing their individual properties. In the given options, rust forming on an iron nail is an example of the formation of a mixture. The iron nail and the oxygen in the air combine to form iron oxide, which is a mixture. The answer is A.</p><p>QUESTION: Evaluate if the proposed solution is logically heading in the correct direction.</p><p>Provide an answer of (A) correct or (B) incorrect.</p><p>ANSWER: The answer is</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Further Analysis</head><p>Reward Criteria in MCTS. We probe the effect of different reward guidance of MCTS in terms of both searching and training. Table <ref type="table" target="#tab_2">7</ref> shows how different reward signals impact the pass rate of searching. The guidance of outcome correctness is substantially dominant in eliciting correct outcomes. We see that MCTS can produce significant improvement across various tasks with the reward signals integrated of outcome correctness and self-evaluation, increasing the baseline performance from 60.6% to 83.0% on ARC-C, 70.9% to 90.5% on AI2Sci-M, and 75.9% to 85.8% on GSM8K. We observe a significant performance gain from learning when using greedy decoding on commonsense reasoning. For example, learning increases the accuracy to 76.4% (+16.4%) on ARC-C, compared to the increase of 9.1% on MCTS performance. This suggests a substantial improvement in the model's policy when applying our MCTS-enhanced iterative learning to tasks that the initial policy is not good at. Furthermore, the ablation study on the reward components shows consistent improvement brought by self-evaluation to increase the MCTS performance in both before-and after-learning cases, suggesting the effectiveness of the integration of self-evaluation in our approach. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Qualitative Analysis on Collected Preferences.</head><p>We show examples of the result search trees elicited via MCTS on different tasks in Figures <ref type="figure" target="#fig_6">5</ref><ref type="figure" target="#fig_7">6</ref><ref type="figure">7</ref><ref type="figure">8</ref><ref type="figure">9</ref>.</p><p>Figures <ref type="figure" target="#fig_6">5</ref> and <ref type="figure" target="#fig_7">6</ref> show the result search trees to answer the same science question using MCTS employed with different search breadths. We see that MCTS not only figures out the correct answer (i.e., the option "D") via broad searching but also serves as a policy improvement optimizer to collect steps along this path as positive samples for preference learning. For example, the Q values of the preference pair at the last step (at the bottom right of Figure <ref type="figure" target="#fig_6">5</ref>) are 0.70838 and -0.45433, compared to the original probability in the policy generation as 0.37989 and 0.38789. Compared to searching with breadth b1 = 4, b2 = 2 in Figure <ref type="figure" target="#fig_6">5</ref>, Figure <ref type="figure" target="#fig_7">6</ref> shows that a higher breadth for the subsequent steps can produce an even larger search tree. However, as we only collect preference pairs alongside the paths leading to correct prediction, these two search heuristics can result in preference data of similar size.</p><p>Figure <ref type="figure">7</ref> shows the search tree using the trained policy on commonsense reasoning. Compared to the one generated by the initial policy in Figure <ref type="figure" target="#fig_6">5</ref>, the policy has a higher chance to elicit correct reasoning chains, as we see more successful predictions of the ground-truth option "D". We also observe that the policy tends to generate longer reasoning chains after being motivated to conduct chain-of-thought reasoning with fine-grained process supervision.</p><p>On arithmetic reasoning, we also probe the impact of diversity in model generations using policies trained for different numbers of epochs in SFT. Figures <ref type="figure">8</ref> and <ref type="figure">9</ref> show the elicited search trees with data sampled by policies corresponding to different levels of diversity, where the policy used in Figure <ref type="figure">8</ref> has generations with higher diversity. With higher diversity, MCTS can explore more alternatives of the correct solutions, as there are more paths of correct predictions, as shown in Figure <ref type="figure">8</ref> than Figure <ref type="figure">9</ref>. Furthermore, higher diversity with reasonable quality also provide more fine-grained supervision signals as there are more branches alongside the reasoning path of correct predictions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E Extended Experiments</head><p>Loss Function. DPO is one of the reward-model-free loss functions we can use for preference learning. We now illustrate the generalizability of our approach using another loss function, Identity Preference Optimization (IPO) <ref type="bibr" target="#b1">(Azar et al., 2023)</ref>, which addresses the overfitting problem of DPO. Table <ref type="table" target="#tab_3">8</ref> shows that IPO achieves similar performance as DPO. In practice, we find that IPO boosts the reasoning on validation tasks while maintaining a more stable performance on the held-out dataset, as indicated by the higher accuracy 89.8% obtained on SciQ. Base Model. We extensively validate the generalizability of our approach on Llama2-13B <ref type="bibr">(Touvron et al., 2023)</ref> on arithmetic reasoning. We employ the same process of SFT on Arithmo and preference learning with DPO on GSM8K and MATH. This experiment is done on a maximum of 2 × 80GB GPUs (NVIDIA A100).  [50] &lt;s&gt; (Q:0.00000)(P:-1.00000)</p><p>[5] . When 1 CH4 molecule reacts 2 O2 molecules are needed with 2 Co2 molecules and 4 H2O molecules formed. (Q:0.16088)(P:0.36265) [0] Balance the equation by writing the correct equation above and then subtracting each part from both in the following: New equation: 2CH4 + 4 O2 -&gt; 4Co2 + 8 H2O (Q:0.01167)(P:0.22393) [2] Balanced Equation: CH4 + 2 O2 -&gt; 2 CO2 + 4 H2O (Q:-0.72269)(P:0.76063) [1] Hence 'excess' O2 molecules need to be formed to form the H2O needed to completely balance the oxygen formed. 2 O2 molecules will form 2 H2O molecules that exactly balance the 2 O2 molecules that were formed. Thus there is NO (Q:-0.03828)(P:0.18065) [0] Therefore 2 oxygen molecules are needed. The answer is B&lt;/s&gt; (Q:-1.07299)(P:0.57110) [0] O2 is a di molecular gas so 2. The answer is B&lt;/s&gt; (Q:-1.07995)(P:0.13073) [2] So, 2/2 O2/1 CH4 =&gt; 1 O2 for 1 CH4 In the unbalanced equation 1 CH4 + 1 O2 -&gt; 2 CO2 + 2 H2O So 1 O2 would balance the given equation. (Q:-1.16414)(P:0.37983) [1] The answer is A&lt;/s&gt; (Q:-1.09599)(P:0.92723) [0] ( For a balanced equation Number of atoms of same element on the two sides should be equal ) Correct Answer The correct answer is A&lt;/s&gt; (Q:-1.10798)(P:0.23028) [5] . CH4 + O2 -&gt; 2CO2 + 4H2O By looking at Answer choices We can see that we need to find a multiple of O2. If we take 2 O2. Then we can have 2 CO2. (Q:0.00566)(P:0.33311) [2] That means we need 2 to balance answer. The next one would be 4 CO2. For Balancing, We need 4 as well. The choice is 2. (Q:-1.36182)(P:0.21155) [0] The answer is B 2 O2.&lt;/s&gt; (Q:-1.32715)(P:0.42094) [0] The answer is 2 ANSWER:B&lt;/s&gt; (Q:-1.39801)(P:0.59756) [1] The answer is B&lt;/s&gt; (Q:-1.29846)(P:0.91250) [0] Hence Answer. (Q:-0.01028)(P:0.35430) [2] Thus Balanced Equation, CH4 + 2 O2 -&gt; 2 CO2 + 4H2O Take 1 O2. Then we need only 1 CO2. Thus, Take 2 CO2. (Q:-1.00641)(P:0.44905) [1] Thus the Balanced Equation, CH4 + 1 O2 -&gt; 2 CO2 + 4H2O Thus the Balanced Equation, CH4 + 1 O2 -&gt; 2 CO2 + 4H2O The equation gets balanced by having Two (Q:-0.00585)(P:0.54334) [0] We need only 1 O2. So Answer is O2. Therefore, Take 2 O2. The Equation is Balanced. Take 2 O2 The answer is Option B&lt;/s&gt; (Q:-1.55572)(P:0.35634) [0] And then we need O2. Total Answer, CH4 + O2 -&gt; 2CO2 + 4H2O Hence 1 Mole of The answer is A&lt;/s&gt; (Q:-1.37009)(P:0.35589) [31] . The overall reaction is 24 in H, 32 in C, and 0 in O, so it's clearly a hydrocarbon combustion. Balancing the overall equation is not very clear. This unbalanced equation can be balanced to show the oxygen requirement. (Q:1.18694)(P:0.15714) [2] CH4 + O2 -&gt; CO2 + H2O The total oxygen requirement should be 2. The ratio CH4 to O2 is 1 to 1, suggesting oxygen demand is 1 to 2. (Q:-1.43110)(P:0.23469) [0] CH4 + 2 O2 -&gt; 2 CO2 + 2 H2O Therefore, 2 molecules of oxygen gas are needed to balance the equation The answer is B&lt;/s&gt; (Q:-1.41782)(P:0.63130) [0] The answer is B&lt;/s&gt; (Q:-1.43029)(P:0.65357) [1] CH4 + 2 O2 -&gt; 2 CO2 + 2 H2O. The answer is B&lt;/s&gt; (Q:-1.40455)(P:0.66416) [31] 2C +2 H_2O + O2 -&gt; 2CO2 + 2 H2O The balanced equation uses more oxygen, because now it shows that one molecule of each element on either side is balanced by two molecules of each element. (Q:0.33569)(P:0.20021) [4] Oxygen is not the limiting reagent, because hydrogen is. 2C +2 H_2O + O2 -&gt; 2CO2 + 2 H2O 1+2+1 -2 = 6 3+2+1 -4 = 4 Total 6 for (Q:0.02011)(P:0.27802) [0] both sides with the balanced equation. Now look at the oxygen. Before it was 2, and then it was 4, a doubling of oxygen requirement. If a tripling of oxygen requirement is needed to balance the equation, then it will be 8. If 3 is needed, then it goes (Q:0.03925)(P:0.18201) [1] left side, 4 for right side; not balanced --H2O is limiting, only 2 more are needed. 2+2+1 -2 = 6 3+2+1 -6 = 2 Answer ; H2O is limiting; needs two more molecules. (Q:0.06306)(P:0.22207) [18] The answer is D&lt;/s&gt; (Q:0.68647)(P:0.46097) [3] That balances the equation and the two waters from the combustion are now together. The new equation is balanced (because the number next to each element is balanced by the number of times it appears on the other side of the equation) and clearly requires two molecules of O2. Final The answer is (Q:-1.19775)(P:0.19619) [1] B&lt;/s&gt; (Q:-0.54880)(P:0.78020) [0] B&lt;/s&gt; (Q:-0.97030)(P:0.71450) [3] Here 22C+240H+260(total molecular weight) Then Both sides are divided by 2. 1/212C+1/240H+1/4600(total molecular weight) (Q:-0.02526)(P:0.14846) [1] Now Since 2O2 is required for 4600*1/4. 2O2 is needed for overall equation. 212C+240H+2600(total molecular weight) 1/212C+1/240 (Q:0.02280)(P:0.33173) [1] 1/21 + 1/4 + 1/4600 = 1/4600(total molecular weight) 46 + 0 + 0 = 46 2(46+260)2(46) Therefore, you (Q:0.03093)(P:0.29965) [0] The total molecular weight represents the amount of oxygen gas required when the 12C is completely combusted. (12C+16H+260) Hence 1 mole (1 * 64) of oxygen gas need 12C, 16H, and (Q:0.03317)(P:0.17285) Tree Visualization [50] &lt;s&gt; (Q:0.00000)(P:-1.00000) [2] Since there are two hydrogen atoms for every one carbon atom, we know there must be twice as many carbon atoms as hydrogen atoms on the left side of the equation. We can write CH4 as C H 2. (Q:0.29309)(P:0.42767)</p><p>[1] With two hydrogen atoms, we would need 2 * 2 = 4 to balance the oxygen. The answer is D.&lt;/s&gt; (Q:1.20966)(P:0.42097) [0] To balance the oxygen atoms we need to add one oxygen atom for each carbon atom. Therefore we need 2 oxygen atoms to balance this equation. The answer is B.&lt;/s&gt; (Q:-0.83019)(P:0.50695) [0] Since there are 2 hydrogen atoms in methane (CH4), 2 hydrogen atoms are converted to 2 water molecules (2 H2O) that yield 2 oxygen atoms in the process. Balance equation: (Q:0.01158)(P:0.32396) <ref type="bibr">[3]</ref> . When an equation is unbalance, we have to add the same molecule to both sides so they will balance.</p><p>In this case, we need to add equal number of oxygen atoms to both sides.</p><p>The overall reaction is: (Q:0.53122)(P:0.24138) [0] CH_{4} + 2CO_{2} + 4 H_{2}O, This now balances the equation. (Q:0.01760)(P:0.25560) [2] CH_{4} + /Box O_{2} -&gt; 2CO_{2} + 4H_{2}O Since, CH_{4} has 4 Hydrogen and 1 Carbon atoms. Hence, (Q:-0.27509)(P:0.59783) [1] carbon atom reacts with 4 oxygen atoms. Therefore, 2CO_{2} will have 4 oxygen atoms. So equation will be: CH_{4} + 4 O_{2} -&gt; 2CO_{2} + 4H_{2}O The answer is D. (Q:0.19991)(P:0.49764) [0] it will need 2 Oxygen atoms just to balance the O atoms. The answer is B&lt;/s&gt; (Q:-0.84370)(P:0.32001) [29] . First, we need to check which element is missing on both sides of the equation. We know that oxygen (O) is missing on the left side. (Q:1.73437)(P:0.39171) [2] We figure this out because on the right side, 2(CO2) means 4(O) and 4(H2O) means 8(O), which is more oxygen than what is needed to fulfill the 2(CO2). (Q:0.17238)(P:0.33288)</p><p>[0] Therefore, the left uses 1(O) twice, for a total of 2(O). Second, we must find out how many oxygen molecules are needed to get a balanced equation. We balance by adding the same thing to both sides that can be multiplied the same on each side. In this (Q:0.03162)(P:0.23481) [1] Next, we need to determine if CH4 is a limiting reagent. A limiting reagent is the reactant that is mostly likely to run out before all of the products can be made. This is important because we need to find out how many times we need to multiply the number of moles of oxygen (Q:-0.01939)(P:0.38211)</p><p>[33] So we need to find the number of oxygen atoms we can get from the right side and place that many on the left side.</p><p>(Q:1.16743)(P:0.35560) [22] 2CO2 has a total of 4 oxygen atoms. So, we can place 4 oxygen atoms on the left side and balance the equation. The equation is now: CH4 + 4O2 -&gt; 2CO2 + 4H2O. The answer is D.&lt;/s&gt; (Q:1.17833)(P:0.63351) [5] On the right side, we have 2 molecules of carbon dioxide (CO2) and 4 molecules of water (H2O). Each molecule of carbon dioxide has 2 oxygen atoms, so 2 x 2 = 4 oxygen atoms from the carbon dioxide (Q:0.05621)(P:0.76038) [2] . Each molecule of water has 1 oxygen atom, so 4 x 1 = 4 oxygen atoms from the water. So, we can place 4 oxygen atoms from the right side on the left side. Now, we have a balanced equation on the left side, which means we have the right (Q:0.28120)(P:0.57643) [1] number of elements with the right atomic weights. So, we can add 4 molecules of oxygen gas (O2) on the left side. The final equation is: CH4 + 4O2 -&gt; 2CO2 + 4H2O The answer is D.&lt;/s&gt; (Q:1.30184)(P:0.55775) [0] number of each element on both sides. The left side has 4 oxygen atoms, so we need 2 molecules of oxygen gas (O2) to complete the reaction. The answer is B.&lt;/s&gt; (Q:-0.74346)(P:0.58410) [0] . Each molecule of water has 2 hydrogen atoms and 1 oxygen atom, so 4 x 1 = 4 oxygen atoms from water. A total of 4 oxygen atoms is available from the right side. Now, we need to place 2 oxygen atoms on the left side of the equation (Q:-0.08359)(P:0.63161) [5] . The chemical formula for methane gas is CH4. The chemical formula for oxygen gas is O2. The chemical formula for carbon dioxide is CO2. The chemical formula for water is H2O. (Q:0.31012)(P:0.81115) [2] To balance this equation, we need to determine the ratio of the number of molecules of O2 to the number of molecules of CO2 and H2O. On the left side of the equation, we have 1 molecule of CH4 and x molecules of O2. (Q:0.09074)(P:0.80392) [1] On the right side of the equation, we have 2 molecules of CO2</p><p>and 4 molecules of H2O. To balance the number of molecules, we need to have 2 molecules of CO2 for every 1 molecule of CH4, and we need to have (Q:-0.02205)(P:0.81702) [0] On the right side of the equation, we have 2 molecules of CO2 and 4 molecules of H2O. Since the coefficient of CO2 is 2 and the coefficient of H2O is 4, the ratio of the number of molecules of O2 to the number of (Q:-0.04654)(P:0.79002) [2] To balance this equation, we need to compare the number of oxygen atoms on the two sides. There are 4 oxygen atoms on the right side of the equation. Therefore, we need 4 oxygen atoms on the left side of the equation to properly balance the equation.</p><p>(Q:-0.71715)(P:0.59589) [49] &lt;s&gt; (Q:0.00000)(P:-1.00000)</p><p>[6] The bakers baked 200 loaves of bread in total. They sold 93 loaves in the morning and 39 loaves in the afternoon, so they sold 93 + 39 = 132 loaves. (Q:0.74724)(P:0.87045) [0] A grocery store returned 6 unsold loaves, so they have 200 -132 + 6 = 78 loaves left. (Q:0.02081)(P:0.79960) [2] They also returned 6 unsold loaves, so they had 132 -6 = 126 loaves left. (Q:-0.88117)(P:0.89317)</p><p>[1] Therefore, they had 126 loaves of bread left. The answer is: 126&lt;/s&gt; (Q:-0.89611)(P:0.95100)</p><p>[0] The answer is: 126&lt;/s&gt; (Q:-0.90947)(P:0.96013) [3] After selling, they had 200 -132 = 68 loaves of bread left. The grocery store returned 6 unsold loaves, so they had 68 + 6 = 74 loaves of bread left.</p><p>(Q:1.18816)(P:0.89653) [2] The answer is: 74&lt;/s&gt; (Q:1.06829)(P:0.99951) [3] The bacon factory produced 200 -93 = 107 loaves on Monday. Then they produced 200 -39 = 161 loaves on Tuesday. (Q:-0.06717)(P:0.47814) [0] So the company baked a total of 107 + 161 = 268 loaves of bread. (Q:0.00192)(P:0.62347) [0] They had 161 + 107 -6 = 252 -6 = 246 loaves on hand They have 246 loaves of bread left. (Q:-0.01176)(P:0.51426) [2] They have 107 + 161 -6 = 254 loaves left. (Q:-1.01392)(P:0.71103) [1] The answer is 254&lt;/s&gt; (Q:-1.00238)(P:0.99992) [30] They sold 93 loaves in the morning and 39 loaves in the afternoon, so they sold a total of 93 + 39 = 132 loaves of bread. (Q:1.44411)(P:0.84845) [11] So, they have 200 -132 = 68 loaves of bread left. The grocery store returned 6 unsold loaves, so they have 68 + 6 = 74 loaves of bread left. (Q:1.13120)(P:0.80345) [10] The answer is: 74&lt;/s&gt; (Q:0.99283)(P:0.99903) [2] The grocery store returned 6 unsold loaves, so the total number of loaves of bread they did not sell is 132 + 6 = 138 loaves. (Q:-0.49569)(P:0.65347) [0] They started with 200 loaves and sold 138 loaves, so they have 200 -138 = 62 loaves of bread left. The answer is: 62&lt;/s&gt; (Q:-0.99298)(P:0.93236) [1] They baked 200 loaves of bread,</p><p>so the total number of loaves of bread they had from the beginning is 200. To find the number of loaves of bread they had left, we subtract the number of loaves they did not sell from the total number of (Q:-0.07920)(P:0.77642) [21] They had 200 loaves baked and sold 132 loaves, so they had 200 -132 = 68 loaves of bread left. (Q:1.14610)(P:0.89809)</p><p>[15] The grocery store returned 6 unsold loaves, so they had 68 + 6 = 74 loaves of bread left. The answer is: 74&lt;/s&gt; (Q:1.08365)(P:0.98273) Tree Visualization Figure <ref type="figure">8</ref>: Example of the result search tree of a GSM8K question "The bakers at the Beverly Hills Bakery baked 200 loaves of bread on Monday morning. They sold 93 loaves in the morning and 39 loaves in the afternoon. A grocery store returned 6 unsold loaves. How many loaves of bread did they have left?". The example solution is "The Bakery sold 93 + 39 = 132 loaves. The Bakery made 200 loaves and sold 132, leaving 200 -132 = 68 loaves remaining. The grocery store returned 6 loaves, so there were 6 + 68 = 74 loaves left.". The policy we use here is the one only tuned for 1 epoch on SFT training data. We conduct MCTS with breadth b 1 = 5, b 2 = 3. Duplicate generations are merged into one node.</p><p>[46] &lt;s&gt; (Q:0.00000)(P:-1.00000)</p><p>[3] The bakery baked 200 loaves of bread on Monday morning. They sold 93 loaves in the morning and 39 loaves in the afternoon, so they sold a total of 93 + 39 = 132 loaves. (Q:0.25430)(P:0.93239)</p><p>[2] They also had 6 loaves returned by the grocery store. To find out how many loaves of bread they have left, we need to subtract the loaves they sold and the returned loaves from the total number of loaves baked. (Q:-1.05085)(P:0.79282)</p><p>[0] 200 -132 + 6 = 78 The bakery has 78 loaves of bread left. The answer is: 78&lt;/s&gt; (Q:-1.07053)(P:0.84111)</p><p>[1] So, 200 -132 -6 = 62 Therefore, they have 62 loaves of bread left. The answer is: 62&lt;/s&gt; (Q:-1.07033)(P:0.91906) [0] A grocery store returned 6 unsold loaves, so the total number of loaves they have left is 200 -132 + 6 = 88 loaves. (Q:-0.02430)(P:0.80175)</p><p>[0] A grocery store returned 6 unsold loaves, so they had 132 -6 = 126 loaves left. Therefore, the bakery had 200 -126 = 74 loaves of bread left. (Q:-0.03073)(P:0.89432)</p><p>[3] They had 200 -93 = 107 loaves left after the morning sales. They had 107 -39 = 68 loaves left after the afternoon sales. (Q:-0.52703)(P:0.86016)</p><p>[2] They had 68 -6 = 62 loaves of bread left after the grocery store returned the unsold loaves.</p><p>(Q:-1.05568)(P:0.80182)</p><p>[1] The answer is 62&lt;/s&gt; (Q:-1.06738)(P:0.99711)</p><p>[30] After the morning sales, they had 200 -93 = 107 loaves of bread left. After the afternoon sales, they had 107 -39 = 68 loaves of bread left. (Q:1.65898)(P:0.80497) <ref type="bibr">[34]</ref> After the grocery store returned the loaves, they had 68 + 6 = 74 loaves of bread left. (Q:1.13097)(P:0.91597) <ref type="bibr">[28]</ref> The answer is 74&lt;/s&gt; (Q:0.98327)(P:0.99718) Tree Visualization Figure <ref type="figure">9</ref>: Example of the result search tree of the same GSM8K question as in Figure <ref type="figure">8</ref> with the same search breadth. We use the policy tuned after 3 epochs to sample the generations.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure1: Monte Carlo Tree Search (MCTS) boosts model performance via iterative preference learning. Each iteration of our framework (on the left) consists of two stages: MCTS to collect step-level preferences and preference learning to update the policy. Specifically, we use action values Q estimated by MCTS to assign the preferences, where steps of higher and lower Q values will be labeled as positive and negative data, respectively. The scale of Q is visualized in the colormap. We show the advantage of the online manner in our iterative learning framework using the validation accuracy curves as training progresses on the right. The performance of ARC-C validation illustrates the effectiveness and efficiency of our proposed method compared to its offline variant.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><figDesc>for Step-Level Preference Data Collection */ For each x ∈ D (i) P , elicit a search tree of depth T via qπ θ (• | x).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Performance on the validation set of ARC-C via training with different settings.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Abltation study on step-vs. instance-level supervision, online vs. offline learning, and w/ vs. w/o G.T. supervision. We also compare the accuracy of the training signals collected via MCTS or instance-level sampling.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>Recent research has explored several alternatives to label the examples.Zelikman et al. (2022) and Gülçehre et al. (2023) use static reward heuristic to curate high-quality examples, while Huang et al. (2023)collect highconfidence outputs as training data via chain-of-thought prompting<ref type="bibr" target="#b45">(Wei et al., 2022)</ref> and self-consistency(Wang  et al., 2023b).<ref type="bibr" target="#b21">Lee et al. (2023)</ref> and<ref type="bibr" target="#b54">Yuan et al. (2024)</ref> utilize the off-the-shelf LLM to reward its generations for preference learning. To mitigate the noise from the sparse instance-level signals, we further refine the preference labels via stepwise tree search and LLM self-evaluation.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><figDesc>(i) l . Thus, if ȳ ̸ = y (i) l for all i ∈ {1, 2, • • • , M }, there exists θ such that ℓi(θ) ≤ 0 for all i = 1, . . . , M , and π θ (ȳ | x) ≥ c, because of the condition that π θ (ȳ | x) ≥ c for some i ∈ {1, 2, • • • , M }: i.e., π θ (ȳ | x) is never minimized from the i-th iteration while minimizing ℓi(θ) arbitrarily well, if ȳ is never sampled.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Example of the result search tree of a science question "An unbalanced equation for the reaction of methane gas (CH 4 ) with oxygen is shown below. CH 4 + □O 2 → 2CO 2 + 4H 2 O How many molecules of oxygen gas (O 2 ) are needed to properly balance this equation? Answer Choices: (A) 1 (B) 2 (C) 3 (D) 4". The ground truth answer is "(D) 4". Here, we set the search breadth as b 1 = 4, b 2 = 2. The numbers at the beginning of each sequence indicate the visit count N of the corresponding node, while the Q and P values at the end of the sequence represent the Q values and the sentence probability, respectively.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Example of the result search tree of the same science question as in Figure 5. Here, we set the search breadth as b 1 = 3, b 2 = 3.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><figDesc>[3] . Looking at the products of the reaction we can see that there are 4 O atoms on the right side. 4 atoms of either oxygen or hydrogen must come from the left side to balance. (Q:0.81835)(P:0.21888)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>[ 0 ]Figure 7 :</head><label>07</label><figDesc>Figure 7: Example of the result search tree of the same science question as in Figure 5. Here, we use the policy after preference learning and set the search breadth as b 1 = 4, b 2 = 2.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 3 :</head><label>3</label><figDesc>Ablation of "EXAMPLE ANSWER" in self-evaluation on GSM8K, MATH, and ARC-C.We report AUC and accuracy (%) to compare the discriminative abilities of self-evaluation scores.</figDesc><table><row><cell>Approach</cell><cell></cell><cell>GSM8K</cell><cell></cell><cell>MATH</cell><cell></cell><cell>ARC-C</cell></row><row><cell></cell><cell cols="6">AUC Accuracy AUC Accuracy AUC Accuracy</cell></row><row><cell>w/ example answer</cell><cell>74.7</cell><cell>72.5</cell><cell>76.6</cell><cell>48.8</cell><cell>65.2</cell><cell>57.5</cell></row><row><cell cols="2">w/o example answer 62.0</cell><cell>69.5</cell><cell>48.1</cell><cell>42.3</cell><cell>55.8</cell><cell>48.4</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 5 :</head><label>5</label><figDesc>Result comparison of using different search breadths in MCTS. For O2, we have a broader spectrum for the initial step and narrow the search space for the subsequent steps of each path.Prompt Example. See an example of the evaluation prompt we use for self-evalution in Table6. For more details, please refer to our implementation code.</figDesc><table><row><cell>Approach</cell><cell cols="7">ARC-e ARC-c AI2Sci-e AI2Sci-m OBQA CSQA SciQ</cell></row><row><cell>SFT Baseline</cell><cell>69.2</cell><cell>60.6</cell><cell>74.9</cell><cell>70.9</cell><cell>59.8</cell><cell>54.1</cell><cell>80.8</cell></row><row><cell>O1 (b1 = 3, b2 = 3)</cell><cell>88.4</cell><cell>74.7</cell><cell>92.1</cell><cell>88.5</cell><cell>77.8</cell><cell>73.2</cell><cell>88.3</cell></row><row><cell>O2 (b1 = 4, b2 = 2)</cell><cell>88.5</cell><cell>76.4</cell><cell>91.7</cell><cell>88.2</cell><cell>79.2</cell><cell>74.8</cell><cell>88.5</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 7 :</head><label>7</label><figDesc>Pass Rates when Ablating MCTS Settings. SE represents the guidance from self-evaluation.</figDesc><table><row><cell cols="2">Decoding Strategy After Learning</cell><cell>ARC-C</cell><cell cols="2">AI2Sci-M GSM8K</cell></row><row><cell>Greedy Decoding</cell><cell>✗ ✓</cell><cell cols="3">60.6 76.4↑16.4 88.2↑17.3 80.7↑5.2 70.9 75.9</cell></row><row><cell>MCTS w/o SE</cell><cell>✗ ✓</cell><cell>82.5 91.0↑8.5</cell><cell>87.3 96.1↑9.8</cell><cell>84.4 89.0↑5.6</cell></row><row><cell>MCTS</cell><cell>✗ ✓</cell><cell>83.0 92.1↑9.1</cell><cell>90.5 97.3↑6.8</cell><cell>85.8 90.2↑4.4</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 8 :</head><label>8</label><figDesc>Result comparison of employing our approach with different loss functions.</figDesc><table><row><cell>Approach</cell><cell cols="7">ARC-e ARC-c AI2Sci-e AI2Sci-m OBQA CSQA SciQ</cell></row><row><cell>SFT Baseline</cell><cell>69.2</cell><cell>60.6</cell><cell>74.9</cell><cell>70.9</cell><cell>59.8</cell><cell>54.1</cell><cell>80.8</cell></row><row><cell>O1 (IPO)</cell><cell>88.1</cell><cell>75.1</cell><cell>92.1</cell><cell>89.6</cell><cell>76.8</cell><cell>74.3</cell><cell>89.8</cell></row><row><cell>O2 (DPO)</cell><cell>88.5</cell><cell>76.4</cell><cell>91.7</cell><cell>88.2</cell><cell>79.2</cell><cell>74.8</cell><cell>88.5</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 9 :</head><label>9</label><figDesc>Result comparison (accuracy %) for Llama2-13B on arithmetic tasks.</figDesc><table><row><cell>Approach</cell><cell cols="4">Base Model GSM8K-CoT GSM8K-PoT MATH-CoT</cell></row><row><cell cols="2">SFT (Arithmo) Llama2-13B Ours</cell><cell>74.5 78.9↑4.4</cell><cell>62.3 67.0↑4.7</cell><cell>23.8 26.1↑2.3</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_0"><p>For tasks (e.g., MATH) where the initial policy performs poorly, we also include the ground-truth reasoning steps for training. We detail the step definition for different tasks with examples in Appendices C and D.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_1"><p>We show an example of evaluation prompt in Table6.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_2"><p>The terminal state is reached when the whole response is complete or exceeds the maximum length.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_3"><p>https://huggingface.co/datasets/akjindal53244/Arithmo-Data</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_4"><p>https://www.nscc.sg/</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgments and Disclosure of Funding</head><p>The computational work for this article was partially performed on resources of the <rs type="funder">National Supercomputing Centre (NSCC)</rs>, <rs type="grantNumber">Singapore 6</rs> .</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_VQUEGJg">
+					<idno type="grant-number">Singapore 6</idno>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Thinking fast and slow with deep learning and tree search</title>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Anthony</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Barber</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 30: Annual Conference on Neural Information Processing Systems</title>
+		<meeting><address><addrLine>Long Beach, CA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2017-09">2017. 2017. December 4-9, 2017</date>
+			<biblScope unit="page" from="5360" to="5370" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">A general theoretical paradigm to understand learning from human preferences</title>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Gheshlaghi Azar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Rowland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bilal</forename><surname>Piot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniele</forename><surname>Calandriello</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michal</forename><surname>Valko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rémi</forename><surname>Munos</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2310.12036</idno>
+		<idno>CoRR, abs/2310.12036</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Yuntao</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kamal</forename><surname>Ndousse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nova</forename><surname>Dassarma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Drain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stanislav</forename><surname>Fort</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deep</forename><surname>Ganguli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Henighan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurav</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jackson</forename><surname>Kernion</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Conerly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sheer</forename><forename type="middle">El</forename><surname>Showk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nelson</forename><surname>Elhage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zac</forename><surname>Hatfield-Dodds</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Hernandez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tristan</forename><surname>Hume</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Johnston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shauna</forename><surname>Kravec</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liane</forename><surname>Lovitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Neel</forename><surname>Nanda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Catherine</forename><surname>Olsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><forename type="middle">B</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Olah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2204.05862</idno>
+		<idno>CoRR, abs/2204.05862</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuntao</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurav</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandipan</forename><surname>Kundu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jackson</forename><surname>Kernion</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Goldie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Azalia</forename><surname>Mirhoseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cameron</forename><surname>Mckinnon</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.08073</idno>
+		<title level="m">Harmlessness from ai feedback</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Rank analysis of incomplete block designs: I. the method of paired comparisons</title>
+		<author>
+			<persName><forename type="first">Ralph</forename><surname>Allan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bradley</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Milton</forename><forename type="middle">E</forename><surname>Terry</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Biometrika</title>
+		<imprint>
+			<biblScope unit="volume">39</biblScope>
+			<biblScope unit="issue">3/4</biblScope>
+			<biblScope unit="page" from="324" to="345" />
+			<date type="published" when="1952">1952</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Deep reinforcement learning from human preferences</title>
+		<author>
+			<persName><forename type="first">Paul</forename><forename type="middle">F</forename><surname>Christiano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><forename type="middle">B</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miljan</forename><surname>Martic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shane</forename><surname>Legg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 30: Annual Conference on Neural Information Processing Systems</title>
+		<meeting><address><addrLine>Long Beach, CA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2017-09">2017. 2017. December 4-9, 2017</date>
+			<biblScope unit="page" from="4299" to="4307" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Think you have solved question answering? try arc, the AI2 reasoning challenge</title>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Isaac</forename><surname>Cowhey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oren</forename><surname>Etzioni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carissa</forename><surname>Schoenick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oyvind</forename><surname>Tafjord</surname></persName>
+		</author>
+		<idno>CoRR, abs/1803.05457</idno>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Training verifiers to solve math word problems</title>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<idno>CoRR, abs/2110.14168</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Efficient selectivity and backup operators in monte-carlo tree search</title>
+		<author>
+			<persName><forename type="first">Rémi</forename><surname>Coulom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on computers and games</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2006">2006</date>
+			<biblScope unit="page" from="72" to="83" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">MME: A comprehensive evaluation benchmark for multimodal large language models</title>
+		<author>
+			<persName><forename type="first">Chaoyou</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peixian</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunhang</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yulei</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengdan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenyu</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinrui</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiawu</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ke</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xing</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rongrong</forename><surname>Ji</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2306.13394</idno>
+		<idno>CoRR, abs/2306.13394</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Monte-carlo tree search as regularized policy optimization</title>
+		<author>
+			<persName><forename type="first">Jean-Bastien</forename><surname>Grill</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florent</forename><surname>Altché</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunhao</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Hubert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michal</forename><surname>Valko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rémi</forename><surname>Munos</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="3769" to="3778" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Reinforced self-training (rest) for language modeling</title>
+		<author>
+			<persName><forename type="first">Çaglar</forename><surname>Gülçehre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><forename type="middle">Le</forename><surname>Paine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Srivatsan</forename><surname>Srinivasan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ksenia</forename><surname>Konyushkova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lotte</forename><surname>Weerts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Siddhant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ahern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miaosen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenjie</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wolfgang</forename><surname>Macherey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arnaud</forename><surname>Doucet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Orhan</forename><surname>Firat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nando</forename><surname>De Freitas</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2308.08998</idno>
+		<idno>CoRR, abs/2308.08998</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Reasoning with language model is planning with world model</title>
+		<author>
+			<persName><forename type="first">Shibo</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haodi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">Jiahua</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daisy</forename><forename type="middle">Zhe</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiting</forename><surname>Hu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing, EMNLP 2023</title>
+		<meeting>the 2023 Conference on Empirical Methods in Natural Language Processing, EMNLP 2023<address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023-12-06">2023. December 6-10, 2023</date>
+			<biblScope unit="page" from="8154" to="8173" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Revisiting self-training for neural sequence generation</title>
+		<author>
+			<persName><forename type="first">Junxian</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiatao</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiajun</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc'aurelio</forename><surname>Ranzato</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">8th International Conference on Learning Representations, ICLR 2020</title>
+		<meeting><address><addrLine>Addis Ababa, Ethiopia</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2020-04-26">2020. April 26-30, 2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Measuring mathematical problem solving with the MATH dataset</title>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurav</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akul</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Neural Information Processing Systems Track on Datasets and Benchmarks 1, NeurIPS Datasets and Benchmarks 2021</title>
+		<meeting>the Neural Information Processing Systems Track on Datasets and Benchmarks 1, NeurIPS Datasets and Benchmarks 2021</meeting>
+		<imprint>
+			<date type="published" when="2021-12">2021. December 2021</date>
+		</imprint>
+	</monogr>
+	<note>virtual</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Large language models can self-improve</title>
+		<author>
+			<persName><forename type="first">Jiaxin</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shixiang</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuexin</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongkun</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Han</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing, EMNLP 2023</title>
+		<meeting>the 2023 Conference on Empirical Methods in Natural Language Processing, EMNLP 2023<address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023-12-06">2023. December 6-10, 2023</date>
+			<biblScope unit="page" from="1051" to="1068" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Probability of error of some adaptive pattern-recognition machines</title>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">J</forename><surname>Scudder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iii</forename></persName>
+		</author>
+		<idno type="DOI">10.1109/TIT.1965.1053799</idno>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. Inf. Theory</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="363" to="371" />
+			<date type="published" when="1965">1965</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Albert</forename><forename type="middle">Q</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandre</forename><surname>Sablayrolles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Mensch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Bamford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Devendra</forename><surname>Singh Chaplot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diego</forename><surname>De Las</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florian</forename><surname>Casas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gianna</forename><surname>Bressand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guillaume</forename><surname>Lengyel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucile</forename><surname>Lample</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Saulnier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Renard</forename><surname>Lélio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marie-Anne</forename><surname>Lavaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teven</forename><surname>Stock</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thibaut</forename><surname>Le Scao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothée</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">El</forename><surname>Lacroix</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sayed</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2310.06825</idno>
+		<idno>CoRR, abs/2310.06825</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Mistral</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Language models (mostly) know what they know</title>
+		<author>
+			<persName><forename type="first">Saurav</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Conerly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Henighan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Drain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Schiefer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zac</forename><surname>Hatfield-Dodds</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nova</forename><surname>Dassarma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eli</forename><surname>Tran-Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Johnston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sheer</forename><forename type="middle">El</forename><surname>Showk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nelson</forename><surname>Elhage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tristan</forename><surname>Hume</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuntao</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Bowman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stanislav</forename><surname>Fort</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deep</forename><surname>Ganguli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Hernandez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Jacobson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jackson</forename><surname>Kernion</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shauna</forename><surname>Kravec</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liane</forename><surname>Lovitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kamal</forename><surname>Ndousse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Catherine</forename><surname>Olsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Ringer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Olah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2207.05221</idno>
+		<idno>CoRR, abs/2207.05221</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Bandit based monte-carlo planning</title>
+		<author>
+			<persName><forename type="first">Levente</forename><surname>Kocsis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Csaba</forename><surname>Szepesvári</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">European conference on machine learning</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2006">2006</date>
+			<biblScope unit="page" from="282" to="293" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">RLAIF: scaling reinforcement learning from human feedback with AI feedback</title>
+		<author>
+			<persName><forename type="first">Harrison</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samrat</forename><surname>Phatale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hassan</forename><surname>Mansoor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kellie</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Mesnard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Colton</forename><surname>Bishop</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Carbune</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Rastogi</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2309.00267</idno>
+		<idno>CoRR, abs/2309.00267</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Making language models better reasoners with step-aware verifier</title>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeqi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shizhuo</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiang</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian-Guang</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 61st Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="5315" to="5333" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Let&apos;s verify step by step</title>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Hunter Lightman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yura</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harrison</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teddy</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cobbe</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2305.20050</idno>
+		<idno>CoRR, abs/2305.20050</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">2023a. Making PPO even better: Value-guided monte-carlo tree search decoding</title>
+		<author>
+			<persName><forename type="first">Jiacheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ramakanth</forename><surname>Pasunuru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Asli</forename><surname>Celikyilmaz</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2309.15028</idno>
+		<idno>CoRR, abs/2309.15028</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Crystal: Introspective reasoners reinforced with self-feedback</title>
+		<author>
+			<persName><forename type="first">Jiacheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ramakanth</forename><surname>Pasunuru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Asli</forename><surname>Celikyilmaz</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.emnlp-main.708</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2023 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="11557" to="11572" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">2023c. Statistical rejection sampling improves preference optimization</title>
+		<author>
+			<persName><forename type="first">Tianqi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Misha</forename><surname>Khalman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Saleh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><forename type="middle">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialu</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2309.06657</idno>
+		<idno>CoRR, abs/2309.06657</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Can a suit of armor conduct electricity? A new dataset for open book question answering</title>
+		<author>
+			<persName><forename type="first">Todor</forename><surname>Mihaylov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/V1/D18-1260</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2018 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Brussels, Belgium</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2018-10-31">2018. October 31 -November 4, 2018</date>
+			<biblScope unit="page" from="2381" to="2391" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Mitchell</surname></persName>
+		</author>
+		<title level="m">A note on dpo with noisy preferences &amp; relationship to ipo</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Training language models to follow instructions with human feedback</title>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carroll</forename><forename type="middle">L</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katarina</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fraser</forename><surname>Kelton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maddie</forename><surname>Simens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Welinder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><forename type="middle">F</forename><surname>Christiano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Lowe</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note>In NeurIPS</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Improved noisy student training for automatic speech recognition</title>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Daniel S Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ye</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chung-Cheng</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Chiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonghui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc V</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Le</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2005.09629</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Formal mathematics statement curriculum learning</title>
+		<author>
+			<persName><forename type="first">Stanislas</forename><surname>Polu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Michael Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kunhao</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mantas</forename><surname>Baksys</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Babuschkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations, ICLR 2023</title>
+		<meeting><address><addrLine>Kigali, Rwanda</addrLine></address></meeting>
+		<imprint>
+			<publisher>OpenReview</publisher>
+			<date type="published" when="2023-05-01">2023. May 1-5, 2023</date>
+		</imprint>
+	</monogr>
+	<note>net</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Direct preference optimization: Your language model is secretly a reward model</title>
+		<author>
+			<persName><forename type="first">Rafael</forename><surname>Rafailov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Archit</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefano</forename><surname>Ermon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2305.18290</idno>
+		<idno>CoRR, abs/2305.18290</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Exploring the limits of transfer learning with a unified text-to-text transformer</title>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Raffel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katherine</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Matena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanqi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><forename type="middle">J</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="5485" to="5551" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Self-evaluation improves selective generation in large language models</title>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tu</forename><surname>Vu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><forename type="middle">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Balaji</forename><surname>Lakshminarayanan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.09300</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Multi-armed bandits with episode context</title>
+		<author>
+			<persName><surname>Christopher D Rosin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Annals of Mathematics and Artificial Intelligence</title>
+		<imprint>
+			<biblScope unit="volume">61</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="203" to="230" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Proximal policy optimization algorithms</title>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Filip</forename><surname>Wolski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleg</forename><surname>Klimov</surname></persName>
+		</author>
+		<idno>CoRR, abs/1707.06347</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Mastering chess and shogi by self-play with a general reinforcement learning algorithm</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Hubert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Guez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Lanctot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurent</forename><surname>Sifre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dharshan</forename><surname>Kumaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thore</forename><surname>Graepel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><forename type="middle">P</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karen</forename><surname>Simonyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Demis</forename><surname>Hassabis</surname></persName>
+		</author>
+		<idno>CoRR, abs/1712.01815</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Learning to summarize from human feedback</title>
+		<author>
+			<persName><forename type="first">Nisan</forename><surname>Stiennon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">M</forename><surname>Ziegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Lowe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><forename type="middle">F</forename><surname>Christiano</surname></persName>
+		</author>
+		<idno>CoRR, abs/2009.01325</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">CommonsenseQA: A question answering challenge targeting commonsense knowledge</title>
+		<author>
+			<persName><forename type="first">Alon</forename><surname>Talmor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Herzig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Lourie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Berant</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/N19-1421</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</title>
+		<title level="s">Long and Short Papers</title>
+		<meeting>the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies<address><addrLine>Minneapolis, Minnesota</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="4149" to="4158" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Albert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amjad</forename><surname>Almahairi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasmine</forename><surname>Babaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolay</forename><surname>Bashlykov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soumya</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prajjwal</forename><surname>Bhargava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shruti</forename><surname>Bhosale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Bikel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukas</forename><surname>Blecher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cristian</forename><surname>Canton-Ferrer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moya</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guillem</forename><surname>Cucurull</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Esiobu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jude</forename><surname>Fernandes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeremy</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenyin</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Fuller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cynthia</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vedanuj</forename><surname>Goswami</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Hartshorn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saghar</forename><surname>Hosseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hakan</forename><surname>Inan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcin</forename><surname>Kardas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Viktor</forename><surname>Kerkez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Madian</forename><surname>Khabsa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Isabel</forename><surname>Kloumann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Artem</forename><surname>Korenev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Punit</forename><surname>Singh Koura</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marie-Anne</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thibaut</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jenya</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diana</forename><surname>Liskovich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinghai</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuning</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Martinet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Todor</forename><surname>Mihaylov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pushkar</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Molybog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixin</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Poulton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeremy</forename><surname>Reizenstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rashi</forename><surname>Rungta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kalyan</forename><surname>Saladi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Schelten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruan</forename><surname>Silva</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2307.09288</idno>
+		<editor>Eric Michael Smith, Ranjan Subramanian, Xiaoqing Ellen Tan, Binh Tang, Ross Taylor, Adina Williams, Jian Xiang Kuan, Puxin Xu, Zheng Yan, Iliyan Zarov, Yuchen Zhang, Angela Fan, Melanie Kambadur, Sharan Narang, Aurélien Rodriguez, Robert Stojnic, Sergey Edunov</editor>
+		<imprint/>
+	</monogr>
+	<note>and Thomas Scialom. 2023. Llama 2: Open foundation and fine-tuned chat models. CoRR, abs/2307.09288</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Solving math word problems with process-and outcome-based feedback</title>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Uesato</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nate</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ramana</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">Francis</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">Y</forename><surname>Siegel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lisa</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonia</forename><surname>Creswell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Irving</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Irina</forename><surname>Higgins</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2211.14275</idno>
+		<idno>CoRR, abs/2211.14275</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">GPT-J-6B: A 6 Billion Parameter Autoregressive Language Model</title>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aran</forename><surname>Komatsuzaki</surname></persName>
+		</author>
+		<ptr target="https://github.com/kingoflolz/mesh-transformer-jax" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Damai</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deli</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhifang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sui</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.08935</idno>
+		<title level="m">Math-shepherd: A label-free step-by-step verifier for llms in mathematical reasoning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Self-consistency improves chain of thought reasoning in language models</title>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><forename type="middle">H</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations, ICLR 2023</title>
+		<meeting><address><addrLine>Kigali, Rwanda</addrLine></address></meeting>
+		<imprint>
+			<publisher>OpenReview</publisher>
+			<date type="published" when="2023-05-01">2023. May 1-5, 2023</date>
+		</imprint>
+	</monogr>
+	<note>net</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><forename type="middle">H</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 35: Annual Conference on Neural Information Processing Systems</title>
+		<meeting><address><addrLine>NeurIPS; New Orleans, LA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2022-11-28">2022. 2022. 2022. November 28 -December 9, 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Crowdsourcing multiple choice science questions</title>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Welbl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nelson</forename><forename type="middle">F</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matt</forename><surname>Gardner</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/V1/W17-4413</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 3rd Workshop on Noisy User-generated Text, NUT@EMNLP 2017</title>
+		<meeting>the 3rd Workshop on Noisy User-generated Text, NUT@EMNLP 2017<address><addrLine>Copenhagen, Denmark</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2017-09-07">2017. September 7, 2017</date>
+			<biblScope unit="page" from="94" to="106" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">Fine-grained human feedback gives better rewards for language model training</title>
+		<author>
+			<persName><forename type="first">Zeqiu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yushi</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weijia</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouha</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alane</forename><surname>Suhr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prithviraj</forename><surname>Ammanabrolu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mari</forename><surname>Ostendorf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2306.01693</idno>
+		<idno>CoRR, abs/2306.01693</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Self-training with noisy student improves imagenet classification</title>
+		<author>
+			<persName><forename type="first">Qizhe</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minh-Thang</forename><surname>Luong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eduard</forename><forename type="middle">H</forename><surname>Hovy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Le</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/CVPR42600.2020.01070</idno>
+	</analytic>
+	<monogr>
+		<title level="m">2020 IEEE/CVF Conference on Computer Vision and Pattern Recognition, CVPR 2020</title>
+		<meeting><address><addrLine>Seattle, WA, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Computer Vision Foundation / IEEE</publisher>
+			<date type="published" when="2020-06-13">2020. June 13-19, 2020</date>
+			<biblScope unit="page" from="10684" to="10695" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<title level="m" type="main">Decomposition enhances reasoning via self-evaluation guided decoding</title>
+		<author>
+			<persName><forename type="first">Yuxi</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenji</forename><surname>Kawaguchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiran</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min-Yen</forename><surname>Kan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxian</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qizhe</forename><surname>Xie</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2305.00633</idno>
+		<idno>CoRR, abs/2305.00633</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<title level="m" type="main">Tree of thoughts: Deliberate problem solving with large language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><forename type="middle">L</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2305.10601</idno>
+		<idno>CoRR, abs/2305.10601</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<analytic>
+		<title level="a" type="main">Unsupervised word sense disambiguation rivaling supervised methods</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Yarowsky</surname></persName>
+		</author>
+		<idno type="DOI">10.3115/981658.981684</idno>
+	</analytic>
+	<monogr>
+		<title level="m">33rd Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting><address><addrLine>Cambridge, Massachusetts, USA, Proceedings</addrLine></address></meeting>
+		<imprint>
+			<publisher>Morgan Kaufmann Publishers / ACL</publisher>
+			<date type="published" when="1995-06-30">1995. 26-30 June 1995</date>
+			<biblScope unit="page" from="189" to="196" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<title level="m" type="main">2023a. Outcome-supervised verifiers for planning in mathematical reasoning</title>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anningzhe</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benyou</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2311.09724</idno>
+		<idno>CoRR, abs/2311.09724</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<author>
+			<persName><forename type="first">Longhui</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weisen</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jincheng</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengying</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><forename type="middle">T</forename><surname>Kwok</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenguo</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adrian</forename><surname>Weller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiyang</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.12284</idno>
+		<title level="m">Metamath: Bootstrap your own mathematical questions for large language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<author>
+			<persName><forename type="first">Weizhe</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">Yuanzhe</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyunghyun</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sainbayar</forename><surname>Sukhbaatar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.10020</idno>
+		<title level="m">Self-rewarding language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<title level="m" type="main">Star: Bootstrapping reasoning with reasoning</title>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Zelikman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhuai</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">D</forename><surname>Goodman</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note>In NeurIPS</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<analytic>
+		<title level="a" type="main">The wisdom of hindsight makes language models better instruction followers</title>
+		<author>
+			<persName><forename type="first">Tianjun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangchen</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Justin</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning, ICML 2023</title>
+		<meeting><address><addrLine>Honolulu, Hawaii, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023-07">2023. July 2023</date>
+			<biblScope unit="volume">202</biblScope>
+			<biblScope unit="page" from="41414" to="41428" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<monogr>
+		<title level="m" type="main">Judging llm-as-a-judge with mt-bench and chatbot arena</title>
+		<author>
+			<persName><forename type="first">Lianmin</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Lin</forename><surname>Chiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhanghao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonghao</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuohan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dacheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><forename type="middle">P</forename><surname>Xing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Stoica</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2306.05685</idno>
+		<idno>CoRR, abs/2306.05685</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<analytic>
+		<title level="a" type="main">Solving math word problems via cooperative reasoning induced language models</title>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongfeng</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruyi</forename><surname>Gan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxing</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujiu</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/V1/2023.ACL-LONG.245</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 61st Annual Meeting of the Association for Computational Linguistics<address><addrLine>Toronto, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023-07-09">2023. July 9-14, 2023</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="4471" to="4485" />
+		</imprint>
+	</monogr>
+	<note>ACL 2023</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<analytic>
+		<title level="a" type="main">Ekin Dogus Cubuk, and Quoc Le. 2020. Rethinking pre-training and self-training</title>
+		<author>
+			<persName><forename type="first">Barret</forename><surname>Zoph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Golnaz</forename><surname>Ghiasi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tsung-Yi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yin</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanxiao</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="3833" to="3845" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,1658 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Continual Reinforcement Learning by Planning with Online World Models</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-07-12">12 Jul 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Zichen</forename><surname>Liu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Sea AI Lab</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution">National University of Sin- gapore</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Guoji</forename><surname>Fu</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">National University of Sin- gapore</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Chao</forename><surname>Du</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Sea AI Lab</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Wee</forename><forename type="middle">Sun</forename><surname>Lee</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">National University of Sin- gapore</orgName>
+							</affiliation>
+						</author>
+						<author role="corresp">
+							<persName><forename type="first">Min</forename><surname>Lin</surname></persName>
+							<email>&lt;linmin@sea.com&gt;.</email>
+							<affiliation key="aff0">
+								<orgName type="department">Sea AI Lab</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Continual Reinforcement Learning by Planning with Online World Models</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-07-12">12 Jul 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">44B6A7AEED0D6A397180E70449C2C45B</idno>
+					<idno type="arXiv">arXiv:2507.09177v1[cs.LG]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:10+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Continual reinforcement learning (CRL) refers to a naturalistic setting where an agent needs to endlessly evolve, by trial and error, to solve multiple tasks that are presented sequentially. One of the largest obstacles to CRL is that the agent may forget how to solve previous tasks when learning a new task, known as catastrophic forgetting. In this paper, we propose to address this challenge by planning with online world models. Specifically, we learn a Follow-The-Leader shallow model online to capture the world dynamics, in which we plan using model predictive control to solve a set of tasks specified by any reward functions. The online world model is immune to forgetting by construction with a proven regret bound of O( K 2 D log(T )) under mild assumptions. The planner searches actions solely based on the latest online model, thus forming a FTL Online Agent (OA) that updates incrementally. To assess OA, we further design Continual Bench, a dedicated environment for CRL, and compare with several strong baselines under the same model-planning algorithmic framework. The empirical results show that OA learns continuously to solve new tasks while not forgetting old skills, outperforming agents built on deep world models with various continual learning techniques.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="26" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="27" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Continual reinforcement learning (CRL) <ref type="bibr" target="#b25">(Khetarpal et al., 2022;</ref><ref type="bibr" target="#b1">Abel et al., 2024)</ref> quests for agents that can continuously evolve to solve possibly infinite number of tasks that are revealed sequentially to them. From a task-level definition, a very strong baseline is to just train a separate agent for each task, and use the information of the task ID to select the agent. Many existing works more or less fall within Proceedings of the 42 nd International Conference on Machine Learning, Vancouver, Canada. PMLR 267, 2025. Copyright 2025 by the author(s).</p><p>this "multitask" view of CRL because task-specific components are constructed and used (e.g., separate weights, task boundaries or IDs) <ref type="bibr" target="#b27">(Kirkpatrick et al., 2017;</ref><ref type="bibr" target="#b31">Mallya &amp; Lazebnik, 2018;</ref><ref type="bibr">Chaudhry et al., 2019a;</ref><ref type="bibr" target="#b23">Kessler et al., 2022;</ref><ref type="bibr" target="#b15">Gaya et al., 2023)</ref>.</p><p>However, a more naturalistic scenario would involve a learning agent that seamlessly interacts and learns in an environment where there is no clear cut tasks. To distinguish with the above, we call such agent an Online Agent (OA). We expect the solution of OA to contain learning components that are shared through out the agent's lifetime, and can be updated incrementally.</p><p>Existing CRL methods are not building towards online agents because of two challenges. First, not all RL components have their online alternatives. For example, the value function and policy are dependent on the reward function defined by a task, thus it is innately not a learning component that can be shared across tasks. To alleviate this issue, prior works often learn them per-task <ref type="bibr">(Chaudhry et al., 2019a;</ref><ref type="bibr" target="#b52">Wołczyk et al., 2021)</ref>. Second, for components that can be shared, they should be learned incrementally without forgetting under severe data distributional shift. <ref type="bibr" target="#b18">Huang et al. (2021)</ref> has attempted this with model-based RL, but they still rely on per-task buffer and embedding.</p><p>In this paper, we aim to develop an OA to tackle the CRL problem. We first notice that a unified world dynamics is the key component that can be shared across tasks and should be learned, and planning with the learned model gives us a RL agent that maximizes long-term rewards <ref type="bibr" target="#b13">(Garcia et al., 1989;</ref><ref type="bibr" target="#b19">Hutter, 2000)</ref>. Since the planner usually has no trainable parameters <ref type="bibr" target="#b11">(De Boer et al., 2005;</ref><ref type="bibr" target="#b51">Williams et al., 2015)</ref>, the goal of OA is to learn an online world model with low regret incrementally. To this end, we employ the recent Follow-The-Leader (FTL) shallow models <ref type="bibr" target="#b30">(Liu et al., 2024)</ref> which permit efficient online updates for world modelling, and plan with the learned models using cross-entropy method (CEM) for acting. Under mild assumptions, we theoretically show the sparsely updating models <ref type="bibr" target="#b30">(Liu et al., 2024)</ref> are no-regret, providing a definitive answer for the design of OA. Consequently, OA's every interaction with the real world brings new information to learn a more accurate world model without forgetting, which immediately benefits the planning at the next step.</p><p>To evaluate OA in the CRL settings, we further develop Continual Bench, which explicitly focuses on the design of a unified world dynamics. It also takes account of forgetting and transfer simultaneously and is computationally lightweight (see motivations in Section 2 part 2). The empirical results demonstrate the superior performance of OA over strong CRL baselines under the same model-planning framework, suggesting its great promise in developing future autonomous artificially agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related Work</head><p>In this section, we provide an overview of how our work integrates with existing literature. Since this work tries to contribute in both algorithm and benchmark aspects, the discussion is structured into the following two subsections.</p><p>Algorithm perspective. The most related work to ours is <ref type="bibr" target="#b30">Liu et al. (2024)</ref>, where the authors propose a non-linear encoding technique and an analytic update rule to learn world models online. We follow their work to employ similar online shallow networks to learn the world dynamics. To bridge the gap between practice and theory, we further analyze the convergence of the online sparse model learning, and identify that regularization is necessary to guarantee it converges to the offline optimal solution. Our work is also methodology-wise distinct from <ref type="bibr" target="#b30">Liu et al. (2024)</ref>, which is based on the Dyna architecture <ref type="bibr" target="#b47">(Sutton, 1990</ref>) and still learns model-free components such as value and policy functions using model-synthetic data. This could further compound difficulties of applying model-free methods to develop continual agents, such as the need to maintain a replay buffer <ref type="bibr" target="#b20">(Isele &amp; Cosgun, 2018)</ref>, the loss of plasticity <ref type="bibr" target="#b0">(Abbas et al., 2023)</ref>, and even the dependency on taskspecific models <ref type="bibr" target="#b14">(Garcia &amp; Thomas, 2019;</ref><ref type="bibr" target="#b52">Wołczyk et al., 2021)</ref>. In the supervised CL settings, <ref type="bibr" target="#b57">(Zhuang et al., 2022;</ref><ref type="bibr">2023;</ref><ref type="bibr">2024)</ref> also employ an analytic solution to solve class incremental learning without forgetting (an FTL approach), but they rely on pretrained deep features over all tasks, which is impossible for online agents. On the contrary, we propose to use a model-planning framework to tackle the CRL problem, given a unified world dynamics representation and external reward function, making our agent (OA) potential to generalize to new tasks zero-shot <ref type="bibr" target="#b42">(Sancaktar et al., 2022)</ref>.</p><p>Benchmark perspective. CRL has typically been evaluated on a sequence of Atari games <ref type="bibr" target="#b27">(Kirkpatrick et al., 2017;</ref><ref type="bibr" target="#b43">Schwarz et al., 2018;</ref><ref type="bibr" target="#b40">Rolnick et al., 2019)</ref>. CORA <ref type="bibr" target="#b38">(Powers et al., 2022)</ref> recently extends this conventional protocol to a set of image-based discrete control environments, additionally including procedurally-generated environments <ref type="bibr" target="#b10">(Cobbe et al., 2020;</ref><ref type="bibr" target="#b29">Küttler et al., 2020)</ref> and realistic home simulators <ref type="bibr" target="#b28">(Kolve et al., 2017;</ref><ref type="bibr" target="#b46">Shridhar et al., 2020)</ref>. Their focus on image-based environments stems Task 1</p><p>Task 2 Task 3 &lt; l a t e x i t s h a 1 _ b a s e 6 4 = " j y 9 O b e 8 a O P B 1 1 p k a S W 4 F V g k t p d g = " &gt; A A A B 7 X i c b V B N S 8 N A E J 3 4 W e t X 1 a O X x S J 4 K o l I 9 V j 0 4 r G C / Y A 2 l s 1 2 0 6 7 d Z M P u R C i h / 8 G L B 0 W 8 + n + 8 + W / c t j l o 6 4 O B x 3 s z z M w L E i k M u u 6 3 s 7 K 6 t r 6 x W d g q b u / s 7 u 2 X D g 6 b R q W a 8 Q Z T U u l 2 Q A 2 X I u Y N F C h 5 O 9 G c R o H k r W B 0 M / V b T 1 w b o e J 7 H C f c j + g g F q F g F K 3 U r D 9 0 k a a 9 U t m t u D O Q Z e L l p A w 5 6 r 3 S V 7 e v W B r x G J m k x n Q 8 N 0 E / o x o F k 3 x S 7 K a G J 5 S N 6 I B 3 L I 1 p x I 2 f z a 6 d k F O r 9 E m o t K 0 Y y U z 9 P Z H R y J h x F N j O i O L Q L H p T 8 T + v k 2 J 4 5 W c i T l L k M Z s v C l N J U J H p 6 6 Q v N G c o x 5 Z Q p o W 9 l b A h 1 Z S h D a h o Q / A W X 1 4 m z f O K V 6 1 U 7 y 7 K t e s 8 j g I c w w m c g Q e X U I N b q E M D G D z C M 7 z C m 6 O c F + f d + Z i 3 r j j 5 z B H 8 g f P 5 A 3 l k j x U = &lt; / l a t e x i t &gt; P ⌧ &lt; l a t e x i t s h a 1 _ b a s e 6 4 = " U C S e p W s j + + </p><formula xml:id="formula_0">b j f J 3 p V B D o X y T h n o I = " &gt; A A A B / H i c d V D L S s N A F J 3 U V 6 2 v a J d u B o s g F E J i 2 7 Q u h K I b l x X s A 9 p S J t N J O 3 Q y C T M T s Y T 4 K 2 5 c K O L W D 3 H n 3 z h 9 C C p 6 4 M L h n H u 5 9 x 4 v Y l Q q 2 / 4 w M i u r a + s b 2 c 3 c 1 v b O 7 p 6 5 f 9 C S Y S w w a e K Q h a L j I U k Y 5 a S p q G K k E w m C A o + R t j e 5 n P n t W y I k D f m N m k a k H 6 A R p z 7 F S G l p Y O b v B o k q O i k 8 h z O W w i J 0 B m b B t p y a W y l V o W 2 V K 7 W z c m l B 3 I o N H c u e o w C W a A z M 9 9 4 w x H F A u M I M S d l 1 7 E j 1 E y Q U x Y y k u V 4 s S Y T w B I 1 I V 1 O O A i L 7 y f z 4 F B 5 r Z Q j 9 U O j i C s 7 V 7 x M J C q S c B p 7 u D J A a y 9 / e T P z L 6 8 b K r / U T y q N Y E Y 4 X i / y Y Q R X C W R J w S A X B i k 0 1 Q V h Q f S v E Y y Q Q V j q v n A 7 h 6 1 P 4 P 2 m d W o 5 r u d f l Q v 1 i G U c W H I I j c A I c U A V 1 c A U a o A k w m I I H 8 A S e j X v j 0 X g x X h e t G W M 5 k w c / Y L x 9 A h V r k 8 o = &lt; / l a t e x i t &gt; x t+1 = x t + 1 &lt; l a t e x i t s h a 1 _ b a s e 6 4 = " s r l s c + i W d 2 P o d g 2 R Z H M m y Y r t o s g = " &gt; A A A B / H i c d V D J S g N B E O 2 J W 4 z b a I 5 e G o M g i E N P l j E e h K A X j x H M A k k Y e j q d p E n P Q n e P O A z x V 7 x 4 U M S r H + L N v 7 G z C C r 6 o O D x X h V V 9 b y I M 6 k Q + j A y S 8 s r q 2 v Z 9 d z G 5 t b 2 j r m 7 1 5 R h L A h t k J C H o u 1 h S T k L a E M x x W k 7 E h T 7 H q c t b 3 w 5 9 V u 3 V E g W B j c q i W j P x 8 O A D R j B S k u u m b 9 z U 3 V s T + A 5 n L I J P I G 2 a x a Q Z R e r T q U C k V V C 5 R I 6 m x G n g k r Q t t A M B b B A 3 T X f u / 2 Q x D 4 N F O F Y y o 6 N I t V L s V C M c D r J d W N J I 0 z G e E g 7 m g b Y p 7 K X z o 6 f w E O t 9 O E g F L o C B W f q 9 4 k U + 1 I m v q c 7 f a x G 8 r c 3 F f / y O r E a V H s p C 6 J Y 0 Y D M F w 1 i D l U I p 0 n A P h O U K J 5 o g o l g + l Z I R l h g o n R e O R 3 C 1 6 f w f 9 I s W r Z j O d f l Q u 1 i E U c W 7 I M D c A R s c A p q 4 A r U Q Q M Q k I A H 8 A S e j X v j 0 X g x X u e t G W M x k w c / Y L x 9 A v A H k 7 A = &lt; / l a t e x i t &gt; x t+1 = x t 1 &lt; l a t e x i t s h a 1 _ b a s e 6 4 = " A H V R l 7 U 1 c B u v 9 i C q t s m i g t g 5 I p 0 = " &gt; A A A B 6 n i c b V B N S 8 N A E J 3 4 W e t X 1 a O X x S J 4 K o l I 9 V j 0 4 r G i / Y A 2 l s 1 2 0 i 7 d b M L u R i i h P 8 G L B 0 W 8 + o u 8 + W / c t j l o 6 4 O B x 3 s z z M w L E s G 1 c d 1 v Z 2 V 1 b X 1 j s 7 B V 3 N 7 Z 3 d s v H R w 2 d Z w q h g 0 W i 1 i 1 A 6 p R c I k N w 4 3 A d q K Q R o H A V j C 6 m f q t J 1 S a x / L B j B P 0 I z q Q P O S M G i v d 1 x / T X q n s V t w Z y D L x c l K G H P V e 6 a v b j 1 k a o T R M U K 0 7 n p s Y P 6 P K c C Z w U u y m G h P K R n S A H U s l j V D 7 2 e z U C T m 1 S p + E s b I l D Z m p v y c y G m k 9 j g L b G V E z 1 I v e V P z P 6 6 Q m v P I z L p P U o G T z R W E q i I n J 9 G / S 5 w q Z E W N L K F P c 3 k r Y k C r K j E 2 n</formula><formula xml:id="formula_1">V D L S s Q w F E 3 H 9 / i q u n Q T H A R h t L Q i 6 k Y Q 3 b g c w V G h U 4 c 0 k 8 4 E k 7 Y k t + J Q + h f + h L / g V v f u R J f 6 J W Y e i M 5 4 I O H k n H u 5 N y d M B d f g u h 9 W a W J y a n p m d q 4 8 v 7 C 4 t G y v r F 7 q J F O U 1 W k i E n U d E s 0 E j 1 k d O A h 2 n S p G Z C j Y V X h 7 2 v O v</formula><p>7 p j S P I k v o J u y Q J J 2 z C N O C R i p a T u N U O b 3 R T O H q l f g I / z z L H A V + 9 4 2 d h 1 z 7 X j B T Q O S F D f t i u u 4 f e B x 4 g 1 J B Q 1 R a 9 p f j V Z C M 8 l i o I J o 7 X t u C k F O F H A q W F F u Z J q l h N 6 S N v M N j Y l k O s j 7 / y r w p l F a O E q U O T H g v v q 7 I y d S 6 6 4 M T a U k 0 N G j X k / 8 z / M z i A 6 D n M d p B i y m g 0 F R J j A k u B c S b n H F K I i u I Y Q q b n b F t E M U o W C i / D M l l E X Z h O K N R j B O L n c d b 9 / Z P 9 + r H J 8 M 4 5 l F 6 2 g D b S E P H a B j d I Z q q I 4 o e k B P 6 B m 9 W I / W q / V m v Q 9 K S 9 a w Z w 3 9 g f X 5 D e x F o 9 M = &lt; / l a t e x i t &gt;</p><p>x t+1 = x t + [1, 0.1, 1] &gt; &lt; l a t e x i t s h a 1 _ b a s e 6 4 = " U d t C C T E 5 T x t+1 = x t + 0.1</p><formula xml:id="formula_2">n i 1 q 3 N g D + x 1 H B j C c M Q = " &gt; A A A C D H i c d V D L S s N A F J 3 U V 6 2 v q k s 3 g 0 U Q C i F J 0 1 Y X Q t G N S w V r C z W E y X S q Q y c P Z m 6 k J e Q X / A W 3 u n c n b v 0 H t 3 6 J 0 1 p B R Q 8 M n H v O v d w 7 J 0 g E V 2 B Z b 0 Z h b n 5 h c a m 4 X F p Z X V v f K G 9 u X a o 4 l Z S 1 a S x i 2 Q 2 I Y o J H r A 0 c B O s m k p E w E K w T D E 8 m f u e W S c X j 6 A L G C f N C c h 3 x A a c E t O S X t 0 d + B l U 7 x 0 d 4 5 A O u Y s u 0 / X L F M l 2 n X j t 0 d O k 0 m 2 7 D 0 q R h u / W a g 2 3 T m q K C Z j j z y + 9 X / Z i m I Y u A C q J U z 7 Y S 8 D I i g V P B 8 t J V q l h C 6 J B c s 5 6 m E Q m Z 8 r L p 8 T n e 0 0 o f D 2 K p X w R 4 q n 6 f y E i o 1 D g M d G d I 4 E b 9 9 i b i X 1 4 v h c G B l / E o S Y F F 9 H P R I B U Y Y j x J A v e 5 Z B T E W B N C J d e 3 Y n p D J K G g 8 / q x J Q j z k g</formula><p>Figure 1: A motivating example comparing task-indexed dynamics (P τ ) with unified dynamics (P u ). Under the task-indexed viewpoint, the state space of each task is the box's location x ∈ R while the action space is {"apply force rightwards", "apply force leftwards"}. Clearly, for the same action "apply force rightwards" (denoted as red arrows) applied at the same state xt, the dynamics P τ is conflicting to each other. Hence, there is no solution for a CRL agent to model the dynamics, unless incorporating task IDs. In contrast, the unified dynamics P u treats each task individually and builds a "global" view of the world, where the solutions to all tasks can co-exist without the need of task IDs.</p><p>from the need for a consistent shared observation space, which they choose to be the pixel space. The games included are also visually-distinct with little to no overlapping, making the benchmark suitable for studying forgetting. However, the image-based environments demand prohibitive computation resources, and the lack of meaningful overlapping prevents us from evaluating the transfer of CRL algorithms. Continual-World <ref type="bibr" target="#b52">(Wołczyk et al., 2021)</ref>, on the other hand, focuses on continuous control and transfer, using a sequence of 10 robot manipulation tasks selected from Meta-World <ref type="bibr" target="#b54">(Yu et al., 2019)</ref>. Nevertheless, their state-based inputs encode the positions of different objects at fixed locations, which results in inconsistent state space (further explained in Section 5), hindering the original purpose of studying transfer. In this work, we propose a lightweight but realistic benchmark environment, Continual Bench, that has a consistent state space and takes both forgetting and transfer into consideration.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Preliminaries</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Continual reinforcement learning</head><p>We first review some necessary RL basics and then define the setting of continual RL. RL is usually formulated as a Markov decision process (MDP) <ref type="bibr" target="#b5">(Bellman, 1957)</ref> M = (S, A, P, R, γ, ρ 0 ), where s t ∈ S and a t ∈ A are state and action at time step t, P : S × A → S is the transition dynamics, R : S × A → R is a reward function associated with a specific task, γ ∈ (0, 1) is a discount factor, and ρ 0 is the initial state distribution. An RL agent aims to identify an optimal policy π : S → A that maximizes long-term reward (or return): <ref type="bibr" target="#b1">(Abel et al., 2024)</ref>, on the other hand, needs to conduct indefinite search for policies to control a sequence of MDPs M τ = (S, A, P u , R τ , γ, ρ τ 0 ) τ with a consistent and shared state and action space. We also consider a unified dynamics P u that describes the whole world an agent can see, instead of time-indexed pieces P τ <ref type="bibr" target="#b52">(Wołczyk et al., 2021;</ref><ref type="bibr" target="#b25">Khetarpal et al., 2022)</ref> that can only be distinguished by explicit task IDs, or otherwise becoming POMDPs whose task ID information needs to be inferred <ref type="bibr" target="#b32">(Nagabandi et al., 2018)</ref>. We depict a motivating example in Figure <ref type="figure">1</ref> to give intuitions on the differences between P τ and P u . While our definition offers a more simplified formulation, it does not compromise nonstationarity, the core problem in CRL, because the nonstationary reward function R τ will drive the CRL agent to perform different tasks, incurring distributional shift in state-action visitation. This gives the objective of a continual agent</p><formula xml:id="formula_3">π * = arg max π E π,P [ ∞ t=0 γ t R (s t , a t , s t+1 ) | s 0 = s ∼ ρ 0 ]. A continual RL agent</formula><formula xml:id="formula_4">J T (π) := 1 T T τ =1 E π,P u ∞ t=0 γ t R τ (s t , a t , s t+1 )|s 0 = s ∼ ρ τ 0 .</formula><p>(1) Note that T in Eq. ( <ref type="formula">1</ref>) is the number of tasks the agent has seen till now, instead of the total number of tasks, which is an unknown for a continual agent. In other words, a continual agent is expected to gain high return for all experienced tasks. In this paper, we develop such an agent by learning a world model online, and form its policy by planning with the learned model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Planning and model predictive control</head><p>Planning. Given the world dynamics P and reward function R, planning involves optimizing action sequences a t:t+H to maximize the H-step finite-horizon return given current state s t : a ⋆ t:t+H = arg max a t:t+H H i=0 R (s t+i , a t+i ) |s t+1 ∼ P (s t , a t ).</p><p>(2) As a model-based RL method, planning has the advantage that it can reuse the same world dynamics and optimize for different reward functions without adaptation. This is especially of our interest in developing a continual agent, because when facing a new task the agent can directly utilize prior knowledge about the world to attempt to solve it.</p><p>Model predictive control (MPC) synthesizes a closedloop policy from the planning results. It takes the first action a t from the optimal action sequence, executes it in the environment and re-plans based on the new environment state. An MPC-based agent collects experiences following such policy, while improving its internal estimation about the world through experiences <ref type="bibr" target="#b33">(Negenborn et al., 2005)</ref> for better planning. In this paper, we focus on the unified world dynamics learning driven by an external time-varying reward function, which aligns with our CRL formulation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Online Agent for Continual Reinforcement Learning</head><p>In this section we present the proposed Online Agent (OA). Section 4.1 introduces the online world model learning pro-cess, followed by our results on the regret of the sparse model learning (Section 4.2). Based on the learned noregret model, Section 4.3 describes how the policy is constructed using planning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Online world model learning</head><p>We present the learning process of OA, where we employ shallow but wide networks that support efficient Follow-The-Leader (FTL) online learning to model the world. In particular, we learn a model of the form y = W σ(P x), where P is a projection matrix filled with fixed random values drawn from a Gaussian distribution, σ is an activation function and W contains learnable weights. Such architecture allows universal approximation <ref type="bibr" target="#b17">(Huang et al., 2006)</ref> but requires a very high dimensional hidden layer to have great capacity. Following <ref type="bibr" target="#b30">Liu et al. (2024)</ref>, we learn a linear model online per time step, using a high-dimensional sparse feature encoder for σ(P x) and solving for W in closed form with FTL strategy.</p><p>Modeling. Let S and A denote the dimenionality of state and action spaces. When the agent is in state s t it executes an action a t and observes how the world changes.</p><p>The observation may incur a loss thus correcting its previous perception of the world dynamics, which is modeled linearly by</p><formula xml:id="formula_5">y t = ϕ(x t ) ⊤ W . W ∈ R D×S is the linear layer, x t = [s t , a t ] ∈ R S+A</formula><p>is the input for the world model and ϕ(x t ) ∈ R D is its sparse high-dimensional projection, and y t = (s t+1s t ) ∈ R S the state differences. At the start of time step t, we have Φ t-1 = [ϕ(x 1 ), . . . , ϕ(x t-1 )] ⊤ ∈ R (t-1)×D accumulating all the inputs and Y t-1 ∈ R (t-1)×S as well for targets. A FTL world model can be solved by regularized least squares:</p><formula xml:id="formula_6">∀ t, W (t) = arg min W ∈R D×S ∥Φ t-1 W -Y t-1 ∥ 2 F + 1 λ ∥W ∥ 2 F ,<label>(3)</label></formula><p>where ∥ • ∥ F denotes the Frobenius norm.</p><p>Learning the world model simply requires finding a solution to Eq. ( <ref type="formula" target="#formula_6">3</ref>), which can be obtained analytically as</p><formula xml:id="formula_7">W (t) = (Φ ⊤ t-1 Φ t-1 + 1 λ I) -1 Φ ⊤ t-1 Y t-1 .</formula><p>Though this computation does not grow with the amount of data, the inversion could still be inefficient since D is usually large for modeling complex environments. We thus utilize the feature sparsity and conduct incremental update on the model:</p><formula xml:id="formula_8">W (t) s = A (t-1) ss + 1 λ I -1 (B (t-1) s -A (t-1) ss W (t-1)<label>s</label></formula><p>),</p><p>(4) where</p><formula xml:id="formula_9">A (t-1) = Φ ⊤ t-1 Φ t-1 and B (t-1) = Φ ⊤ t-1 Y t-1</formula><p>, s contains all the indices on which the latest input feature ϕ(x t-1 ) has non-zero values, i.e., the newly coming data point only activates K = |s| ≪ D nodes, and s is its complement. Using them in subscript means taking a submatrix from the original one. The activation ratio K/D is fixed and small for any input to guarantee a constant and low update overhead. Note that when s covers all coordinates (thus the feature is dense), Eq. ( <ref type="formula">4</ref>) recovers the analytic solution to Eq. ( <ref type="formula" target="#formula_6">3</ref>). We refer to Appendix A.1 for a more detailed sparse feature construction process.</p><p>Despite the resemblance to the update rule in Algorithm 2 of <ref type="bibr" target="#b30">Liu et al. (2024)</ref>, Eq. ( <ref type="formula">4</ref>) highlights a crucial difference that 1 λ I derived from the ridge regularization term is important for the local update to have a unique minimizer (Lemma 1), or otherwise it may not converge <ref type="bibr">(Peng &amp; Vidal, 2023)</ref> when A (t-1) ss is rank-deficient, which is the case during the initial phase of the learning when data points are only a few. We provide theoretical analysis in Section 4.2.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Regret analysis</head><p>In this section we show the sparse update rule (Eq. ( <ref type="formula">4</ref>)) learns a no-regret (O(log(T )) world model. With the following mild assumptions for hyperparameters and inputs, we have Theorem 1.</p><p>Assumption 1. For all t ≥ 1 and x 1 , x 2 , . . . , x t , we assume that there exists λ ≥ 1 such that</p><formula xml:id="formula_10">sup x ϕ(x)ϕ(x) ⊤ - 1 t t i=1 ϕ(x i )ϕ(x i ) ⊤ 2 ≤ 1 λt .<label>(5)</label></formula><p>Assumption 2. Assume that for all t ≥ 1, ∥y t ∥ 2 ≤ c y with y t,i ≥ 0, and ∥W ∥ F ≤ c W .</p><p>Assumption 3. For all t ≥ 1, we set K such that</p><formula xml:id="formula_11">K ≥ min D, c 2 y t i=1 ϕ(xi)ϕ(xi) ⊤ ϕ(xt) ⊤ ϕ(xt) +1 A (t) ss A (t) ss + 1 λ I -1 2 2 +1</formula><p>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Remark 1 (Discussions on the assumptions).</head><p>Assumption 1 ensures that as more data points are observed, the feature mappings stabilize. The difference between the outer product of any new input's feature mapping and the average outer product of the observed mappings decreases as increases. In essence, as more data is gathered, the empirical covariance matrix better approximates the true covariance matrix. The term 1 λt controls this stabilization rate, with λ as a scaling factor. It ensures the model's representations become more reliable over time, improving generalization to new data. In practice, Assumption 1 holds if we explore new points near to the observed data, i.e., within 1 λt away from the center in the feature space. Assumption 2 assumes bounded input and output, which is a mild condition. Assumption 3 states that the choice of the hyperparameter K depends on two factors: (1) the weights of the features at time t over all observed data and (2) the sparsity of the activated elements in the feature matrix A (t) . Intuitively, If A ss is more significant than A ss in spectral norm, or if the feature value at x t is larger than previously observed data, a smaller K suffices to ensure model performance. In practice, we choose K such that Assumption 3 hold.</p><p>Theorem 1 (Regret Bounds for Sparse Online Model Learning). Let W (1) , W (2) , . . . be the sequence produced by the sparse online model learning Eq. (4). Let r M ≥ 1 be a constant defined as in Eq. ( <ref type="formula" target="#formula_66">18</ref>). Suppose that there exist c W , c y &gt; 0 and λ ≥ 1 such that Assumptions 1 to 3 hold. Then, for all T ≥ 1 and all ξ ∈ R D×S , we have</p><formula xml:id="formula_12">Regret(T ) := T t=1 f t ( W (t) ) - T t=1 f t (ξ) ≤ 1 λ c 2 W + 5λ(K 2 r 2 M + 1)c 2 y D(log(T ) + 1). (6) If λ = c W /c y 5(K 2 r 2</formula><p>M + 1)D(log(T ) + 1) ≥ 1 and it satisfies Assumptions 1 and 3, then we have</p><formula xml:id="formula_13">Regret(T ) ≤ c W c y 20(K 2 r 2 M + 1)D(log(T ) + 1). (<label>7</label></formula><formula xml:id="formula_14">)</formula><p>Proof Sketch (for formal proof see Appendix E.3.2). Note that we can decompose the regret into:</p><formula xml:id="formula_15">Regret(T ) = T t=1 f t ( W (t) ) -f t (W (t) ) + T t=1 f t (W (t) ) - T t=1 f t (ξ) .</formula><p>The first term involves the gap between the solutions of Eq. ( <ref type="formula" target="#formula_6">3</ref>) and the sparse online model learning Eq. ( <ref type="formula">4</ref>) at each time step. By Schur's Complement Lemma for block matrix inversion <ref type="bibr" target="#b56">(Zhang, 2006)</ref> together with the sparse update rule Eq. ( <ref type="formula">4</ref>), we can upper-bound the difference between W (t) and W (t) (see Proposition 3), which is further used to bound f t ( W (t) )f t (W (t) ) (see the proof in Appendix E.3.2). The second term is the regret bound for online model learning Eq. (3). By bounding the difference between W (t) and W (t+1) (see Lemma 2), we can upperbound f (W (t) )f (W (t+1) ) (see Lemma 3). Then, following a similar proof (Shalev-Shwartz et al., 2012) for the regret bounds of FTL models, we obtain the regret bound for online model learning (see Corollary 1). Combining the bounds for the two terms we conclude the proof. We refer to Appendices E.2 and E.3 for more details and other results.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Planning with online world models</head><p>Based on its internal no-regret model about the world, OA acts in the environment by planning and MPC. For planning we use the cross-entropy method (CEM) <ref type="bibr" target="#b41">(Rubinstein, 1999;</ref><ref type="bibr" target="#b11">De Boer et al., 2005)</ref>, a stochastic derivative-free optimization technique that has demonstrated effectiveness in different model-based RL scenarios <ref type="bibr" target="#b9">(Chua et al., 2018;</ref><ref type="bibr" target="#b50">Wang &amp; Ba, 2020)</ref>. It solves Eq. ( <ref type="formula">2</ref>) in an iterative manner as described below.</p><p>In each iteration, it first generates N action sequence candidates C = {a t:t+H } N n=1 for a planning horizon H, in which each a i is independently sampled from N (µ, diag(σ 2 )) with µ, σ ∈ R A . Then, individual candidates are evaluated by simulating the action sequences in the learned model to compute the total rewards. Finally, only a fixed number of elite candidates with high total rewards is selected and used to estimate the parameters {µ, σ} by maximum likelihood for the next iteration. After a few iterations, an approximately optimal action sequence can be found and used by MPC.</p><p>Instead of the plain CEM, we adopt several improvements to make it efficient for model-based RL. The first modification is shift-initialization. At time step (t + 1), we initialize the candidates C 0 t+1 using the solution of the previous decision step C ⋆ t , shifted by one step. This is because MPC only takes the first best action and discards the remaining (H -1) results, which could be utilized to provide better initialization for the next time step. We also incorporate colored noise and memory proposed by <ref type="bibr" target="#b37">Pinneri et al. (2021)</ref> for better sample efficiency. The colored noise injects temporal correlation along the planning horizon when generating a t:t+H , which potentially leads to deeper exploration of the state space. Meanwhile, the memory keeps the elite candidates generated at each CEM iteration and carry a fraction of them over to initialize the next iteration. Reusing these high quality samples could speed up the convergence of CEM iterations. We refer to Appendices A.2 and A.3 for a detailed algorithm and hyperparameters used in this paper.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Continual Bench: An Environment for CRL Evaluation</head><p>The field of machine learning in general benefits from properly designed datasets and benchmarks to iterate algorithms. However, in CRL, there are not many widely adopted benchmarks, and prior works tend to themselves create a sequence of tasks from an existing suite of environments. For example, <ref type="bibr" target="#b27">Kirkpatrick et al. (2017)</ref> select a sequence of Atari games <ref type="bibr" target="#b4">(Bellemare et al., 2013)</ref> to learn sequentially, and Huang et al. (2021) vary the world properties (e.g. the density of the same object) in a single environment. The former type may overlook knowledge transfer across tasks due to the lack of meaningful overlapping, and the latter kind could be unrealistic because real world physics does not change. Recently, Wołczyk et al. (2021) propose a benchmark z y x</p><p>Figure <ref type="figure">2</ref>: Potential physical conflicts between two consecutive tasks in Continual-World <ref type="bibr" target="#b52">(Wołczyk et al., 2021)</ref>. The handles of the door and the drawer follow different trajectory when being opened.</p><p>named Continual-World, where they select a sequence of tasks from Meta-World <ref type="bibr" target="#b54">(Yu et al., 2019)</ref> and run experiments using soft actor-critic (SAC) <ref type="bibr" target="#b16">(Haarnoja et al., 2018)</ref> with various continual learning techniques. This benchmark has put explicit focus on low-level transfer, because the same robotic arm is instructed to achieve different goals by interacting with real-world objects. However, the potential underlying physical conflict impedes the original design purpose.</p><p>We use Figure <ref type="figure">2</ref> to illustrate how such conflict would appear and why it is undesirable. The figure shows two similar tasks: open the door (left) and open the drawer (right).</p><p>As different tasks all share the same observation space <ref type="bibr" target="#b52">(Wołczyk et al., 2021)</ref>, the locations of both the door handle and the drawer handle will be regarded as "the first object location", thus their values are placed into the same positions of the observation vector. However, when the gripper pulls the handle, the door will allow a circular movement in the xy plane, but the drawer will constrain the displacement to the y axis, immediately resulting in conflicting world dynamics. This could prevent us from studying forgetting or transfer in CRL, because there is even no common solution about the world, not to mention how the skills learned from one task can transfer to the next one. This issue is not obvious in <ref type="bibr" target="#b52">Wołczyk et al. (2021)</ref> because they work with model-free methods, take advantage of task ID information, and learn separate heads for different tasks.</p><p>Motivated by above-mentioned issues, we design Continual Bench, a dedicated environment for CRL evaluation, for assessing OA and comparing it with baselines. Our development is based on the task primitives proposed by Meta-World, but instead of directly concatenating several tasks temporally like Continual-World, we redesign the environment to arrange different tasks spatially. This ensures the existence of a unified world dynamics, which corresponds to the multi-task solution, a basic assumption for achieving an ideal continual learner <ref type="bibr">(Peng et al., 2023)</ref>. Figure <ref type="figure" target="#fig_2">3</ref> gives an overview of the environment. Starting from the lower left and anti-clockwise, the 6 selected tasks with diverse difficulty levels are: peg-unplug, faucet-close, pick-place, door-open, window-close, button-press. They are placed in a circle with maximal distances to each other, facilitating test on forgetting in the presence of dis- tributional shift in state-action visitation when switching tasks. Different tasks also share meaningful overlapping, allowing us to study transfer, though it is not the focus of this work. We open source the code of Continual Bench 1 and hope this realistic but lightweight environment can accelerate the progress of CRL research. Please see Appendix B for detailed environment specifications.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Experiment</head><p>We evaluate OA using Continual Bench, and compare its CRL capability with several continual learning baselines under the same agent design framework.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.1">Setup and metrics</head><p>We mainly focus on the model-based planning framework, where all agents we compare are model-based RL agents that learn a world model using experiences and act using CEM planning with MPC (refer to Figure <ref type="figure">7</ref>). In this setup, OA learns the world model online (Section 4.1), while the baselines employ a deep world models, a default choice of many prior approaches <ref type="bibr" target="#b9">(Chua et al., 2018;</ref><ref type="bibr" target="#b50">Wang &amp; Ba, 2020;</ref><ref type="bibr" target="#b24">Kessler et al., 2023)</ref>.</p><p>The reward function is provided to the agent and changed upon task switch, but no task boundary information is given to the world model learning (unless the continual learning baseline requires it). We let all agents run in Continual Bench to continuously solve a sequence of 6 tasks in the order (pick-place, button-press, door-open, peg-unplug, window-close, faucet-close). The order is chosen such that adjacent tasks are as spatially far away as possible to increase the nonstationarity.</p><p>The performance is measured in accordance to the CRL objective defined in Eq. ( <ref type="formula">1</ref>). Since all the tasks in Continual Bench have a binary success measure depending on current and goal state, we define average performance on all seen τ =1</p><p>p τ (w), with</p><formula xml:id="formula_16">p τ (w) = E π,P u ∞ t=0 I(∥s t -g∥ 2 2 &lt; δ)|s 0 = s ∼ ρ τ 0 . (<label>8</label></formula><formula xml:id="formula_17">)</formula><p>T w is the number of tasks an agent has experienced at step w, p τ (w) is the success rate of the policy at time w on task τ , and I is the indicator function. Intuitively, this metric reflects the offline performance of π at time step w across all observed tasks, thus accounting for forgetting.</p><p>We also define regret to better capture the online performance of an agent:</p><formula xml:id="formula_18">Reg(w) = 1 w w τ =0 (1 -p Tτ (τ ))dτ,<label>(9)</label></formula><p>which effectively calculates the normalized area enclosed by the online agent's performance curve and that of an oracle agent (with success rate always being 1), as depicted in Figure <ref type="figure" target="#fig_3">4</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.2">Baselines</head><p>Continual learning (CL) methods can be categorized into several paradigms, such as regularization-based methods <ref type="bibr" target="#b27">(Kirkpatrick et al., 2017;</ref><ref type="bibr" target="#b55">Zenke et al., 2017;</ref><ref type="bibr">Aljundi et al., 2019b)</ref>, replay-based methods <ref type="bibr" target="#b39">(Riemer et al., 2018;</ref><ref type="bibr">Aljundi et al., 2019a;</ref><ref type="bibr">Chaudhry et al., 2019b)</ref> and architecturebased methods <ref type="bibr" target="#b31">(Mallya &amp; Lazebnik, 2018;</ref><ref type="bibr" target="#b22">Kang et al., 2022)</ref>. Prior CRL works typically apply CL methods to base RL agents, such as the model-free Soft Actor-Critic (SAC) <ref type="bibr" target="#b16">(Haarnoja et al., 2018;</ref><ref type="bibr" target="#b53">Yang et al., 2023)</ref> or the model-based Dyna <ref type="bibr" target="#b47">(Sutton, 1990;</ref><ref type="bibr" target="#b30">Liu et al., 2024)</ref>. We follow the practices to test multiple representative CL methods with both a model-free actor-critic agent and a model-based planning agent. Concretely, we consider EWC <ref type="bibr" target="#b27">(Kirkpatrick et al., 2017)</ref> and SI <ref type="bibr" target="#b55">(Zenke et al., 2017)</ref> for regularization-based methods, PackNet (Mallya</p><p>0.0 0.2 0.4 0.6 0.8 Success rate Task 1: pick-place 0.0 0.2 0.4 0.6 0.8 1.0 Task 2: button-press 0.0 0.2 0.4 0.6 0.8 Task 3: door-open 0 1 2 3 4 5 6 Episodes £10 2 0.0 0.2 0.4 0.6 0.8 1.0 Success rate Task 4: peg-unplug 0 1 2 3 4 5 6 Episodes £10 2 0.0 0.2 0.4 0.6 Task 5: window-close 0 1 2 3 4 5 6 Episodes £10 2 0.0 0.2 0.4 0.6 0.8 1.0 Task 6: faucet-close 0 100 200 300 400 500 600 step 0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 eval/0/success Fine-tuning SI Coreset Perfect Memory OA &amp; Lazebnik, 2018) for architecture-based methods, and Coreset <ref type="bibr" target="#b49">(Vitter, 1985)</ref> for replay-based methods. We also include the vanilla baseline of Fine-tuning which finetunes the model only on the current task, and upper-bound baselines Perfect Memory that train on all previous data. More details about the baselines can be found in Appendix A.5.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.3">Learning curves of model-based agents</head><p>We first present the comparison of learning curves between OA and baseline agents in the model-based planning setting on the Continual Bench environment. Figure <ref type="figure" target="#fig_4">5</ref> shows the performance (success rate) of different agents for all 6 tasks, measured along the learning process. Different tasks are presented to the agents sequentially, with the shaded region in grey denoting the learning period of that particular task. We first observe that during the learning period of a particular task, all agents effectively learn to perform the task well, showing the plasticity of model-based agents: it can reuse the knowledge of the world dynamics and quickly adapt to new tasks by planning with corresponding reward functions. Focusing on the stability (to retain the performance on previously seen tasks), we notice that Fine-tuning agents immediately cease to perform well on the old task when switching to the new one due to catastrophic forgetting. Using SI to regularize the weight updates can alleviate the forgetting slightly, resulting in a bit higher final performance on two tasks (button-press and window-close). Maintaining a Coreset for experience replay performs better than SI, resembling the state-of-the-art performance of replay-based methods in supervised continual learning <ref type="bibr" target="#b6">(Boschini et al., 2022)</ref>. However, its performance diminishes as the proportion of older experiences decreases. This suggests that determining the size of the replay is a challenging design choice, especially when the number of tasks and the number of samples in each task are unknown. In comparison, OA stands out by demonstrating non-forgetting capability building on the online FTL world models. For all tasks it has seen, OA maintains a high performance over all remaining time steps, matching the performance of Perfect Memory. However, Perfect Memory ensures non-forgetting by keeping all the data and performing SGD updates until convergence, which is inefficient with unboundedly growing computation for lifelong agents. OA, on the other hand, achieves the same performance by a much more efficient online update with constant overhead.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.4">Average performance of model-based and model-free agents</head><p>We show the average performance (Eq. ( <ref type="formula" target="#formula_16">8</ref>)) curves over all seen tasks in Figure <ref type="figure" target="#fig_5">6</ref>(a). We scale the performance by</p><p>Tw 6 for better visual effect. The dashed lines denote task switching, upon which we can observe a performance jump of different scales for all agents. Due to the loss of stability, deep agents (even with various continual learning tech-0 1 2 3 4 5 6 Episodes £10 2 0.0 0.2 0.4 0.6 0.8 Average performance Fine-tuning SI Coreset Perfect Memory OA 0 1 2 3 4 5 6 Episodes £10 2 0.15 0.30 0.45 Sparse model utilization 0.2 0.3 0.4 0.5 Utilization 0 20 40 60 Final average performance § 5 7 9 11 1 5000 10000 20000 141946 BuÆer size 0.2 0.4 0.6 0.8 Final average performance Coreset Perfect Memory OA   <ref type="formula" target="#formula_6">3</ref>)) and the sparse learning is no-regret (Theorem 1). In contrast, methods based on iterative solution finding from a prior solution subspace <ref type="bibr" target="#b12">(Farajtabar et al., 2020;</ref><ref type="bibr">Peng et al., 2023)</ref> may exhaust the solution space quickly and fail to learn from new data. Figure <ref type="figure" target="#fig_5">6</ref>(c) compares the performance against the buffer size, and shows that OA achieves the best performance under buffer constraints. Finally, in Figure <ref type="figure" target="#fig_5">6</ref>(d) we ablate the effect of different sparsity of the model. Λ denotes the number of bins in Losse ( <ref type="bibr" target="#b30">(Liu et al., 2024)</ref>, Appendix A.1); larger Λ means sparser models.</p><p>The results show that sparser model contains greater capacity and reaches higher performance with less activated weights. This is a natural result as D increases with Λ (the network is becoming wider), but the attractive property is that both the update and inference computation remains almost the same since K is fixed. This shows the flexibility of choosing suitable sparsity levels to model environments with different complexities.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Conclusion</head><p>In this paper, we propose to tackle the CRL problem by developing Online Agents, which should learn a shared component throughout the agent's lifetime and update incrementally. In environments with a unified world dynamics across tasks, we learn such a shared component by online FTL world modeling and act by planning. Theoretically we prove that the sparse online update learns a no-regret world model. To assess the agent's CRL capability, we further develop a benchmark named Continual Bench. Empirical results show that our Online Agents outperform several strong baselines under a fair setting, demonstrating its effectiveness and promise in building future autonomous agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Impact Statement</head><p>This paper presents work whose goal is to advance the field of Machine Learning. There are many potential societal consequences of our work, none which we feel must be specifically highlighted here.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Agent details</head><p>In this section we provide more details about OA, including the sparse non-linear feature encoding, the learning and acting process, the model hyperparameters, and the planing algorithm. We also include baseline and experimental details for reproducibility.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 Sparse feature encoding</head><p>We revisit the feature construction process of Losse <ref type="bibr" target="#b30">(Liu et al., 2024)</ref>, on which we will build our online world models for planning. At time step t, given an input vector x t ∈ R S+A , we first randomly project it to obtain bounded random features σ(x t ) = sigmoid(P x t ), where P ∈ R d×(S+A) is sampled from a multivariate Gaussian N (0, 1 S+A I) to preserve feature similarity <ref type="bibr" target="#b21">(Johnson &amp; Lindenstrauss, 1984)</ref>, and sigmoid is applied element-wise to ensure each feature value is bounded between (0, 1), such that the binning edges can be clearly defined. Next, each element of σ(x t ) is binned softly by locating its neighboring edges and computing the distances from them. We illustrate using 1-dimensional feature grid with Λ bins. For the i-th element of σ(x t ), let I i = (Λ -1) • σ(x t ) i denote its projection location on the grid. Then the "activated" indices are</p><formula xml:id="formula_19">s i = [⌊I i ⌋, ⌊I i ⌋ + 1],</formula><p>and their associated values are</p><formula xml:id="formula_20">v i = [1 -(I i -⌊I i ⌋) , I i -⌊I i ⌋].</formula><p>Therefore, the i-th slice of the resulting feature vector is a Λ-long zero vector with non-zero values filled at indices s i with values v i , and the final feature ϕ(x t ) is the concatenation of d such slices.</p><p>A.2 The learning and acting process Online Agent (OA) Learning and Acting Loop Require: zero-initialized agent memories A (0) , B (0) and world model weights W (0) ; sparse encoder ϕ : R S+A → R D ; initial index s = [D]; planner CEM; sequence of tasks (R τ ) ∞ τ =1 ; initial state s 1 ∼ ρ 0 ; time step t = 1. 1: loop ▷ OA runs forever, updates per step 2: if task changes then 3: µ t ← init values ∈ R A×H 4: else 5: µ t ← shifted µ t-1 (fill the last column with init values) 6: end if 7:</p><formula xml:id="formula_21">W (t) s ← (A (t-1) ss + 1 λ I) -1 (B (t-1) s -A (t-1) ss W (t-1) s ) 8: a t , µ t+1 ← CEM(s t , W (t) , µ t , R τ ) ▷</formula><p>Appendix A.4 for details 9: s t+1 ← environment(s t , a t ) 10: x t ← [s t , a t ]; y t ← s t+1s t 11: s ← nonzero_index(ϕ(x t )) 12: A (t) ss ← A (t-1) ss + ϕ s (x t )ϕ s (x t ) ⊤ 13: B (t) s ← B (t-1) s + ϕ s (x t )y ⊤ t 14: t ← t + 1 15: end loop Figure 7: OA learning and acting loop.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3 OA hyperparameters</head><p>To build the sparse world model, we use 300 2-dimensional Losse features with Λ = 9. We perform a coarse sweeping over different sparsity levels (Λ = (5, 7, 9, 11)) and find Λ = 5 slightly under-fits the environment while all others give robust good performance. See Figure <ref type="figure" target="#fig_5">6</ref>(d) for a comparison. We find 1 λ = 0.005 as a good regularization strength without any tuning.</p><p>For the planner, we use a candidate sampling size of N = 150 with planning horizon H = 15 and K = 3 iterations. The ratio of elite candidates is 0.1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.4 CEM planning</head><p>We give a detailed algorithm of CEM that we use to extract policy from a learned model below.</p><p>Require: candidate sampling size N ; number of iteration K; planning horizon H; init noise σ init .</p><formula xml:id="formula_22">1: function CEM(s, W , µ, R) 2: σ ← init values ∈ R A×H 3: for k ← 1, K do /* add colored noise */ 4: candidates C = {a 0:H } N n=1 ← N samples from clip(µ + C β (A, H) ⊙ σ) /* memory */ 5: add a fraction of elite-set into C if k &gt; 1 6: r ← unroll N trajectories to get returns H t=0 R(s t , a t ) | s 0 = s, s t+1 = s t + ϕ([s t , a t ]) ⊤ W 7: elite-set ← best K candidates 8:</formula><p>µ, σ ← fit Gaussian distribution to elite-set 9: end for 10: end function A.5 Baseline details Fine-tuning. This serves as a minimal baseline for agents that use deep world models. The agent is allowed to keep all the data within the current task, but cannot carry the data over to the next task. The world model is repeatedly fine-tuned using a sequence of datasets.</p><p>Coreset. This refers to replay-based CL methods where a small buffer is kept across all tasks. We use reservoir sampling <ref type="bibr" target="#b49">(Vitter, 1985)</ref>, which updates the buffer such that its distribution approximates the empirical distribution of all observed samples. We use a large buffer (10K) in our experiments. <ref type="bibr" target="#b55">(Zenke et al., 2017)</ref>. As a regularization-based method, synaptic intelligence (SI) estimates the importance of each parameter based on the gradients and weights deviation, and regularizes the parameter updates based on the recorded importance. Similar to Fine-tuning only the data of the current task can be kept, and task boundary information is needed for SI to recompute the importance measure. The two hyper-parameters used in SI, c = 0.5 and ξ = 0.05, are selected using a coarse grid search.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Synaptic Intelligence</head><p>Perfect Memory. It is impractical to assume unlimited buffer capacity, but this baseline serves as the upper bound for agents using deep world models. It can also be regarded as a deep version of the FTL world model <ref type="bibr" target="#b30">(Liu et al., 2024)</ref> -the current model is optimized using all previous data -but in an inefficient way.</p><p>In all above baselines, we use a 4-layer MLP with hidden size 200 and ReLU activation for world modeling. We use the Adam optimizer <ref type="bibr" target="#b26">(Kingma &amp; Ba, 2015)</ref> with learning rate of 4 × 10 -4 and minibatch size of 256. Since updating deep models per time step is computationally impractical, especially for CRL settings where the dataset size grows along inter-</p><p>10 °6 10 °5 10 °4 10 °3 10 °2 Model error Task 1: pick-place 10 °6 10 °5 10 °4 10 °3 Task 2: button-press 10 °6 10 °5 10 °4 10 °3 10 °2 Task 3: door-open 0 1 2 3 4 5 6 Episodes £10<ref type="foot" target="#foot_0">foot_0</ref> 10 °6 10 °5 10 °4 10 °3 10 °2 Model error Task 4: peg-unplug 0 1 2 3 4 5 6 Episodes £10 2 10 °6 10 °5 Task 5: window-close 0 1 2 3 4 5 6 Episodes £10 2 10 °6 2 £ 10 °6 Task 6: faucet-close 0 100 200 300 400 500 600 step 0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 eval/0/success Fine-tuning SI Coreset Perfect Memory OA Figure 8: Curves of the world model errors. Same as the performance measure in the main text, results are aggregated from 7 runs with different seeds. The solid lines show the means and shaded areas are the standard errors. The grey regions denote the learning period for the current task τ ∈ [1, 2, . . . , 6].</p><p>actions, we update the models every 250 environment step. On every update, the deep models are trained until convergence over all available data (stopped when the validation loss on 5% holdout data does not improve over 5 consecutive epochs). All hyperparameters of the planner are the same as OA's for a fair comparison (see Appendix A.3).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.6 Experimental details</head><p>All experiments in the paper are run on the internal cluster, with each job consuming one A100 GPU and 16 CPUs. The training time of a single experiment ranges from 10 hours to 15 hours, given a total of 600 episodes budget. We develop our agent and the baselines using the MBRL Library 2 <ref type="bibr" target="#b36">(Pineda et al., 2021)</ref> by Meta (MIT license, v0.2.0).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Continual Bench details</head><p>We build Continual Bench based on the Mujoco <ref type="bibr" target="#b48">(Todorov et al., 2012)</ref> physics engine and task primitives from Meta-World <ref type="bibr" target="#b54">(Yu et al., 2019)</ref>. We include in total 6 tasks (pick-place, button-press, door-open, peg-unplug, window-close, faucet-close) with diverse difficulty levels. Incorporating all the information about the world on the table, we have dim(S) = 26. The state includes: hand position (3), gripper openness (1), button position (3), door handle position (3), door opening angle (1), window handle position (3), faucet handle position (3), peg position (3), block position (3), gripper velocity (1), gripper pad offsets (2). The action space is the same as Meta-World, a 2-tuple consisting the change of endeffector position in 3D space (3) and a normalized torque applied to gripper fingers (1). When the environment starts, each episode can be at most 500-step long, with early termination on task success. The reward function R τ is changed according to the task on hand upon switching. All reward functions are defined based on their well-crafted subroutines (Section E of <ref type="bibr" target="#b54">Yu et al. (2019)</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C More empirical results</head><p>We present more empirical results in this section. In Figure <ref type="figure">8</ref>, we show the mean squared error (MSE) of world models when the agents learn sequentially on the Continual World environment, to more directly investigate the forgetting issues. We keep a separate buffer for each task, and measure the MSE of the model on the data of every seen task. We can observe that the baseline agents (except the one with perfect memory) all exhibit increasing model errors when leaving the current task, but OA can maintain nearly the same accuracy along the whole learning process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Limitations and Future Work</head><p>One limitation of the current OA is that the online world model can only deal with moderate-dimensional state-based observation and does not capture world uncertainties. We envisage that developing highly capable probabilistic models that permits efficient online learning is a future research avenue. Besides, though the current framework is simple yet effective, the model planing does not incorporate explicit exploration. We leave this topic for future research. The proposed benchmark environment, Continual Bench, is limited to episodic settings with explicit task switch across episodes. This is mainly due to the challenge brought by irreversible states <ref type="bibr" target="#b45">(Sharma et al., 2022)</ref> since the underlying MDP is non-ergodic (e.g., a block falling outside the table can never be placed back). Developing a reset-free CRL environment consisting of many tasks is a potential future work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E Theoretical analysis and proofs</head><p>E.1 Closed-form solutions for sparse online world model learning Lemma 1 (Sparse Online Model Learning Minimizer). For every t ∈ [1, T ], s ⊆ [D], the following problem at time step t has a unique global minimizer</p><formula xml:id="formula_23">W (t) s := arg min Ws∈R K×S ∥Φ t-1 ([W (t-1) s ; W s ]) -Y t-1 ∥ 2 F + 1 λ ∥[W (t-1) s ; W s ]∥ 2 F .<label>(10)</label></formula><p>The global minimizer W</p><p>s has a closed-form solution as Eq. ( <ref type="formula">4</ref>), i.e.:</p><formula xml:id="formula_25">W (t) s = A (t) ss + 1 λ I -1 (B (t) s -A (t) ss W (t-1) s ),</formula><p>where</p><formula xml:id="formula_26">W (t) = [W (t-1) s ; W (t) s ], A (t) = Φ ⊤ t-1 Φ t-1 , B (t) = Φ ⊤ t-1 Y t-1</formula><p>and they can be decomposed into</p><formula xml:id="formula_27">A (t) = A (t) ss A (t) ss A (t) ss A (t) ss , B (t) = B (t) s B (t) s , W (t) = W (t-1) s W (t) s .</formula><p>Proof. Uniqueness. By the convexity of Frobenius norm and both two terms in Eq. ( <ref type="formula" target="#formula_23">10</ref>) are quadratic in W s , the objective function Eq. ( <ref type="formula" target="#formula_23">10</ref>) is strictly convex and has a unique solution.</p><p>Closed-form solution. Note that</p><formula xml:id="formula_28">∥ΦW -Y ∥ 2 F + 1 λ ∥W ∥ 2 F =∥ΦW ∥ 2 F + ∥Y ∥ 2 F -2⟨ΦW , Y ⟩ F + 1 λ ∥W ∥ 2 F = Tr W ⊤ Φ ⊤ ΦW + Tr Y ⊤ Y -2 Tr W ⊤ Φ ⊤ Y + 1 λ ∥W ∥ 2 F = Tr W ⊤ AW + Tr Y ⊤ Y -2 Tr W ⊤ B + 1 λ ∥W ∥ 2 F = Tr W s W s ⊤ A ss A ss A ss A ss W s W s + Tr Y ⊤ Y -2 Tr W s W s ⊤ B s B s + 1 λ Tr W s W s ⊤ W s W s = Tr W ⊤ s A ss W s + Tr W ⊤ s A ss W s + 2 Tr W ⊤ s A ss W s + Tr Y ⊤ Y -2 Tr W ⊤ s B s -2 Tr W ⊤ s B s + 1 λ Tr W ⊤ s W s + 1 λ Tr W ⊤ s W s As a result, min Ws∈R K×S ∥Φ t (W s ; W s ) -Y t ∥ 2 F + 1 λ ∥W ∥ F ⇐⇒ min Ws∈R K×S Tr W ⊤ s A ss W s + 2 Tr W ⊤ s A ss W s -2 Tr W ⊤ s B s + 1 λ Tr W ⊤ s W s (<label>11</label></formula><p>) Differentiate the objective function Eq. (11) w.r.t W s and set it to zero, we obtain W s = A ss + 1 λ I -1 (B s -A ss W s ). E.2 Theoretical analysis for online model Learning Before we derive the regret bounds for sparse online model learning Eq. (10), we first derive the regret bound for online model learning Eq. (3). The developed regret bound of online model learning, as given in Corollary 1, will be further used to derive the regret bounds for sparse online model learning Eq. (10) in Appendix E.3.2. E.2.1 ONLINE MODEL LEARNING For t ≥ 1, i = 1, . . . , t, we define</p><formula xml:id="formula_29">f i (W ) = Tr(W ⊤ ϕ(x i )ϕ(x i ) ⊤ W ) + Tr(y ⊤ i y i ) -2 Tr(W ⊤ ϕ(x i )y ⊤ i ), ℓ reg (W ) = 1 λ ∥W ∥ 2 F .</formula><p>Then, the regularized least squares problem Eq. ( <ref type="formula" target="#formula_6">3</ref>) can be rewritten as</p><formula xml:id="formula_30">∀t, W (t) = arg min W ∈R D×S t-1 i=1 f i (W ) + R(W ). (<label>12</label></formula><formula xml:id="formula_31">)</formula><p>Lemma 2. Let W (1) , W (2) , . . . be the sequence produced by Eq. ( <ref type="formula" target="#formula_30">12</ref>) (or equivalently Eq. ( <ref type="formula" target="#formula_6">3</ref>)). Suppose that there exist λ ≥ 1 such that Assumption 1 holds, then for all t ≥ 1, we have</p><formula xml:id="formula_32">1 - 1 t W (t) + ∆ t ⪯ W (t+1) ⪯ W (t) + ∆ t ,</formula><p>where</p><formula xml:id="formula_33">∆ t := t i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 ϕ(x t )y ⊤ t . (<label>13</label></formula><formula xml:id="formula_34">) Proof. ∀t, df t (W ) dW = 2ϕ(x t )ϕ(x t ) ⊤ W -2ϕ(x t )y ⊤ t .</formula><p>Then we have</p><formula xml:id="formula_35">d t i=1 f i (W ) dW + dℓ reg (W ) dW = t i=1 df i (W ) dW + 2 λ W = t i=1 2ϕ(x i )ϕ(x i ) ⊤ W - t i=1 2ϕ(x i )y ⊤ i + 2 λ W .</formula><p>Therefore, we get</p><formula xml:id="formula_36">W (t+1) = t i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 t i=1 ϕ(x i )y ⊤ i = t i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 t-1 i=1 ϕ(x i )y ⊤ i + t i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 ϕ(x t )y ⊤ t = t i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 t-1 i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I W (t) + t i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 ϕ(x t )y ⊤ t =   I - t i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 ϕ(x t )ϕ(x t ) ⊤   W (t) + ∆ t ⪰ I - 1 t I W (t) + ∆ t (Assumption 1) = 1 - 1 t W (t) + ∆ t .</formula><p>On the other hand,</p><formula xml:id="formula_37">W (t+1) = t i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 t i=1 ϕ(x i )y ⊤ i = t i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 t-1 i=1 ϕ(x i )y ⊤ i + t i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 ϕ(x t )y ⊤ t ⪯ t-1 i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 t-1 i=1 ϕ(x i )y ⊤ i + t i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 ϕ(x t )y ⊤ t = W (t) + ∆ t .</formula><p>Lemma 3. Let W (1) , W (2) , . . . be the sequence produced by Eq. (12) (or equivalently Eq. ( <ref type="formula" target="#formula_6">3</ref>)). Suppose that there exist λ ≥ 1, c y &gt; 0 such that Assumptions 1 and 2 hold. Then for all t ≥ 1, we have</p><formula xml:id="formula_38">|f t (W (t) ) -f t (W (t+1) )| ≤ 5λc 2 y D 1 t . Proof. Recall from Lemma 2 that ∆ t -1 t W (t) ⪯ W t+1 -W (t) ⪯ ∆ t . Then we have |f t (W (t+1) ) -f t (W (t) )| = Tr(ϕ(x t )ϕ(x t ) ⊤ W (t+1) W (t+1)⊤ ) -2 Tr(ϕ(x t )y ⊤ t W (t+1)⊤ ) -Tr(ϕ(x t )ϕ(x t ) ⊤ W (t) W (t)⊤ ) + 2 Tr(ϕ(x t )y ⊤ t W (t)⊤ ) = Tr ϕ(x t )ϕ(x t ) ⊤ W (t+1) -W (t) W (t+1) -W (t) ⊤ + 2 Tr ϕ(x t )ϕ(x t ) ⊤ W (t+1) -W (t) W (t)⊤ -2 Tr(ϕ(x t )y ⊤ t W (t+1)⊤ ) + 2 Tr(ϕ(x t )y ⊤ t W (t)⊤ ) ≤ Tr ϕ(x t )ϕ(x t ) ⊤ W (t+1) -W (t) W (t+1) -W (t) ⊤ + 2 Tr ϕ(x t )ϕ(x t ) ⊤ W (t+1) -W (t) W (t)⊤ + 2 Tr ϕ(x t )y ⊤ t W (t+1) -W (t) ⊤ ≤ Tr ϕ(x t )ϕ(x t ) ⊤ ∆ t ∆ ⊤ t + 2 Tr ϕ(x t )ϕ(x t ) ⊤ ∆ t W (t)⊤ + 2 Tr ϕ(x t )y ⊤ t ∆ ⊤ t (Lemma 2) = Tr ϕ(x t )ϕ(x t ) ⊤ ∆ t ∆ ⊤ t + 2 Tr ϕ(x t )ϕ(x t ) ⊤ t i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 ⪯ 1 t I by Assumption 1 ϕ(x t )y ⊤ t W (t)⊤ + 2 Tr ϕ(x t )y ⊤ t y t ϕ(x t ) ⊤ t i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 ⊤ ≤ Tr ϕ(x t )ϕ(x t ) ⊤ ∆ t ∆ ⊤ t + 2 t Tr ϕ(x t )y ⊤ t W (t)⊤ + 2C 2 y Tr ϕ(x t )ϕ(x t ) ⊤ t i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 ⪯ 1 t I by Assumption 1 ≤ Tr ϕ(x t )ϕ(x t ) ⊤ ∆ t ∆ ⊤ t + 2 t Tr ϕ(x t )y ⊤ t W (t)⊤ + C 2 y D 2 t .</formula><p>For the first term on the right hand side of the above inequality, we have</p><formula xml:id="formula_39">Tr ϕ(x t )ϕ(x t ) ⊤ ∆ t ∆ ⊤ t = Tr   ϕ(xt)ϕ(xt) ⊤ t i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 ϕ(x t )y ⊤ t y t ϕ(x t ) ⊤   t i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I ⊤   -1    = ∥y t ∥ 2 2 Tr   ϕ(x t )ϕ(x t ) ⊤ t i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 ϕ(x t )ϕ(x t ) ⊤ t i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1   ≤ c 2 y Tr   ϕ(x t )ϕ(x t ) ⊤ t i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 ϕ(x t )ϕ(x t ) ⊤ t i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1   = c 2 y Tr        t i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 ϕ(x t )ϕ(x t ) ⊤ ⪯ 1 t I t i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 ϕ(x t )ϕ(x t ) ⊤ ⪯ 1 t I        ≤ c 2 y D 1 t 2 (Assumption 1) ≤ c 2 y Dλ 1 t . (λ ≥ 1 ≥ 1 t for all t = 1, 2, . . . )</formula><p>For the second term, we have</p><formula xml:id="formula_40">1 t Tr ϕ(x t )y ⊤ t W (t)⊤ = Tr   ϕ(x t )y ⊤ t t-1 i=1 y i ϕ(x i ) ⊤ t-1 i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1   = 1 t Tr   t-1 i=1 ϕ(x t )y ⊤ t y i ϕ(x i ) ⊤ t-1 i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1   ≤ c 2 y 1 t Tr   t-1 i=1 ϕ(x t )ϕ(x i ) ⊤ t-1 i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1   = c 2 y 1 t Tr      t-1 i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I ⊤   -1 t-1 i=1 ϕ(x t )ϕ(x i ) ⊤ ⊤    = c 2 y 1 t Tr   t-1 i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 t-1 i=1 ϕ(x i )ϕ(x t ) ⊤   ≤ c 2 y 1 t D.</formula><p>(Assumption 1)</p><p>Combining the above results, we obtain</p><formula xml:id="formula_41">|f t (W (t+1) ) -f t (W (t) )| ≤ Tr ϕ(x t )ϕ(x t ) ⊤ ∆ t ∆ ⊤ t + 4 t Tr ϕ(x t )y ⊤ t W (t)⊤ ≤ c 2 y Dλ 1 t + 4c 2 y D 1 t ≤ c 2 y Dλ 1 t + 4λc 2 y D 1 t (λ ≥ 1) = 5λc 2 y D 1 t .</formula><p>Lemma 4. Let W (1) , W (2) , . . . be the sequence produced by Eq. ( <ref type="formula" target="#formula_30">12</ref>) (or equivalently Eq. ( <ref type="formula" target="#formula_6">3</ref>)). For all t ≥ 1 and all ξ ∈ R D×S we have</p><formula xml:id="formula_42">T t=1 f t (W (t+1) ) ≤ T t=1 f t (ξ)</formula><p>Proof. We prove this lemma by induction. For T = 1, it follows directly from the definition of W (t+1) , i.e.,</p><formula xml:id="formula_43">W (2) = arg min W ∈R D×S f 1 (W ), that f 1 (W (2) ) ≤ f 1 (ξ).</formula><p>Assume that the inequality holds for T -1, then for all ξ ∈ R D×S we have</p><formula xml:id="formula_44">T -1 t=1 f t (W (t+1) ) ≤ T -1 t=1 f t (ξ).</formula><p>Adding f T (W (T +1) ) to both sides we obtain</p><formula xml:id="formula_45">T t=1 f t (W (t+1) ) ≤ f T (W (T +1) ) + T -1 t=1 f t (ξ)</formula><p>The above holds for all ξ and in particular for ξ = W (T +1) . Thus,</p><p>T t=1 f t (W (t+1) ) ≤ T t=1 f t (W (T +1) ) = min W ∈R D×S T t=1 f t (W ) Lemma 5. Let W (1) , W (2) , . . . be the sequence of vectors produced by Eq. (12) (or equivalently Eq. <ref type="formula" target="#formula_6">(3</ref>)). Then, for all t ≥ 1 and all ξ ∈ R D×S we have</p><formula xml:id="formula_46">T t=1 (f t (W (t) ) -f t (ξ)) ≤ ℓ reg (ξ) -ℓ reg (W (1) ) + T t=1 f t (W (t) ) -f t (W (t+1) ) Proof. Let f 0 (W ) = ℓ reg (W ).</formula><p>Using Lemma 4 we obtain</p><p>T t=0 f t (W (t+1) ) ≤ T t=0 f t (ξ). (14) Adding T t=0 f t (W (t) ) to both sides and rearrange, we get T t=0 f t (W (t) ) -T t=0 f t (ξ) ≤ T t=0 f t (W (t) ) -T t=0 f t (W (t+1) ). E.2.2 REGRET BOUND FOR ONLINE MODEL LEARNING Now, we are ready to prove the regret bound for the online model learning problem Eq. (3): Corollary 1 (Regret Bound for Online Model Learning). Let W (1) , W (2) , . . . be the sequence produced by Eq. (3) (or equivalently Eq. ( <ref type="formula" target="#formula_30">12</ref>)). Suppose that there exist λ ≥ 1, c W , c y &gt; 0 such that Assumptions 1 and 2 hold. Then, for all T ≥ 1 and all ξ ∈ R D×S , we have</p><formula xml:id="formula_47">T t=1 f t (W (t) ) - T t=1 f t (ξ) ≤ 1 λ c 2 W + 5λc 2 y D(log(T ) + 1). Proof. T t=1 f t (W (t) ) - T t=1 f t (ξ) ≤ ℓ reg (ξ) -ℓ reg (W (1) ) + T t=1 f t (W (t) ) -f t (W (t+1) ) (Lemma 5) ≤ 1 λ c 2 W + T t=1 5c 2 y Dλ 1 t (Lemma 3) ≤ 1 λ c 2 W + 5λc 2 y D(log(T ) + 1). ( T t=1 1 t ≤ log(T ) + 1)</formula><p>E.3 Theoretical analysis for sparse online model learning</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.3.1 USEFUL LEMMAS</head><p>Lemma 6 (Schur Complement for Block Matrix Inversion <ref type="bibr" target="#b56">(Zhang, 2006)</ref>). Given a matrix M that can be partitioned into four blocks as below,</p><formula xml:id="formula_48">M = M 11 M 12 M 21 M 22</formula><p>it can be inverted blockwise as:</p><formula xml:id="formula_49">M -1 = M -1 11 + M -1 11 M 12 S -1 M 21 M -1 11 -M -1 11 M 12 S -1 -S -1 M 21 M -1 11 S -1 ,</formula><p>where S = M 22 -M 21 M -1 11 M 12 is the Schur complement. Proposition 1. Given A, B, W (t) as defined by A = Φ ⊤ t-1 Φ t-1 , B = Φ ⊤ t-1 Y t-1 , and W (t) = A + 1 λ I -1 B and they can be decomposed into</p><formula xml:id="formula_50">A = A ss A ss A ss A ss , B = B s B s , W (t) = W (t) s W (t) s</formula><p>, then, we have</p><formula xml:id="formula_51">W (t) s = A ss + 1 λ I -1 + D B s -A ss + 1 λ I -1 A ss S -1 B s , W (t) s = S -1 B s -S -1 A ss A ss + 1 λ I -1 B s , where S := A ss + 1 λ I -A ss A ss + 1 λ I -1 A ss , D := (A ss + 1 λ I) -1 A ss S -1 A ss (A ss + 1 λ I) -1 .</formula><p>Proof. Consider the inverse of A + 1 λ I, which can be written as:</p><formula xml:id="formula_52">A + 1 λ I = A ss + 1 λ I A ss A ss A ss + 1 λ I</formula><p>Applying Lemma 6 to our matrix A + 1 λ I, we get:</p><formula xml:id="formula_53">A + 1 λ I -1 = (A ss + 1 λ I) -1 + (A ss + 1 λ I) -1 A ss S -1 A ss (A ss + 1 λ I) -1 -(A ss + 1 λ I) -1 A ss S -1 -S -1 A ss (A ss + 1 λ I) -1 S -1 ,</formula><p>where S = A ss + 1 λ I -A ss (A ss + 1 λ I) -1 A ss . Now, we can write the expression for W (t) as:</p><formula xml:id="formula_54">W (t) = (A ss + 1 λ I) -1 + (A ss + 1 λ I) -1 A ss S -1 A ss (A ss + 1 λ I) -1 -(A ss + 1 λ I) -1 A ss S -1 -S -1 A ss (A ss + 1 λ I) -1 S -1 B s B s</formula><p>Therefore, we get</p><formula xml:id="formula_55">W (t) s = (A ss + 1 λ I) -1 + (A ss + 1 λ I) -1 A ss S -1 A ss (A ss + 1 λ I) -1 B s -(A ss + 1 λ I) -1 A ss S -1 B s , W (t) s = -S -1 A ss (A ss + 1 λ I) -1 B s + S -1 B s . Let D := (A ss + 1 λ I) -1 A ss S -1 A ss (A ss + 1 λ I) -1 , we obtain: W (t) s = A ss + 1 λ I -1 + D B s -(A ss + 1 λ I) -1 A ss S -1 B s , W (t) s = S -1 B s -S -1 A ss A ss + 1 λ I -1 B s .</formula><p>Proposition 2. Suppose that Assumption 3 holds, then we have</p><formula xml:id="formula_56">0 A (t) ss + 1 λ I -1 B (t) s ⪯ K A (t) + 1 λ I -1 ϕ(x t )y ⊤ t .</formula><p>Proof. Note that</p><formula xml:id="formula_57">A = A ss A ss A ss A ss , B = B s B s .</formula><p>We have</p><formula xml:id="formula_58">A + 1 λ I 0 0 0 A ss + 1 λ I -1 = A ss + 1 λ I A ss A ss A ss + 1 λ I 0 0 0 A ss + 1 λ I -1 = 0 A ss A ss + 1 λ I -1 0 I .</formula><p>Then, we have</p><formula xml:id="formula_59">0 A ss + 1 λ I -1 B s = 0 0 0 A ss + 1 λ I -1 B s B s = A + 1 λ I -1 0 A ss A ss + 1 λ I -1 0 I B.<label>(15)</label></formula><p>Note that by the properties of the block matrix's spectral norm, we get</p><formula xml:id="formula_60">0 A ss A ss + 1 λ I -1 0 I 2 ≤ A ss A ss + 1 λ I -1 2 2 + ∥I∥ 2 2 = A ss A ss + 1 λ I -1 2 2 + 1<label>(16)</label></formula><p>Additionally, if Assumption 1 holds for c y ≥ 1, we have for all x</p><formula xml:id="formula_61">By t ϕ(x t ) ⊤ ϕ(x t )y ⊤ t = t i=1 ϕ(x i )y ⊤ i y t ϕ(x t ) ⊤ ϕ(x t )y ⊤ t ⪯ c 2 y t i=1 ϕ(x i )ϕ(x t ) ⊤ ϕ(x t )y ⊤ t ⪯ c 2 y t i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I ϕ(x t )y ⊤ t (by Assumption 1) Moreover, by y t ϕ(x t ) ⊤ ϕ(x t )y ⊤ t -1 = ϕ(x t ) ⊤ ϕ(x t )y ⊤ t y t -1 y t y ⊤ t we obtain B ⪯ c 2 y t i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I ϕ(x t )y ⊤ t y t ϕ(x t ) ⊤ ϕ(x t )y ⊤ t -1 = c 2 y t i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I ϕ(x t )y ⊤ t y t y ⊤ t ϕ(x t ) ⊤ ϕ(x t )y ⊤ t y ⊤ t -1 = c 2 y ϕ(x t ) ⊤ ϕ(x t ) t i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I ϕ(x t )y ⊤ t ⪯ K ′ ϕ(x t )y ⊤ t ,<label>(17)</label></formula><p>where</p><formula xml:id="formula_62">K ′ ≥ c 2 y t i=1 ϕ(xi) ⊤ ϕ(xi) ϕ(xt) ⊤ ϕ(xt) + 1 .</formula><p>Combining Eq. ( <ref type="formula" target="#formula_59">15</ref>) to ( <ref type="formula" target="#formula_61">17</ref>) we obtain,</p><formula xml:id="formula_63">0 A ss + 1 λ I -1 B s = A + 1 λ I -1 0 A ss A ss + 1 λ I -1 0 I B ⪯ A ss A ss + 1 λ I -1 2 2 + 1 A + 1 λ I -1 B ⪯ K ′ A ss A ss + 1 λ I -1 2 2 + 1 A + 1 λ I -1 ϕ(x t )y ⊤ t = K A + 1 λ I -1 ϕ(x t )y ⊤ t ,</formula><p>where we choose</p><formula xml:id="formula_64">K = K ′ A ss A ss + 1 λ I -1 2 2 + 1 ≥ c 2 y t i=1 ϕ(x i ) ⊤ ϕ(x i ) ϕ(x t ) ⊤ ϕ(x t ) + 1 A ss A ss + 1 λ I -1 2 2 + 1. Proposition 3. Let W (1) , W<label>(</label></formula><p>2) , . . . be the sequence produced by the online model learning Eq. (3) and W (1) , W (2) , . . . be the sequence produced by the sparse model learning Eq. <ref type="formula">(4</ref>). For all t ≥ 1, let M (t) := A</p><formula xml:id="formula_65">(t) ss A (t) ss + 1 λ I -1 A (t)</formula><p>ss and r M := sup t,s∈{s1,...,st}</p><formula xml:id="formula_66">A (t) ss + 1 λ I + M (t) A (t) ss + 1 λ I -M (t) -1 F (<label>18</label></formula><formula xml:id="formula_67">)</formula><p>Suppose that there exist λ such that Assumption 3 holds. Then, for all t ≥ 1, we have</p><formula xml:id="formula_68">W (t+1) -W (t+1) ⪯ Kr M ∆ t ,</formula><p>where ∆ t is defined by Eq. (13) in Lemma 2.</p><p>Proof. Note that A is symmetric and A ss = A ⊤ ss , then, M := A ss A ss + 1 λ I -1 A ss ⪰ 0, and we have S :=</p><formula xml:id="formula_69">A ss + 1 λ I -A ss A ss + 1 λ I -1 A ss = A ss + 1 λ I -M . Moreover, A ss D = A ss (A ss + 1 λ I) -1 A ss S -1 A ss (A ss + 1 λ I) -1 = M S -1 (A ss + 1 λ I) -1 ⪰ 0.</formula><p>Then, with Proposition 1, we get</p><formula xml:id="formula_70">W (t) s -A ss + 1 λ I -1 B s + A ss + 1 λ I -1 A ss W (t) s = S -1 B s -S -1 A ss A ss + 1 λ I -1 B s -A ss + 1 λ I -1 B s -A ss + 1 λ I -1 A ss A ss + 1 λ I -1 + D B s -(A ss + 1 λ I) -1 A ss S -1 B s = S -1 + A ss + 1 λ I -1 A ss A ss + 1 λ I -1 A ss S -1 -A ss + 1 λ I -1 B s -S -1 A ss A ss + 1 λ I -1 + A ss + 1 λ I -1 A ss A ss + 1 λ I -1 + D B s = S -1 + A ss + 1 λ I -1 A ss A ss + 1 λ I -1 A ss S -1 -A ss + 1 λ I -1 B s -       S -1 + A ss + 1 λ I -1 A ss A ss + 1 λ I -1 ⪰0 + A ss + 1 λ I -1 A ss D ⪰0       B s ⪯ S -1 + A ss + 1 λ I -1 A ss A ss + 1 λ I -1 A ss S -1 -A ss + 1 λ I -1 B s = S -1 + A ss + 1 λ I -1 M S -1 -A ss + 1 λ I -1 B s .</formula><p>Let r M := sup t,s∈{s1,...,st} A (t)</p><formula xml:id="formula_71">ss + 1 λ I + M (t) A (t)</formula><p>ss + 1 λ I -M (t) -1 F , we have</p><formula xml:id="formula_72">W (t) s -A ss + 1 λ I -1 B s + A ss + 1 λ I -1 A ss W (t) s ⪯ S -1 + A ss + 1 λ I -1 M S -1 -A ss + 1 λ I -1 B s = I + A ss + 1 λ I -1 M A ss + 1 λ I -M -1 -A ss + 1 λ I -1 B s =      A ss + 1 λ I -1 A ss + 1 λ I + M A ss + 1 λ I -M -1 ⪯r M I -A ss + 1 λ I -1      B s = A ss + 1 λ I -1 A ss + 1 λ I + M A ss + 1 λ I -M -1 -I ⪯(r M -1)I B s ⪯ (r M -1) • A ss + 1 λ I -1 B s</formula><p>Recall from Assumption 3 and Proposition 2 that</p><formula xml:id="formula_73">0 A (t) ss + 1 λ I -1 B (t) s ⪯ K A (t) + 1 λ I -1 ϕ(x t )y ⊤ t ,</formula><p>which gives that</p><formula xml:id="formula_74">W (t+1) -W (t+1) = W (t+1) -W (t+1) s ; W (t+1) s = W (t+1) -W (t) s ; W (t+1) s ⪯ W (t) + ∆ t -W (t) s ; W (t+1) s = W (t) + ∆ t -W (t) s ; A (t) ss + 1 λ I -1 B (t) s -A (t) ss W (t) s = 0; W (t) s -A (t) ss + 1 λ I -1 B (t) s + A (t) ss + 1 λ I -1 A (t) ss W (t) s + ∆ t ⪯ 0; (r M -1) A (t) ss + 1 λ I -1 B (t) s + ∆ t ⪯ K(r M -1)∆ t + ∆ t</formula><p>(Assumption 3 and Proposition 2) ⪯ Kr M ∆ t .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.3.2 REGRET BOUNDS FOR SPARSE ONLINE MODEL LEARNING</head><p>Theorem 1 (Regret Bounds for Sparse Online Model Learning). Let W (1) , W (2) , . . . be the sequence produced by the sparse online model learning Eq. (4). Let r M ≥ 1 be a constant defined as in Eq. ( <ref type="formula" target="#formula_66">18</ref>). Suppose that there exist c W , c y &gt; 0 and λ such that Assumptions 1 to 3 hold. Then, for all T ≥ 1 and all ξ ∈ R D×S , we have Regret(T ) :=</p><formula xml:id="formula_75">T t=1 f t ( W (t) ) - T t=1 f t (ξ) ≤ 1 λ c 2 W + 5λ(K 2 r 2 M + 1)c 2 y D(log(T ) + 1),</formula><p>Furthermore, If λ = c W /c y 5(K 2 r 2 M + 1)D(log(T ) + 1) ≥ 1 and it satisfies Assumptions 1 and 3, then we have Regret(T ) ≤ c W c y 20(K 2 r 2 M + 1)D(log(T ) + 1).</p><p>Proof. For t = 1, we have f t ( W (1) ) = f t (W (1) ) and f t ( W (1) )f t (W (1) ) = 0.</p><p>For t ≥ 2, denote by r ′ M := Kr M , we have</p><formula xml:id="formula_76">f t ( W (t) ) -f t (W (t) ) = Tr( W (t)⊤ ϕ(x t )ϕ(x t ) ⊤ W (t) ) + Tr(y ⊤ t y t ) -2 Tr( W (t)⊤ ϕ(x t )y ⊤ t ) -Tr(W (t)⊤ ϕ(x t )ϕ(x t ) ⊤ W (t) ) -Tr(y ⊤ t y t ) + 2 Tr(W (t)⊤ ϕ(x t )y ⊤ t ) = Tr ϕ(x t )ϕ(x t ) ⊤ W (t) W (t)⊤ -2 Tr ϕ(x t )y ⊤ t W (t)⊤ -Tr ϕ(x t )ϕ(x t ) ⊤ W (t) W (t)⊤ + 2 Tr ϕ(x t )y ⊤ t W (t)⊤ ≤ Tr ϕ(x t )ϕ(x t ) ⊤ W (t) -W (t) W (t) -W (t) ⊤ + 2 Tr ϕ(x t )y ⊤ t W (t) -W (t) ⊤ ≤ r ′2 M • Tr ϕ(x t )ϕ(x t ) ⊤ ∆ t-1 ∆ ⊤ t-1 + 2r ′ M • Tr ϕ(x t )y ⊤ t ∆ ⊤ t-1 (Proposition 3)</formula><p>For the first term in the right hand side of the above inequality, we have</p><formula xml:id="formula_77">Tr ϕ(x t )ϕ(x t ) ⊤ ∆ t-1 ∆ ⊤ t-1 = Tr ϕ(x t )ϕ(x t ) ⊤ t-1 i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 ϕ(x t-1 )y ⊤ t-1 y t-1 ϕ(x t-1 ) ⊤ t-1 i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I ⊤ -1 = ∥y t-1 ∥ 2 2 Tr ϕ(x t )ϕ(x t ) ⊤ t-1 i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 ϕ(x t-1 )ϕ(x t-1 ) ⊤ t-1 i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 ≤ c 2 y Tr ϕ(x t )ϕ(x t ) ⊤ t-1 i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 ϕ(x t-1 )ϕ(x t-1 ) ⊤ t-1 i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 = c 2 y Tr t-1 i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 ϕ(x t-1 )ϕ(x t-1 ) ⊤ ⪯ 1 t-1 I t-1 i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 ϕ(x t )ϕ(x t ) ⊤ ⪯ 1 t-1 I ≤ c 2 y D 1 (t -1) 2 (Assumption 1) ≤ c 2 y Dλ 1 t -1 . (λ ≥ 1 ≥ 1 t-1 for all t = 2, . . . )</formula><p>For the last term, we have</p><formula xml:id="formula_78">Tr ϕ(x t )y ⊤ t ∆ ⊤ t-1 = Tr ϕ(x t )y ⊤ t y t-1 ϕ(x t-1 ) ⊤ t-1 i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I ⊤ -1 ≤ c 2 y Tr ϕ(x t )ϕ(x t-1 ) ⊤ t-1 i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 = c 2 y Tr t-1 i=1 ϕ(x i )ϕ(x i ) ⊤ + 1 λ I -1 ϕ(x t )ϕ(x t-1 ) ⊤ ⪯ 1 t-1 I ≤ c 2 y D 1 t -1 .</formula><p>Therefore, the regret bound is upper-bounded as below:</p><formula xml:id="formula_79">Regret(T ) = T t=1 f t ( W (t) ) - T t=1 f t (W (t) ) + T t=1 f t (W (t) ) - T t=1 f t (ξ) ≤ T t=1 f t ( W (t) ) -f t (W (t) ) + 1 λ c 2 W + 5λc 2 y D(log(T ) + 1) (Corollary 1) ≤ c 2 y D r ′2 M λ + 2r ′ M T t=2 1 t -1 + 1 λ c 2 W + 5λc 2 y D(log(T ) + 1) ≤ c 2 y D r ′2 M λ + 2r ′ M (log(T -1) + 1) + 1 λ c 2 W + 5λc 2 y D(log(T ) + 1) ≤ 1 λ c 2 W + 5λ(r ′2 M + 1)c 2 y D(log(T ) + 1), (λ ≥ 1, r ′ M ≥ 1)</formula><p>which holds for all λ ≥ 1 that satisfies Assumptions 1 and 3.</p><p>Furthermore, If c W ≥ c y 5(K 2 r 2 M + 1)D(log(T ) + 1), and λ = c 2 W 5(K 2 r 2 M +1)c 2 y D(log(T )+1) satisfies Assumptions 1 and 3, then we have Regret(T ) ≤ c W c y 20(K 2 r 2 M + 1)D(log(T ) + 1).</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><figDesc>a E P w F l 9 e J s 3 z i l e t V O 8 u y r X r P I 4 C H M M J n I E H l 1 C D W 6 h D A x g M 4 B l e 4 c 0 R z o v z 7 n z M W 1 e c f O Y I / s D 5 / A E 3 3 Y 3 G &lt; / l a t e x i t &gt; P u &lt; l a t e x i t s h a 1 _ b a s e 6 4 = " W z y 4 d 5 z d N 6 u V Q 4 e t d d S q m D i k p s 8 = " &gt; A A A C J 3 i c b</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><figDesc>7 l 6 + f 4 f 3 L p m H b D b J y 7 l d b x L J 4 i 2 k G 7 a B / Z q I l a 6 B S d o T a i a I z u 0 Q N 6 N O 6 M J + P Z e P l s L R i z m W 3 0 A 8 b r B 5 H 3 m c M = &lt; / l a t e x i t &gt;</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure3: The Continual Bench environment consists of 6 tasks with diverse difficulty levels. All tasks share the same unified dynamics.</figDesc><graphic coords="6,55.44,67.06,234.00,134.73" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>1Figure 4 :</head><label>4</label><figDesc>Figure 4: Regret can be calculated with the area in blue, which integrates the sub-optimality gap of the online agent. tasks to evaluate agents at global time step w: AP (w) = 1 T w Tw</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Performance comparison of our agent OA with different deep model-based planning agents on Continual Bench environment. Results are aggregated from 7 runs with different seeds. The solid lines show the means and shaded areas are the standard errors. The grey regions denote the learning period for the current task τ ∈ [1, 2, . . . , 6].</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: (a) The average performance curves of different methods. (b) Ratio of the activated weights of the OA sparse world model. (c) Final agent performance with different buffer budgets. (d) Ablation on the world model sparsity.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Comparison on average performance and regret (in %) of</figDesc><table><row><cell cols="5">regularization-based ( ), architecture-based (Ȥ), replay-based</cell><cell>world model. Figure 6(b) shows the change of the model</cell></row><row><cell cols="3">( ) and perfect memory ( ) methods.</cell><cell></cell><cell></cell><cell>utilization (ratio of activated weights) of OA. Interestingly,</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>we can observe the sparse model gradually grows its uti-</cell></row><row><cell cols="2">Base</cell><cell>Methods</cell><cell cols="2">AP (↑) Reg (↓)</cell><cell>lization as learning more new tasks. Note that even if OA</cell></row><row><cell>Model-free</cell><cell>(SAC)</cell><cell>Perfect Memory Fine-tuning EWC Coreset Ȥ PackNet</cell><cell>41.51 0.69 31.45 37.31 41.72</cell><cell>77.58 67.68 77.38 77.97 78.50</cell><cell>reaches nearly full model utilization, it can still learn from newly coming data because the model solves for an overall least squares solution based on sufficient statistics (Eq. (</cell></row><row><cell>Model</cell><cell>based</cell><cell>Fine-tuning SI Coreset Perfect Memory</cell><cell>24.86 39.96 61.83 73.09</cell><cell>37.74 33.57 30.83 30.95</cell><cell></cell></row><row><cell></cell><cell></cell><cell>OA (ours)</cell><cell>72.93</cell><cell>27.62</cell><cell></cell></row><row><cell cols="5">niques) struggle to succeed on all sequentially seen tasks.</cell><cell></cell></row><row><cell cols="5">Only OA (and deep agent with perfect memory) can improve</cell><cell></cell></row><row><cell cols="5">the average performance continually. Table 1 gives quanti-</cell><cell></cell></row><row><cell cols="5">tative results of the average performance (AP) and the re-</cell><cell></cell></row><row><cell cols="5">gret (Reg) measured over all tasks at the final step of agent</cell><cell></cell></row><row><cell cols="5">learning. For model-free agents, various CL methods im-</cell><cell></cell></row><row><cell cols="5">prove AP compared to the Fine-tuning baseline, while they</cell><cell></cell></row><row><cell cols="5">all incur high regret. This might be because the learned</cell><cell></cell></row><row><cell cols="5">policy and value are hard to adapt to new tasks quickly. On</cell><cell></cell></row><row><cell cols="5">the other hand, model-based agents generally exhibit lower</cell><cell></cell></row><row><cell cols="5">regret by planning with the learned world model, which is</cell><cell></cell></row><row><cell cols="5">shared across tasks thus being more generalizable. Notably,</cell><cell></cell></row><row><cell cols="5">the proposed method achieves even lower regret than deep</cell><cell></cell></row><row><cell cols="5">agents with perfect memory. This is because our incremen-</cell><cell></cell></row><row><cell cols="5">tal update ensures the optimal solution at each step, while</cell><cell></cell></row><row><cell cols="5">SGD updates on all previous data are not guaranteed and</cell><cell></cell></row><row><cell cols="5">could be less efficient. While model-based results in Fig-</cell><cell></cell></row><row><cell cols="5">ure 5 &amp; Table 1 measure the agent's CRL performance (a</cell><cell></cell></row><row><cell cols="5">joint result of world model and planner), the world model</cell><cell></cell></row><row><cell cols="5">accuracy provides a more direct measure. Please see Ap-</cell><cell></cell></row><row><cell cols="3">pendix C for more results.</cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">6.5 Ablation analysis</cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="5">OA perceives the state-action inputs as high-dimensional</cell><cell></cell></row><row><cell cols="5">sparse features (Section 4.1), and naturally learns a sparse</cell><cell></cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_0"><p>https://github.com/facebookresearch/mbrl-lib</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Loss of plasticity in continual deep reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Abbas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Modayil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>White</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">C</forename><surname>Machado</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of The 2nd Conference on Lifelong Learning Agents</title>
+		<meeting>The 2nd Conference on Lifelong Learning Agents</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">A definition of continual reinforcement learning</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Abel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Barreto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Van Roy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Precup</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">P</forename><surname>Van Hasselt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Singh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Gradient based sample selection for online continual learning</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Aljundi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Goujaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bengio</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Selfless sequential learning</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Aljundi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rohrbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Tuytelaars</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">The arcade learning environment: An evaluation platform for general agents</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">G</forename><surname>Bellemare</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Naddaf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Veness</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bowling</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Artificial Intelligence Research</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">A markovian decision process</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Bellman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of mathematics and mechanics</title>
+		<imprint>
+			<date type="published" when="1957">1957</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Class-incremental continual learning into the extended der-verse</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Boschini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bonicelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Buzzega</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Porrello</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Calderara</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Pattern Analysis and Machine Intelligence</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Efficient lifelong learning with A-GEM</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chaudhry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ranzato</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rohrbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Elhoseiny</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Continual learning with tiny episodic memories</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chaudhry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rohrbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Elhoseiny</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Ajanthan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dokania</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Torr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ranzato</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Workshop on Multi-Task and Lifelong Reinforcement Learning at ICML</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Deep reinforcement learning in a handful of trials using probabilistic dynamics models</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Chua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Calandra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Mcallister</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Leveraging procedural generation to benchmark reinforcement learning</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schulman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">A tutorial on the cross-entropy method</title>
+		<author>
+			<persName><forename type="first">P.-T</forename><surname>De Boer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">P</forename><surname>Kroese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mannor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">Y</forename><surname>Rubinstein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Annals of operations research</title>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Orthogonal gradient descent for continual learning</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Farajtabar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Azizan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The 23rd International Conference on Artificial Intelligence and Statistics</title>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Chiappa</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">R</forename><surname>Calandra</surname></persName>
+		</editor>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Model predictive control: Theory and practice-a survey</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">E</forename><surname>Garcia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">M</forename><surname>Prett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Morari</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Automatica</title>
+		<imprint>
+			<date type="published" when="1989">1989</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">A meta-mdp approach to exploration for lifelong reinforcement learning</title>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">M</forename><surname>Garcia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Thomas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Building a subspace of policies for scalable continual learning</title>
+		<author>
+			<persName><forename type="first">J.-B</forename><surname>Gaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Doan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Caccia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Soulier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Denoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Raileanu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Soft actor-critic: Off-policy maximum entropy deep reinforcement learning with a stochastic actor</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Haarnoja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Universal approximation using incremental constructive feedforward networks with random hidden nodes</title>
+		<author>
+			<persName><forename type="first">G.-B</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">K</forename><surname>Siew</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+			<publisher>IEEE Trans. Neural Networks</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Continual model-based reinforcement learning with hypernetworks</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Bharadhwaj</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Shkurti</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE International Conference on Robotics and Automation</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">A theory of universal artificial intelligence based on algorithmic complexity</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hutter</surname></persName>
+		</author>
+		<idno>arXiv: cs.0004001</idno>
+		<imprint>
+			<date type="published" when="2000">2000</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Selective experience replay for lifelong learning</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Isele</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Cosgun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI Conference on Artificial Intelligence</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Extensions of lipschitz mappings into a hilbert space</title>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">B</forename><surname>Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lindenstrauss</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Contemporary Mathematics</title>
+		<imprint>
+			<date type="published" when="1984">1984</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Forget-free continual learning with softwinning subnetworks</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yoon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">R</forename><surname>Madjid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">J</forename><surname>Hwang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">D</forename><surname>Yoo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Same state, different task: Continual reinforcement learning without interference</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kessler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Parker-Holder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">J</forename><surname>Ball</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zohren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">J</forename><surname>Roberts</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">AAAI Conference on Artificial Intelligence</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">The effectiveness of world models for continual reinforcement learning</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kessler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ostaszewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">P</forename><surname>Bortkiewicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Żarski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wolczyk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Parker-Holder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">J</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Miloś</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of The 2nd Conference on Lifelong Learning Agents</title>
+		<meeting>The 2nd Conference on Lifelong Learning Agents</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Towards continual reinforcement learning: A review and perspectives</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Khetarpal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Riemer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Rish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Precup</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Artificial Intelligence Research</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">A method for stochastic optimization</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">P</forename><surname>Kingma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ba</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Adam</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Overcoming catastrophic forgetting in neural networks</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kirkpatrick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Pascanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Rabinowitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Veness</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Desjardins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">A</forename><surname>Rusu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Milan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Quan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Ramalho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Grabska-Barwinska</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the national academy of sciences</title>
+		<meeting>the national academy of sciences</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><forename type="first">E</forename><surname>Kolve</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Mottaghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Vanderbilt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Weihs</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Herrasti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Deitke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ehsani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Gordon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1712.05474</idno>
+		<title level="m">An interactive 3d environment for visual ai</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">The nethack learning environment</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Küttler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Nardelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Selvatici</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Grefenstette</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Rocktäschel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Locality sensitive sparse encoding for learning world models online</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">S</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Adding multiple tasks to a single network by iterative pruning</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mallya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lazebnik</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Packnet</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Deep online learning via meta-learning: Continual adaptation for modelbased rl</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Nagabandi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Learning-based model predictive control for markov decision processes</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">R</forename><surname>Negenborn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>De Schutter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A</forename><surname>Wiering</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hellendoorn</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IFAC Proceedings Volumes</title>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Block coordinate descent on smooth manifolds: Convergence theory and twenty-one examples</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Vidal</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<publisher>Conference on Parsimony and Learning</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">The ideal continual learner: An agent that never forgets</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">V</forename><surname>Giampouras</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Vidal</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Mbrl-lib: A modular library for model-based reinforcement learning</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Pineda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Amos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">O</forename><surname>Lambert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Calandra</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<publisher>Arxiv</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Sample-efficient crossentropy method for real-time planning</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Pinneri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sawant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Blaes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Achterhold</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Stueckler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rolinek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Martius</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Cora: Benchmarks, baselines, and metrics as a platform for continual reinforcement learning agents</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Powers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Xing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Kolve</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Mottaghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gupta</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of The 1st Conference on Lifelong Learning Agents</title>
+		<meeting>The 1st Conference on Lifelong Learning Agents</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Learning to learn without forgetting by maximizing transfer and minimizing interference</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Riemer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Cases</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ajemian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Rish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Tesauro</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Experience replay for continual learning</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Rolnick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ahuja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schwarz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Wayne</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<publisher>Neural Information Processing Systems</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">The cross-entropy method for combinatorial and continuous optimization. Methodology and computing in applied probability</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rubinstein</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1999">1999</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Curious exploration via structured world models yields zero-shot object manipulation</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Sancaktar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Blaes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Martius</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schwarz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Luketina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">M</forename><surname>Czarnecki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Grabska-Barwinska</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">W</forename><surname>Teh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Pascanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Hadsell</surname></persName>
+		</author>
+		<title level="m">Progress &amp; compress: A scalable framework for continual learning. International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Online learning and online convex optimization</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Shalev-Shwartz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Foundations and Trends in Machine Learning</title>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Autonomous reinforcement learning: Formalism and benchmarking</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Sardana</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Alfred: A benchmark for interpreting grounded instructions for everyday tasks</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Shridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Thomason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Gordon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Mottaghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fox</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF conference on computer vision and pattern recognition</title>
+		<meeting>the IEEE/CVF conference on computer vision and pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Integrated architectures for learning, planning, and reacting based on approximating dynamic programming</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">S</forename><surname>Sutton</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Machine Learning Proceedings</title>
+		<imprint>
+			<date type="published" when="1990">1990</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">A physics engine for model-based control</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Todorov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Erez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tassa</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mujoco</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE International Conference on Intelligent Robots and Systems</title>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Random sampling with a reservoir</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">S</forename><surname>Vitter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Mathematical Software</title>
+		<imprint>
+			<date type="published" when="1985">1985</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Exploring model-based planning with policy networks</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ba</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title level="m" type="main">Model predictive path integral control using covariance variable importance sampling</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Williams</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Aldrich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Theodorou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1509.01149</idno>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Continual world: A robotic benchmark for continual reinforcement learning</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wołczyk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zaj Ąc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Pascanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ł</forename><surname>Kuciński</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Miłoś</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Continual task allocation in meta-policy network via sparse prompting</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Long</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="39623" to="39638" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Meta-world: A benchmark and evaluation for multi-task and meta reinforcement learning</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Quillen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Julian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<analytic>
+		<title level="a" type="main">Continual learning through synaptic intelligence</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Zenke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Poole</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ganguli</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<author>
+			<persName><forename type="first">F</forename><surname>Zhang</surname></persName>
+		</author>
+		<title level="m">The Schur complement and its applications</title>
+		<imprint>
+			<publisher>Springer Science &amp; Business Media</publisher>
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<analytic>
+		<title level="a" type="main">ACIL: Analytic class-incremental learning with absolute memorization and privacy protection</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Weng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K.-A</forename><surname>Toh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<analytic>
+		<title level="a" type="main">GKEAL: Gaussian kernel embedded analytic learning for few-shot class incremental task</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Weng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zeng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<analytic>
+		<title level="a" type="main">A dual-stream analytic learning for exemplar-free class-incremental learning</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Tong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ds-Al</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

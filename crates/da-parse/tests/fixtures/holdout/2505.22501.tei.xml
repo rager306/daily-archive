@@ -1,0 +1,1570 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">EvolveSearch: An Iterative Self-Evolving Search Agent</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-05-28">28 May 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Dingchu</forename><surname>Zhang</surname></persName>
+							<email>zhangdc@lamda.nju.edu.cn</email>
+						</author>
+						<author>
+							<persName><forename type="first">Yida</forename><surname>Zhao</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Jialong</forename><surname>Wu</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Baixuan</forename><surname>Li</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Wenbiao</forename><surname>Yin</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Liwen</forename><surname>Zhang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Yong</forename><surname>Jiang</surname></persName>
+							<email>yongjiang.jy@alibaba-inc.com</email>
+						</author>
+						<author>
+							<persName><forename type="first">Yufeng</forename><surname>Li</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Kewei</forename><surname>Tu</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Pengjun</forename><surname>Xie</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+						</author>
+						<title level="a" type="main">EvolveSearch: An Iterative Self-Evolving Search Agent</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-05-28">28 May 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">1027B6A5C183A73D5F639ABB78AE456D</idno>
+					<idno type="arXiv">arXiv:2505.22501v1[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:06+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>The rapid advancement of large language models (LLMs) has transformed the landscape of agentic information seeking capabilities through the integration of tools such as search engines and web browsers. However, current mainstream approaches for enabling LLM web search proficiency face significant challenges: supervised fine-tuning struggles with data production in open-search domains, while RL converges quickly, limiting their data utilization efficiency. To address these issues, we propose EvolveSearch, a novel iterative selfevolution framework that combines SFT and RL to enhance agentic web search capabilities without any external human-annotated reasoning data. Extensive experiments on seven multi-hop question-answering (MHQA) benchmarks demonstrate that EvolveSearch consistently improves performance across iterations, ultimately achieving an average improvement of 4.7% over the current state-of-the-art across seven benchmarks, opening the door to selfevolution agentic capabilities in open web search domains.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Rapid advances in large language models (LLMs) have enabled agentic AI capabilities through tool integration (e.g., search, browsing, code execution), supporting autonomous interaction with external environments. Recent agentic systems like Ope-nAI Deep Research (OpenAI, 2025) achieve 51.9% accuracy on BrowseComp, well above human performance (29.8%) <ref type="bibr" target="#b29">(Wei et al., 2025)</ref>, highlighting LLMs' potential for deep information research.</p><p>Existing agentic systems are primarily implemented via prompting-based, supervised finetuning (SFT)-based, and reinforcement learning (RL)-based approaches. Prompting-based agents rely on predefined workflows <ref type="bibr" target="#b2">(Anthropic, 2025;</ref><ref type="bibr"></ref> Figure <ref type="figure">1</ref>: Iterative improvements in the average performance of SFT and RL models, reflecting progressive enhancement through self-evolution. <ref type="bibr">Zhou et al., 2023)</ref>, resulting in rigid behaviors and limited generalization. They often struggle with instruction following and reasoning, requiring substantial manual prompt engineering for reliable performance <ref type="bibr" target="#b3">(Pan et al., 2025)</ref>. Subsequent work distills agentic capabilities into smaller LLMs via supervised fine-tuning (SFT) <ref type="bibr" target="#b29">(Wang et al., 2025;</ref><ref type="bibr">Wu et al., 2025a)</ref>. However, in open-ended search tasks, collecting SFT data necessitates complex environment interactions, making data construction challenging. More importantly, they lack robustness in complex, real-world environments <ref type="bibr" target="#b41">(Zheng et al., 2025)</ref>. RL-based approaches <ref type="bibr" target="#b24">(Shao et al., 2024)</ref> have recently gained attention for enabling models to acquire decision-making capabilities through online interactions with the environment and rewarddriven updates. This paradigm allows agents to adapt to task dynamics in an end-to-end manner. However, in practice, existing RL-based methods often converge within fewer than 100 steps, resulting in low data efficiency and limited performance gains <ref type="bibr" target="#b25">(Song et al., 2025;</ref><ref type="bibr">Jin et al., 2025)</ref>.</p><p>To address the challenges of scarce SFT data and the limited performance of the existing RL approach, we propose EvolveSearch, a novel iterative self-evolution framework that combines SFT and RL to enhance web search capabilities without any external human-annotated reasoning data. Specifically, EvolveSearch proceeds in alternating phases: (i) In the RL exploration phase, the model interacts with a web search environment, leveraging tool-use capabilities and receiving a hybrid reward signal. This enables the model to identify and learn from high-reward rollouts. (ii) In the SFT optimization phase, the best-performing rollouts from the RL phase are selected based on three criteria and used to optimize the model via SFT, yielding a stronger initialization (i.e., cold-start policy) for the next RL cycle. By iteratively alternating between exploration and optimization, EvolveSearch progressively bootstraps the performance of the RL model and the SFT model, learning robust and effective search behaviors from its own experience without human intervention, as illustrated in Figure <ref type="figure">1</ref>.</p><p>To validate the effectiveness of EvolveSearch, we conduct extensive experiments in realistic web search settings. Evaluation on seven multi-hop question-answering (MHQA) benchmarks demonstrates EvolveSearch consistently outperforms competitive baselines. Notably, it achieves a 4.7% average accuracy gain over the previous state-of-theart (SOTA), demonstrating the benefits of combining supervised fine-tuning and reinforcement learning in a self-evolution framework. These results highlight the strength of iterative learning from high-reward rollouts, enabling substantial performance improvements without reliance on humanannotated reasoning data.</p><p>Overall, our contributions are as follows:</p><p>• We propose EvolveSearch, a novel framework that, to the best of our knowledge, is the first to iteratively combine RL with SFT to enhance LLMs' capabilities in the web search scenario.</p><p>• EvolveSearch requires no human-annotated reasoning data; instead, it leverages highquality rollouts from RL models to enable continuous self-improvement via self-generated supervision.</p><p>• We conduct extensive empirical evaluations on multiple MHQA datasets, demonstrating the significant effectiveness and generality of EvolveSearch over existing SOTA.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Background</head><p>In this work, a question-answering rollout expands through a ReAct-based <ref type="bibr" target="#b37">(Yao et al., 2022)</ref> sequence of thought-action-observation iterations. Within each iteration, the LLM agent generates: (i) A free-form thought (τ ) to extract information, adjust action plans, and track task progress, etc. (ii) A structured action (α) to interact with external environments. (iii) This interaction yields an observation (o) which serves as feedback for the next iteration. Formally, we represent the agentic execution loop at a given time step t as a triplet (τ t , α t , o t ). In EvolveSearch, the action α can be either search, corresponding to the utilization of a search tool, or answer, which involves formulating a response to the given question. The observation o after a search action typically includes a list of relevant results, such as the top-10 titles and snippets retrieved from the search tool. Consequently, the historical rollout leading up to time step t denoted as, H t , can be represented as the sequence:</p><formula xml:id="formula_0">H t = (τ 0 , α 0 , o 0 , τ 1 , ..., τ t-1 , α t-1 , o t-1 ). (1)</formula><p>At time step t, the agent considers the historical rollout H t to generate thought τ t and subsequently select an action α t , following policy π(τ t , α t |H t ).</p><p>Then it gets a feedback observation o if α t is a search action. Otherwise, the rollout comes to an end after the answer action α t is completed.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Method</head><p>EvolveSearch employs iterative Reinforcement Learning (RL) and Rejection Sampling Fine-tuning (RSFT) to train an LLM agent towards solving question-answering problems with multiturn thinking and tool use. We provide an overview of our framework, with the full workflow illustrated in Figure <ref type="figure">2</ref>. We begin by evenly dividing the dataset into N parts. The process then involves iteratively executing the following two stages N times:</p><p>• Stage 1. In the i-th iteration, we utilize the i-th portion of the raw data to perform RL training on the SFT model from the previous iteration. By implementing a hybrid reward mechanism, we obtain an RL model with better generalization capabilities and rollouts during training. These rollouts provide diverse and high-quality training data for the subsequent SFT training phase.</p><p>• Stage 2. We merge the high-quality and diverse rollouts from the previous stage into the data pool, then refine the cold-start data by applying three filtering rules. This refined </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>RL Model</head><p>Figure <ref type="figure">2</ref>: The overall framework of EvolveSearch. We iteratively input raw question-answering data and a fixed base model. In the i-th iteration, the base model first performs SFT with a filter pool of training data, followed by RL with the i-th raw data. The rollout data during RL is filtered and incorporated into the training data pool for SFT in the subsequent iteration.</p><p>&lt;think&gt; To find out who the screenwriter for The Blackcoat's Da ughter is, I should perform a web search to gather information ab out the movie and its writers. &lt;/think&gt; &lt;tool_call&gt;{name: web_search, arguments: {queries: [screenwri ter for The Blackcoat's Daughter]}} &lt;/tool_call&gt; &lt;tool_response&gt;title: Producer Bryan Bertino Discusses Horror Film, The Blackcoat's url: <ref type="url" target="https://scriptmag.com/career/selling-screenplay-producer-">https://scriptmag.com/career/selling-screenplay-producer-</ref>bryan-bertino-discusses-horror-film-blackcoats-daughter snippet:Writer, director, and producer Bryan Bertino discusses b reaking in as a screenwriter and getting attached as a director… …&lt;/tool_response&gt; &lt;think&gt; From the search results, it appears that the screenwriter for \"The Blackcoat's Daughter\" is Oz Perkins. The information is consistent across multiple sources, including IMDb, YouTube, and other film-related websites. &lt;/think&gt; &lt;answer&gt; The screenwriter for \"The Blackcoat's Daughter\" is Oz Perkins. &lt;/answer&gt; Who was the screenwriter for The Blackcoat's Daughter? {name: web_search, arguments: {queries: [screenwriter for The Blackcoat's Daughter]}} data is subsequently used for SFT of the fixed base model, thereby enabling a more robust cold-start model for RL training in the next iteration.</p><p>We will further explain these two stages in Section 3.1 and Section 3.2, respectively. The iterative algorithm workflow is presented in Appendix D.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Hybrid Reward Reinforcement Learning</head><p>To encourage the model to explore diverse, highquality rollouts, we propose hybrid reward reinforcement learning: (i) A composite reward function is designed to guide the model towards proper tool calls and the derivation of accurate answers (Section 3.1.1); (ii) A modified version of Group Relative Policy Optimization (GRPO) <ref type="bibr" target="#b24">(Shao et al., 2024)</ref> is applied to improve optimization stability and bypass the need for an extra value model (Section 3.1.2). The prompt for RL rollout is shown in Appendix A.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.1">Reward Design</head><p>We structure reward function to comprise two key components: format reward and answer reward.</p><p>Format Reward. We establish a specific template to generate rollouts, as illustrated in Figure <ref type="figure" target="#fig_1">3</ref>. According to this template, the model's thought for each turn is enclosed within &lt;think-ing&gt;&lt;/thinking&gt; tags, any tool call (action) is placed within &lt;tool_call&gt;&lt;/tool_call&gt; tags, the corresponding tool feedback (observation) is enclosed by &lt;tool_response&gt;&lt;/tool_response&gt; tags, and finally, the answer is presented within &lt;an-swer&gt;&lt;/answer&gt; tags. Only when a rollout exactly matches the format, it receives a 1.0 format reward, denoted as R f = 1.0. Otherwise, we do not further check the answer, and the rollout receives a final reward of 0.0.</p><p>Answer Reward. When the format is strictly followed, we employ a judge model to assess the correctness of the answer (between &lt;answer&gt; and &lt;/answer&gt; tags). The judge prompt is shown in Appendix B. A rollout receives a 1.0 reward (R a = 1.0) if the answer is correct, otherwise R a = 0.0. In experiments, we also apply the F1 and recall as the answer reward for analysis, which we detail in Appendix F.</p><p>We define the final reward as a combination of the above two rewards: R = 0.5 * (R f + R a ), if the format is correct 0, if the format is incorrect (2)</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.2">Group Relative Policy Optimization</head><p>In this work, we adopt the Group Relative Policy Optimization (GRPO) algorithm. GRPO optimizes the current policy π θ by leveraging a reference policy π θ ref along with a set of rollouts generated by an existing policy π θ old . As suggested by <ref type="bibr">(Yu et al., 2025)</ref> and <ref type="bibr" target="#b15">(Liu et al., 2025)</ref>, we modify the original sample-level loss of GRPO into the token-level loss for better training performance. Specifically, given</p><formula xml:id="formula_1">G rollouts {y i } G i=1 ∼ π θ old (•|x)(with each input x ∼ D,</formula><p>where D is the experience distribution), the current policy is then optimized by maximizing the following objective function:</p><formula xml:id="formula_2">J (θ) = E x∼D,{y i } G i=1 ∼π θ old (•|x) 1 G i=1 |y i | G i=1 |y i | t=1 [min (r i,t A i,t , clip(r i,t , 1 -ϵ, 1 + ϵ)A i,t ) -βD KL ]</formula><p>(3) where ϵ is the clipping threshold and |y i | is the length of rollout y i . The D KL represents the discrepancy of the predicted probability between the current policy π θ and the reference policy π ref .</p><p>The advantage A i,t and r i,t are defined as follows:</p><formula xml:id="formula_3">r i,t = π θ (y i,t |x, y i,&lt;t ) π θ old (y i,t |x, y i,&lt;t ) A i,t = R i -mean {R} std {R}<label>(4)</label></formula><p>where R i represents reward for y i , and mean(•), std(•) are calculated over the batch to normalize reward scores into advantage estimates.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Rejection Sampling Fine-Tuning</head><p>To enhance the utilization of rollouts during the RL phase and provide a better cold-start model for the next RL iteration, we collect the rollouts in RL and use rejection sampling fine-tuning to learn high-quality and diverse samples. The following three rules are applied sequentially to ensure highquality, diverse and multi-step rollout filtering.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Rule 1: High-Reward Selection (HRS).</head><p>We only retain rollouts with rewards ≥ δ to ensure the high quality of training samples.</p><p>Rule 2: Same Query Deduplication (SQD). For multiple rollouts with the same query, we retain the sample that utilizes the tools the most, to ensure the diversity of the training samples.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Rule 3: Multi-Calls Selection (MCS).</head><p>To enhance data utilization efficiency, we combine rollouts from the current and previous iterations. We observe that samples with multiple tool calls offer meaningful thinking and search features. As noted in Section 5, data quantity is prioritized over quality. Hence, we select the top k rollouts with the most tool calls for SFT in each iteration. The distribution of tool calls for RL rollouts in each iteration is presented in the Appendix C. Supervised Fine-Tuning. After obtaining the data D f filtered by the three rules, we train the base model in an SFT manner. This produces a good cold-start model for the next RL stage. Given the question x and the agentic execution rollout H = (y 0 , y 1 , ..., y n-1 , y n ), where each y i ∈ {τ, α, o}, the loss function for SFT is computed as follows:</p><formula xml:id="formula_4">L = - 1 |H| i=1 I[y i ̸ = o] × |H| i=1 I[y i ̸ = o] • log π θ (y i | x, y &lt;i )<label>(5)</label></formula><p>Here, I[y i ̸ = o] filters out tokens corresponding to external feedback, ensuring that the loss is calculated only on the actions of the agent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Benchmark and Evaluation Metrics</head><p>In EvolveSearch, we utilize the same training and testing data as DeepResearcher <ref type="bibr" target="#b41">(Zheng et al., 2025)</ref>. Specifically, for the training dataset, we used a distribution ratio of NQ <ref type="bibr" target="#b13">(Kwiatkowski et al., 2019)</ref>:TQ <ref type="bibr" target="#b11">(Joshi et al., 2017)</ref>:HotpotQA <ref type="bibr" target="#b36">(Yang et al., 2018)</ref>:2Wiki <ref type="bibr" target="#b7">(Ho et al., 2020)</ref> as 1:1:3:3 with a total of 80,000 samples. This includes 75% of the samples from multi-hop scenarios, which better reflect the complex information-seeking behaviors required for deep research questions. For the evaluation dataset, we use the NQ, TQ, Hot-Pot, and 2Wiki datasets as the in-domain evaluation set, totaling 2,048 examples. We use the Musique <ref type="bibr" target="#b27">(Trivedi et al., 2022)</ref>, Bamboogle <ref type="bibr" target="#b23">(Press et al., 2022)</ref>, and PopQA <ref type="bibr" target="#b17">(Mallen et al., 2022)</ref> datasets as the out-of-domain evaluation set, totaling 1,129 examples. We utilize a judge model to evaluate the correctness of the model's response.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Implementation Details</head><p>We utilize Qwen2.5-7B-Instruct 1 <ref type="bibr" target="#b39">(Yang et al., 2024)</ref> as our backbone. During the RL training phase, each sample undergoes 16 rollouts with a training batch size of 128, a learning rate of 1e-6, a maximum search count of 10, and a temperature of 1.0. The training epoch is set to 1. We utilize Qwen2.5-72B-Instruct 2 as our judge model. We split the training data into N = 10 parts, and 8,000 samples are consumed for RL training in each iteration. In the data filter process, we set k to 2000 to select samples with the highest number of tool calls, δ to 0.7 to select samples with a reward exceeding 0.7. In the RSFT training phase, we employ Zero-3 offload <ref type="bibr">(Aminabadi et al., 2022)</ref>, with a batch size of 64, a learning rate of 3e-6, and the training epoch set to 1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Baselines</head><p>To evaluate the effectiveness of our approach, we compare it with the following baseline methods:</p><p>• CoT: This baseline generates answers using Chain-of-Thought reasoning without depending on any external reference context.</p><p>• RAG: This method integrates CoT reasoning with retrieved reference context to assist in the generation.</p><p>• Search-o1 <ref type="bibr" target="#b14">(Li et al., 2025)</ref> + Web Search: A multi-step reasoning baseline where the model is permitted to generate search queries and send real-time search requests via APIs, accessing URLs to browse web pages. The model can then generate answers based on the content of these web pages.</p><p>• Search-r1 (Jin et al., 2025): An RL-based finetuning strategy. During both the training and inference stages, it utilizes a retriever to access information from Wikipedia. We consider two setups: using Qwen2.5-7B-base 3 or Qwen2.5-7B-Instruct as the initial actor models, respectively.</p><p>1 <ref type="url" target="https://huggingface.co/Qwen/Qwen2.5-7B-Instruct">https://huggingface.co/Qwen/Qwen2.5-7B-Instruct</ref> 2 <ref type="url" target="https://huggingface.co/Qwen/Qwen2.5-72B-Instruct">https://huggingface.co/Qwen/Qwen2.5-72B-Instruct</ref> 3 <ref type="url" target="https://huggingface.co/Qwen/Qwen2.5-7B">https://huggingface.co/Qwen/Qwen2.5-7B</ref> </p><p>• R1-Searcher <ref type="bibr" target="#b25">(Song et al., 2025)</ref>: Unlike Search-r1, when given a search query, it searches Bing and answers questions by summarizing the first three pages of the search results.</p><p>• DeepResearcher <ref type="bibr" target="#b41">(Zheng et al., 2025)</ref>: Unlike R1-Searcher, DeepResearcher does not restrict its search to a specific domain and allows for autonomous selection of URLs rather than mandatorily summarizing the top three search results.</p><p>• DeepResearcher + Model-Based Reward (MBR): The standard DeepResearcher uses the F1 score as a reward. For fair comparison with our method, we also use Qwen2.5-72B-Instruct as the judge model for the response reward. For simplicity, we denote this baseline as DeepResearcher * .</p><p>• RLSearch: An RL-only baseline of our framework. It is only trained via RL with the same raw data and the same hyperparameters.</p><p>All the baselines use Qwen2.5-7B-Instruct as the backbone unless specifically mentioned.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Main Results</head><p>The results of EvolveSearch for 3 iterations and other baselines are presented in Table <ref type="table">1</ref>.</p><p>EvolveSearch consistently outperforms all baselines within training domains. EvolveSearch achieves the highest performance across all datasets within the four domains, significantly surpassing all baselines on the NQ and 2Wiki datasets. While DeepResearcher + MBR demonstrates comparable performance on the NQ and HotpotQA datasets, it is noteworthy that DeepResearcher + MBR utilizes model-based reward, which results in performance significantly higher than when using F1 as a reward during training. Therefore, using F1 as a reward tends to shorten the model's response, thereby affecting the overall quality of its responses.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>EvolveSearch demonstrates impressive generalization capabilities in out-of-domain scenarios.</head><p>It consistently surpasses all baseline methods across three out-of-domain datasets. This indicates that EvolveSearch allows the model to effectively acquire reasoning skills that can be applied broadly, instead of just adjusting to specific training data.</p><p>Method Inference In Domain Out of Domain Environment NQ TQ Hotpot 2Wiki Avg Musique Bamb PopQA Avg Prompt Based CoT † Local RAG 32.0 48.2 27.9 27.3 33.9 7.4 21.6 15.0 14.7 CoT+RAG † Local RAG 59.6 75.8 43.8 24.8 51.0 10.0 27.2 48.8 28.7 Search-o1 † Web Search 55.1 69.5 42.4 37.7 51.2 19.7 53.6 43.4 38.9 Training Based Search-r1-base † Local RAG 60.0 76.2 63.0 47.9 61.8 27.5 57.6 47.0 44.0 Search-r1-instruct † Local RAG 49.6 49.2 52.5 48.8 50.0 28.3 47.2 44.5 49.5 R1-Searcher † Web Search 52.3 79.1 53.1 65.8 62.6 25.6 65.6 43.4 44.9 DeepResearcher † Web Search 61.9 85.0 64.3 66.6 69.5 29.3 72.8 52.7 51.6 DeepResearcher * Web Search 66.4 86.0 65.4 75.0 73.2 29.0 71.7 50.2 50.3 RLSearch-ite1 Web Search 68.5 86.3 66.7 76.4 74.5 30.4 74.2 50.4 51.6 RLSearch-ite2 Web Search 69.3 87.7 66.8 75.5 74.9 33.5 73.6 51.1 52.7 RLSearch-ite3 Web Search 69.8 88.4 65.0 71.8 73.8 30.8 77.0 51.8 53.2 Ours EvolveSearch-ite1 Web Search 68.5 87.4 65.4 75.6 74.2 29.3 74.0 51.2 51.5 EvolveSearch-ite2 Web Search 69.4 86.3 66.3 78.5 75.1 31.6 76.5 52.8 53.6 EvolveSearch-ite3 Web Search 71.0 89.5 67.7 76.4 76.2 33.8 77.1 50.3 53.7 Table 1: Main results on seven multi-hop question answering (MHQA) benchmarks. All the results labelled with † are taken from Zheng et al. (2025). A good cold-start model is crucial. We select high-quality and diverse reasoning rollouts during the RL phase to employ Rejection Sampling Fine-Tuning (RSFT) for obtaining a better initial policy model. From the results, especially the comparison between the three iterations of EvolveSearch and the RLSearch baseline, we can conclude that a good cold-start model can further enhance the model's potential and stability in RL training, thereby consistently improving the performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Analysis</head><p>Data filtering plays a vital role. To demonstrate the significance of data filtering rules, we report the model's average in-domain and out-of-domain per-</p><p>Training Reward Method AVG ID AVG OOD Recall DeepResearcher 65.5 52.8 EvolveSearch-ite1 68.8 55.8 EvolveSearch-ite2 69.6 56.6 EvolveSearch-ite3 69.9 58.8 F1 DeepResearcher 61.2 50.8 EvolveSearch-ite1 61.6 51.4 EvolveSearch-ite2 62.2 51.0 EvolveSearch-ite3 62.1 52.1 Judge Model DeepResearcher 73.2 50.3 EvolveSearch-ite1 74.2 51.5 EvolveSearch-ite2 75.1 53.6 EvolveSearch-ite3 76.2 53.7 Table 2: Performance comparison of different training rewards during the training phase.</p><p>formance across different filtering rules. For fair comparison, we randomly select only 2000 SFT samples for each experiment, followed by using the additional 8000 samples for RL training. As shown in Figure <ref type="figure" target="#fig_2">4</ref>, each data filtering rule is essential. Specifically, filtering out multi-call data aims to enhance the model's initial multi-step reasoning capabilities, filtering data with high rewards ensures data accuracy, and filtering data with different queries increases diversity, thereby comprehensively improving the model's performance. of our method when employing different answer rewards, we replace the answer reward component with three common and widely recognized metrics: Recall, F1 Score, and Model-Based Reward. We utilize these metrics to compare the performance of our method against the baseline. To ensure consistency between training and testing, the same answer evaluation metric is used for both. The experimental results, presented in Table <ref type="table">2</ref>, demonstrate that our method consistently outperforms the baseline when using each of these different answer reward metrics on seven benchmarks. Furthermore, we observe that as the number of iterations of our method increases, the model's performance on both in-domain (ID) and out-of-domain (OOD) datasets gradually improves.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>EvolveSearch remains effective with different training rewards.</head><p>EvolveSearch still demonstrates superior performance across different judge models. To further verify our approach's effectiveness, we utilize different judge models to evaluate the model's response. In Table <ref type="table" target="#tab_0">3</ref>, we select three wellknown LLMs, DeepSeek-V3 (DeepSeek-AI, 2024), chatgpt-4o-latest<ref type="foot" target="#foot_0">foot_0</ref> , and grok-3<ref type="foot" target="#foot_1">foot_1</ref> as the judge model.</p><p>Although their performance is slightly lower than the trained judge model, the improvement trend relative to the baseline remains consistent. After the first iteration of training, the model outperforms the baseline in both in-domain and out-of-domain benchmarks. As the iteration increases, the model's performance gradually improves, further demonstrating the effectiveness of the method. Training Num AVG ID AVG OOD 4000 75.6 53.3 8000 75.2 52.6 12000 75.4 53.0 16000 75.4 53.4</p><p>Table 4: The impact of different data volumes on model performance during the RSFT phase.</p><p>The performance of the SFT Model and RL Model improves as the number of iterations increases. Figure <ref type="figure" target="#fig_3">5</ref> presents the performance of the SFT model and RL model across different iterations. We observe that as iterations grow, not only does the RL Model exhibit significant improvements across seven different benchmarks, but the SFT Model also shows considerable enhancement. This confirms the high quality of our chosen data and demonstrates the effectiveness of EvolveSearch.</p><p>Iterative training increases the frequency of model tool calls. To investigate the model's tool usage on the test set throughout the entire iterative training process, we record the average number of search tool calls by the SFT model and the RL model on the test set. As shown in Figure <ref type="figure" target="#fig_4">6</ref>, our findings reveal that, as the number of iterations increases, the model increasingly depends on the tool, leading to gathering more information. Furthermore, we note that for the majority of questions, the model requires only three calls to the search tool to reach a solution, indicating that the training data is not sufficiently challenging. A test case of the interaction between the model and the environment is presented in the Appendix E.</p><p>Data quality is more important than data quantity. To investigate the impact of SFT training data volume on model performance, we conduct controlled experiments using progressively scaled datasets. Based on historical RL training rollouts, we remove the filtering on the number of web search tool calls. SFT is performed at four different scales: 4,000, 8,000, 12,000, and 16,000 samples.</p><p>All experiments subsequently undergo an identical RL training phase using a fixed 8,000 questionanswering samples. The results are presented in Table <ref type="table">4</ref>, which show that merely increasing data volume does not necessarily enhance performance, which indicates that the quality of data is more important than the quantity.</p><p>6 Related Work Search Agent. Current methods often rely on manually designed workflows to guide large language models (LLMs) in interacting with external knowledge sources <ref type="bibr">(Wu et al., 2025b)</ref>. Recent studies like OpenResearcher <ref type="bibr">(Zheng et al., 2024)</ref>, IterDRAG <ref type="bibr" target="#b40">(Yue et al., 2025)</ref>, AirRAG <ref type="bibr" target="#b5">(Feng et al., 2025)</ref>, and others have improved search capabilities using these detailed workflows. However, these approaches are limited by their dependence on humancrafted prompts and interaction patterns. Recent developments about SFT for Retrieval-Augmented Generation (RAG) have become a preferred method over manual optimization <ref type="bibr" target="#b39">(Yu et al., 2024)</ref>. For example, CoRAG <ref type="bibr" target="#b30">(Wang et al., 2024)</ref> utilizes Monte Carlo Tree Search (MCTS) to select optimal document blocks under budget constraints but faces high computational costs and limited generalization due to reliance on supervised signals. Reinforcement Learning (RL) presents an end-to-end approach to enhance large language models' capabilities, improving reasoning skills significantly by late 2024 <ref type="bibr">(Ouyang et al., 2022;</ref><ref type="bibr" target="#b24">Shao et al., 2024)</ref>. Recent research explores RL for external knowl-edge retrieval, with systems like Search-R1 (Jin et al., 2025), ReSearch <ref type="bibr" target="#b3">(Chen et al., 2025)</ref>, and R1-Searcher <ref type="bibr" target="#b25">(Song et al., 2025)</ref> evolving beyond predefined cues to models that autonomously develop reasoning during retrieval. However, these methods often converge quickly, resulting in low data efficiency and limited performance gains.</p><p>Self-Evolution. Large language models (LLMs) have shown the capability to annotate datasets without relying on human-annotated labels, enabling low-resource training for other LLMs. In typical setups, a larger model, the teacher, generates labels for a smaller model, the student, in a process known as context distillation. Various algorithms can be employed, such as conventional supervised finetuning (SFT) <ref type="bibr" target="#b0">(Alpaca, 2023;</ref><ref type="bibr" target="#b8">Hsieh et al., 2023)</ref>, in-context learning <ref type="bibr" target="#b12">(Krishna et al., 2024)</ref>, and preference optimization <ref type="bibr" target="#b28">(Tunstall et al., 2023;</ref><ref type="bibr">Llama-3, 2024)</ref>. Self-evolution methods remove the necessity for a larger LLM, reducing computational demand and API costs. Recent research has shown this approach is viable using an unlabeled dataset with a few examples for; context <ref type="bibr" target="#b18">(Huang et al., 2022;</ref><ref type="bibr" target="#b26">Tian et al., 2023)</ref>. For instance, <ref type="bibr" target="#b6">(He et al., 2019)</ref> uses a small labeled dataset for initial finetuning before applying the trained generator to annotate the unlabeled data, similar strategies are employed for rationalization tasks in <ref type="bibr" target="#b9">(Jie et al., 2024)</ref>. <ref type="bibr" target="#b18">(Meng et al., 2022)</ref> enhances labeled datasets with additional samples, though this is limited to classification. Our approach focuses on the open web search domain, combining SFT and RL to enhance search capabilities without requiring any external human-annotated reasoning data.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Conclusion</head><p>In an era where current search agents have surpassed the capabilities of most humans, we propose EvolveSearch, a novel iterative self-evolution framework that synergistically combines RL with SFT to enhance web search capabilities without any external human-annotated reasoning rollouts. Extensive experiments on multiple MHQA benchmarks demonstrate that EvolveSearch consistently improves performance with each iteration, ultimately achieving an average accuracy improvement of 4.7% over SOTA methods on seven benchmarks, paving the way to self-evolution and selfimprovement in open web search domains.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitations</head><p>EvolveSearch relies on iterative collection and filtering of the rollouts during RL training for SFT, which adds to the computation cost of the whole training process. Designing a streaming rollout filtering system with higher sample efficiency is one possible way to minimize the impact of extra computation.</p><p>In this work, the tool call is limited to web search, so the performance of other tools remains unknown. The investigation of multiple tools is left for future research.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A RL Prompt</head><p>An example of rollout in the RL phase is shown below.</p><p>Prompts for RL Rollout A conversation between User and Assistant. The user asks a question, and the assistant solves it by calling one or more of the following tools. &lt;tools&gt; { "name": "web_search", "description": "Utilize the web search engine to retrieve relevant information based on multiple queries.", "parameters": { "type": "object", "properties": { "queries": { "type": "array", "items": { "type": "string", "description": "The search query." }, "description": "The list of search queries." } }, "required": ["queries"] } } &lt;/tools&gt;</p><p>The assistant starts with one or more cycles of ( thinking about which tool to use -&gt; performing tool call -&gt; waiting for tool response), and ends with ( thinking about the answer -&gt; answer of the question). The thinking processes, tool calls, tool responses, and answer are enclosed within their tags. There could be multiple thinking processes, tool calls, tool call parameters and tool response parameters.</p><p>Example response: &lt;think&gt; thinking process here &lt;/think&gt; &lt;tool_call&gt; {"name": "tool name here", "arguments": {" parameter name here": parameter value here, " another parameter name here": another parameter value here, ...}} &lt;/tool_call&gt; &lt;tool_response&gt; {"name": "tool name here", "content": {"result name here": result value here, "another result name here": another result value here, ...}} &lt;/tool_response&gt; &lt;think&gt; thinking process here &lt;/think&gt; &lt;tool_call&gt; {"name": "another tool name here", "arguments": {...}} &lt;/tool_call&gt; &lt;tool_response&gt; {"name": "another tool name here", "content": {...}}&lt;/tool_response&gt; (more thinking processes, tool calls and tool responses here) &lt;think&gt; thinking process here &lt;/think&gt; &lt;answer&gt; answer here &lt;/answer&gt; User: {INPUT QUERY} "</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Judgement Prompt</head><p>The prompt for answer judgement in our work is based on <ref type="bibr">Wei et al. (2024)</ref>. The detailed prompt is shown below.</p><p>references for detailed information. Is that the correct answer? Model Prediction 5: Barack Obama's children These responses are Incorrect because: They contain factual statements that contradict the standard answer. The answer is empty, restates the question. The answer lists multiple answers, restates the answer.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Special Notes</head><p>Please note the following: The standard answer may contain multiple aspects of the question's response, and within the same aspect, there may be multiple different descriptions, all of which are correct and are given within the same parentheses, connected by commas. For example, consider the question ''What is the name of the social media platforms purchased by Elon Musk?'': Predicted answers ''Twitter,'' ''Twitter, X,'' and ''X'' are all Correct. For standard answers that contain responses to multiple aspects of the question, the model must provide answers to all aspects to be considered correct; otherwise, it is directly judged as Incorrect.</p><p>There is no such output as Partially Correct. These answers will be given in different parentheses. For example, consider the question '' Who are the original members of the band The Beatles?'': Predicted answers ''John Lennon, Paul McCartney, George Harrison, Ringo Starr'' that include all answers are considered Correct. Predicted answers like ''John Lennon, Paul McCartney'' that do not include all answers are considered Incorrect.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Additional Guidelines</head><p>Also, pay special attention to the following: For questions with numerical standard answers, the predicted answer should match the standard answer. For example, consider the question ''What is the total length of the Jinshan Railway Huangpujiang Special Bridge in meters?'': Predicted answers ''3518,'' ''3518.1,'' and ''3518.17'' are all Correct. Predicted answers ''3520'' and ''3600'' are all Incorrect. If the model's prediction does not directly answer the question and attempts to bypass or fails to directly provide the standard answer, it is considered an Incorrect answer.</p><p>If the standard answer contains more information than the question, the predicted answer only needs to include the information mentioned in the question. If it is obvious from the question that the predicted answer has omitted information, it is considered Correct. If it is clear that different translation versions of a name refer to the same person, they are also considered Correct. You should focus more on the match between the standard answer and the model's prediction, rather than whether the standard answer is correct.</p><p>Example Question Here is a new example question. Please rate the predicted answer as one of the following: Question: {question} Standard Answer: {target} Predicted Answer: {predicted answer} Only return the option represented by Correct or Incorrect, that is, only return A or B, without adding any other text.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Distribution of RL Rollouts</head><p>The distribution of RL Rollouts is shown in Figure <ref type="figure" target="#fig_5">7</ref>. Algorithm 1 The iterative workflow of EvolveSearch. Input: The number of iterations N , raw data RD = {{d 1 , a 1 }, ..., {d n , a n }}, a base model M. Output: RL model M rN in the last iteration.</p><p>1: RD ⋆ ← {RD ⋆ 1 , ..., RD ⋆ N } ▷ Divide the raw data evenly into N parts 2: DP ← {} ▷ Initialize data pool 3: for i ← 1...N do 4: D ← GET (DP) ▷ Get all data 5: FD ← F(D) ▷ Filter data by three rules 6: M s ← SF T (M, FD) ▷ Get SFT model 7: M ri ← RL(M s , RD ⋆ i ) ▷ Get RL model 8: D r i ← {{d i1 , t i1 , a i1 }, ..., {d ik , t ik , a ik }} ▷ Obtain i-th RL rollout data 9: DP ← DP ∪ D r i ▷ Combine D with D r i 10: end for 11: return M rN</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D The Iterative Algorithm Workflow</head><p>The overall workflow framework of EvolveSearch is shown in Algorithm 1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E Case Study</head><p>A test case of EvolveSearch is presented below. In this case, the model demonstrates abilities such as critical thinking and refinement through multiple tool calls, proving the effectiveness of our training method.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>EvolveSearch Case</head><p>Query: What was the name changed to after Allison J71 was modified to a thrust of 7400 lbf? &lt;think&gt; To find the name change after Allison J71 was modified to a thrust of 7400 lbf, I need to first determine which model was created with this modification. &lt;/think&gt; &lt;tool_call&gt; {\"name\": \"web_search\", \"arguments\": {\" queries\":</p><p>[\"Allison J71 modified to 7400 lbf thrust model name\"]}} &lt;/tool_call&gt; &lt;tool_response&gt; ... &lt;/tool_response&gt; &lt;think&gt; The web search detailed various F-89 Scorpion versions but didn't mention the Allison J71 modified to 7400 lbf thrust. I'll refine the search to find the specific model name linked to this engine modification. &lt;/think&gt; &lt;tool_call&gt; {\"name\": \"web_search\", \"arguments\": {\" queries\": [\"Allison J71 modified to 7400 lbf thrust model name F-89 Scorpion\"]}} &lt;/tool_call&gt; &lt;tool_response&gt; ... &lt;/tool_response&gt; &lt;think&gt; The web search results don't specify the model name change for the Allison J71 modified to 7400 lbf thrust but indicate it's developed from the J35 engine, particularly the J35-A-23 variant. Since the F-89 Scorpion used the J71, it's likely that the thrust modification was part of an engine upgrade rather than a model name change. I will try to identify if any specific F-89 Scorpion model included this engine modification. &lt;/think&gt; &lt;tool_call&gt; {\"name\": \"web_search\", \"arguments\": {\" queries\": [\"F-89 Scorpion model with Allison J71 7400 lbf thrust\"]}} &lt;/tool_call&gt; &lt;tool_response&gt; ... &lt;/tool_response&gt; &lt;think&gt;</p><p>The web search suggests that the Allison J35 engine with 7,400 lbf wet thrust was used in the F -89 Scorpion. Specifically, the F-89C-25-NO block adopted the J35-A-33 engine, providing a dry thrust of 5,600 lbf and 7,400 lbf with afterburner. This implies the sought name change might be tied to this engine upgrade in the F-89C series, possibly altering the model designation to F -89C-25-NO. &lt;/think&gt; &lt;answer&gt; The name change after modifying the Allison J71 to a thrust of 7400 lbf likely relates to the F-89C -25-NO production of the F-89 Scorpion, which used the Allison J35-A-33 engine with the needed thrust specifications. &lt;/answer&gt;</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F Other Answer Reward</head><p>For F1, we directly define R a as the exact F1 score of the predicted answer and the gold answer, i.e., R a = F 1(pred, gold) ∈ [0, 1].</p><p>For recall, through some preliminary experiments, we found that a hard label is more helpful in RL rather than a soft score. Therefore, we define R a as follows: R a = 1.0, if the recall score = 1.0 0.0, if the recall score &lt; 1.0</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Filter</head></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 :</head><label>3</label><figDesc>Figure3: The illustration of a rollout that exactly matches the format.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: The impact of different data filtering rules on performance.</figDesc><graphic coords="6,70.87,371.05,218.27,130.21" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Performance of SFT model and RL model at different iterations.</figDesc><graphic coords="7,306.14,70.87,218.27,130.21" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Average number of tool calls in the test set across different iterations.</figDesc><graphic coords="8,70.87,70.87,218.27,130.21" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 7 :</head><label>7</label><figDesc>Figure7: The distribution of tool calls for RL rollouts. As the iteration increases, the average number of tool calls also increases, and the number of trivial rollouts (≤ 1 tool call) significantly decreases. This indicates that the rollouts gain in both diversity and quality during training.</figDesc><graphic coords="13,306.14,266.92,218.27,129.99" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 3 :</head><label>3</label><figDesc>To evaluate the effectiveness Comparison of model performance using different judge models.</figDesc><table><row><cell>Method</cell><cell>Judge Model</cell><cell cols="2">AVG ID AVG OOD</cell></row><row><cell></cell><cell>DeepSeek-V3</cell><cell>66.1</cell><cell>38.0</cell></row><row><cell>DeepResearcher  *</cell><cell>chatgpt-4o-latest</cell><cell>71.0</cell><cell>42.5</cell></row><row><cell></cell><cell>grok-3</cell><cell>74.5</cell><cell>45.9</cell></row><row><cell></cell><cell>DeepSeek-V3</cell><cell>66.3</cell><cell>39.8</cell></row><row><cell>EvolveSearch-ite1</cell><cell>chatgpt-4o-latest</cell><cell>71.8</cell><cell>43.9</cell></row><row><cell></cell><cell>grok-3</cell><cell>74.7</cell><cell>48.0</cell></row><row><cell></cell><cell>DeepSeek-V3</cell><cell>67.4</cell><cell>41.1</cell></row><row><cell>EvolveSearch-ite2</cell><cell>chatgpt-4o-latest</cell><cell>72.6</cell><cell>45.0</cell></row><row><cell></cell><cell>grok-3</cell><cell>75.3</cell><cell>48.7</cell></row><row><cell></cell><cell>DeepSeek-V3</cell><cell>67.4</cell><cell>41.6</cell></row><row><cell>EvolveSearch-ite3</cell><cell>chatgpt-4o-latest</cell><cell>72.7</cell><cell>45.3</cell></row><row><cell></cell><cell>grok-3</cell><cell>75.8</cell><cell>49.3</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_0"><p>https://openai.com</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_1"><p>https://x.ai</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Prompts for Answer Judgement</head><p>Please evaluate whether the model's response is correct based on the given question, standard answer, and the model's predicted answer. Your task is to rate the result as: Correct or Incorrect .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Correct Response</head><p>Here are examples of Correct responses:</p><p>Question: What are Barack Obama's children's names? Standard Answer: Malia Obama and Sasha Obama Model Prediction 1: Malia Obama and Sasha Obama Model Prediction 2: Malia and Sasha Model Prediction 3: Most people would say Malia and Sasha, but I'm not sure and need to confirm. Model Prediction 4: Barack Obama has two daughters, Malia Ann and Natasha Marian, but they are commonly known as Malia Obama and Sasha Obama. Model Prediction 5: Barack Obama's children These responses are Correct because:</p><p>They fully include the important information from the standard answer. They do not contain any information that contradicts the standard answer. Only the semantic content is considered; language ( English or Chinese), case, punctuation, grammar, and order are not important. The presence of vague statements or guesses is acceptable, as long as the standard answer is included and there is no incorrect or contradictory information.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Incorrect Response</head><p>Here are examples of Incorrect responses:</p><p>Question: What are Barack Obama's children's names? Standard Answer: Malia Obama and Sasha Obama Model Prediction 1: Malia Model Prediction 2: Malia, Sasha, Susan, and Sasha Obama or Malia Obama, or Natasha Marian, or Einstein Model Prediction 3: Although I don't know their exact names, I can say that Barack Obama has two children. Model Prediction 4: You might be thinking of Bessie and Olivia. But you should check the latest</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Introducing alpaca: A strong and performant instruction-following language model</title>
+		<author>
+			<persName><surname>Alpaca</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="2024" to="2026" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Shaden Smith, Olatunji Ruwase, and Yuxiong He. 2022. Deepspeed inference: Enabling efficient inference of transformer models at unprecedented scale</title>
+		<author>
+			<persName><forename type="first">Reza</forename><surname>Yazdani Aminabadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samyam</forename><surname>Rajbhandari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minjia</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ammar</forename><surname>Ahmad Awan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Du</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elton</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Rasley</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2207.00032</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Building effective agents</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Research: Learning to reason with search for llms via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Mingyang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianpeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoze</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yijie</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenzheng</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haofen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><forename type="middle">Z</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huajun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zenan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weipeng</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.19470</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Deepseek-Ai</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.19437</idno>
+		<title level="m">Deepseek-v3 technical report</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Airrag: Activating intrinsic reasoning for retrieval augmented generation via tree-based search</title>
+		<author>
+			<persName><forename type="first">Wenfeng</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuzhan</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuewei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyi</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.10053</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Revisiting self-training for neural sequence generation</title>
+		<author>
+			<persName><forename type="first">Junxian</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiatao</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiajun</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc'aurelio</forename><surname>Ranzato</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1909.13788</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Constructing a multi-hop qa dataset for comprehensive evaluation of reasoning steps</title>
+		<author>
+			<persName><forename type="first">Xanh</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anh-Khoa</forename><surname>Duong Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saku</forename><surname>Sugawara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akiko</forename><surname>Aizawa</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2011.01060</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Distilling step-by-step! outperforming larger language models with less training data and smaller model sizes</title>
+		<author>
+			<persName><forename type="first">Cheng-Yu</forename><surname>Hsieh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chun-Liang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chih-Kuan</forename><surname>Yeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hootan</forename><surname>Nakhost</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasuhisa</forename><surname>Fujii</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Ratner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ranjay</forename><surname>Krishna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen-Yu</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomas</forename><surname>Pfister</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.02301</idno>
+		<idno>arXiv:2210.11610</idno>
+		<editor>Jiaxin Huang, Shixiang Shane Gu, Le Hou, Yuexin Wu, Xuezhi Wang, Hongkun Yu, and Jiawei Han</editor>
+		<imprint>
+			<date type="published" when="2022">2023. 2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>Large language models can self-improve</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Plausible extractive rationalization through semi-supervised entailment signal</title>
+		<author>
+			<persName><forename type="first">Yeo</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ranjan</forename><surname>Satapathy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erik</forename><surname>Cambria</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.08479</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Bowen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hansi</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenrui</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinsung</forename><surname>Yoon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sercan</forename><surname>Arik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hamed</forename><surname>Zamani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Han</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.09516</idno>
+		<title level="m">Search-r1: Training llms to reason and leverage search engines with reinforcement learning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Triviaqa: A large scale distantly supervised challenge dataset for reading comprehension</title>
+		<author>
+			<persName><forename type="first">Mandar</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eunsol</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">S</forename><surname>Weld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1705.03551</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Post hoc explanations of language models can improve language models</title>
+		<author>
+			<persName><forename type="first">Satyapriya</forename><surname>Krishna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaqi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dylan</forename><surname>Slack</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Asma</forename><surname>Ghandeharioun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sameer</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Himabindu</forename><surname>Lakkaraju</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="page">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Natural questions: A benchmark for question answering research</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Kwiatkowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jennimaria</forename><surname>Palomaki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivia</forename><surname>Redfield</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Collins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ankur</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Alberti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danielle</forename><surname>Epstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Illia</forename><surname>Polosukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenton</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kristina</forename><surname>Toutanova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Llion</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Kelcey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">M</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakob</forename><surname>Uszkoreit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Slav</forename><surname>Petrov</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="page" from="452" to="466" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Search-o1: Agentic search-enhanced large reasoning models</title>
+		<author>
+			<persName><forename type="first">Xiaoxi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanting</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiajie</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuyao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peitian</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhicheng</forename><surname>Dou</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2501.05366</idno>
+		<idno>CoRR, abs/2501.05366</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Understanding r1-zero-like training: A critical perspective</title>
+		<author>
+			<persName><forename type="first">Zichen</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changyu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Penghui</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wee</forename><surname>Sun Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.20783</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title/>
+		<idno>Llama-3. 2024</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Meta llama</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page" from="2024" to="2026" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">When not to trust language models: Investigating effectiveness and limitations of parametric and nonparametric memories</title>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Mallen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akari</forename><surname>Asai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rajarshi</forename><surname>Das</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Khashabi</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Generating training data with language models: Towards zero-shot language understanding</title>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxin</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Han</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="462" to="477" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<title level="m">Deep research system card</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carroll</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katarina</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename></persName>
+		</author>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Training language models to follow instructions with human feedback</title>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fraser</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Kelton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maddie</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Simens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Welinder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Christiano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lowe</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Dan Klein, and 1 others. 2025. Why do multiagent systems fail?</title>
+		<author>
+			<persName><forename type="first">Mert</forename><surname>Melissa Z Pan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cemri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lakshya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyi</forename><surname>Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bhavya</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Chopra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kurt</forename><surname>Tiwari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Keutzer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kannan</forename><surname>Parameswaran</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ramchandran</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR 2025 Workshop on Building Trust in Language Models and Applications</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muru</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sewon</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ludwig</forename><surname>Schmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03350</idno>
+		<title level="m">Measuring and narrowing the compositionality gap in language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.03300</idno>
+		<title level="m">Deepseekmath: Pushing the limits of mathematical reasoning in open language models</title>
+		<imprint>
+			<date type="published" when="2024">1 others. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">R1-searcher: Incentivizing the search capability in llms via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Huatong</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinhao</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingqian</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhipeng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wayne</forename><forename type="middle">Xin</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji-Rong</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Miu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Katherine</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huaxiu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.08401</idno>
+		<title level="m">Finetuning language models for factuality</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Musique: Multihop questions via single-hop question composition</title>
+		<author>
+			<persName><forename type="first">Harsh</forename><surname>Trivedi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niranjan</forename><surname>Balasubramanian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="page" from="539" to="554" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Leandro von Werra, Clémentine Fourrier, Nathan Habib, and 1 others</title>
+		<author>
+			<persName><forename type="first">Lewis</forename><surname>Tunstall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Beeching</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Lambert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nazneen</forename><surname>Rajani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kashif</forename><surname>Rasul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Younes</forename><surname>Belkada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengyi</forename><surname>Huang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.16944</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Direct distillation of lm alignment</title>
+		<meeting><address><addrLine>Zephyr</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Chainof-retrieval augmented generation</title>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haonan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaolong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhicheng</forename><surname>Dou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Furu</forename><surname>Wei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.14342</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ziting</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haitao</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gao</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feifei</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2411.00744</idno>
+		<title level="m">Corag: A cost-constrained retrieval optimization system for retrieval-augmented generation</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nguyen</forename><surname>Karina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyung</forename><forename type="middle">Won</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunxin</forename><forename type="middle">Joy</forename><surname>Jiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Spencer</forename><surname>Papay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amelia</forename><surname>Glaese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Fedus</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2411.04368</idno>
+		<title level="m">Measuring short-form factuality in large language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqing</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Spencer</forename><surname>Papay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Mckinney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Isa</forename><surname>Fulford</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.12516</idno>
+		<title level="m">Hyung Won Chung, Alex Tachard Passos, William Fedus, and Amelia Glaese. 2025. Browsecomp: A simple yet challenging benchmark for browsing agents</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jialong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baixuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runnan</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenbiao</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liwen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenglin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengwei</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ding-Chu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zekun</forename><surname>Xi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengjun</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingren</forename><surname>Zhou</surname></persName>
+		</author>
+		<title level="m">Towards autonomous information seeking agency</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jialong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenbiao</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenglin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zekun</forename><surname>Xi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runnan</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linhai</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yulan</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deyu</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.07572</idno>
+		<title level="m">Pengjun Xie, and Fei Huang. 2025b. Webwalker: Benchmarking llms in web traversal</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baosong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beichen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianhong</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianwei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianxin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingren</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Dang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.15115</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>and 22 others. 2024. Qwen2.5 technical report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Hotpotqa: A dataset for diverse, explainable multi-hop question answering</title>
+		<author>
+			<persName><forename type="first">Zhilin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saizheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">W</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruslan</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1809.09600</idno>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03629</idno>
+		<title level="m">React: Synergizing reasoning and acting in language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qiying</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruofei</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufeng</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaochen</forename><surname>Zuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tiantian</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaohong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingjun</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.14476</idno>
+		<title level="m">Xin Liu, and 1 others. 2025. Dapo: An open-source llm reinforcement learning system at scale. arXiv preprint</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Auto-rag: Autonomous retrieval-augmented generation for large language models</title>
+		<author>
+			<persName><forename type="first">Tian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaolei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Feng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2411.19443</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Inference scaling for long-context retrieval augmented generation</title>
+		<author>
+			<persName><forename type="first">Zhenrui</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honglei</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aijun</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rolf</forename><surname>Jagerman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hansi</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanhui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Bendersky</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayuan</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangkun</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojie</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lyumanshan</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengrui</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.03160</idno>
+		<title level="m">Deepresearcher: Scaling deep research via reinforcement learning in real-world environments</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shichao</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongyu</forename><surname>Ru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Jiayang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuefeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jifan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binjie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yun</forename><surname>Luo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.06941</idno>
+		<title level="m">Renjie Pan, and 1 others. 2024. Openresearcher: Unleashing ai for accelerated scientific research</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<author>
+			<persName><forename type="first">Wangchunshu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eleanor</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tiannan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shi</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jintian</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruipu</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.07870</idno>
+		<title level="m">Shuai Wang, and 1 others. 2023. Agents: An open-source framework for autonomous language agents</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

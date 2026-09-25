@@ -1,0 +1,1805 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">ReMEmbR: Building and Reasoning Over Long-Horizon Spatio-Temporal Memory for Robot Navigation</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Abrar</forename><surname>Anwar</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">John</forename><surname>Welsh</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Joydeep</forename><surname>Biswas</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Soha</forename><surname>Pouya</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Yan</forename><surname>Chang</surname></persName>
+						</author>
+						<title level="a" type="main">ReMEmbR: Building and Reasoning Over Long-Horizon Spatio-Temporal Memory for Robot Navigation</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">5F9502AB4418007B7CBF603888ECFE25</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:46+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Navigating and understanding complex environments over extended periods of time is a significant challenge for robots. People interacting with the robot may want to ask questions like where something happened, when it occurred, or how long ago it took place, which would require the robot to reason over a long history of their deployment. To address this problem, we introduce a Retrieval-augmented Memory for Embodied Robots, or ReMEmbR, a system designed for long-horizon video question answering for robot navigation. To evaluate ReMEmbR, we introduce the NaVQA dataset where we annotate spatial, temporal, and descriptive questions to long-horizon robot navigation videos. ReMEmbR employs a structured approach involving a memory building and a querying phase, leveraging temporal information, spatial information, and images to efficiently handle continuously growing robot histories. Our experiments demonstrate that ReMEmbR outperforms LLM and VLM baselines, allowing ReMEmbR to achieve effective long-horizon reasoning with low latency. Additionally, we deploy ReMEmbR on a robot and show that our approach can handle diverse queries. The dataset, code, videos, and other material can be found at the following link:</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I. INTRODUCTION</head><p>Robots are increasingly being deployed in a wide variety of environments, including buildings, warehouses, and outdoor settings. During their deployments, robots perceive a range of objects, dynamic events, and phenomena that are challenging to encapsulate within conventional representations like metric or semantic maps. Additionally, these robots exist for long periods of time, typically on the magnitude of hours, but there is currently no way to query the robot on what it has seen over this long period of time. In this work, we address the challenge of efficiently building this long-horizon memory for robot navigation and responding to questions by framing it as a long-horizon video questionanswering task. Our system enables robots to respond to freeform questions and to perform actions based on what they have observed.</p><p>Existing approaches to spatio-temporal video memory in robotics are constrained by their capacity to handle only short durations, typically limited to 1-2 minutes <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b1">2]</ref>. As the time span increases, the inference time memory requirements grow for transformer-based methods, rendering them impractical for processing arbitrarily long videos Concurrent work <ref type="bibr" target="#b2">[3]</ref> has focused on leveraging extremely large context windows of large language models to answer questions given Fig. <ref type="figure">1</ref>: Robots continuously operate for long periods of time, where they gather long histories. In this work, we investigate how to aggregate these robot histories over time efficiently, and how to utilize that memory representation for answering spatio-temporal questions and generating navigational goals. a long robot history; however, this is not a scalable solution. No matter the length of the context window, unbounded length histories will not fit in fixed context sizes. In this work, we propose a Retrieval-augmented Memory for Embodied Robots, or ReMEmbR, which uses a retrieval-based LLMagent capable of querying memory across arbitrary lengths by formulating text-based, spatial, and temporal queries. As shown in Figure <ref type="figure">1</ref>, ReMEmbR consists of a memory-building phase and a querying phase.</p><p>Episodic memory in robotics has been framed mostly as a question-answering task, where systems are evaluated based on their ability to answer questions from a given video <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b4">5]</ref>. While useful for assessing QA capabilities, the text-based outputs of these systems may fall short of providing actionable information for a navigation robot.</p><p>For example, a question like "Where did you see my phone?" might yield a response such as "I saw it on the coffee table." While informative, this answer does not translate into actionable data for the robot. Our work, therefore, also incorporates reasoning over explicit spatial (e.g., xy positions) and temporal (e.g., "10 minutes ago") information.</p><p>To evaluate our system, we construct the Navigation Video Question Answering dataset NaVQA where methods must output position, temporal information, or free-form text. Our dataset consists of 210 questions sampled from subsets of 7 long-horizon navigation videos. This dataset is intended to foster further research in long-horizon memory building and reasoning for navigation robots.</p><p>In particular, we</p><p>• design the NaVQA dataset for evaluating 1) whether a robot had seen events or objects over the course of its deployment, 2) when it saw certain events or objects, 3) where they happened, and 4) how to reason about these spatio-temporal aspects to answer questions; • introduce ReMEmbR, a retrieval-augmented LLM-agent capable of forming function calls to retrieve relevant memories and answer questions based on a real-time memory-building process; • provide qualitative results on a real-world deployment of ReMEmbR on a robot, testing whether ReMEmbR is able to reason over its long-horizon deployment.</p><p>II. RELATED WORK Embodied question answering. Embodied Question Answering (EQA) <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b5">[6]</ref><ref type="bibr" target="#b6">[7]</ref><ref type="bibr" target="#b7">[8]</ref><ref type="bibr" target="#b8">[9]</ref><ref type="bibr" target="#b9">[10]</ref> is an extension of video question answering to egocentric, and possibly interactive, environments, requiring agents to navigate and gather information to answer questions. Most similar to the question answering ability of our work is OpenEQA <ref type="bibr" target="#b6">[7]</ref>, which answers questions about what a robot has seen. However, their questions consider only a short 30-second memory. This formulation falls short when applied to robotics scenarios that involve extended time horizons and continuous interaction with the environment. In our work, we focus on answering questions and generating navigational goals on longer lengths of history and leverage robot-centric data such as position and time.</p><p>Language and navigation. Classical navigation typically uses metric maps and does not focus on navigating to semantic goals. Most recent work in vision-and-language navigation <ref type="bibr" target="#b10">[11]</ref><ref type="bibr" target="#b11">[12]</ref><ref type="bibr" target="#b12">[13]</ref><ref type="bibr" target="#b13">[14]</ref><ref type="bibr" target="#b14">[15]</ref>, object-goal navigation <ref type="bibr" target="#b15">[16]</ref><ref type="bibr" target="#b16">[17]</ref><ref type="bibr" target="#b17">[18]</ref><ref type="bibr" target="#b18">[19]</ref>, and various forms of language-guided navigation <ref type="bibr" target="#b19">[20]</ref><ref type="bibr" target="#b20">[21]</ref><ref type="bibr" target="#b21">[22]</ref> focus on navigating in unseen spaces. These works focus more on exploration; however, robots typically are deployed for extended periods of time in the same area. Forms of memory such as scene graphs <ref type="bibr" target="#b22">[23,</ref><ref type="bibr" target="#b23">24]</ref>, topological memory <ref type="bibr" target="#b24">[25,</ref><ref type="bibr" target="#b25">26]</ref>, or queryable map representations <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b26">27,</ref><ref type="bibr" target="#b27">28]</ref> may also allow for semantic goal generation, but may fall short in answering questions about a robot's experience over time about dynamic, non-static objects. As such, our work uses a robot's video to capture these details over a robot's deployment.</p><p>MobilityVLA <ref type="bibr" target="#b2">[3]</ref> is a concurrent work where a longhorizon robot video tour is given to the 1M length context window of a Gemini LLM from which the robot must generate a topological goal. In this work, we solve a more general problem of answering spatial, temporal, and descriptive questions while also generating metric navigation goals. Additionally, simply increasing the context window length is not scalable to unbounded history lengths. Using retrieval-based methods, our approach can scale better to long histories.</p><p>Large language models and robotics. Recent years have seen advancements in large language models (LLMs) and vision-and-language models (VLMs), significantly expanding their capabilities across various tasks <ref type="bibr" target="#b28">[29,</ref><ref type="bibr" target="#b29">30]</ref>. Prompting techniques such as chain-of-thought <ref type="bibr" target="#b30">[31]</ref> and others <ref type="bibr" target="#b31">[32,</ref><ref type="bibr" target="#b32">33]</ref> has further enhanced LLMs' problem-solving abilities, enabling more complex reasoning. Retrieval-augmented generation <ref type="bibr" target="#b33">[34,</ref><ref type="bibr" target="#b34">35]</ref> and LLM-agents <ref type="bibr" target="#b35">[36]</ref><ref type="bibr" target="#b36">[37]</ref><ref type="bibr" target="#b37">[38]</ref><ref type="bibr" target="#b38">[39]</ref> allow the LLM to leverage external information to provide further context to the LLM. In robotics, past work have used the reasoning ability of LLMs for task planning <ref type="bibr" target="#b39">[40]</ref><ref type="bibr" target="#b40">[41]</ref><ref type="bibr" target="#b41">[42]</ref><ref type="bibr" target="#b42">[43]</ref>, generating plans as code <ref type="bibr" target="#b43">[44]</ref><ref type="bibr" target="#b44">[45]</ref><ref type="bibr" target="#b45">[46]</ref>, or to generate navigational goals <ref type="bibr" target="#b2">[3,</ref><ref type="bibr" target="#b19">20]</ref>. Rather than focusing on planning, our work focuses open horizon perception, and builds an LLM-agent to enable scalable multi-step reasoning over long-horizion robot histories.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>III. PROBLEM FORMULATION</head><p>We formulate our problem as a variation of a longhorizon video question answering task for robots. Unlike standard video question answering, robots are deployed for K minutes and actively accumulate a history H 1:K from various sensors. Due to their continuous deployment, the size of the history is monotonically increasing over time. Thus our work focuses on two problems: efficiently building a representation this long history H 1:K over time and then querying the representation to answer questions and generate navigational goals.</p><p>To efficiently build a memory, we consider a history of images H I , positions H P , and timestamps H T . We assume that the robot has localization capabilities, such as using LIDAR-based localization, GPS, or odometery information to provide metric coordinates. After a memory representation is built, a user asks the robot a question Q about spatial, temporal, or descriptive information which the robot may have seen. Specifically, our goal is to predict an answer A given the history and a question p(A|Q, H).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Questions.</head><p>Robots need to localize information in their histories; however, we focus on making this information actionable. For spatial questions such as "Where is closest bathroom?", the robot must reason about all the bathrooms and signs for bathrooms it has seen. Then, the system must provide the specific (x,y) location to go to the closest bathroom. By formulating spatial questions with coordinates, robots can act on this information to navigate to these goals.</p><p>Users may also want to query how long ago an event had occurred or understand how long a robot has done a task. Thus, we define two types of temporal questions: point-in-time questions and duration questions. Point-in-time questions such as "When did you see the boxes fall?" with the answer "15 minutes ago" refer to a specific point-intime relative to the present. Duration questions focus on the length of an activity such as "How long were you inside the building for?" with the answer "10 minutes". These temporal questions allow robots to retrospectively consider their previous actions.</p><p>Lastly, descriptive questions ask about the environment, activities the robot may have seen, or the robot's state in the Fig. <ref type="figure">2:</ref> (Left) We design ReMEmbR with a memory building phase and a querying phase. The memory building phase runs a VILA <ref type="bibr" target="#b46">[47]</ref> video captioning model, embeds the caption, then stores the caption embedding, position, and time vectors into a vector database. Then, when a user asks a question, a vector database querying loop starts with an LLM. (Right) Then, we evaluate ReMEmbR on the NaVQA dataset which we construct. NaVQA consists of three types of questions as shown above. Then we deploy ReMEmbR on a robot.</p><p>past. This general category can be yes or no questions such as "Was the sidewalk busy today?" or be more descriptive like "What side of the street are you driving on?" These descriptive questions ensure that our robots can effectively remember pertinent details that users ask for.</p><p>To capture these questions, we build the NaVQA dataset. We then design ReMEmbR as a step towards solving this task.</p><p>IV. REMEMBR Since robots are embodied and continually persist in the environment, we decompose the task into two distinct phases: memory building and querying.</p><p>The computation of p(A|Q, H 1:K ) is often difficult, as long histories are computationally expensive for Transformer-based models or can lead to forgetting in statespace models such as LSTMs. We note that for a given question, a large history is often not required to provide a correct answer. Instead, only a subset of the history R ⊆ H 1:K is needed.</p><p>Therefore, we can compute the answer given an optimal history subset R * ⊆ H 1:K . In practice, we cannot compute R * and must sample an R such that it contains the same information as R * . To do so, we build a memory representation V that is sampled using F : V → R, where F (V ) = {h|h ∈ H 1:K }. We decompose the problem as follows:</p><formula xml:id="formula_0">p(A|H 1:K , Q) = p(A|R * , Q) ≈ p(A|R, Q),<label>(1)</label></formula><p>s.t. R ∼ F (V ). Then, our goal is to estimate R * such that the answers derived from R and H are consistent. To do so, we must minimize the size of R while ensuring that the answer can be predicted from both the history H and the subset R:</p><formula xml:id="formula_1">R * = argmin R |R| s.t. argmax A p(A|R, Q) = argmax A ′ p(A ′ |H, Q)<label>(2)</label></formula><p>Using a memory representation V and a sampling strategy F makes the computation more tractable given a long history. Next, we detail how ReMEmbR aggregates the memory representation V during a memory building phase and how it samples R ∼ F (V ) during a querying phase.</p><p>Memory Building. As robots aggregate information over time, we define the queryable memory representation V as a vector database. Vector databases are commonly used to store millions of vector embeddings and search efficiently through them using quantized approximate nearest neighbor methods. Since these databases are efficient in search, we use a vector database to store time, position, and visual representations.</p><p>Robots perceive static objects, scenes, and dynamic events, over the course of their deployments. We would like to note that the memory representation V must be constructed without knowing the question Q in advance, and thus must be general enough for any potential question. As the robot is moving in real-time, we aggregate t seconds of image frames H Ii:i+t to compute an embedding representation for that segment of memory. We use video captioning using VILA <ref type="bibr" target="#b46">[47]</ref> over each consecutive t-second segment, which generates a caption for each temporal segment L i:i+t . These captions capture low-level details of what the robot sees over time, which we then embed using a text embedding function E. We use the mxbai-embed-large-v1 <ref type="bibr" target="#b47">[48]</ref> embedding model to embed the captions. Over time, the robot adds the vector representation of the text captions, the position, and the timestamps E(L Ii:i+t ), H Pi:i+t , H Pi:i+t into the vector database V .</p><p>Querying With the vector database V in place, the querying phase can begin. To gather a history subset R, we use an LLM-agent as the sampling function F to sample the database V .</p><p>The LLM-agent acts as a state machine that iteratively calls the LLM as shown in Figure <ref type="figure">2</ref>. Our approach begins with a retrieval node which queries the vector database in three different ways, using position, timestamp, or text embeddings. The LLM considers the current set of memories R 0:i and the question Q to generate a function call f and a query q which retrieves m memories. Each memory contains position, time, and caption information to be used as further context. These m retrieved memories are then added into R: R i:i+m = f (q), where q = LLM (R 0:i , Q).</p><p>We define three functions which the LLM could call:</p><p>• Text retrieval: f l (object) -→ m memories • Position retrieval: f p ((x, y, z)) -→ m memories • Time retrieval: f t ("HH:MM:SS") -→ m memories At each iteration, the LLM can formulate up to k queries that may help it answer the question. Once k × m memories are retrieved, the LLM assesses whether the question can be answered with the updated context. If the question is not answerable, the LLM uses the current context and executes the querying phase again retrieve new memories. If the question is answerable, the LLM summarizes any relevant information, and then generates an answer given the entire based on all the retrieved memories. The output is formatted as a JSON with keys for text, position, time, or duration answers. This structured output ensures simple evaluation on NaVQA and makes it easy to generate goals for a robot deployment.</p><p>V. DATASET We introduce the NaVQA dataset, a long-horizon navigation video question answering dataset built on top of the CODa robot navigation dataset <ref type="bibr" target="#b48">[49]</ref>. As described in the previous section, this dataset is annotated with spatial, temporal, and descriptive questions and answers. We use these questions to evaluate models' ability to handle robotcentric long-horizon reasoning. We are excited for the robot learning community to leverage this robot-centric QA dataset to improve the long-horizon reasoning capability of robots.</p><p>CODa Dataset. The CODa dataset is a large urban navigation dataset consisting of long-horizon sequences in indoor and outdoor settings on a university campus. The dataset was collected using a Clearpath Husky robot <ref type="bibr" target="#b49">[50]</ref>, where the robot navigated during the morning, afternoon, and evening. This data is also realistic to what outdoor robots may encounter, with sunny, cloudy, low-light, and rainy sequences. Though the dataset provides various sensor information such as LIDAR, GPS, LIDAR, and multiple cameras, we consider only the GPS coordinate and a frontfacing camera. We select 7 of the 23 sequences in the CODa dataset for building the NaVQA dataset. Each sequence ranged in length from 15 to 30 minutes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Data Annotation.</head><p>We are interested in how varying the length of a robot trajectory may impact the question answering ability of a system. In our work, we subsample the 7 sequences into three length-based categories: less than 2 minutes (short), between 2 and 7 minutes (medium), and longer than 7 minutes (long) segments. For each sequence, we subsample 10 segments of each length category, which we then provide to annotators to design questions and answers for. This process leads to 30 questions per sequence, for a total of 210 total questions. As these videos are long and require an understanding of robot perception, we recruited 5 robot experts to annotate spatial, temporal, and descriptive questions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Data Statistics.</head><p>The NaVQA dataset consists of five types of question outputs: binary yes/no questions (32%), point-intime questions (14%), duration questions (4%), spatial position questions (34%), and descriptive text questions (16%). Figure <ref type="figure" target="#fig_0">3</ref> depicts the distribution over time of the videos and examples of questions. These questions focused on spatial understanding, object detection, sign reading, dynamic event understanding, and contextual reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>VI. EXPERIMENTAL SETUP</head><p>We use NaVQA to evaluate the ability of ReMEmbR and other LLM-based approaches.</p><p>Methods. ReMEmbR uses a retrieval module to aggregate relevant parts of the long-horizon history. We show the ability of ReMEmbR with a closed-source LLM (GPT-4o), various open-source LLMs (Codestral <ref type="bibr" target="#b50">[51]</ref>, Command-R <ref type="bibr" target="#b51">[52]</ref>), and a smaller 8 billion parameter Llama3.1 <ref type="bibr" target="#b52">[53]</ref> model. ReMEmbR uses up to 3 retrieval steps to construct R. We compare these models to using GPT-4o with all the captions provided at once and a version using frames sampled at 2 FPS from the video itself. For captioning, we use the VILA1.5-13b over 3 seconds of video, leading to 2 FPS.</p><p>Metrics. The NaVQA dataset consists of four types of answers, for which we compute different metrics. To unify each of these types of metrics into one metric and reduce the impact of outliers, we threshold the temporal and spatial metrics to determine whether an instance is correct or not to create an Overall Correctness metric.</p><p>• Spatial questions output (x,y,z) coordinates, from which we compute an L2 distance. We define a spatial question to be correct if it is within 15 meters of the goal.</p><p>• Temporal point-in-time and duration questions produce answers such as "15 minutes", for which we compute</p><p>Method LLMs Descriptive Question Accuracy ↑ Positional Error (m) ↓ Temporal Error (s) ↓ Short Medium Long Short Medium Long Short Medium Long Ours GPT4o 0.62±0.5 0.58±0.5 0.65±0.5 5.1±11.9 27.5±26.8 46.25±59.6 0.3±0.1 1.8±2.0 3.6±5.9 Codestral 0.25±0.4 0.24±0.4 0.11±0.3 151.3±109.7 189.0±109.6 212.4±121.3 4.8±5.6 8.4±6.8 14.8±7.5 Command-R 0.36±0.5 0.32±0.5 0.14±0.3 158.7±129.6 172.2±119.4 188.7±107.1 4.5±17.3 14.3±6.7 15.3±11.7 Llama3.1:8b 0.31±0.5 0.33±0.5 0.21±0.4 159.9±123.2 151.2±121.1 165.3±115.1 9.5±27.5 7.9±16.3 18.7±10.8 LLM with Caption GPT4o 0.57±0.5 0.66±0.5 0.55±0.5 5.1±8.2 33.3±47.3 56.0±61.7 0.5±0.5 1.9±2.2 8.0±6.7 Multi-Frame VLM GPT4o 0.55±0.5 ✗ ✗ 7.5±11.4 ✗ ✗ 0.5±2.2 ✗ ✗</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>TABLE I: Results.</head><p>We compare ReMEmbR to an approach that processes all captions at once and another that processes all frames at once. We find that GPT4o-based approaches perform the best, and that ReMEmbR outperforms the LLM-based method and remains competitive to the VLM-based approach on the Short videos. The Medium and Long videos are too long for the VLM to process, and thus is marked with an ✗.</p><p>L1 temporal error. We define a temporal question to be correct if it is within 2 minutes of the goal.</p><p>• Descriptive questions produce either yes/no or textual answers, for which we compute a binary accuracy. This accuracy also determines correctness. To make evaluation faster, text answers are evaluated by an LLM to be correct or not, similar to other work <ref type="bibr" target="#b6">[7]</ref>.</p><p>All ReMEmbR experiments are run over three seeds while the baseline results are over one seed due to cost. Since seeds are not as reproducible, we micro-average the results across all seeds. The variance is high due to the differences in difficulty between questions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>VII. RESULTS</head><p>ReMEmbR performs strongly given a long-horizon memory at a lower latency. As shown in the results in Table <ref type="table">I</ref>, ReMEmbR improves performance on long-horizon tasks compared to traditional LLM methods. For longduration videos, ReMEmbR using GPT4o achieves better descriptive question accuracy, positional error, and temporal error compared to the LLM with captions and Multi-Frame VLM baselines. ReMEmbR performed similarly to the VLM for short category; however, the VLM is unable to process the long videos and most of the medium length videos.</p><p>ReMEmbR scales to longer videos with higher overall corectness. Figure <ref type="figure">4</ref> shows the overall correctness over time.</p><p>Fig. <ref type="figure">4</ref>: Overall correctness over time. We discretize time into 4 bins and average overall correctness scores in each. Note that although the Medium category in Table <ref type="table">I</ref> is incomplete, some test instances did complete. We find that ReMEmbR is more correct as the amount of time increases.</p><p>Although ReMEmbR does not have the highest performance for short videos compared to the VLM and LLM with captions, ReMEmbR is able to maintain a higher overall correctness score as the video length scales to be longer.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ReMEmbR performs with low latency.</head><p>We found that for a 21.5 minute video, ReMEmbR takes approximately 25 seconds per question, while the VLM took around 90 seconds per question for a shorter 5.5 minute video. In fact, since ReMEmbR only calls retrieval functions, the amount of time to answer a question remains relatively static regardless of the video duration. Despite their lower performance, we also note that Command-R and Codestral running on a local desktop takes around 40 seconds, while the smaller Llama3.1-8b takes around 15 seconds.</p><p>Open-source LLMs perform worse than GPT-4o. As shown in Table <ref type="table">I</ref>, we found that LLMs trained specifically for code or function calling work well for generating queries. However, our results imply that these LLMs struggle largely with arithmetic reasoning required for answering temporal and spatial questions, leading to lower performance.</p><p>Longer caption lengths hurt performance. We captioned with VILA1.5-13b during memory building by passing the model 6 frames for every 3 seconds of accumulated video, effectively operating at 2 FPS. We chose 6 frames as this is the max number of frames VILA can process. To evaluate the effect of frame rate, we also tested a lower rate of 6 frames every 12 seconds, or 0.5 FPS. We observed that captioning at this reduced frame rate led to a drop in performance, likely due to information loss from the coarser sampling.</p><p>Different sizes of captioning models slightly reduces performance. As shown in Table <ref type="table">II</ref>, using the 13b captioning model performs slightly better than smaller 8b and 3b models with respect to overall correctness. The minimal performance loss for using the 3b model is important as smaller models have a higher throughput when deployed on a robot.</p><p>Iterative function calls are required for good performance. ReMEmbR uses up to three iterations to find the answer. We found that with only one iteration, which is similar to traditional retrieval-augmented generation, overall correctness decreases. This is likely due to some questions requiring multi-step reasoning, or if the first retrieval did not provide relevant information, ReMEmbR can try again.</p><p>LLMs Overall Correctness ↑ Short Medium Long ReMEmbR 0.72±0.5 0.56±0.5 0.61±0.5 -1 call only 0.67±0.5 0.48±0.4 0.50±0.5 -12-sec captions 0.54±0.5 0.50±0.5 0.38±0.5 -Llama-VILA1.5-8b 0.58 ±0.5 0.52 ±0.5 0.54±0.5 -VILA1.5-3b 0.60±0.5 0.58±0.5 0.50±0.5</p><p>TABLE II: Ablations. We provide various abaltions of different components of ReMEmbR. We find that the iterative querying process, 3-second captions, and the size of the captioning model are important components to making ReMEmbR work. VIII. REAL WORLD DEPLOYMENT Though NaVQA is useful for prototyping and validating new methods, it is important to deploy such methods on robots. In this section, we demonstrate that ReMEmbR can also be deployed in real time on a robot in the real world.</p><p>Robot Deployment. We deploy ReMEmbR on a Nova Carter robot <ref type="bibr" target="#b53">[54]</ref>. We run the memory building phase on Jetson Orin 32GB, and use GPT-4o as the LLM backend for the ReMEmbR agent. We run a quantized version of VILA-3b to aggregate captions over time. We use ROS2's Nav2 stack with AMCL for computing localization over a premapped metric map. We run a Whisper automatic speech recognition model <ref type="bibr" target="#b54">[55]</ref> that was optimized for a Jetson to enable interaction with ReMEmbR. VILA-3b, Whisper, the Nav2 stack with 3D LiDAR, and the vector database querying runs on-device. In the code release, we will provide various LLM backends such as cloud-based LLMs like NVIDIA NIM APIs <ref type="bibr" target="#b55">[56]</ref> or OpenAI APIs, local large LLMs like Command-R that can run on a local desktop, and smaller function-calling LLMs that can run on-device. We hope that our code release can enable researchers to build and query long-horizon robot histories across arbitrary embodiments.</p><p>Qualitative results. We deployed the system in a large office space by first building a memory by driving the robot around for 25 minutes. Then we began querying the robot with various navigation-centric questions. We found that our robot was able to execute tasks such as "Where can I get some chips" where the robot took the user to a cafeteria shelf that contained chips. In contrast to searching for specific objects, we also found that our system can guide users to more general areas such as food courts if asked about food or drinks. Our system can also handle more vague questions. We asked the robot to "Take me somewhere with a nice view", and observed the function calls looking for tall glass windows, plants, and open spaces. Then the robot navigated to a lobby with large glass windows and greenery. We also found that for questions such as "Take me to the soda machine", the robot would go to a water fountain, as it was captioned as a "silver machine". This is likely an artifact of using a quantized 3B captioning model that was unable to caption the water fountain properly. Fig. <ref type="figure">5</ref>: Robot deployment. We deploy ReMEmbR on a Nova Carter robot. We run the memory building phase for 25 minutes, and then begin to ask navigation-centric questions The robot successfully handles various instructions, including those with more ambiguous instructions such as going to somewhere with a nice view. However, we found that ReMEmbR often confuses some objects such as soda machines and water fountains, leading to incorrect goals.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>IX. CONCLUSION</head><p>In this work, we introduced ReMEmbR, a system designed to address the challenge of long-horizon video question answering for robots. By decomposing the task into a memory building phase using a VLM and a vector database then a querying phase with an LLM-agent, ReMEmbR efficiently handles the extensive histories that robots accumulate over time. This approach makes it feasible for robots to leverage long-term memory in dynamic and complex environments.</p><p>Limitations and Future Work. While NaVQA ensures a unique answer for each question, real-world deployments often involve situations where multiple potential answers could be valid, which would require more focus on contextual reasoning. Additionally, our memory-building approach relies solely on video captioning. However, realworld environments contain rich spatial information such as room numbers, equipment labels, and other details that could be manually annotated. Semantic maps, scene graphs, and queryable scene representations can also provide useful spatial information. We hope to integrate other kinds of memory as function calls so that the ReMEmbR agent can reason spatially and contextually across a broader range of information. A limitation of our approach is that it constantly adds potentially repetitive information into the vector database which would dilute useful information over time. We believe that efficient memory aggregation of pertinent information is an interesting area of future research.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Fig. 3 :</head><label>3</label><figDesc>Fig. 3: We introduce the NaVQA dataset, which is composed of 210 examples across three different time ranges up to 20 minutes in length. The dataset consists of spatial, temporal, and descriptive questions, each of which has different types of outputs as shown above.</figDesc><graphic coords="4,54.00,55.08,244.80,124.73" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><graphic coords="3,54.00,55.09,503.98,149.06" type="bitmap" /></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>NVIDIA,</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>University of Southern California,</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>University of Texas at Austin. This work was done while Abrar Anwar was an intern at NVIDIA Contact: abrar.anwar@usc.edu, {jwelsh, jbiswas, spouya, yachang}@nvidia.com</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Open-Vocabulary Queryable Scene Representations for Real World Planning</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">S</forename><surname>Ryoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kappler</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">RoboVQA: Multimodal Long-Horizon Reasoning for Robotics</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sermanet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Dwibedi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Dulac-Arnold</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Maddineni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">J</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Baruch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mirchandani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sanketi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Mobility VLA: Multimodal Instruction Navigation with Long-Context VLMs and Topological Graphs</title>
+		<author>
+			<persName><forename type="first">H.-T</forename><forename type="middle">L</forename><surname>Chiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">G</forename><surname>Jacob</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T.-W</forename><forename type="middle">E</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Schenck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Rendleman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Shah</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.07775</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Embodied Question Answering</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Das</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Datta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Gkioxari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Batra</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Ego4D: Around the World in 3,000 Hours of Egocentric Video</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Grauman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Westbury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Byrne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Chavis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Furnari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Girdhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hamburger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<imprint>
+			<biblScope unit="page">2022</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Neural Modular Control for Embodied Question Answering</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Das</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Gkioxari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Batra</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning (CoRL)</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">OpenEQA: Embodied Question Answering in the Era of Foundation Models</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Majumdar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ajay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Putta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yenamandra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Henaff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Silwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Mcvay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Maksymets</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Arnaud</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<imprint>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">Z</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dixit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Itkina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Majumdar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Sadigh</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.15941</idno>
+		<title level="m">Explore Until Confident: Efficient Exploration for Embodied Question Answering</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Shifting the Baseline: Single Modality Performance on Visual Navigation &amp; QA</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Thomason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Gordon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bisk</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<publisher>North American Association for Computational Linguistics</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Embodied Question Answering in Photorealistic Environments with Point Cloud Perception</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Wijmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Datta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Maksymets</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Das</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Gkioxari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Essa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Batra</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Vision-and-Language Navigation: Interpreting Visually-Grounded Navigation Instructions in Real Environments</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Anderson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Teney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bruce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Sünderhauf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gould</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Van Den</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hengel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Visionand-Dialog Navigation</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Thomason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Murray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Cakmak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning (CoRL)</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">NavGPT: Explicit Reasoning in Vision-and-Language Navigation with Large Language Models</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Wu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI Conference on Artificial Intelligence</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Iterative Vision-and-Language Navigation</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Krantz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Banerjee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Corso</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Anderson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Thomason</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Vision-Language Pre-Training: Basics, Recent Advances, and Future Trends</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Gan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Foundations and Trends in Computer Graphics and Vision</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Object Goal Navigation Using Goal-Oriented Semantic Exploration</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">S</forename><surname>Chaplot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">P</forename><surname>Gandhi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">R</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Neural Information Processing Systems (NeurIPS)</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Cows on Pasture: Baselines and Benchmarks for Language-Driven Zero-Shot Object Navigation</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">Y</forename><surname>Gadre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wortsman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Ilharco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Schmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Song</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">ZSON: Zero-Shot Object-Goal Navigation Using Multimodal Goal Embeddings</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Majumdar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Aggarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Devnani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hoffman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Batra</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Neural Information Processing Systems (NeurIPS)</title>
+		<imprint>
+			<biblScope unit="page">2022</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Habitat-Web: Learning Embodied Object-Search Strategies from Human Demonstrations at Scale</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ramrakhya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Undersander</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Das</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<imprint>
+			<biblScope unit="page">2022</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">LM-Nav: Robotic Navigation with Large Pre-Trained Models of Language, Vision, and Action</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Shah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Osiński</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning (CoRL)</title>
+		<imprint>
+			<biblScope unit="page">2022</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Navigation with Large Language Models: Semantic Guesswork as a Heuristic for Planning</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Shah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R</forename><surname>Equi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Osiński</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning (CoRL)</title>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">CLIP-Nav: Using CLIP for Zero-Shot Vision-and-Language Navigation</title>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">S</forename><surname>Dorbala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sigurdsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Piramuthu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Thomason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">S</forename><surname>Sukhatme</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Workshop on Language and Robot Learning (LangRob) @ CoRL</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Learning 3D Semantic Scene Graphs from 3D Indoor Reconstructions</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wald</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Dhamo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Navab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Tombari</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Embodied Semantic Scene Graph Generation</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Sun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning (CoRL)</title>
+		<imprint>
+			<biblScope unit="page">2022</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">B</forename><surname>Eysenbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">R</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<title level="m">Search on the Replay Buffer: Bridging Planning and Reinforcement Learning</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note>Conference on Neural Information Processing Systems (NeurIPS)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Semi-Parametric Topological Memory for Navigation</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Savinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dosovitskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Koltun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations (ICLR)</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Scene Memory Transformer for Embodied Agents in Long-Horizon Tasks</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Toshev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Savarese</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">CLIP-Fields: Weakly Supervised Semantic Fields for Robotic Memory</title>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">M M</forename><surname>Shafiullah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Paxton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chintala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Szlam</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.05663</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><forename type="first">H</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Izacard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Martinet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-A</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lacroix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Azhar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.13971</idno>
+		<title level="m">Llama: Open and Efficient Foundation Language Models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">J</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Adler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Akkaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">L</forename><surname>Aleman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Altenschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Altman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Anadkat</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.08774</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Chain-of-Thought Prompting Elicits Reasoning in Large Language Models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Neural Information Processing Systems (NeurIPS)</title>
+		<imprint>
+			<biblScope unit="page">2022</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Tree of Thoughts: Deliberate Problem Solving with Large Language Models</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Neural Information Processing Systems (NeurIPS)</title>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Least-to-Most Prompting Enables Complex Reasoning in Large Language Models</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Bousquet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Le</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.10625</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.10997</idno>
+		<title level="m">Generation for Large Language Models: A Survey</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Asai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.11511</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Reflexion: Language Agents with Verbal Reinforcement Learning</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Neural Information Processing Systems (NeurIPS)</title>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03629</idno>
+		<title level="m">React: Synergizing Reasoning and Acting in Language Models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Generative Agents: Interactive Simulacra of Human Behavior</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">S</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>O'brien</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">J</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R</forename><surname>Morris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">S</forename><surname>Bernstein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACM Symposium on User Interface Software and Technology (UIST)</title>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Toolformer: Language Models Can Teach Themselves to Use Tools</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Scialom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Neural Information Processing Systems (NeurIPS)</title>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Do as i can, not as i say: Grounding language in robotic affordances</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Herzog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ibarz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Irpan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Julian</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Conference on Robot Learning (CoRL)</title>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Inner Monologue: Embodied Reasoning through Planning with Language Models</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Mordatch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chebotar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Conference on Robot Learning (CoRL)</title>
+		<imprint>
+			<biblScope unit="page">2022</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">TwoStep: Multi-agent task planning using classical planners and large language models</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Traum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Thomason</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.17246</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">LLM+P: Empowering Large Language Models with Optimal Planning Proficiency</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Biswas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Stone</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.11477</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">ProgPrompt: Generating situated robot task plans using large language models</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Blukis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mousavian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tremblay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fox</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Thomason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Garg</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Deploying and Evaluating LLMs to Program Service Mobile Robots</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Lucchetti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Schlesinger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Saxena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Freeman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Modak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Guha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Biswas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Robotics and Automation Letters (RA-L)</title>
+		<imprint>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Code as policies: Language model programs for embodied control</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">VILA: On Pre-Training for Visual Language Models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Ping</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Molchanov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Shoeybi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Han</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<imprint>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">Open source strikes bread -new fluffy embeddings model</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Shakir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Koenig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lipp</surname></persName>
+		</author>
+		<ptr target="https://www.mixedbread.ai/blog/mxbai-embed-large-v1" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Towards Robust Robot 3D Perception in Urban Environments: The UT Campus Object Dataset</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Eranki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-H</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Kalyani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Kalyanaraman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gamare</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bagad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Esteva</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Robotics</title>
+		<imprint>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<title level="m" type="main">Husky UGV -Outdoor Field Research Robot</title>
+		<author>
+			<persName><forename type="first">Clearpath</forename><surname>Robotics</surname></persName>
+		</author>
+		<ptr target="https://clearpathrobotics.com/husky-unmanned-ground-vehicle-robot/" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<title level="m" type="main">Codestral model card</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">I</forename><surname>Mistral</surname></persName>
+		</author>
+		<ptr target="https://huggingface.co/mistralai/Codestral-22B-v0.1" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title level="m" type="main">Command-r model card</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">I</forename><surname>Cohere For</surname></persName>
+		</author>
+		<ptr target="https://huggingface.co/CohereForAI/c4ai-command-r-v01" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dubey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Jauhri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Pandey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kadian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Al-Dahle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Letman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mathur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Schelten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Fan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.21783</idno>
+		<title level="m">The Llama 3 Herd of Models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<title level="m" type="main">Nova Carter -Complete Robotics Development Platform</title>
+		<author>
+			<persName><forename type="first">Segway</forename><surname>Robotics</surname></persName>
+		</author>
+		<ptr target="https://robotics.segway.com/nova-carter/" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Robust Speech Recognition via Large-Scale Weak Supervision</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">W</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Brockman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Mcleavey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Sutskever</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning (ICML)</title>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<title level="m" type="main">NVIDIA NIM</title>
+		<author>
+			<persName><surname>Nvidia</surname></persName>
+		</author>
+		<ptr target="https://docs.nvidia.com/nim/index.html" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,1870 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">A Self-Improving Coding Agent</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-05-16">16 May 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Maxime</forename><surname>Robeyns</surname></persName>
+							<email>maxime@igent.ai</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Bristol</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Martin</forename><surname>Szummer</surname></persName>
+							<email>szummer@igent.ai</email>
+						</author>
+						<author>
+							<persName><forename type="first">Laurence</forename><surname>Aitchison</surname></persName>
+							<email>laurence.aitchison@bristol.ac.uk</email>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Bristol</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">A Self-Improving Coding Agent</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-05-16">16 May 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">138AB4D1BB7A4A5E3020DBAE8F50A390</idno>
+					<idno type="arXiv">arXiv:2504.15228v2[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:01+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Recent advancements in Large Language Models (LLMs) have spurred interest in deploying LLM agents to undertake tasks in the world. LLMs are often deployed in agent systems: code that orchestrates LLM calls and provides them with tools. We demonstrate that an agent system, equipped with basic coding tools, can autonomously edit itself, and thereby improve its performance on benchmark tasks. We find performance gains from 17% to 53% on a random subset of SWE Bench Verified, with additional performance gains on LiveCodeBench, as well as synthetically generated agent benchmarks. Our work represents an advancement in the automated and open-ended design of agentic systems, and demonstrates a data-efficient, non gradient-based learning mechanism driven by LLM reflection and code updates.</p><p>Recent improvements in coding agents raise the question of whether these agents themselves can autonomously modify and improve their own code by discovering e.g. new prompting schemes or tools without manual design and implementation. We argue that this style of fully self-referential meta-agent programming is possible today and offers a sound alternative to the ad-hoc, trial-and-error approach of hand-crafted orchestrators, which may only explore a small fraction of the solution space. Recent work in the Automated Design of Agentic Systems (ADAS) <ref type="bibr" target="#b15">[16]</ref> uses a meta-agent to optimise agent implementations. However, Hu et al. [16]  is not self -improving, as there are two separate agents: the target-agent that performs the task, and the meta-agent, which improves the target agent. A motivation for a self-improving system is that the improvements in coding abilities may be leveraged during subsequent improvement steps, hopefully compounding.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>LLMs have recently made impressive advancements across a range of domains and tasks <ref type="bibr" target="#b1">[2,</ref><ref type="bibr" target="#b13">14,</ref><ref type="bibr" target="#b28">29]</ref>. However, in order to put these LLMs to use in real world applications, LLMs must be wrapped in code to orchestrate them and expose tools that allow the models to take actions. These action-taking LLMs are referred to as agents, and the broader system an agent system. These agent systems often show dramatic improvements in benchmark performance over "plain" LLMs <ref type="bibr" target="#b42">[43,</ref><ref type="bibr" target="#b45">46,</ref><ref type="bibr" target="#b4">5]</ref>, through combinations of prompting strategies and methods for combining different LLM outputs. Early examples include best-of-N sampling and simple prompting strategies such as chain of thought <ref type="bibr" target="#b19">[20]</ref>. However more sophisticated schemes have shown success in getting the desired behavior and performance improvements from the models, for instance STaR <ref type="bibr" target="#b44">[45]</ref>, Tree of Thoughts <ref type="bibr" target="#b41">[42]</ref>, Graph of Thoughts <ref type="bibr" target="#b2">[3]</ref>, LLM Debate <ref type="bibr" target="#b9">[10]</ref>, Iterative Self-Refinement <ref type="bibr" target="#b22">[23]</ref>, Expert Prompting <ref type="bibr" target="#b21">[22]</ref> among many others. The comprehensive survey of Schulhoff et al. <ref type="bibr" target="#b33">[34]</ref> demonstrates the vast number of manually created strategies to date.</p><p>Agent 0 Base Code Benchmarks Bench 1 Bench 2 Bench 3 Agent 1 Agent 1 Code Benchmarks Bench 1 Bench 2 Bench 3 Agent 2 Agent 2 Code Benchmarks Bench 1 Bench 2 Bench 3 Base Agent Meta-Improvement Meta-Improvement Meta-Improvement Best Agent 0, 1 Best Agent 0, ..., 2 ... Our contributions are:</p><p>• A self-improving coding agent (SICA) that eliminates the distinction between meta-agent and target agent, and is capable of editing its own codebase to improve itself with respect to its cost, speed and benchmark performance.</p><p>• Empirical evidence that self-referential agents can effectively improve their own implementations; we find performance improves from 17% to 53% performance on a random subset of SWE-Bench Verified, even with consideration given to safety constraints and resource efficiency.</p><p>• We share a our implementation of a self-improving coding agent (SICA) with the community.</p><p>SICA is implemented in standard Python without a domain-specific language, and provides a reference agent framework for building new SICA systems, as well as those seeking to post-train LLMs on tool use and other agent tasks.</p><p>We make our code available at <ref type="url" target="https://github.com/MaximeRobeyns/self_improving_coding_agent">https://github.com/MaximeRobeyns/self_improving_coding_   agent</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related Work</head><p>The traditional approach to developing and optimizing agent systems has been to manually design agent architectures and prompting techniques. Notable examples include Chain-of-Thought prompting <ref type="bibr" target="#b38">[39]</ref>, self-refinement <ref type="bibr" target="#b22">[23]</ref> and self-reflection <ref type="bibr" target="#b36">[37]</ref> for improving reasoning, tool use frameworks <ref type="bibr" target="#b32">[33]</ref>, and various compositional agent systems <ref type="bibr" target="#b37">[38,</ref><ref type="bibr">1]</ref>. While these hand-crafted approaches have achieved strong results, they require significant human effort and may miss useful patterns that could be discovered through automated search.</p><p>Another direction focuses on enabling agents to learn reusable skills and continuously self-improve. MaestroMotif <ref type="bibr" target="#b18">[19]</ref> uses LLM feedback to learn skill rewards and combines skills through code generation. This builds on earlier work on intrinsically motivated reinforcement learning <ref type="bibr" target="#b5">[6]</ref> and autotelic agents <ref type="bibr" target="#b7">[8]</ref> that develop repertoires of internally motivated skills, as well as work in openendedness <ref type="bibr" target="#b47">[48,</ref><ref type="bibr" target="#b11">12]</ref> that use LLMs to identify interesting and useful directions to explore in.</p><p>Several approaches leverage LLMs to optimize agent behaviors through natural language interaction. OPRO <ref type="bibr" target="#b40">[41]</ref> and Promptbreeder <ref type="bibr" target="#b12">[13]</ref> focus on optimizing prompts through language. Others have explored using LLMs to critique and refine agent behaviors <ref type="bibr" target="#b17">[18]</ref>, generate training curricula <ref type="bibr" target="#b20">[21]</ref>, or provide natural language feedback for reinforcement learning <ref type="bibr" target="#b30">[31]</ref>. Since our agent can edit its entire codebase, this includes the ability to tune its own prompts to optimise the behaviour of any part of the agent.</p><p>Recent work has begun exploring automated approaches for designing and optimizing agent systems. AgentSquare <ref type="bibr" target="#b34">[35]</ref> proposed a modular design space that abstracts agent components into planning, reasoning, tool use and memory modules, allowing automated search over module combinations. AlphaEvolve <ref type="bibr" target="#b27">[28]</ref> set out to use a coding agent to make scientific discoveries and optimize computational infrastructure, the results of which may accelerate the training of the LLM underpinning AlphaEvolve itself. The approach taken by these works leans more heavily on structured, evolutionary search than our own.</p><p>Perhaps the most closely related line of prior work began with ADAS <ref type="bibr" target="#b15">[16]</ref>. ADAS used a target-agent which performs the actual task, and a meta-agent which improves the target-agent. As such, ADAS is not self-improving (as the meta-agent improves the target agent, not itself). Moreover, in ADAS the meta-agent edits only a single forward function, written in a domain-specific language which has been carefully designed to make expressing different prompting schemes very straightforward. In contrast, our self-improving coding agent is fully self-improving (i.e. there is no distinction between the meta and target agent), and it operates over the agent's full Python codebase.</p><p>Of course, we would expect the first truly self-improving agents to be coding agents, because agents are written in code. The natural approach is to start off with a basic coding agent that can open/close/edit files, run commands in the terminal etc, then to launch this agent in a selfimprovement loop. We believe that our self-improving coding agent is the first such work. However, there are two papers claiming self-improving agents, but they do not evaluate in the coding setting, as they do not consider "full" coding agents. First, Gödel Agent <ref type="bibr" target="#b43">[44]</ref> has specific tools (such as action_adjust_logic and action_read_logic) that allow modification of small parts of the agent as it is running. Thus, it is not a general-purpose coding agent, as it is traditionally understood. And as such, as with ADAS, it was evaluated on language understanding and mathematical benchmarks (DROP <ref type="bibr" target="#b10">[11]</ref>, MGSM <ref type="bibr" target="#b35">[36]</ref>, MMLU <ref type="bibr" target="#b14">[15]</ref> and GPQA <ref type="bibr" target="#b31">[32]</ref>), rather than coding benchmarks. Second, Zelikman et al. <ref type="bibr" target="#b46">[47]</ref> introduce a self-taught optimizer for recursively self-improving code generation. Again, this is not a general-purpose coding agent with the ability to e.g. work on arbitrary software engineering tasks, and as such, it self-improves and evaluates and only on algorithmic tasks such as learning parity with noise <ref type="bibr" target="#b3">[4]</ref>, String Grid Distance, and 3-SAT.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Methods</head><p>The main running loop of SICA resembles the ADAS loop Hu et al. <ref type="bibr" target="#b15">[16]</ref> and is illustrated in Figure <ref type="figure" target="#fig_0">1</ref>.</p><p>In particular, both SICA, and ADAS keep an archive of previous agents and their benchmark results.</p><p>In the first step, SICA takes the best performing agent from the archive up until this point as the meta-agent, which is instructed to look through the archive, identify an improvement, and implement it. The high-level scheme is illustrated in Algorithm 1. Note that this is different from ADAS, in that ADAS has a fixed meta-agent, so does not select the meta-agent from the archive (the archive in ADAS is an archive of target-agents, not meta-agents). Second, both ADAS and SICA evaluate the new agent on a set of evaluation benchmarks and store the results.</p><p>We define the 'best' performing agent by a utility function, which incorporates common desiderata for a good agent; the normalised benchmark performance score p score ∈ [0, 1], the wall-clock time in seconds p time , as well as the dollar cost p cost . The base utility is calculated as</p><formula xml:id="formula_0">U = w score p score + w cost (1 -min(1, p cost /$10)) + w time (1 -min(1, p time /300 s))<label>(1)</label></formula><p>where we set the coefficients to w score = 0.5, w cost = 0.25 and w time = 0.25. We cap the worst cost at $10 per problem, and impose a timeout of 300 s after which we cancel the agent. To give partial credit for work done before the timeout, we calculate the final utility as follows, with a timeout penalty of τ = 0.5:</p><formula xml:id="formula_1">U final = U (1 -τ ), if timed out U, otherwise<label>(2)</label></formula><p>Note that since we are not performing any weight updates, this numerical score is only used to pick the next meta agent, as well as the base agent for the next iteration.</p><p>We begin by describing the initial coding agent. We then go on to describe the benchmark runner framework, and how this framework naturally allows us to create a self-referential task (that of improving the coding agent).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Initial agent</head><p>System Prompt</p><p>• Agent definition and goals • Tool documentation • Sub-agent documentation • System instructions Core Prompt • Problem statement or instruction • Open files • Directory tree Assistant Messages • CoT reasoning • Tool calls and results • Sub-agent calls and results • Overseer notifications LLM Context Window We were interested in useful, practically relevant coding agents capable of self-improvement. To that end, we started with a sophisticated coding agent, with a number of tools, sub-agents and oversight mechanisms. Of course, the tools, sub-agents and oversight mechanisms were all amenable to self-improvement; but here we simply describe the starting point.</p><p>We designed a set of tools to open (i.e. add to the context) and close files, overwrite files, execute a shell command and a simple calculator tool. We also include basic tools to submit a final answer to a benchmark problem, return a result from a sub-agent call to its caller, as well as exiting early from a sub-agent call. Finally, we provide an 'archive analysis' tool, which facilitates extracting high-level summary statistics about each agent iteration in the archive. We describe the tool calling mechanism in more detail in Appendix C. Next, we included several sub-agents. These are merely agents invoked by an existing agent, much like a tool call, by accepting input arguments and returning a string value. Introducing this abstraction serves two purposes. The first is to ensure the benchmark tasks can run entirely autonomously, without human direction and guidance. We provide the problem statement to the main entrypoint agent, (the full prompt for which is given in Appendix A) which then decomposes the task, delegating and asking questions to sub-agents. The second is to manage the context length for extended agent runs. The meta-improvement task is challenging, and the main agent may take on the order of one hour to finish one meta-improvement iteration. The subagent calls allow the context used for a sub-task to be naturally discarded when the agent returns, with the value returned by the sub-agent providing a summary of that sub-task in the main agent's context. Initially, we included three agents: a coding agent, a problem-solver agent and a reasoning agent. The full prompts for these agents are given in Appendix A.1.</p><p>Finally, one important component we provide in the initial agent that enables extended, autonomous operation while remaining on-task, avoiding loops or other behaviours that frustrate progress is the asynchronous overseer. This is an LLM, running periodically in a concurrent thread, which is prompted to judge whether there are any pathological behaviours or deviations from the original task, and which may intervene by notifying the currently running agent (or any of its parents) by means of a message in-lined into the assistant context, or in serious cases to cancel the execution of an agent if it has deviated too far or appears stuck. The overseer is called every 30s by default, or on key events. This overseer is provided with a comprehensive textual representation of the state of the system (a truncated example of which is provided in Appendix B) with verbose content truncated to limit context. This consists of the 'callgraph' of agent and sub-agent execution, in addition to the event stream of LLM messages, tool calls and responses, and sub-agent calls and responses associated with each agent call. This broad representation of the system's behaviour, allows the overseer to to pick out patterns, as well as detect repeated work completed by previous agent calls. The full Overseer prompt is given in Appendix A.2.</p><p>The structure of the agent's contexts, which contains e.g. open file contents, rather than just the prompt is critical. In the initial coding agent, the context is structured as Figure <ref type="figure">3</ref>. The system prompt with the agent definition (from Appendix A) is presented first, listing the definitions of the tools that the agent has available and the sub-agents it has available to call too. The system prompt concludes with system information, such as instructions for how to break out of the agent loop and return to the calling process. Next comes the 'core prompt', which is set as the first user message in the chat template format<ref type="foot" target="#foot_0">foot_0</ref> , and contains the caller-specified problem statement to work on (the caller might be the user invoking the agent, or an agent calling a sub-agent). This is also where we insert a view of the files the agent has open, as well as a representation of the current working directory.</p><p>Finally, the remainder of the LLM agent's context is the running assistant message. This contains periods of chain-of-thought reasoning about the problem, punctuated by tool calls and their responses, sub-agent calls and their responses, as well as any notifications or comments from the asynchronous overseer system.</p><p>The LLM context is laid out in this way to allow new content to be appended, hence preserving the KV cache to the benefit of latency between tool calls and cost. For the base agent, we adopt a simple scheme where file edits are appended as diffs, and these are periodically re-consolidated into the stale file view after a certain number accumulate. More sophisticated KV cache preservation schemes may be written by the agent to drive down cost.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments and Results</head><p>We first show a run that includes relatively long-horizon tasks in the benchmark set. We include SWE Bench Verified <ref type="bibr" target="#b6">[7]</ref> which tests problem decomposition, code navigation as well as fast and efficient Table <ref type="table">1</ref>: Performance per iteration: the benchmark accuracy numbers correspond to a synthetic file editing benchmark and symbol location (codebase navigation) benchmark, SWE-Bench Verified, and LiveCodeBench, respectively. We also show the metrics averaged across all problem instances across all benchmarks to compare the relative 'per problem' costs across agent iterations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Benchmark Accuracy Average Metrics (per benchmark problem)</head><p>Iter File Sym SWE-Bv LCB Cost ($) Time (s) Tokens (M) % Cached</p><p>0 0.82 0.35 0.17 0.65 1.91 130.2 0.24 32.5 1 0.87 0.32 0.14 0.62 1.71 123.8 0.24 33.6 2 0.92 0.31 0.17 0.58 2.45 151.4 0.26 34.3 3 0.82 0.33 0.22 0.64 1.84 126.9 0.29 31.9 4 0.88 0.31 0.38 0.54 2.70 148.3 0.26 30.9 5 0.89 0.31 0.30 0.59 2.17 134.8 0.23 36.9 6 0.96 0.31 0.37 0.64 2.21 134.1 0.25 36.1 7 0.92 0.35 0.33 0.58 2.15 134.9 0.23 38.2 8 0.93 0.33 0.27 0.64 2.03 128.5 0.26 36.4 9 0.88 0.40 0.47 0.61 2.03 126.3 0.27 38.3 10 0.87 0.41 0.46 0.66 1.77 107.0 0.22 40.9 11 0.89 0.43 0.44 0.70 2.25 129.6 0.27 36.9 12 0.91 0.38 0.44 0.64 1.58 103.9 0.26 39.0 13 0.86 0.40 0.27 0.61 1.66 113.3 0.29 37.2 14 0.94 0.34 0.53 0.67 2.20 117.1 0.25 37.2 15 0.91 0.40 0.51 0.71 1.70 114.5 0.30 36.3</p><p>file editing from which we select a fixed random subset of 50 questions. We also include 50 random questions from LiveCodeBench <ref type="bibr" target="#b25">[26]</ref>, the questions from which resemble competitive programming and often include more theoretical reasoning<ref type="foot" target="#foot_1">foot_1</ref> . We also include two example 'synthetic' benchmark tasks, defined and curated entirely within the agent's codebase. The first of these is a file editing benchmark, constructed by cloning the repositories used in SWE bench, finding 'interesting' (i.e. not trivial, nor complete overwrites) file edits in consecutive commits, mounting the repository checked out at the first commit in the working directory, and prompting the agent to edit the file such that it matches the target content of the second commit. The agent is scored on the closeness of the final file content to the target content, with time and dollar cost and token consumption also being accounted for in the utility function. The second is a codebase navigation problem, which is also constructed by cloning some Python repositories, from which we identify 'interesting' symbols, and at least one reference to this symbol in the project. The benchmark task is for the agent to locate the definition of this symbol, and return the location in the format path/to/file.py:line_num:column_num from the example reference.</p><p>We run the agent system using Sonnet 3.5 (v2) <ref type="bibr" target="#b1">[2]</ref> in most of the agents in the agent system, with the exception of a 'reasoning agent' which uses o3 mini <ref type="bibr" target="#b29">[30]</ref>. While the base agent system can run with much smaller and less expensive models, and many of our benchmark tasks can be solved by this class of models, the meta-improvement task is a complicated long-horizon task which requires powerful models. The API cost of the 15 iteration run was approximately $7,000.</p><p>The results are shown in Figure <ref type="figure">3</ref>, with more detailed iteration-level peformance numbers in Table <ref type="table">1</ref>.</p><p>The numbers show a promising progression. For the file editing benchmark, the agent is initially only equipped with the ability to overwrite files which is slow and token inefficient, and it quickly implemented self-termed 'smart' editing tools based on diffs and ranges. For the symbol navigation task, the agent implemented a simple AST based symbol locator at iteration 9 (perhaps exploiting the fact that our benchmarks were predominantly Python based), which yielded good improvements also reflected in other tasks. <ref type="foot" target="#foot_2">3</ref> The SWE Bench Verified subset saw an appreciable increase in performance throughout the run, accuring agent framework improvements. The LiveCodeBench scores saw a subtle improvement, although not as pronounced as some of the other benchmarks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Performance on Reasoning Tasks</head><p>We also evaluate the effectiveness of the self-referential agent system in improving task performance in more reasoning-heavy domains. We ran another experiment with two question answering tasks in the benchmark set: AIME 2024 and GPQA Diamond <ref type="bibr" target="#b31">[32]</ref>, the results of which are shown in Figure <ref type="figure">4</ref>.</p><p>0 1 2 3 4 5 6 7 8 9 0.65 0.7 0.75 0.8 Independent math verifier Sympy symbolic calculator Math cross validator Geometry specialist Systematic mathematical reasoning Agent Iteration Mean Accuracy AIME and GPQA Show Little Improvement Mean Accuracy Best Mean Accuracy So Far 95% Confidence Interval</p><p>Figure <ref type="figure">4</ref>: Agent Framework Saturation: the benefits the agent system was able to find when the models alone (e.g. o3-mini-high) already perform well was marginal.</p><p>The results here show less improvement, and highlight an important interplay between the base models and the scaffolding system. The base agent system at iteration 0 used in Figure <ref type="figure">4</ref> used Sonnet 3.5, with a 'reasoning' sub-agent that used o3-mini. The o3-mini model alone scores 87% and 79% on AIME and GPQA Diamond with a 'high' reasoning effort, while the agent system as a whole averaged 76% across the two benchmarks.</p><p>Inspecting the traces, we observe that for many of the runs, the main agent merely delegated the problem to the o3-mini based reasoning agent, and did not leverage the full capabilites of the agent system. For 'reasoning models' such as o1 <ref type="bibr" target="#b28">[29]</ref>, o3-mini or DeepSeek's R1 <ref type="bibr" target="#b8">[9]</ref>), we suspect that the inclusion of crude components aiming to induce reasoning behaviour (such as those included in iterations 4 and 6 in Figure <ref type="figure">4</ref>) may in fact interrupt the reasoning chain of thought of a reasoning model trained outside the agent system, resulting in a drop in performance. We look forward to future work training 'agent' LLMs jointly with the design of the agent system which will hopefully make better use of both components' strengths.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>We provide SICA, a self-improving coding agent. Our results demonstrate that self-improvement, implemented via an agent system editing its own codebase, is indeed possible, particularly in longerhorizon 'agentic' tasks where the base LLMs stand to gain more from the structure and guidance of a scaffolding system-for instance showing improvements from 17% to 53% on a random subset of SWE-Bench Verified, while also achieving a slight decrease in the average time spent per problem on average. The framework we present offers both a practical approach to automated agent system design and a foundation for future work in jointly training foundation models with their agent systems.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Limitations</head><p>Our initial attempt at a self-improving coding agent is not without limitations. One key difficulty was getting the LLM-based agent to autonomously come up with truely novel, innovative, feasible and interesting modification ideas at each meta-improvement step, which is a theme which has been commented on in the open-ended learning literature <ref type="bibr" target="#b26">[27,</ref><ref type="bibr" target="#b39">40,</ref><ref type="bibr" target="#b16">17]</ref>. The cost of settling on a bad idea which suffered from poor 'taste' was a lengthy agent editing step followed by an even more expensive run through the benchmarks. While the failed iteration persists in the archive, in principle acting as an example of what not to do, we found that the initial feature ideas would often heavily influence later feature ideas as variations on the same theme. This path dependency may lead to higher variance agent runs; with poor quality initial feature suggestions (e.g. fixating on caching open files) often lowering the quality of subsequent feature suggestions.</p><p>We also note that in optimizing for agent running time and cost, our relatively short 5-minute timeouts (and to a lesser degree per-problem cost limits) cause the initial benchmark scores to perhaps be lower than expected for the underlying language model (e.g. Sonnet 3.5 v2), especially for longer-horizon benchmark tasks like SWE-Bench. Indeed, much of the initial improvement we report arises from features speeding up file editing and agent cost, which are not traditionally reflected to the same degree in SWE-Bench numbers.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Future Work</head><p>Our approach reflects a non weight-based learning mechanism, where we update the system's behaviour through a combination of optimising the prompts on which the model is conditioned, as well as the way the LLM calls are orchestrated by editing the underlying code. This is in some sense very sample-efficient, where a detailed inspection of the archive of outcomes informs substantial modifications at each step. However, we recognize the potential of jointly updating the foundation model's weights with the agent system. The work of AlphaEvolve <ref type="bibr" target="#b27">[28]</ref> demonstrates a proof of this principle, and it may be fruitful to more explicitly fine-tune the foundation model to work with new newly created tools and scaffold at each iteration.</p><p>While we did not get to the point of benchmark saturation in our relatively short runs, we expect that future systems may run out of things to learn from a static benchmark set. One way this problem may be solved is through the automated design and curation of benchmarks, as initially demonstrated in the work of <ref type="bibr" target="#b11">[12]</ref> where RL environments are designed in code. By including two synthetic benchmarks in our work which were curated entirely by the agent through manual prompting (the file editing and symbol navigation benchmark) we demonstrate that SICA is flexible enough to support creating new benchmarks and evaluations for itself.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Safety Considerations</head><p>It is vitally important to carefully consider the safety implications posed by systems designed to be self-improving. While our self-improving coding agent shows improvement in certain agentic tasks, there seem to be limits to what can be achieved with such purely scaffolding based systems (as seen in Figure <ref type="figure">4</ref>), which do not modify the model weights. If the system updated the model weights as well as the scaffolding, we would expect that the risks of recursively self-improving systems would be higher. We highlight two key mechanisms for mitigating any risks.</p><p>First, a key safety mitigation in such systems is observability: that humans can and do oversee all aspects of potentially self-improving systems. We have thus architected SICA with sophisticated yet user-friendly observability mechanisms, which provide rich insight into the chain-of-thought, actions and sub-agent invocations at each step. These include an interactive web interface for easy oversight of all events occurring in the agent system, as well as the asynchronous LLM-based overseer, which may be prompted to treat various behaviors as grounds for canceling an agent, and which may also use a different LLM to the running agent. See Appendix A.2 for an example overseer judgement and the control afforded to it at each asynchronous invocation. Given the lack of model weight updates, which make it difficult but not impossible for the model to encode e.g. stenographic messages <ref type="bibr" target="#b23">[24,</ref><ref type="bibr" target="#b24">25]</ref> in the chain-of-thought, we believe this provides strong safety mitigation. That said, for recursively self-improving systems where the model weights are also updated, observability mechanisms, on their own, are clearly inadequate, and further research on safety mechanisms is clearly necessary.</p><p>The second opportunity for safety mitigation is inherent to the iterative, evaluation-based update procedure. While our initial benchmark set focuses on measuring capabilities we wish to improve, it is entirely possible to include safety-related evaluations in this benchmark set, to validate each agent before it progresses to the next iteration as the meta-agent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Agent Prompts</head><p>The main agent is the entrypoint that routes requests to other agents and synthesises sub-agent results into the final answer.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Main Agent Prompt</head><p>Your task is to orchestrate sub-agents in order to solve the problem. Here is the problem to solve: Problem Statement ============================================================== {problem_statement} End Problem Statement ========================================================== You must now delegate this problem to one, two or however many agents are required to thoroughly solve the problem. Ensure you relay the problem statement accurately and completely to the agent. Sub-agents will have access to the problem statement too, and so it should rarely be necessary to write it out verbatim. In particular, if the problem statement is very long, you should explicitly NOT write it out again in full. Instead, just give clear direction, and trust that the sub-agent can also refer to the problem statement. You have been given access to file and directory viewing tools, since these can help you get your bearings and direct sub-agents more effectively. These are however meant to help you understand the context in which you operate. You are intentionally not directly equipped with any tools to conduct substantive work, because you are just the router, delegator and orchestrator. The tools that your sub-agents' have available are however listed, and you should carefully refer to these when considering which agent to call next. It is these sub-agents' job to make the necessary state changes to make progress on the task at hand.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 Base Sub-Agent Prompts</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Main Agent Prompt</head><p>As a professional and experienced programmer, your approach is to:</p><p>1. slow down and don't write files fully end-to-end in one go 2. first understand your context thoroughly: 2.1 explore the project to locate all the files that could be useful documentation (README.md files, common likely MD documentation files, etc) 2.2 view each of these files, making notes or summaries, and closing irrelevant or long files 2.3 explore the codebase as it relates to your instructions: find all relevant files, in order to identify existing design patterns and conventions 3. (optional) prototype and design before starting coding 3.1 come up with some simple toy examples in a testing directory 3.2 use execution feedback to benchmark or compare the approaches 3.3 synthesise the information and learnings into a final design or solution 4. make code edits 4.1 identify the most minimal and effective ways to make your required changes 4.2 observe any existing stylistic conventions 5. test end-to-end 5.1 Prefer end-to-end testing in testing scripts without test frameworks 5.2 If this is not an option or the project already uses a testing framework, then use that 5.</p><p>3 Ensure your code is valid, hasn't introduced any regressions and works as intended 6. Clean up after yourself 6.1 Check that all the documentation is still up to date after your changes 6.2 Clean up any temporary files or changes NOTE: -don't create virtual environments -avoid pytest and mocks if you can; prefer end-to-end scripts -if the request is clearly exploratory in nature, then you may bypass the rigorous procedure above, and address it appropriately -call your reasoning agent if you are stuck on a tricky algorithmic or mathematical problem, to help you gain insight and make progress Main Agent Prompt Here is the problem you have been asked to solve: Your problem ================ {self.problem_statement} ================================== Approach: 1. Talk over what the question or problem is asking of you 2. Plan minimum viable solution and validate approach 3. Execute swiftly and adapt based on feedback 4. Verify against original requirements Key principles: -Choose simplest viable solution -Validate early and often -Adapt swiftly when blocked</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Main Agent Prompt</head><p>Here is the initial request, provided for context only, that we are ultimately trying to solve: Initial request: {self._context.initial_request} End initial request.</p><p>Here is the problem you have been asked to solve:</p><p>Problem statement: {self.problem_to_solve} End problem statement.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Overseer Prompt</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Main Agent Prompt</head><p>You are an expert system overseer responsible for monitoring agent execution in real-time. You will be shown execution traces as they develop and must make decisions about whether intervention is needed. You are running in a loop.</p><p>Your task is to: 1. Analyze the current execution state 2. Determine if you have enough information to make confident assessments 3. Evaluate whether agents are progressing healthily or need intervention 4. Provide thoughtful and constructive steering notifications to running agents if intervention is needed 5. In extreme cases, cancel the execution of an agent and notify its parent of why this is 6. Leave notes for future evaluation iterations if needed You must provide your analysis in the following structured format: OVERSEER_EXAMPLES Here is the current execution trace: graph_repr Previous overseer notes (if any) self._previous_notes if self._previous_notes else 'No notes.' Key considerations:</p><p>-Agents that have already returned cannot receive notifications -Look at timestamps and event counts to understand execution progress -Some agents may legitimately take long periods to complete -Consider both local agent health and global execution progress -If the agent appears stuck without terminating, remind it that it can exit by generating &lt;COMPLETE&gt;{COMPLETE_STOP_TOKEN} -If, when the agent has been tasked to work on its own code at meta-improvement time, it is attempting to test tools or other features directly (using its own running code), intervene immediately and tell it to either test a new agent end-to-end (python -m workdir.agent -p "&lt;some prompt&gt;"...) or to create test scripts to test the tools directly.</p><p>-You may cancel an agent if it is no longer making progress, wasting resources, or very clearly going down the wrong path or deviating from its instructions. You must make at least one attempt to notify the agent of its wrongdoings before issuing a cancellation command.</p><p>-When canceling an agent, you must also notify its parent calling agent of the reasons for the cancellation.</p><p>-If the task becomes untenable, after multiple failed attempts, and the agent is appearing to repeat itself, instruct the main agent to use its early_exit tool to exit early.</p><p>-Use cancellations sparingly, as they are disruptive and ultimately more costly than guiding the agent to successful completion, since any new sub-agent will often have to start the task from scratch.</p><p>The last time you checked was at: self._last_check_time.strftime("%H:%M:%S") if self._last_check_time else "N/A" The current timestamp is datetime.now().strftime("%H:%M:%S")</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Your analysis:</head><p>The judgements of the overseer will generally be in the following form:</p><p>Main Agent Prompt &lt;OVERSEER_JUDGEMENT&gt; &lt;making_progress&gt;false&lt;/making_progress&gt; &lt;is_looping&gt;true&lt;/is_looping&gt; &lt;currently_running_agent&gt;agent_d4e5f6g7&lt;/currently_running_agent&gt; &lt;needs_notification_reasoning&gt;The agent has been notified previously about its looping behavior but has not corrected course. It's time to forcefully cancel this execution.&lt;/needs_notification_reasoning&gt; &lt;needs_notification&gt;true&lt;/needs_notification&gt; &lt;agent_to_notify&gt;agent_b8a796h5&lt;/agent_to_notify&gt; &lt;notification_content&gt;Your software developer agent was looping while trying to install the program, and as a result I have cancelled it. You might want to start another software developer with clearer instructions about how to install the program.&lt;/notification_content&gt; &lt;force_cancel_agent&gt;true&lt;/force_cancel_agent&gt; &lt;force_cancel_agent_id&gt;agent_d4e5f6g7&lt;/force_cancel_agent_id&gt; &lt;next_check_type&gt;time&lt;/next_check_type&gt; &lt;next_check_delay&gt;10&lt;/next_check_delay&gt; &lt;notes_for_next_iteration&gt;Forced cancellation of agent_d4e5f6g7 due to unresponsive looping. Monitor parent agent for proper handling of cancelled child.&lt;/notes_for_next_iteration&gt; &lt;OVERSEER_JUDGEMENT&gt;</p><p>The above shows a representative example of an agent solving a problem. The problem at hand is a maths problem, and the execution begins with a reasoning agent (o3 mini) which devises a solution method. This is then passed to a 'problem solving' agent which attempts to solve the problem. Then, the main agent invokes a 'software developer' agent to write a script to numerically verify the solution. The software developer agent gets stuck after attempting to run the test script, and invokes the reasoning agent to help debug the problem. After applying the fix, the test script runs correctly and yields a solution that differs from the first problem solver's answer. To consolidate the two, the main agent invokes another reasoning agent, which sides with the empirically derived solution, which is finally submitted as the answer by the main agent.</p><p>The above shows a characteristic meta-improvement run: the agent starts by invoking the 'archive explorer' sub-agent, which has access to a number of tools to facilitate archive analysis. Note that this is using exactly the same simple, generic and extensible sub-agent class as the other base agents in the system. The archive explorer compares different iterations, looks at the best performing benchmark problems in a given iterations to understand success cases, as well as the worst performing benchmark problems at a given iteration to understand the failure modes. It then views some files to understand the agetn's implementation and documentation, and then invokes two reasoning agents to help it reason over this information. The result of this agent call is a recommendation to the main agent about what to work on.</p><p>The main agent then invokes the 'software developer' sub-agent with the instruction to implement the feature. The coding sub-agent first looks at relevant files and documentation, implement the feature, and then enters into a debugging loop as it fixes the bugs in its implementation. About 3 minutes later, it successfully gets all the tests (that it wrote) to pass, documents the change in the agent change log, and returns to the main agent.</p><p>The main agent then invokes a second software developer sub-agent to independently verify the implementation of the feature, which passes after an initial issue, and the agent returns a description of the newly functioning tool to the main agent which then exits.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Function Calling Interface</head><p>The LLM function calling interface allows the LLM to invoke tools and sub-agents at run-time without pre-defined control flow. There are many approaches to implementing this, from constrained generation, to parsing the stream of agent token generations without interruption, to simply relying on LLM providers' or inference frameworks' native function or tall calling implementations.</p><p>For maximum flexibility, we adopt an un-constrained structured generation approach, where the LLM outputs XML-formatted generations, where the closing tag is registered as a stop token. Inspecting the stop reason, we can then detect whether a tool call or an agent call occurred, parse the content, and run the tool implementation.</p><p>For instance, here is an example tool calling syntax: &lt;TOOL_CALL&gt; &lt;TOOL_NAME&gt;tool_name&lt;/TOOL_NAME&gt; &lt;TOOL_ARGS&gt; &lt;arg1&gt;value1&lt;/arg1&gt; &lt;arg2&gt;value2&lt;/arg2&gt; &lt;/TOOL_ARGS&gt; &lt;/TOOL_CALL&gt; where &lt;/TOOL_CALL&gt; is registered as a stop token. The tool_name is then parsed first and is used to index into a set of tools made available to the calling agent, following which the tool arguments are parsed into a dict, and the tool class is instantiated.</p><p>We choose XML over JSON as the tool calling format since it does not require escaping string literals, which can become burdensome when including file content verbatim as an argument.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Additional Result Details</head><p>Here is the sequence of updates the agent made, corresponding to the plot in Figure <ref type="figure">3</ref>.</p><p>1. Smart Editor: Implemented a new SmartEditor tool to intelligently select and execute the optimal file editing strategy based on edit characteristics. 2. Quick Overwrite Tool: to address performance issues with file editing operations to improve on full file overwrites; reducing token usage. 3. Diff-Enhanced Smart Editor: adds intelligent diff-based strategy selection and improved pattern-based editing. 4. Simplified DiffVerifier Tests: improved the developer experience to improve maintainability 5. Code Context Summarizer: Added a new CodeContextSummarizer tool that efficiently extracts and summarizes code context using ripgrep. Intended to make codebase exploration more efficient. 6. SmartEditor Input Normalizer: Added an InputNormalizer component to improve edit operation efficiency and reliability. 7. Enhanced File Edit Verification: Implemented a comprehensive file state tracking system to improve edit operation efficiency. 8. Minimal Diff Output Optimization: Implemented optimizations to reduce token usage in file editing operations by minimizing diff context output. 9. AST Symbol Locator: Integrated an AST-based symbol locator tool for precise code navigation. 10. Optimized File Edit Routing: Implemented explicit task type detection and routing optimization in MainAgent to improve handling of file editing tasks. 11. Enhanced File Size Optimization: Added file size thresholding of 100KB to optimize handling of large files and reduce processing overhead on big changes. 12. Hybrid Symbol Locator: Implemented a hybrid symbol location approach that combines ripgrep-based candidate identification with AST verification. 13. Context-Sensitive Diff Minimization: Completed the integration of context-sensitive diff minimization into the SmartEditor tool. Uses AST parsing for Python code changes and pattern-based analysis for other file types. Intends to reduce token usage by minimizing change context. 14. Optimized AST Parsing in Hybrid Symbol Locator: Implemented targeted AST parsing in hybrid_symbol_locator.py to process only relevant code regions instead of whole files.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure1: Meta Agent Loop: the agents starts with the minimal code required to support initial self-improvement, and then follows a sequence of benchmarking and meta-improvement.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: LLM context window structure.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Algorithm 1 : 4 RunFigure 3 :</head><label>143</label><figDesc>Figure3: Performance across iterations. Key improvements are annotated with their corresponding tool or agent modifications.</figDesc></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>We use the user message role in the chat template for the core prompt not by design, but owing to the fact that we are using chat endpoints from model provider APIs. If fine-tuning the LLM specifically for agentic applications, one might choose a more appropriately named section delimiter such as &lt;core&gt;.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>Both SWEBench-Verified and LiveCodeBench are MIT licensed</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>Note that we attribute the low score in the symbol locator benchmark to poor data quality-some of the target symbols point to uninstalled external libraries for instance.</p></note>
+		</body>
+		<back>
+
+			
+			<div type="acknowledgement">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>We do not believe there to be any significant, direct adverse societal consequences to this work. Our objectives either focus on improving the mechanics of code editing or the effectiveness of multi-step reasoning through longer-horizon coding tasks.</p></div>
+			</div>
+
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Grounding Language in Robotic Affordances</title>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Michael Ahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Byron</forename><surname>Cortes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuyuan</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keerthana</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Herzog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jasmine</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ibarz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Irpan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rosario</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Jauregui Ruano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sally</forename><surname>Jeffrey</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Jesmonth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Nikhil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitry</forename><surname>Julian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Kalashnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuang-Huei</forename><surname>Kuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linda</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carolina</forename><surname>Luu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Parada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jornell</forename><surname>Pastor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kanishka</forename><surname>Quiambao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jarek</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diego</forename><surname>Rettinghouse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Reyes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Sermanet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clayton</forename><surname>Sievers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Toshev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Vanhoucke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sichun</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengyuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zeng</surname></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/2204.01691" />
+		<imprint>
+			<date type="published" when="2022-08">August 2022</date>
+			<publisher>Do As I Can</publisher>
+			<pubPlace>Not As I Say</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/news/claude-3-5-sonnet" />
+		<title level="m">Introducing Claude 3.5 Sonnet</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Graph of Thoughts: Solving Elaborate Problems with Large Language Models</title>
+		<author>
+			<persName><forename type="first">Maciej</forename><surname>Besta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nils</forename><surname>Blach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ales</forename><surname>Kubicek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Gerstenberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukas</forename><surname>Gianinazzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joanna</forename><surname>Gajda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomasz</forename><surname>Lehmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michal</forename><surname>Podstawski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hubert</forename><surname>Niewiadomski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Nyczyk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Torsten</forename><surname>Hoefler</surname></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/2308.09687" />
+		<imprint>
+			<date type="published" when="2023-08">August 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Noise-tolerant learning, the parity problem, and the statistical query model</title>
+		<author>
+			<persName><forename type="first">Avrim</forename><surname>Blum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Kalai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hal</forename><surname>Wasserman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the ACM (JACM)</title>
+		<imprint>
+			<biblScope unit="volume">50</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="506" to="519" />
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Program of Thoughts Prompting: Disentangling Computation from Reasoning for Numerical Reasoning Tasks</title>
+		<author>
+			<persName><forename type="first">Wenhu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueguang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">W</forename><surname>Cohen</surname></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/2211.12588" />
+		<imprint>
+			<date type="published" when="2023-10">October 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Intrinsically Motivated Reinforcement Learning</title>
+		<author>
+			<persName><forename type="first">Nuttapong</forename><surname>Chentanez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Barto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Satinder</forename><surname>Singh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">17</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Introducing SWE-bench Verified</title>
+		<author>
+			<persName><forename type="first">Neil</forename><surname>Chowdhury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Aaung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chan</forename><surname>Jung Shern</surname></persName>
+		</author>
+		<ptr target="https://openai.com/index/introducing-swe-bench-verified/" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Autotelic Agents with Intrinsically Motivated Goal-Conditioned Reinforcement Learning: A Short Survey</title>
+		<author>
+			<persName><forename type="first">Cédric</forename><surname>Colas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tristan</forename><surname>Karch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Sigaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre-Yves</forename><surname>Oudeyer</surname></persName>
+		</author>
+		<idno type="DOI">10.1613/jair.1.13554</idno>
+		<ptr target="https://www.jair.org/index.php/jair/article/view/13554" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Artificial Intelligence Research</title>
+		<idno type="ISSN">1076-9757</idno>
+		<imprint>
+			<biblScope unit="volume">74</biblScope>
+			<biblScope unit="page" from="1159" to="1199" />
+			<date type="published" when="2022-07">July 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning</title>
+		<author>
+			<persName><forename type="first">Deepseek-Ai</forename></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/2501.12948" />
+		<imprint>
+			<date type="published" when="2025-01">January 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Improving Factuality and Reasoning in Language Models through Multiagent Debate</title>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonio</forename><surname>Torralba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/2305.14325" />
+		<imprint>
+			<date type="published" when="2023-05">May 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dheeru</forename><surname>Dua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pradeep</forename><surname>Dasigi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Stanovsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sameer</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matt</forename><surname>Gardner</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Drop</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1903.00161</idno>
+		<title level="m">A reading comprehension benchmark requiring discrete reasoning over paragraphs</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">OMNI-EPIC: Open-endedness via Models of human Notions of Interestingness with Environments Programmed in Code</title>
+		<author>
+			<persName><forename type="first">Maxence</forename><surname>Faldor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jenny</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Cully</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Clune</surname></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/2405.15568" />
+		<imprint>
+			<date type="published" when="2024-10">October 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Promptbreeder: Self-Referential Self-Improvement via Prompt Evolution</title>
+		<author>
+			<persName><forename type="first">Chrisantha</forename><surname>Fernando</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dylan</forename><surname>Sunil Banarse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Osindero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Rocktäschel</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=HKkiX32Zw1" />
+		<imprint>
+			<date type="published" when="2023-10">October 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Introducing Gemini 2.0: Our new AI model for the agentic era</title>
+		<author>
+			<persName><surname>Google</surname></persName>
+		</author>
+		<ptr target="https://blog.google/technology/google-deepmind/google-gemini-ai-update-december-2024/" />
+		<imprint>
+			<date type="published" when="2024-12">December 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mantas</forename><surname>Mazeika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2009.03300</idno>
+		<title level="m">Measuring massive multitask language understanding</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Automated Design of Agentic Systems</title>
+		<author>
+			<persName><forename type="first">Shengran</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cong</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Clune</surname></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/2408.08435" />
+		<imprint>
+			<date type="published" when="2024-08">August 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Open-Endedness is Essential for Artificial Superhuman Intelligence</title>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Hughes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Dennis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Parker-Holder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feryal</forename><surname>Behbahani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditi</forename><surname>Mavalankar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuge</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Schaul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Rocktaschel</surname></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/2406.04268" />
+		<imprint>
+			<date type="published" when="2024-06">June 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Klissarov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D'</forename><surname>Pierluca</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shagun</forename><surname>Oro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberta</forename><surname>Sodhani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre-Luc</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pascal</forename><surname>Bacon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amy</forename><surname>Vincent</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikael</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Henaff</surname></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/2310.00166" />
+	</analytic>
+	<monogr>
+		<title level="j">Motif: Intrinsic Motivation from Artificial Intelligence Feedback</title>
+		<imprint>
+			<date type="published" when="2023-09">September 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Klissarov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikael</forename><surname>Henaff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberta</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shagun</forename><surname>Sodhani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pascal</forename><surname>Vincent</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amy</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre-Luc</forename><surname>Bacon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Doina</forename><surname>Precup</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marlos</forename><forename type="middle">C</forename><surname>Machado</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierluca D'</forename><surname>Oro</surname></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/2412.08542" />
+	</analytic>
+	<monogr>
+		<title level="j">MaestroMotif: Skill Design from Artificial Intelligence Feedback</title>
+		<imprint>
+			<date type="published" when="2024-12">December 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Large Language Models are Zero-Shot Reasoners</title>
+		<author>
+			<persName><forename type="first">Takeshi</forename><surname>Kojima</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shane</forename><surname>Shixiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Machel</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutaka</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusuke</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Iwasawa</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=e" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2022-05">May 2022. 2TBb5y0yFf</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Practice Makes Perfect: Planning to Learn Skill Parameter Policies. Robotics: Science and Systems</title>
+		<author>
+			<persName><forename type="first">Nishanth</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Willie</forename><surname>Mcclinton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linfeng</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Proulx</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomas</forename><surname>Lozano-Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leslie</forename><surname>Pack Kaelbling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jennifer</forename><surname>Barry</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024-07">2024. July 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Multi-expert Prompting Improves Reliability, Safety and Usefulness of Large Language Models</title>
+		<author>
+			<persName><forename type="first">Xuan</forename><surname>Do</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Duong</forename><surname>Long</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anh</forename><forename type="middle">Tuan</forename><surname>Ngoc Yen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenji</forename><surname>Luu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min-Yen</forename><surname>Kawaguchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nancy</forename><forename type="middle">F</forename><surname>Kan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chen</surname></persName>
+		</author>
+		<ptr target="https://aclanthology.org/2024.emnlp-main.1135/" />
+		<imprint>
+			<date type="published" when="2024-11">November 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niket</forename><surname>Tandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prakhar</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Skyler</forename><surname>Hallinan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Wiegreffe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouha</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shrimai</forename><surname>Prabhumoye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shashank</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bodhisattwa</forename><surname>Prasad Majumder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katherine</forename><surname>Hermann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Welleck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amir</forename><surname>Yazdanbakhsh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/2303.17651" />
+	</analytic>
+	<monogr>
+		<title level="j">Self-Refine: Iterative Refinement with Self-Feedback</title>
+		<imprint>
+			<date type="published" when="2023-05">May 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">A perfect collusion benchmark: How can ai agents be prevented from colluding with information-theoretic undetectability?</title>
+		<author>
+			<persName><forename type="first">Ramesh</forename><surname>Sumeet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikhail</forename><surname>Motwani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lewis</forename><surname>Baranchuk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Hammond</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Schroeder De Witt</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Multi-Agent Security Workshop@ NeurIPS&apos;23</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Secret collusion among ai agents: Multi-agent deception via steganography</title>
+		<author>
+			<persName><forename type="first">Ramesh</forename><surname>Sumeet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikhail</forename><surname>Motwani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Baranchuk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vijay</forename><surname>Strohmeier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philip</forename><surname>Bolina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lewis</forename><surname>Torr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Hammond</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Schroeder De Witt</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirty-eighth Annual Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Livecodebench: Holistic and contamination free evaluation of large language models for code</title>
+		<editor>Alex Gu Wen-Ding Li Fanjia Yan Tianjun Zhang Sida Wang Armando Solar-Lezama Koushik Sen Ion Stoica Naman Jain, King Han</editor>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Deepak</forename><surname>Nathani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lovish</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolay</forename><surname>Bashlykov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Menon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Moens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amar</forename><surname>Budhiraja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Despoina</forename><surname>Magka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladislav</forename><surname>Vorotilov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaurav</forename><surname>Chaurasia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dieuwke</forename><surname>Hupkes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ricardo</forename><forename type="middle">Silveira</forename><surname>Cabral</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tatiana</forename><surname>Shavrina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakob</forename><surname>Foerster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoram</forename><surname>Bachrach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberta</forename><surname>Raileanu</surname></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/2502.14499" />
+		<title level="m">MLGym: A New Framework and Benchmark for Advancing AI Research Agents</title>
+		<imprint>
+			<date type="published" when="2025-02">February 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">AlphaEvolve: A coding agent for scientific and algorithmic discovery</title>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Novikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ngân</forename><surname>Vu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marvin</forename><surname>Eisenberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emilien</forename><surname>Dupont</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Po-Sen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><forename type="middle">Zsolt</forename><surname>Wagner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Shirobokov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Borislav</forename><surname>Kozlovskii</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J R</forename><surname>Francisco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abbas</forename><surname>Ruiz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M Pawan</forename><surname>Mehrabian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swarat</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Chaudhuri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Holland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Davies</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pushmeet</forename><surname>Nowozin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matej</forename><surname>Kohli</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Balog</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025-05">May 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">OpenAI o1 System Card</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://openai.com/index/openai-o1-system-card/" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">OpenAI o3-mini</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://openai.com/index/openai-o3-mini/" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Recursive Introspection: Teaching Language Model Agents How to Self-Improve</title>
+		<author>
+			<persName><forename type="first">Yuxiao</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianjun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aviral</forename><surname>Kumar</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum" />
+	</analytic>
+	<monogr>
+		<title level="m">The Thirty-eighth Annual Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024-11">November 2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page">29</biblScope>
+		</imprint>
+	</monogr>
+	<note>id=DRC9pZwBwR&amp; referrer=%5Bthe+profile+of+Yuxiao+Qu%5D%28%2Fprofile%3Fid%3D~Yuxiao_Qu</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">GPQA: A Graduate-Level Google-Proof Q&amp;A Benchmark</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Rein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Betty</forename><forename type="middle">Li</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Asa</forename><forename type="middle">Cooper</forename><surname>Stickland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jackson</forename><surname>Petty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">Yuanzhe</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julien</forename><surname>Dirani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Michael</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><forename type="middle">R</forename><surname>Bowman</surname></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/2311.12022" />
+		<imprint>
+			<date type="published" when="2023-11">November 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Toolformer: Language Models Can Teach Themselves to Use Tools</title>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberta</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicola</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Scialom</surname></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/2302.04761" />
+		<imprint>
+			<date type="published" when="2023-02">February 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Sander</forename><surname>Schulhoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Ilie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nishant</forename><surname>Balepur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Konstantine</forename><surname>Kahadze</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenglei</forename><surname>Si</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aayush</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyojung</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sevien</forename><surname>Schulhoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Sandeep Dulepet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurav</forename><surname>Vidyadhara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayeon</forename><surname>Ki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sweta</forename><surname>Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chau</forename><surname>Pham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gerson</forename><surname>Kroiz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feileen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hudson</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashay</forename><surname>Srivastava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hevander</forename><surname>Da Costa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saloni</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Megan</forename><forename type="middle">L</forename><surname>Rogers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Inna</forename><surname>Goncearenco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Giuseppe</forename><surname>Sarli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Galynker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denis</forename><surname>Peskoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marine</forename><surname>Carpuat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jules</forename><surname>White</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shyamal</forename><surname>Anadkat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Hoyle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philip</forename><surname>Resnik</surname></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/2406.06608" />
+		<imprint>
+			<date type="published" when="2024-06">June 2024</date>
+		</imprint>
+		<respStmt>
+			<orgName>A Systematic Survey of Prompting Techniques</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">The Prompt Report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Shang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keyu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Likai</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahe</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fengli</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Agentsquare</surname></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/2410.06153" />
+		<title level="m">LLM Agent Search in Modular Design Space</title>
+		<imprint>
+			<date type="published" when="2024-11">November 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Language models are multilingual chain-of-thought reasoners</title>
+		<author>
+			<persName><forename type="first">Freda</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mirac</forename><surname>Suzgun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Markus</forename><surname>Freitag</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suraj</forename><surname>Srivats</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soroush</forename><surname>Vosoughi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyung</forename><forename type="middle">Won</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Ruder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03057</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Reflexion: Language Agents with Verbal Reinforcement Learning</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beck</forename><surname>Labash</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/2303.11366" />
+		<imprint>
+			<date type="published" when="2023-06">June 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Voyager: An Open-Ended Embodied Agent with Large Language Models</title>
+		<author>
+			<persName><forename type="first">Guanzhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqi</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Mandlekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaowei</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuke</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linxi</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anima</forename><surname>Anandkumar</surname></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/2305.16291" />
+		<imprint>
+			<date type="published" when="2023-10">October 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Chain-of-Thought Prompting Elicits Reasoning in Large Language Models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><forename type="middle">H</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=_VjQlMeSB_J" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2022-05">May 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yutaro</forename><surname>Yamada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Tjarko Lange</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cong</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengran</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakob</forename><surname>Foerster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Clune</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Ha</surname></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/2504.08066" />
+		<title level="m">The AI Scientist-v2: Workshop-Level Automated Scientific Discovery via Agentic Tree Search</title>
+		<imprint>
+			<date type="published" when="2025-04">April 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Large Language Models as Optimizers</title>
+		<author>
+			<persName><forename type="first">Chengrun</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifeng</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanxiao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/2309.03409" />
+		<imprint>
+			<date type="published" when="2024-04">April 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Tree of Thoughts: Deliberate Problem Solving with Large Language Models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><forename type="middle">L</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/2305.10601" />
+		<imprint>
+			<date type="published" when="2023-05">May 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">ReAct: Synergizing Reasoning and Acting in Language Models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Karthik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cao</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=WE_vluYUL-X" />
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023-02">February 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">Gödel Agent: A Self-Referential Framework Helps for Recursively Self-Improvement</title>
+		<author>
+			<persName><forename type="first">Xunjian</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liangming</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojun</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=dML3XGvWmy" />
+		<imprint>
+			<date type="published" when="2024-10">October 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">STaR: Bootstrapping Reasoning With Reasoning</title>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Zelikman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhuai</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">D</forename><surname>Goodman</surname></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/2203.14465" />
+		<imprint>
+			<date type="published" when="2022-05">May 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Parsel : Algorithmic Reasoning with Language Models by Composing Decompositions</title>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Zelikman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Poesia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Noah D Goodman</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Haber</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<title level="m" type="main">Self-Taught Optimizer (STOP): Recursively Self-Improving Code Generation</title>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Zelikman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eliana</forename><surname>Lorch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lester</forename><surname>Mackey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Tauman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kalai</forename></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/2310.02304" />
+		<imprint>
+			<date type="published" when="2024-08">August 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">| Success) [Stats] Events: 1 tool calls, 6 messages [Assistant] t+0.1s | &quot;I&apos;ll orchestrate the solution to this problem foll</title>
+		<author>
+			<persName><forename type="first">Jenny</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joel</forename><surname>Lehman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenneth</forename><surname>Stanley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Clune</surname></persName>
+		</author>
+		<idno>134.4s | 95752 tokens (cached 0.57%) | $0.185</idno>
+		<ptr target="http://arxiv.org/abs/2306.01711" />
+	</analytic>
+	<monogr>
+		<title level="m">1.3 reasoning_agent</title>
+		<imprint>
+			<date type="published" when="2024-02">February 2024</date>
+		</imprint>
+	</monogr>
+	<note>OMNI: Open-endedness via Models of human Notions of Interestingness agent_b8845adf B Example Traces Main Agent Prompt EXECUTION TREE ============== 1 main agent_20fccbc1] (12.0s | 5673 tokens cached 0.00%) | $0.013 | Success) [Stats] Events: 1 messages [Assistant] t+9.8s | &quot;Below is an explanation that addresses the three p...&quot; [Assistant] t+21.1s | &quot;The reasoning agent has provided excellent analy.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<title level="m" type="main">| Success) [Stats] Events: 3 tool calls, 4 messages [Assistant] t+26.1s | &quot;Let me solve this step by step.1. UNDERSTANDING</title>
+		<idno>agent_11804c1f] (17.6s | 54822 tokens (cached 0.68%) | $0.085</idno>
+		<imprint/>
+	</monogr>
+	<note>Tool] calculate | 0.0s → Success [Assistant] t+32.4s | &quot;Therefore there are floor(404.8) = 404 complete...&quot; [Tool] return_result | 0.0s → Success [Assistant] t+42.1s | &quot;&lt;COMPLETE&gt;&lt;/COMPLETE&gt;.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<title level="m" type="main">Assistant] t+43.7s | &quot;The problem solver has provided a solution</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<title level="m" type="main">tool calls, 10 messages [Assistant] t+49.3s | &quot;I&apos;ll help solve this mathematical game problem thr...&quot; [Tool] execute_command | 0.0s → Success</title>
+		<idno>overwrite_file | 0.0</idno>
+		<imprint/>
+	</monogr>
+	<note>agent_0117a7ef s → Success [Assistant] t+59.9s | &quot;Now let&apos;s create our main implementation file:.. s → Success [Assistant] t+70.4s | &quot;Now let&apos;s create a test script to verify our imp s → Success [Assistant] t+76.8s | &quot;Now let&apos;s run our test script to verify everythi Tool] execute_command | 0.0s → Success [Assistant] t+80.9s | &quot;I notice that there&apos;s an issue with our pattern.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title level="m" type="main">messages [Assistant] t+87.2s | &quot;The problem comes from our backward induction func...&quot; [Assistant] t+98.5s | &quot;Based on the reasoning agent&apos;s analysis, let&apos;s u</title>
+		<idno>t+116.8s | &quot;&lt;COMPLETE&gt;&lt;/COMPLETE&gt;..</idno>
+		<imprint/>
+	</monogr>
+	<note>agent_8a69d943 s | &quot;Now let&apos;s run our test script again to verify th s → Success [Assistant] t+112.0s | &quot;Perfect! Our implementation now correctly:1. I.. s → Success Assistant] t+119.0s | &quot;Let&apos;s verify the software agent&apos;s answer since it di.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<title level="m" type="main">5s | 106497 tokens (cached 0.30%) | $0.299 | Success) [Stats] Events: 1 tool calls, 5 messages [Assistant] t+0.1s | &quot;I&apos;ll help orchestrate the solution to this problem</title>
+		<idno>open_file | 0.0</idno>
+		<imprint>
+			<biblScope unit="volume">617</biblScope>
+		</imprint>
+	</monogr>
+	<note>reasoning_agent agent_6cd34374 Answer synthesis: Our analysis starts s | &quot;Let&apos;s submit our final answer:&lt;TOOL_CALL&gt;&lt;TO. s → Success [Assistant] t+132.1s | &quot;&lt;COMPLETE&gt;&lt;/COMPLETE&gt;.. agent_5e260c4e Total Duration: 249.9s Total Tokens: 407766 (of which cached 232952) Total Cost: $0.712 EXECUTION TREE ============== 1 main agent_534a61ec] (88.6s | 372576 tokens (cached 0.16%) | $1.205 | Success) [Stats] Events: 7 tool calls, 10 messages s | &quot;I&apos;ll follow the procedure step by step to analyze s → Success [Assistant] t+9.7s | &quot;Let&apos;s also look at some of the best and worst pe s → Success [Assistant] t+13.2s | &quot;Let me also look at some of the worst performing s → Success [Assistant] t+16.7s | &quot;Let me inspect the project documentation s → Success Assistant] t+22.1s | &quot;&lt;TOOL_CALL&gt;&lt;TOOL_NAME&gt;open_file&lt;/TOOL_NAME&gt;&lt;TO...&quot; [Tool] open_file | 0.0s → Success [Assistant] t+27.4s| &quot;Let me also look at the current iteration&apos;s desc...&quot; [Tool] open_file | 0.0s → Success [Assistant] t+33.6s| &quot;Having reviewed the documentation and cu</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<title level="m" type="main">%) | $0.097 | Success) [Stats] Events: 1 messages [Assistant] t+44.0s| &quot;I updated description.txt and agent_change_log.md</title>
+		<idno>1.2 reasoning_agent [agent_d4553475] (14.8s | 81577 tokens (cached 0.00</idno>
+		<imprint/>
+	</monogr>
+	<note>Assistant] t+58.1s | &quot;Let me examine this suggestion from the reasoni..</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<title level="m" type="main">| Success) [Stats] Events: 1 messages [Assistant] t+72.0s | &quot;I&apos;ve updated both description.txt and agent_change</title>
+		<idno>t+94.1</idno>
+		<imprint/>
+	</monogr>
+	<note>s | &quot;Based on the analysis from both reasoning agents s | &quot;The archive explorer has made a specific suggest</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<title level="m" type="main">s → Success [Assistant] t+118.3s | &quot;Let&apos;s also look at existing utils and __init__ f...&quot; [Tool] open_file | 0.0s → Success [Assistant] t+123.1s | &quot;Now that I understand the context better, let me</title>
+		<idno>diff_patch_edit | 0.0</idno>
+		<imprint/>
+	</monogr>
+	<note>agent_6345b78d] (331.2s | 1388672 tokens (cached 0.22%) | $4.341 | Success) [Stats] Events: 21 tool calls, 22 messages Let&apos;s first look at key documentation files:&lt;T. s | &quot;Now let&apos;s look at any existing diff-related code s → Success [Assistant] t+274.6s | &quot;Now let&apos;s run the tests to verify the implementa Tool] execute_command | 0.5s → Success [Assistant] t+281.9s | &quot;Oops, looks like I need to fix the test case. Th...&quot; ... truncated ... [Tool] diff_patch_edit | 0.0s → Success [Assistant] t+356.8s | &quot;Now let me run the tests again:&lt;TOOL_CALL&gt;&lt;T...&quot; [Tool] execute_command | 0.5s → Success s | &quot;Great! Now that the implementation and tests ar s → Success [Assistant] t+375.6s | &quot;Now let me update description.txt:&lt;TOOL_CALL&gt;. s → Success Assistant] t+392.4s | &quot;Finally, let me update agent_change_log.md:&lt;...&quot; [Tool] diff_patch_edit | 3.6s → Success [Assistant] t+415.4s | &quot;Let me verify that I&apos;ve completed all the requ...&quot; [Tool] return_result | 0.0s → Success [Assistant] t+428.0s | &quot;&lt;COMPLETE&gt;&lt;/COMPLETE&gt;.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<title level="m" type="main">Assistant] t+434.6s | &quot;The software developer has successfully impleme</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<monogr>
+		<title level="m" type="main">s | &quot;I&apos;ll help test the DiffSummarizer implementation b...&quot; [Tool] open_file | 0.0s → Success [Assistant] t+447.8s | &quot;Now let&apos;s create a directory for our test and se...&quot; [Tool] execute_command | 0.0s → Success [Assistant] t+456.7s | &quot;Now let&apos;s execute the agent command to run our t</title>
+		<idno>t+595.5</idno>
+		<imprint/>
+	</monogr>
+	<note>3 software_developer [agent_ae600007 s | &quot;I apologize for the error. We need to properly s. Tool] execute_command | 120.3s → Failed [Assistant] t+585.8s | &quot;I see that the command is taking longer than exp...&quot; [Tool] open_file | 0.0s → Success [Assistant] t+588.9s | &quot;Let&apos;s try a direct test of the DiffSummarizer. W...&quot; [Tool] execute_command | 0.0s → Success s | &quot;Now let&apos;s run our test script:&lt;TOOL_CALL&gt;&lt;TOO. Tool] execute_command | 0.5s → Success [Assistant] t+598.5s | &quot;Perfect! Let&apos;s analyze what we&apos;ve found:1. The...&quot; [Tool] return_result | 0.0s → Success [Assistant] t+608.3s | &quot;&lt;COMPLETE&gt;&lt;/COMPLETE&gt;.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<monogr>
+		<title level="m" type="main">s | &quot;Great! The implementation and testing of the Di</title>
+		<idno>submit_answer | 0.0s → Success [Assistant] t+615.2s | &quot;&lt;COMPLETE&gt;&lt;/COMPLETE&gt;..</idno>
+		<imprint/>
+	</monogr>
+	<note>Assistant</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

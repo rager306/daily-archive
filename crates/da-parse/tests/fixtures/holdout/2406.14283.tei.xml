@@ -1,0 +1,1820 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Q*: Improving Multi-step Reasoning for LLMs with Deliberative Planning</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-07-22">22 Jul 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Chaojie</forename><surname>Wang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Nanyang Technological University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yanchen</forename><surname>Deng</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Nanyang Technological University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhiyi</forename><surname>Lyu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Nanyang Technological University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Liang</forename><surname>Zeng</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Nanyang Technological University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jujie</forename><surname>He</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Nanyang Technological University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Shuicheng</forename><surname>Yan</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Nanyang Technological University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Bo</forename><surname>An</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Nanyang Technological University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Skywork</forename><surname>Ai</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Nanyang Technological University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Q*: Improving Multi-step Reasoning for LLMs with Deliberative Planning</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-07-22">22 Jul 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">F7E1BF04F21E6A68D1349118DCA99DDA</idno>
+					<idno type="arXiv">arXiv:2406.14283v4[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:43+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large Language Models (LLMs) have demonstrated impressive capability in many natural language tasks. However, the auto-regressive generation process makes LLMs prone to produce errors, hallucinations and inconsistent statements when performing multi-step reasoning. In this paper, by casting multi-step reasoning of LLMs as a heuristic search problem, we aim to alleviate the pathology by introducing Q*, a general, versatile and agile framework for guiding LLMs decoding process with deliberative planning. By learning a plug-and-play Q-value model as heuristic function for estimating expected future rewards, our Q* can effectively guide LLMs to select the most promising next reasoning step without fine-tuning LLMs for the current task, which avoids the significant computational overhead and potential risk of performance degeneration on other tasks. Extensive experiments on GSM8K, MATH and MBPP demonstrate the superiority of our method, contributing to improving the reasoning performance of existing open-source LLMs.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Large Language Models (LLMs) have exhibited impressive capabilities in solving various reasoning tasks encoded in natural languages, including math word problems <ref type="bibr" target="#b0">[1]</ref><ref type="bibr" target="#b1">[2]</ref><ref type="bibr" target="#b2">[3]</ref><ref type="bibr" target="#b3">[4]</ref><ref type="bibr" target="#b4">[5]</ref><ref type="bibr" target="#b5">[6]</ref>, code generation <ref type="bibr" target="#b6">[7]</ref><ref type="bibr" target="#b7">[8]</ref><ref type="bibr" target="#b8">[9]</ref> and planning <ref type="bibr" target="#b9">[10]</ref><ref type="bibr" target="#b10">[11]</ref><ref type="bibr" target="#b11">[12]</ref>. Unfortunately, even the most advanced LLMs still face significant challenges and are prone to introduce errors, hallucinations and inconsistent statements as the number of reasoning steps grows due to their auto-regressive nature <ref type="bibr" target="#b12">[13,</ref><ref type="bibr" target="#b13">14]</ref>. In fact, the auto-regressive generation process of LLMs can be characterized by "System 1" <ref type="bibr">[15]</ref>, a mode of thought which is fast, instinctive but less accurate. Most of recent works focus on improving LLMs' "System 1" capability by (1) constructing sophisticated prompts with extensive expertise to trigger the potential capacities of LLMs without modifying their parameters <ref type="bibr" target="#b14">[16]</ref><ref type="bibr" target="#b15">[17]</ref><ref type="bibr" target="#b16">[18]</ref><ref type="bibr" target="#b17">[19]</ref>, (2) fine-tuning LLMs with massive task-specific corpus at the price of significant computational burdens and the potential risk of performance degeneration on other tasks <ref type="bibr" target="#b4">[5,</ref><ref type="bibr" target="#b5">6,</ref><ref type="bibr" target="#b18">20,</ref><ref type="bibr" target="#b19">21]</ref>, or (3) training reward models to rank the candidate responses <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b20">[22]</ref><ref type="bibr" target="#b21">[23]</ref><ref type="bibr" target="#b22">[24]</ref>.</p><p>On the other hand, solving complex reasoning problems requires more in-depth, deliberative and logical thinking steps, i.e., the "System 2" mode <ref type="bibr">[15]</ref>. Taking solving math word problems as an example, any incorrect intermediate reasoning step (e.g., calculation errors, mis-interpretations) can potentially lead to incorrect final answers. Prior attempts <ref type="bibr" target="#b23">[25]</ref><ref type="bibr" target="#b24">[26]</ref><ref type="bibr" target="#b25">[27]</ref><ref type="bibr" target="#b26">[28]</ref> for enhancing "System 2" reasoning capability includes performing deliberation with basic tree search algorithms (e.g., BFS or DFS), Monte Carlo Tree Search (MCTS) <ref type="bibr" target="#b27">[29]</ref>, and A* <ref type="bibr" target="#b28">[30]</ref>. Nonetheless, the utility functions used in these methods often require laborious expertise to design for each specific task, which are difficult to be extended to new scenarios. Furthermore, deliberation with MCTS would require significant number of rollouts before finding high-quality responses when solving the problems with many reasoning steps, which substantially slows down the overall decoding process.</p><p>In light of this, we propose Q*, a general, versatile and agile framework for improving the multi-step reasoning capability of LLMs with deliberative planning. Different from the existing deliberation methods, our method does not rely on domain knowledge to design the heuristic function. Besides, by leveraging plug-and-play Q-value models as heuristic function, our Q* can effectively solve various tasks via guiding LLMs to select the most promising next step without fine-tuning LLMs beforehand, which avoids the significant computational overhead and potential risk of performance degeneration in other tasks. Finally, Q* considers only one single step when performing deliberation, which is much cheaper than completing rollouts in MCTS. Specifically, the main contributions of our work are summarized as follows:</p><p>• We formalize the multi-step reasoning of LLMs as a Markov Decision Process (MDP) where the state is the concatenation of input prompt and the reasoning steps generated so far, the action is the next reasoning step and the reward measures how well the task is solved.</p><p>• We present several general approaches to estimate the optimal Q-value of state-action pairs, i.e., offline reinforcement learning, the best sequence from rollouts, and completion with stronger LLMs. It is noteworthy that our methods only need the ground-truth of training problems and can be easily applied to various reasoning tasks without modification.</p><p>• We cast solving multi-step reasoning tasks as a heuristic search problem, where the objective is to find the most proper reasoning trace with maximum utility.</p><p>Built upon A* search, our deliberation framework, Q*, leverages plug-and-play Q-value models as heuristic function and guides LLMs to select the most promising next reasoning step in best-first fashion. • We conduct extensive experiments on math reasoning and code generation tasks, demonstrating that Q* can significantly improve the multi-step reasoning capability of existing open-sourced LLMs.</p><p>2 Related Works LLM alignment. Alignment has become an important technique to prevent the output of LLMs deviates from human's expectation. Supervised Fine-Tuning (SFT) is probably the most fundamental alignment approach that directly minimizes the cross-entropy loss between the output and groundtruth. Reinforcement learning from Human Feedback (RLHF) <ref type="bibr" target="#b29">[31]</ref>, on the other hand, firstly learns a reward model (RM) from human preferences and then optimizes the SFT model with reinforcement learning algorithms to maximize the cumulative rewards from RM. Direct Preference Optimization (DPO) <ref type="bibr" target="#b30">[32]</ref> aligns LLMs directly according to the ranking information from human feedback without explicitly learning RM. Recently, Aligner <ref type="bibr" target="#b31">[33]</ref> came out as a model-agnostic alignment method by learning to re-write LLMs' output. Compared to these methods, our Q* achieves the goal of alignment with distinct merits. Different from SFT and Aligner, Q* does not rely on massive human annotated preference pairs which are expensive to collect; different from RLHF and DPO, our Q* does not modify the parameters of LLMs, which avoids the potential risk of performance degeneration on other tasks.</p><p>Enhancing LLMs with planning. Tree-of-thoughts (ToT) <ref type="bibr" target="#b23">[25]</ref> improves the LLMs' reasoning capability by exploring the intermediate steps towards problem solving with basic tree-search algorithms. In the same vein, A* search and MCTS are applied to serve as a planning technique to enhance the performance of LLMs when solving challenging complex reasoning problems <ref type="bibr" target="#b24">[26]</ref><ref type="bibr" target="#b25">[27]</ref><ref type="bibr" target="#b26">[28]</ref><ref type="bibr" target="#b32">34]</ref>. Unfortunately, the utility function used in these methods is either constructed from LLMs' feedback (e.g., <ref type="bibr" target="#b23">[25,</ref><ref type="bibr" target="#b25">27]</ref>), which could be highly-inaccurate in complex problems, or specific to each individual task (e.g., <ref type="bibr" target="#b26">[28,</ref><ref type="bibr" target="#b32">34]</ref>). Moreover, planning with MCTS often requires to perform costly rollout, which can significantly slow down the overall decoding process. In contrast, our Q* solely relies on training a Q-value model to guide LLMs to select the most promising next reasoning step and the pipeline can be easily applied to various reasoning tasks without modification. Besides, we consider only a single step each time in Q*, which is much cheaper than complete rollout in MCTS-based methods.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LLMs for math reasoning &amp; code generation. Math reasoning and code generation require</head><p>LLMs to perform multi-step reasoning on relations, quantities and logics which are inherently challenging. Current techniques include: 1) prompt engineering which triggers the potential capacities of LLMs with sophisticated prompts <ref type="bibr">[16-19, 35, 36]</ref>. However, constructing such prompt needs extensive expertise and case-by-case tuning, which is difficult to generalize to different tasks; 2) Fine-tuning LLMs with massive math/code corpus <ref type="bibr" target="#b4">[5,</ref><ref type="bibr" target="#b5">6,</ref><ref type="bibr" target="#b7">8,</ref><ref type="bibr" target="#b8">9,</ref><ref type="bibr" target="#b18">20,</ref><ref type="bibr" target="#b19">21,</ref><ref type="bibr" target="#b35">37]</ref>, which usually comes at the price of significant computational burden and may compromise the performance on other tasks; 3) training RMs/verifiers to rank the candidate solutions without providing any guidance in intermediate steps <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b20">[22]</ref><ref type="bibr" target="#b21">[23]</ref><ref type="bibr" target="#b22">[24]</ref>. Differently, our Q* leverages a plug-and-play Q-value model to direct the deliberation process of LLMs, which effectively provides guidance for each intermediate step without modifying the parameters of LLMs. Moreover, by casting multi-step reasoning of LLMs as a heuristic search problem, our method can be generalized to various reasoning tasks without laborious prompt engineering.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Preliminary</head><p>3.1 Formulate the Multi-step Reasoning of LLMs as an MDP Taking the question q as input, the answer generation process of LLMs can be broken down into multiple reasoning steps, where the final answer sequence a can be treated as the concatenation of these T single-step reasoning steps, formulated as a = [a 1 ; a 2 ; . . . ; a T ]. Each step can be a single line or fixed number of tokens outputted by LLMs. Under this perspective, we can conceptualize the multi-step reasoning process of LLMs as a Markov Decision Process (MDP) ⟨S, A, T , R, γ⟩, where the state s t ∈ S denotes the concatenation of the input question and the partial reasoning trace already generated by timestep t -1 (i.e., s t = [q; a 1 ; . . . ; a t-1 ]) with the special case s 1 = q, the action a t ∈ A denotes the next reasoning step generated by LLMs taking the current state s t as input, the deterministic state transition T from the current state s t to the next state s t+1 is accomplished through a simple operation of concatenation, R is the reward function to measure how well the question is solved and γ is the discount factor. The reward function is often outcome-based. That is, it gives reward by comparing the final results with ground-truth: R(s t , a t ) = 1 t = T ∧ [s t ; a t ] matches the ground-truth 0 otherwise ,</p><p>In particular, we assign a reward of 1 if the generated code passes all test cases (for code generation tasks) or the final answer matches the ground-truth (for math reasoning tasks) which is a common practise in previous studies <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b20">22]</ref>. Finally, the policy π θ is embodied by an LLM, which produces reasoning sequence conditioned on the input question:</p><formula xml:id="formula_1">π θ (a t |s t ) = LLM(a t |s t ), π θ (a|q) = T t=1 π θ (a t |s t ).<label>(2)</label></formula><p>Given the MDP and LLM policy π θ , the value of state-action pair (s t , a t ) is given by a Q-function</p><formula xml:id="formula_2">Q π θ (s t , a t ) = E π θ T t ′ =t γ T -t ′ R(s t ′ , a t ′</formula><p>) . The Q-function of an optimal policy π * is called optimal Q-function and satisfies the Bellman optimality equation:</p><formula xml:id="formula_3">Q * (s t , a t ) = R(s t , a t ) + γ max at+1∈A Q * (s t+1 , a t+1 ),<label>(3)</label></formula><p>which gives the value of starting state s t , taking action a t and then following the optimal policy π * .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">A* Search</head><p>A* <ref type="bibr" target="#b28">[30]</ref> is an important heuristic search algorithm in deliberative planning <ref type="bibr" target="#b36">[38]</ref>, multi-agent pathfinding <ref type="bibr" target="#b37">[39]</ref>, and constraint reasoning <ref type="bibr" target="#b38">[40]</ref>. Originally, A* is proposed for finding the shortest path from source s to goal g in path planning problems. It associates each frontier vertex n with a value</p><formula xml:id="formula_4">f (n) = g(n) + h(n), where g(n)</formula><p>is the accumulated path cost from source s and h(n) is a heuristic value that estimates the cost of the shortest path from n to goal g. The algorithm adopts a best-first search strategy, i.e., in each iteration it always picks the vertex with minimum f -value to explore until reaching the goal. When the heuristic h(•) is admissible <ref type="bibr" target="#b39">[41]</ref>, A* guarantees to find the optimal path.  <ref type="formula">5</ref>)) and the heuristic value (cf. Eq. ( <ref type="formula" target="#formula_6">6</ref>)). (b-d): estimating optimal Q-value with fitted-Q-iteration, rollout and completion with stronger LLMs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Q*: A General, Versatile and Agile Deliberation Framework for LLMs</head><p>Most of modern LLMs generate natural languages in an auto-regressive way, i.e., predict the next token in a sequence given the previously generated tokens (cf. Eq. ( <ref type="formula" target="#formula_1">2</ref>)). Therefore, when applied to multi-step reasoning problem, LLMs can potentially introduce errors, hallucinations and inconsistent statements in the subsequent reasoning trace if any previous step is incorrect, which may fail to solve the current problem. Indeed, given the fact that LLMs produce each token with limited computation resources, there is no way to devote more computational efforts to solve difficult problems. In short, LLMs cannot perform in-depth deliberation which is essential for solving complex multi-step reasoning problems.</p><p>We address this issue by presenting Q*, a general, versatile and agile deliberation framework based on A* to effectively guide LLMs to select the most promising next step when performing multi-step reasoning without costly fine-tuning LLMs for each task beforehand. In more detail, we cast finding the most proper reasoning sequence for a given problem as a heuristic search process, where each state s t is associated with a f -value estimating how much utility will be attained if we expand s t :</p><formula xml:id="formula_5">f (s t ) = g(s t ) + λh(s t ),<label>(4)</label></formula><p>where g(s t ) denotes the aggregated utility from the initial state s 1 ; h(s t ) is the heuristic value for measuring the probability of reaching the correct answer derived from s t ; λ is a coefficient to balance the importance of g(s t ) and h(s t ) terms.</p><p>Specifically, we propose to use process-based reward function R P that encodes the prior knowledge or preference of the reasoning task to compute the aggregated utility g(s t ). That is, g(s t ) = Agg(R P (s 1 ), . . . , R P (s i ), . . . , R P (s t )), (5) where Agg ∈ {min, max, , [-1]}, with [-1] standing for assigning the reward of last state as the utility, is the aggregation function to summarize the rewards in the path from s 1 to s t , and s i-1 is the prefix of s i , 1 &lt; i ≤ t. Such process-based reward function R P could be learned from human feedback <ref type="bibr" target="#b20">[22,</ref><ref type="bibr" target="#b21">23,</ref><ref type="bibr" target="#b40">42]</ref>, ground-truth <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b22">24]</ref>, rules, or simply be the logits of a reasoning step which reflects the confidence of the LLM. Furthermore, we use the optimal Q-value of state s t (cf. Eq. ( <ref type="formula" target="#formula_3">3</ref>)) as the heuristic value h(s t ). In other words, the f -value is given by:</p><formula xml:id="formula_6">f (s t ) = g(s t ) + λ max at∈A Q * (s t , a t ).<label>(6)</label></formula><p>Since enumerating all possible next reasoning steps is intractable, in practice we restrict the alternatives to the top-K of all step candidates returned by LLM, and thus Eq. ( <ref type="formula" target="#formula_6">6</ref>) can be written as f (s t ) = g(s t ) + λ max at∈top-K(π θ (•|st)) Q * (s t , a t ).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Estimation of Optimal Q-value</head><p>A critical challenge of implementing Q* is to estimate the optimal Q-value of state-action pairs (cf. Eq. ( <ref type="formula" target="#formula_6">6</ref>)) with a frozen LLM policy π θ which could be suboptimal on the given reasoning problems. Therefore, we aim to learn a proxy Q-value model Q to approximate Q * from a dataset D = {q i , {a ij } M j=1 } N i=1 , where q i is a training problem and a ij ∼ π θ (•|q i ) is a trajectory sampled from the LLM policy π θ . Formally:</p><formula xml:id="formula_7">Q = arg min Q 1 N M T N i=1 M j=1 at∈ai j (Q(s t , a t ) -ŷ(s t , a t )) 2 ,<label>(7)</label></formula><p>where s t = [q i ; a 1 ; . . . ; a t-1 ] is the partial reasoning trace by timestep t -1 in a ij and ŷ(s t , a t ) is the label that approximates the true optimal Q-value, specifically Q * (s t , a t ).</p><p>In more detail, we effectively construct Q-value labels ŷ(s t , a t ) for question q i in the following ways:</p><p>Offline reinforcement learning. Given the offline dataset D, we learn the proxy Q-value model Q using Fitted Q-iteration <ref type="bibr" target="#b41">[43]</ref>. Specifically, for each iteration ℓ, we construct Q-value label as:</p><formula xml:id="formula_8">ŷℓ (s t , a t ) = R(s t , a t ) t = T R(s t , a t ) + γ max at+1∈top-K(π θ (•|st+1)) Qℓ-1 (s t+1 , a t+1 ) otherwise ,<label>(8)</label></formula><p>where Qℓ-1 is the proxy Q-value model learned in iteration ℓ -1. After that, we train a new proxy model Qℓ according to Eq. ( <ref type="formula" target="#formula_7">7</ref>). Such two phases will be alternated for L iterations, and we use QL as the proxy Q-value model when performing deliberation.</p><p>Learning from rollout. Staring from the state-action pair (s t , a t ), we first perform random rollout or MCTS <ref type="bibr" target="#b24">[26,</ref><ref type="bibr" target="#b25">27]</ref> with policy π θ for enough iterations, forming a trajectory pool P . After that, we use the best reasoning sequence with the highest accumulated rewards to construct the Q-value label:</p><formula xml:id="formula_9">ŷ(s t , a t ) = R(s t , a t ) + max τ ∼P (s t ′ ,a t ′ )∈τ T t ′ =t+1 γ T -t ′ R(s t ′ , a t ′ ) . (<label>9</label></formula><formula xml:id="formula_10">)</formula><p>Approximating optimal policy with stronger LLMs. By exploiting the fact that the optimal Q-values are derived from an optimal policy, one can estimate the optimal Q-value of state-action pair (s t , a t ) by completing the trajectory with another stronger LLM π θ * (e.g., GPT-4) if available:</p><formula xml:id="formula_11">ŷ(s t , a t ) = R(s t , a t ) + T t ′ =t+1 γ T -t ′ R(s * t ′ , a * t ′ ),<label>(10)</label></formula><p>where s * t ′ = [s t ; a t ; a * t+1 ; . . . ; a * t ′ -1 ] and a * t ′ ∼ π θ * (•|s * t ′ ).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Deliberative Planning with A*</head><p>Once obtaining the proxy Q-value model Q, we can plug it to Eq. ( <ref type="formula" target="#formula_6">6</ref>) to compute the f -value of each state and perform best-first search with A*. Alg. 1 illustrates the deliberative planning process.</p><p>Specifically, we maintain a set for storing state candidates to be explored, denoted as unvisited, which initially only contains the input question q, and another set visited to record the visited states. Each step we pick the state s with the maximum f -value from the set unvisited and expand it by querying the top-K alternatives with the LLM policy π θ . After that, both visited and unvisited sets will be updated and this process repeats until the terminal state (a complete trajectory) is reached. Finally, we extract the answer part of the terminal state s as the result.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Experimental Settings</head><p>Datasets. We evaluate the effectiveness of Q* on two math reasoning and one code generation tasks, where the dataset statistics have been summarized in </p><formula xml:id="formula_12">s ← arg max s ′ ∈unvisited f (s ′ ) 4: unvisited ← unvisited\{s}, visited ← visited ∪ {s} 5:</formula><p>if s is a terminal state then return the complete trajectory s 6:</p><p>for each a ∈ top-K(π θ (•|s)) do 7:</p><formula xml:id="formula_13">s ′ ← [s; a] 8: if s ′ / ∈ visited then unvisited ← unvisited ∪ {s ′ }</formula><p>grade school math problems, where the solution is given in a one-line-per-step format with an exact numerical answer in the last line; 2) MATH <ref type="bibr" target="#b2">[3]</ref> is a dataset consisting of math problems of high school math competitions, where the solutions are given in a format that mixes latex code and natural language; 3) MBPP <ref type="bibr" target="#b42">[44]</ref> is an entry-level Python programming dataset, where the questions are coding challenges along with a test case that defines the function format. The solutions are Python code that is excepted to pass the pre-collected test cases of each question. Implementation Details. The implementation of Q* method mainly includes three steps: 1) Q-value estimation. As discussed in Section 4.1, we propose several ways for estimating Q values and will illustrate the implementation details in the next paragraph; 2) Utility aggregation for each step (cf. Eq. ( <ref type="formula">5</ref>)). For GSM8K dataset, we adopt a process reward model (PRM) trained on PRM800K <ref type="bibr" target="#b20">[22]</ref> to model R P to provide an intermediate signal for each reasoning step, and use min as the aggregation function; For MATH dataset, we set g(s t ) = 0 for all passed states {s i } t i=1 in each trajectory for fairness, because PRM800K contains data samples constructed from MATH testing set and there is a potential risk of data leakage; For MBPP dataset, we tokenize the code generated so far with function tokenize.generate_tokens and give a penalty of -0.5 if TokenError is raised, which is often the case that there are mismatched delimiters (e.g., parentheses, quotation marks) and invalid indention in the code. We use [-1] as the aggregation function to cancel the previous penalties since the code is generated on-the-fly and mismatched delimiters may be fixed in subsequent steps. 3) A* planning. For GSM8K and MATH datasets, we treat a single line outputted by the LLM as an action, while the action in MBPP is defined as a code snippet with 24 tokens when planning. Besides, in all experiments, we set λ = 1 when computing f -values and expand a state with K = 6 actions at each reasoning step. Finally, following the common practice of Best-of-N , we perform planning to collect N = 6 trajectories for each question, and select the one with the maximum f -value as the final result for evaluation. For Q-value estimation, in our practice, we find that learning from rollout could be the most effective and robust way to collect precise Q-value labels. Specifically, given the prompt of questions, we will firstly perform random rollout to obtain complete trajectories with LLM, denoted as π θ , under the setting of high temperature, e.g., τ = 0.9 for math reasoning and τ = 0.2 for code generation, and split each trajectory into a series of states according to the newline token "\n". Then, for each state-action pair in a trajectory, denoted as (s t , a t ), we can perform random rollout or MCTS with the same LLM to collect a pool P of trajectories, and then select the best reasoning path with the highest accumulated rewards to construct the corresponding Q-value label of the current state-action pair. Note that the reward R(s t , a t ) is given as 1 only if the obtained math numerical answer is correct or the program passes all test cases, indicating that the Q value of a state-action pair can be 1 only if it has the potential to generate a trajectory containing the correct answer. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Experimental Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>GSM8K.</head><p>For the comparison on GSM8K dataset, we select Llama-2-7b <ref type="bibr" target="#b43">[45]</ref> as our base model, whose accuracy can achieve 65.2% after finetuning on MetaMath <ref type="bibr" target="#b4">[5]</ref>. Then, we treat Llama-2-7b finetuned on MetaMath as policy π θ , and perform random rollout to collect Q-value labels for training Q-value model (QVM). For utility aggregation, we train a process reward model (PRM) on PRM800K <ref type="bibr" target="#b20">[22]</ref> to provide intermediate signal for each reasoning step. With PRM and QVM in hand, traditional methods tend to treat either of them as a verifier to select the Best-of-N trajectory or utilize them to perform PPO training of RLHF. As the results shown in Table <ref type="table" target="#tab_2">2</ref>, we can find that with the same PRM/QVM, using it for verification performs significantly better than using it for alignment. Further, in the comparison of planning-based methods, we can find that with the same QVM, Q* method with constant aggregated utility can still outperform Best-of-N method. With the PRM trained on PRM800K determining whether the intermediate reasoning steps are correct, Q* method that combines PRM and QVM achieves the best performance among all methods based on the same LLM, helping Llama-2-7b surpass the performance of close-sourced ChatGPT-turbo <ref type="bibr" target="#b44">[46]</ref> and reaching an accuracy of 80.8%.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>MATH.</head><p>As the results shown in Table <ref type="table">3</ref>, considering the weak performance of Llama-2-7b finetuned with MetaMath for the MATH dataset, we seek for two other stronger LLMs to evaluate the effectiveness of our Q* method. One is Llama-2-7b fine-tuned on Synthetic Data <ref type="bibr" target="#b45">[47]</ref>, which is constructed following the instruction of scaling up the SFT data, and achieves 41.9% accuracy on MATH dataset, approaching the performance of GPT-4 <ref type="bibr" target="#b46">[48]</ref>. The other base model is DeepSeek-Math-7b <ref type="bibr" target="#b47">[49]</ref>, which could be the most powerful open-source 7b model for math reasoning on MATH dataset, achieving 50.8% accuracy in our evaluation. From the results shown in the second and third blocks of Table <ref type="table">3</ref>, we can find that Q* can still lead to further performance improvement compared to the Best-of-N method on either of base models. Additionally, it is noteworthy that the performance of DeepSeek-Math-7b enhanced with Q* has already surpassed a series of closed-source models on the leaderboard of MATH dataset<ref type="foot" target="#foot_0">foot_0</ref> , such as Gemini Ultra (4-shot), reaching an accuracy of 55.4% .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>MBPP.</head><p>As for the comparison on MBPP dataset, we also choose the most powerful open-source LLM in the aspect of code generation, specifically CodeQwen1.5-7b-Chat, as our base model for evaluating the effectiveness of Q*. Following a similar procedure of math reasoning, we train a QVM for Q-value estimation and manually construct the utility function as described in the previous part of implementation details (tokenize the code generated so far with function tokenize.generate_tokens and give a penalty of -0.5 if TokenError is raised). From the results shown in Table <ref type="table">4</ref>, we can find that Q* can still outperform Best-of-N method in the aspect of code generation, and help CodeQwen1.5-7b-Chat to achieve 77.0% accuracy on MBPP dataset, which is also a promising performance in the leaderboard of MPBB<ref type="foot" target="#foot_1">foot_1</ref> .</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Overview of Q*. (a): the deliberation process of Q*. Each state is associated with an f -value which is the weighted sum of the aggregated utility (cf. Eq. (5)) and the heuristic value (cf. Eq. (6)). (b-d): estimating optimal Q-value with fitted-Q-iteration, rollout and completion with stronger LLMs.</figDesc><graphic coords="4,307.47,72.00,194.04,198.42" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1</head><label>1</label><figDesc>Deliberative planning for LLMs with A* Input: question q, LLM policy π θ , proxy Q-value model Q 1: unvisited ← {q}, visited ← ∅ 2: while unvisited ̸ = ∅ do</figDesc><table><row><cell>3:</cell></row></table><note><p>. 1) GSM8K<ref type="bibr" target="#b1">[2]</ref> </p><p>is a dataset of Algorithm 1</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 1 :</head><label>1</label><figDesc>Statistics of datasets.</figDesc><table><row><cell>Dataset</cell><cell>GSM8K</cell><cell>MATH</cell><cell>MBPP</cell></row><row><cell>Domain</cell><cell cols="3">Math Reasoning Math Reasoning Code Generation</cell></row><row><cell>Training</cell><cell>5000</cell><cell>8000</cell><cell>374</cell></row><row><cell>Testing</cell><cell>1319</cell><cell>5000</cell><cell>500</cell></row><row><cell>Average Steps</cell><cell>4.5</cell><cell>11.0</cell><cell>7.0</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 2 :</head><label>2</label><figDesc>Comparison of Q* and other baselines on GSM8K dataset.</figDesc><table><row><cell>Base Model</cell><cell>SFT</cell><cell>Alignment</cell><cell>Verification</cell><cell>Accuracy</cell></row><row><cell>GPT-3.5 (5-shot) [50]</cell><cell>Unknown</cell><cell>PPO (RM) [31]</cell><cell>-</cell><cell>57.1%</cell></row><row><cell>ChatGPT-instruct (0-shot) [46]</cell><cell>Unknown</cell><cell>PPO (RM) [31]</cell><cell>-</cell><cell>71.3%</cell></row><row><cell>ChatGPT-turbo (0-shot) [46]</cell><cell>Unknown</cell><cell>PPO (RM) [31]</cell><cell>-</cell><cell>77.7%</cell></row><row><cell>GPT-4 (0-shot) [46]</cell><cell>Unknown</cell><cell>PPO (RM) [31]</cell><cell>-</cell><cell>91.9%</cell></row><row><cell>GPT-4 (5-shot) [50]</cell><cell>Unknown</cell><cell>PPO (RM) [31]</cell><cell>-</cell><cell>92.0%</cell></row><row><cell>Llama-2-7b (0-shot)</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>49.5%</cell></row><row><cell>Llama-2-7b (0-shot)</cell><cell>MetaMath[5]</cell><cell>-</cell><cell>-</cell><cell>65.2%</cell></row><row><cell>Llama-2-7b (0-shot)</cell><cell>MetaMath[5]</cell><cell>PPO (PRM) [31]</cell><cell>-</cell><cell>67.2%</cell></row><row><cell>Llama-2-7b (0-shot)</cell><cell>MetaMath[5]</cell><cell>PPO (QVM) [31]</cell><cell>-</cell><cell>67.6%</cell></row><row><cell>Llama-2-7b (0-shot)</cell><cell>MetaMath[5]</cell><cell>-</cell><cell>Best-of-N (PRM) [22]</cell><cell>72.1%</cell></row><row><cell>Llama-2-7b (0-shot)</cell><cell>MetaMath[5]</cell><cell>-</cell><cell>Best-of-N (QVM) [22]</cell><cell>74.5%</cell></row><row><cell>Llama-2-7b (0-shot)</cell><cell>MetaMath[5]</cell><cell>-</cell><cell>Q* (QVM)</cell><cell>78.8%</cell></row><row><cell>Llama-2-7b (0-shot)</cell><cell>MetaMath[5]</cell><cell>-</cell><cell>Q* (PRM+QVM)</cell><cell>80.8%</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_0"><p>https://paperswithcode.com/sota/math-word-problem-solving-on-math</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_1"><p>https://paperswithcode.com/sota/code-generation-on-mbpp</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Table <ref type="table">3</ref>: Comparison of Q* and other baselines on MATH dataset.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Base Model SFT Alignment Verification Accuracy</head><p>GPT-3.5 (0-shot) <ref type="bibr" target="#b46">[48]</ref> Unknown PPO (RM) <ref type="bibr" target="#b29">[31]</ref> -23.5% GPT-4 (0-shot) <ref type="bibr" target="#b46">[48]</ref> Unknown PPO (RM) [31] -42.5% Gemini Ultra (4-shot) <ref type="bibr" target="#b49">[51]</ref> Unknown PPO (RM) <ref type="bibr">[</ref>31] -53.2% Llama-2-7b (0-shot) ---7.9% Llama-2-7b (0-shot) MetaMath[5] --20.0% Llama-2-7b (0-shot) Synthetic Data[47] --41.9% Llama-2-7b (0-shot) Synthetic Data[47] PPO (QVM) [31] -42.5% Llama-2-7b (0-shot) Synthetic Data[47] -Best-of-N (QVM) [22] 46.8% Llama-2-7b (0-shot) Synthetic Data[47] -Q* (QVM) 49.1% DeepSeek-Math-7b (0-shot) Unknown PPO (QVM) [31] -50.8% DeepSeek-Math-7b (0-shot) Unknown PPO (QVM) [31] Best-of-N (QVM) [22] 54.3% DeepSeek-Math-7b (0-shot) Unknown PPO (QVM) [31] Q* (QVM) [22] 55.4% </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 4 :</head><label>4</label><figDesc>Comparison of Q* and other baselines on MBPP dataset.Unlike existing deliberation methods which need extensive expertise to design a utility function for each specific task, Q* relies on ground-truth solely to train value model and can be easily applied to various reasoning tasks without modification. Moreover, by leveraging plug-and-play Q-value models as the heuristic function, Q* can effectively guide LLMs to solve various tasks without fine-tuning LLMs beforehand, which avoids potential performance degeneration on other tasks. Finally, our Q* is agile because we consider only a single step each time rather than complete rollouts (e.g., simulation in MCTS). Extensive empirical evaluations on math reasoning and code generation tasks confirm the superiority of our method.</figDesc><table><row><cell>Base Model</cell><cell>SFT</cell><cell>Alignment</cell><cell>Verification</cell><cell>Accuracy</cell></row><row><cell>GPT-3.5 Turbo (self-debug) [52]</cell><cell>Unknown</cell><cell>PPO (RM) [31]</cell><cell>-</cell><cell>72.8%</cell></row><row><cell>GPT-4 (self-debug) [52]</cell><cell>Unknown</cell><cell>PPO (RM) [31]</cell><cell>-</cell><cell>80.2%</cell></row><row><cell>CodeQwen1.5-7b-Chat (0-shot)</cell><cell>Unknown</cell><cell>PPO (QVM) [31]</cell><cell>-</cell><cell>74.6%</cell></row><row><cell>CodeQwen1.5-7b-Chat (0-shot)</cell><cell>Unknown</cell><cell>PPO (QVM) [31]</cell><cell>Best-of-N (QVM) [22]</cell><cell>75.0%</cell></row><row><cell>CodeQwen1.5-7b-Chat (0-shot)</cell><cell>Unknown</cell><cell>PPO (QVM) [31]</cell><cell>Q* (PRM+QVM) [22]</cell><cell>77.0%</cell></row><row><cell>6 Conclusion</cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table><note><p>Solving challenging multi-step reasoning problems requires LLMs to perform in-depth deliberation beyond auto-regressive token generation. In this paper, we present Q*, a general, versatile and agile deliberation framework for LLMs.</p></note></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Large language models for mathematical reasoning: Progresses and challenges</title>
+		<author>
+			<persName><forename type="first">Janice</forename><surname>Ahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishu</forename><surname>Verma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Renze</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Di</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenpeng</forename><surname>Yin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.00157</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Training verifiers to solve math word problems</title>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.14168</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Measuring mathematical problem solving with the math dataset</title>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurav</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akul</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2103.03874</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Damai</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deli</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhifang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sui</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.08935</idno>
+		<title level="m">Math-shepherd: A label-free step-by-step verifier for LLMs in mathematical reasoning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Longhui</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weisen</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jincheng</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengying</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><forename type="middle">T</forename><surname>Kwok</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenguo</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adrian</forename><surname>Weller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Metamath</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.12284</idno>
+		<title level="m">Bootstrap your own mathematical questions for large language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Haipeng</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingfeng</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Can</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianguang</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongyang</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiubo</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingwei</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shifeng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongmei</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.09583</idno>
+		<title level="m">Wizardmath: Empowering mathematical reasoning for large language models via reinforced evol-instruct</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ziyang</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Can</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingfeng</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiubo</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenxiang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongyang</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingwei</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daxin</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wizardcoder</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.08568</idno>
+		<title level="m">Empowering code large language models with evol-instruct</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Code llama: Open foundation models for code</title>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Baptiste Roziere</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabian</forename><surname>Gehring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sten</forename><surname>Gloeckle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Itai</forename><surname>Sootla</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Xiaoqing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yossi</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyu</forename><surname>Adi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tal</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jérémy</forename><surname>Remez</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rapin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.12950</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Codegemma</forename><surname>Team</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ale Jakse</forename><surname>Hartman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrea</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">A</forename><surname>Choquette-Choo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heri</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Fine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyue</forename><surname>Shen</surname></persName>
+		</author>
+		<ptr target="https://goo.gle/codegemma" />
+		<title level="m">Open code models based on gemma</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiangjie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tinghui</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Renze</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuandong</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanghua</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Su</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.01622</idno>
+		<title level="m">TravelPlanner: A benchmark for real-world planning with language agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">LLM+P: Empowering large language models with optimal planning proficiency</title>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqian</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiqi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joydeep</forename><surname>Biswas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Stone</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.11477</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Leveraging pre-trained large language models to construct and utilize world models for model-based task planning</title>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Valmeekam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarath</forename><surname>Sreedharan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Subbarao</forename><surname>Kambhampati</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="79081" to="79094" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">On the planning abilities of large language models -A critical investigation</title>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Valmeekam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Marquez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarath</forename><surname>Sreedharan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Subbarao</forename><surname>Kambhampati</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="75993" to="76005" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Chain of thoughtlessness: An analysis of CoT in planning</title>
+		<author>
+			<persName><forename type="first">Kaya</forename><surname>Stechly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Valmeekam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Subbarao</forename><surname>Kambhampati</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.04776</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="24824" to="24837" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Self-consistency improves chain of thought reasoning in language models</title>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.11171</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Complexity-based prompting for multi-step reasoning</title>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Least-to-most prompting enables complex reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claire</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Bousquet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.10625</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhangir</forename><surname>Azerbayev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hailey</forename><surname>Schoelkopf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keiran</forename><surname>Paster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marco</forename><forename type="middle">Dos</forename><surname>Santos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Mcaleer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Albert</forename><forename type="middle">Q</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stella</forename><surname>Biderman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Welleck</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.10631</idno>
+		<title level="m">Llemma: An open language model for mathematics</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingwei</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhu</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.05653</idno>
+		<title level="m">Mammoth: Building math generalist models through hybrid instruction tuning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Hunter Lightman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yura</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harri</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teddy</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Schulman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.20050</idno>
+		<title level="m">Ilya Sutskever, and Karl Cobbe. Let&apos;s verify step by step</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Solving math word problems with process-and outcome-based feedback</title>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Uesato</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nate</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ramana</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francis</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Siegel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lisa</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonia</forename><surname>Creswell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Irving</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Irina</forename><surname>Higgins</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.14275</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Discriminator-guided multi-step reasoning with language models</title>
+		<author>
+			<persName><forename type="first">Muhammad</forename><surname>Khalifa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lajanugen</forename><surname>Logeswaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moontae</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honglak</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.14934</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Tree of thoughts: Deliberate problem solving with large language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<editor>NeurIPS</editor>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xidong</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyu</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muning</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weinan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.17179</idno>
+		<title level="m">AlphaZerolike tree-search can guide large language model decoding and training</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shibo</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haodi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">Jiahua</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daisy</forename><forename type="middle">Zhe</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiting</forename><surname>Hu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.14992</idno>
+		<title level="m">Reasoning with language model is planning with world model</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saayan</forename><surname>Mitra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Bursztyn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><forename type="middle">A</forename><surname>Rossi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Somdeb</forename><surname>Sarkhel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.13227</idno>
+		<title level="m">Toolchain*: Efficient action space navigation in large language models with A* search</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">A survey of monte carlo tree search methods</title>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Cameron B Browne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Powley</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Whitehouse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Simon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><forename type="middle">I</forename><surname>Lucas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philipp</forename><surname>Cowling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Rohlfshagen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diego</forename><surname>Tavener</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Spyridon</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Samothrakis</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Colton</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Computational Intelligence and AI in Games</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="43" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">A formal basis for the heuristic determination of minimum cost paths</title>
+		<author>
+			<persName><forename type="first">Nils</forename><forename type="middle">J</forename><surname>Peter E Hart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bertram</forename><surname>Nilsson</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Raphael</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Systems Science and Cybernetics</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="100" to="107" />
+			<date type="published" when="1968">1968</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Training language models to follow instructions with human feedback</title>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carroll</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katarina</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+		<editor>NeurIPS</editor>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="27730" to="27744" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Rafael</forename><surname>Rafailov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Archit</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefano</forename><surname>Ermon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.18290</idno>
+		<title level="m">Direct preference optimization: Your language model is secretly a reward model</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Aligner: Achieving efficient alignment through weak-to-strong correction</title>
+		<author>
+			<persName><forename type="first">Jiaming</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hantao</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donghai</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Borong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuehai</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juntao</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaodong</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.02416</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">SayCanPay: Heuristic planning with large language models using learnable domain knowledge</title>
+		<author>
+			<persName><forename type="first">Rishi</forename><surname>Hazra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pedro</forename><surname>Zuidberg Dos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luc</forename><surname>Martires</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raedt</forename><surname>De</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="20123" to="20133" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingwen</forename><surname>Bu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Jie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heming</forename><surname>Luck</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Agentcoder</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.13010</idno>
+		<title level="m">Multi-agent-based code generation with iterative testing and optimisation</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Reflexion: Language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beck</forename><surname>Labash</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<idno>cs.AI/2303.11366</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Code with codeqwen1</title>
+		<author>
+			<persName><forename type="first">Qwen</forename><surname>Team</surname></persName>
+		</author>
+		<ptr target="https://qwenlm.github.io/blog/codeqwen1.5/" />
+		<imprint>
+			<date type="published" when="2024-04">April 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Planning as heuristic search</title>
+		<author>
+			<persName><forename type="first">Blai</forename><surname>Bonet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Héctor</forename><surname>Geffner</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artificial Intelligence</title>
+		<imprint>
+			<biblScope unit="volume">129</biblScope>
+			<biblScope unit="issue">1-2</biblScope>
+			<biblScope unit="page" from="5" to="33" />
+			<date type="published" when="2001">2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Cooperative pathfinding</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI-AIIDE</title>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+			<biblScope unit="page" from="117" to="122" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">AND/OR branch-andbound for computational protein design optimizing K</title>
+		<author>
+			<persName><forename type="first">Bobak</forename><surname>Pezeshki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Radu</forename><surname>Marinescu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Ihler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rina</forename><surname>Dechter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">UAI</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="1602" to="1612" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Artificial Intelligence: A Modern Approach</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Stuart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Russell</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Norvig</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<publisher>Pearson</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zeqiu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yushi</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weijia</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouha</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alane</forename><surname>Suhr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prithviraj</forename><surname>Ammanabrolu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mari</forename><surname>Ostendorf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.01693</idno>
+		<title level="m">Fine-grained human feedback gives better rewards for language model training</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Neural fitted Q iteration-first experiences with a data efficient neural reinforcement learning method</title>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Riedmiller</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECML</title>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+			<biblScope unit="page" from="317" to="328" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Program synthesis with large language models</title>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Augustus</forename><surname>Odena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carrie</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2108.07732</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">Llama 2: Open foundation and fine-tuned chat models</title>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Albert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amjad</forename><surname>Almahairi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasmine</forename><surname>Babaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolay</forename><surname>Bashlykov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soumya</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prajjwal</forename><surname>Bhargava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shruti</forename><surname>Bhosale</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.09288</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<author>
+			<persName><forename type="first">Koustuv</forename><surname>Kumar Shridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Sinha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianlu</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ping</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ram</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mrinmaya</forename><surname>Pasunuru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Sachan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Asli</forename><surname>Weston</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Celikyilmaz</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.07961</idno>
+		<title level="m">The art of LLM refinement: Ask, refine, and trust</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiqi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingcheng</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nanning</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Houwen</forename><surname>Peng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.04706</idno>
+		<title level="m">Common 7b language models already possess strong math capabilities</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sébastien</forename><surname>Bubeck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Varun</forename><surname>Chandrasekaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronen</forename><surname>Eldan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Gehrke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Horvitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ece</forename><surname>Kamar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yin</forename><surname>Tat Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Lundberg</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.12712</idno>
+		<title level="m">Sparks of artificial general intelligence: Early experiments with GPT-4</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daya</forename><surname>Guo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.03300</idno>
+		<title level="m">Deepseekmath: Pushing the limits of mathematical reasoning in open language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Adler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lama</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilge</forename><surname>Akkaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florencia</forename><surname>Leoni Aleman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Janko</forename><surname>Altenschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Altman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.08774</idno>
+		<title level="m">Shyamal Anadkat, et al. GPT-4 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<author>
+			<persName><forename type="first">Gemini</forename><surname>Team</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Anil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Borgeaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonghui</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean-Baptiste</forename><surname>Alayrac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahui</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Radu</forename><surname>Soricut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johan</forename><surname>Schalkwyk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">M</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anja</forename><surname>Hauth</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.11805</idno>
+		<title level="m">A family of highly capable multimodal models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<title level="m" type="main">Teaching large language models to self-debug</title>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.05128</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,541 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-06-05">5 Jun 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Hudson</forename><surname>De Martim</surname></persName>
+							<email>hudsonm@senado.leg.br</email>
+							<affiliation key="aff0">
+								<orgName type="department">Federal Senate of Brazil</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-06-05">5 Jun 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">F1A3E1B03D7E2530743C9FAA847E143F</idno>
+					<idno type="arXiv">arXiv:2506.07853v5[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:08+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>LRMoo</term>
+					<term>Temporal Modeling</term>
+					<term>Event-Centric Modeling</term>
+					<term>Legal Knowledge Graph</term>
+					<term>Legal Text Evolution</term>
+					<term>Component-Level Versioning</term>
+					<term>Akoma Ntoso</term>
+					<term>LexML</term>
+					<term>ELI</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Representing the temporal evolution of legal norms is a critical challenge for automated processing. While foundational frameworks exist, they lack a formal pattern for granular, component-level versioning, hindering the deterministic point-in-time reconstruction of legal texts required by reliable AI applications. This paper proposes a structured, temporal modeling pattern grounded in the LRMoo ontology. Our approach models a norm's evolution as a diachronic chain of versioned F1 Works, distinguishing between language-agnostic Temporal Versions (TV) -each being a distinct Work -and their monolingual Language Versions (LV), modeled as F2 Expressions. The legislative amendment process is formalized through event-centric modeling, allowing changes to be traced precisely. Using the Brazilian Constitution as a case study, we demonstrate that our architecture enables the exact reconstruction of any part of a legal text as it existed on a specific date. This provides a verifiable semantic backbone for legal knowledge graphs, offering a deterministic foundation for trustworthy legal AI.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>The increasing demand for transparency, efficiency in legal research, and the proliferation of Legal Tech and Artificial Intelligence (AI) applications underscore the critical need for machine-readable representations of legal norms. In recent years, the development of robust Legal Knowledge Graphs (LKGs) has emerged as a key strategy to meet this need <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b1">2]</ref>. The challenge of formally modeling time and identifying legal resources through an event-centric ontology was a foundational topic in seminal early research <ref type="bibr" target="#b2">[3]</ref>, and it continues to be an active area of investigation <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b4">5,</ref><ref type="bibr" target="#b5">6]</ref>.</p><p>While foundational conceptual frameworks like IFLA LRMoo <ref type="bibr" target="#b6">[7]</ref> and standards like Akoma Ntoso <ref type="bibr" target="#b7">[8]</ref> provide robust, general-purpose approaches, the specific challenge of tracking temporally discrete, component-level changes requires a dedicated modeling pattern. This challenge is particularly acute when considering current Generative AI. Brazil's 1988 Federal Constitution, for instance, has been amended over one hundred times. Today's large language models (LLMs) operate on a probabilistic basis, making them inherently unsuitable for tasks requiring absolute precision. Their lack of deterministic mechanisms makes them unreliable for the high-stakes legal domain, where correctness is not a probability but a requirement <ref type="bibr" target="#b8">[9,</ref><ref type="bibr" target="#b9">10]</ref>. They frequently fail when asked to retrieve the exact text of the Constitution as it stood on a particular past date.</p><p>Against this backdrop, the present paper proposes a structured model grounded in the IFLA LRMoo ontology to deliver a semantically rich representation of legal norms and their diachronic evolution. We model this evolution as a chain of versioned F1 Works, distinguishing between a language-agnostic Temporal Version (TV), each being a distinct F1 Work, and its concrete monolingual Language Versions (LV), modeled as F2 Expressions. This paradigm is extended to the component level by establishing parallel hierarchies for abstract Components and their Component Versions. Furthermore, we formalize the amendment process itself through a scalable hierarchy of creation and end-of-existence events (anchored in F27 Work Creation), from which each version's validity is deterministically derived. This fine-grained, event-centric architecture forms the basis for building deterministic pipelines capable of reconstructing any part of a legal text as it existed on any given date.</p><p>This paper is structured as follows. Section 2 reviews foundational concepts from LRMoo and related standards. Section 3 introduces our core proposal for norms, detailing the TV/LV distinction and the eventcentric mechanism. Section 4 details how this model is extended to represent internal hierarchical components. Section 5 concludes and outlines future research directions.</p><p>2 Background and Related Work</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">LRMoo Overview</head><p>The IFLA Library Reference Model (LRM), formalized as the LRMoo ontology <ref type="bibr" target="#b6">[7]</ref>, is an object-oriented model harmonized with the CIDOC Conceptual Reference Model (CIDOC CRM). It refines the Work, Expression, Manifestation, Item (WEMI) distinction:</p><p>• F1 Work, representing a distinct abstract intellectual creation (e.g., the normative intent of a law).</p><p>• F2 Expression, representing a specific intellectual realization of a Work. Differences in form imply different Expressions (e.g., from text to spoken word, a transcript of a recording). Similarly, differences in language imply different Expressions.</p><p>• F3 Manifestation, representing the embodiment of an Expression in a product (e.g., a PDF file published in the Official Gazette).</p><p>• F5 Item, representing a single exemplar of a Manifestation (e.g., a specific printed copy).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Related Standards: Akoma Ntoso, LexML Brazil, and ELI</head><p>Akoma Ntoso (AKN) <ref type="bibr" target="#b7">[8]</ref> is an XML vocabulary for legal documents aligned with the WEMI model. AKN does offer rich amendment constructs-activeModifications and passiveModifications, whose textualMod elements reference the affected provisions (by eId) and the amending sourceso a textual change can be linked to the component it affects. These are, however, document-embedded XML annotations rather than first-class, reified entities: AKN does not model each component as an independently versioned work with an explicit derivative lineage, nor the amendment as a shared causal node, and point-in-time states are typically materialized as separate consolidated documents, leaving the per-component diachronic history implicit. The LexML Brazil project <ref type="bibr" target="#b10">[11]</ref> provides a URN standard (norm@version~language!part, implementing the URN Lex namespace) able to name a specific provision within a specific version of a norm-an addressing scheme we reuse to identify our entities. Its XML layer additionally records legislative events (e.g., amendments and partial revocations) as document metadata, and its FRBRoo-based ontology <ref type="bibr" target="#b2">[3]</ref> pioneered the time-aware modeling of the normative act's life cycle. A URN, however, identifies a versioned provision as a locator within a consolidated document snapshot; it does not model it as a first-class Work bearing explicit derivative lineage and conceptual membership, nor does it reify the legislative event as a queryable causal entity<ref type="foot" target="#foot_0">foot_0</ref> . Our model supplies exactly this formal, relational layer, elevating each component and each event to a first-class entity.</p><p>The European Legislation Identifier (ELI) <ref type="bibr" target="#b11">[12]</ref> also builds upon FRBR principles and supports both temporal versioning (through point-in-time URI components) and language version differentiation (via language codes in the URI). Its metadata model further captures relevant temporal dimensions, such as validity and applicability dates, on which we build in Section 3. However, ELI is fundamentally a URI identification and metadata scheme. While its accompanying formal ontology is based on FRBR principles, its semantics are document-centric, designed to describe relationships between laws (e.g., eli:amends). It does not provide the built-in constructs to model the legislative event as a first-class entity, which is essential for tracing the precise provenance of a legal change.</p><p>Grounding our model in IFLA LRMoo supplies the formal ontology these schemes lack: a recursive, component-level versioning pattern coupled with reified, event-centric provenance that traces each modification to its source legislative instrument.</p><p>While recent studies emphasize the need for LKGs to act as a verifiable backbone for computational law <ref type="bibr" target="#b12">[13,</ref><ref type="bibr" target="#b13">14]</ref>, they often presuppose the existence of a stable, versioned representation of the legal text itself. Our model provides exactly this versioned textual ground truth, a necessary prerequisite for any subsequent semantic modeling or logical reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">LRMoo-Based Representation of Legal Norms</head><p>Building on LRMoo, our model maps each stage of a norm's existence:</p><p>• Concept (C): A single, immutable F1 Work represents the abstract legal norm in its entirety, persisting through time. For example, "The Brazilian Federal Constitution of 1988" as an overarching concept is one such entity. It serves as the permanent anchor for all its historical versions.</p><p>• Temporal Version (TV): An F1 Work representing the norm's complete and distinct normative identity at a specific point in time-a "semantic snapshot." Each TV is a separate Work because legislative amendments alter the norm's legal force, creating a new normative entity. All TVs are linked to the overarching concept via R10 is member of-related works that are considered to share a common concept. Their temporal lineage is captured via R2 is derivative of, which can be precisely qualified using R2.1 has type to denote a "Temporal Succession".</p><p>• Language Version (LV): An F2 Expression representing the concrete monolingual textual realization of a Temporal Version. By being multiply instantiated as an E33 Linguistic Object, an LV is formally described by its language (P72 has language) and its complete textual content (P190 has symbolic content). An LV R3i realises its parent Temporal Version.</p><p>• Manifestation (F3 Manifestation): Embodies a Language Version on a specific carrier, such as an HTML page on a government website. The detailed modeling of manifestations is considered out of scope for this work.</p><p>This results in a clear structure, illustrated in Figure <ref type="figure" target="#fig_0">1</ref>. The legislative enactment of an amending norm (e.g., through promulgation or signing into law) has a creative effect resulting in at least two distinct F1 Works: the original version of the amending norm itself and the new version(s) of the amended norm(s). While the creation of the modifying instrument is a necessary outcome, the primary focus of this paper is the second, transformative effect: the creation of the new Temporal Version (TV) of an amended norm.</p><p>A legislative change is an inherently n-ary fact-it binds an author, a target norm, a resulting text, a date, and a legal effect-so collapsing it into a single binary relation (e.g., amends) would discard most of this structure <ref type="bibr" target="#b14">[15]</ref>. We therefore reify the change as a first-class event, following event-centric knowledge graph approaches <ref type="bibr" target="#b15">[16,</ref><ref type="bibr" target="#b16">17]</ref>.</p><p>This transformative effect is modeled through a single event whose ontological typing depends on the nature of the legislative operation. For a textual amendment-the most common case-the event is multiply instantiated as both an F27 Work Creation and an E64 End of Existence, reflecting that a constitutive legal change simultaneously terminates one normative entity and inaugurates another. <ref type="foot" target="#foot_1">2</ref>This event explicitly models the legal change by documenting that it:</p><p>• uses (P16 used specific object) the specific provision of the amending instrument that prescribes the change, recording the authoritative source of the modification;</p><p>• takes out of existence (P93 took out of existence) the preceding Temporal Version (TV n-1 ) of the norm being changed, thereby terminating its validity period; and</p><p>• creates (R16 created) the new, resulting Temporal Version (TV n ) that incorporates the normative changes.</p><p>The typing is operation-dependent: a pure insertion is typed only as F27 Work Creation (asserting R16 created); a pure repeal only as E64 End of Existence (asserting P93 took out of existence); and a wording amendment combines both, as above. This event-centric view allows us to precisely trace the provenance of each version of a legal norm, as shown in Figure <ref type="figure" target="#fig_1">2</ref>.</p><p>Essentially, a Temporal Version does not store its validity interval as a static attribute. Following an eventsourcing approach, the interval [t start , t end ) is derived from the events bounding the version's life cycle: t start from the event that R16 created it, and t end from the event that P93 took it out of existence-remaining open-ended while no such terminating event exists. The event can be further described by its Nature (P2 has type), Actors (P14 carried out by), and Time-span (P4 has time-span).</p><p>The temporal dimension of legal knowledge is bitemporal in the strict technical sense <ref type="bibr" target="#b17">[18]</ref>: it requires distinguishing valid time-when a norm produces legal effect-from transaction time-when the norm was recorded in the official system. In our model, P4 has time-span captures transaction time (the publication/recording date), while valid time is carried by a validity interval attached to the event (an extension beyond those native to LRMoo). For legal corpora, valid time decomposes further: following the ELI ontology <ref type="bibr" target="#b11">[12]</ref> and the legal time model of Palmirani and Brighi <ref type="bibr" target="#b18">[19]</ref>, we distinguish the date a norm enters the legal order from its applicability-the temporal scope of the facts it may govern-because the two diverge under vacatio legis (deferred onset), retroactive (ex tunc) effect, and tax-anteriority or lex mitior rules. A tax statute, for instance, may be published and in force in October yet only applicable to taxable events from the following January; conversely, a more lenient criminal law (lex mitior) applies retroactively to facts predating its enactment. Modeling these as explicit properties on valid time renders such asymmetries computable rather than leaving them buried in unstructured text. The life-cycle interval [t start , t end ) derived above is the valid-time projection; transaction time is recorded independently via P4.</p><p>The property R2 is derivative of is a semantic "shortcut" for this detailed event-based model, allowing for both simple version traversal and deep contextual analysis.</p><p>This architecture is designed to robustly handle both multilingual and monolingual scenarios. In jurisdictions like Canada or the European Union, a single language-agnostic Temporal Version can be realized in multiple Language Versions, one for each official language. In predominantly monolingual jurisdictions like Brazil, each TV will typically have one primary LV that realizes it. Even in this one-to-one case, the conceptual distinction remains essential: the TV defines what the law says (its semantic content and structure), while the LV defines how it is expressed (its specific linguistic form).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Practical Application: Brazilian Constitution</head><p>We trace the Constitution's lifecycle, using the LexML URN format (norm@version ~language syntax) <ref type="foot" target="#foot_2">3</ref> to identify the entities.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>The Concept (F1)</head><p>The abstract concept of the Constitution is a single F1 Work:</p><p>• <ref type="url" target="urn:lex:br:federal:constituicao:1988-10-05;1988">urn:lex:br:federal:constituicao:1988-10-05;1988</ref> Initial State (1988) Its promulgation created the initial TV 0 and its Portuguese LV 0 .</p><p>• TV 0 : <ref type="url" target="urn:lex:br:federal:constituicao:1988-10-05;1988@1988-10-05">urn:lex:br:federal:constituicao:1988-10-05;1988@1988-10-05</ref> </p><p>• LV 0 : <ref type="url" target="urn:lex:br:federal:constituicao:1988-10-05;1988@1988-10-05~texto;pt">urn:lex:br:federal:constituicao:1988-10-05;1988@1988-10-05~tex  to;pt</ref> Legislative Event (EC1-1992-03-31) Constitutional Amendment No. 1, promulgated on March 31, 1992, is modeled as a complex legislative event that creates two F1 Works:</p><p>• Work 1 -The Amendment Instrument: The normative act EC No. 1/1992 itself, which legally prescribes specific modifications to the constitutional text. This work has its own F2 Expression containing the amendment's official text.</p><p>• Work 2 -The Amended Constitution: The new TV 1 (1992-03-31), which represents the constitutional framework incorporating the changes. This work is created via an event jointly typed as F27 Work Creation and E64 End of Existence that uses (P16) the relevant provision of EC No. 1/1992 as its authoritative source, takes out of existence (P93) the prior TV 0 , and creates (R16) the new TV 1 .</p><p>New State (Post-Amendment) The event's result was a new Temporal Version, TV 1 , with its Language Version LV 1 .</p><p>• TV 1 : <ref type="url" target="urn:lex:br:federal:constituicao:1988-10-05;1988@1992-03-31">urn:lex:br:federal:constituicao:1988-10-05;1988@1992-03-31</ref> </p><formula xml:id="formula_0">•</formula><p>LV 1 : <ref type="url" target="urn:lex:br:federal:constituicao:1988-10-05;1988@1992-03-31~texto;pt">urn:lex:br:federal:constituicao:1988-10-05;1988@1992-03-31~tex  to;pt</ref> This establishes an auditable version chain: TV 1 R2 is derivative of TV 0 .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Legal Norm's Components Representation</head><p>Legal norms have a hierarchy of components (articles, paragraphs, etc.). Our model applies the same LRMoo pattern recursively to each component.</p><p>• Component Concept (CC): An F1 Work representing the abstract identity of a structural component of a legal norm (e.g., "Article 5"). The hierarchy of CCs is structured using R67 has part.</p><p>• Component Temporal Version (CTV): An F1 Work representing the semantic content of a component at a specific point in time. A CTV R10 is member of its corresponding CC. Amendments create new CTVs, linked via R2 is derivative of.</p><p>• Component Language Version (CLV): An F2 Expression representing the monolingual realization of a CTV. A CLV R3i realises its corresponding CTV. Translations are linked via R76 is derivative of.</p><p>The formal distinction between properties at each level, as showed in Figure <ref type="figure" target="#fig_2">3</ref>-R10 (conceptual membership), R67 (work composition), R3 (work realization), and R5 (textual incorporation)-is key to maintaining the model's semantic integrity and enabling precise querying across abstraction levels. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Temporal Evolution and Event Granularity of Components</head><p>Amendments are modeled with a scalable event hierarchy that leverages CIDOC CRM's mechanism for process decomposition. A single macro-event (e.g., "Enactment of an Amending Norm") captures the overall change and is formally composed of multiple micro-events using the P9 consists of property <ref type="foot" target="#foot_3">4</ref> . Each micro-event happens concurrently, representing a single, granular modification to a component's version.</p><p>Since the direct outcome of this granular action is a new semantic version of the component, each micro-event is typed dynamically according to its dogmatic operation, mirroring the pattern introduced in Section 3: a pure insertion is an F27 Work Creation, a pure repeal an E64 End of Existence, and a wording amendment is jointly typed as both. This creates an explicit, auditable link between the cause and effect of the change. Taking a wording amendment as the general case, the micro-event documents that it:</p><p>• uses (P16 used specific object) the original Component Temporal Version (CTV 0 ) of the specific provision of the amending instrument that prescribes the change, recording its authoritative source;</p><p>• takes out of existence (P93 took out of existence) the preceding Component Temporal Version (CTV n-1 ) of the component being changed, thereby terminating its validity period; and</p><p>• creates (R16 created) the new, resulting Component Temporal Version (CTV n ) that incorporates the normative changes.</p><p>This hierarchical event structure is essential for establishing a complete auditable trail and data provenance. Its power is twofold. On one hand, the detailed record of the micro-event-as part of an overarching macrolegislative act-answers precisely how, when, and why a component changed, tracing a specific instruction in an amending act to its precise effect on the amended norm. On the other hand, the outcome of this event creates a new Component Temporal Version (CTV) linked to its predecessor via R2 is derivative of. This property efficiently answers what changed by forming a simple, traversable version history, while unaffected components simply retain their existing CTVs. While this hierarchical event structure provides a precise target for establishing a complete auditable trail, its instantiation at scale represents a significant practical challenge. The parsing of unstructured legislative texts to reliably extract the inputs and outputs for each micro-event is a non-trivial task, underscoring the importance of developing dedicated processing pipelines as part of future work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.1">Practical Example: The Lifecycle of a Component</head><p>We trace the caput of Article 6 of the Brazilian Constitution, which enumerates social rights.</p><p>The Component Concept (CC) The abstract concept of "the caput of Article 6" is a single F1 Work.</p><p>• CC: <ref type="url" target="urn:lex:br:federal:constituicao:1988-10-05;1988!art6_cpt">urn:lex:br:federal:constituicao:1988-10-05;1988!art6_cpt</ref> The Initial State (1988) Its original 1988 text is captured in its first CTV 0 and Portuguese CLV 0 . • CTV 0 : <ref type="url" target="urn:lex:br:federal:constituicao:1988-10-05;1988@1988-10-05!art6_cpt">urn:lex:br:federal:constituicao:1988-10-05;1988@1988-10-05!a  rt6_cpt</ref> • CLV 0 : <ref type="url" target="urn:lex:br:federal:constituicao:1988-10-05;1988@1988-10-05~texto;pt!art6_cpt">urn:lex:br:federal:constituicao:1988-10-05;1988@1988-10-05~tex  to;pt!art6_cpt</ref> The Component-Level Event (EC26-2000-02-14!art1_cpt_...) On Feb 14, 2000, the caput of Article 1 of Constitutional Amendment No. 26 added the word "housing" ("moradia") to the caput of Article 6 of the Constitution. This specific instruction (action) is a micro-event. Being a wording amendment, it is jointly typed as an F27 Work Creation and an E64 End of Existence: it uses (P16) the CTV 0 of the amending provision (<ref type="url" target="urn:lex:br:federal:emenda.constitucional:2000-02-14;26@2000-02-14!art1_cpt_alt1_art6">urn:lex:br:federal:emenda.constitucional:2000-02- 14;26@2000-02-14!art1_cpt_alt1_art6</ref>) as its authoritative source, takes out of existence (P93) the preceding CTV 0 of the Art. 6 caput, and creates (R16) the new version, CTV 1 . The New State (Post-Amendment) • CTV 1 : <ref type="url" target="urn:lex:br:federal:constituicao:1988-10-05;1988@2000-02-14!art6_cpt">urn:lex:br:federal:constituicao:1988-10-05;1988@2000-02-14!a  rt6_cpt</ref> • CLV 1 : <ref type="url" target="urn:lex:br:federal:constituicao:1988-10-05;1988@2000-02-14~texto;pt!art6_cpt">urn:lex:br:federal:constituicao:1988-10-05;1988@2000-02-14~tex  to;pt!art6_cpt</ref> The new Portuguese CLV 1 realises CTV 1 , containing the updated text. The lineage CTV 1 R2 is derivative of CTV 0 preserves the full, auditable history of this single component.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion and Future Work</head><p>This paper has proposed a structured, temporal model for representing legal norms and their hierarchical components, grounded in IFLA LRMoo. By representing temporal states as a chain of versioned F1 Works, our proposal offers a robust, standards-compliant solution for deterministic point-in-time reconstruction of legal texts. The key contributions are:</p><p>• A Two-Tier Expression Model: A clear distinction between a language-agnostic Temporal Version (TV) and its monolingual realizations, the Language Versions (LV), providing a precise mechanism for managing multilingual content.</p><p>• Granular Component Versioning: A recursive application of this model to internal components using parallel hierarchies for Component Concepts and Component Versions.</p><p>• Event-Centric Change Modeling: A scalable event hierarchy that traces an amendment from its precise provision in an amending norm to its exact effect on an amended norm, with each version's validity and applicability derived from these events.</p><p>• Deterministic Reconstruction: A formal structure that provides the unambiguous, verifiable ground truth essential for high-stakes legal applications, in direct contrast to probabilistic generative AI.</p><p>Future work will focus on three main areas:</p><p>• Full Ontological Implementation: Develop and publish a comprehensive OWL ontology that formally specifies all entities and relationships, ensuring alignment with CIDOC CRM and LRMoo.</p><p>• Knowledge Graph Population and Tooling: Implement the model as a large-scale LKG. This involves developing automated pipelines to parse historical legislation and instantiate version and event entities, and creating tools for deterministic point-in-time reconstruction.</p><p>• Advanced Reasoning and Benchmarks: Build upon the LKG to develop advanced reasoning. A critical step will be creating benchmarks to rigorously test the model's ability to perform flawless, deterministic reconstruction.</p><p>In an era dominated by probabilistic models, a robust descriptive model such as this provides the precise, versioned textual facts-the verifiable ground truth-that are essential for building reliable Legal Knowledge Graphs. We frame this model as a foundational prerequisite for effective computational law, providing the deterministic and auditable factual layer required for trustworthy legal AI systems.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Relationship among the Concept, a chain of Temporal Versions (TVs) and their Language Versions (LVs).</figDesc><graphic coords="4,142.20,72.00,327.62,120.06" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: An amendment event, jointly typed as F27 Work Creation and E64 End of Existence: it P16 used the amending provision as source, P93 took out of existence the prior Temporal Version, and R16 created the new one.</figDesc><graphic coords="5,165.60,72.00,280.81,154.65" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Parallel hierarchies of Works (structured by R67 has part) and Expressions (structured by R5 has component).</figDesc><graphic coords="7,118.80,72.00,374.42,177.68" type="bitmap" /></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>In LexML the same amendment is recorded redundantly-actively in the amending norm's EventosGerados and passively in the amended norm's CicloDeVida. The two records are document-scoped: an Evento's identifier is an xsd:ID, unique and resolvable only within its own file, whereas LexML reserves global identifiers (URN-LEX) for norms and provisions, not for events. Reusing the same id string across both documents is therefore a naming convention, not a resolvable co-reference, and a processor still correlates the two views heuristically (by matching source, target, type, and date). Reifying the event as a single first-class node gives it one global identity referenced from both sides, making the correlation deterministic.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>We deliberately avoid modeling the change as an E11 Modification: the property P31 has modified ranges over physical things (E24/E18), whereas a Temporal Version is a conceptual F1 Work (E28). Modeling the transition at the level of the entity's existence (E63/E64), rather than as a physical modification, keeps the pattern ontologically consistent. The combined F27 ∩ E64 typing follows the CIDOC CRM precedent for state-transition events (e.g., a death jointly typed as E64 and E7).</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>LexML URN syntax follows the standard proposed by the Brazilian LexML project. Available at: https://projeto.le xml.gov.br</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_3"><p>Although the property P9 consists of is formally defined in CIDOC CRM for E4 Period, its extension, LRMOO, explicitly recommends its use for hierarchical relationships among activities. As F27 Work Creation is a subclass of E7 Activity, it inherits this applicability. The LRMOO documentation considers this use "more specific (and appropriate)" for decomposing an F27 into component events (e.g., F31 Performance sub-activities), thus providing the rationale for its analogical application to decompose a macro-level creation event into its micro-level constituent parts.</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Interpretable long-form legal question answering with retrievalaugmented large language models</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Louis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Van Dijck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Spanakis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<publisher>AAAI Press</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page" from="22266" to="22275" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Automatic detection of arguments in legal texts</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">F</forename><surname>Moens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Boiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">M</forename><surname>Palau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Reed</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 11th International Conference on Artificial Intelligence and Law. ICAIL &apos;07</title>
+		<meeting>the 11th International Conference on Artificial Intelligence and Law. ICAIL &apos;07<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2007">2007</date>
+			<biblScope unit="page" from="225" to="230" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Moving in the time: An ontology for identifying legal resources</title>
+		<author>
+			<persName><forename type="first">De</forename><surname>Oliveira Lima</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">A</forename><surname>Palmirani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Vitali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Legal Knowledge and Information Systems</title>
+		<meeting><address><addrLine>Berlin; Berlin Heidelberg</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2008">2008</date>
+			<biblScope unit="page" from="15" to="24" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Computational law: datasets, benchmarks, and ontologies</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Küçük</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Can</surname></persName>
+		</author>
+		<idno>ArXiv:2503.04305</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note>preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Temporal knowledge question answering via abstract reasoning induction</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.09149v2</idno>
+		<ptr target="https://arxiv.org/abs/2311" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">09149</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">ArXiv preprint</note>
+	<note>Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">A survey on temporal knowledge graph: Representation learning and applications</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Cai</surname></persName>
+		</author>
+		<idno>ArXiv:2403.04782</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note>preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">LRMoo: Object-oriented definition and mapping from the IFLA Library Reference Model</title>
+		<author>
+			<orgName type="collaboration">IFLA LRMoo Working Group and CIDOC CRM Special Interest Group</orgName>
+		</author>
+		<idno>IFLA; 2024. Version 1.0</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Akoma-Ntoso for legal documents</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Palmirani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Vitali</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Legislative XML for the Semantic Web: Principles, Models, Standards for Document Management</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="75" to="100" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">To What Extent Have LLMs Reshaped the Legal Domain So Far? A Scoping Literature Review</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Padiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Iacob</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Rebedea</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Dascalu</surname></persName>
+		</author>
+		<ptr target="https://www.mdpi.com/2078-2489/15/11/662" />
+	</analytic>
+	<monogr>
+		<title level="j">Information</title>
+		<imprint>
+			<biblScope unit="volume">15</biblScope>
+			<biblScope unit="issue">11</biblScope>
+			<biblScope unit="page">662</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Large Language Models in Law: A Survey</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Gan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">S</forename><surname>Yu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2312.03718" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Projeto</forename><surname>Lexml</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brasil</forename></persName>
+		</author>
+		<ptr target="https://projeto.lexml.gov.br/documentacao/Parte-1-Modelo-de-Referencia.pdf" />
+	</analytic>
+	<monogr>
+		<title level="j">Modelo de Referência LexML. Brasília: Senado Federal</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">European Legislation Identifier (ELI): Technical Specification for Legal Documents</title>
+		<ptr target="https://op.europa.eu/en/web/eli" />
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<publisher>European Commission</publisher>
+			<biblScope unit="page" from="2025" to="2036" />
+		</imprint>
+	</monogr>
+	<note>ISA² Programme</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Legal Knowledge Extraction for Knowledge Graph Based Question-Answering</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Boer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Winkels</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Vitali</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Legal Knowledge and Information Systems: JURIX 2020: The Thirty-third Annual Conference</title>
+		<meeting><address><addrLine>Amsterdam, The Netherlands</addrLine></address></meeting>
+		<imprint>
+			<publisher>IOS Press</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">334</biblScope>
+			<biblScope unit="page" from="143" to="147" />
+		</imprint>
+	</monogr>
+	<note>of Frontiers in Artificial Intelligence and Applications</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">A Constructive Framework for Legal Ontologies</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gangemi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">T</forename><surname>Sagri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Tiscornia</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Law and the Semantic Web</title>
+		<title level="s">Lecture Notes in Computer Science</title>
+		<editor>
+			<persName><forename type="first">V</forename><forename type="middle">R</forename><surname>Benjamins</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">P</forename><surname>Casanovas</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Breuker</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Gangemi</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Berlin, Heidelberg</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2003">2003</date>
+			<biblScope unit="volume">3369</biblScope>
+			<biblScope unit="page" from="97" to="124" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Defining N-ary Relations on the Semantic Web. W3C Working Group Note</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Noy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Rector</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Hayes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Welty</surname></persName>
+		</author>
+		<ptr target="https://www.w3.org/TR/swbp-n-aryRelations/" />
+		<imprint>
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Building event-centric knowledge graphs from news</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rospocher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Van Erp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Vossen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Fokkens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Aldabe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Rigau</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Web Semantics</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="132" to="151" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">A Multilingual Event-Centric Temporal Knowledge Graph</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gottschalk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Demidova</forename><forename type="middle">E</forename><surname>Eventkg</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Semantic Web -ESWC 2018</title>
+		<title level="s">Lecture Notes in Computer Science</title>
+		<meeting><address><addrLine>Cham</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="volume">10843</biblScope>
+			<biblScope unit="page" from="272" to="287" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Developing Time-Oriented Database Applications in SQL</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">T</forename><surname>Snodgrass</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1999">1999</date>
+			<publisher>Morgan Kaufmann</publisher>
+			<pubPlace>San Francisco</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Time Model for Managing the Dynamic of Normative System</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Palmirani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Brighi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Electronic Government (EGOV 2006)</title>
+		<title level="s">Lecture Notes in Computer Science</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2006">2006</date>
+			<biblScope unit="volume">4084</biblScope>
+			<biblScope unit="page" from="207" to="218" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

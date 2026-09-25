@@ -1,0 +1,1327 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">ToolAlpaca: Generalized Tool Learning for Language Models with 3000 Simulated Cases</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2023-09-07">7 Sep 2023</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Qiaoyu</forename><surname>Tang</surname></persName>
+							<email>tangqiaoyu2020@iscas.ac.cn</email>
+							<affiliation key="aff0">
+								<orgName type="laboratory">Chinese Information Processing Laboratory</orgName>
+							</affiliation>
+							<affiliation key="aff2">
+								<orgName type="institution">University of Chinese Academy of Sciences</orgName>
+								<address>
+									<settlement>Beijing</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ziliang</forename><surname>Deng</surname></persName>
+							<email>dengziliang2021@iscas.ac.cn</email>
+							<affiliation key="aff0">
+								<orgName type="laboratory">Chinese Information Processing Laboratory</orgName>
+							</affiliation>
+							<affiliation key="aff2">
+								<orgName type="institution">University of Chinese Academy of Sciences</orgName>
+								<address>
+									<settlement>Beijing</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hongyu</forename><surname>Lin</surname></persName>
+							<email>hongyu@iscas.ac.cn</email>
+							<affiliation key="aff0">
+								<orgName type="laboratory">Chinese Information Processing Laboratory</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xianpei</forename><surname>Han</surname></persName>
+							<email>xianpei@iscas.ac.cn</email>
+							<affiliation key="aff0">
+								<orgName type="laboratory">Chinese Information Processing Laboratory</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="department">Computer Science Institute of Software</orgName>
+								<orgName type="laboratory">State Key Laboratory</orgName>
+								<orgName type="institution">Chinese Academy of Sciences</orgName>
+								<address>
+									<settlement>Beijing</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Qiao</forename><surname>Liang</surname></persName>
+							<email>liangqiao2022@iscas.ac.cn</email>
+							<affiliation key="aff0">
+								<orgName type="laboratory">Chinese Information Processing Laboratory</orgName>
+							</affiliation>
+							<affiliation key="aff2">
+								<orgName type="institution">University of Chinese Academy of Sciences</orgName>
+								<address>
+									<settlement>Beijing</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Boxi</forename><surname>Cao</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="laboratory">Chinese Information Processing Laboratory</orgName>
+							</affiliation>
+							<affiliation key="aff2">
+								<orgName type="institution">University of Chinese Academy of Sciences</orgName>
+								<address>
+									<settlement>Beijing</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Le</forename><surname>Sun</surname></persName>
+							<email>sunle@iscas.ac.cn</email>
+							<affiliation key="aff0">
+								<orgName type="laboratory">Chinese Information Processing Laboratory</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="department">Computer Science Institute of Software</orgName>
+								<orgName type="laboratory">State Key Laboratory</orgName>
+								<orgName type="institution">Chinese Academy of Sciences</orgName>
+								<address>
+									<settlement>Beijing</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">ToolAlpaca: Generalized Tool Learning for Language Models with 3000 Simulated Cases</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2023-09-07">7 Sep 2023</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">055A6324761A838B1D4562AAC3B2E385</idno>
+					<idno type="arXiv">arXiv:2306.05301v2[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:30+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Enabling large language models to utilize real-world tools effectively is crucial for achieving embodied intelligence. Existing approaches to tool learning have either primarily relied on extremely large language models, such as GPT-4, to attain generalized tool-use abilities in a zero-shot manner, or utilized supervised learning to train limited scopes of tools on compact models. However, it remains uncertain whether smaller language models can achieve generalized tool-use abilities without tool-specific training. To address this question, this paper introduces ToolAlpaca, a novel framework designed to automatically generate a diverse tool-use corpus and learn generalized tool-use abilities on compact language models with minimal human intervention. Specifically, ToolAlpaca first automatically creates a highly diversified tool-use corpus by building a multi-agent simulation environment. The corpus contains 3938 tool-use instances from more than 400 real-world tool APIs spanning 50 distinct categories. Subsequently, the constructed corpus is employed to fine-tune compact language models, resulting in two models, namely ToolAlpaca-7B and ToolAlpaca-13B, respectively. Finally, we evaluate the ability of these models to utilize previously unseen tools without specific training. Experimental results demonstrate that ToolAlpaca achieves effective generalized tool-use capabilities comparable to those of extremely large language models like GPT-3.5, demonstrating that learning generalized tool-use ability is feasible for compact language models. 1</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Embodied intelligence, the ability to meaningfully interact with the environment, stands as a core attribute of advanced cognitive systems and a crucial advancement in artificial intelligence. The ability to create and use tools has expanded human beings' physical capabilities to interact with environments and augmented cognitive functions. Such evolutionary milestone has not only broadened our range of physical actions, but also brought about transformative changes in our problem-solving abilities and innovative thinking. The pursuit of incorporating tool-use capabilities into artificial intelligence holds great significance in advancing the development of general intelligent systems.</p><p>Recent advancements in enhancing large language models (LLMs) such as GPT-4 (OpenAI 2023) with tool-use abilities have made significant progress in this area. These models have shown their ability to effectively employ external tools through integrated plugins, thereby expanding their versatility and enhancing the precision and quality of their outputs. Unfortunately, due to a lack of understanding of how existing large language models acquire the general tool-use capability, currently compact language models still do not possess such general ability. Consequently, substantial research efforts are dedicated to finetuning smaller language models to acquire the capacity for tool usage <ref type="bibr" target="#b7">(Komeili, Shuster, and Weston 2022;</ref><ref type="bibr" target="#b11">Parisi, Zhao, and Fiedel 2022;</ref><ref type="bibr" target="#b15">Schick et al. 2023</ref>) on a limited range of tools, which lacks the ability to generalize to unseen tools. This discrepancy between the generalized tool-use abilities of larger models and the more constrained capabilities of compact models presents an intriguing question: Can these compact language models learn to generalize their tool-use abilities, thus enabling interaction with a broader spectrum of tools?</p><p>In this paper, we explore whether it is feasible for compact language models to learn generalized tool-use abilities. Intuitively, previous studies have demonstrated the possibility of equipping compact language models with generalized instruction-following abilities by fine-tuning them on diversified instruction datasets <ref type="bibr" target="#b18">(Taori et al. 2023;</ref><ref type="bibr" target="#b24">Zhou et al. 2023)</ref>. Hence, a promising strategy for equipping language models with generalized tool-use abilities would involve fine-tuning them on a corpus containing highly-diversified tool-use instances. Unfortunately, such a diversified corpus is currently unavailable. This absence can be attributed to several crucial factors. First, the absence of a set of available tool APIs that can accommodate various tool usage scenarios for language models presents a considerable challenge in assembling a diverse collection of tools. Second, real-world tool-use instances often entail complex, intricate, and multiturn interactions between the language model, users, and tools. This complexity significantly heightens the difficulty and manual effort involved in creating instances encompassing a wide array of tools on a large scale. Consequently,</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ToolAlpaca Training</head><p>Public-apis NL Documentation getHolidays: Get a list of holidays for a particular country with dates, descriptions, and types. searchHoliday: Search for holidays based on keywords, country, and date range.</p><p>OpenAPI openapi: 3.0.0 info:</p><p>title: Public Holidays description: ... servers:</p><p>-url: ... paths: /holidays/{country}:... /holidays/search: ...</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Toolset Construction</head><p>Tool-use Instance Generation (3) ToolAlpaca model training, which involves fine-tuning language models on generated tool-use corpus to get ToolAlpaca.</p><p>these factors significantly restrict the efforts to construct a diversified tool-use corpus for language model training efficiently.</p><p>To this end, we propose a framework named ToolAlpaca, which is designed to automatically create a diverse and wellstructured toolset for LLMs and generate multi-turn complex tool-use instances for generalized tool learning. The overall structure of ToolAlpaca is shown in Figure <ref type="figure" target="#fig_0">1</ref>. Specifically, to ensure the diversity and comprehensiveness of the toolset, ToolAlpaca leverages LLM's text generation capability to construct a comprehensive toolset. ToolAlpaca gathers a substantial amount of brief introductions of potentially valuable tools from the internet. It's important to note that there is no requirement for these tools' APIs to be functional or for them to possess structured documentation directly usable by LLMs. Building on this foundation, ToolAlpaca employs the generative capacity of LLMs by taking the brief introduction of relevant tools as input and prompts the model to produce detailed, structured documentation for each tool. By employing this methodology, ToolAlpaca has collected more than 400 tool descriptions spanning 50 categories. Each tool is uniformly represented using a standardized documentation format. Subsequently, in order to acquire tool-use instances involving the aforementioned tools, we have designed a simulation environment aimed at emulating the multi-step interactions among language models, users, and tools. Specifically, we utilize LLMs to simulate the interactions between the model, users, and the APIs of the tools by leveraging LLMs to serve as different kinds of agents. In this way, our simulation environment can generate a substantial volume of tool-use instances without any manual intervention. Consequently, we have crafted an inclusive tool-use dataset that comprises 3938 instances, effectively showcasing the practical application of over 400 distinct tools.</p><p>To verify whether our corpus can empower compact language models with the generalized tool-use ability, we conduct experiments to train ToolAlpaca model on Vicuna (Chiang et al. 2023), a representative compact language model, and subsequently evaluate its performance on various unseen tools. Through machine evaluation with GPT-4, we find that ToolAlpaca can effectively equip numerous unseen tools, ranging from real-world APIs to multi-modal tools, and it exhibits competitive performance with GPT-3.5. Furthermore, we investigate the effect of diversity. It is observed that even with the same number of instances, the model trained on more varied toolsets will achieve better performance. This underscores that diversity is a pivotal factor for ToolAlpaca to generalize tool learning with 3000 simulated cases.</p><p>In summary, the main contributions of this paper are: • To the best of our knowledge, this paper is the first work that verifies the feasibility of equipping compact language models with generalized tool-use capacities as extremely large language models.</p><p>• This paper presents ToolAlpaca, a simple framework for the automated generation of tool-use corpus and the enhancement of the compact language model's generalized tool-use ability.</p><p>• We create a diverse tool-use corpus containing 3.9k tooluse instances from more than 400 tools across 50 distinct categories. It serves as a solid foundation for compact language models to acquire generalized tool-use ability.</p><p>2 Related Work</p><p>Tool Use The utilization of external tools in LLMs has emerged as a rapidly growing research area <ref type="bibr" target="#b10">(Mialon et al. 2023;</ref><ref type="bibr">Qin et al. 2023a)</ref>. Current approaches can be divided into two distinct categories. The first category leverages the capabilities of LLMs, prompting them to interact with various tools, ranging from highly specialized ones such as code interpreters <ref type="bibr" target="#b4">(Gao et al. 2022;</ref><ref type="bibr" target="#b2">Chen et al. 2022)</ref>, search engines <ref type="bibr" target="#b23">(Yao et al. 2022)</ref>, retrieval models <ref type="bibr" target="#b6">(Khattab et al. 2023)</ref> and AI models <ref type="bibr" target="#b17">(Shen et al. 2023;</ref><ref type="bibr" target="#b9">Lu et al. 2023)</ref>, to more versatile toolsets <ref type="bibr">(Qin et al. 2023a;</ref><ref type="bibr" target="#b8">Li et al. 2023;</ref><ref type="bibr">Song et al. 2023)</ref>. Large language models have already demonstrated robust generalization capabilities in tool usage and enable to equip numerous unseen tools via prompting. In contrast, the second category concentrates on enhancing the tool-specific usage capabilities of compact language models through fine-tuning with datasets specifically designed for the specialized tools <ref type="bibr" target="#b11">(Parisi, Zhao, and Fiedel 2022;</ref><ref type="bibr" target="#b15">Schick et al. 2023;</ref><ref type="bibr" target="#b21">Xu et al. 2023)</ref>. Concurrent with our work, GPT4Tools <ref type="bibr" target="#b22">(Yang et al. 2023</ref>) fine-tuning compact models to incorporate multi-modal tools, which concentrates on a Introduction: Data on national, regional, and religious holidays via API Description: The Public Holidays API is a user-friendly interface that provides comprehensive information on national, regional, and religious holidays around the world. The API's key features are: 1) Get a list of holidays for a particular country with dates, descriptions, and types.</p><p>2) Retrieve detailed information on a specific holiday, including its history, purpose, and traditions.</p><p>3) Obtain information on public holidays for a specific year, month, or day. Function Documentation: getHolidays: Get a list of holidays for a particular country with dates, descriptions, and types. Parameters: {"country": "Required. String. The country for which holidays are to be retrieved.", "year": "Integer. The year for which holidays are to be retrieved."} Output: A list of holidays with their dates, descriptions, and types for the specified country, year, month, and day. searchHoliday: Search for holidays based on keywords, country, and date range. getHolidayDetails: Retrieve detailed information on a specific holiday, including its history, purpose, and traditions.</p><p>OpenAPI Specification: -GET /holidays/{country} -GET /holidays/{holidayId}/details -GET /holidays/search set of quite similar multi-modal tools. ToolLLM <ref type="bibr">(Qin et al. 2023b</ref>) facilitates language models to master massive APIs. However, their data collection strategy requires the prior accumulation of massive authentic APIs, which requires manual efforts to obtain and verify. Despite their effectiveness, the domain of generalized tool-use abilities in compact language models remains largely unexplored upon the accomplishment of this paper. This study aims to bridge this research gap by automatically constructing a diverse dataset on tool utilization that encompasses various tool-use scenarios.</p><p>LLMs for Data Generation Many research studies have employed LLMs for data generation, focusing on various tasks such as question answering <ref type="bibr" target="#b19">(Wang et al. 2021;</ref><ref type="bibr" target="#b0">Agrawal et al. 2022</ref>; Chen, Chen, and tau Yih 2023), semantic similarity predictions <ref type="bibr" target="#b16">(Schick and Schütze 2021)</ref>, and instruction tuning <ref type="bibr" target="#b5">(Honovich et al. 2022;</ref><ref type="bibr" target="#b20">Wang et al. 2023)</ref>. Furthermore, in the context of tool use, several works <ref type="bibr" target="#b15">(Schick et al. 2023;</ref><ref type="bibr" target="#b12">Patil et al. 2023;</ref><ref type="bibr" target="#b22">Yang et al. 2023</ref>) have already employed model-synthesized data to enhance specific tool-use capabilities. However, the generation of generalized tool-use data poses more significant challenges, as it involves extensive and diverse tools and more intricate multi-turn interactions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Diversified Tool-use Corpus Generation via Multi-agent Simulation</head><p>In this section, we introduce ToolAlpaca, a multi-agent simulation framework designed to generate a diversified tooluse corpus with minimal human intervention. As shown in Figure <ref type="figure" target="#fig_0">1</ref>, our framework consists of two stages: 1. Toolset Construction. This step aims to construct a collection of tools and represent them using a standardized format as {name, introduction, description, function documentation, OpenAPI specification}. Specifically, we initiate the process by sourcing tool names and introductions from the internet and then utilize LLMs to enrich them with structured documentation that thoroughly delineates the functionality and usage of each tool. In this way, we can construct a diverse and structured toolset that closely resembles real-world scenarios.</p><p>2. Tool-use Instance Generation. Given the toolset, this phase's objective is to generate tool-use instances within a simulation environment automatically. This environment is engineered through the orchestration of three distinct virtual agents, each embodied by a large language model: the user, the tool executor, and the assistant. Through the multi-turn interplay among these agents, we can generate tool-use instances that reflect real-world tool utilization scenarios. Each tool-use instance consists of three key elements: {the user's instructions, the actions and their corresponding tool outputs, final response}.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Diverse Toolset Construction</head><p>This section describes how to construct a diverse toolset and represent them in a uniform format. The process initiates with the accumulation of an extensive API collection from the internet, reflecting real-world tool usage scenarios.</p><p>Given the rudimentary descriptions and lack of uniform representation in these APIs, we further leverage the generative capabilities of LLM to create comprehensive documentation for each tool. This documentation assists language models in understanding the functionality and usage of each tool. Subsequently, we adhere to OpenAPI standards to generate a uniform specification for each API, enabling automated computer invocation and facilitating subsequent tool execution simulation. In this way, each tool can be represented as a quintuple {name, introduction, description, function documentation, OpenAPI specification}. Figure <ref type="figure" target="#fig_1">2</ref> provides an example, where the name, description, and introduction offer basic information and the purpose of the public holiday tool, the function documentation provides the functionality, inputs and outputs of various functions (getHolidays, search-Holidays, getHolidayDetails) contained within the tool, and the OpenAPI Specification provides a more comprehensive and structured document. The detailed construction steps are elaborated as follows.</p><p>Tool Collection. Various tools are commonly utilized by human beings, typically manifested in the form of webbased APIs. To facilitate the utilization and discovery of these APIs, a plethora of repositories exist on the Internet, aggregating a vast collection of practical and commonly used APIs. Consequently, this step leverages the representative API repository, public-apis 2 , as our target toolset. This repository encompasses over 1400 APIs spanning more than 50 distinct categories. From this, we collect the name and introduction of each tool.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Documentation Generation.</head><p>To enhance the language model's comprehension of tools' functionalities and usage, this step employs LLMs to automatically generate documentation for each tool, including its description and function documentation. Specifically, given the tool's name and introduction, we leverage the powerful generative capabilities of LLMs, such as ChatGPT, and construct corresponding prompts to generate the description and function documentation for each tool. As illustrated in Figure <ref type="figure" target="#fig_1">2</ref>, for the tool description, we expand the introduction to provide a general overview of the tool's purpose and functionality, enabling the language model to understand the appropriate task scenarios for using the tool. For the function documentation, we prompt LLMs to generate more specific functions within the scope described in the description, including their respective input and output parameters. It ensures that the LLM comprehends how to use the tool's different functionalities. By employing this approach, we lay a solid foundation for subsequent user instruction generation and the creation of the simulated tool-use environment.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>OpenAPI Specification Generation.</head><p>Finally, we prompt LLM to generate a more formalized and structured representation for each tool in the form of OpenAPI Specification. OpenAPI Specification (OAS) defines a standard and language-agnostic interface for describing APIs, including information about endpoints, expected input/output types, and possible error responses. OAS provides consistency and readability for both humans and machines, making it an ideal choice for our tool-use corpus. This comprehensive documentation serves as the foundation for simulating tool execution in the subsequent stages of our framework.</p><p>In this way, we construct a diverse, uniformly represented toolset, which provides a solid foundation for the multiagent simulation environment building and further tool-use corpus generation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Automatic Tool-use Instances Generation</head><p>Given the toolset, this section describes how to automatically construct a tool-use corpus, so that language models can be trained to acquire generalized tool-use ability. Specifically, as depicted in Figure <ref type="figure" target="#fig_3">3</ref>, each tool-use instance can be represent as a triple {Instruction, Actions, Response}: 2 <ref type="url" target="https://github.com/public-apis/public-apis">https://github.com/public-apis/public-apis</ref> Answer the following questions as best you can. You have access to the following tools: Public Holidays getHolidays: Get a list of holidays for a particular country with dates, descriptions, and types. Parameters: {"country": "Required. String. The country for which holidays are to be retrieved.", "year": "Integer. The year for which holidays are to be retrieved."} Output: A list of holidays with their dates, descriptions, and types for the specified country, year, month, and day. searchHoliday: Search for holidays based on keywords, country, and date range. getHolidayDetails: Retrieve detailed information on a specific holiday, including its history, purpose, and traditions.  • Instruction: A user query that requires tool assistance for resolution. "... so can you tell me the list of holidays in Japan next year?" serves as an instruction in our example.</p><p>• Actions: The process of resolving an instruction may involve executing multiple actions in a specific order. Following React <ref type="bibr" target="#b23">(Yao et al. 2022)</ref>, each action is represented by a tuple that includes the thought, the function name, the input parameters, and the corresponding tool response. For example, as shown in Figure <ref type="figure" target="#fig_3">3</ref>, the tuple ("I need to get the list of holidays in Japan for 2024.", "getHolidays", {"country": "Japan", "year": 2024}, "Status Code: 200 Response:...") represents an action.</p><p>• Response: This refers to the model's conclusive response after the multi-turn interaction, integrating the tool responses to provide a comprehensive solution to the original instruction. For instance, the response in our example is: "The list of holidays in Japan for 2024 is ...".</p><p>However, constructing a diverse and authentic tool-use dataset is a challenging task. Firstly, the wide variety within our toolset makes it impracticable to manually draft instructions for each tool. Given the vast array of tools, spanning from recreational to professional domains, and the fact that the construction of instructions relies on understanding the functionality and potential use cases of the tools, the burden of manual annotation becomes overwhelming. Secondly, tool usage in real-world scenarios often involves a multi-round iterative process of trial and error, making the automated construction of tool-use instances that reflect real situations highly challenging.</p><p>To this end, we design a simulation environment to generate a tool-use corpus, encompassing three virtual agents: the user, the assistant, and the tool executor. Tool-use instances are generated through the interplay among these agents. Specifically, each agent is simulated by a large language model with a specific prompt. The distinct roles of each agent are detailed as follows:</p><p>• User Agent is designed to mimic the tool user, with its functionalities encompassing: (1) drafting task instructions for the current tool based on its function documentation;</p><p>(2) responding to the assistant's queries based on the current interaction context, providing essential information that might be missing from the initial instruction. For each functionality, we construct corresponding prompt templates to guide LLMs to generate appropriate outputs. Moreover, to ensure diversity in task instructions, we have employed various prompts to generate instructions of different formats, including commands, questions, and others. Leveraging the large model's proficiency across virtually all domains, this approach enables the generation of high-quality and diversified instructions based on tool documentation. This effectively addresses the previously mentioned issues with manual annotation.</p><p>• Assistant Agent is designed to simulate an assistant with tool utilization capabilities. It receives instructions from the user agent and determines the subsequent actions. This involves choosing the appropriate tools and functions, generating commands for the tool executor, and summarizing the interaction to generate the final response. As shown in Figure <ref type="figure" target="#fig_3">3</ref>, following ReAct <ref type="bibr" target="#b23">(Yao et al. 2022)</ref>, we employ a (thought, action, observation) format template to guide LLM in accomplishing these tasks.</p><p>• Tool Executor Agent is constructed to emulate the execution of tools, receiving requests from the assistant agent and generating responses based on the tool's predefined functionalities. Specifically, after conducting format and parameter checks on the assistant's requests, these requests are converted into network request formats. Then the tool executor prompts LLM with the tool's OpenAPI specification and the assistant's requests to generate simulated execution results. Leveraging LLMs' robust simulation and generation capabilities, we mitigate the intricacies involved in constructing actual API calls. This method has been empirically validated as both accurate and effective, as evidenced in the following section.</p><p>Given the above agents, tool-use cases are generated through multiple rounds of interaction between them. Initially, the user agent generates instructions based on the tool information. Subsequently, the assistant agent selects an appropriate action and its corresponding input and awaits simulation execution and response from the tool executor. This iterative procedure of action selection and tool response collection continues until the assistant agent deems it has gathered sufficient information to respond to the user's instructions. Through this multi-agent interaction, we can simulate realistic tool-use scenarios and generate comprehensive and diversified tool-use instances.</p><p>4 ToolAlpaca Corpus</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Construction Details</head><p>Leveraging the aforementioned multi-agent simulation framework, we have constructed the ToolAlpaca corpus. Specifically, the process begins with randomly selecting 500 APIs from the public-apis repository. Subsequently, we utilize ChatGPT to generate more comprehensive documentation, resulting in a varied and well-structured toolset. Within our simulation environment, we use ChatGPT as the user agent to generate ten instructions for each tool, and the tool executor to simulate tool execution. We appoint GPT-3.5 as the assistant agent due to its superior performance in structured output generation. 3  To guarantee the quality of the data, we implement a simple yet effective filtering process on the generated corpus. We systematically exclude tools that might incorporate nontextual content within their inputs or outputs. In terms of instances, we discard those that exceed five interaction steps, lack relevant function calls, or exhibit parsing errors in their output.</p><p>Finally, we automatically construct an extensive and diversified tool-use corpus. As shown in Table <ref type="table" target="#tab_0">1</ref>, it encompasses 426 distinctive tools from 50 categories, totaling 3938 instances. In the following sections, we will analyze the diversity and quality of our corpus. 3 Preliminary experiments demonstrated an occasional inability of ChatGPT to strictly adhere to the prescribed output formats. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Diversity</head><p>As previously underscored, diversity is pivotal for large models to acquire generalized capabilities and adapt to a multitude of unseen scenarios <ref type="bibr" target="#b20">(Wang et al. 2023)</ref>. ToolAlpaca corpus demonstrates diversity in two aspects:</p><p>• Toolset. As outlined in Table <ref type="table" target="#tab_0">1</ref>, our toolset demonstrates diversity in multiple aspects: (1) The toolset encompasses 50 categories of tools, ranging from common categories, such as jobs and news, to specialized categories like blockchain and finance. (2) Each tool provides an average of five functions, highlighting the diversity and comprehensiveness of its capabilities.</p><p>(3) The range of function inputs varies from simple to complex scenarios, including arrays and objects, further enhancing the richness and complexity of our toolset.</p><p>• Instances. The instances within the ToolAlpaca corpus demonstrate diversity in terms of instruction, function calls, and error handling. Specifically, we employ a variety of prompts during instruction generation to stimulate the language model in producing diverse instructions. The wide-ranging distribution of instruction length, as illustrated in Figure <ref type="figure" target="#fig_4">4</ref>, partly substantiates this point. Additionally, our dataset contains about 1.5k instances that require multiple function invocations for resolution, further underscoring the comprehensiveness of our dataset. Furthermore, our data adequately reflects the potential errors that may be encountered in authentic tool usage scenarios, encompassing instances that involve various types of errors, such as invalid actions, parsing errors, and incorrect parameters.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Quality</head><p>To evaluate the quality of ToolAlpaca corpus, we randomly sample 100 instances and engage a human annotator for assessment. The evaluation tests the solvability of the instructions generated by the user agent, the precision of the output from the tool executor agent, and the accuracy of the assistant agent's actions and responses. As illustrated in Table <ref type="table" target="#tab_1">2</ref>, we observe that the metrics for assessing the capabilities of the three agents all exceed 80%. This substantiates that each agent is proficient in their respective roles, demonstrating the reliability of data constructed based on simulation and affirming the decent quality of our dataset. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Experiment</head><p>In this section, we investigate whether a set of simulated data can empower compact language models to acquire generalized tool-use capabilities. To verify this, we conduct zeroshot experiments on various tools that have not appeared in the training set, ranging from simulated tools, real-world tools, to out-of-dataset multi-modal tools. Furthermore, we investigate how the diversity of the toolset impacts the generalized tool-use ability of language models.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Experimental Settings</head><p>Training We fine-tune Vicuna models (Vicuna-7B and Vicuna-13B) on ToolAlpaca corpus. The fine-tuning process consists of three epochs, with a batch size of 128 and a learning rate of 2e-5.</p><p>Evaluation To measure the generalized tool-use ability of the language model, we create an evaluation dataset through our data generation framework and manually annotate the data. This evaluation dataset consists of two subsets: (1) a simulated subset that includes 10 simulated tools, which were not part of the training toolset;</p><p>(2) a real-world subset comprising 11 real-world APIs from various domains, designed to assess the divergence between our simulated data and real-world data.</p><p>To evaluate the models, we utilize GPT-4 for machine evaluation across all experiments, with an additional manual evaluation conducted specifically for the simulated subset. We prompt GPT-4 with the tool documentation and the standard answer from the human annotator and expect it to evaluate the performance in the following aspects:</p><p>• Procedure: This metric evaluates the model's proficiency in accurately selecting suitable actions, utilizing correct parameters, and avoiding redundant actions.</p><p>• Response: This criterion measures whether the final response can satisfy the user's instruction.</p><p>• Overall: This metric evaluates the whole process, requiring the correctness of procedure and response.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Results</head><p>Effectiveness of ToolAlpaca corpus.</p><p>Table 3 presents the main results from the simulated set, evidencing that finetuning on ToolAlpaca corpus can foster generalized tool learning for compact models. Without fine-tuning on our Model Simulated Tools Real-world APIs Procedure Response Overall Human Procedure Response Overall GPT-3.5 77.0 85.0 75.0 79.0 75.4 80.7 72.8 Vicuna-7B 19.0 21.0 17.0 16.0 7.9 11.4 7.9 ToolAlpaca-7B 63.0 69.0 60.0 73.0 63.2 57.9 55.3 Vicuna-13B 17.0 31.0 16.0 25.0 13.2 16.7 12.3 ToolAlpaca-13B 70.0 73.0 70.0 75.0 66.7 67.5 61.4</p><p>Table <ref type="table">3</ref>: Evaluation results on unseen simulated tools and real-world APIs. We can observe that after training on our corpus, ToolAlpaca's performance significantly surpasses that of the Vicuna model, reaching comparable performance with GPT-3.5.</p><p>corpus, Vicuna models demonstrate constrained tool-use capabilities, with the human accept rate of 16 and 25, respectively. These statistics emphasize the existing compact models' insufficiency in achieving the generalized tool-use capacity like larger models. Nevertheless, our ToolAlpaca models can attain 73 (+57) and 75 (+50) accept rates, respectively. ToolAlpaca-13B even achieves comparable performance to GPT-3.5. This evidences the feasibility of instilling generalized tool-use capabilities into compact language models by only training on 3000 instances generated by our framework. Furthermore, the consistency between the human accept rate and the overall accuracy proves that machine evaluation can serve as a suitable evaluation method for this task.</p><p>Generalization on real-world tools. The effectiveness of our corpus is further validated through testing on real-world APIs, demonstrating that simulation serves as an exceptionally efficient data collection method.</p><p>Table 3 exhibits the performance of ToolAlpaca on the real-world test set, where it achieves an overall accuracy of 55.3 and 61.4, respectively, significantly surpassing the performance of Vicuna models. This suggests that training on simulated data can indeed adapt to real-world tool usage scenarios. We attribute this to the current LLMs' robust simulation capabilities, which provide compelling evidence for future simulation-based data construction. Model SR t SR act SR args SR GPT-3.5 99.5 99.5 91.5 91.5 Vicuna-13B 84.4 43.7 46.7 26.2 GPT4Tools 98.2 97.0 92.2 90.6 ToolAlpaca-13B* -95.5 85.3 83.7  of-dataset evaluation, which is close to GPT4Tools, trained on 71k instances constructed with the same process. This observation indicates that the language model can invoke out-of-dataset tools after training on ToolAlpaca corpus. We speculate that the performance may be attributed to the diversity of instances and toolset, and we delve into it in the subsequent experiment.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Impact of diversity.</head><p>The diversity of the dataset is crucial for the generalization of tool learning. To investigate this, we maintain the number of instances and construct datasets on 10, 40, 100, and 400 tools, respectively. Subsequently, we fine-tune Vicuna-13B on these datasets with the same experimental settings and utilize GPT-4 to evaluate the validation set. As shown in Figure <ref type="figure" target="#fig_5">5</ref>, as the diversity of the toolset increases, the performance on the validation set gradually improves. Specifically, training with a dataset of 10 different tools resulted in a mere 51 overall accuarcy. In contrast, when the variety of tools increases to 400 and keeps the number of instances, the performance escalates to 70. This finding highlights the significant role of toolset diversity in generalizing tool learning. This provides valuable insight for the construction of datasets for generalized ability learning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>In this paper, we introduce ToolAlpaca, an automated framework designed to improve the generalized tool-use capability of language models. Specifically, we first create a comprehensive corpus spanning a broad range of tools with various usage instances. Subsequently, this corpus serves as the basis for fine-tuning compact language models, leading to the generation of the </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Toolset Construction -Function Documentation Prompt</head><p>You are given the name, link, and description of an API. Your task is to create a comprehensive introduction for this API.</p><p>Guidelines: 1. For each function of the API, detail its purpose, input requirements, and output results. 2. For function input, present it in JSON format. Each key should be the input parameter</p><p>'s name, and its value should be a string indicating whether it's required or not, its type, and a brief description, such as "Required/Optional. Integer. {some description}". 3. Do not design functions that return excessive data, such as 'getAllXxx'. If such a function is necessary, incorporate input parameters to limit, filter, or paginate the results. 4. Limit the number of functions generated. Only generate functions based on the API Description. Do not create unnecessary functions that overcomplicate the API. 5. If any API function requires fields that are not directly accessible to the users (like IDs, internal codes, etc.) as inputs, there must be corresponding methods for users to retrieve these values, such as through 'search' or 'list' functions. 6. Output with the following format: {index}. Name: {function name, follow the camel case naming convention.} Description: {function short description} Input: {function input, presented as a single line without any formatting} Output: {function output, describe all the information that this function will return} Begin! Name: ${name} Link: ${link} Description: ${description} Functions: </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Toolset Construction -OpenAPI Specification Prompt</head><p>Please generate API documentation that conforms to the OpenAPI Specification for the provided API, following these guidelines: 1. Name the API with the 'title' field in the 'info' section, and include a 'version' and 'description' field to describe the API's purpose and functionality succinctly.</p><p>2. Exclude the 'tags' field in the specification.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">For each function:</head><p>-Design an endpoint, adhering to its definition and input/output requirements.</p><p>-Use the function's name in the 'operationId' field. Decompose the description of the function into appropriate fields.</p><p>-For the endpoint's input, provide additional details in the 'parameters' section to complement the function's input requirements. For instance, use 'enum' to specify valid parameter values.</p><p>-Generate a detailed model for each endpoint's response, including status codes and structured return values. This should base on the function's output description, detailing each field whenever possible.</p><p>-If an endpoint's input includes fields unknown to the user, like IDs, these fields must be included in the responses of relevant 'search', 'list', or similar endpoints. 4. Include a 'description' field for each input parameter and 'requestBody' in the operation object to explain their purpose and usage. 5. Ensure the OpenAPI Specification is comprehensive, capturing all functions mentioned in the API Introduction. 6. For parameters/schemas with a 'type' of 'object', you must include their properties in the specification.</p><p>Name: ${name} Link: ${link} Description: ${description} Functions: ${functions} OpenAPI Spec(Format with JSON, indent=1): </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>User Agent -Instruction Prompt</head><p>Imagine that you are a user who wants to utilize the features provided by various APIs in your daily life. Your task is to come up with realistic scenarios for using these APIs and express them as natural language instructions, as if you were asking a friend or assistant for help.</p><p>Please follow these guidelines: 1. The instructions should be 1 to 2 sentences long. Use a mix of interrogative sentences, first-person statements, imperative sentences, and other structures that convey a request. Aim for diversity in your instructions. 2. Do not mention the API's name in your instructions. 3. Your instructions should only involve the features provided by these APIs. The instructions that need multiple times of API call is better. 4. Generate 10 diverse instructions. 5. Use specific nouns and real-world examples from various domains, such as entertainment, sports, or technology. Avoid using any form of placeholder or generic phrases, such as "this xxx", "a xxx" or "a specific xxx", and provide concrete details instead. 6. Try not to repeat the verb for each instruction to maximize diversity. 7. Ensure diversity in language by combining questions with imperative statements and other structures that convey a request. &lt;API&gt; Name: ${name} Description: ${description} API Functions: ${functions} &lt;/API&gt; Based on the API provided above, generate 10 natural language instructions with specific examples and diverse language, following the guidelines. </p><note type="other">4</note></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>User Agent -Additional Information Prompt</head><p>As a user, you ask the AI assistant some questions, but the assistant believes you have missed crucial information. Please respond to the AI assistant's inquiries with specific and direct answers using text or formatted text. Avoid using placeholders. If a file is necessary, please provide the contents of the file in your response. your response should startswith " <ref type="bibr">[User]</ref>:". ${interaction_history} </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Assistant Agent</head><p>Your task is to answer the user's question using available tools. The user cannot see or use the tools themselves, nor can they know the process of your tool usage. Provide all necessary information in the "Final Answer" field. Do not make up any information. If required parameters are missing, use the "getDetails" tool to ask the user for them. You have access to the following tools:</p><p>${tool_list} Use the following format: Question: the input question you must answer Thought: you should always think about what to do Action: the action to take, should be one of [${tool_names}]. Action Input: the input to the action, must be in JSON format. All of the action input must be realistic and from the user. Observation: the result of the action ... (this Thought/Action/Action Input/Observation can repeat N times) Thought: Summarize the information gathered and the reasoning behind your final answer. Final Answer: Provide a user-friendly and detailed answer to the original input question that summarizes all relevant information from the Thought/Action/Action Input/Observation sequences. Begin! Question: ${instruction} Thought:${agent_scratchpad} </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Tool Excutor Agent</head><p>As an API simulator, your task is to process API requests and generate appropriate responses based on the provided API documentation. Please adhere to the following guidelines:</p><p>1. Validate the HTTP method and parameters in the request according to the OpenAPI Spec. 2. Generate a response that strictly adheres to the specified format in the OpenAPI Spec, and ensure it's in JSON format. 3. Responses should contain realistic data. Avoid using placeholders. 4. Handle edge cases by providing appropriate error responses. 5. For requests without any length limit, ensure to return at least 3 samples in the response. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>GPT-4 Evaluation</head><p>Given the documentation of a REST API and a task instruction, I need you to evaluate whether the solution provided by my AI assistant aligns with the standard answer. Follow these guidelines: 1. You need to assess both the process and final response of the AI assistant's solution. 2. For the process, refer to the standard answer:</p><p>-The standard answer only includes function names and parameters, while the AI assistant's solution also includes function returns. Therefore, it is acceptable to adjust the call situation based on the function return, such as retrying when the function errors, calling function `getDetails`for more information, and calling function `retrievalDataFromFile`when the function's return is too long.</p><p>-Random calls to unrelated functions are not allowed.</p><p>-The solution must contain all the steps in the standard answer.</p><p>-The necessary parameters of the function need to be consistent with the standard answer. Parameters not mentioned in the instruction can be inconsistent. 3. You need to comprehensively judge whether the final response of the solution accurately summarizes the entire call process and provides a reasonable response to the initial instruction.    </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: A high-level overview of ToolAlpaca, consisting of three components: (1)Toolset construction, where structured documentation for each tool is generated based on the brief introductions provided by public-apis. (2) Tool-use instance generation via multi-agent simulation. (3) ToolAlpaca model training, which involves fine-tuning language models on generated tool-use corpus to get ToolAlpaca.</figDesc><graphic coords="2,64.86,168.24,225.09,79.62" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure2: An instance of a tool documentation, composed of five essential parts: name, introduction, description, function documentation, OpenAPI specification.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><figDesc>I'm planning a trip to Japan next year, and I want to avoid any major holidays, so can you tell me the list of holidays in Japan next year? I need to know which year the user is referring to. Action: chatWithUser Action Input: {"Question": "Could you please specify the year you are planning your trip for?"} The year is 2024. I need to get the list of holidays in Japan for 2024. Action: getHolidays Action Input: {"country": "Japan", "year": 2024} Status Code: 200Response: {"holidays":[{"name":"New Year's Day", "date":"2024-01-01", "type":"National", "description":"..."}, ...]The list of holidays in Japan for 2024 is New Year's Day (January 1st), Coming of Age Day (January 8th) ...</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 3 :</head><label>3</label><figDesc>Figure3: An illustration of the tool-use instance generation process within the simulation environment. The user agent initiates the sequence by providing an instruction. The assistant agent then interprets the instruction and engages in a multi-turn interaction with the user and the tool executor until a suitable response is generated.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Length distribution of generated instructions and final outputs.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 5 :</head><label>5</label><figDesc>Figure5: Performance variation with the increasing toolset diversity.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Function documentation generation prompt.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 8 :</head><label>8</label><figDesc>Figure 8: Openapi specification generation prompt.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 9 :</head><label>9</label><figDesc>Figure 9: User agent prompt 1 for instruction generation.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 10 :</head><label>10</label><figDesc>Figure10: User agent prompt 2 for providing missing information.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 11 :</head><label>11</label><figDesc>Figure 11: Assistant agent prompt.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Figure 12 :</head><label>12</label><figDesc>Figure 12: Tool executor agent prompt.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><figDesc>4. You need to first analyze the entire solution according to the guidelines, then give your answer. Your output should adhere to the format</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><head>Figure 13 :</head><label>13</label><figDesc>Figure 13: Evaluation prompt for GPT-4.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_14"><head>Figure 14 :</head><label>14</label><figDesc>Figure 14: Cases for real-world API: Nager.Date.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_15"><head>Figure 16 :</head><label>16</label><figDesc>Figure16: Cases for real-world API: apilayer weatherstack.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Statistics of ToolAlpaca corpus.</figDesc><table><row><cell>statistics # of Tool Categories # of Tools # of Instance # of single function call # of multiple function calls avg. functions per tool avg. steps avg. instruction length avg. output length</cell><cell>50 426 3, 938 2, 512 1, 426 4.85 1.66 23.42 36.19</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Data quality review for ToolAlpaca corpus.</figDesc><table><row><cell>Quality solvability of instructions effectiveness of Tool agent's response accuracy of action sequences and final output</cell><cell>Yes% 88% 92% 80%</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 4 :</head><label>4</label><figDesc>Evaluation results on unseen tools from GPT4Tools test set. Metrics: successful rate of thought, action, arguments, and the entire instance. We can observe that ToolAlpaca, with 3.9k cases, reaches the same performance level as GPT4Tools, which has been trained on 71k instances generated by the same process with the test set. *: As our training set does not include data not involving tool use, we exclude 50 out of 652 test cases that do not involve tool usage.<ref type="bibr" target="#b22">Yang et al. 2023)</ref> test set, which encompasses 8 multi-modal tools. As shown in Table4, ToolAlpaca, trained on merely 3.9k cases, demonstrate 83.7 success rate on out-</figDesc><table><row><cell>Moreover, to evaluate ToolAlpaca's generalization on out-of-dataset scenarios, we conduct experiments on GPT4Tools(</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 6 :</head><label>6</label><figDesc>ToolAlpaca models. Experimental re-sults indicate that ToolAlpaca performs comparably to GPT-3.5 in generalized tool-use scenarios. This finding not only substantiates the potential of our data generation framework but also highlights the feasibility of mastering generalized tool use in compact-size models.Tools used in our evaluation dataset.</figDesc><table><row><cell></cell><cell>Category</cell><cell>Introduction</cell></row><row><cell>Simulated Tools</cell><cell></cell><cell></cell></row><row><cell>Axolotl AniAPI AbuseIPDB Améthyste Auth0 Abstract Public Holidays 1Forge A Bíblia Digital Apache Superset Lob.com</cell><cell cols="2">Animals Anime Anti-Malware Art &amp; Design Authentication &amp; Authorization Easy to implement, adaptable authentication and authorization platform Collection of axolotl pictures and facts Anime discovery, streaming &amp; syncing with trackers IP/domain/URL reputation Generate images for Discord users Calendar Data on national, regional, and religious holidays via API Currency Exchange Forex currency market data Books Do not worry about managing the multiple versions of the Bible Business API to manage your BI dashboards and data sources on Superset Data Validation US Address Verification</cell></row><row><cell>Real-world APIs</cell><cell></cell><cell></cell></row><row><cell>Nager.Date airportsapi AviationAPI chucknorris.io Random Useless Facts apilayer weatherstack Free Dictionary WolframAlpha Fruityvice Cataas CurrencyBeacon</cell><cell>Calendar Transportation Transportation Entertainment Entertainment Weather Dictionaries Machine Learning Food &amp; Drink Animals Currency Exchange</cell><cell>Public holidays for more than 90 countries Get name and website-URL for airports by ICAO code FAA Aeronautical Charts and Publications, Airport Information, and Airport Weather JSON API for hand curated Chuck Norris jokes Get useless, but true facts Real-Time &amp; Historical World Weather Data API Definitions, phonetics, pronounciations, parts of speech, examples, synonyms Provides specific answers to questions using data and algorithms Data about all kinds of fruit Cat as a service (cats pictures and gifs) Real-time and historical currency rates JSON API</cell></row><row><cell cols="3">Toolset Construction -Description Prompt</cell></row><row><cell cols="3">I will provide the API's name, link, and brief introduction. You need to generate a detailed description for the API.</cell></row><row><cell cols="3">Guidelines: 1. Write a general overview of the API's purpose and functionality. 2. List and briefly describe all features provided by the API, ensuring each feature has a clear and distinct purpose with low coupling between them. 3. Use clear, concise language and avoid jargon, keeping the description under 300 tokens in length.</cell></row><row><cell cols="3">&lt;API&gt; Name: AdoptAPet Link: https://www.adoptapet.com/public/apis/pet_list.html Introduction: Resource to help get pets adopted Description: The Adopt-a-Pet.com API (Application Programming Interface) is a series of tools that allows partners to use Adopt-a-Pet.com's pet adoption features and pet data in other applications. It provides the following features: 1) Retrieve the list of available pets for the shelter or rescue. 2) Retrieve the details for a specific pet. &lt;/API&gt;</cell></row><row><cell cols="3">&lt;API&gt; Name: ${name} Link: ${link} Introduction: ${introduction} Description:</cell></row><row><cell></cell><cell cols="2">Figure 6: Description generation prompt.</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Implementation Details</head><p>In this section, we show the details of prompt templates in ToolAlpaca. Figure <ref type="figure">6</ref>, Figure <ref type="figure">7</ref>, and Figure <ref type="figure">8</ref> delineate the prompts employed during toolset construction. Figure <ref type="figure">9</ref> and Figure <ref type="figure">10</ref> illustrate the corresponding prompts for user agent's two responsibility, generating user instructions and providing missing information. The prompts designed for to the assistant agent and the tool executor agent are detailed in Figure <ref type="figure">11</ref> and Figure <ref type="figure">12</ref>. "${...}" within the prompts are placeholders, will be replaced by real variables during the generation process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Experiment Details</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1 Hyperparameters</head><p>The fine-tuning configuration for ToolAlpaca is recorded in Table <ref type="table">5</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Hyperparameters</head><p>Value optimizer AdamW learning rate 2e-5 weight decay 0.0 warmup ratio 0.03 lr scheduler type cosine num train epochs 3 batch size 128 max length 2048</p><p>Table <ref type="table">5</ref>: The fine-tuning configuration for ToolAlpaca.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2 Evaluation Dataset Details</head><p>To evaluate the generalized tool-use ability, we construct the evaluation dataset via our framework, which consists two subsets: a simulated subset with 10 simulated tools and 100 instances, a real-world subset with 11 real-world APIs and 114 instances. The toolset used in the evaluation datset is detailed in Table <ref type="table">6</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3 Evaluation Prompt</head><p>Following the evaluation method used by Vicuna <ref type="bibr" target="#b3">(Chiang et al. 2023)</ref>, we use GPT-4 as our evaluator. The evaluation prompt is shown in Figure <ref type="figure">13</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.4 Case Study</head><p>Through training on a set of diverse simulated tool-use instances, ToolAlpaca can equip various tools, even real-world APIs, some selected cases are shown in Figure <ref type="figure">14</ref>, Figure <ref type="figure">15</ref> and Figure <ref type="figure">16</ref>.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">P</forename><surname>Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Alberti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Huot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Maynez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ruder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ganchev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Das</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lapata</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.08264</idno>
+		<title level="m">QAmeleon: Multilingual QA with Only 5 Examples</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Yih</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.13691</idno>
+		<title level="m">Efficient Open Domain Multi-Hop Question Answering with Few-Shot Data Synthesis</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Program of Thoughts Prompting: Disentangling Computation from Reasoning for Numerical Reasoning Tasks</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">W</forename><surname>Cohen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.12588</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">W.-L</forename><surname>Chiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Stoica</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">P</forename><surname>Xing</surname></persName>
+		</author>
+		<title level="m">Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90%* ChatGPT Quality</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">L</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Callan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Neubig</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.10435</idno>
+		<title level="m">PAL: Program-aided Language Models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note>arXiv e-prints</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">O</forename><surname>Honovich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Scialom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Levy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schick</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.09689</idno>
+		<title level="m">Unnatural Instructions: Tuning Language Models with (Almost) No Human Labor</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">O</forename><surname>Khattab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Santhanam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">L</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Potts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zaharia</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.14024</idno>
+		<title level="m">Demonstrate-Search-Predict: Composing retrieval and language models for knowledge-intensive NLP</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Internet-Augmented Dialogue Generation</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Komeili</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Shuster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Weston</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 60th Annual Meeting of the Association for Computational Linguistics<address><addrLine>Dublin, Ireland</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="8460" to="8478" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.08244</idno>
+		<title level="m">API-Bank: A Benchmark for Tool-Augmented LLMs</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">P</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Galley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K.-W</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">N</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S.-C</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.09842</idno>
+		<title level="m">Chameleon: Plug-and-Play Compositional Reasoning with Large Language Models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">G</forename><surname>Mialon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Nalmpantis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Pasunuru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Celikyilmaz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Grave</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lecun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Scialom</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.07842.OpenAI.2023.GPT-4</idno>
+		<idno>arXiv:2303.08774</idno>
+		<title level="m">Augmented Language Models: a Survey</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Technical Report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">TALM: Tool Augmented Language Models</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Parisi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Fiedel</surname></persName>
+		</author>
+		<idno>CoRR, abs/2205.12255</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">G</forename><surname>Patil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.15334</idno>
+		<title level="m">Gorilla: Large Language Model Connected with Massive APIs</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">R</forename><surname>Fung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Phang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.08354</idno>
+		<title level="m">Tool Learning with Foundation Models</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Gerstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sun</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.16789</idno>
+		<title level="m">ToolLLM: Facilitating Large Language Models to Master 16000+ Real-world APIs</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Toolformer: Language Models Can Teach Themselves to Use Tools</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Scialom</surname></persName>
+		</author>
+		<idno>CoRR, abs/2302.04761</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Generating Datasets with Pretrained Language Models</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Schütze</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2021 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<publisher>Dominican Republic: Association for Computational Linguistics</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="6943" to="6951" />
+		</imprint>
+		<respStmt>
+			<orgName>Online and Punta Cana</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.17580</idno>
+		<idno>arXiv:2306.06624</idno>
+		<title level="m">RestGPT: Connecting Large Language Models with Real-World Applications via RESTful APIs</title>
+		<meeting><address><addrLine>Song, Y</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note>HuggingGPT: Solving AI Tasks with ChatGPT and its Friends in Hugging Face</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">R</forename><surname>Taori</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Gulrajani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dubois</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Guestrin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">B</forename><surname>Hashimoto</surname></persName>
+		</author>
+		<ptr target="https://github.com/tatsu-lab/stanfordalpaca" />
+		<title level="m">Stanford Alpaca: An Instruction-following LLaMA model</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Want To Reduce Labeling Cost? GPT-3 Can Help</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zeng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: EMNLP 2021</title>
+		<meeting><address><addrLine>Punta Cana, Dominican Republic</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="4195" to="4205" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Kordi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Khashabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.10560</idno>
+		<title level="m">Self-Instruct: Aligning Language Models with Self-Generated Instructions</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.16504</idno>
+		<title level="m">On the Tool Manipulation Capability of Open-source Large Language Models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">R</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.18752</idno>
+		<title level="m">GPT4Tools: Teaching Large Language Model to Use Tools via Self-instruction</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03629</idno>
+		<title level="m">ReAct: Synergizing Reasoning and Acting in Language Models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Iyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Efrat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Ghosh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Levy</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.11206.CaseForReal-worldAPI:Nager.Date</idno>
+		<title level="m">LIMA: Less Is More for Alignment</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Thought: I need to use the PublicHolidayPublicHolidaysV3 tool to get the list of public holidays in Australia in 2023</title>
+	</analytic>
+	<monogr>
+		<title level="m">I&apos;m curious about the public holidays in Australia in 2023</title>
+		<imprint/>
+	</monogr>
+	<note>Assistant Can you fetch the list for me? Action: PublicHolidayPublicHolidaysV3 Action Input: {&quot;countryCode&quot;: &quot;AU&quot;, &quot;year&quot;: 2023} [Tool]: The output is too long. You need to use the &apos;retrievalDataFromFile&apos; function to retrieve the output from the file: ./tmp/retrieval_1692114481.txt</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Labour Day -March 6th (observed in AU-WA)\n4. Canberra Day -March 13th (observed in AU-ACT)\n5. March Public Holiday -March 13th (observed in AU-SA)\n6. Eight Hours Day -March 13th (observed in AU-TAS)\n7. Labour Day -March 13th</title>
+		<author>
+			<persName><surname>Assistant</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Action: retrievalDataFromFile Action Input: {&quot;file_path&quot;: &quot;./tmp/retrieval_1692114481.txt&quot;, &quot;query&quot;: &quot;public holidays in Australia in 2023&quot;} [Tool]: {&quot;retrieved_info&quot;: &quot;Public Holidays in Australia in 2023:\n1. New Year&apos;s Day -January 1st\n2. Australia Day -January 26th\n3</title>
+		<title level="s">observed in AU-VIC)\n8. Good Friday</title>
+		<meeting><address><addrLine>AU-ACT, AU-NSW, AU-NT, AU-QLD</addrLine></address></meeting>
+		<imprint>
+			<date>April 7th\n9. April 8th</date>
+			<biblScope unit="page">10</biblScope>
+		</imprint>
+		<respStmt>
+			<orgName>AU-SA ; AU-VIC</orgName>
+		</respStmt>
+	</monogr>
+	<note>Thought: I need to use the retrievalDataFromFile tool to retrieve the output from the file Holy Saturday (Easter Eve</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Labour Day -May 1st (observed in AU-QLD)\n15. Reconciliation Day -May 29th (observed in AU-ACT)\n16. Western Australia Day -June 5th (observed in AU-WA)\n17. King&apos;s Birthday -June 12th</title>
+		<author>
+			<persName><forename type="first">Easter</forename><surname>Sunday</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">- ; Au-Act</forename><surname>Au-Nsw</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Au-Vic</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Au-Wa)\n11</forename><forename type="middle">Easter</forename><surname>Monday</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Thought: The output from the file contains the list of public holidays in Australia in 2023. Response: The public holidays in Australia in 2023 are New Year&apos;s Day</title>
+		<editor>
+			<persName><surname>Au-Act</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Au-Nt</forename><surname>Au-Nsw</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Au-Sa</forename></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Au-Tas</forename></persName>
+		</editor>
+		<meeting><address><addrLine>AU-ACT, AU-NSW, AU</addrLine></address></meeting>
+		<imprint>
+			<publisher>Good Friday</publisher>
+			<date>April 9th. April 10th\n12. January 1st. January 26th. March 6th. March 13th. March 13th. April</date>
+			<biblScope unit="volume">18</biblScope>
+		</imprint>
+		<respStmt>
+			<orgName>AU-VIC</orgName>
+		</respStmt>
+	</monogr>
+	<note>Anzac Day -April 25th\n13. May Day -May 1st (observed in AU-NT)\n14 Picnic Day -August 7th (observed in AU-NT)\n19 Labour Day -October 2nd -SA)\n20. Christmas Day -December 25th\n21. Boxing Day -December 26th Labour Day Eight Hours Day (March 13th Labour Day (March 13th</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><forename type="first">Holy</forename><surname>Saturday</surname></persName>
+		</author>
+		<title level="m">Easter Sunday</title>
+		<imprint>
+			<date>April 8th. April</date>
+		</imprint>
+	</monogr>
+	<note>Easter Eve</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Labour Day (October 2nd), Christmas Day (December 25th), and Boxing Day (December 26th). Case for Real-world API: Currency Beacon [User]: I&apos;m a business owner and I need to invoice a client in Europe. Can you provide me with the current exchange rate from US dollars to Euros, and also the average rate for the July so I can set a fair price? Authentication information: api_key=*** [Assistant]: Thought: I need to get the current exchange rate and the average rate for July</title>
+		<author>
+			<persName><forename type="first">Easter</forename><surname>Monday</surname></persName>
+		</author>
+		<ptr target="https://currencybeacon.com/terms" />
+	</analytic>
+	<monogr>
+		<title level="m">Western Australia Day</title>
+		<imprint>
+			<date>April 10th. April 25th. May Day (May 1st. May 1st. May 29th. June 5th. June 12th. August 7th</date>
+		</imprint>
+	</monogr>
+	<note>Anzac Day Reconciliation Day Labour Day Picnic Day King&apos;s Birthday Input: {&quot;api_key&quot;: &quot;***&quot;, &quot;base&quot;: &quot;USD&quot;, &quot;symbols&quot;: &quot;EUR&quot;} [Tool]: Status Code: 200. Response: {&quot;meta&quot;: {&quot;code&quot;: 200, &quot;disclaimer&quot;: &quot;Usage subject to terms }, &quot;response&quot;: {&quot;date&quot;: &quot;2023-08-15T16:46:58Z&quot;, &quot;base&quot;: &quot;USD&quot;, &quot;rates&quot;: {&quot;EUR&quot;: 0.91572671}}, &quot;date&quot;: &quot;2023-08-15T16:46:58Z&quot;, &quot;base&quot;: &quot;USD&quot;, &quot;rates&quot;: {&quot;EUR</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">91572671}}</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Thought: I have the current exchange rate from US dollars to Euros</title>
+		<author>
+			<persName><surname>Assistant</surname></persName>
+		</author>
+		<idno>]: Status Code: 200. Response: {&quot;meta&quot;: {&quot;code&quot;: 200</idno>
+		<ptr target="https://currencybeacon.com/terms" />
+	</analytic>
+	<monogr>
+		<title level="m">Action: historical_get Action Input: {&quot;api_key&quot;: &quot;***</title>
+		<imprint/>
+	</monogr>
+	<note>&quot;, &quot;base&quot;: &quot;USD&quot;, &quot;date&quot;: &quot;2023-07-01&quot;, &quot;symbols&quot;: &quot;EUR&quot;} [Tool Usage subject to terms }, &quot;response&quot;: {&quot;date&quot;: &quot;2023-07-01&quot;, &quot;base&quot;: &quot;USD&quot;, &quot;rates&quot;: {&quot;EUR&quot;: 0.91706262}}, &quot;date&quot;: &quot;2023-07-01&quot;, &quot;base&quot;: &quot;USD&quot;, &quot;rates&quot;: {&quot;EUR&quot;: 0.91706262}} [Assistant]: Thought: I have the average rate for July. Response: The current exchange rate from US dollars to Euros is</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Can you help me check the weather conditions for the major cities along the route, like Chicago, Denver, and Las Vegas? I&apos;d like to know if there will be any severe weather conditions that might affect my trip</title>
+		<idno>2023-08-15 12:18</idno>
+		<ptr target="https://cdn.worldweatheronline.com/images/wsymbols01_png_64/" />
+	</analytic>
+	<monogr>
+		<title level="m">units&quot;: &quot;m&quot;, &quot;callback&quot;: &quot;weatherResponse&quot;} [Tool]: Status Code: 200. Response: weatherResponse({&quot;request&quot;: {&quot;type&quot;: &quot;City&quot;, &quot;query&quot;: &quot;Denver, United States of America</title>
+		<meeting><address><addrLine>New York, Chicago, Denver, Las Vegas</addrLine></address></meeting>
+		<imprint>
+			<date>July was 0.91706262</date>
+		</imprint>
+	</monogr>
+	<note>Los Angeles next week Authentication information: access_key=*** [Assistant]: Thought: I need to get the weather conditions for the major cities along the route. Action: current_get Action Input: {&quot;access_key&quot;: &quot;*** Figure 15: Cases for real-world API: Currency Beacon. Case for Real-world API: apilayer weatherstack language&quot;: &quot;en&quot;, &quot;unit&quot;: &quot;m&quot;}, &quot;location&quot;: {&quot;name&quot;: &quot;Denver&quot;, &quot;country&quot;: &quot;United States of America&quot;, &quot;region&quot;: &quot;New York&quot;, &quot;lat&quot;: &quot;42.213&quot;, &quot;lon&quot;: &quot;-74.570&quot;, &quot;timezone_id&quot;: &quot;America/New_York&quot;, &quot;localtime&quot; localtime_epoch&quot;: 1692101880, &quot;utc_offset&quot;: &quot;-4.0&quot;}, &quot;current&quot;: {&quot;observation_time&quot;: &quot;04:18 PM&quot;, &quot;temperature&quot;: 17, &quot;weather_code&quot;: 143, &quot;weather_icons wsymbol_0006_mist.png&quot;], &quot;weather_descriptions&quot;: [&quot;Mist&quot;], &quot;wind_speed&quot;: 4, &quot;wind_degree&quot;: 24, &quot;wind_dir&quot;: &quot;NNE&quot;, &quot;pressure&quot;: 1009, &quot;precip&quot;: 0, &quot;humidity&quot;: 96, &quot;cloudcover&quot;: 100, &quot;feelslike&quot;: 17, &quot;uv_index&quot;: 4, &quot;visibility&quot;: 0, &quot;is_day&quot;: &quot;yes&quot;}}) [Assistant]: Thought: The response from the current_get tool indicates that the weather in Denver is currently misty with a temperature of 17°C Action: current_get Action Input: {&quot;access_key&quot;: &quot;***&quot;, &quot;query&quot;: &quot;Chicago, United States of America&quot;, &quot;units&quot;: &quot;m&quot;, &quot;callback&quot;: &quot;weatherResponse&quot;} [Tool]: Status Code: 200. Response: ..</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><surname>Assistant</surname></persName>
+		</author>
+		<title level="m">Thought: The response from the current_get tool indicates that the weather in Chicago is currently lightly raining with a temperature of 19°C. Action: current_get Action Input: {&quot;access_key&quot;: &quot;***&quot;, &quot;query&quot;: &quot;Las Vegas</title>
+		<imprint/>
+	</monogr>
+	<note>United States of America&quot;, &quot;units&quot;: &quot;m&quot;, &quot;callback&quot;: &quot;weatherResponse&quot;} [Tool]: Status Code: 200. Response: ..</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Thought: The response from the current_get tool indicates that the weather in Las Vegas is currently sunny with a temperature of 34°C. Response: The weather conditions for the major cities along the route from New York to Los Angeles are as follows: Denver: currently misty with a temperature of 17°C, Chicago: currently lightly raining with a temperature of 19°C</title>
+		<author>
+			<persName><surname>Assistant</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note>and Las Vegas: currently sunny with a temperature of 34°C</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

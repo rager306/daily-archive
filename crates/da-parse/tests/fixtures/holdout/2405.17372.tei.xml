@@ -1,0 +1,1958 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">BehaviorGPT: Smart Agent Simulation for Autonomous Driving with Next-Patch Prediction</title>
+				<funder ref="#_HBYtmE8 #_nPNytFZ">
+					<orgName type="full">unknown</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-11-11">11 Nov 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Zikang</forename><surname>Zhou</surname></persName>
+							<email>zikanzhou2-c@my.cityu.edu.hk</email>
+							<affiliation key="aff0">
+								<orgName type="institution">City University of Hong Kong</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Haibo</forename><surname>Hu</surname></persName>
+							<email>haibohu2-c@my.cityu.edu.hk</email>
+							<affiliation key="aff0">
+								<orgName type="institution">City University of Hong Kong</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xinhong</forename><surname>Chen</surname></persName>
+							<email>xinhong.chen@cityu.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">City University of Hong Kong</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jianping</forename><surname>Wang</surname></persName>
+							<email>jianwang@cityu.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">City University of Hong Kong</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Nan</forename><surname>Guan</surname></persName>
+							<email>nanguan@cityu.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">City University of Hong Kong</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Kui</forename><surname>Wu</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Victoria</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yung-Hui</forename><surname>Li</surname></persName>
+							<email>yunghui.li@foxconn.com</email>
+							<affiliation key="aff2">
+								<orgName type="institution">Hon Hai Research Institute</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yu-Kai</forename><surname>Huang</surname></persName>
+							<affiliation key="aff3">
+								<orgName type="institution">Carnegie Mellon University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Chun</forename><forename type="middle">Jason</forename><surname>Xue</surname></persName>
+							<affiliation key="aff4">
+								<orgName type="institution">Zayed University of Artificial Intelligence</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">BehaviorGPT: Smart Agent Simulation for Autonomous Driving with Next-Patch Prediction</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-11-11">11 Nov 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">17C90343817B74FA2AFDB1F9C961D1F0</idno>
+					<idno type="arXiv">arXiv:2405.17372v3[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:42+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Multi-Agent Systems</term>
+					<term>Transformers</term>
+					<term>Generative Models</term>
+					<term>Autonomous Driving *Equal contribution</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Simulating realistic behaviors of traffic agents is pivotal for efficiently validating the safety of autonomous driving systems. Existing data-driven simulators primarily use an encoder-decoder architecture to encode the historical trajectories before decoding the future. However, the heterogeneity between encoders and decoders complicates the models, and the manual separation of historical and future trajectories leads to low data utilization. Given these limitations, we propose BehaviorGPT, a homogeneous and fully autoregressive Transformer designed to simulate the sequential behavior of multiple agents. Crucially, our approach discards the traditional separation between "history" and "future" by modeling each time step as the "current" one for motion generation, leading to a simpler, more parameter-and data-efficient agent simulator. We further introduce the Next-Patch Prediction Paradigm (NP3) to mitigate the negative effects of autoregressive modeling, in which models are trained to reason at the patch level of trajectories and capture long-range spatial-temporal interactions. Despite having merely 3M model parameters, BehaviorGPT won first place in the 2024 Waymo Open Sim Agents Challenge with a realism score of 0.7473 and a minADE score of 1.4147, demonstrating its exceptional performance in traffic agent simulation.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Autonomous driving has emerged as an unstoppable trend, with its rapid development increasing the demand for faithful evaluation of autonomy systems' reliability <ref type="bibr" target="#b31">[32]</ref>. While on-road testing can measure driving performance by allowing autonomous vehicles (AVs) to interact with the physical world directly, the high testing cost and the scarcity of safety-critical scenarios in the real world have hindered large-scale and comprehensive evaluation. As an alternative, validating system safety via simulation has become increasingly attractive <ref type="bibr" target="#b13">[14,</ref><ref type="bibr" target="#b47">48,</ref><ref type="bibr" target="#b52">53,</ref><ref type="bibr" target="#b43">44]</ref> as it enables rapid testing in diverse driving scenarios simulated at a low cost. This work focuses on smart agent simulation, i.e., simulating the behavior of traffic participants such as vehicles, pedestrians, and cyclists in the digital world, which is critical for efficiently validating and iterating behavioral policies for AVs.</p><p>A good simulator should be realistic, matching the real-world distribution of multi-agent behaviors to support the assessment of AVs' ability to coexist with humans safely. To this end, researchers started by designing naive simulators that mainly replay the driving logs collected in the real world <ref type="bibr" target="#b26">[27,</ref><ref type="bibr" target="#b28">29]</ref>. When testing new driving policies that deviate from the ones during data collection, agents in such simulators often exhibit unrealistic interactions with AVs, owing to the lack of reactivity to AVs' behavior changes. To simulate reactive agents, traditional approaches <ref type="bibr" target="#b13">[14,</ref><ref type="bibr" target="#b27">28]</ref> apply traffic rules to control agents heuristically <ref type="bibr" target="#b44">[45,</ref><ref type="bibr" target="#b25">26]</ref>, which may struggle to capture real-world complexity. Recently, the availability of large-scale driving data <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b14">15,</ref><ref type="bibr" target="#b49">50]</ref>, the emergence of powerful deep learning tools <ref type="bibr" target="#b18">[19,</ref><ref type="bibr" target="#b46">47,</ref><ref type="bibr" target="#b19">20]</ref>, and the prosperity of related fields such as motion forecasting <ref type="bibr" target="#b15">[16,</ref><ref type="bibr" target="#b45">46,</ref><ref type="bibr" target="#b58">59,</ref><ref type="bibr" target="#b41">42,</ref><ref type="bibr" target="#b57">58]</ref>, have spurred the development of data-driven agent simulation <ref type="bibr" target="#b43">[44,</ref><ref type="bibr" target="#b3">4,</ref><ref type="bibr" target="#b23">24,</ref><ref type="bibr" target="#b51">52,</ref><ref type="bibr" target="#b55">56]</ref> towards more precise matching of behavioral distribution. With the establishment of standard benchmarks like the Waymo Open Sim Agents Challenge (WOSAC) <ref type="bibr" target="#b31">[32]</ref>, which systematically evaluates the realism of agent simulation in terms of kinematics, map compliance, and multi-agent interaction, the research on data-driven simulation approaches has been further advanced <ref type="bibr" target="#b48">[49,</ref><ref type="bibr" target="#b34">35]</ref>.</p><p>Existing learning-based agent simulators <ref type="bibr" target="#b43">[44,</ref><ref type="bibr" target="#b3">4,</ref><ref type="bibr" target="#b23">24,</ref><ref type="bibr" target="#b51">52,</ref><ref type="bibr" target="#b55">56,</ref><ref type="bibr" target="#b48">49,</ref><ref type="bibr" target="#b34">35]</ref> mainly mirror the techniques from motion forecasting <ref type="bibr" target="#b15">[16,</ref><ref type="bibr" target="#b45">46,</ref><ref type="bibr" target="#b58">59,</ref><ref type="bibr" target="#b41">42,</ref><ref type="bibr" target="#b57">58,</ref><ref type="bibr" target="#b40">41,</ref><ref type="bibr" target="#b17">18]</ref> and opt for an encoder-decoder architecture, presumably due to the similarity between the two fields. Typically, these models use an encoder to extract historical information and a decoder to predict agents' future states leveraging the encoded features. This paradigm requires manually splitting the multi-agent time series into a historical and a future segment, with the two segments being processed by separate encoders and decoders with heterogeneous architecture. For example, MVTA <ref type="bibr" target="#b48">[49]</ref> constructs training samples by randomly selecting a "current" timestamp to divide sequences into historical and future components. Others <ref type="bibr" target="#b51">[52,</ref><ref type="bibr" target="#b34">35]</ref> use fixed-length agent trajectories as historical scene context, conditioned on which the multi-agent future is sampled from the decoder. Nonetheless, the benefit of employing heterogeneous modules to separately encode the history and decode the future, at the cost of significantly complicating the architecture, is unclear. Moreover, the manual separation of history and future leads to low utilization of data and computation: as every point in the sequence can be used for the separation, we believe a sample-efficient framework should be able to learn from every possible history-future pair from the sequence in parallel, which cannot be easily achieved by encoder-decoder solutions owing to their heterogeneous processing for the historical and the future time steps.</p><p>Inspired by the success of decoder-only Large Language Models (LLMs) <ref type="bibr" target="#b36">[37,</ref><ref type="bibr" target="#b37">38,</ref><ref type="bibr" target="#b4">5]</ref>, we introduce a fully autoregressive Transformer architecture, dubbed BehaviorGPT, into the field of smart agent simulation to overcome the limitations of previous works. By applying homogeneous Transformer blocks <ref type="bibr" target="#b46">[47]</ref> to the complete trajectory snippets without differentiating history and future, we arrive at a simpler, more parameter-efficient, and more sample-efficient solution for agent simulation. Utilizing relative spacetime representations <ref type="bibr" target="#b57">[58]</ref>, BehaviorGPT symmetrically models each agent state in the sequence as if it were the "current" one and tasks each state with modeling subsequent states' distribution during training. As a result, our framework maximizes the utilization of traffic data for autoregressive modeling, avoiding wasting any learning signals available in the time series.</p><p>Autoregressive modeling with imitation learning, however, suffers from compounding errors <ref type="bibr" target="#b38">[39]</ref> and causal confusion <ref type="bibr" target="#b10">[11]</ref>. Concerning the behavior simulation task, we observed that blindly mimicking LLMs' training paradigm of next-token prediction <ref type="bibr" target="#b34">[35]</ref>, regardless of the difference in tokens' semantics across tasks, will make these issues more prominent. For a next-token prediction model embedding tokens at 10 Hz, a low training loss can be achieved by simply copying and pasting the current token as the next one without performing any long-range interaction reasoning in space or time. To mitigate this issue, we introduce the Next-Patch Prediction Paradigm (NP3) that enables models to reason at the patch level of trajectories, as illustrated in Figure <ref type="figure" target="#fig_0">1</ref>. By enforcing models to autoregressively generate the next trajectory patch containing multiple time steps, which requires understanding the high-level semantics of agent behaviors and capturing long-range spatialtemporal interactions, we prevent models from leveraging trivial shortcuts during training. We equip BehaviorGPT with NP3 and attain superior performance on WOSAC <ref type="bibr" target="#b31">[32]</ref> with merely 3M model parameters, demonstrating the effectiveness of our modeling framework for smart agent simulation.</p><p>Our main contributions are three-fold. First, we propose a fully autoregressive architecture for smart agent simulation, which consists of homogeneous Transformer blocks that process multi-agent long sequences with high parameter and sample efficiency. Second, we develop the Next-Patch Prediction scheme to enhance long-range interaction reasoning, leading to more realistic multi-agent simulation over a long horizon. Third, we achieve remarkable performance on the Waymo Open Motion Dataset, winning first place in the 2024 Waymo Open Sim Agents Challenge. 2 Related Work</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Multi-Agent Traffic Simulation</head><p>Multi-agent traffic simulation is essential for developing and testing autonomous driving systems. From early systems like ALVINN <ref type="bibr" target="#b35">[36]</ref> to contemporary simulators such as CARLA <ref type="bibr" target="#b13">[14]</ref> and SUMO <ref type="bibr" target="#b27">[28]</ref>, these platforms have used heuristic driving policies to simulate agents' reactive behaviors <ref type="bibr" target="#b7">[8,</ref><ref type="bibr" target="#b6">7,</ref><ref type="bibr" target="#b9">10]</ref>. However, they struggle to capture real-world complexity since policies based on simple heuristics are not robust enough to handle all sorts of scenarios. With the availability of large-scale data and deep learning approaches, generative models like VAEs <ref type="bibr" target="#b43">[44]</ref>, GANs <ref type="bibr" target="#b23">[24]</ref>, Diffusion <ref type="bibr" target="#b55">[56]</ref>, and autoregressive models <ref type="bibr" target="#b48">[49,</ref><ref type="bibr" target="#b40">41,</ref><ref type="bibr" target="#b34">35]</ref> have gained success in generating multi-agent motions, which greatly enhance the realism of simulations. Given the temporal dependency of agent trajectories, autoregressive models naturally fit the simulation task, while others require extra designs to capture such dependencies. Among the existing autoregressive models, two representatives are MotionLM <ref type="bibr" target="#b40">[41]</ref> and Trajeglish <ref type="bibr" target="#b34">[35]</ref>. Both of them adopt an encoder-decoder paradigm, designing complicated scene context encoders to extract historical information before autoregressive decoding. In contrast, our approach is fully autoregressive similar to decoder-only LLMs <ref type="bibr" target="#b36">[37,</ref><ref type="bibr" target="#b37">38,</ref><ref type="bibr" target="#b4">5]</ref>, which eliminates the need for using heterogeneous modules to process the historical and future time steps and achieves higher efficiency in terms of data and parameters via simpler architectural design.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Patching Operations in Transformers</head><p>The application of patches in Transformer models has demonstrated significant potential across various data modalities. For instance, BERT <ref type="bibr" target="#b11">[12]</ref> employs subword tokenization <ref type="bibr" target="#b39">[40]</ref> for natural language processing, while ViT <ref type="bibr" target="#b12">[13]</ref> segments images into 2D patches for visual understanding. The patching design has also found applications in time-series forecasting <ref type="bibr" target="#b50">[51,</ref><ref type="bibr" target="#b56">57,</ref><ref type="bibr" target="#b33">34]</ref>, aiming at retaining local semantics and reducing computational complexity <ref type="bibr" target="#b33">[34]</ref>. Moreover, it has shown the effectiveness in self-supervised learning, which has significantly facilitated representation learning and contributed to excellent fine-tuning results on large datasets <ref type="bibr" target="#b1">[2,</ref><ref type="bibr" target="#b20">21,</ref><ref type="bibr" target="#b2">3]</ref>. Since the task of agent simulation also involves time-series data, we expect the patching mechanism to help models effectively capture the spatial-temporal interactions in driving scenarios and enhance the realism of the generated motion. Our proposed Next-Patch Prediction Paradigm (NP3) utilizes patch-level tokens in autoregressive modeling and trains each token to generate the next patch that comprises multi-step motions, which shares some similarities to multi-token prediction in LLMs <ref type="bibr" target="#b16">[17]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Methodology</head><p>This section presents the proposed BehaviorGPT for multi-agent behavior simulation, with Figure <ref type="figure">2</ref> illustrating the overall framework. To begin with, we provide the formulation of our map-conditioned, multi-agent autoregressive modeling. Then, we detail the architecture of BehaviorGPT, which adopts a Transformer decoder with a triple-attention mechanism to operate sequences at the patch level. Finally, we present the objective for model training.</p><p>Agent Data Map Data Traffic Scenario Embedding Map Embedding Agent Embedding Decoder Tokenization Temporal Self-Attention Agent-Map Cross-Attention Agent-Agent Self-Attention Head Pos Vel Yaw 0.6 0.3 0.1 0.1: 40km/h 0.3: 50km/h 0.6: 40km/h 0.6 0.3 0.1 Current Agent State Agent Token Map Token Predicted Position Past Agent State 0.3 Predicted Yaw and Probability Predicted Velocity and Probability 0.3: 50km/h ... ... ... ... ... ... ... ... ... ... ... .. ...</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Patching</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Figure 2: Overview of BehaviorGPT.</head><p>The model takes as input the agent trajectories and the map elements, which are converted into the embeddings of trajectory patches and map polyline segments, respectively. These embeddings are fed into a Transformer decoder for autoregressive modeling based on next-patch prediction, in which the model is trained to generate the positions, velocities, and yaw angles of trajectory patches.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Problem Formulation</head><p>In multi-agent traffic simulation, we aim to simulate agents' future behavior in dynamic and complex environments. Specifically, we define a scenario as the composite of a vector map M and the states of N agent agents over T time steps. At each time step, the state of the i-th agent S i includes the agent's position, velocity, yaw angle, and bounding box size. The semantic type of agents (e.g., vehicles, pedestrians, and cyclists) are also available. Given the sequential nature of agent trajectories, we formulate the problem as sequential predictions over trajectory patches, where the prediction of each patch will affect the subsequent patches. We define an agent-level trajectory patch as</p><formula xml:id="formula_0">P τ i = S ((τ -1)×ℓ+1):(τ ×ℓ) i , i ∈ {1, . . . , N agent } , τ ∈ {1, . . . , N patch } ,<label>(1)</label></formula><p>where ℓ is the number of time steps covered by a patch, N patch = T /ℓ indicates the number of patches, and P τ i represents the τ -th trajectory patch of the i-th agent, with S ((τ -1)×ℓ+1):(τ ×ℓ) i denoting the states within the patch. On top of P τ i , we use P τ = S ((τ -1)×ℓ+1):(τ ×ℓ) 1:Nagent to denote the τ -th multi-agent patch, where P τ incorporates all agents' states at the τ -th patch. Next, we factorize the multi-agent joint distribution over patches along the time axis according to the chain rule:</p><formula xml:id="formula_1">Pr S 1:T 1:Nagent | M = Npatch τ =1 Pr P τ | P 1:(τ -1) , M ,<label>(2)</label></formula><p>where Pr(S 1:T 1:Nagent | M ) is the joint distribution of all agents' states over all time steps conditioned on the map M . Further, we factorize over agents the conditional distribution of multi-agent patches based on the assumption that agents plan their motions independently within the horizon of a patch:</p><formula xml:id="formula_2">Pr P τ | P 1:(τ -1) , M = Nagent i=1 Pr P τ i | P 1:(τ -1) , M .<label>(3)</label></formula><p>Considering the multimodality of agents' behavior within the horizon of a patch, we assume Pr(P τ i | P 1:(τ -1) , M ) to be a mixture model consisting of N mode modes:</p><formula xml:id="formula_3">Pr P τ i | P 1:(τ -1) , M = Nmode k=1 π τ i,k Pr P τ i,k | P 1:(τ -1) , M ,<label>(4)</label></formula><p>where π τ i,k is the probability of the k-th mode. Given the sequential nature of the states within a patch, we further conduct factorization over the states per mode using the chain rule:</p><formula xml:id="formula_4">Pr P τ i,k | P 1:(τ -1) , M = τ ×ℓ t=(τ -1)×ℓ+1 Pr S t i,k | S ((τ -1)×ℓ+1):(t-1) i,k , P 1:(τ -1) , M . (<label>5</label></formula><formula xml:id="formula_5">)</formula><p>Such an autoregressive formulation can be interpreted as planning the patch-level behavior of each agent independently (Eq. ( <ref type="formula" target="#formula_2">3</ref>)), freezing agents' behavior mode per ℓ time steps (Eq. ( <ref type="formula" target="#formula_3">4</ref>)), and autoregressively unrolling the next state under a specific behavior mode (Eq. ( <ref type="formula" target="#formula_4">5</ref>)). Under this formulation, we can flexibly adjust the replan frequency during inference to control the reactivity of agents. For example, we can let agents execute α ∈ {1, . . . , ℓ} steps of the planned motions and choose a new behavior mode after α steps to react to the change in environments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Relative Spacetime Representation</head><p>In our autoregressive formulation, we treat each trajectory patch as the "current" patch that is responsible for estimating the next-patch distribution during training, contrasting many existing approaches that designate one current time step per sequence <ref type="bibr" target="#b51">[52,</ref><ref type="bibr" target="#b48">49,</ref><ref type="bibr" target="#b22">23]</ref>. As a result, it is inefficient to employ the well-established agent-or polyline-centric representation from the field of motion forecasting <ref type="bibr" target="#b45">[46,</ref><ref type="bibr" target="#b58">59,</ref><ref type="bibr" target="#b32">33,</ref><ref type="bibr" target="#b41">42,</ref><ref type="bibr" target="#b24">25,</ref><ref type="bibr" target="#b53">54,</ref><ref type="bibr" target="#b42">43]</ref>, given that these representations are computed under the reference frames determined by one current time step per sequence. For this reason, we adopt the relative spacetime representation introduced in QCNet <ref type="bibr" target="#b57">[58]</ref> to model the patches symmetrically in space and time, achieving simultaneous multi-agent prediction when implementing Eq. ( <ref type="formula" target="#formula_2">3</ref>) and allowing parallel next-patch prediction for the modeling of Eq. ( <ref type="formula" target="#formula_1">2</ref>). Under this representation, the features of each map element and agent state are derived from coordinate-independent attributes, e.g., the semantic category of a map element and the speed of an agent state. On top of this, we effectively maintain the spatial-temporal relationships between input elements via relative positional embeddings. Specifically, we use i and j to index two different input elements and compute the relative spatial-temporal embedding by</p><formula xml:id="formula_6">R j→i = MLP (∥d j→i ∥, ∠ (n i , d j→i ) , ∆θ j→i , ∆z j→i , ∆τ j→i ) ,<label>(6)</label></formula><p>where R j→i is the relational embedding from j to i, ∥d j→i ∥ is the Euclidean distance between them, ∠(n i , d j→i ) is the angle between n i (i.e., the orientation of i) and d j→i (i.e., the displacement vector from j to i), ∆θ j→i /∆z j→i is the relative yaw/height from j to i, and ∆τ j→i is the time difference.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Map Tokenization and Agent Patching</head><p>Before performing spatial-temporal relational reasoning among the input elements of a traffic scenario, we must convert the raw information into high-dimensional embeddings. We first embed map information by sampling points along map polylines every 5 meters and tokenizing the semantic category of each 5-meter segment (e.g., lane centerlines, road edges, and crosswalks) via learnable embeddings. The i-th polyline segment's embedding is denoted by Mi , which does not include any information about coordinates. On the other hand, we process agent states using attention-based patching to obtain patch-level embeddings of trajectories. For the i-th agent's state S t i at time step t, we employ an MLP to transform the speed, the velocity vector's angle relative to the bounding box's heading, the size of the bounding box, and the semantic type of the agent, into a feature vector Ŝt i . To further acquire patch embeddings, we collect the feature vectors of ℓ consecutive agent states and apply the attention mechanism with relative positional embeddings to them:</p><formula xml:id="formula_7">P τ i = MHSA(Q = Ŝτ×ℓ i , K = V = {[ Ŝt i , R t→(τ ×ℓ) i ]} t∈{(τ -1)×ℓ+1,...,τ ×ℓ-1} ) ,<label>(7)</label></formula><p>where P τ i is the patch embedding of the i-th agent at the τ -th patch, MHSA(•) denotes the multi-head self-attention <ref type="bibr" target="#b46">[47]</ref>, [:, :] denotes concatenation, and R t→(τ ×ℓ) i indicates the positional embedding of S t i relative to S τ ×ℓ i computed according to Eq. ( <ref type="formula" target="#formula_6">6</ref>). Such an operation can be viewed as aggregating the features of S ((τ -1)×ℓ+1):(τ ×ℓ-1) i into Ŝτ×ℓ i and using the embeddings fused with high-level semantics as the agent tokens in the subsequent modules.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">Triple-Attention Transformer Decoder</head><p>After obtaining map tokens and the patch embeddings of agents, we employ a Transformer decoder <ref type="bibr" target="#b46">[47]</ref> with the triple-attention mechanism to model the spatial-temporal interactions among scene elements. As illustrated in Figure <ref type="figure" target="#fig_1">3</ref>, the triple-attention mechanism considers three distinct sources of relations in the scene, including the temporal dependencies over the trajectory patches per agent, the regulations of the map elements on the agents, and the social interactions among agents.</p><p>Temporal Self-Attention. This module captures the relationships among the trajectory patches of each individual agent. Similar to decoder-only LLMs <ref type="bibr" target="#b36">[37,</ref><ref type="bibr" target="#b37">38,</ref><ref type="bibr" target="#b4">5]</ref>, it leverages the multi-head self-attention (MHSA) with a causal mask to enforce each trajectory patch to only attend to the preceding patches of the same agent, accommodating our autoregressive formulation. The temporal MHSA is equipped with relative positional embeddings:</p><formula xml:id="formula_8">F τ a2t,i = MHSA(Q = P τ i , K = V = {[ P t i , R (t×ℓ)→(τ ×ℓ) i ]} t∈{1,...,τ -1} ) , (<label>8</label></formula><formula xml:id="formula_9">)</formula><p>where F τ a2t,i and P τ i are the temporal-aware feature vector and the patch embedding of the i-th agent at the τ -th patch, respectively, and R t×ℓ→τ ×ℓ i embeds the relative position from S t×ℓ i to S τ ×ℓ i , which represents the spatial-temporal relationship between the patches P t i and P τ i . Agent-Map Cross-Attention. Unlike natural language which only has a sequence dimension, we must also conduct spatial reasoning to consider the environmental influence on agents' behavior. To facilitate the modeling of agent-map interactions, we apply the multi-head cross-attention (MHCA) to each trajectory patch in the scenario. Considering that a scenario may comprise an explosive number of map polyline segments and that an agent would not be influenced by map elements far away, we filter the key/value map elements in MHCA using the k-nearest neighbors algorithm <ref type="bibr" target="#b41">[42,</ref><ref type="bibr" target="#b53">54]</ref>. The agent-map cross-attention is formulated as</p><formula xml:id="formula_10">F τ a2m,i = MHCA(Q = F τ a2t,i , K = V = {[ Mj , R τ ×ℓ j→i ]} j∈N (i,τ ) ) ,<label>(9)</label></formula><p>where F τ a2m,i is the map-aware feature vector for the i-th agent at the τ -th patch, Mj is the embedding of the j-th map polyline segment, R τ ×ℓ j→i is the relative positional embedding between the agent state S τ ×ℓ i and the j-th map polyline segment, and N (i, τ ) denotes the k-nearest map neighbors of S τ ×ℓ i .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Agent-Agent Self-Attention.</head><p>We further capture the social interactions among agents by applying the MHSA to the space dimension of the trajectory patches. In this module, we also utilize the locality assumption induced by the k-nearest neighbor selection for better computational and memory efficiency. Specifically, the map-aware features of trajectory patches are refined by</p><formula xml:id="formula_11">F τ a2a,i = MHSA(Q = F τ a2m,i , K = V = {[F τ a2m,j , R τ ×ℓ j→i ]} j∈N (i,τ ) ) ,<label>(10)</label></formula><p>where F τ a2a,i is the feature vector enriched with spatial interaction information among agents for the i-th agent at the τ -th patch, R τ ×ℓ j→i contains the relative information between the i-th and the j-th agent at the τ -th patch, and N (i, τ ) filters the k-nearest agent neighbors of S τ ×ℓ i .</p><p>Overall Decoder Architecture. Each of the attention layers above is enhanced by commonly used components in Transformers <ref type="bibr" target="#b46">[47]</ref>, including feed-forward networks, residual connections <ref type="bibr" target="#b18">[19]</ref>, and Layer Normalization <ref type="bibr" target="#b0">[1]</ref> in a pre-norm fashion. To enable higher-order relational reasoning, we stack multiple triple-attention blocks by interleaving the three Transformer layers. We denote the ultimate feature of the i-th agent at the τ -th patch as F τ i , which will serve as the input of the prediction head for next-patch prediction modeling.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.5">Next-Patch Prediction Head</head><p>Given the interaction-aware patch features output by the Transformer decoder, we develop a nextpatch prediction head to model the marginal multimodal distribution of agent trajectories, which estimates the distributional parameters of each patch's successor.</p><p>The following describes the process of next-patch prediction regarding the τ -th patch of the i-th agent. Based on the attention output F τ i , we intend to estimate the parameters of the next patch's mixture model pre-defined with N mode modes. First, we use an MLP to transform F τ i into π τ +1 i ∈ R Nmode , the mixing coefficient of the modes. In each mode, the conditional distribution of the next agent state, as depicted in Eq. ( <ref type="formula" target="#formula_4">5</ref>), is considered a multivariate marginal distribution that parameterizes the position and velocity components as Laplace distributions and the yaw angle as a von Mises distribution. Based on this formulation, we employ a GRU-based autoregressive RNN <ref type="bibr" target="#b8">[9]</ref> to unroll the states within the next patch step by step, with each step being conditioned on the previously predicted states. Specifically, The hidden state h τ,t i,k of the RNN is initialized with F τ i at t = 1 for ∀k ∈ {1, . . . , N modes }. At each step of the rollout, we use an MLP to estimate the location and scale parameters of the next agent state's position and velocity based on the hidden state. On the other hand, the MLP also estimates the location and concentration parameters of the next yaw angle. The location parameters of the newly predicted state, including the 3D positions, the 2D velocities, and the yaw angle, are used to update the RNN's hidden state directly without relying on the predicted scale/concentration parameters for sampling. The whole process is summarized as follows:</p><formula xml:id="formula_12">π τ +1 i,k = MLP([F τ i , Z k ]) , h τ,1 i,k = F τ i , µ τ ×ℓ+t i,k , b τ ×ℓ+t i,k , κ τ ×ℓ+t i,k = MLP([h τ,t i,k , Z k ]) , h τ,t+1 i,k = RNN(h τ,t i,k , MLP(µ τ ×ℓ+t i,k )) ,<label>(11)</label></formula><p>where {µ τ ×ℓ+t i,k ∈ R 6 } t∈{1,...,ℓ} , {b τ ×ℓ+t i,k ∈ R 5 } t∈{1,...,ℓ} , and {κ τ ×ℓ+t i,k ∈ R} t∈{1,...,ℓ} are the location, scale, and concentration parameters in the k-th mode, and Z k is the k-th learnable mode embedding.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.6">Training Objective</head><p>To train BehaviorGPT, we apply the negative log-likelihood loss L NLL to the factorized distribution of Pr(S 1:T 1:Nagent | M ) as formulated previously:</p><formula xml:id="formula_13">L NLL = Npatch τ =1 Nagent i=1 -log Nmode k=1 π τ i,k τ ×ℓ t=(τ -1)×ℓ+1</formula><p>Pr S t i,k | S ((τ -1)×ℓ+1):(t-1) i,k</p><p>, P 1:(τ -1) , M .</p><p>(12) Note that each ground-truth trajectory patch is transformed into the viewpoint of its previous patch. During training, we utilize teacher forcing to parallelize the modeling of next-patch prediction and ease the learning difficulty, but we do not use the ground-truth agent states when updating the RNN's hidden states, intending to train the model to recover from its mistakes made in next-state prediction.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head><p>This section first introduces the dataset and the evaluation metrics used in our experiments, followed by presenting the implementation details and the rollout results obtained by BehaviorGPT on the Waymo Open Sim Agents Benchmark <ref type="bibr" target="#b31">[32]</ref>. Finally, we conduct ablation studies to further compare and analyze the performance of BehaviorGPT under various settings.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Dataset and Metrics</head><p>Our experiments are conducted on the Waymo Open Motion Dataset (WOMD) <ref type="bibr" target="#b14">[15]</ref>. The dataset comprises 486,995/44,097/44,920 training/validation/testing scenarios. Each scenario includes 91step observations sampled at 10 Hz, totaling 9.1 seconds. Given 11-step initial states of the scenarios, we simulate up to 128 agents and generate 80 simulation steps per agent at 0.1-second intervals in an autoregressive and reactive manner. Each agent requires 32 simulations comprising x/y/z centroid coordinates and a heading value. The results on the test set are obtained by utilizing the full training set, while the performance on the validation set is based on 20% of training data unless specified.</p><p>We use various metrics for evaluation. The minADE measures the minimum average displacement error over multiple simulated trajectories, assessing trajectory accuracy. REALISM is the meta-metric  that expects the simulations to match the real-world distribution. LINEAR SPEED and LINEAR ACCEL evaluate the realism regarding speed and acceleration. Similarly, ANG SPEED and ANG ACCEL measure the realism of angular speed and acceleration. DIST TO OBJ considers the distances to objects, while COLLISION and TTC assess the simulation performance in terms of collision and time to collision. Finally, DIST TO ROAD EDGE and OFFROAD focus on map compliance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Implementation Details</head><p>The optimal patch size we experimented with is 10, corresponding to 1 second. All hidden sizes are set to 128. Each attention layer has 8 attention heads with 16 dimensions per head. To save training resources, we limit the maximum number of agents per scenario to 128 and restrict the maximum number of neighbors in kNN attention layers to 32. The prediction head produces 16 modes per agent and time step. We train the models for 30 epochs on 8 NVIDIA RTX 4090 GPUs with a batch size of 24, utilizing the AdamW optimizer <ref type="bibr" target="#b30">[31]</ref>. The weight decay rate and dropout rate are both set to 0.1. The learning rate is initially set to 5 × 10 -4 and decayed to 0 following a cosine annealing schedule <ref type="bibr" target="#b29">[30]</ref>. Our results in the 2024 WOSAC are obtained using a single model with 2 decoding blocks and a total of 3M parameters. To produce 32 replicas of rollouts, we randomly sample behavior modes from agents' next-patch distributions until completing the 8-second multi-agent trajectories, and we repeat this process with different random seeds. The final results on the leaderboard are based on a replan rate of 2 Hz, while the ablation studies are based on a 1-Hz replan rate unless specified.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Quantitative Results</head><p>We report the test set results in Table <ref type="table" target="#tab_0">1</ref>. Notably, BehaviorGPT achieves the lowest minADE and the best REALISM, underscoring the model's ability to match the real-world distribution. Its excellent performance on COLLISION and OFFROAD also indicates that the model has successfully captured the agent-agent and agent-map interactions in driving scenarios. Besides the benchmarking results, we also compare the number of model parameters in BehaviorGPT and other baselines. Table <ref type="table" target="#tab_0">1</ref> demonstrates that BehaviorGPT, with only 3M parameters, achieves more realistic simulation than significantly larger models like MVTE <ref type="bibr" target="#b48">[49]</ref> and GUMP <ref type="bibr" target="#b21">[22]</ref>, which demonstrates the parameter efficiency of our approach. Without employing tricks like data augmentation, model ensemble, or post-processing steps, BehaviorGPT won first place in the 2024 Waymo Open Sim Agents Challenge. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Qualitative Results</head><p>Figure <ref type="figure" target="#fig_2">4</ref> visualizes some qualitative results of the rollouts produced by our model. In this scenario, BehaviorGPT can generate multiple plausible futures given the same initial states of agents, which demonstrates its capability of simulating diverse yet realistic agent behavior. However, we also note that autoregressive models still suffer from accumulated errors in some cases. As shown in Figure <ref type="figure" target="#fig_3">5</ref>, the vehicle in orange gradually goes out of the road as time goes by, which indicates the inherent limitations of autoregressive generation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5">Ablation Studies</head><p>We conduct some ablation studies to gain a more in-depth understanding of our approach.</p><p>Impact of patch size. Table <ref type="table" target="#tab_1">2</ref> presents the results of BehaviorGPT with varying patch sizes.</p><p>According to the results, it is evident that using a patch size of 5, i.e., training and predicting with 2-Hz tokens, significantly outperforms the baseline without patching. Moreover, increasing the patch size to 10 further enhances the overall performance. These results demonstrate the benefits of incorporating the NP3 into agent simulation. However, changing the patch size also leads to a variation in replan frequency, which also has an influence on simulation. Next, we investigate the impact of replan frequency on the test set using the model submitted to the 2024 WOSAC. Impact of replan frequency. During inference, we vary the replan frequency of the model with a patch size of 10 by discarding a portion of the predicted states at each simulation step. As shown in Table <ref type="table" target="#tab_2">3</ref>, increasing the replan frequency from 1 Hz to 2 Hz can even improve the overall performance, which may benefit from the enhanced reactivity. This phenomenon demonstrates that the performance gain is not merely due to the lower replan frequency, as the model with a patch size of 10 beats that with a patch size of 5 even harder if using the same replan frequency of 2 Hz. However, using an overly high replan frequency harms the performance, as indicated by the third row of Table <ref type="table" target="#tab_2">3</ref>.</p><p>Overall, we conclude that using a larger patch indeed helps long-term reasoning, but a moderate replan frequency is important for temporal stability, which may be neglected by prior works.  Impact of multi-agent interaction modeling. We remove all agent-agent self-attention layers in the first row of Table <ref type="table" target="#tab_3">4</ref> to show that modeling the interactions among agents can boost minADE and REALISM. In particular, the realism in terms of collision is improved by 34.66% when employing agent-agent self-attention. Scaling with data. We train our models with different proportions of training data. All the models have 4 decoding blocks and a hidden size of 128, totaling 5M parameters. As shown in Table <ref type="table" target="#tab_4">5</ref>, BehaviorGPT is able to achieve remarkable performance with merely 20% of training data, which is attributed to the high data efficiency of our approach. Increasing the proportion of training data from 20% to 50% further improves the performance on minADE and REALISM, and training on 100% of the data continues to gain enhancement. Judging from the trend in Table <ref type="table" target="#tab_4">5</ref>, we believe that feeding more data for model training will continuously achieve better simulation performance.</p><p>Scaling with model size. We investigate the effects of scaling up the model size based on some preliminary experiments with 20% of training data. In Table <ref type="table" target="#tab_5">6</ref>, we vary the number of decoding blocks while fixing the hidden size as 128. On the other hand, we fix the number of decoding blocks as 2 and vary the hidden size, as depicted in Table <ref type="table" target="#tab_6">7</ref>. Based on the experimental results, we can summarize that enlarging the model consistently leads to more realistic simulation, which showcases the potential of BehaviorGPT for scaling up.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Extrapolation ability.</head><p>We tried training a model on 5-second sequences and generating 9.1-second sequences during inference. The results in Table <ref type="table" target="#tab_7">8</ref> show that this model achieves similar performance compared with the baseline trained with 9.1-second sequences, demonstrating our approach's extrapolation ability to generate longer sequences.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>This work introduced BehaviorGPT, a fully autoregressive architecture designed to enhance smart agent simulation for autonomous driving. By applying homogeneous Transformer blocks to entire trajectory snippets and utilizing relative spacetime representations, BehaviorGPT simplifies the modeling process and maximizes data utilization. To enable high-level understanding and long-range interaction reasoning in space and time, we developed the Next-Patch Prediction Paradigm, which tasks models with generating trajectory patches instead of single-step states. Experimental results on the Waymo Open Sim Agents Challenge demonstrate that BehaviorGPT achieves outstanding performance with merely 3M model parameters, highlighting its potential to further improve the realism of agent simulation with more data and computation.</p><p>Limitations. First, BehaviorGPT is currently inferior in kinematics-related performance, which can be enhanced by incorporating a kinematic model, e.g., the bicycle model. Second, the current version of BehaviorGPT does not support controlling agent behavior with specific prompts such as language and goal points. However, achieving controllable generation should be trivial given a powerful base model. Finally, we have not verified whether BehaviorGPT will facilitate the development of motion planning, which we leave as future work.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Next-Patch Prediction Paradigm with patch sizes of 1, 5, and 10 time steps for trajectories sampled at 10 Hz. The capsules in dark red represent the agent states at the current time step t, while the faded red capsules indicate agents' past states. The grey circles represent the masked agent states required for generation. Our approach groups multi-step agent states as patches, demanding each patch to predict the subsequent patch during training.</figDesc><graphic coords="3,112.92,72.01,178.17,128.16" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Triple Attention applies attention mechanisms to model (a) agents' sequential behaviors, (b) agents' relationships with the map context, and (c) the interactions among agents.</figDesc><graphic coords="6,108.00,72.00,395.92,88.09" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: High-quality simulations produced by BehaviorGPT, where multimodal behaviors of agents are simulated realistically.</figDesc><graphic coords="8,108.00,176.54,395.99,104.30" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: A typical failed case produced by BehaviorGPT, where offroad trajectories are generated owing to the compounding error caused by autoregressive modeling.</figDesc><graphic coords="9,108.00,72.00,395.99,105.30" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Test set results in the 2024 Waymo Open Sim Agents Challenge.</figDesc><table><row><cell>Model</cell><cell>#Param</cell><cell>minADE (↓)</cell><cell>REALISM (↑)</cell><cell>LINEAR SPEED (↑)</cell><cell>LINEAR ACCEL (↑)</cell><cell>ANG SPEED (↑)</cell><cell>ANG ACCEL (↑)</cell><cell>DIST TO OBJ (↑)</cell><cell>COLLISION (↑)</cell><cell>TTC (↑)</cell><cell>DIST TO ROAD EDGE (↑)</cell><cell>OFFROAD (↑)</cell></row><row><cell>Linear Extrapolation [32]</cell><cell>-</cell><cell>7.5148</cell><cell>0.3985</cell><cell>0.0434</cell><cell>0.1661</cell><cell>0.2522</cell><cell>0.4393</cell><cell>0.2154</cell><cell>0.3905</cell><cell>0.7555</cell><cell>0.4801</cell><cell>0.4426</cell></row><row><cell>TrafficBotsV1.5 [55]</cell><cell>10M</cell><cell>1.8825</cell><cell>0.6988</cell><cell>0.3361</cell><cell>0.3497</cell><cell>0.4512</cell><cell>0.5844</cell><cell>0.3596</cell><cell>0.8083</cell><cell>0.8209</cell><cell>0.6423</cell><cell>0.9134</cell></row><row><cell>VBD [23]</cell><cell>12M</cell><cell>1.4743</cell><cell>0.7200</cell><cell>0.3591</cell><cell>0.3664</cell><cell>0.4197</cell><cell>0.5222</cell><cell>0.3683</cell><cell>0.9341</cell><cell>0.8153</cell><cell>0.6508</cell><cell>0.8788</cell></row><row><cell>MVTE [49]</cell><cell>&gt;65M</cell><cell>1.6770</cell><cell>0.7302</cell><cell>0.3506</cell><cell>0.3531</cell><cell>0.4974</cell><cell>0.6000</cell><cell>0.3743</cell><cell>0.9049</cell><cell>0.8310</cell><cell>0.6655</cell><cell>0.9071</cell></row><row><cell>GUMP [22]</cell><cell>523M</cell><cell>1.6041</cell><cell>0.7431</cell><cell>0.3567</cell><cell>0.4111</cell><cell>0.5089</cell><cell>0.6353</cell><cell>0.3707</cell><cell>0.9403</cell><cell>0.8276</cell><cell>0.6686</cell><cell>0.9028</cell></row><row><cell>BehaviorGPT (Ours)</cell><cell>3M</cell><cell>1.4147</cell><cell>0.7473</cell><cell>0.3615</cell><cell>0.3365</cell><cell>0.4806</cell><cell>0.5544</cell><cell>0.3834</cell><cell>0.9537</cell><cell>0.8308</cell><cell>0.6702</cell><cell>0.9349</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Impact of patch size on the validation set.</figDesc><table><row><cell>Patch Size</cell><cell>Replan Frequency</cell><cell>minADE (↓)</cell><cell>REALISM (↑)</cell><cell>LINEAR SPEED (↑)</cell><cell>LINEAR ACCEL (↑)</cell><cell>ANG SPEED (↑)</cell><cell>ANG ACCEL (↑)</cell><cell>DIST TO OBJ (↑)</cell><cell>COLLISION (↑)</cell><cell>TTC (↑)</cell><cell>DIST TO ROAD EDGE (↑)</cell><cell>OFFROAD (↑)</cell></row><row><cell>1</cell><cell>10 Hz</cell><cell>2.3752</cell><cell>0.6783</cell><cell>0.2559</cell><cell>0.2088</cell><cell>0.4022</cell><cell>0.5094</cell><cell>0.3201</cell><cell>0.9002</cell><cell>0.8015</cell><cell>0.6149</cell><cell>0.8432</cell></row><row><cell>5</cell><cell>2 Hz</cell><cell>1.5599</cell><cell>0.7273</cell><cell>0.3543</cell><cell>0.3218</cell><cell>0.4623</cell><cell>0.5435</cell><cell>0.3768</cell><cell>0.9181</cell><cell>0.8339</cell><cell>0.6564</cell><cell>0.9077</cell></row><row><cell>10</cell><cell>1 Hz</cell><cell>1.5203</cell><cell>0.7335</cell><cell>0.3517</cell><cell>0.3023</cell><cell>0.4734</cell><cell>0.5432</cell><cell>0.3797</cell><cell>0.9358</cell><cell>0.8329</cell><cell>0.6645</cell><cell>0.9132</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Impact of replan frequency on the test set.</figDesc><table><row><cell>Patch Size</cell><cell>Replan Frequency</cell><cell>minADE (↓)</cell><cell>REALISM (↑)</cell><cell>LINEAR SPEED (↑)</cell><cell>LINEAR ACCEL (↑)</cell><cell>ANG SPEED (↑)</cell><cell>ANG ACCEL (↑)</cell><cell>DIST TO OBJ (↑)</cell><cell>COLLISION (↑)</cell><cell>TTC (↑)</cell><cell>DIST TO ROAD EDGE (↑)</cell><cell>OFFROAD (↑)</cell></row><row><cell>10</cell><cell>1 Hz</cell><cell>1.5405</cell><cell>0.7414</cell><cell>0.3553</cell><cell>0.3153</cell><cell>0.4695</cell><cell>0.5303</cell><cell>0.3772</cell><cell>0.9520</cell><cell>0.8285</cell><cell>0.6664</cell><cell>0.9308</cell></row><row><cell>10</cell><cell>2 Hz</cell><cell>1.4147</cell><cell>0.7473</cell><cell>0.3615</cell><cell>0.3365</cell><cell>0.4806</cell><cell>0.5544</cell><cell>0.3834</cell><cell>0.9537</cell><cell>0.8308</cell><cell>0.6702</cell><cell>0.9349</cell></row><row><cell>10</cell><cell>5 Hz</cell><cell>1.5693</cell><cell>0.7342</cell><cell>0.3430</cell><cell>0.3472</cell><cell>0.4663</cell><cell>0.5673</cell><cell>0.3722</cell><cell>0.9429</cell><cell>0.8253</cell><cell>0.6534</cell><cell>0.9089</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 :</head><label>4</label><figDesc>Impact of agent-agent self-attention on the validation set.</figDesc><table><row><cell>Agent-Agent Self-Attention</cell><cell>minADE (↓)</cell><cell>REALISM (↑)</cell><cell>DIST TO OBJ (↑)</cell><cell>COLLISION (↑)</cell><cell>TTC (↑)</cell></row><row><cell>×</cell><cell>2.1489</cell><cell>0.6659</cell><cell>0.3539</cell><cell>0.6987</cell><cell>0.8070</cell></row><row><cell>✓</cell><cell>1.6247</cell><cell>0.7349</cell><cell>0.3783</cell><cell>0.9409</cell><cell>0.8320</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 5 :</head><label>5</label><figDesc>Effects of training data on the validation set.</figDesc><table><row><cell>Train Data</cell><cell>#Param</cell><cell>minADE (↓)</cell><cell>REALISM (↑)</cell></row><row><cell>20%</cell><cell>5M</cell><cell>1.4881</cell><cell>0.7396</cell></row><row><cell>50%</cell><cell>5M</cell><cell>1.4060</cell><cell>0.7427</cell></row><row><cell>100%</cell><cell>5M</cell><cell>1.3804</cell><cell>0.7438</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 6 :</head><label>6</label><figDesc>Effects of model depth on the validation set.</figDesc><table><row><cell>Model Depth</cell><cell>#Param</cell><cell>minADE (↓)</cell><cell>REALISM (↑)</cell></row><row><cell>2</cell><cell>3M</cell><cell>1.6247</cell><cell>0.7349</cell></row><row><cell>3</cell><cell>4M</cell><cell>1.5381</cell><cell>0.7387</cell></row><row><cell>4</cell><cell>5M</cell><cell>1.4881</cell><cell>0.7396</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 7 :</head><label>7</label><figDesc>Effects of model width on the validation set.</figDesc><table><row><cell>Model Width</cell><cell>#Param</cell><cell>minADE (↓)</cell><cell>REALISM (↑)</cell></row><row><cell>64</cell><cell>800K</cell><cell>1.9637</cell><cell>0.7251</cell></row><row><cell>128</cell><cell>3M</cell><cell>1.6247</cell><cell>0.7349</cell></row><row><cell>192</cell><cell>7M</cell><cell>1.4993</cell><cell>0.7382</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_7"><head>Table 8 :</head><label>8</label><figDesc>Extrapolation ability to generate longer sequences.</figDesc><table><row><cell cols="2">Training Inference</cell><cell>minADE (↓)</cell><cell>REALISM (↑)</cell><cell>LINEAR SPEED (↑)</cell><cell>LINEAR ACCEL (↑)</cell><cell>ANG SPEED (↑)</cell><cell>ANG ACCEL (↑)</cell><cell>DIST TO OBJ (↑)</cell><cell>COLLISION (↑)</cell><cell>TTC (↑)</cell><cell>DIST TO ROAD EDGE (↑)</cell><cell>OFFROAD (↑)</cell></row><row><cell>9.1 sec</cell><cell>9.1 sec</cell><cell>1.6247</cell><cell>0.7349</cell><cell>0.3546</cell><cell>0.3105</cell><cell>0.4689</cell><cell>0.5363</cell><cell>0.3783</cell><cell>0.9409</cell><cell>0.8320</cell><cell>0.6605</cell><cell>0.9163</cell></row><row><cell>5.0 sec</cell><cell>9.1 sec</cell><cell>1.6294</cell><cell>0.7333</cell><cell>0.3565</cell><cell>0.3471</cell><cell>0.4613</cell><cell>0.5293</cell><cell>0.3813</cell><cell>0.9375</cell><cell>0.8273</cell><cell>0.6585</cell><cell>0.9100</cell></row></table></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgement</head><p>This project is supported by a grant from <rs type="grantName">Hong Kong Research Grant Council</rs> under <rs type="projectName">GRF</rs> project <rs type="grantNumber">11216323</rs> and <rs type="grantNumber">CRF C1042-23G</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funded-project" xml:id="_HBYtmE8">
+					<idno type="grant-number">11216323</idno>
+					<orgName type="grant-name">Hong Kong Research Grant Council</orgName>
+					<orgName type="project" subtype="full">GRF</orgName>
+				</org>
+				<org type="funding" xml:id="_nPNytFZ">
+					<idno type="grant-number">CRF C1042-23G</idno>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Lei Ba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamie</forename><surname>Ryan Kiros</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><forename type="middle">E</forename><surname>Hinton</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1607.06450</idno>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Layer normalization. arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">wav2vec 2.0: A framework for self-supervised learning of speech representations</title>
+		<author>
+			<persName><forename type="first">Alexei</forename><surname>Baevski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhao</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abdelrahman</forename><surname>Mohamed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Auli</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">BEit: BERT pre-training of image transformers</title>
+		<author>
+			<persName><forename type="first">Hangbo</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Songhao</forename><surname>Piao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Furu</forename><surname>Wei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Simnet: Learning reactive self-driving simulations from real-world observations</title>
+		<author>
+			<persName><forename type="first">Luca</forename><surname>Bergamini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yawei</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oliver</forename><surname>Scheel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chih</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luca</forename><surname>Del Pero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Błażej</forename><surname>Osiński</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Grimmett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Ondruska</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2021 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="5119" to="5125" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Argoverse: 3d tracking and forecasting with rich maps</title>
+		<author>
+			<persName><forename type="first">Ming-Fang</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Lambert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patsorn</forename><surname>Sangkloy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jagjeet</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Slawomir</forename><surname>Bak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Hartnett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">De</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Carr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Lucey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deva</forename><surname>Ramanan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="8748" to="8757" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Learning to drive from a world on rails</title>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladlen</forename><surname>Koltun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philipp</forename><surname>Krähenbühl</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF International Conference on Computer Vision</title>
+		<meeting>the IEEE/CVF International Conference on Computer Vision</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="15590" to="15599" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Learning by cheating</title>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brady</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladlen</forename><surname>Koltun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philipp</forename><surname>Krähenbühl</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="66" to="75" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Learning phrase representations using rnn encoder-decoder for statistical machine translation</title>
+		<author>
+			<persName><forename type="first">Kyunghyun</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bart</forename><surname>Van Merrienboer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Çaglar</forename><surname>Gülçehre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dzmitry</forename><surname>Bahdanau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fethi</forename><surname>Bougares</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Holger</forename><surname>Schwenk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Empirical Methods in Natural Language Processing</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">End-to-end driving via conditional imitation learning</title>
+		<author>
+			<persName><forename type="first">Felipe</forename><surname>Codevilla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Müller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonio</forename><surname>López</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladlen</forename><surname>Koltun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexey</forename><surname>Dosovitskiy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2018 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="4693" to="4700" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Causal confusion in imitation learning</title>
+		<author>
+			<persName><forename type="first">Pim</forename><surname>De Haan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dinesh</forename><surname>Jayaraman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Pre-training of deep bidirectional transformers for language understanding</title>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenton</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kristina</forename><surname>Toutanova</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bert</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">North American Chapter</title>
+		<imprint>
+			<publisher>the Association for Computational Linguistics</publisher>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">An image is worth 16x16 words: Transformers for image recognition at scale</title>
+		<author>
+			<persName><forename type="first">Alexey</forename><surname>Dosovitskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Beyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Kolesnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dirk</forename><surname>Weissenborn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohua</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Unterthiner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mostafa</forename><surname>Dehghani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Minderer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Georg</forename><surname>Heigold</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sylvain</forename><surname>Gelly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakob</forename><surname>Uszkoreit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Neil</forename><surname>Houlsby</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">An open urban driving simulator</title>
+		<author>
+			<persName><forename type="first">Alexey</forename><surname>Dosovitskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">German</forename><surname>Ros</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felipe</forename><surname>Codevilla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonio</forename><surname>Lopez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladlen</forename><surname>Koltun</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Carla</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="1" to="16" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Large scale interactive motion forecasting for autonomous driving: The waymo open motion dataset</title>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Ettinger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyang</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Caine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenxi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sabeek</forename><surname>Pradhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuning</forename><surname>Chai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Sapp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yin</forename><surname>Charles R Qi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF International Conference on Computer Vision</title>
+		<meeting>the IEEE/CVF International Conference on Computer Vision</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="9710" to="9719" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Vectornet: Encoding hd maps and agent dynamics from vectorized representation</title>
+		<author>
+			<persName><forename type="first">Jiyang</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dragomir</forename><surname>Anguelov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Congcong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cordelia</forename><surname>Schmid</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="11525" to="11533" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<author>
+			<persName><forename type="first">Fabian</forename><surname>Gloeckle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Youbi</forename><surname>Badr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baptiste</forename><surname>Idrissi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Lopez-Paz</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Synnaeve</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.19737</idno>
+		<title level="m">Better &amp; faster large language models via multi-token prediction</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Densetnt: End-to-end trajectory prediction from dense goal sets</title>
+		<author>
+			<persName><forename type="first">Junru</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Zhao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF International Conference on Computer Vision</title>
+		<meeting>the IEEE/CVF International Conference on Computer Vision</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="15303" to="15312" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Deep residual learning for image recognition</title>
+		<author>
+			<persName><forename type="first">Kaiming</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoqing</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Sun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="770" to="778" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Denoising diffusion probabilistic models</title>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Self-supervised speech representation learning by masked prediction of hidden units</title>
+		<author>
+			<persName><forename type="first">Wei-Ning</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Bolte</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hubert</forename><surname>Yao-Hung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kushal</forename><surname>Tsai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruslan</forename><surname>Lakhotia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abdelrahman</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mohamed</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hubert</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE/ACM Transactions on Audio, Speech, and Language Processing</title>
+		<imprint>
+			<biblScope unit="volume">29</biblScope>
+			<biblScope unit="page" from="3451" to="3460" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Solving motion planning tasks with a scalable generative model</title>
+		<author>
+			<persName><forename type="first">Yihan</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siqi</forename><surname>Chai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhening</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyu</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenxin</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haichao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiang</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">European Conference on Computer Vision</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Versatile scene-consistent traffic scenario generation as optimization with diffusion</title>
+		<author>
+			<persName><forename type="first">Zhiyu</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zixu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ameya</forename><surname>Vaidya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaime</forename><surname>Fernández</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fisac</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.02524</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Symphony: Learning realistic and diverse agents for autonomous driving simulation</title>
+		<author>
+			<persName><forename type="first">Maximilian</forename><surname>Igl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daewoo</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Kuefler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Mougin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Punit</forename><surname>Shah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyriacos</forename><surname>Shiarlis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dragomir</forename><surname>Anguelov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Palatucci</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brandyn</forename><surname>White</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shimon</forename><surname>Whiteson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2022 International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="2445" to="2451" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Hdgt: Heterogeneous driving graph transformer for multi-agent trajectory prediction via scene encoding</title>
+		<author>
+			<persName><forename type="first">Xiaosong</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Penghao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongyang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junchi</forename><surname>Yan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE transactions on pattern analysis and machine intelligence</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">General lane-changing model mobil for car-following models</title>
+		<author>
+			<persName><forename type="first">Arne</forename><surname>Kesting</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Treiber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dirk</forename><surname>Helbing</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transportation Research Record</title>
+		<imprint>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="86" to="94" />
+			<date type="published" when="1999">1999. 2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Drivergym: Democratising reinforcement learning for autonomous driving</title>
+		<author>
+			<persName><forename type="first">Parth</forename><surname>Kothari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Perone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luca</forename><surname>Bergamini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandre</forename><surname>Alahi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Ondruska</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2111.06889</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Sumo (simulation of urban mobility)-an open-source traffic simulation</title>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Krajzewicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Georg</forename><surname>Hertkorn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Rössel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Wagner</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 4th middle East Symposium on Simulation and Modelling (MESM20002)</title>
+		<meeting>the 4th middle East Symposium on Simulation and Modelling (MESM20002)</meeting>
+		<imprint>
+			<date type="published" when="2002">2002</date>
+			<biblScope unit="page" from="183" to="187" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Composing diverse driving scenarios for generalizable reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Quanyi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenghao</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lan</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenghai</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bolei</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Metadrive</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Pattern Analysis and Machine Intelligence</title>
+		<imprint>
+			<biblScope unit="volume">45</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="3461" to="3475" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Sgdr: Stochastic gradient descent with warm restarts</title>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Loshchilov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><surname>Hutter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Decoupled weight decay regularization</title>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Loshchilov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><surname>Hutter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">The waymo open sim agents challenge</title>
+		<author>
+			<persName><forename type="first">Nico</forename><surname>Montali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Lambert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Mougin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Kuefler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Rhinehart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michelle</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cole</forename><surname>Gulino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tristan</forename><surname>Emrich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Zoey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shimon</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brandyn</forename><surname>Whiteson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dragomir</forename><surname>White</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Anguelov</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems Track on Datasets and Benchmarks</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Wayformer: Motion forecasting via simple &amp; efficient attention networks</title>
+		<author>
+			<persName><forename type="first">Nigamaa</forename><surname>Nayakanti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rami</forename><surname>Al-Rfou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aurick</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kratarth</forename><surname>Goel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Khaled</forename><forename type="middle">S</forename><surname>Refaat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Sapp</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2023 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="2980" to="2987" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">A time series is worth 64 words: Long-term forecasting with transformers</title>
+		<author>
+			<persName><forename type="first">Yuqi</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nam</forename><forename type="middle">H</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phanwadee</forename><surname>Sinthong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jayant</forename><surname>Kalagnanam</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Trajeglish: Traffic modeling as next-token prediction</title>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<editor>
+			<persName><forename type="first">Jonah</forename><surname>Philion</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Xue Bin</forename><surname>Peng</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sanja</forename><surname>Fidler</surname></persName>
+		</editor>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Alvinn: An autonomous land vehicle in a neural network</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dean</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Pomerleau</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="1988">1988</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Improving language understanding by generative pre-training</title>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Salimans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">OpenAI blog</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Language models are unsupervised multitask learners</title>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rewon</forename><surname>Child</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Luan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">OpenAI blog</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">A reduction of imitation learning and structured prediction to no-regret online learning</title>
+		<author>
+			<persName><forename type="first">Stéphane</forename><surname>Ross</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Gordon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Drew</forename><surname>Bagnell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Fourteenth International Conference on Artificial Intelligence and Statistics</title>
+		<meeting>the Fourteenth International Conference on Artificial Intelligence and Statistics</meeting>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="627" to="635" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Japanese and korean voice search</title>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Schuster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaisuke</forename><surname>Nakajima</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2012 IEEE international conference on acoustics, speech and signal processing (ICASSP)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="5149" to="5152" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Motionlm: Multi-agent motion forecasting as language modeling</title>
+		<author>
+			<persName><forename type="first">Ari</forename><surname>Seff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Cera</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mason</forename><surname>Ng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aurick</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nigamaa</forename><surname>Nayakanti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rami</forename><surname>Khaled S Refaat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Al-Rfou</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sapp</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF International Conference on Computer Vision</title>
+		<meeting>the IEEE/CVF International Conference on Computer Vision</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="8579" to="8590" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Motion transformer with global intention localization and local movement refinement</title>
+		<author>
+			<persName><forename type="first">Shaoshuai</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dengxin</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bernt</forename><surname>Schiele</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Mtr++: Multi-agent motion prediction with symmetric scene modeling and guided intention querying</title>
+		<author>
+			<persName><forename type="first">Shaoshuai</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dengxin</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bernt</forename><surname>Schiele</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Pattern Analysis and Machine Intelligence</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Trafficsim: Learning to simulate realistic multi-agent behaviors</title>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Suo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Regalado</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergio</forename><surname>Casas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raquel</forename><surname>Urtasun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="10400" to="10409" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Congested traffic states in empirical observations and microscopic simulations</title>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Treiber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ansgar</forename><surname>Hennecke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dirk</forename><surname>Helbing</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Physical Review E</title>
+		<imprint>
+			<biblScope unit="volume">62</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page">1805</biblScope>
+			<date type="published" when="2000">2000</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Multipath++: Efficient information fusion and trajectory aggregation for behavior prediction</title>
+		<author>
+			<persName><forename type="first">Balakrishnan</forename><surname>Varadarajan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmed</forename><surname>Hefny</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Avikalp</forename><surname>Srivastava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nigamaa</forename><surname>Khaled S Refaat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andre</forename><surname>Nayakanti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kan</forename><surname>Cornman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bertrand</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><forename type="middle">Pang</forename><surname>Douillard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dragomir</forename><surname>Lam</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Anguelov</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2022 International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="7814" to="7821" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Attention is all you need</title>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Vaswani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niki</forename><surname>Parmar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakob</forename><surname>Uszkoreit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Llion</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aidan</forename><forename type="middle">N</forename><surname>Gomez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Łukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Illia</forename><surname>Polosukhin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Nocturne: a scalable driving benchmark for bringing multi-agent learning one step closer to the real world</title>
+		<author>
+			<persName><forename type="first">Eugene</forename><surname>Vinitsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Lichtlé</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaomeng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brandon</forename><surname>Amos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakob</forename><forename type="middle">Nicolaus</forename><surname>Foerster</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems Track on Datasets and Benchmarks</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<title level="m" type="main">Multiverse transformer: 1st place solution for waymo open sim agents challenge 2023</title>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tiebiao</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Yi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.11868</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Argoverse 2: Next generation datasets for self-driving perception and forecasting</title>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Wilson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tanmay</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Lambert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jagjeet</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siddhesh</forename><surname>Khandelwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ratnesh</forename><surname>Bowen Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jhony</forename><surname>Hartnett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deva</forename><surname>Kaesemodel Pontes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Ramanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Carr</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hays</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems Track on Datasets and Benchmarks</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Autoformer: Decomposition transformers with auto-correlation for long-term series forecasting</title>
+		<author>
+			<persName><forename type="first">Haixu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiehui</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianmin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingsheng</forename><surname>Long</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<analytic>
+		<title level="a" type="main">Bits: Bi-level imitation for traffic simulation</title>
+		<author>
+			<persName><forename type="first">Danfei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boris</forename><surname>Ivanovic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marco</forename><surname>Pavone</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2023 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="2929" to="2936" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Unisim: A neural closed-loop sensor simulator</title>
+		<author>
+			<persName><forename type="first">Ze</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingkang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sivabalan</forename><surname>Manivasagam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Chiu</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anqi</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joyce</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raquel</forename><surname>Urtasun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="1389" to="1399" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Real-time motion prediction via heterogeneous polyline transformer with relative pose encoding</title>
+		<author>
+			<persName><forename type="first">Zhejun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Liniger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christos</forename><surname>Sakaridis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fisher</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luc</forename><surname>Van Gool</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhejun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christos</forename><surname>Sakaridis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luc</forename><surname>Van Gool</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.10898</idno>
+		<title level="m">Trafficbots v1. 5: Traffic simulation via conditional vaes and transformers with relative pose encoding</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<analytic>
+		<title level="a" type="main">Guided conditional diffusion for controllable traffic simulation</title>
+		<author>
+			<persName><forename type="first">Ziyuan</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Davis</forename><surname>Rempe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danfei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sushant</forename><surname>Veer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Che</forename><surname>Tong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baishakhi</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marco</forename><surname>Pavone</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2023 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="3560" to="3566" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<analytic>
+		<title level="a" type="main">Informer: Beyond efficient transformer for long sequence time-series forecasting</title>
+		<author>
+			<persName><forename type="first">Haoyi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanghang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jieqi</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianxin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wancai</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI conference on artificial intelligence</title>
+		<meeting>the AAAI conference on artificial intelligence</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<analytic>
+		<title level="a" type="main">Query-centric trajectory prediction</title>
+		<author>
+			<persName><forename type="first">Zikang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianping</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yung-Hui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu-Kai</forename><surname>Huang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="17863" to="17873" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<analytic>
+		<title level="a" type="main">Hivt: Hierarchical vector transformer for multi-agent motion prediction</title>
+		<author>
+			<persName><forename type="first">Zikang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luyao</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianping</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kui</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kejie</forename><surname>Lu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="8823" to="8833" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

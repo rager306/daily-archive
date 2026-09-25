@@ -1,0 +1,1911 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">AutoFlow: Automated Workflow Generation for Large Language Model Agents</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-07-01">1 Jul 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Zelong</forename><surname>Li</surname></persName>
+							<email>zelong.li@rutgers.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Rutgers University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Shuyuan</forename><surname>Xu</surname></persName>
+							<email>shuyuan.xu@rutgers.edu</email>
+							<affiliation key="aff1">
+								<orgName type="institution">Rutgers University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Kai</forename><surname>Mei</surname></persName>
+							<email>kai.mei@rutgers.edu</email>
+							<affiliation key="aff2">
+								<orgName type="institution">Rutgers University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Wenyue</forename><surname>Hua</surname></persName>
+							<email>wenyue.hua@rutgers.edu</email>
+							<affiliation key="aff3">
+								<orgName type="institution">Rutgers University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Balaji</forename><surname>Rama</surname></persName>
+							<email>balajirw10@gmail.com</email>
+						</author>
+						<author>
+							<persName><forename type="first">Om</forename><surname>Raheja</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Hao</forename><surname>Wang</surname></persName>
+							<affiliation key="aff4">
+								<orgName type="institution">Rutgers University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">He</forename><surname>Zhu</surname></persName>
+							<affiliation key="aff5">
+								<orgName type="institution">Rutgers University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yongfeng</forename><surname>Zhang</surname></persName>
+							<email>yongfeng.zhang@rutgers.edu</email>
+							<affiliation key="aff6">
+								<orgName type="institution">Rutgers University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">AutoFlow: Automated Workflow Generation for Large Language Model Agents</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-07-01">1 Jul 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">06E22330D50FEF421EE0D55F5204F8FE</idno>
+					<idno type="arXiv">arXiv:2407.12821v1[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:44+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Recent advancements in Large Language Models (LLMs) have shown significant progress in understanding complex natural language. One important application of LLM is LLM-based AI Agent, which leverages the ability of LLM as well as external tools for complex-task solving. To make sure LLM Agents follow an effective and reliable procedure to solve the given task, manually designed workflows are usually used to guide the working mechanism of agents. However, manually designing the workflows requires considerable efforts and domain knowledge, making it difficult to develop and deploy agents on massive scales. To address these issues, we propose AutoFlow, a framework designed to automatically generate workflows for agents to solve complex tasks. AutoFlow takes natural language program as the format of agent workflow and employs a workflow optimization procedure to iteratively optimize the workflow quality. Besides, this work offers two workflow generation methods: fine-tuning-based and in-context-based methods, making the AutoFlow framework applicable to both open-source and closed-source LLMs. Experimental results show that our framework can produce robust and reliable agent workflows. We believe that the automatic generation and interpretation of workflows in natural language represent a promising paradigm for solving complex tasks, particularly with the rapid development of LLMs. The source code of this work is available at <ref type="url" target="https://github.com/agiresearch/AutoFlow">https://github.com/agiresearch/AutoFlow</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Recent advancements in Large Language Models (LLMs) have demonstrated substantial progress in understanding and processing complex natural language. These developments have opened up a wide array of applications, among which the deployment of LLM-based AI agents stands out. These agents leverage the capabilities of LLMs along with external tools to tackle intricate tasks, ranging from data analysis <ref type="bibr" target="#b6">[7]</ref>, software development <ref type="bibr" target="#b22">[23,</ref><ref type="bibr" target="#b34">35]</ref>, scientific research [2], travel planning <ref type="bibr" target="#b45">[46]</ref> to many other decision-making processes in various domains.</p><p>One of the critical aspects of ensuring that LLM-based AI agents operate effectively and reliably is the design of workflows that guide their task-solving procedures. For example, an LLM-based agent for fake news detection may execute under the following workflow designed by information and</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Figure <ref type="figure" target="#fig_0">1</ref>: The overall generation process of AutoFlow using reinforcement learning reward for LLMs communication experts <ref type="bibr" target="#b23">[24]</ref>: 1) Check the URL, 2) Check the language, 3) Commonsense evaluation, 4) Standpoint evaluation, 5) Summarize the findings, and 6) Classification. The agent executes the workflow step by step, and each step may call the LLM or external tools to gather useful information for the final summarization and classification.</p><p>Traditionally, these workflows are manually crafted, requiring significant effort and deep domain knowledge. This manual process poses a substantial barrier to the large-scale development and deployment of AI agents, as it is both time-consuming and resource-intensive.</p><p>To address the challenges associated with manual workflow design, this paper proposes AutoFlow, a novel framework aimed at the automatic generation of workflows for AI agents to solve complex tasks. AutoFlow represents workflows in the form of natural language programs <ref type="bibr" target="#b46">[47]</ref>, facilitating easier comprehension and interaction. Central to AutoFlow is a workflow optimization procedure that iteratively refines the quality of the generated workflows, ensuring robustness and reliability.</p><p>Technically, AutoFlow introduces two innovative workflow generation methods: a fine-tuning-based method and an in-context-based method. The fine-tuning-based approach customizes the workflow generation process for specific tasks and domains by adjusting the parameters of the LLMs. In contrast, the in-context-based method utilizes contextual information to guide the generation process without the need for extensive fine-tuning, making it suitable for both open-source and closed-source LLMs. More specifically, as shown in Figure <ref type="figure" target="#fig_0">1</ref>, the user will provide a workflow generation query to describe the type of tasks. Based on the query, the generator LLM generates a workflow and the frozen interpreter LLM executes the generated workflow on the dataset, with evaluating performance as the reward. Then, AutoFlow uses reinforcement learning (RL) to update the generator LLM with the reward. This process can be seen as one training iteration and the generator LLM expects to learn how to generate effective and optimal workflows after several iterations.</p><p>Our experimental results validate the effectiveness of the AutoFlow framework, showing that the generated workflows by AutoFlow outperform manually designed ones while keeping readability, and showcasing its ability to produce high-quality workflows that enable AI agents to perform complex tasks with a high degree of reliability. The automatic generation and interpretation of workflows in natural language not only streamline the development process but also represent a promising paradigm for addressing complex problems, especially in the context of the rapid evolution of LLM technologies. In summary, this paper makes the following contributions:</p><p>• We introduce AutoFlow, a framework that can automatically generate workflows in natural language so that the workflows can be precisely interpreted by LLMs while reducing human efforts.</p><p>• We propose two methods, the fine-tuning method and the in-context learning method, to incorporate RL in the workflow generation process for both open-source and closed-source LLMs.</p><p>• We conduct experiments through benchmark tasks to validate the AutoFlow framework, contributing to higher valid plan rates and overall performance while keeping the generated natural language workflow readable by humans.</p><p>In the following part of this paper, we first review the related work in Section 2. In Section 3, we introduce how to represent workflows in natural language and our motivations. In Section 4, we demonstrate the detailed design of our AutoFlow framework, including two learning methods, fine-tuning and in-context learning methods. We provide and analyze the experimental results on benchmark datasets in Section 5, and finally conclude our work and suggest potential avenues for future research in Section 6.</p><p>2 Related Work</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">LLM Agents and Workflow</head><p>AI agent is an autonomous entity capable of making decisions and executing actions in a given environment to effectively handle various complex tasks <ref type="bibr" target="#b29">[30,</ref><ref type="bibr" target="#b7">8,</ref><ref type="bibr" target="#b37">38,</ref><ref type="bibr" target="#b44">45]</ref>. Recently, with the rapid advancement of Large Language Models (LLMs), LLM-based AI agents have become an important type of agent for complex task solving <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b22">23,</ref><ref type="bibr" target="#b34">35]</ref>, such as reasoning, planning and coding.</p><p>Reasoning: LLMs typically break down complex tasks into a series of steps, constituting a chain of reasoning <ref type="bibr" target="#b39">[40]</ref>. Approaches such as Chain of Thought (CoT) and its derivatives <ref type="bibr" target="#b39">[40,</ref><ref type="bibr" target="#b20">21]</ref>, including tree <ref type="bibr" target="#b48">[49]</ref> and graph structures <ref type="bibr" target="#b0">[1]</ref>, are commonly used. The self-consistency method <ref type="bibr" target="#b38">[39]</ref> samples multiple reasoning paths and selects the most consistent outcome through voting.</p><p>Planning: Planning tasks require LLMs to generate a sequence of actions to achieve specific goals <ref type="bibr" target="#b8">[9]</ref>.</p><p>Recent studies have designed platforms to test LLMs' planning abilities in areas such as expert model integration <ref type="bibr" target="#b6">[7]</ref>, travel task planning <ref type="bibr" target="#b45">[46]</ref>, and tool usage <ref type="bibr" target="#b51">[52]</ref>. However, a known issue is that LLMs may generate non-executable, invalid or grammatically wrong plans, such as using a piece of text as input to an image-processing tool. To solve the problem, some studies <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b51">52]</ref> use post-processing method to extract a chain of tools from the generated texts, which use LLM itself as a parser to post-process the generated text. Further, recent attempts integrate finite state machines into LLMs to enhance human's controllability of LLM in planning <ref type="bibr" target="#b24">[25,</ref><ref type="bibr" target="#b43">44]</ref>. The ReAct approach <ref type="bibr" target="#b49">[50]</ref> also uses external tools such as search engines to improve LLM planning. In this work, we build on these ideas to enhance the executability of the generated frameworks.</p><p>Coding: LLMs can generate code to solve complex tasks, reducing the need for manual programming <ref type="bibr" target="#b28">[29,</ref><ref type="bibr" target="#b46">47,</ref><ref type="bibr" target="#b14">15,</ref><ref type="bibr" target="#b26">27,</ref><ref type="bibr" target="#b4">5,</ref><ref type="bibr" target="#b33">34,</ref><ref type="bibr" target="#b30">31,</ref><ref type="bibr" target="#b2">3]</ref>. However, the generated code may contain errors or fail to meet user requirements. To mitigate these issues, workflow-based methods have been proposed, including manually designed and automatically generated workflows <ref type="bibr" target="#b15">[16,</ref><ref type="bibr" target="#b42">43,</ref><ref type="bibr" target="#b52">53]</ref>. Another research direction involves using LLMs for natural language programming, leveraging their strong natural language understanding abilities. A notable example is the CoRE language <ref type="bibr" target="#b46">[47]</ref>, which unifies natural language programming, pseudo-code programming, and workflow programming under the same framework using LLM as interpreter. Our work follows the workflow concept in natural language programming and develops an automated workflow generation framework to reduce human labor.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Automated Machine Learning</head><p>Automated Machine Learning (AutoML) aims to reduce human labors in designing and deploying machine learning techniques, simplifying the application of ML in real-world problems. There are three main types of AutoML techniques <ref type="bibr" target="#b47">[48,</ref><ref type="bibr" target="#b25">26]</ref>:</p><p>Automated Model Selection: Tools such as Auto-sklearn <ref type="bibr" target="#b5">[6]</ref> and Auto-WEKA <ref type="bibr" target="#b21">[22]</ref> automatically select the best machine learning model from a library of models and hyper-parameter settings.</p><p>Automated Feature Engineering: Tools such as Data Science Machine <ref type="bibr" target="#b16">[17]</ref>, ExploreKit <ref type="bibr" target="#b17">[18]</ref>, and VEST <ref type="bibr" target="#b3">[4]</ref> generate or select useful features without manual intervention, since feature engineering significantly impacts model performance in many applications.</p><p>Neural Architecture Search (NAS): Methods such as ENAS <ref type="bibr" target="#b32">[33]</ref>, DARTS <ref type="bibr" target="#b27">[28]</ref>, NASH <ref type="bibr" target="#b36">[37]</ref>, GNAS <ref type="bibr" target="#b11">[12]</ref>, and AmoebaNet-A <ref type="bibr" target="#b35">[36]</ref> discover effective neural network architectures for specific tasks without manual design. Experiments show that networks generated through NAS can match or even outperform human-designed architectures across various tasks.</p><p>AutoML systems typically involve two main components for training: a controller, which is a machine learning model responsible for sampling model selections, and a child model, which comprises the parameters of the machine learning model to be created and used for the task at hand. In our work, we follow this training paradigm, using a workflow generator LLM as the controller, and the generated workflow along with a workflow interpreter LLM as the child model. More details of the proposed technique are introduced in Section 4.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Preliminary and Background</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Natural Language Programs as Workflows</head><p>In this section, we introduce how to use natural language programs as a representation of workflows. Specifically, we will use the Code Representation and Execution (CoRE) system <ref type="bibr" target="#b46">[47]</ref> as an example to show how to construct workflows as natural language programs and how the LLM Agent follows the workflow by executing the natural language program.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.1">CoRE Language Syntax</head><p>The CoRE language defines four components to organize workflows as natural language instructions.</p><p>• Step Name is used to uniquely identify each step of the workflow.</p><p>• Step Type defines the type of instruction for each step. There are three different types of steps:</p><p>-Process: The process step transitions to the next specified step after executing the current step.</p><p>-Decision: Similar to conditional statements (e.g., "if-else"), the decision step is used for branching the program flow based on evaluated conditions. -Terminal: The terminal step represents the end of the program.</p><p>• Step Instruction is a natural language instruction to be executed in the step.</p><p>• Step Connection points to the next step, which establishs the program execution flow.</p><p>An example workflow for image-text processing on the OpenAGI benchmark is shown as follows: In this paper, we use ':::' to delimit the above four components in each step.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.2">LLM as Interpreter for Workflow Execution</head><p>To process and execute the workflow in the CoRE language, the system uses an LLM as an interpreter. The LLM interpreter executes instructions step by step. Concretely, the execution of one step can be divided into four procedures in the CoRE system.</p><p>❶ First, the LLM decides which information from memory may be needed to execute the current step and retrieves the relevant information from memory. ❷ After obtaining the relevant information, the system integrates the information with the instruction of that step into a structured prompt, which the LLM processes to generate a response. ❸ To extend LLM's capability, the system may use external tools to analyze the initial response of each step. According to the initial response to the current step, the LLM determines whether external tools are required. If tool usage is confirmed, LLM will decide the tool name and tool arguments, then execute the external tool, and finally incorporate the results into the memory. ❹ After the execution of the current step, LLM will decide which is the next step to execute based on the output of the current step.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Motivation</head><p>The CoRE system enables users to write workflows in natural language, which unifies natural language programming, pseudo-code programming, and workflow programming. Although the entry barrier is lower than coding in programming languages, constructing workflows in natural language   <ref type="bibr" target="#b12">[13]</ref>, we would like to automatically learn the best workflow based on the given task and training data. Considering the instructions in CoRE language are written in natural language and LLM has a strong ability of natural language understanding, we also use LLM as the workflow generator. To distinguish with the Interpreter LLM mentioned in 3.1, we denote the LLM that learns to generate workflows as the Workflow Generator LLM, and name the LLM that interprets and executes workflow as the Workflow Interpreter LLM, consistent with Figure <ref type="figure" target="#fig_0">1</ref>. In this way, users only need to provide a high-level description of the task and the corresponding dataset, and the generator LLM can generate the optimal workflow in CoRE language for the interpreter LLM to execute on the given task. This process expects to minimize human efforts and automatically pursue the optimal workflow for LLM regardless of users' knowledge on workflow design.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">The AutoFlow Framework</head><p>In this section, we introduce the two methods of applying the AutoFlow framework to the workflow generator LLM, i.e., the fine-tuning method for open-source LLMs and the in-context learning method for closed-source LLMs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Fine-tuning Method for Workflow Generation with Open-source LLMs</head><p>We use LoRA adapter <ref type="bibr" target="#b10">[11]</ref> for fine-tuning open-souced LLMs as workflow generators. The training process is shown in Figure <ref type="figure" target="#fig_2">2a</ref>.</p><p>First, the workflow generator LLM receives a few-shot example workflow and a description of the task from users as the input query. Although the CoRE language has minimal grammar requirements and the instructions are written in natural language, which can be well learned and generated by LLMs, an example workflow can help the workflow generator LLM better understand the grammar of the CoRE language. The natural language description of the task is to help the generator LLM understand the application scenarios of the workflow to be generated. Take the text and image processing tasks in OpenAGI benchmark <ref type="bibr" target="#b6">[7]</ref> as an example, the task description could be "Provide a workflow with several steps. The workflow can guide the LLM to design plans for a type of complex tasks realted to text and image processing using the provided tools".</p><p>Second, the next step is to generate an executable workflow based on the input query. For closedsource LLMs such as GPT-4, the model can directly generate a grammatically valid workflow given the few-shot example. However, open-source LLMs such as Mixtral-8x7B cannot consistently generate grammatically valid workflow even if few-shot example workflows are provided. To solve the problem, we follow the post-processing strategy in previous work <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b51">52]</ref> and use GPT-4 as a parser to revise the output workflow into a grammatically valid one.</p><p>Third, the generated workflow will be executed by the interpreter LLM to obtain its performance on the validation dataset. Then, the generator LLM is updated based on the workflow's performance on the validation dataset. Specifically, we use reinforcement learning (RL) to update the parameters of the LoRA adapter of the generator LLM, with the average metrics of all data instances on the validation dataset as the reward.</p><p>These three steps together consist of one iteration of the fine-tuning process. The fine-tuning process will terminal and the final workflow will be produced when the terminal condition is met, when the difference of reward between two consecutive iterations is smaller then a threshold. After the iterative optimization process, the workflow generator LLM produces the optimal workflow for the task based on the execution feedback.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">In-context Learning Method for Workflow Generation with Closed-source LLMs</head><p>As for closed-source LLMs such as GPT-4, we use in-context learning to avoid fine-tuning the parameters. As shown in Figure <ref type="figure" target="#fig_2">2b</ref>, the AutoFlow framework also requires an example workflow and a description of the task, and feeds them as the input query to the workflow generator LLM. After the GPT-4 generates the workflow, we do not use a parser to revise the flow since GPT-4 can well follow the CoRE grammar demonstrated by the example workflow. Then, the interpreter LLM executes the workflow to evaluate its performance on the validation dataset as the reward, which is the same process as the fine-tuning method. The difference is that, in the next step, the AutoFlow framework directly includes the reward value in the query and prompts the generator LLM to generate a new workflow given the performance of the previously generated workflow, such as "The execution performance of the previous workflow is 0.6415. Provide a new workflow that can gain a better performance". The whole process is demonstrated in Figure <ref type="figure" target="#fig_2">2b</ref>.</p><p>We will show in the experimentation that closed-source LLMs such as GPT-4 can well utilize the reward values in the prompt to refine the workflow and finally obtainn the optimal workflow by using the in-context learning method.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Backbone Large Language Model (LLM)</head><p>We conduct experiments on both closed-source and open-source LLMs:</p><p>• GPT-4 <ref type="bibr" target="#b31">[32]</ref> (Closed-source) is a generative pre-trained transformer of OpenAI. In this work, we use the GPT-4-1106-preview version.</p><p>• Mixtral-8x7B <ref type="bibr" target="#b13">[14]</ref> (Open-source) is a pre-trained generative Sparse Mixture of Experts with 46.7 billion parameters.</p><p>In our experiment, we apply these two types of LLMs for both workflow generator LLM and interpreter LLM. Thus, there are four combinations in total.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Planning Schema of LLMs</head><p>We adopt the following LLM-based agent planning schema:</p><p>• Zero-shot Learning (Zero) directly inputs the query to the LLM.</p><p>• Chain-of-Thought (CoT) <ref type="bibr" target="#b39">[40]</ref> induces the LLM to generate a coherent language sequence that serves as a meaningful intermediate step bridging the input query and the output answer.</p><p>• Few-shot Learning (Few) presents a set of high-quality demonstrations in the prompt, each consisting of both input and desired output on the target task.</p><p>• CoRE <ref type="bibr" target="#b46">[47]</ref> uses a manually designed workflow with LLM as an interpreter.</p><p>• AutoFlow is our proposed framework that can automatically generate workflows.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Benchmark Datasets</head><p>We conduct experiments on a benchmark dataset, OpenAGI <ref type="bibr" target="#b6">[7]</ref>. The OpenAGI benchmark tasks are categorized based on their output type and ground-truth label type (Task 1, 2, and 3). Table 2: Performance on OpenAGI using the closed-source LLM, GPT-4, as the LLM interpreter for all tasks and learning schema. Zero is for Zero-shot Learning, Few is for Few-shot Learning. The boldface numbers denote the highest score under each task type using the same LLM.</p><p>on different task types, different metrics are employed to gauge the performance: CLIP Score <ref type="bibr" target="#b9">[10]</ref>, assessing the similarity between text and image, is utilized for Text-to-Image tasks (Task 1); BERT Score <ref type="bibr" target="#b53">[54]</ref>, evaluating text generation with BERT, is applied when both data labels and the expected outputs are texts (Task 2); and ViT Score <ref type="bibr" target="#b41">[42]</ref> gauges the similarity between the image label and image output (Task 3).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.4">Implementation Details</head><p>Our framework and all baselines are implemented by PyTorch, an open-source library. We follow the implementation setting of the OpenAGI platform <ref type="bibr" target="#b6">[7]</ref> for Zero-shot and few-shot learnings. We leverage the DSPy framework <ref type="bibr" target="#b18">[19,</ref><ref type="bibr" target="#b19">20]</ref> to apply the CoT strategy to the OpenAGI platform. We also tried Program-of-Thought <ref type="bibr" target="#b4">[5]</ref> and ReAct <ref type="bibr" target="#b50">[51]</ref> strategies on the OpenAGI platform. However, the ReAct strategy requires text observation, which is unsuitable for our OpenAGI task since some observations are in image format, and Program-of-Thought cannot generate executable codes. Thus, we did not include them as the baselines.</p><p>For the hyper-parameter setting of the AutoFlow framework, we set the number of iterations for the workflow generator LLM as 30. For the open-source LLM, Mixtral, as the generator LLM, we use the REINFORCE <ref type="bibr" target="#b40">[41]</ref> as the core reinforcement learning (RL) algorithm for the generator LLM, with the average score on the training dataset as the reward. We use Adam as the optimizer with the learning rate at 0.001 for RL. Also, we apply Low-Rank Adaptation (LoRA) <ref type="bibr" target="#b10">[11]</ref> with the rank equal to 8 to Mixtral for efficient fine-tuning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.5">Experimental Analysis</head><p>We conduct the experiments on the OpenAGI <ref type="bibr" target="#b6">[7]</ref> benchmark dataset. For a fair comparison, we show the results using the same workflow interpreter LLM in a table. Specifically, the results of using the open-source LLM, Mixtral, as the LLM interpreter is shown in Table <ref type="table" target="#tab_0">1</ref>; and the results of using the closed-source LLM, GPT-4, as the LLM interpreter is shown in Table <ref type="table">2</ref>. Each row stands for a type of task, each column represents the planning schema of an LLM interpreter. From these two tables, we can see that, after applying our AutoFlow framework, the average score over tasks is significantly better than the baselines. Compared to the best baseline, CoRE, AutoFlow has over 40% improvement when using Mixtral as the LLM interpreter, and over 5% improvement when using GPT-4 as the interpreter LLM. For the score of each type of task, our AutoFlow also reaches the highest one. Thus, the experiment results validate that AutoFlow is effective and can generate a workflow with better performance than manually designed ones.</p><p>An interesting observation is that, the best average score when using Mixtral as the LLM interpreter, is AutoFlow with GPT-4 as the workflow generator; and the best average score when using GPT-4 as the LLM interpreter, is AutoFlow with Mixtral as the workflow generator. This observation suggests that the combination of different systems (Mixtral and GPT-4) for the LLM interpreter and workflow generator might lead to a kind of synergistic effect where the strengths of one system complement the weaknesses of the other, which helps to better solve complex multi-step tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusions and Future Work</head><p>In this study, we introduce the AutoFlow framework to use Large Language Models (LLMs) for automatically generating effective workflows for agents. We propose two learning methods for AutoFlow, the fine-tuning method when using open-source LLM as workflow generator, and the in-context learning method when using closed-source LLM as workflow generator. Compared to manually designed workflows, automatically generated workflows can reach better performance and significantly reduce the human labor, leading to a higher degree of automation.</p><p>Although AutoFlow demonstrates promising results, there is still space for improvement. For example, the learning process for the workflow generator LLM uses reinforcement learning, which may not be the most efficient compared to some gradient-based methods or few-shot learning methods. Future studies may try to evaluate the efficacy of other learning methods. Another example in the AutoFlow framework is that, the workflow generator and interpreter LLMs work together using a collaborative learning paradigm. Instead, we may try other learning paradigms such as the teacher-student paradigm or the adversarial learning paradigm.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Step 1 :</head><label>1</label><figDesc>:: Process ::: Identify the input data type based on the objective .::: next :: Step 2 Step 2::: Process ::: Identify the output data type based on the objective .::: next :: Step 3 Step 3::: Process ::: Select tools in the provided tool list to generate a plan .::: next :: Step 4 Step 4::: Decision ::: Check whether every tool in the plan is in the provided tool list .::: Yes :: Step 5:: No :: Step 3 Step 5::: Decision ::: Check whether the output data type of the previous tool is the input data type of the next tool .::: Yes :: Step 6:: No :: Step 3 Step 6::: Terminal ::: Output the plan by listing the tool names .:::</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>User:</head><figDesc>Provide a workflow with several steps. The workflow can guide the LLM design of plans for a type of complex task using provided neural network tools. {Tool List} {Task Example} Workflow Generator LLM: Step 1:::Process:::Establish the main purpose of the project.:::next::Step 2 Step 2:::…… …… Step n:::…… Example Workflow Step 1:::Process:::identify the input data type based on the objective.:::next::step 2 Step 2:::Process:::identify the output data type based on the objective.:::next::Step 3 Step 3:::Process:::Select models in provided models list to generate a to-do list.:::next::step 4 Step 4:::decision:::Check whether every models in the to-do list is in the provided models.:::Yes::Step 5::No::Step 3 Step 5:::decision:::Check whether the previous model output data type is the input data type of the next model.:::Yes::Step 6::No::Step 3 Step 6:::terminal:::Output the to-do list solely with model name.::: Workflow Interpreter LLM: Execute workflow and calculate reward. Workflow Generator LLM: Update LoRA param with reward = 0.6415. Iteration GPT-4 as a parser to ensure the workflow matches CoRE grammar (a) AutoFlow generation process based on fine-tuning method with RL reward for open-source LLMs. User: Provide a workflow with several steps. The workflow can guide the LLM design of plans for a type of complex task using provided neural network tools. {Tool List} {Task Example} Workflow Generator LLM: Step 1:::Process:::Establish the main purpose of the project.:::next::Step 2 Step 2:::…… …… Step n:::…… Example Workflow Step 1:::Process:::identify the input data type based on the objective.:::next::step 2 Step 2:::Process:::identify the output data type based on the objective.:::next::Step 3 Step 3:::Process:::Select models in provided models list to generate a to-do list.:::next::step 4 Step 4:::decision:::Check whether every models in the to-do list is in the provided models.:::Yes::Step 5::No::Step 3 Step 5:::decision:::Check whether the previous model output data type is the input data type of the next model.:::Yes::Step 6::No::Step 3 Step 6:::terminal:::Output the to-do list solely with model name.::: Workflow Interpreter LLM: Execute workflow and calculate reward. Iteration User: The execution performance of given workflow is 0.6415. Provide a new workflow in the same form of previous one. (b) AutoFlow generation process based on in-context learning with RL reward for closed-source LLMs.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 2 :</head><label>2</label><figDesc>Figure2: Overview for workflow generation with AutoFlow, using OpenAGI<ref type="bibr" target="#b6">[7]</ref> tasks as an example still requires much human labor and domain expertise. Inspired by Automated Machine Learning (AutoML)<ref type="bibr" target="#b12">[13]</ref>, we would like to automatically learn the best workflow based on the given task and training data. Considering the instructions in CoRE language are written in natural language and LLM has a strong ability of natural language understanding, we also use LLM as the workflow generator. To distinguish with the Interpreter LLM mentioned in 3.1, we denote the LLM that learns to generate workflows as the Workflow Generator LLM, and name the LLM that interprets and executes workflow as the Workflow Interpreter LLM, consistent with Figure1. In this way, users only need to provide a high-level description of the task and the corresponding dataset, and the generator LLM can generate the optimal workflow in CoRE language for the interpreter LLM to execute on the given task. This process expects to minimize human efforts and automatically pursue the optimal workflow for LLM regardless of users' knowledge on workflow design.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Then, basedPerformance on OpenAGI when using the open-source LLM, Mixtral, as the LLM interpreter for all tasks and learning schema. Zero is for Zero-shot Learning, Few is for Few-shot Learning. The boldface numbers denote the highest score under each task type using the same LLM.</figDesc><table><row><cell>Metrics / Task</cell><cell>Zero</cell><cell>CoT</cell><cell>Few</cell><cell cols="3">CoRE AutoFlow (GPT) AutoFlow (Mixtral)</cell></row><row><cell>Task 1 (CLIP Score)</cell><cell>0.0</cell><cell>0.0</cell><cell cols="2">0.1839 0.1825</cell><cell>0.2441</cell><cell>0.1831</cell></row><row><cell cols="5">Task 2 (BERT Score) 0.1092 0.1987 0.0687 0.2593</cell><cell>0.3017</cell><cell>0.3133</cell></row><row><cell>Task 3 (ViT Score)</cell><cell cols="4">0.1949 0.1562 0.5501 0.2437</cell><cell>0.5720</cell><cell>0.4907</cell></row><row><cell>Average over tasks</cell><cell cols="4">0.1206 0.1736 0.1887 0.2483</cell><cell>0.3597</cell><cell>0.3442</cell></row><row><cell>Metrics / Task</cell><cell>Zero</cell><cell>CoT</cell><cell>Few</cell><cell cols="3">CoRE AutoFlow (GPT) AutoFlow (Mixtral)</cell></row><row><cell>Task 1 (CLIP Score)</cell><cell>0.0</cell><cell cols="3">0.2732 0.3055 0.1368</cell><cell>0.3049</cell><cell>0.3032</cell></row><row><cell cols="5">Task 2 (BERT Score) 0.2076 0.2266 0.6307 0.6505</cell><cell>0.6628</cell><cell>0.7014</cell></row><row><cell>Task 3 (ViT Score)</cell><cell cols="4">0.5058 0.6736 0.6480 0.6480</cell><cell>0.6899</cell><cell>0.6119</cell></row><row><cell>Average over tasks</cell><cell cols="4">0.2378 0.3359 0.5281 0.6104</cell><cell>0.6415</cell><cell>0.6501</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Graph of thoughts: Solving elaborate problems with large language models</title>
+		<author>
+			<persName><forename type="first">Maciej</forename><surname>Besta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nils</forename><surname>Blach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ales</forename><surname>Kubicek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Gerstenberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michal</forename><surname>Podstawski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukas</forename><surname>Gianinazzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joanna</forename><surname>Gajda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomasz</forename><surname>Lehmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hubert</forename><surname>Niewiadomski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Nyczyk</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page" from="17682" to="17690" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Emergent autonomous scientific research capabilities of large language models</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Daniil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Boiko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabe</forename><surname>Macknight</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gomes</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.05332</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>physics.chem-ph</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuzhe</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoguang</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenshan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zehua</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaobo</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenfei</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename><surname>You</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ting</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Tien</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Furu</forename><surname>Wei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.08103[cs.CL]</idno>
+		<title level="m">Low-code LLM: Graphical User Interface over Large Language Models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Vest: Automatic feature engineering for forecasting</title>
+		<author>
+			<persName><forename type="first">Nuno</forename><surname>Vitor Cerqueira</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><surname>Moniz</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Soares</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Machine Learning</title>
+		<imprint>
+			<biblScope unit="page" from="1" to="23" />
+			<date type="published" when="2021">2021. 2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Program of Thoughts Prompting: Disentangling Computation from Reasoning for Numerical Reasoning Tasks</title>
+		<author>
+			<persName><forename type="first">Wenhu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueguang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">W</forename><surname>Cohen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions on Machine Learning Research</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Efficient and Robust Automated Machine Learning</title>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Feurer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Klein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katharina</forename><surname>Eggensperger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jost</forename><surname>Springenberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manuel</forename><surname>Blum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><surname>Hutter</surname></persName>
+		</author>
+		<ptr target="https://proceedings.neurips.cc/paper/2015/file/11" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">N</forename><surname>Cortes</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">D</forename><surname>Lawrence</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Lee</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">R</forename><surname>Sugiyama</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Garnett</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="volume">28</biblScope>
+		</imprint>
+	</monogr>
+	<note>d0e6287202fced83f79975ec59a3a6-Paper.pdf</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">OpenAGI: When LLM Meets Domain Experts</title>
+		<author>
+			<persName><forename type="first">Yingqiang</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenyue</forename><surname>Hua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Mei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianchao</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juntao</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zelong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongfeng</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems (NeurIPS)</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yingqiang</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujie</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenyue</forename><surname>Hua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juntao</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongfeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno>arXiv-2312</idno>
+		<title level="m">LLM as OS, Agents as Apps: Envisioning AIOS, Agents and the AIOS-Agent Ecosystem</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note>arXiv e-prints</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shibo</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haodi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">Jiahua</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daisy</forename><forename type="middle">Zhe</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiting</forename><surname>Hu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.14992</idno>
+		<title level="m">Reasoning with language model is planning with world model</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">CLIPScore: A Reference-free Evaluation Metric for Image Captioning</title>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Hessel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ari</forename><surname>Holtzman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Forbes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronan</forename><surname>Le Bras</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">Edward</forename><forename type="middle">J</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yelong</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phillip</forename><surname>Wallis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyuan</forename><surname>Allen-Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shean</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2106.09685[cs.CL]</idno>
+		<title level="m">LoRA: Low-Rank Adaptation of Large Language Models</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Gnas: A greedy neural architecture search method for multi-attribute learning</title>
+		<author>
+			<persName><forename type="first">Siyu</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi-Qi</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongfei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Hauptmann</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 26th ACM international conference on Multimedia</title>
+		<meeting>the 26th ACM international conference on Multimedia</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="2049" to="2057" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Automated machine learning: methods, systems, challenges</title>
+		<author>
+			<persName><forename type="first">Frank</forename><surname>Hutter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lars</forename><surname>Kotthoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joaquin</forename><surname>Vanschoren</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<publisher>Springer Nature</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Alexandre</forename><surname>Albert Q Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Sablayrolles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Roux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Blanche</forename><surname>Mensch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Savary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Devendra</forename><surname>Bamford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diego</forename><surname>Singh Chaplot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emma</forename><forename type="middle">Bou</forename><surname>De Las Casas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florian</forename><surname>Hanna</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bressand</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.04088</idno>
+		<title level="m">Mixtral of experts</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Gpt is becoming a turing machine: Here are some ways to program it</title>
+		<author>
+			<persName><forename type="first">Ana</forename><surname>Jojic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nebojsa</forename><surname>Jojic</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.14310</idno>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Josifoski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lars</forename><surname>Klein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxime</forename><surname>Peyrard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saibo</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Paul Schnitzler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxing</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiheng</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Debjit</forename><surname>Paul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>West</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.01285[cs.AI]</idno>
+		<title level="m">Flows: Building Blocks of Reasoning and Collaborating AI</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Deep feature synthesis: Towards automating data science endeavors</title>
+		<author>
+			<persName><forename type="first">Max</forename><surname>James</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kalyan</forename><surname>Kanter</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Veeramachaneni</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2015 IEEE international conference on data science and advanced analytics (DSAA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="1" to="10" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Explorekit: Automatic feature generation and selection</title>
+		<author>
+			<persName><forename type="first">Gilad</forename><surname>Katz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eui</forename><surname>Chul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Shin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2016 IEEE 16th International Conference on Data Mining (ICDM)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="979" to="984" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Khattab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keshav</forename><surname>Santhanam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lisa</forename><surname>Xiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Hall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matei</forename><surname>Potts</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zaharia</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.14024</idno>
+		<title level="m">Demonstrate-Search-Predict: Composing Retrieval and Language Models for Knowledge-Intensive NLP</title>
+		<imprint>
+			<date type="published" when="2022">2022. 2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Khattab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arnav</forename><surname>Singhvi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paridhi</forename><surname>Maheshwari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keshav</forename><surname>Santhanam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sri</forename><surname>Vardhamanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saiful</forename><surname>Haq</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashutosh</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><forename type="middle">T</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanna</forename><surname>Moazam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heather</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matei</forename><surname>Zaharia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Potts</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.03714</idno>
+		<title level="m">DSPy: Compiling Declarative Language Model Calls into Self-Improving Pipelines</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Large language models are zero-shot reasoners</title>
+		<author>
+			<persName><forename type="first">Takeshi</forename><surname>Kojima</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shane</forename><surname>Shixiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Machel</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutaka</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusuke</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Iwasawa</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="22199" to="22213" />
+			<date type="published" when="2022">2022. 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Auto-WEKA: Automatic model selection and hyperparameter optimization in WEKA</title>
+		<author>
+			<persName><forename type="first">Lars</forename><surname>Kotthoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Thornton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Holger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><surname>Hoos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Hutter</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Leyton-Brown</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Automated Machine Learning</title>
+		<meeting><address><addrLine>Cham</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="81" to="95" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">CAMEL: Communicative Agents for &quot;Mind&quot; Exploration of Large Language Model Society</title>
+		<author>
+			<persName><forename type="first">Guohao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hasan</forename><surname>Abed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Al</forename><surname>Kader Hammoud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hani</forename><surname>Itani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitrii</forename><surname>Khizbullin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bernard</forename><surname>Ghanem</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Thirty-seventh Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongfeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><forename type="middle">C</forename><surname>Malthouse</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.01593</idno>
+		<title level="m">Large Language Model Agent for Fake News Detection</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zelong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenyue</forename><surname>Hua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">He</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongfeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.00798</idno>
+		<title level="m">Formal-LLM: Integrating Formal Language and Natural Language for Controllable LLM-based Agents</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">AutoLossGen: Automatic Loss Function Generation for Recommender Systems</title>
+		<author>
+			<persName><forename type="first">Zelong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianchao</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingqiang</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongfeng</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SIGIR</title>
+		<imprint>
+			<date type="published" when="2022">2022. 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqian</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiqi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joydeep</forename><surname>Biswas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Stone</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.11477</idno>
+		<title level="m">Llm+ p: Empowering large language models with optimal planning proficiency</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">DARTS: Differentiable Architecture Search</title>
+		<author>
+			<persName><forename type="first">Hanxiao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karen</forename><surname>Simonyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=S1eYHoC5FX" />
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qing</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shreya</forename><surname>Havaldar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Stein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Delip</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marianna</forename><surname>Apidianaki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Callison-Burch</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2301.13379</idno>
+		<title level="m">Faithful chain-of-thought reasoning</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Mei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zelong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruosong</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingqiang</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongfeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno>arXiv</idno>
+		<title level="m">AIOS: LLM Agent Operating System</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Erik</forename><surname>Nijkamp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hiroaki</forename><surname>Hayashi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lifu</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingbo</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvio</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.13474</idno>
+		<title level="m">Codegen: An open large language model for code with multi-turn program synthesis</title>
+		<imprint>
+			<date type="published" when="2022">2022. 2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Josh</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.08774[cs.CL]</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">GPT-4 Technical Report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Efficient neural architecture search via parameters sharing</title>
+		<author>
+			<persName><forename type="first">Hieu</forename><surname>Pham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melody</forename><surname>Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barret</forename><surname>Zoph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Dean</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="4095" to="4104" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Poesia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleksandr</forename><surname>Polozov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vu</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Tiwari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gustavo</forename><surname>Soares</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Meek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sumit</forename><surname>Gulwani</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.11227</idno>
+		<title level="m">Synchromesh: Reliable code generation from pre-trained language models</title>
+		<imprint>
+			<date type="published" when="2022">2022. 2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufan</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juyuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dahai</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.07924[cs.SE]</idno>
+		<title level="m">Communicative Agents for Software Development</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Regularized Evolution for Image Classifier Architecture Search</title>
+		<author>
+			<persName><forename type="first">Esteban</forename><surname>Real</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alok</forename><surname>Aggarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanping</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<idno type="DOI">10.1609/aaai.v33i01.33014780</idno>
+		<ptr target="https://doi.org/10.1609/aaai.v33i01.33014780" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2019-07">2019. Jul. 2019</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="4780" to="4789" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Simple and efficient architecture search for Convolutional Neural Networks</title>
+		<author>
+			<persName><forename type="first">Frank</forename><surname>Hutter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Elsken</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=SySaJ0xCZ" />
+		<imprint>
+			<date type="published" when="2018-01">Jan Hendrik Metzen. 2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueyang</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingsen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiakai</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wayne</forename><forename type="middle">Xin</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhewei</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji-Rong</forename><surname>Wen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.11432[cs.AI]</idno>
+		<title level="m">A Survey on Large Language Model based Autonomous Agents</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Self-consistency improves chain of thought reasoning in language models</title>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.11171</idno>
+		<imprint>
+			<date type="published" when="2022">2022. 2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24824" to="24837" />
+			<date type="published" when="2022">2022. 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Simple statistical gradient-following algorithms for connectionist reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Williams</forename><surname>Ronald</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Machine learning</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="page" from="229" to="256" />
+			<date type="published" when="1992">1992. 1992</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">Bichen</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenfeng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoliang</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alvin</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peizhao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhicheng</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Masayoshi</forename><surname>Tomizuka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kurt</forename><surname>Keutzer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Vajda</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2006.03677[cs.CV]</idno>
+		<title level="m">Visual Transformers: Tokenbased Image Representation and Processing for Computer Vision</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qingyun</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gagan</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jieyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiran</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beibin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erkang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaokun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiale</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmed</forename><surname>Hassan Awadallah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryen</forename><forename type="middle">W</forename><surname>White</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Doug</forename><surname>Burger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.08155[cs.AI]</idno>
+		<title level="m">AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yiran</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianwei</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaokun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyun</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.11322[cs.CL]</idno>
+		<title level="m">StateFlow: Enhancing LLM Task-Solving through State-Driven Workflows</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhiheng</forename><surname>Xi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenxiang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiwen</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyang</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junzhe</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Senjie</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Enyu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoran</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Limao</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhao</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiran</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changhao</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yicheng</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhangyue</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shihan</forename><surname>Dou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rongxiang</forename><surname>Weng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wensen</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjuan</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongyan</forename><surname>Zheng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.07864[cs.AI]</idno>
+		<title level="m">Xipeng Qiu, Xuanjing Huang, and Tao Gui. 2023. The Rise and Potential of Large Language Model Based Agents: A Survey</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiangjie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tinghui</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Renze</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuandong</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanghua</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Su</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.01622</idno>
+		<title level="m">Travelplanner: A benchmark for real-world planning with language agents</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shuyuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zelong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Mei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongfeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.06907[cs.CL]</idno>
+		<title level="m">CoRE: LLM as Interpreter for Natural Language Programming, Pseudo-Code Programming, and Flow Programming of AI Agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<author>
+			<persName><forename type="first">Quanming</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengshuo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqiang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenyuan</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu-Feng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Wei</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiang</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1810.13306</idno>
+		<title level="m">Taking human out of learning applications: A survey on automated machine learning</title>
+		<imprint>
+			<date type="published" when="2018">2018. 2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Tree of thoughts: Deliberate problem solving with large language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03629</idno>
+		<title level="m">React: Synergizing reasoning and acting in language models</title>
+		<imprint>
+			<date type="published" when="2022">2022. 2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">ReAct: Synergizing Reasoning and Acting in Language Models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations (ICLR)</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<author>
+			<persName><forename type="first">Siyu</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaitao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiangjie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongliang</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ren</forename><surname>Kan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongsheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deqing</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.06201</idno>
+		<title level="m">EASYTOOL: Enhancing LLM-based Agents with Concise Tool Instruction</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Watson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicole</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saba</forename><surname>Rahimi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shayleen</forename><surname>Reynolds</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tucker</forename><surname>Balch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manuela</forename><surname>Veloso</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.13050[cs.CL]</idno>
+		<title level="m">FlowMind: Automatic Workflow Generation with LLMs</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Varsha</forename><surname>Kishore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kilian</forename><forename type="middle">Q</forename><surname>Weinberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoav</forename><surname>Artzi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">BERTScore: Evaluating Text Generation with BERT</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

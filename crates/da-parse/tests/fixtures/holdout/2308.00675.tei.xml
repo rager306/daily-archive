@@ -1,0 +1,2841 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Tool Documentation Enables Zero-Shot Tool-Usage with Large Language Models</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2023-08-01">1 Aug 2023</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Cheng-Yu</forename><surname>Hsieh</surname></persName>
+							<email>cydhsieh@cs.washington.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Washington</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Si-An</forename><surname>Chen</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">National Taiwan University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Chun-Liang</forename><surname>Li</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">Google Cloud AI Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yasuhisa</forename><surname>Fujii</surname></persName>
+							<affiliation key="aff3">
+								<orgName type="department">Google Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Alexander</forename><surname>Ratner</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Washington</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Chen-Yu</forename><surname>Lee</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">Google Cloud AI Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ranjay</forename><surname>Krishna</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Washington</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Tomas</forename><surname>Pfister</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">Google Cloud AI Research</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Tool Documentation Enables Zero-Shot Tool-Usage with Large Language Models</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2023-08-01">1 Aug 2023</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">576DB5525D87CB8F997FB0D26A590F9D</idno>
+					<idno type="arXiv">arXiv:2308.00675v1[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:31+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Today, large language models (LLMs) are taught to use new tools by providing a few demonstrations of the tool's usage. Unfortunately, demonstrations are hard to acquire, and can result in undesirable biased usage if the wrong demonstration is chosen. Even in the rare scenario that demonstrations are readily available, there is no principled selection protocol to determine how many and which ones to provide. As tasks grow more complex, the selection search grows combinatorially and invariably becomes intractable. Our work provides an alternative to demonstrations: tool documentation. We advocate the use of tool documentation-descriptions for the individual tool usage-over demonstrations. We substantiate our claim through three main empirical findings on 6 tasks across both vision and language modalities. First, on existing benchmarks, zero-shot prompts with only tool documentation are sufficient for eliciting proper tool usage, achieving performance on par with few-shot prompts. Second, on a newly collected realistic tool-use dataset with hundreds of available tool APIs, we show that tool documentation is significantly more valuable than demonstrations, with zero-shot documentation significantly outperforming few-shot without documentation. Third, we highlight the benefits of tool documentations by tackling image generation and video tracking using just-released unseen state-of-the-art models as tools. Finally, we highlight the possibility of using tool documentation to automatically enable new applications: by using nothing more than the documentation of GroundingDino, Stable Diffusion, XMem, and SAM, LLMs can re-invent the functionalities of the just-released Grounded-SAM <ref type="bibr" target="#b22">[23]</ref> and Track Anything [70] models.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Today, large language models (LLMs) summon the imagery of a craftsman: when asked to solve a complex task, they decompose the task into simpler sub-tasks and assemble the best possible tools to tackle each sub-task <ref type="bibr" target="#b50">[51,</ref><ref type="bibr" target="#b71">72]</ref>. For example, consider the complex task of question answering given the image in Figure <ref type="figure">1</ref>. To answer "whether the two magnets will attract or repel each other", the LLM needs the following: it needs to identify the positions of the magnets in the image, extract general knowledge explaining that "opposite (same) poles attract (repel)". Just like a competent craftsman who knows what their tools are capable of, an LLM with such knowledge of its tools will be able to invoke one tool (e.g. its Text Detector) to identify the north and south poles and a second tool (e.g. Knowledge Retriever) to extract pertinent background knowledge about magnetic forces. But how does an LLM know which tool is capable of what? Figure <ref type="figure">1</ref>: Example workflow of tool-using with LLMs to solve a multi-modal question answering task. Given the input question with an image, the LLM selects appropriate tools from the tool set and generates an execution plan to answer the question correctly. Here, the LLMs outlines a plan to first use Text Detector to understand the positioning of the magnets in the image, then leverage Knowledge Retriever to obtain relevant background knowledge about magnets, then finally generate the solution based on the previous steps.</p><p>Currently, LLM tool-usage provides LLMs with few-shot demonstrations (demos) of what its tools can do, hoping that these demos will help generalize the model's behavior to newer complex tasks. This process has been rather successful so far. These few-shot demos contain one or several exemplars of &lt;input, output&gt; mappings <ref type="bibr" target="#b67">[68]</ref> on given instructions and their corresponding tool-use plans (illustrated in Figure <ref type="figure">2</ref>). LLMs are expected to find patterns within these demos and generalize them for new tasks. On textual tasks, LLMs have presented with demos of calculators <ref type="bibr" target="#b14">[15,</ref><ref type="bibr" target="#b46">47,</ref><ref type="bibr" target="#b55">56]</ref>, Python interpreters <ref type="bibr" target="#b12">[13,</ref><ref type="bibr" target="#b17">18]</ref> and search engines <ref type="bibr" target="#b61">[62,</ref><ref type="bibr" target="#b42">43,</ref><ref type="bibr" target="#b49">50,</ref><ref type="bibr" target="#b55">56,</ref><ref type="bibr" target="#b39">40]</ref> can perform logical and arithmetic operations to obtain more accurate and factual knowledge. On visual tasks, LLMs with demos of pretrained vision models can do complex visual reasoning <ref type="bibr" target="#b36">[37,</ref><ref type="bibr" target="#b39">40,</ref><ref type="bibr" target="#b56">57,</ref><ref type="bibr" target="#b15">16,</ref><ref type="bibr" target="#b72">73]</ref>, can generate and even edit images <ref type="bibr" target="#b18">[19,</ref><ref type="bibr" target="#b8">9]</ref>. On embodied robotic tasks, LLMs can similarly be used to reason and plan <ref type="bibr" target="#b74">[75,</ref><ref type="bibr" target="#b20">21,</ref><ref type="bibr" target="#b0">1,</ref><ref type="bibr" target="#b16">17]</ref>.</p><p>We argue that this reliance on demos in tool using is unnecessary in some cases, and might be even limiting. In fact, recent work finds that LLMs tend to be sensitive to demos <ref type="bibr" target="#b80">[81]</ref>, and carefully selecting demos is needed to avoid biasing or overfitting to a particular usage <ref type="bibr" target="#b11">[12]</ref>. This leads to the follow-up question: how do we choose which few-shot demos to use? There are no known principled approaches to select demos without human intervention or to even efficiently enable humans to choose or create them. To make the matter worse, when we scale up the number of tools that LLMs have access to, this few-shot selection process becomes combinatorially intractable. Just as a craftsman doesn't need to see a new tool being demonstrated and can instead discern their capabilities from reading a user manual for the tool, we seek to enable LLMs to learn how to use tools without seeing any demos.</p><p>Our work provides an alternative to demonstrations: tool documentation (doc). Similar to the metaphor of a manual indicating an physical tool's capabilities, a software tool's docs outline what the tool can and cannot be used for and how to invoke it. Docs provide relatively neutral instruction about the tools' functionalities and how individual tools should be used (illustrated in Figure <ref type="figure">2</ref>), and they are usually conveniently available through the creation of the tools organically. Intuitively, just as the craftman leans to use a new tool by reading the manual, we provide LLMs with README files when encountering a new tool/repository. With docs, an LLM may not necessarily need demos to use a new tool.</p><p>Distinct from existing work that rely mostly on few-shot demos for tool-learning, in this work, we study whether LLMs can instead solely rely on docs to use tools. We study the tool-learning performances of LLMs as we include or exclude docs, and vary the number of demos from few-shot down to zero-shot. We conduct the experiments on 6 tasks across vision and text modalities. Our experiments show that:</p><p>• Surprisingly, when provided with tool docs, LLMs' zero-shot tool-using performance is on par or even better than their few-shot counterparts, showing that including docs is an effective way to sidestep the few-shot demos needed.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Demonstration:</head><p>Below are examples mapping a problem to a tool-use plan.</p><p>• Question: Which property do these three objects have in common?</p><p>Tool-use Plan:</p><p>Text Detector → Knowledge Retriever → Solution Generator</p><p>• Question: Which material is this jar made of?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Tool-use Plan:</head><p>Image Captioner → Solution Generator</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>DEMO</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Chips Pretzel Fries</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Demonstration</head><p>Description: examples of questions and the tool-use plan.</p><p>• Question: Which property do these objects have in common?</p><p>Tool-use Plan:</p><p>Text Detector → Knowledge Retriever → Solution Generator</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>• Question: […]</head><p>Tool-use Plan: […]</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>• Question: […]</head><p>Tool-use Plan: […]</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Documentation</head><p>Description: available tools and their functionalities.</p><p>• Text Detector: It detects the text in an image […]</p><p>• Knowledge Retriever:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>It retrieves relevant knowledge […]</head><p>• Search Engine: It searches the web for relevant info […]</p><p>• Image Captioner: It generates a caption for an image […]</p><p>• …</p><p>Figure <ref type="figure">2</ref>: Two types of knowledge for prompting LLMs for tool-use: Demonstrations (demos) and Documentations (docs). Demos consist of &lt;input, output&gt; pairs on input instructions and their corresponding output tool-use plans. They require manual efforts for careful curation on every new task, and the model performance can be sensitive to which demos are used <ref type="bibr" target="#b80">[81,</ref><ref type="bibr" target="#b11">12]</ref>. Many demos may also be necessary for good coverage when the number of tools scales up. On the other hand, docs provide descriptions for the tool functionality, and are usually organically available for tools.</p><p>• Building on the above finding, we relax the few-shot demo constraint, and show that we can efficiently scale up to a significantly larger tool set, on a newly collected API usage dataset, by simply providing the LLMs with docs.</p><p>• We show how to seamlessly add new tools along with their docs to a tool set for LLMs to solve unseen tasks on image editing and video tracking, all without any further demos in a plug-and-play manner.</p><p>• Finally, with unseen tools developed recently as building blocks, we showcase LLMs are capable of re-inventing popular yet even more recent works Grounded-SAM <ref type="bibr" target="#b22">[23]</ref> and Track Anything <ref type="bibr" target="#b69">[70]</ref>, which suggests a potential from zero-shot tool usage to automatic knowledge discovery.</p><p>2 Related work</p><p>LLMs with retrieval augmentation and tools. In spite of the remarkable achievements demonstrated by LLMs, the performance can be further boosted with external tool usages to be more accurate, efficient or versatile for wider applications. The authors in <ref type="bibr" target="#b50">[51]</ref> detailed the cognitive origins, the paradigm shift of foundation models, and the complementary roles of tools and models to LLMs. The example tool usage starts from knowledge retrieval <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b19">20,</ref><ref type="bibr" target="#b32">33,</ref><ref type="bibr" target="#b73">74,</ref><ref type="bibr" target="#b76">77]</ref> and expands to search engine <ref type="bibr" target="#b42">[43,</ref><ref type="bibr" target="#b30">31,</ref><ref type="bibr" target="#b31">32,</ref><ref type="bibr" target="#b61">62,</ref><ref type="bibr" target="#b57">58,</ref><ref type="bibr" target="#b45">46,</ref><ref type="bibr" target="#b39">40]</ref>, QA system <ref type="bibr" target="#b55">[56]</ref>, calculator <ref type="bibr" target="#b14">[15,</ref><ref type="bibr" target="#b46">47,</ref><ref type="bibr" target="#b55">56]</ref>, the Python interpreter [18, 13, 65, 24, 46, 16], simulation engines <ref type="bibr" target="#b36">[37]</ref>, machine learning models <ref type="bibr" target="#b56">[57,</ref><ref type="bibr" target="#b72">73,</ref><ref type="bibr" target="#b68">69,</ref><ref type="bibr" target="#b39">40,</ref><ref type="bibr" target="#b15">16]</ref>, or even tools created by LLMs <ref type="bibr" target="#b10">[11]</ref>. Pioneer works of LLMs with tools often rely on human supervision <ref type="bibr" target="#b61">[62,</ref><ref type="bibr" target="#b30">31]</ref> or additional self-supervised learning techniques <ref type="bibr" target="#b55">[56]</ref>, which pose challenges for practical plug-and-play usage. Recent advancements eliminate additional training by using example demos in the prompt <ref type="bibr" target="#b18">[19,</ref><ref type="bibr" target="#b74">75,</ref><ref type="bibr" target="#b72">73,</ref><ref type="bibr" target="#b56">57,</ref><ref type="bibr" target="#b39">40,</ref><ref type="bibr" target="#b45">46]</ref>. Our work further simplifies prompt design by only leveraging documentation for individual tools, while maintaining competitive performance.</p><p>Planning with LLMs. Language models are proven to have potential to conduct planning for solving complex tasks or decompose the complex tasks into sub-problems when prompted properly. <ref type="bibr" target="#b20">[21,</ref><ref type="bibr" target="#b21">22]</ref> retrieve demos at test-time with large knowledge space coverage to generate admissible actions. <ref type="bibr" target="#b27">[28]</ref> relies on pre-designed demos for task decomposition. Similarly, recent works of tool using with LLMs leverage the example demonstrations of solving examples tasks with a planning of tools <ref type="bibr" target="#b12">[13,</ref><ref type="bibr" target="#b18">19,</ref><ref type="bibr" target="#b74">75,</ref><ref type="bibr" target="#b72">73,</ref><ref type="bibr" target="#b56">57,</ref><ref type="bibr" target="#b39">40,</ref><ref type="bibr" target="#b45">46]</ref>. However, crafting demos of interactions between tools may be challenging in practice when the number of tools surges. Concurrent work <ref type="bibr" target="#b47">[48,</ref><ref type="bibr" target="#b51">52,</ref><ref type="bibr" target="#b70">71]</ref> tackles the challenge by using strong LLMs such as GPT-4 <ref type="bibr" target="#b44">[45]</ref> to create large instruction-following datasets that cover diverse instructions and corresponding tool-use plans, typically through mechanisms like self-instruct <ref type="bibr" target="#b65">[66]</ref>. The resultant datasets can then be used to finetune and equip other LLMs (e.g., LLaMA <ref type="bibr" target="#b62">[63]</ref> and OPT <ref type="bibr" target="#b78">[79]</ref>) the ability to use a large collection of tools for unseen instructions. On the other hand, our work showcases the potential for LLMs to utilize any unseen new tools by reading their tool docs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Demonstration and Documentation.</head><p>Learning from demonstration is popular in reinforcement learning <ref type="bibr" target="#b48">[49,</ref><ref type="bibr" target="#b3">4,</ref><ref type="bibr" target="#b43">44,</ref><ref type="bibr" target="#b54">55]</ref>. <ref type="bibr" target="#b7">[8]</ref> propose the in-context learning algorithm for efficient and effective downstream task adaptations through showing example demonstrations. Inspired by the success, most of existing LLM tool-using works rely on few-shot demonstration <ref type="bibr" target="#b12">[13,</ref><ref type="bibr" target="#b18">19,</ref><ref type="bibr" target="#b74">75,</ref><ref type="bibr" target="#b72">73,</ref><ref type="bibr" target="#b56">57,</ref><ref type="bibr" target="#b39">40,</ref><ref type="bibr" target="#b45">46]</ref>. However, <ref type="bibr" target="#b11">[12]</ref> show that having more example demonstration might counter-intuitively degrade performance, and a careful selection might be needed. <ref type="bibr" target="#b34">[35]</ref> proposes a retrieval method for demo selection, which implicitly requires a larger set of examples to be selected. Using documentation to improve algorithms is relatively under-explored. <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b81">82]</ref> propose document reading algorithms for specific games. <ref type="bibr" target="#b82">[83]</ref> introduced DocPrompting, which employs a trained retriever on the given training data to boost code generation by retrieving relevant documents. In this work, we take a step towards exploring the zero-shot tool planning in LLMs solely with the aid of documentation, and investigate a wide range of diverse tasks from language to vision domains. While <ref type="bibr" target="#b63">[64,</ref><ref type="bibr" target="#b41">42]</ref> showcase pure zero-shot planning capability of LLMs, they do not study either the tool usage or the unseen scenarios to the language models. ViperGPT <ref type="bibr" target="#b15">[16]</ref> is a concurrent work, which focuses on visual programming in Python and uses function implementations and specifications as documentation.</p><p>Lastly, while AutoGPT <ref type="bibr" target="#b2">[3]</ref> provides several demos that showcase the LLM's capability of tool using through documentation reading, our study focuses on a systematic exploration ranging from real-world use cases to academic benchmarks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Experimental setup</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">General workflow</head><p>We follow the general framework of tool-using with LLMs in <ref type="bibr" target="#b50">[51]</ref>, which encompasses many of the recent works <ref type="bibr" target="#b74">[75,</ref><ref type="bibr" target="#b26">27,</ref><ref type="bibr" target="#b18">19,</ref><ref type="bibr" target="#b56">57,</ref><ref type="bibr" target="#b72">73,</ref><ref type="bibr" target="#b68">69,</ref><ref type="bibr" target="#b39">40]</ref>. Specifically, given a natural language instruction, an LLM planner generates a program to be sequentially executed where each step of the program may rely on using tools selected from a tool set. After the program is generated, it is then executed by an environment which finally returns the execution results. Here, the program extends beyond conventional coding practice <ref type="bibr" target="#b75">[76,</ref><ref type="bibr" target="#b52">53,</ref><ref type="bibr" target="#b24">25]</ref> and is more closely associated with automata theory <ref type="bibr" target="#b58">[59]</ref>: a set of instructions of automations (e.g. tools in our case). Therefore, the tool set can be libraries with specific programming languages (e.g. Python), or general computation with properly defined input-output, such as trained models, API calls, and beyond.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Tool-use prompting methods</head><p>As discussed in Section 1, two main types of information are considered in prompting LLMs for tool-using plans: demonstrations (demos) and documentations (docs). Demos showcase how tool interactions can accomplish specific tasks, while docs describe individual tool functionalities without task-specific ties as shown in Figure <ref type="figure">2</ref>. In the experiment, we explore combinations of including/excluding docs and demos in prompts, as well as varying numbers of demos.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Evaluation tasks</head><p>We conduct our experiments on 6 tasks across multiple modalities with a variety of tool sets. We describe the setup and the tool sets for each task below. Except for specific cases where it is explicitly specified, the LLM planner is ChatGPT (gpt-3.5-turbo).</p><p>Multi-modal question answering on ScienceQA. ScienceQA <ref type="bibr" target="#b38">[39]</ref> consists of multi-modal multiplechoice science questions that requires language and visual understanding as well as domain-specific knowledge to answer correctly. On ScienceQA, we follow the setup used in Chameleon <ref type="bibr" target="#b39">[40]</ref> and employ the same tool set with 7 tools, such as the search engine and the image text detector.</p><p>Tabular math reasoning on TabMWP. TabMWP <ref type="bibr" target="#b40">[41]</ref> is a math reasoning dataset with various forms of tables. It requires a model to understand structured or domain-specific tables, and utilize the</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Zero Shot</head><p>• llmcloud firewall allow my_vm --port 8000 --protocol tcp </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Documentation</head><p>• llmcloud comp firewall-rules create NAME --allow tcp:8000 • touch my_file • llmcloud comp scp --port 8000 my_file my_vm:./ • llmcloud pubsub topics create TOPIC • llmcloud pubsub topics publish PROJ --message "hi"</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Few Shot</head><p>• llmcloud comp firewall-rules create NAME --allow tcp:8000 • touch my_file • llmcloud comp scp --P 8000 my_file my_vm:./ [Wrong flag] • [Missing topic creation] • llmcloud pubsub topics publish PROJ my-topic --message "Hi"</p><p>Question:</p><p>• Here is a new cloud service called LLMVM, which provides its own SDK CLI tool (llmcloud).</p><p>• Create a firewall allowing port 8000. Please touch a file my_file then copy it to server with port 8000.</p><p>• Last, please publish a message "Hi" to the project.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Answer (in GCP)</head><p>• gcloud compute firewall-rules create NAME --allow tcp:8000 • touch my_file • gcloud compute scp --port 8000 my_file my_vm:./ • gcloud pubsub topics create TOPIC • gcloud pubsub topics publish PROJ --message "hi" information to answer corresponding math questions. On TabMWP, we also follow Chameleon <ref type="bibr" target="#b39">[40]</ref> with the same tool set with 9 tools, such as program generator and column lookup.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Multi-modal reasoning on NLVRv2.</head><p>NLVRv2 <ref type="bibr" target="#b59">[60]</ref> requires the model to verify whether a statement is true on a pair of images, requiring compositional understanding of both texts and images. On NLVRv2, we follow the setup used in Visual Programming (VisProg) <ref type="bibr" target="#b18">[19]</ref> with 20 vision modules (tools) for image understanding and manipulation. Since VisProg only relies on few-shot demonstrations and does not utilize documentations for the modules. We generate the documentation for each module by including descriptions on the functionality of the module and the function signature. We provide the full documentations we use for each module in the appendix.</p><p>Unseen API usage on a newly collected dataset. Existing benchmarks used in literature come with a limited set of tools. To explore real-world use cases involving a large number of tools, we collect a new benchmark called the LLM Cloud CLI that consists of 200 commands representing the functionalities of the Google Cloud Platform (GCP) command-line interface (CLI). Each command in our CLI is renamed from its corresponding GCP command, preserving the semantics and logic of the original tools, while being unseen to the language models. For instance, the command gcloud compute create NAME , responsible for creating a virtual machine, is renamed to be llmvm compute make NAME . The renaming conventions also allow us to utilize authentic GCP examples as few-shot demos and leverage the corresponding GCP documentation. The benchmark comprises 50 questions, each focused on creating and configuring specific cloud services using command-line tools. Each question requires at least two commands to complete the task. We show an example in Figure <ref type="figure" target="#fig_1">3</ref>, and include more in appendix.</p><p>Due to the length constraints of the LLM we use, we cannot fit documentation of 200 tools in a single prompt. Therefore, we employ a simple TF-IDF search using the questions as queries to retrieve the most relevant documentations and truncate them to fit within the prompt length. More details can be found in the appendix.</p><p>Image editing with natural language. We consider image editing as a form of qualitative evaluation. This process calls for the model to plan and use different vision modules to handle complex natural language instructions. For instance, to execute an instruction like "replace the red bus with a green bicycle", the model must localize the red bus, generate its segmentation mask, and then inpaint the masked area. We use the tool sets from VisProg. Unlike VisProg, which depends on few-shot demonstrations, our model only looks at the module documentation. We further include the recently released image understanding works, Segment Anything (SAM) <ref type="bibr" target="#b29">[30]</ref> and Grouding DINO <ref type="bibr" target="#b37">[38]</ref> to expand the tool set to test the zero-shot capability on the new and unseen tools in a plug-and-play fashion.</p><p>Video tracking. Video tracking is also utilized in this study as a qualitative evaluation. This task aims to acquire the masks of a tracked object in each frame of a video, necessitating the deployment of processes such as object localization, segmentation, and tracking. In addition to SAM and Groudning DINO, we incorporate the documentation of an unseen object tracking module, Xmen <ref type="bibr" target="#b13">[14]</ref> into the VisProg framework with the aim to showcase the model's ability to adapt and employ new tools without the need for explicit demonstrations again on a different task. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Empirical findings</head><p>We showcase the importance of tool documentation in three-fold: First, we show that tool documentations reduces the need of demonstrations (Section 4.1). Second, based on the finding, we further show that relying on documentation rather than demonstrations provides a more scalable solution to equip LLMs with a large number of available tools (Section 4.2). Finally, we show that with tool documentations alone, LLMs are able to comprehend and utilize most recent vision models to accomplish impressive results on image editing and video tracking tasks, on which existing results are achieved either with human-crafted demos or predefined procedures (Section 4.3).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Documentations sidestep the need for demonstrations</head><p>In this section, we show how tool documentations reduce the need of demonstrations. We present the findings on three datasets: ScienceQA, TabMWP, and NLVRv2. We evaluate the model performance, with and without tool documentations, across varying number of demonstrations (demo) on each dataset.</p><p>In Figure <ref type="figure" target="#fig_2">4</ref>, we see that when provided with tool docs, the model is able to maintain stable performance as we strip away the number of demos used. In fact, without using any demos (i.e., 0-shot), the model is able to achieve on par performances to using 16-shot on TabMWP, and using 12-shot on NLVRv2. On ScienceQA, the model can even achieve better performance solely with docs compared to additionally using 10-shot demos. On the other hand, without tool docs, the model performance is very sensitive to the number of demos used. As we decrease the number of demos, we see significant performance drop on all three datasets. This highlights the importance of tool docs and shows that it provides an effective way to reduce the reliance on demos. In Table <ref type="table">1</ref>, when compared to existing baseline methods, we also see that with doc, even 0-shot can perform very competitively.</p><p>By sidestepping the need for demos, we are able to alleviate the efforts needed to carefully curate these demos. For example, aligned with recent studies <ref type="bibr" target="#b80">[81,</ref><ref type="bibr" target="#b11">12]</ref>, we observe in Figure <ref type="figure" target="#fig_2">4</ref> that the model performance is sensitive to which demos are used, shown by the large performance variances under 5-shot on ScienceQA and 2-shot on NLVRv2.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Documentations enable efficient scaling on tool-using</head><p>The findings in Section 4.1 show that one can in fact reduce the reliance on few-shot demos with tool docs. By relaxing this constraint, we study whether tool docs enables a more scalable way to equip LLMs with a large number of tools, wherein few-shot demos can specifically fall short on covering limited tool-use cases. We present our findings in this section on the newly collected LLM Cloud CLI dataset with 200 available tools.</p><p>Qualitative walk-through result. Figure <ref type="figure" target="#fig_1">3</ref> serves as a qualitative example illustrating the limitations of the LLMs with different information. As expected, zero-shot LLM successfully identifies and responds to the touch command, which is familiar and well-known. However, when faced with the Table <ref type="table">1</ref>: Comparisons to existing baseline methods on different benchmarks. We follow <ref type="bibr" target="#b39">[40,</ref><ref type="bibr" target="#b18">19]</ref> to select the beasline methods for each benchmark task. We see that 0-shot with doc performs competitively, outperforming CoT and PoT on ScienceQA and TabMWP. On NLVRv2, ViLT-NLVR is finetuned on the dataset, while the LLM performs in a zero-shot fashion.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Benchmark Methods</head><p>CoT <ref type="bibr" target="#b66">[67]</ref> without doc (0-shot) with doc (0-shot)</p><p>ScienceQA 78.54 78.25 79.91 PoT [13] without doc (0-shot) with doc (0-shot) TabMWP 89.28 84.13 92.69 ViLT-NLVR [29] without doc (0-shot) with doc (0-shot) NLVRv2 76.30 0.00 63.40 unseen LLM-Cloud command lines, the zero-shot LLM fails to generate accurate responses involving these unfamiliar tools due to its lack of knowledge regarding their syntax and usage.</p><p>While few-shot demonstrations have the potential to enhance model performance, it is important to acknowledge that the coverage of these demonstrations is limited due to the vast number of command-line tools. Consequently, certain commands or flags may not be adequately covered. In Figure <ref type="figure" target="#fig_1">3</ref>, although we observe data copying is commonly appeared the few-shot examples, however, the model encounters difficulties in correctly configuring the less common flag --port, instead hallucinating the use of -P based on familiarity with the scp -P command in Linux.</p><p>Conversely, in the same example illustrated in Figure <ref type="figure" target="#fig_1">3</ref>, by solely utilizing the provided documentation, the language models not only successfully discern the steps required for utilizing tools (such as a hidden step of creating a topic before sending messages), but also possess the ability to accurately configure flags (e.g., --port) by leveraging information extracted from the documentation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Quantitative comparisons.</head><p>We calculate the command-line level F1 score of each example and report the average F1 across 50 examples. Figure <ref type="figure" target="#fig_3">5</ref> showcases the performance of various LLMs in the zero-shot setting, where they have no prior exposure to the LLM-Cloud command-line tools we create.</p><p>As anticipated, all zero-shot LLMs demonstrate low F1 scores. Zero-shot text-davinci-002 achieves an F1 score of 0.02, while the gpt-3.5-turbo model achieves a slightly higher score of 0.13. The improved performance of the gpt-3.5-turbo model can be attributed to better handling of common Linux commands, such as touch. As mentioned in quantitative comparison, few-shot demos improve upon zero-shot, but still fail on uncovered commands or flags in the demo. Therefore, the best few-shot demo in text-davinci-002 and gpt-3.5-turbo are only with 0.05 and 0.19 F1 scores respectively. On the other hand, LLM with documentation boosts the performance by a large margin to be 0.37 in text-davinci-002 and 0.45 in gpt-3.5-turbo .</p><p>Figure <ref type="figure">6</ref>: Plug-and-play new vision tools without demonstration. We add GroundingDINO <ref type="bibr" target="#b37">[38]</ref>, Segment Anything (SAM) <ref type="bibr" target="#b29">[30]</ref>, XMem <ref type="bibr" target="#b13">[14]</ref> as new tools for VisProg. Solely with the documentations of the new tools, the LLM is able to automatically "re-invent" recent Grounded-SAM <ref type="bibr" target="#b22">[23]</ref> and Track Anything <ref type="bibr" target="#b69">[70]</ref> without knowing these derivatives, taking a further step toward automatic knowledge discovery.</p><p>We further compare the performance of the documentation reading with that of the documentation supplemented with few-shot demonstrations. In the case of text-davinci-002 , with documentation only, we achieves an F1 score of 0.37. Conversely, the documentation augmented with different shots yields an average F1 score of 0.35. Similarly, in the gpt-3.5-turbo experiment, the performance with different shot demonstrations (0.44, 0.44, 0.42) are consistently lower than the documentation-only performance (0.45).</p><p>These results highlight two observations. First, the performance of the model is highly sensitive to the selection of few-shot demonstrations. The observation aligns the finding in <ref type="bibr" target="#b11">[12]</ref> that more few-shot demos might be redundant and even degrade performance due to spurious correlations. It emphasizes the importance of careful selection and design, which may involve more human effort. Second, the zero-shot documentation reading baseline exhibits remarkable robustness and delivers competitive performance across both examples. This highlights the potential value and reliability of relying solely on the documentation, which is usually easy to get in many packages and tools.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Plug-and-play with new image and video tools</head><p>In this section, we validate that one can equip LLMs with unseen tools to solve novel tasks solely with tool docs, and without any further demos. We present our results on image editing and video tracking tasks. We show that LLMs can effectively re-invent existing human-programmed image editing and video tracking pipelines, backed by state-of-the-art vision models to achieve impressive results.</p><p>Recent advancements in vision models, including GroundingDINO <ref type="bibr" target="#b37">[38]</ref>, an advanced open-set object detector; Segment Anything (SAM) <ref type="bibr" target="#b29">[30]</ref>, a cutting-edge image segmentation tool; and XMem <ref type="bibr" target="#b13">[14]</ref>, a state-of-the-art video object segmentation tool, accompany the progress of language models. These breakthroughs, emerging in the past year, serve as additional tools that are yet unfamiliar to our LLM (gpt-3.5-turbo). By expanding VisProg to include these new tools, we embark on the intriguing exploration of whether LLMs can effortlessly comprehend the documentation associated with these new models, and combine these tools in a plug-and-play manner, enabling a wide range of applications.</p><p>In Figure <ref type="figure">6</ref>, when performing an image editing request "replace the bench with a blue sofa", the LLM generates a VisProg program that harnesses the power of GroundingDINO and SAM from the expanded tool set to segment the bench, and apply the stable diffusion <ref type="bibr" target="#b53">[54]</ref> for synthesizing the sofa. This program re-invents the wheel by replicating the behavior of recent popular project, Grounded-SAM <ref type="bibr" target="#b22">[23]</ref> without prior knowledge of this repository. Similarly, when tasked with video tracking "track the cat in the video", the generated VisProg program by the LLM incorporates GroundingDINO together SAM for first frame segmentation as the initialization for XMem to do video tracking. It again re-invents the results obtained in the contemporary work, Track Anything <ref type="bibr" target="#b69">[70]</ref>. We note that TaskMatrix <ref type="bibr" target="#b68">[69]</ref> also has an updated approach with Grounded-SAM. However, they pre-program the entire Grounded-SAM editing pipeline as an image editing function, allowing the LLM to control it rather than enabling the LLM to generate the editing program using the building tools alone as we present here.</p><p>By successfully re-inventing the functionalities of Grounded-SAM and Track Anything without prior knowledge, solely relying on the available building blocks, the LLM demonstrates not only its capacity to effortlessly comprehend and combine new tools with documentation only but also highlights its potential for automatic knowledge discovery. It discovers new insights through leveraging its existing knowledge only without further demonstration.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Performance v.s. documentation quality</head><p>We investigates the impact of documentation quality on performance. To assess LLM's capability to comprehend realistic documentation, we refrain from engineering or curating the content of the documentation. Instead, we vary the document length by truncating the documents and keeping the first n words, using it as a proxy for assessing thoroughness and quality. In this ablation, we consider the LLM-Cloud benchmark, which has long documentation based on real-world GCP CLI manuals. We illustrate the result in Figure <ref type="figure" target="#fig_4">7</ref>. In both text-davinci-002 and gpt-3.5-turbo experiments, we consistently observe a trend where performance improves as the document length increases, up to a length of 600. This finding aligns with our hypothesis that the models possess the ability to comprehend and leverage documentation effectively. Remarkably, this improvement in performance is achieved without any additional training, fine-tuning nor document curation . It highlights the tremendous value of providing comprehensive documentation, as it empowers the models to leverage a wide range of command-line tools at scale, solely through the process of reading and understanding the documentation.</p><p>We note that a degradation in performance after the document length exceeds 600 words. We attribute this decline to the inherent challenges associated with comprehending lengthy documents in language models <ref type="bibr" target="#b60">[61]</ref>. However, we foresee the ongoing advancements in handling long inputs in language models will gradually address this limitation <ref type="bibr" target="#b9">[10,</ref><ref type="bibr" target="#b4">5,</ref><ref type="bibr" target="#b1">2]</ref>. We leave exploring solutions for overcoming this limitation for future research.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>In this paper, we examined the effectiveness of tool docs in enabling zero-shot tool usage with LLMs. We first showed that LLMs can achieve on par or better performance than their few-shot counterparts when provided with tool docs. We then scaled up to a significantly larger tool set on a newly collected API through docs only. By simply plugging in new tools along with their docs, LLMs are able to tackle unseen tasks in image editing and video tracking without further demos and replicate the functionalities of recent popular projects, suggesting a potential for automatic knowledge discovery.</p><p>Overall, we shed light on a new perspective of tool usage with LLMs by focusing on their internal planning and reasoning capabilities with docs, rather than explicitly guiding their behaviors with demos.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Broader impacts and limitations</head><p>This work studies the importance of tool documentations in equipping LLMs with the ability to compose usages of a variety of tools to accomplish complex tasks. However, as discussed in <ref type="bibr" target="#b50">[51]</ref>, it is imperative to contemplate what tools should be made available to LLMs as well as how one should interpret and rely on the results obtained from the models. We envision tool documentations as a channel to guide LLMs in more safely using the tools, aligning with the original intended use of the tools.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Implementation details</head><p>In this section, we provide further implementation details on each task. We conduct all our experiments on Debian GNU/Linux 10 machines with 40GB A100 GPUs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1 ScienceQA</head><p>On ScienceQA <ref type="bibr" target="#b38">[39]</ref>, we closely follow the original setup<ref type="foot" target="#foot_0">foot_0</ref> used in Chameleon <ref type="bibr" target="#b39">[40]</ref>, including the tool docs and few-shot demos (when used). We however find that the "Image Captioner" module used in the original work often provides less accurate captions on given images. In the documentation, we thus add the description on this observation for the "Image Captioner" module as shown in Figure <ref type="figure" target="#fig_5">8</ref>. We used the original tool docs in Chameleon <ref type="bibr" target="#b39">[40]</ref> and added the description for "Image Captioner" that the generated captions may be inaccurate.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2 TabMWP</head><p>On TabMWP <ref type="bibr" target="#b40">[41]</ref>, we strictly follow the original setup used in Chameleon <ref type="bibr" target="#b39">[40]</ref>. We refer the readers to <ref type="bibr" target="#b39">[40]</ref> and their open-sourced implementations for further details.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3 NLVRv2</head><p>On NLVRv2, we follow the setup used in <ref type="bibr" target="#b18">[19]</ref>. However, as tool docs are not used in <ref type="bibr" target="#b18">[19]</ref>, we create our own docs for the tools used. Figure <ref type="figure" target="#fig_6">9</ref> shows the tool docs we use for several available tools used in VisProg <ref type="bibr" target="#b18">[19]</ref>.  Figure 10: The documentation examples from GCP CLI. We crawl the website, remove the HTML tags and apply the renaming procedure as the documentation of the created LLM-Cloud CLI. B.4 LLM-Cloud CLI More examples.</p><p>In Table <ref type="table">2</ref>, we show more examples of the created LLM-Cloud CLI dataset, based on GCP CLI.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Creating tool documentations.</head><p>On the LLM-Cloud CLI dataset, we create tool documentations using the widely-used BeautifulSoup<ref type="foot" target="#foot_1">foot_1</ref> library to scrape the GCP CLI documentation. We removed HTML tags and implemented the renaming procedures for LLM-Cloud CLI documentation. We note that we purposely do not eliminate unrelated content such as terms and hyperlinks. An example documentation from GCP before our renaming procedure is shown in Figure <ref type="figure" target="#fig_7">10</ref>. This is to prevent excessive engineering of the documentation for better assessing the robustness of LLM documentation reading ability.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Documentation retrieval details.</head><p>Given the extensive number of command-line tools in our experiments (200 in total), the complete documentation cannot fit within a single prompt. Consequently, for each query, we employ a simple TF-IDF search to retrieve the top 10 relevant documentations.</p><p>We then truncate the length to a maximum of 600 words. We note that the actual token count depends on the tokenizer used by each LLM and is typically more than 600.</p><p>Table <ref type="table">2</ref>: More examples of the created LLM-Cloud CLI dataset.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Question</head><p>Commands in GCP Commands after renaming (Final Answer) Show me how to deploy ocr-xer container and invoke it with a schedule every 2 hours on a project "test_proj" in sdk command lines. The ocr-xer container is located at "us-docker.pkg.dev/gcrcleaner/ocr-xer/ocr-xer".</p><p>• gcloud config set project test_proj • gcloud run deploy ocr-xer --image=us-docker.pkg.dev/gcrcleaner/ocr-xer/ocr-xer • gcloud scheduler jobs create http NAME --schedule --schedule="0 */2 * * *" • llmcloud config set project test_proj • llmcloud run deploy ocr-xer --image=us-docker.pkg.dev/gcrcleaner/ocr-xer/ocr-xer • llmcloud scheduler jobs make http NAME --schedule --schedule="0 */2 * * *" How to deploy a machine learning model model.pt saved in my local to cloud via sdk command line? • gsutil cp model.pt LOC/model.pt • gcloud ai-platform versions create VERSION --model MODEL -origin gs://LOC/model.pt • llmutil cp model.pt LOC/model.pt • llmcloud ai-platform versions create VERSION --model MODEL -origin gs://LOC/model.pt How to get transcript of a video test.mp4 at local via the cloud SDK? • ffmpeg -i test.mp4 -ac 2 -f wav output.wav • gsutil cp test.wav LOC/test.wav • gcloud ml speech recognize-longrunning --uri LOC/test.wav • ffmpeg -i test.mp4 -ac 2 -f wav output.wav • llmutil cp test.wav LOC/test.wav • llmcloud ml speech recognize-longrunning --uri LOC/test.wav How to create a composer enviroment with a private ip network?</p><p>• gcloud composer environments create my_env • gcloud compute networks subnets update default --enable-private-ipgoogle-access</p><p>• llmcloud composer environments make my_env • llmcloud compute networks subnets update default --enableprivate-ip-google-access How to create a service account test@service.com with the name "AutoML" "BigQuery Data Editor" and ""AutoML Recommendations Service Account" permissions?</p><p>• gcloud iam service-accounts test@service.com --display-name AutoML • gcloud projects add-iampolicy-binding PROJ_ID --member="test@service.com" --role "roles/bigquery.dataEditor" • gcloud projects add-iam-policybinding PROJ_ID --member "test@service.com" --role "roles/automlrecommendations.serviceAgent"</p><p>• llmcloud iam service-accounts test@service.com --display-name AutoML • llmcloud projects add-iampolicy-binding PROJ_ID --member="test@service.com" --role "roles/bigquery.dataEditor" • llmcloud projects add-iam-policybinding PROJ_ID --member "test@service.com" --role "roles/automlrecommendations.serviceAgent"</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.5 Image editing and video tracking</head><p>As discussed in Section 4.3, by providing tool documentations, we can easily add on new tools to enable LLMs in solving novel tasks such as image editing and video tracking. Here, we leverage the recent advancements in vision models and expand the tool set used in VisProg <ref type="bibr" target="#b18">[19]</ref> with three new tools: GroundingDINO <ref type="bibr" target="#b37">[38]</ref>, Segment Anything (SAM) <ref type="bibr" target="#b29">[30]</ref>, and XMem <ref type="bibr" target="#b13">[14]</ref>. We provide their corresponding documentations in Figure <ref type="figure" target="#fig_8">11</ref>. Figure <ref type="figure">12</ref>: Image editing examples by zero-shot prompting gpt-3.5-turbo with tool docs. Zeroshot prompting with docs is able to reproduce the results achieved by VisProg using few-shot demos <ref type="bibr" target="#b18">[19]</ref>.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><figDesc>[Hallucination] • touch my_file • scp -P 8000 /path/to/my_file user@server_ip:~ [Wrong command] • [Missing topic creation] • llmcloud publish-message --project PROJ --message "Hi" [Hallucination]</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: The new LLM Cloud Platform command-line toolkit, which is an unseen toolset to existing LLMs based on real-world Google Cloud command-line tools through renaming.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure4: Tool-using performance with gpt-3.5-turbo on different benchmarks, which covers from langauge to vision modalities. We report results with and without documentation (doc) and demonstations (demo), and their combinations. Clearly, with documentation only (upper-left blue dot) shows competitive performance across all datasets.</figDesc><graphic coords="6,110.72,72.00,388.08,113.98" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Command planning of LLM Cloud Platform CLI with and without documentation (doc) and demonstations (demo), and their combinations. Few-shot demonstration without documentation results in unsatisfactory performance due to low coverage of large number of tools, while reading documentation significantly boosts the performance.</figDesc><graphic coords="7,146.35,252.22,316.81,121.46" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Performance of zero-shot documentation LLM when varying the input document length.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 8 :</head><label>8</label><figDesc>Figure8: Documentations used in ScienceQA datasets. We used the original tool docs in Chameleon<ref type="bibr" target="#b39">[40]</ref> and added the description for "Image Captioner" that the generated captions may be inaccurate.</figDesc><graphic coords="16,147.60,313.31,316.81,128.69" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 9 :</head><label>9</label><figDesc>Figure9: Example documentations used for tools in VisProg<ref type="bibr" target="#b18">[19]</ref>.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>.Figure 10 :</head><label>10</label><figDesc>Figure9: Example documentations used for tools in VisProg<ref type="bibr" target="#b18">[19]</ref>.</figDesc><graphic coords="17,127.80,107.06,356.38,560.00" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 11 :</head><label>11</label><figDesc>Figure 11: Documentation of new tools introduced in VisProg. BETTERLOC, BETTERSEG, TRACK calls GroundingDINO, Segment Anything, XMem, respectively.</figDesc><graphic coords="20,135.72,159.68,340.56,522.19" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><graphic coords="2,116.66,72.00,376.20,144.50" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><graphic coords="8,108.00,71.99,396.00,301.76" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><graphic coords="18,108.00,72.00,395.99,129.89" type="bitmap" /></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>https://github.com/lupantech/chameleon-llm</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>https://pypi.org/project/beautifulsoup4/</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Experimental results</head><p>In this section, we show the experimental results on each task with comparisons to more baselines.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ScienceQA.</head><p>In Table <ref type="table" target="#tab_0">3</ref>, we compare zero-shot prompting with tool documentations to other baseline methods. We include the following baseline methods that are finetuned on the ScienceQA training set for performance reference: ViLT <ref type="bibr" target="#b28">[29]</ref>, VisualBERT <ref type="bibr" target="#b33">[34]</ref>, UnifiedQA CoT <ref type="bibr" target="#b38">[39]</ref>, MM-CoT <ref type="bibr" target="#b79">[80]</ref>, and LLaMA-Adapter <ref type="bibr" target="#b77">[78]</ref>. We report the results obtained from <ref type="bibr" target="#b39">[40]</ref> for the finetuned methods. For fair comparison, we shall focus on zero/few-shot settings. Thus, we include Chain-of-Thought (CoT) <ref type="bibr" target="#b66">[67]</ref> and Chameleon <ref type="bibr" target="#b39">[40]</ref> as the few-shot baselines to compare to. We see that with tool docs, we can not only achieve better performance than the few-shot methods without any demos, but we can also match (outperform) several models specifically finetuned on the dataset. TabMWP. Similarly, in Table <ref type="table" target="#tab_1">4</ref>, we compare zero-shot prompting with tool docs to various finetuned models and few-shot baselines, inlcuding: UnifiedQA <ref type="bibr" target="#b25">[26]</ref>, TAPEX <ref type="bibr" target="#b35">[36]</ref>, Chain-of-Thought (CoT) <ref type="bibr" target="#b66">[67]</ref>, Program-of-Thought (PoT) <ref type="bibr" target="#b12">[13]</ref>, and Chameleon <ref type="bibr" target="#b39">[40]</ref>. We report the results obtained from <ref type="bibr" target="#b39">[40]</ref> for UnifiedQA, TAPEX, and CoT. We see that with tool docs, zero-shot prompting significantly outperforms finetuned models, and baseline few-shot methods, CoT and PoT. When compared to Chameleon that utilizes 16 few-shot tool-usage demos, tool docs enable the model to perform comparably without relying on any demos. NLVRv2. In Table <ref type="table" target="#tab_2">5</ref>, we compare zero-shot prompting with tool docs to a finetuned model on NLVRv2 and various few-shot baselines. Specifically, we consider ViLT <ref type="bibr" target="#b28">[29]</ref> as the finetuned baseline and VisProg <ref type="bibr" target="#b18">[19]</ref> with varying numbers of tool-usage demos as the few-shot baselines. We report the result obtained from <ref type="bibr" target="#b18">[19]</ref> for ViLT. Since VisProg does not utilize tool docs, we see that its performance is very sensitive to the number of demos used. In addition, we also observe large performance variances when we randomly select different demos used for prompting, e.g., the standard deviation for 2-shot prompting reaches 16.1 percentage point. This indicates that the few-shot demos may require careful curation for the model to achieve good performance. On the other hand, with tool docs, zero-shot prompting can already achieve decent performance compared to only using few-shot demos. LLM Cloud-CLI. In Table <ref type="table" target="#tab_3">6</ref>, we present the results on LLM-Cloud CLI with different underlying LLM planners. On both text-davinci-002 and gpt-3.5-turbo, when there is a large number of tools, we see documentation is much more important than few-shot demonstrations, where zeroshot with docs achieves significantly better performances than few-shot without docs. Additionally, when provided with docs, the LLMs are able to figure out how to use the tools without the need of demonstrations. Image editing. We provide more image editing examples achieved by zero-shot prompting with tool docs in Figure <ref type="figure">12</ref>. In particular, we show that with tool docs, we are able to reproduce the image editing examples achieved by VisProg <ref type="bibr" target="#b18">[19]</ref> without using any few-shot demos, wherein VisProg relies on 10 task-specific few-shot demos.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 3 :</head><label>3</label><figDesc>Comparing zero-shot prompting with tool docs to existing baseline methods on ScienceQA. We see that zero-shot prompting with tool docs performs competitively, outperforming the two few-shot baselines and several finetuned models.</figDesc><table><row><cell></cell><cell></cell><cell cols="2">Finetuned methods</cell><cell></cell><cell cols="2">Few-shot methods</cell><cell>Zero-shot methods</cell></row><row><cell cols="7">Benchmark ViLT VisualBERT UnifiedQA CoT MM-CoT LLaMA-Adapter CoT Chameleon</cell><cell>0-shot with docs</cell></row><row><cell>ScienceQA 61.14</cell><cell>61.87</cell><cell>74.11</cell><cell>84.91</cell><cell>85.19</cell><cell>78.54</cell><cell>79.20</cell><cell>79.91</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 4 :</head><label>4</label><figDesc>Comparing zero-shot prompting with tool docs to existing baseline methods on TabMWP. We see that with tool docs, even zero-shot prompting without any tool-usage demos achieves better performance than finetuned models and few-shot CoT and PoT baseline. It also performs comparably to Chameleon that employs 16-shot tool-usage demos.</figDesc><table><row><cell></cell><cell cols="2">Finetuned methods</cell><cell></cell><cell cols="2">Few-shot methods</cell><cell>Zero-shot methods</cell></row><row><cell cols="4">Benchmark UnifiedQA TAPEX CoT</cell><cell cols="2">PoT Chameleon</cell><cell>0-shot with docs</cell></row><row><cell>TabMWP</cell><cell>57.35</cell><cell>58.52</cell><cell cols="2">82.03 89.28</cell><cell>93.88</cell><cell>92.69</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 5 :</head><label>5</label><figDesc>Comparing zero-shot prompting with tool docs to existing baseline methods on NLVRv2.</figDesc><table><row><cell></cell><cell>Finetuned methods</cell><cell></cell><cell cols="2">Few-shot methods</cell><cell></cell><cell>Zero-shot methods</cell></row><row><cell>Benchmark</cell><cell>ViLT</cell><cell cols="4">VisProg (0-shot) VisProg (2-shot) VisProg (4-shot) VisProg (12-shot)</cell><cell>0-shot with docs</cell></row><row><cell>NLVRv2</cell><cell>76.30</cell><cell>0</cell><cell>43.1 ± 16.1</cell><cell>66.5 ± 1.4</cell><cell>69.1 ± 0.1</cell><cell>63.4</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 6 :</head><label>6</label><figDesc>Results on the LLM-Cloud CLI.</figDesc><table><row><cell>LLM</cell><cell cols="2">Number of Demos Documentations</cell><cell>F1</cell></row><row><cell>text-davinci-002</cell><cell>0</cell><cell>No</cell><cell>0.02</cell></row><row><cell></cell><cell>5</cell><cell>No</cell><cell>0.02 ± 0.02(0.05)</cell></row><row><cell></cell><cell>10</cell><cell>No</cell><cell>0.05 ± 0.02(0.11)</cell></row><row><cell></cell><cell>15</cell><cell>No</cell><cell>0.05 ± 0.05(0.1)</cell></row><row><cell></cell><cell>5</cell><cell>Yes</cell><cell>0.35 ± 0.02(0.37)</cell></row><row><cell></cell><cell>10</cell><cell>Yes</cell><cell>0.35 ± 0.02(0.37)</cell></row><row><cell></cell><cell>15</cell><cell>Yes</cell><cell>0.35 ± 0.01(0.37)</cell></row><row><cell></cell><cell>0</cell><cell>Yes</cell><cell>0.37</cell></row><row><cell>gpt-3.5-turbo</cell><cell>0</cell><cell>No</cell><cell>0.13</cell></row><row><cell></cell><cell>5</cell><cell>No</cell><cell>0.18 ± 0.06(0.21)</cell></row><row><cell></cell><cell>10</cell><cell>No</cell><cell>0.19 ± 0.06(0.23)</cell></row><row><cell></cell><cell>15</cell><cell>No</cell><cell>0.18 ± 0.06(0.22)</cell></row><row><cell></cell><cell>5</cell><cell>Yes</cell><cell>0.44 ± 0.02(0.47)</cell></row><row><cell></cell><cell>10</cell><cell>Yes</cell><cell>0.44 ± 0.02(0.48)</cell></row><row><cell></cell><cell>15</cell><cell>Yes</cell><cell>0.42 ± 0.04(0.49)</cell></row><row><cell></cell><cell>0</cell><cell>Yes</cell><cell>0.45</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Michael Ahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Byron</forename><surname>Cortes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuyuan</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keerthana</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Herzog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jasmine</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ibarz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Irpan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rosario</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Jauregui Ruano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sally</forename><surname>Jeffrey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikhil</forename><surname>Jesmonth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitry</forename><surname>Julian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Kalashnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuang-Huei</forename><surname>Kuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linda</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carolina</forename><surname>Luu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Parada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jornell</forename><surname>Pastor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kanishka</forename><surname>Quiambao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jarek</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diego</forename><surname>Rettinghouse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Reyes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Sermanet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clayton</forename><surname>Sievers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Toshev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Vanhoucke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sichun</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengyuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zeng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.01691</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note>Do as i can and not as i say: Grounding language in robotic affordances. In arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">100k context windows</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/index/100k-context-windows" />
+		<imprint>
+			<date type="published" when="2023-05-15">2023. 05/15/2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title/>
+		<ptr target="https://autogpt.net/category/chatgpt-tools/autogpt/,2023" />
+	</analytic>
+	<monogr>
+		<title level="j">AutoGPT. Auto gpt</title>
+		<imprint>
+			<date type="published" when="2023">05/15/2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">A framework for behavioural cloning</title>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Bain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claude</forename><surname>Sammut</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Machine Intelligence 15</title>
+		<imprint>
+			<date type="published" when="1995">1995</date>
+			<biblScope unit="page" from="103" to="129" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Unlimiformer: Longrange transformers with unlimited length input</title>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Bertsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><forename type="middle">R</forename><surname>Gormley</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.01625</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Improving language models by retrieving from trillions of tokens</title>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Borgeaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Mensch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jordan</forename><surname>Hoffmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Trevor</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eliza</forename><surname>Rutherford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katie</forename><surname>Millican</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><forename type="middle">Bm</forename><surname>Van Den Driessche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean-Baptiste</forename><surname>Lespiau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bogdan</forename><surname>Damoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aidan</forename><surname>Clark</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on machine learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="2206" to="2240" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Learning to win by reading manuals in a monte-carlo framework</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Srk Branavan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Regina</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Barzilay</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Artificial Intelligence Research</title>
+		<imprint>
+			<biblScope unit="volume">43</biblScope>
+			<biblScope unit="page" from="661" to="704" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sébastien</forename><surname>Bubeck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Varun</forename><surname>Chandrasekaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronen</forename><surname>Eldan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Gehrke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Horvitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ece</forename><surname>Kamar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yin</forename><surname>Tat Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Lundberg</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.12712</idno>
+		<title level="m">Sparks of artificial general intelligence: Early experiments with gpt-4</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aydar</forename><surname>Bulatov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Kuratov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikhail</forename><forename type="middle">S</forename><surname>Burtsev</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.11062</idno>
+		<title level="m">Scaling transformer to 1m tokens and beyond with rmt</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tianle</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tengyu</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.17126</idno>
+		<title level="m">Large language models as tool makers</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">How many demonstrations do you need for in-context learning?</title>
+		<author>
+			<persName><forename type="first">Jiuhai</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lichang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Zhou</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Program of thoughts prompting: Disentangling computation from reasoning for numerical reasoning tasks</title>
+		<author>
+			<persName><forename type="first">Wenhu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueguang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">W</forename><surname>Cohen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.12588</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Xmem: Long-term video object segmentation with an atkinson-shiffrin memory model</title>
+		<author>
+			<persName><forename type="first">Kei</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><forename type="middle">G</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Schwing</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Computer Vision-ECCV 2022: 17th European Conference</title>
+		<meeting><address><addrLine>Tel Aviv, Israel</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2022">October 23-27, 2022. 2022</date>
+			<biblScope unit="page" from="640" to="658" />
+		</imprint>
+	</monogr>
+	<note>Proceedings, Part XXVIII</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Training verifiers to solve math word problems</title>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.14168</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Vipergpt: Visual inference via python execution for reasoning</title>
+		<author>
+			<persName><forename type="first">Surís</forename><surname>Dídac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sachit</forename><surname>Menon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carl</forename><surname>Vondrick</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.08128</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Palm-e: An embodied multimodal language model</title>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Driess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">M</forename><surname>Mehdi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Corey</forename><surname>Sajjadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Lynch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ayzaan</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Wahid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quan</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhe</forename><surname>Vuong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Sermanet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Duckworth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Vanhoucke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Klaus</forename><surname>Toussaint</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Greff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Mordatch</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Florence</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.03378</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamie</forename><surname>Callan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.10435</idno>
+		<title level="m">Pal: Program-aided language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Visual programming: Compositional visual reasoning without training</title>
+		<author>
+			<persName><forename type="first">Tanmay</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aniruddha</forename><surname>Kembhavi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.11559</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Retrieval augmented language model pre-training</title>
+		<author>
+			<persName><forename type="first">Kelvin</forename><surname>Guu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenton</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zora</forename><surname>Tung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Panupong</forename><surname>Pasupat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingwei</forename><surname>Chang</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on machine learning</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="3929" to="3938" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Language models as zero-shot planners: Extracting actionable knowledge for embodied agents</title>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deepak</forename><surname>Pathak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="9118" to="9147" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Inner monologue: Embodied reasoning through planning with language models</title>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harris</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacky</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Chebotar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2207.05608</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><surname>Idea-Research</surname></persName>
+		</author>
+		<ptr target="https://github.com/IDEA-Research/Grounded-Segment-Anything" />
+		<title level="m">Grounded-segment-anything</title>
+		<imprint>
+			<date type="published" when="2023-05-15">2023. 05/15/2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shima</forename><surname>Imani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harsh</forename><surname>Shrivastava</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mathprompter</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.05398</idno>
+		<title level="m">Mathematical reasoning using large language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Mapping language to code in programmatic context</title>
+		<author>
+			<persName><forename type="first">Srinivasan</forename><surname>Iyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Konstas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alvin</forename><surname>Cheung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1808.09588</idno>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">UNIFIEDQA: Crossing format boundaries with a single QA system</title>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Khashabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sewon</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oyvind</forename><surname>Tafjord</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: EMNLP 2020</title>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2020-11">November 2020</date>
+			<biblScope unit="page" from="1896" to="1907" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Demonstrate-search-predict: Composing retrieval and language models for knowledge-intensive nlp</title>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Khattab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keshav</forename><surname>Santhanam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lisa</forename><surname>Xiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Hall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matei</forename><surname>Potts</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zaharia</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.14024</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Decomposed prompting: A modular approach for solving complex tasks</title>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harsh</forename><surname>Trivedi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Finlayson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Richardson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.02406</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Vilt: Vision-and-language transformer without convolution or region supervision</title>
+		<author>
+			<persName><forename type="first">Wonjae</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bokyung</forename><surname>Son</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ildoo</forename><surname>Kim</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="5583" to="5594" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Kirillov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Mintun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikhila</forename><surname>Ravi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanzi</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chloe</forename><surname>Rolland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laura</forename><surname>Gustafson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tete</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Spencer</forename><surname>Whitehead</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><forename type="middle">C</forename><surname>Berg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wan-Yen</forename><surname>Lo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.02643</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Segment anything. arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Internet-augmented dialogue generation</title>
+		<author>
+			<persName><forename type="first">Mojtaba</forename><surname>Komeili</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kurt</forename><surname>Shuster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.07566</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Internetaugmented language models through few-shot prompting for open-domain question answering</title>
+		<author>
+			<persName><forename type="first">Angeliki</forename><surname>Lazaridou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elena</forename><surname>Gribovskaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wojciech</forename><surname>Stokowiec</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolai</forename><surname>Grigorev</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.05115</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Retrieval-augmented generation for knowledge-intensive nlp tasks</title>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Piktus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladimir</forename><surname>Karpukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heinrich</forename><surname>Küttler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Rocktäschel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="9459" to="9474" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">Liunian</forename><surname>Harold</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Yatskar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cho-Jui</forename><surname>Da Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Hsieh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1908.03557</idno>
+		<title level="m">Visualbert: A simple and performant baseline for vision and language</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jiachang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dinghan</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Dolan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lawrence</forename><surname>Carin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2101.06804</idno>
+		<title level="m">What makes good in-context examples for gpt-3?</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaqi</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Morteza</forename><surname>Ziyadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeqi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian-Guang</forename><surname>Lou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.07653</idno>
+		<title level="m">Tapex: Table pre-training via learning a neural sql executor</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Mind&apos;s eye: Grounded language model reasoning through simulation</title>
+		<author>
+			<persName><forename type="first">Ruibo</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shixiang</forename><surname>Shane Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Te-Yen</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soroush</forename><surname>Vosoughi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claire</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">M</forename><surname>Dai</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.05359</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Grounding dino: Marrying dino with grounded pre-training for open-set object detection</title>
+		<author>
+			<persName><forename type="first">Shilong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoyang</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhe</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianwei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Zhu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.05499</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Learn to explain: Multimodal reasoning via thought chains for science question answering</title>
+		<author>
+			<persName><forename type="first">Pan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swaroop</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tony</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Song-Chun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oyvind</forename><surname>Tafjord</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Kalyan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The 36th Conference on Neural Information Processing Systems (NeurIPS)</title>
+		<imprint>
+			<biblScope unit="page">2022</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Chameleon: Plug-and-play compositional reasoning with large language models</title>
+		<author>
+			<persName><forename type="first">Pan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baolin</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michel</forename><surname>Galley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><forename type="middle">Nian</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Song-Chun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Gao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.09842</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Dynamic prompt learning via policy gradient for semi-structured mathematical reasoning</title>
+		<author>
+			<persName><forename type="first">Pan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><forename type="middle">Nian</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Song-Chun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tanmay</forename><surname>Rajpurohit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Kalyan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations (ICLR)</title>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Multimodal procedural planning via dual text-image prompting</title>
+		<author>
+			<persName><forename type="first">Yujie</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanrong</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suchir</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christina</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shantanu</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Saunders</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2112.09332</idno>
+		<title level="m">Browser-assisted question-answering with human feedback</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Algorithms for inverse reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Andrew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stuart</forename><surname>Ng</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Russell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Icml</title>
+		<imprint>
+			<date type="published" when="2000">2000</date>
+			<biblScope unit="volume">1</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title/>
+	</analytic>
+	<monogr>
+		<title level="j">OpenAI. Gpt-4 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Automatic multi-step reasoning and tool-use for large language models</title>
+		<author>
+			<persName><forename type="first">Bhargavi</forename><surname>Paranjape</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Lundberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sameer</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marco</forename><surname>Tulio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ribeiro</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.09014</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<pubPlace>Art</pubPlace>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Parisi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Fiedel</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.12255</idno>
+		<title level="m">Talm: Tool augmented language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tianjun</forename><surname>Shishir G Patil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gonzalez</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.15334</idno>
+		<title level="m">Gorilla: Large language model connected with massive apis</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Alvinn: An autonomous land vehicle in a neural network</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dean</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Pomerleau</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<date type="published" when="1988">1988</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<title level="m" type="main">Measuring and narrowing the compositionality gap in language models</title>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muru</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sewon</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ludwig</forename><surname>Schmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03350</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<title level="m" type="main">Tool learning with foundation models</title>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengding</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ganqu</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheni</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaojun</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Han</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.08354</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shihao</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yining</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kunlun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lan</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaxi</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sihan</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runchu</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruobing</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Gerstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dahai</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Toolllm</surname></persName>
+		</author>
+		<title level="m">Facilitating large language models to master 16000+ real-world apis</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<title level="m" type="main">Abstract syntax networks for code generation and semantic parsing</title>
+		<author>
+			<persName><forename type="first">Maxim</forename><surname>Rabinovich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mitchell</forename><surname>Stern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Klein</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1704.07535</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Highresolution image synthesis with latent diffusion models</title>
+		<author>
+			<persName><forename type="first">Robin</forename><surname>Rombach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Blattmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dominik</forename><surname>Lorenz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Esser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Björn</forename><surname>Ommer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="10684" to="10695" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<analytic>
+		<title level="a" type="main">A reduction of imitation learning and structured prediction to no-regret online learning</title>
+		<author>
+			<persName><forename type="first">Stéphane</forename><surname>Ross</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Gordon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Drew</forename><surname>Bagnell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the fourteenth international conference on artificial intelligence and statistics</title>
+		<meeting>the fourteenth international conference on artificial intelligence and statistics</meeting>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="627" to="635" />
+		</imprint>
+	</monogr>
+	<note>JMLR Workshop and Conference Proceedings</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberta</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicola</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Scialom</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Toolformer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.04761</idno>
+		<title level="m">Language models can teach themselves to use tools</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yongliang</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaitao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongsheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiming</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yueting</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hugginggpt</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.17580</idno>
+		<title level="m">Solving ai tasks with chatgpt and its friends in huggingface</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<monogr>
+		<title level="m" type="main">Blenderbot 3: a deployed conversational agent that continually learns to responsibly engage</title>
+		<author>
+			<persName><forename type="first">Kurt</forename><surname>Shuster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mojtaba</forename><surname>Komeili</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Da</forename><surname>Ju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><forename type="middle">Michael</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Roller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Megan</forename><surname>Ung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moya</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kushal</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><surname>Lane</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2208.03188</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<analytic>
+		<title level="a" type="main">Introduction to the theory of computation</title>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Sipser</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Sigact News</title>
+		<imprint>
+			<biblScope unit="volume">27</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="27" to="29" />
+			<date type="published" when="1996">1996</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<analytic>
+		<title level="a" type="main">A corpus for reasoning about natural language grounded in photographs</title>
+		<author>
+			<persName><forename type="first">Alane</forename><surname>Suhr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephanie</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ally</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iris</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huajun</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoav</forename><surname>Artzi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 57th Annual Meeting of the Association for Computational Linguistics<address><addrLine>Florence, Italy</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2019-07">July 2019</date>
+			<biblScope unit="page" from="6418" to="6428" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<monogr>
+		<author>
+			<persName><forename type="first">Simeng</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katherine</forename><surname>Thai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Iyyer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.10878</idno>
+		<title level="m">Chapterbreak: A challenge dataset for long-range language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<monogr>
+		<author>
+			<persName><forename type="first">Romal</forename><surname>Thoppilan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">De</forename><surname>Freitas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamie</forename><surname>Hall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Apoorv</forename><surname>Kulshreshtha</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Heng-Tze</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alicia</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Taylor</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leslie</forename><surname>Bos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Du</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.08239</idno>
+		<title level="m">Language models for dialog applications</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thibaut</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gautier</forename><surname>Izacard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Martinet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marie-Anne</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothée</forename><surname>Lacroix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baptiste</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Faisal</forename><surname>Azhar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.13971</idno>
+		<title level="m">Open and efficient foundation language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<monogr>
+		<title level="m" type="main">Plan-and-solve prompting: Improving zero-shot chain-of-thought reasoning by large language models</title>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanyu</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihuai</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqiang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunshi</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roy</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ka-Wei</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ee-Peng</forename><surname>Lim</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.04091</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<monogr>
+		<title level="m" type="main">Code4struct: Code generation for few-shot structured prediction from natural language</title>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sha</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.12810</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<monogr>
+		<title level="m" type="main">Self-instruct: Aligning language model with self generated instructions</title>
+		<author>
+			<persName><forename type="first">Yizhong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yeganeh</forename><surname>Kordi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swaroop</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alisa</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Khashabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.10560</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b66">
+	<monogr>
+		<title level="m" type="main">Chain of thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.11903</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b67">
+	<monogr>
+		<title level="m" type="main">Larger language models do in-context learning differently</title>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dustin</forename><surname>Tran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Albert</forename><surname>Webson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifeng</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanxiao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Da</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.03846</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b68">
+	<monogr>
+		<title level="m" type="main">Visual chatgpt: Talking, drawing and editing with visual foundation models</title>
+		<author>
+			<persName><forename type="first">Chenfei</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengming</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhen</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zecheng</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Duan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.04671</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b69">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jinyu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingqi</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shang</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangjing</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feng</forename><surname>Zheng</surname></persName>
+		</author>
+		<title level="m">Track anything: Segment anything meets videos</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b70">
+	<monogr>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanwei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sijie</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixiao</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Shan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.18752</idno>
+		<title level="m">Gpt4tools: Teaching large language model to use tools via self-instruction</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b71">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sherry</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Nachum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.04129</idno>
+		<title level="m">Pieter Abbeel, and Dale Schuurmans. Foundation models for decision making: Problems, methods, and opportunities</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b72">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhengyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linjie</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ehsan</forename><surname>Azarnasab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Faisal</forename><surname>Ahmed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zicheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ce</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lijuan</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.11381</idno>
+		<title level="m">Mm-react: Prompting chatgpt for multimodal reasoning and action</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b73">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Howard</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Webshop</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2207.01206</idno>
+		<title level="m">Towards scalable real-world web interaction with grounded language agents</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b74">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03629</idno>
+		<title level="m">React: Synergizing reasoning and acting in language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b75">
+	<monogr>
+		<title level="m" type="main">A syntactic neural model for general-purpose code generation</title>
+		<author>
+			<persName><forename type="first">Pengcheng</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1704.01696</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b76">
+	<analytic>
+		<title level="a" type="main">Generate rather than retrieve: Large language models are strong context generators</title>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Iter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuohang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichong</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingxuan</forename><surname>Ju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soumya</forename><surname>Sanyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenguang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meng</forename><surname>Jiang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b77">
+	<monogr>
+		<title level="m" type="main">Llama-adapter: Efficient fine-tuning of language models with zero-init attention</title>
+		<author>
+			<persName><forename type="first">Renrui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaming</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aojun</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangfei</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shilin</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongsheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Qiao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.16199</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b78">
+	<monogr>
+		<title level="m" type="main">Opt: Open pre-trained transformer language models</title>
+		<author>
+			<persName><forename type="first">Susan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Roller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikel</forename><surname>Artetxe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moya</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuohui</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Dewan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mona</forename><surname>Diab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xian</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Victoria Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.01068</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b79">
+	<monogr>
+		<title level="m" type="main">Multimodal chain-of-thought reasoning in language models</title>
+		<author>
+			<persName><forename type="first">Zhuosheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aston</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hai</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Karypis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Smola</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.00923</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b80">
+	<analytic>
+		<title level="a" type="main">Calibrate before use: Improving few-shot performance of language models</title>
+		<author>
+			<persName><forename type="first">Zihao</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Wallace</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shi</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Klein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sameer</forename><surname>Singh</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="12697" to="12706" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b81">
+	<monogr>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Rocktäschel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Grefenstette</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rtfm</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1910.08210</idno>
+		<title level="m">Generalising to novel environment dynamics via reading</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b82">
+	<analytic>
+		<title level="a" type="main">Docprompting: Generating code by retrieving the docs</title>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengbao</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

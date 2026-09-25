@@ -1,0 +1,1580 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">MLR-COPILOT: Autonomous Machine Learning Research based on Large Language Model Agents</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-11-14">14 Nov 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Ruochen</forename><surname>Li</surname></persName>
+							<email>ruochen.li@utdallas.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Texas at Dallas</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="department">Code package</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Teerth</forename><surname>Patel</surname></persName>
+							<email>teerth.patel@utdallas.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Texas at Dallas</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="department">Code package</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Qingyun</forename><surname>Wang</surname></persName>
+							<email>qingyun4@illinois.edu</email>
+						</author>
+						<author>
+							<persName><forename type="first">Xinya</forename><surname>Du</surname></persName>
+							<email>xinya.du@utdallas.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Texas at Dallas</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="department">Code package</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">MLR-COPILOT: Autonomous Machine Learning Research based on Large Language Model Agents</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-11-14">14 Nov 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">4E2CF3D3D876B05879BDCAA54218AB4E</idno>
+					<idno type="arXiv">arXiv:2408.14033v3[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:45+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Autonomous machine learning research has gained significant attention recently. We present MLR-COPILOT, an autonomous Machine Learning Research framework powered by large language model agents. The system is designed to enhance ML research productivity through automatic generation and implementation of research ideas within constraints. Our work was released in August 2024 (concurrent to AI-SCIENTIST) and has gained notable recognition from leading projects. We further enhance our ideation with training afterwards. The framework consists of three stages: idea generation, experiment implementation, and code execution. First, existing research papers are used to generate feasible ideas and experiment plans with IdeaAgent powered by an RLtuned LLM. Next, ExperimentAgent leverages retrieved prototype code to convert plans into executable code with optionally retrieved candidate models and data from HuggingFace. In the final stage, ExperimentAgent runs experiments, and allows subsequent iterations of debugging and human feedback for a better chance of success with executable outcomes. We evaluate our framework on five machine learning research tasks. Experiment results demonstrate the potential of our framework to facilitate ML research progress and innovation. 1 23  </p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>The increasing complexity of modern scientific research and the rapid expansion of scientific knowledge pose significant challenges for researchers <ref type="bibr" target="#b3">(Choudhury, 2021)</ref>. Traditional research workflow typically follows a structured process: researchers begin with a literature review to identify existing knowledge and gaps, then proceed to method formulation and experimental design. Afterward, they move to the implementation and execution phases to obtain results. While effective, these steps are highly labor-intensive and time-consuming <ref type="bibr" target="#b21">(Powell, 2015)</ref>, especially given the accelerated pace of advancements that shorten research cycles, which leads to tighter time constraints and a higher risk of errors in decisionmaking, potentially hindering progress <ref type="bibr" target="#b1">(Bornmann et al., 2010)</ref>.</p><p>Recent advancements in Large Language Models (LLMs) and agents offer a promising opportunity to augment and accelerate this traditional workflow. With their impressive ability to generate text, code, and hypotheses <ref type="bibr" target="#b2">(Brown et al., 2020;</ref><ref type="bibr">Ope-nAI, 2023;</ref><ref type="bibr">Touvron et al., 2023;</ref><ref type="bibr" target="#b20">Park et al., 2023;</ref><ref type="bibr" target="#b38">Zhou et al., 2023)</ref>, LLMs can act as a "copilot" for researchers (Figure <ref type="figure" target="#fig_0">1</ref>), supporting every phase of the research process to enable higher efficiency and productivity <ref type="bibr" target="#b5">(Dakhel et al., 2023;</ref><ref type="bibr">GitHub, Inc.)</ref>.</p><p>There have been some recent efforts to explore LLMs for scientific discovery, but these are often limited in scope. For example, <ref type="bibr" target="#b33">Yang et al. (2023)</ref>; <ref type="bibr" target="#b30">Wang et al. (2024)</ref>; <ref type="bibr">Qi et al. (2023a)</ref>; <ref type="bibr" target="#b0">Baek et al. (2024)</ref> focus only on idea generation from general scientific literature (Stage 1 in our process), but they are not tailored to Machine Learning Research (MLR) and fail to address the limitations of prior work for specific problems, which results in solutions that are too broad for targeted applications. In addition, their reliance on pertaining through prompting limits their creativity. Other studies, such as <ref type="formula">Huang et al. (2023); Zhang et al. (2023)</ref>target auto-experimenting for ML tasks (Stages 2 and 3). However, their settings are much more constricted as they start with a predefined task and mature code template instead of research literature as in real-world scenarios. Also, they typically apply small code edits like hyperparameter tuning with limited exploration of novel models, structures, or data. Moreover, they lack robust feedback mechanisms, leaving no guarantee that the experiment will converge with no address of the root cause of errors in code.</p><p>Different from all the above (and concurrent to AI Scientist <ref type="bibr" target="#b16">(Lu et al., 2024</ref>)), we aim to build a fully autonomous framework to tackle the entire process of machine learning research. We present MLR-COPILOT (Figure <ref type="figure">2</ref>), a systematic framework designed to enhance productivity through automatic generation and implementation/verification with LLM agents. It takes the paper as input and operates in three integrated phases: research idea generation, experiment implementation, and implementation execution. In this first stage, we construct input prompts that incorporate relevant research papers and extracted research problems (including task definition); these prompts are then processed by IdeaAgent, a fine-tuned LLM agent, to generate research methodologies and experimental plans. The structured generation ensures that the proposed ideas are well-grounded in the existing literature and address current gaps <ref type="bibr" target="#b36">(Zhang and Teng, 2023;</ref><ref type="bibr" target="#b4">Cohan and Goharian, 2018;</ref><ref type="bibr" target="#b0">Baek et al., 2024)</ref>, while the fine-tuning tailors them specifically to the needs of MLR. In the second stage, the framework translates these experimental plans into executable experiments. It is facilitated by Ex-perimentAgent, which incorporates the utility of model and data retrieval, and leverages retrieved prototype code (from relevant papers) to generate the necessary implementations <ref type="bibr" target="#b26">(Smith et al., 2023;</ref><ref type="bibr" target="#b9">Hocky and White, 2022;</ref><ref type="bibr" target="#b29">Viswanathan et al., 2023)</ref>. Later, ExperimentAgent leverages feedback from the execution results from Stage 3. Finally, the implementation execution phase, also managed by Ex-perimentAgent, involves running the experiments and generating execution/debugging feedback, as well as optional human feedback. The feedback allows for the refinement of the experiment implementations (Stage 2). The implementation and execution process is iterative, and the human-inthe-loop feature ensures that the final research outcomes are robust, reproducible, and scientifically sound <ref type="bibr" target="#b29">(Viswanathan et al., 2023)</ref>.</p><p>We conduct manual and automatic evaluations on generated hypotheses and experimental executions/results. We also present case studies demonstrating the practical applications of our system on five ML research papers/problems. Through evaluations and examples, we illustrate that our framework can generate novel and feasible hypotheses for research, enabling researchers to focus on highlevel scientific inquiry and innovation. We also show that MLR-COPILOT is able to help finish the full research process and obtain significant results/improvements and conclusions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">MLR-COPILOT Framework</head><p>MLR-COPILOT automates the generation and implementation of research ideas using LLM agents, organized into three integrated phases: research idea generation, experiment implementation, and implementation execution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Research Idea Generation</head><p>In the first stage, IdeaAgent an LLM-powered agent, generates research methodologies and experimental plans.</p><p>The agent is fine-tuned with fine-grained Reinforcement Learning (RL) technique following our training-based method <ref type="bibr">(Li et al., 2024a)</ref> 4 on collected feedback data of the top ML topic conference papers 5 collected from OpenReview 6 . The overall rate, novelty, feasibility, and effectiveness scores are collected and used to guide the optimization. In this process, the model first under-Research Idea Research Papers Prototype Retrieval Research Problem &amp; Task Definitions Prototype code Methodology Experimental Plan Model &amp; Data Retrieval (optional) Experiment Implementation Execution Results Implementation Execution Implementation Generation Research Idea Proposal Refine Human Feedback (optional) Stage 1: Idea Generation Stage 2: Experiment Implementation Stage 3: Implementation Execution Experiment Agent Agent Legend Idea Agent Final Results</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Input Prompt</head><p>Figure goes supervised fine-tuning with a derived dataset of 1,000 papers and extracted research ideas and plans, ensuring an initial understanding of the task.</p><p>Next, the model is refined on the dataset using RL with multi-dimensional feedback from respective reward models for novelty, feasibility, and effectiveness. These reward models evaluate and score ideas, guiding the reinforcement learning process to improve the quality of generated ideas. This alignment helps IdeaAgent to produce ideas that are not only grounded in the literature but also tailored to the unique requirements of machine learning research. During idea generation, for each task, the process begins with an individual research paper c = {c 1 , c 2 , . . . , c n }, where c i represents the selected contents of the paper with Semantic Scholar API<ref type="foot" target="#foot_3">foot_3</ref> , including the title, abstract, introduction, and related work. The input processing involves analyzing the literature to extract essential information. Specifically, the initial input prompt is used to extract research tasks t, research gaps g, and keywords k = {k 1 , k 2 , . . . , k m } with LLM. Then P = {c, t, g, k} are provided to retrieve a set of recent works in the literature, denoted as R = {r 1 , r 2 , . . . , r l }. IdeaAgent extracts and synthesizes relevant information from the literature. Using updated information, the LLM generates a new methodology with a prompt detailed as P 1 = {P, R} → h based on identified trends and gaps in the existing research, ensuring both relevance and grounding in current studies. This initial methodology set P 1 is then appended to create a detailed experimental plan P 2 = {P 1 , h} → e. The experiment plan outlines the methodology, expected outcomes, and potential challenges associated with testing the methodology.</p><p>Finally, we represent a research idea as:</p><formula xml:id="formula_0">RI = {P, R, h, e}</formula><p>where: P denotes the information from original paper, R denotes the recent research findings, h represents the generated methodology, e outlines the experiment plan.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Experiment Implementation</head><p>The second phase involves translating experimental plans into executable experiments. This phase is facilitated by ExperimentAgent an LLM-based agent. Given research idea RI that contains experiment plan e, ExperimentAgent performs several critical actions: First, it retrieves prototype implementation I from the original paper. Leveraging existing I, Ex-perimentAgent adapts and integrates this code, and optionally retrieves suitable models M ∇ from a model repository M = {M 1 , M 2 , . . . , M p } to fit the specific needs of the experimental plan. The selection process is guided by the requirements of the experimental plan e j , ensuring that the chosen models are appropriate for the specified tasks. If needed, relevant datasets D ∈ {D 1 , D 2 , . . . , D q } are identified and retrieved. We ensure that these datasets align with the experimental requirements by post-checkup, facilitating accurate and comprehensive testing of the methodologies <ref type="bibr" target="#b9">(Hocky and White, 2022)</ref>.</p><p>The ExperimentAgent modifies the code to ensure compatibility with the selected models and datasets <ref type="bibr" target="#b29">(Viswanathan et al., 2023)</ref>. Finally, the retrieved models, datasets, and prototype code are integrated into a cohesive experimental setup with experimental implementation (I, M ∇ , D) → S, ExperimentAgent ensures seamless interaction between these components, preparing the experimental setup for execution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">Implementation Execution</head><p>In the final phase, ExperimentAgent manages the execution of the experiments. The execution phase encompasses running the experiments, incorporating mechanisms for human feedback, and supporting iterative debugging.</p><p>The experimental setups (I, M ∇ , D) → S are executed under the management of ExperimentAgent. The agent oversees the allocation of computational resources, monitoring the progress and performance of the experiments. Additionally, Ex-perimentAgent integrates mechanisms for human feedback, allowing researchers to provide input and adjustments during the execution phase. This feedback loop ensures that the experimental design and implementation can be refined in real time.</p><p>From the global point of view, ExperimentAgent provides feedback and enables researchers (or stage 1) to refine their methodologies and experimental designs based on intermediate and final execution results (e.g. feasibility). This iterative approach ensures that the final research outcomes are robust, reproducible, and scientifically sound.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Experimental Setup and Datasets</head><p>To evaluate the effectiveness of MLR-COPILOT , we conduct experiments across five machine learning research task papers following <ref type="bibr" target="#b26">(Smith et al., 2023)</ref>. These tasks of the papers were chosen to cover a range of domains and complexities, demonstrating the versatility and robustness of our framework. SemRel <ref type="bibr" target="#b19">(Ousidhoum et al., 2024)</ref> from Se-mEval 2024 Task 1 focuses on semantic textual relatedness across 13 languages and is popular for its diversity and real-world relevance. We use the supervised track for our experiments and adopt Pearson correlation as the metrics. MLAgentBenchmark <ref type="bibr" target="#b10">(Huang et al., 2023)</ref> includes several datasets for evaluating LLMs in automated research idea generation and implementation. We use the following datasets: feedback (ELLIPSE) <ref type="bibr" target="#b7">(Franklin et al., 2022;</ref><ref type="bibr" target="#b6">Doe and Smith, 2023)</ref> used for ma-chine learning-based feedback prediction, suitable for regression tasks like MCRMSE. IMDB <ref type="bibr" target="#b17">(Maas et al., 2011)</ref> consists of movie reviews labeled by sentiment, commonly used for sentiment analysis and NLP tasks. Spaceship-Titanic dataset predicts passenger survival based on features like passenger class, age, and ticket fare. Identify-Contrails involves identifying contrails in satellite images, suitable for image classification tasks. Classification accuracy is used as the metric for these tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Evaluation and Results</head><p>We evaluate different stages of our framework, i.e. the hypothesis generation stage (Section 3.2.1), the experiment implementation and implementation execution stages (Section 3.2.2) separately.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.1">Research Idea Generation</head><p>We conduct both manual evaluations and automated evaluations. For baselines, we adopt BaseLLM which prompts with only a core paper to generate research ideas, and ResearchAgent <ref type="bibr" target="#b0">(Baek et al., 2024)</ref> with our implementation.</p><p>For manual evaluation, we invite five domain expert reviewers to assess 45 generated hypotheses based on the following criteria: clarity, validity, rigor, innovativeness, and generalizability. Additionally, the experimental designs are evaluated for clarity, validity, robustness, feasibility, and reproducibility. Each criterion is scored on a 5-point Likert scale (detailed definitions from <ref type="bibr" target="#b0">Baek et al. (2024)</ref>), with human researchers who have published at least three papers providing the annotations. For automated evaluation, we employ GPT-4 as our reviewing agent to assess the clarity and validity of the hypotheses and the robustness and feasibility of the experimental designs, scoring each criterion on a 5-point Likert scale. Similarity analysis is performed to compare the new hypotheses with the original hypotheses from existing papers on a scale from 0 to 1.</p><p>Table <ref type="table" target="#tab_0">1</ref>  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Utility Modules</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Filesystem</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Model Retriever</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Experiment Agent</head><p>[Reasoning]: Execute the "final_model.py" using ExecuteScript action to evaluate performance of the final model.</p><p>[Action]: Execute "final_model.py" using ExecuteScript action. input: {"script_name": "final_model.py"}.</p><p>Epoch [1/10], Train MSE: 0.543, Test MSE: 0.688 Epoch [2/10], Train MSE: 0.242, Test MSE: 0.493 ... [Observation]: Successful execute "final_model.py" [Reasoning]: To understand the initial structure and functionality of train.py for effective improvements. [Action]: Inspect Script (train.py) Input: { "script_name": "train.py", "start_line_number": "1", "end_line_number": "74" } Objective: Understand the training script, including data processing, [...] [Observation]: The train.py script imports [...]. Sets random seeds [...] Defines [...] Placeholder functions [...] exist without implementation. [...] [Feedback]: The script structure is clear, but key functions (train_model, predict) need proper implementation for proposed model training and prediction. [Reasoning]: To execute train.py as is, generating baseline results and [...] [Action]: Execute Script (train.py) Input: { "script_name": "train.py" } Objective: Run the script to generate baseline results [...] [Observation]: The script was executed successfully. Generated embeddings using the BERT model Completed the training process without errors. Metrics calculation placeholders indicated [...] [Feedback]: experimental model definition and training logic are missing. ... [Reasoning]: The existing structure of train.py and eval.py needs to be reorganized [...] [Action]: Edit Script (train.py) [Observation]: Edit train.py to separate data loading, model definition, training loop, and evaluation into distinct functions. The edited train.py now has clearly defined functions for data loading (load_data), model definition (build_model), training (train_model), and evaluation (evaluate_model). Similarly, eval.py is reorganized to load the model and perform predictions efficiently. [Feedback]: modify model architecture, retrieve hybrid model of CNN, BiLSTM, and attention mechanisms, similar to DTLP to align with the experiment design. .. [Reasoning]: CNN and BiLSTM need to be retrieved and fine-tuned [...] [Action]: Retrieve Model Input: { "Instruction": "retrieve the hybrid model of CNN, BiLSTM, and attention mechanisms" } [Observation]: CNN and BiLSTM retrieved [Feedback]: modify the model architecture ... Action Executor Action Log Human Feedback (optional) Code Inspection</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Response Observation</head><p>Figure <ref type="figure">3</ref>: An illustrative case study demonstrating the practical application of MLR-COPILOT for sentiment analysis on the ELLIPSE dataset. The diagram shows the interaction between the ExperimentAgent, Action Executor, and various Utility Modules. The action log details steps taken to inspect, execute, and retrieve models, with observations and feedback guiding iterative improvements in the experimental implementation and model performance.</p><p>BaseLLM and ResearchAgent across various criteria for generated hypotheses and experimental design. IdeaAgent consistently outperforms the BaseLLM and better than ResearchAgent in both manual and automated assessments. Furthermore, the similarity scores indicate that IdeaAgent generates hypotheses with lower similarity to existing ones, suggesting more novel contributions. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.2">Experiment Implementation and Implementation Execution</head><p>We evaluate the effectiveness of experiment implementation and execution by measuring the average task performance improvement and success rate across 8 trials aided with human instructions.</p><p>For each assessment, we utilize the retrieved stateof-the-art prototype code as the starting point for improvement. Our MLR-COPILOT is compared against a One-Pass Prompting (1-Prompt) baseline, a single-step method that directly modifies code without iterative feedback.</p><p>Task 1Prompt Ours (Claude-2.1) Ours (Claude-3.7) Ours (GPT-4) SemRel N/A 14.5 21.5 15.2 imdb N/A 67.3 76.2 78.5 spaceship-titanic N/A 48.4 48.4 45.8 feedback (ELLIPSE) N/A 55.3 60.2 49.2 identify-contrails N/A 4.6 14.5 10.0 Average N/A 38.0 44.16 39.74</p><p>Table 3: Average percentage improvement over the SOTA prototype. N/A indicates execution failure. Table <ref type="table">3</ref> and 4 demonstrate that both GPT-4 and Claude outperform the 1-Prompt baseline. 1-Prompt consistently fails across all trails in improvement towards the generated ideas due to its inability to detect and correct environmental and execution errors. This becomes particularly prominent when handling novel or complex research ideas, leading to persistent runtime failures and a complete lack of measurable success. Notably, Our method with Claude-3.7 achieves the highest average improvement, with a success rate of 50.0% compared to GPT-4 with 40% and Claude-2.1 with 27.5%, highlighting its superior effectiveness.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Case Study for Sentiment Analysis</head><p>To demonstrate the practical application of our framework, we conducted a case study where researchers used the system to generate hypotheses and conduct sentiment analysis experiments on EL-LIPSE dataset. As shown in Figure <ref type="figure">3</ref>, the process involves interaction between the ExperimentAgent, Action Executor, and various Utility Modules. The action sequences illustrate how the MLR-COPILOT system helps researchers systematically generate hypotheses and conduct experiments. The system inspects scripts, executes models, retrieves models, and analyzes results. Details are provided in the appendix. This comprehensive action log highlights the systematic approach of MLR-COPILOT , allowing researchers to understand, modify, and execute scripts for sentiment analysis. Each action, driven by reasoning, objectives, observations, and feedback, refines the model and experimental design, leading to the success of evaluation.</p><p>5 Related Work LLM as Scientific Agents. The automation of idea generation in scientific research received great interest with the advent of LLMs. Prior works have explored their potential for research question and idea generation based on literature-based discovery <ref type="bibr" target="#b37">(Zhong et al., 2023;</ref><ref type="bibr">Qi et al., 2023b;</ref><ref type="bibr" target="#b33">Yang et al., 2023;</ref><ref type="bibr" target="#b30">Wang et al., 2024;</ref><ref type="bibr">Li et al., 2024b)</ref>. Others apply LLM agents for AutoML tasks <ref type="bibr">(Sci-enceDirect, 2023;</ref><ref type="bibr">Zhang et al., 2023)</ref>. MLAgent-Bench <ref type="bibr" target="#b10">(Huang et al., 2023)</ref> is proposed to benchmark LLM performance on diverse ML tasks and datasets. Their scope is limited to predefined tasks and existing codebases without interaction. Our work supports automatic ML hypothesis generation with broader utilities and a more expressive action space.</p><p>Concurrent to our work, AI SCIENTIST <ref type="bibr" target="#b16">(Lu et al., 2024)</ref> introduced comprehensive autonomous research of very similar stage design with further scope of paper writing and reviewing. AI-SCIENTIST V2 <ref type="bibr" target="#b32">(Yamada et al., 2025)</ref> replaces manual templates with tree-search. Subsequent works like AGENTLAB <ref type="bibr" target="#b24">(Schmidgall et al., 2025)</ref> and AI-RESEARCHER <ref type="bibr" target="#b27">(Tang et al., 2025)</ref> adopt similar staged designs with enhanced role specialization and coordination. Other systems, including AI CO-SCIENTIST <ref type="bibr" target="#b8">(Gottweis et al., 2025)</ref> and RESEARCHTOWN <ref type="bibr">(Yu et al., 2024)</ref>, explore multiagent collaboration to facilitate novel idea discovery. Several follow-up efforts incorporate humanin-the-loop paradigms. CODESCIENTIST <ref type="bibr" target="#b12">(Jansen et al., 2025)</ref> supports collaborative code-based experimentation between LLMs and humans. <ref type="bibr" target="#b11">Ifargan et al. (2025)</ref> and DEEPREVIEW <ref type="bibr" target="#b39">(Zhu et al., 2025)</ref> integrate expert feedback to refine and align LLMgenerated drafts with domain expertise.</p><p>Model and Data Retrieval Systems. Efficient models and data retrieval are critical components of modern AI systems. Hugging Face's Datasets and Model Hub provide researchers with vast repositories of datasets and pre-trained models <ref type="bibr" target="#b13">(Lhoest et al., 2021;</ref><ref type="bibr" target="#b31">Wolf et al., 2020)</ref>. These systems enable users to find relevant data and models quickly through natural language prompts, facilitating seamless integration into the research workflow. Our framework incorporates the model and data retrieval utilities, which play a crucial role in the experiment implementation process based on natural language prompts <ref type="bibr" target="#b29">(Viswanathan et al., 2023)</ref>. This allows for translating research questions and problem statements into specific model requirements, facilitating the automated retrieval of the most relevant models for hypothesis testing and validation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>We introduce MLR-COPILOT, a framework for automating machine learning research using LLM agents. It helps generate novel research ideas, implements and executes the experiments, and refines the implementations based on both automatic and human feedback. Evaluations from domain experts highlight it as a powerful tool for research idea generation and the experimentation process.</p><p>While MLR-COPILOT demonstrates promising results in automating machine learning research, several limitations remain. First, the current pipeline treats the stages, especially idea generation and experiment implementation and execution largely as sequential. In practice, however, failed or suboptimal experiments often indicate the need to revisit and revise the original hypotheses. A tighter integration between stages, particularly enabling backward transitions from implementation or execution back to ideation, would better reflect the iterative nature of real-world scientific discovery. Second, although our framework introduces a novel paradigm and a usable end-to-end system, there remains room for improving its usability and accessibility, especially for researchers without extensive experience in LLM prompting or code debugging. Enhancing the user interface and providing more intuitive interaction mechanisms would help broaden adoption among a wider range of ML practitioners.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: The autonomous machine learning research task. We take the research paper as input and output the research idea (i.e. research methodology and experiment plan) with execution results.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><figDesc>Figure 2: Our MLR-COPILOT Framework. LLM IdeaAgent (leftmost grey component) performs research idea generation including hypothesis and experimental design (Stage 1). ExperimentAgent implements and executes the experiments (Stage 2 and 3).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Evaluation results for generated hypotheses.</figDesc><table><row><cell></cell><cell cols="4">and 2 present evaluation results com-</cell></row><row><cell cols="5">paring IdeaAgent trained with Llama3-7B to</cell></row><row><cell>Method</cell><cell>Criteria</cell><cell cols="3">BaseLLM ResearchAgent IdeaAgent</cell></row><row><cell></cell><cell>Clarity</cell><cell>3.7</cell><cell>4.2</cell><cell>4.4</cell></row><row><cell></cell><cell>Validity</cell><cell>3.8</cell><cell>3.8</cell><cell>3.9</cell></row><row><cell>Manual</cell><cell>Rigor</cell><cell>3.5</cell><cell>4.0</cell><cell>4.3</cell></row><row><cell></cell><cell>Innovativeness</cell><cell>3.1</cell><cell>3.8</cell><cell>3.9</cell></row><row><cell></cell><cell>Generalizability</cell><cell>3.6</cell><cell>3.8</cell><cell>4.1</cell></row><row><cell></cell><cell>Clarity</cell><cell>2.9</cell><cell>4.4</cell><cell>4.6</cell></row><row><cell>Automated</cell><cell>Validity</cell><cell>3.2</cell><cell>4.2</cell><cell>4.7</cell></row><row><cell></cell><cell>Similarity</cell><cell>0.32</cell><cell>0.15</cell><cell>0.13</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Evaluation results for experimental design.</figDesc><table><row><cell>Method</cell><cell>Criteria</cell><cell cols="3">BaseLLM ResearchAgent IdeaAgent</cell></row><row><cell></cell><cell>Clarity</cell><cell>3.4</cell><cell>4.1</cell><cell>4.3</cell></row><row><cell></cell><cell>Validity</cell><cell>3.7</cell><cell>3.9</cell><cell>4.2</cell></row><row><cell>Manual</cell><cell>Robustness</cell><cell>3.5</cell><cell>3.8</cell><cell>4.1</cell></row><row><cell></cell><cell>Feasibility</cell><cell>3.8</cell><cell>4.0</cell><cell>4.3</cell></row><row><cell></cell><cell>Reproducibility</cell><cell>3.6</cell><cell>3.9</cell><cell>3.9</cell></row><row><cell>Automated</cell><cell>Robustness Feasibility</cell><cell>3.1 3.3</cell><cell>3.9 4.0</cell><cell>4.4 4.6</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 4 :</head><label>4</label><figDesc>Success rate over 8 trials, where success is defined as achieving at least 10% improvement over the SOTA prototype.</figDesc><table><row><cell>Task</cell><cell cols="4">1Prompt Ours (Claude-2.1) Ours (Claude-3.7) Ours (GPT-4)</cell></row><row><cell>SemRel</cell><cell>0.0</cell><cell>37.5</cell><cell>62.5</cell><cell>50.0</cell></row><row><cell>imdb</cell><cell>0.0</cell><cell>12.5</cell><cell>50.0</cell><cell>50.0</cell></row><row><cell>spaceship-titanic</cell><cell>0.0</cell><cell>75.0</cell><cell>75.0</cell><cell>62.5</cell></row><row><cell>feedback (ELLIPSE)</cell><cell>0.0</cell><cell>12.5</cell><cell>50.0</cell><cell>25.0</cell></row><row><cell>identify-contrails</cell><cell>0.0</cell><cell>0.0</cell><cell>12.5</cell><cell>12.5</cell></row><row><cell>Average</cell><cell>0.0</cell><cell>27.5</cell><cell>50.0</cell><cell>40.0</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_0"><p>Without steering at inference time.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_1"><p>4,271 papers are collected as of year 2023 and 2024. ICLR: https://iclr.cc/ NeurIP: https:// neurips.cc/.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_2"><p>Open Review API :https://docs.openreview. net/reference/api-v2.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="7" xml:id="foot_3"><p>https://www.semanticscholar.org/ product/api.</p></note>
+		</body>
+		<back>
+
+			<div type="availability">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>data, models, and demonstration can be found at: <ref type="url" target="https://github.com/du-nlp-lab/MLR-Copilot">https://github.com/du-nlp-lab/  MLR-Copilot</ref>.</p><p>2 Our software demonstration video is at: <ref type="url" target="https://youtu.be/y_yBKUtvln8">https://  youtu.be/y_yBKUtvln8</ref>.</p><p>3 Our examples with Graphical User Interface can be found at: <ref type="url" target="https://huggingface.co/spaces/du-lab/MLR-Copilot">https://huggingface.co/spaces/du-lab/  MLR-Copilot</ref>.</p></div>
+			</div>
+
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Details of Case Study: Sentiment Analysis Research</head><p>For the purpose of brevity, the running logs are summarized. Full logs are available in git repository <ref type="url" target="https://github.com/du-nlp-lab/MLR-Copilot/blob/main/full.log">https://github.com/du-nlp-lab/MLR-Copilot/blob/main/full.log</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Hypothesis and Experiment Generation Prompts</head><p>Detailed prompts guiding the formulation of innovative scientific methods and robust experiments, emphasizing clarity, innovation, validity, and reproducibility based on provided research problems, existing studies, and relevant entities.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Generated</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2 Definition of Novelty, Feasibility, and Effectiveness</head><p>This appendix provides detailed definitions and scoring guidelines for Novelty, Feasibility, and Effectiveness-the three primary dimensions used to evaluate research ideas and used in RL to train the IdeaAgent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2.1 Novelty</head><p>Novelty evaluates how different a proposed research idea is compared to existing works. Following previous work, the guidelines for scoring are as follows:</p><p>• 1: Not novel at all -The idea is identical to many existing works. • 3: Mostly not novel -Very similar ideas already exist.</p><p>• 5: Somewhat novel -There are differences, but not enough for a standalone paper.</p><p>• 6: Reasonably novel -Notable differences, potentially sufficient for a new paper.</p><p>• 8: Clearly novel -Major differences from all existing ideas.</p><p>• 10: Highly novel -Highly different and creative in a clever, impactful way.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2.2 Feasibility</head><p>Feasibility measures how practical it is to execute the proposed idea within 1-2 months under the following assumptions:</p><p>• Ample access to OpenAI/Anthropic APIs.</p><p>• Limited GPU computing resources.</p><p>Scoring guidelines:</p><p>• 1: Impossible -The idea or experiments are fundamentally flawed.</p><p>• 3: Very challenging -Major flaws or significant resource limitations.</p><p>• 5: Moderately feasible -Possible with careful planning and modifications.</p><p>• 6: Feasible -Achievable with reasonable planning.</p><p>• 8: Highly feasible -Straightforward to implement and run.</p><p>• 10: Easy -Quick to implement without requiring advanced skills.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2.3 Effectiveness</head><p>Effectiveness assesses the likelihood of the research idea achieving meaningful experimental performance improvement. The scoring is defined as:</p><p>• 1: Extremely unlikely -Significant flaws, almost certain to fail.</p><p>• 3: Low effectiveness -Limited potential, might work in very specific scenarios.</p><p>• 5: Somewhat ineffective -A slight chance of marginal or inconsistent improvement.</p><p>• 6: Somewhat effective -A decent chance of moderate improvement on certain benchmarks.</p><p>• 8: Probably effective -Likely to deliver significant improvement on benchmarks.</p><p>• 10: Definitely effective -Highly likely to outperform existing benchmarks by a substantial margin.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><figDesc>Research Idea Method: Advanced Aspect-Level Sentiment Analysis with Hybrid Deep Learning -Dataset Enhancement: Additional data collection, preprocessing, and annotation refinement. -Hybrid Model: Integration of CNN, BiLSTM, and Transformers (BERT) with enhanced linguistic features. -Training and Validation: Cross-validation and comparison to baseline methods. -Iterative Refinement: Expert feedback and active learning for continuous improvement. -Deployment: Real-time integration with educational systems and user-friendly interfaces. Model Training and Evaluation Scripts Training Script (train.py): -Loads and preprocesses data, splits into training and validation sets. -Implements custom dataset and regression model based on BERT. -Conducts training loop with validation and outputs metrics. Evaluation Script (eval.py): -Loads trained model parameters. -Evaluates predictions on test data, calculates metrics, and generates submissions.Both scripts are structured to streamline training, evaluation, and deployment processes effectively.B IdeaAgent TrainingB.1 Dataset AnalysisFigures 4 and 5 provide an overview of the IdeaAgent training data distribution and top 10 keywords.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 :</head><label>4</label><figDesc>Rating distribution statistics of our dataset.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 5 :</head><label>5</label><figDesc>Top 10 topic distribution of our dataset.</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Researchagent: Iterative research idea generation over scientific literature with large language models</title>
+		<author>
+			<persName><forename type="first">Jinheon</forename><surname>Baek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sujay</forename><surname>Kumar Jauhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silviu</forename><surname>Cucerzan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sung</forename><forename type="middle">Ju</forename><surname>Hwang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.07738</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">The growth of scientific knowledge: a bibliometric perspective on the expansion and acceleration of scientific output</title>
+		<author>
+			<persName><forename type="first">Ruediger</forename><surname>Lutz Bornmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hans-Dieter</forename><surname>Mutz</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Daniel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the American Society for Information Science and Technology</title>
+		<imprint>
+			<biblScope unit="volume">61</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="2155" to="2160" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Emerging technologies in scientific research: Opportunities and challenges</title>
+		<author>
+			<persName><forename type="first">Shyam</forename><surname>Choudhury</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Scientific Research and Development</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="45" to="56" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Scientific document summarization via citation contextualization and scientific discourse</title>
+		<author>
+			<persName><forename type="first">Arman</forename><surname>Cohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nazli</forename><surname>Goharian</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">International Journal on Digital Libraries</title>
+		<imprint>
+			<biblScope unit="volume">19</biblScope>
+			<biblScope unit="issue">2-3</biblScope>
+			<biblScope unit="page" from="287" to="303" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Github copilot ai pair programmer: Asset or liability</title>
+		<author>
+			<persName><forename type="first">Arghavan</forename><surname>Moradi Dakhel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vahid</forename><surname>Majdinasab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amin</forename><surname>Nikanjam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Foutse</forename><surname>Khomh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michel</forename><forename type="middle">C</forename><surname>Desmarais</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Ming</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Jiang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Systems and Software</title>
+		<imprint>
+			<biblScope unit="volume">203</biblScope>
+			<biblScope unit="page">111734</biblScope>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Ellipse: A dataset for feedback prediction in machine learning</title>
+		<author>
+			<persName><forename type="first">John</forename><surname>Doe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Smith</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">24</biblScope>
+			<biblScope unit="page" from="1" to="10" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">A</forename><surname>Franklin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Benner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Rambis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Baffour</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Holbrook</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Crossley</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ulrichboser</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Juraj</forename><surname>Gottweis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Hung</forename><surname>Weng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Daryin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anil</forename><surname>Palepu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Petar</forename><surname>Sirkovic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Artiom</forename><surname>Myaskovsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Weissenberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keran</forename><surname>Rong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryutaro</forename><surname>Tanno</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.18864</idno>
+		<title level="m">Towards an ai co-scientist</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Natural language processing models that automate programming will transform chemistry research and teaching</title>
+		<author>
+			<persName><forename type="first">Glen</forename><forename type="middle">M</forename><surname>Hocky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">D</forename><surname>White</surname></persName>
+		</author>
+		<idno type="DOI">10.1039/D1DD00009H</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Digital Discovery</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="79" to="83" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Mlagentbench: Evaluating language agents on machine learning experimentation</title>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Vora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jure</forename><surname>Leskovec</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.03302</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Autonomous llm-driven research-from data to human-verifiable research papers</title>
+		<author>
+			<persName><forename type="first">Tal</forename><surname>Ifargan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukas</forename><surname>Hafner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maor</forename><surname>Kern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ori</forename><surname>Alcalay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roy</forename><surname>Kishony</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">NEJM AI</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<date type="published" when="2025">2025. 2400555</date>
+			<publisher>AIoa</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Codescientist: End-to-end semiautomated scientific discovery with code-based experimentation</title>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Jansen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oyvind</forename><surname>Tafjord</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marissa</forename><surname>Radensky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pao</forename><surname>Siangliulue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Hope</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bhavana</forename><surname>Dalvi Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bodhisattwa</forename><surname>Prasad Majumder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">S</forename><surname>Weld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.22708</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Datasets: A community library for natural language processing</title>
+		<author>
+			<persName><forename type="first">Quentin</forename><surname>Lhoest</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Albert</forename><surname>Villanova Del Moral</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yacine</forename><surname>Jernite</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Thakur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suraj</forename><surname>Patrick Von Platen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julien</forename><surname>Patil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mariama</forename><surname>Chaumond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julien</forename><surname>Drame</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lewis</forename><surname>Plu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joe</forename><surname>Tunstall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mario</forename><surname>Davison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gunjan</forename><surname>Šaško</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bhavitvya</forename><surname>Chhablani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Malik</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Brandeis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Teven</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Scao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Canwen</forename><surname>Sanh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Angelina</forename><surname>Patry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philipp</forename><surname>Mcmillan-Major</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sylvain</forename><surname>Schmid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clément</forename><surname>Gugger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Théo</forename><surname>Delangue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lysandre</forename><surname>Matussière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stas</forename><surname>Debut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierric</forename><surname>Bekman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thibault</forename><surname>Cistac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Goehringer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">François</forename><surname>Mustar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Lagunas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Rush</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wolf</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2021.emnlp-demo.21</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing: System Demonstrations</title>
+		<meeting>the 2021 Conference on Empirical Methods in Natural Language Processing: System Demonstrations<address><addrLine>Dominican Republic</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="175" to="184" />
+		</imprint>
+		<respStmt>
+			<orgName>Online and Punta Cana</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">2024a. Learning to generate research idea with dynamic control</title>
+		<author>
+			<persName><forename type="first">Ruochen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liqiang</forename><surname>Jing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinya</forename><surname>Du</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">2024b. Learning to generate research idea with dynamic control</title>
+		<author>
+			<persName><forename type="first">Ruochen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liqiang</forename><surname>Jing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinya</forename><surname>Du</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.14626</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cong</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><forename type="middle">Tjarko</forename><surname>Lange</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakob</forename><surname>Foerster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Clune</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Ha</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.06292</idno>
+		<title level="m">The AI Scientist: Towards fully automated open-ended scientific discovery</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Learning word vectors for sentiment analysis</title>
+		<author>
+			<persName><forename type="first">Raymond</forename><forename type="middle">E</forename><surname>Andrew L Maas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><forename type="middle">T</forename><surname>Daly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Pham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">Y</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Ng</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Potts</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 49th annual meeting of the association for computational linguistics: Human language technologies</title>
+		<meeting>the 49th annual meeting of the association for computational linguistics: Human language technologies</meeting>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="142" to="150" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2303.08774</idno>
+		<idno type="arXiv">arXiv:2303.08774</idno>
+		<title level="m">GPT-4 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Nirmal Surange</title>
+		<author>
+			<persName><forename type="first">Nedjma</forename><surname>Ousidhoum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hassan</forename><surname>Shamsuddeen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohamed</forename><surname>Muhammad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Idris</forename><surname>Abdalla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ibrahim</forename><forename type="middle">Said</forename><surname>Abdulmumin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sanchit</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alham</forename><surname>Ahuja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladimir</forename><surname>Fikri Aji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abinew</forename><surname>Araujo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pavan</forename><surname>Ali Ayele</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meriem</forename><surname>Baswani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Beloucif</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sofia</forename><surname>Biemann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christine</forename><forename type="middle">De</forename><surname>Bourhim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Genet</forename><surname>Kock</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oumaima</forename><surname>Shanko Dekebo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gopichand</forename><surname>Hourrane</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lokesh</forename><surname>Kanumolu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><surname>Madasu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manish</forename><surname>Rutunda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thamar</forename><surname>Shrivastava</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Solorio</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.08638</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Semrel2024: A collection of semantic textual relatedness datasets for 13 languages</title>
+		<editor>
+			<persName><forename type="first">Genta</forename><surname>Vishnubhotla</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Seid</forename><surname>Winata</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Saif</forename><forename type="middle">M</forename><surname>Muhie Yimam</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Mohammad</surname></persName>
+		</editor>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Generative agents: Interactive simulacra of human behavior</title>
+		<author>
+			<persName><forename type="first">Sung</forename><surname>Joon</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O'</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carrie</forename><forename type="middle">Jun</forename><surname>Brien</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meredith</forename><forename type="middle">Ringel</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Morris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><forename type="middle">S</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bernstein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 36th annual acm symposium on user interface software and technology</title>
+		<meeting>the 36th annual acm symposium on user interface software and technology</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="1" to="22" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Research Design: Qualitative, Quantitative, and Mixed Methods Approaches</title>
+		<author>
+			<persName><forename type="first">Kenny</forename><surname>Powell</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<publisher>Sage Publications</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Large language models are zero shot hypothesis proposers</title>
+		<author>
+			<persName><forename type="first">Biqing</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiyan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoxiang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sihang</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Zhang-Ren Chen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Large language models are zero shot hypothesis proposers</title>
+		<author>
+			<persName><forename type="first">Biqing</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiyan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoxiang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sihang</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Zhang-Ren Chen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Samuel</forename><surname>Schmidgall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ze</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ximeng</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialian</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zicheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emad</forename><surname>Barsoum</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.04227</idno>
+		<title level="m">Agent laboratory: Using llm agents as research assistants</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Automl: A systematic review on automated machine learning</title>
+		<author>
+			<persName><surname>Sciencedirect</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>ScienceDirect</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Mlagentbench2023: A framework for automating research idea generation and implementation using llm agents</title>
+		<author>
+			<persName><forename type="first">John</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Doe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Computational Research</title>
+		<imprint>
+			<biblScope unit="volume">45</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="123" to="145" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jiabin</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lianghao</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhonghang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Huang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.18705</idno>
+		<title level="m">Ai-researcher: Autonomous scientific innovation</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Albert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amjad</forename><surname>Almahairi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasmine</forename><surname>Babaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolay</forename><surname>Bashlykov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soumya</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prajjwal</forename><surname>Bhargava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shruti</forename><surname>Bhosale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Bikel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukas</forename><surname>Blecher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cristian</forename><surname>Canton-Ferrer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moya</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guillem</forename><surname>Cucurull</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Esiobu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jude</forename><surname>Fernandes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeremy</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenyin</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Fuller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cynthia</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vedanuj</forename><surname>Goswami</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Hartshorn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saghar</forename><surname>Hosseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hakan</forename><surname>Inan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcin</forename><surname>Kardas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Viktor</forename><surname>Kerkez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Madian</forename><surname>Khabsa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Isabel</forename><surname>Kloumann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Artem</forename><surname>Korenev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Punit</forename><surname>Singh Koura</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marie-Anne</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thibaut</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jenya</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diana</forename><surname>Liskovich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinghai</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuning</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Martinet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Todor</forename><surname>Mihaylov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pushkar</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Molybog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixin</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Poulton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeremy</forename><surname>Reizenstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rashi</forename><surname>Rungta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kalyan</forename><surname>Saladi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Schelten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruan</forename><surname>Silva</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2307.09288</idno>
+		<idno type="arXiv">arXiv:2307.09288</idno>
+		<editor>Eric Michael Smith, Ranjan Subramanian, Xiaoqing Ellen Tan, Binh Tang, Ross Taylor, Adina Williams, Jian Xiang Kuan, Puxin Xu, Zheng Yan, Iliyan Zarov, Yuchen Zhang, Angela Fan, Melanie Kambadur, Sharan Narang</editor>
+		<imprint>
+			<publisher>Aurélien Rodriguez</publisher>
+			<pubPlace>Robert Stojnic, Sergey Edunov</pubPlace>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>and Thomas Scialom. 2023. Llama 2: Open foundation and finetuned chat models</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Prompt2model: Generating deployable models from natural language instructions</title>
+		<author>
+			<persName><forename type="first">Vijay</forename><surname>Viswanathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyang</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Bertsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tongshuang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<idno>CoRR, abs/2308.12261</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Scimon: Scientific inspiration machines optimized for novelty</title>
+		<author>
+			<persName><forename type="first">Qingyun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Doug</forename><surname>Downey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji</forename><surname>Heng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Hope</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the</title>
+		<meeting>the 62nd Annual Meeting of the</meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Transformers: State-of-the-art natural language processing</title>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Wolf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lysandre</forename><surname>Debut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Sanh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julien</forename><surname>Chaumond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clement</forename><surname>Delangue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Moi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierric</forename><surname>Cistac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Rault</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Remi</forename><surname>Louf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Morgan</forename><surname>Funtowicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joe</forename><surname>Davison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Shleifer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clara</forename><surname>Patrick Von Platen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yacine</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julien</forename><surname>Jernite</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Canwen</forename><surname>Plu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teven</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sylvain</forename><surname>Le Scao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mariama</forename><surname>Gugger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quentin</forename><surname>Drame</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Lhoest</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rush</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2020.emnlp-demos.6</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing: System Demonstrations</title>
+		<meeting>the 2020 Conference on Empirical Methods in Natural Language Processing: System Demonstrations</meeting>
+		<imprint>
+			<publisher>Online. Association for Computational Linguistics</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="38" to="45" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yutaro</forename><surname>Yamada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Tjarko Lange</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cong</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengran</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakob</forename><surname>Foerster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Clune</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Ha</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.08066</idno>
+		<title level="m">The ai scientist-v2: Workshop-level automated scientific discovery via agentic tree search</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Large language models for automated open-domain scientific hypotheses discovery</title>
+		<author>
+			<persName><forename type="first">Zonglin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinya</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxian</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Zheng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.02726</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>Soujanya Poria, and Erik Cambria</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Haofei</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaochen</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zirui</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kunlun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keyang</forename><surname>Xuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinwei</forename><surname>Yao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.17767</idno>
+		<title level="m">Tao Feng, and Jiaxuan You. 2024. Researchtown: Simulator of human research community</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Automl-gpt: Automatic machine learning with gpt</title>
+		<author>
+			<persName><forename type="first">Shujian</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengyue</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lemeng</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingchao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mi</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2305.02499</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyang</forename><surname>Teng</surname></persName>
+		</author>
+		<title level="m">Natural Language Processing: A Machine Learning Perspective</title>
+		<imprint>
+			<publisher>MIT Press</publisher>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Goal driven discovery of distributional differences via language descriptions</title>
+		<author>
+			<persName><forename type="first">Ruiqi</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steve</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinwoo</forename><surname>Ahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Klein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="40204" to="40237" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuhui</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abishek</forename><surname>Sridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianyi</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyue</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.13854</idno>
+		<title level="m">Webarena: A realistic web environment for building autonomous agents</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Deepreview: Improving llm-based paper review with human-like deep thinking process</title>
+		<author>
+			<persName><forename type="first">Minjun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Weng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linyi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.08569</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

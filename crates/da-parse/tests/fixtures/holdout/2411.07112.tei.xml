@@ -1,0 +1,2556 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">ROCODE: Integrating Backtracking Mechanism and Program Analysis in Large Language Models for Code Generation</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Xue</forename><surname>Jiang</surname></persName>
+							<email>jiangxue@stu.pku.edu.cn</email>
+							<affiliation key="aff0">
+								<orgName type="laboratory">Key Lab of High Confidence Software Technology</orgName>
+								<orgName type="institution">MoE (Peking University</orgName>
+								<address>
+									<settlement>Beijing</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yihong</forename><surname>Dong</surname></persName>
+							<email>dongyh@stu.pku.edu.cn</email>
+							<affiliation key="aff0">
+								<orgName type="laboratory">Key Lab of High Confidence Software Technology</orgName>
+								<orgName type="institution">MoE (Peking University</orgName>
+								<address>
+									<settlement>Beijing</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yongding</forename><surname>Tao</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Electronic Science and Technology of China Chengdu</orgName>
+								<address>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Huanyu</forename><surname>Liu</surname></persName>
+							<email>huanyuliu@stu.pku.edu.cn</email>
+							<affiliation key="aff2">
+								<orgName type="laboratory">Key Lab of High Confidence Software Technology</orgName>
+								<orgName type="institution">MoE (Peking University</orgName>
+								<address>
+									<settlement>Beijing</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+							<email>zhijin@pku.edu.cn</email>
+							<affiliation key="aff3">
+								<orgName type="laboratory">Key Lab of High Confidence Software Technology</orgName>
+								<orgName type="institution">MoE (Peking University</orgName>
+								<address>
+									<settlement>Beijing</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Wenpin</forename><surname>Jiao</surname></persName>
+							<affiliation key="aff4">
+								<orgName type="laboratory">Key Lab of High Confidence Software Technology</orgName>
+								<orgName type="institution">MoE (Peking University</orgName>
+								<address>
+									<settlement>Beijing</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+							<email>lige@pku.edu.cn</email>
+							<affiliation key="aff5">
+								<orgName type="laboratory">Key Lab of High Confidence Software Technology</orgName>
+								<orgName type="institution">MoE (Peking University</orgName>
+								<address>
+									<settlement>Beijing</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">ROCODE: Integrating Backtracking Mechanism and Program Analysis in Large Language Models for Code Generation</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">311C4A05B1D72ECAD7F5364DAA515E03</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:50+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Code Generation</term>
+					<term>Large Language Models</term>
+					<term>Backtracking Mechanism</term>
+					<term>Program Analysis</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large language models (LLMs) have achieved impressive performance in code generation recently, offering programmers revolutionary assistance in software development. However, due to the auto-regressive nature of LLMs, they are susceptible to error accumulation during code generation. Once an error is produced, LLMs can merely continue to generate the subsequent code conditioned on it, given their inability to adjust previous outputs. Existing LLM-based approaches typically consider post-revising after code generation, leading to the challenging resolution of accumulated errors and the significant wastage of resources. Ideally, LLMs should rollback and resolve the occurred error in time during code generation, rather than proceed on the basis of the error and wait for postrevising after generation. In this paper, we propose ROCODE, which integrates the backtracking mechanism and program analysis into LLMs for code generation. Specifically, we employ program analysis to perform incremental error detection during the generation process. When an error is detected, the backtracking mechanism is triggered to priming rollback strategies and constraint regeneration, thereby eliminating the error early and ensuring continued generation on the correct basis. Experiments on multiple code generation benchmarks show that ROCODE can significantly reduce the errors generated by LLMs, with a compilation pass rate of 99.1%. The test pass rate is improved by up to 23.8% compared to the best baseline approach. Compared to the post-revising baseline, the token cost is reduced by 19.3%. Moreover, our approach is model-agnostic and achieves consistent improvements across nine representative LLMs.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I. INTRODUCTION</head><p>As modern software architectures continue to increase in size and complexity, the burden on developers to construct and maintain these systems has become substantial. Given that programs serve as the fundamental carriers of software functionality, the automation of their generation is of paramount importance. Code generation technology, which seeks to automatically produce programs that align with human intentions, has emerged as a focal area of interest within both academia and industry fields <ref type="bibr" target="#b0">[1]</ref>- <ref type="bibr" target="#b3">[4]</ref>. In recent years, large language models (LLMs) have rapidly advanced and achieved significant success in the domain of automated code generation <ref type="bibr" target="#b4">[5]</ref>- <ref type="bibr" target="#b8">[9]</ref>. A well-known tool for code generation based on LLMs is Copilot <ref type="bibr" target="#b9">[10]</ref>, which has demonstrated its utility by generating code that can be accepted by more than 30% of its users <ref type="bibr" target="#b10">[11]</ref>. Typically, LLMs adopt an auto-regressive approach, where the output at each step is conditioned on the outputs of previous steps. Once an error occurs during the generation process at any step (for example, the selection of an inappropriate token due to hallucinations<ref type="foot" target="#foot_0">foot_0</ref>  <ref type="bibr" target="#b13">[14]</ref>), this error will be included in the context of the subsequent steps. This phenomenon can cause errors to accumulate and amplify their impact, potentially causing the generated content to completely deviate from the expected path <ref type="bibr" target="#b14">[15]</ref>, <ref type="bibr" target="#b15">[16]</ref>. Moreover, the generation process of LLMs differs significantly from the common practice of reviewing and adjusting existing code in human coding. In practice, developers are able to adjust their code whenever necessary based on its quality and its alignment with requirements, while LLMs can merely proceed based on the output generated so far and are unable to adjust previous outputs spontaneously. Recent studies <ref type="bibr" target="#b16">[17]</ref>- <ref type="bibr" target="#b18">[19]</ref> have attempted to utilize the LLMs to revise their output after generation in a post-revising manner. However, this type of approach faces difficulties in revising the accumulated errors <ref type="bibr" target="#b19">[20]</ref> and can result in resource wastage <ref type="bibr" target="#b16">[17]</ref>.</p><p>Ideally, through incorporating a backtracking mechanism into the generation process, we can expose potential errors early and resolve them, effectively preventing error propagation. However, to effectively implement backtracking, three key issues ought to be addressed: 1) When to roll back. During the generation process, the rollback is triggered depending on when errors are detected. Error detection during the generation of LLMs should satisfy the following conditions. First, it must be capable of performing real-time checks on incomplete code; second, it is required to cover common errors produced by LLMs which are shown in Figure <ref type="figure" target="#fig_0">1</ref>; finally, its running speed would be better to fast enough so as not to affect the efficiency of LLM significantly. 2) Where to roll back to. Simply rolling back to the last error-free state of the generated code usually does not address the issue. We should identify the initial decision point that caused the error and roll back to that point. Determining the rollback point is a complex decision-making process because the meaning and behavior of the erroneous code depend not only on itself, but also on interactions with preceding code, which are influenced by factors such as variable scopes, state dependencies, and logical dependencies within the program. 3) How to avoid previous errors. After the rollback, the key task during regeneration is to prevent the recurrence of previous errors. However, completely prohibiting the LLMs from generating previously erroneous code may inadvertently block benign tokens. Thus, it is essential to impose appropriate constraints on the regeneration process.</p><p>To address the preceding three issues, we first implement incremental error detection using program analysis, which enables the examination of incomplete code to identify potential errors. Compilers can be used not only in code transformation for execution but also as an effective tool for program analysis. It is capable of performing numerous key and common analyses such as syntax parsing, type checking, and dependency analysis, and they have been optimized for speed over many years. Moreover, by using compilers, we can design new analyses for specific errors in LLMs' generated code, such as checking for code repetition problems. Second, for determining rollback points, program analysis serves as an external inspection during the generation of LLMs, providing essential error information. However, this error information may not directly pinpoint the root cause of the error. In contrast, the inherent uncertainty of LLMs is proven to be usable for self-assessment during generation <ref type="bibr" target="#b20">[21]</ref>- <ref type="bibr" target="#b22">[23]</ref>, which can aid in tracing the root cause of errors. Therefore, combining these two sources of information facilitates determining rollback points. Third, in regeneration with constraints, we decay the generation probability of the paths leading to error progressively. Moreover, by modeling the entire generation process with tree structures, it is feasible to comprehensively account for all historical errors and to effectively superimpose penalties for them.</p><p>In this paper, we propose ROCODE, a novel code generation approach that integrates backtracking mechanism and program analysis to LLMs. The core of our approach -the backtracking mechanism detects errors in real-time, rolls back, and regenerates with constraints during the generation process of LLMs, thus preventing error accumulation and enhancing the performance and efficiency of code generation. Specifically, we employ program analysis to perform incremental error detection during the code generation process to discover errors timely. Based on the results of program analysis and the observation of uncertainty in the generation of LLMs, we design a series of rollback strategies to determine the rollback point. To constrain the process of regeneration, we strategically penalize the likelihood of tokens that have contributed to previous errors. Further, given that the introduction of rollback and regeneration makes code generation no longer follow a linear path, we use a Trie Tree to model the whole generation process of ROCODE. Importantly, our approach is modelagnostic, and requires no additional training.</p><p>Our experimental results demonstrate that ROCODE consistently outperforms all baselines across six code generation benchmarks. ROCODE achieves a compilation success rate of 99.1% and surpasses the best-performing baseline by 23.8% in pass rate. To further demonstrate its utility, we apply ROCODE to multilingual code generation tasks and achieve a relative improvement of 34.2% in pass rate. We also explore generalizability of ROCODE across various LLMs, revealing significant enhancements in the performance of both general LLMs and code LLMs, with an average improvement of 18.2% in pass rate. In terms of cost and performance, ROCODE reduces token costs by 19.3%, compared to the Post-revising approach. Furthermore, the ablation studies reveal that incremental error detection, rollback strategies, and constraint regeneration in ROCODE all contribute to performance improvement. To the best of our knowledge, this work is the first to introduce and implement the rollback approach for code generation during the decoding process in LLMs<ref type="foot" target="#foot_1">foot_1</ref> .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>II. METHODOLOGY</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Overview</head><p>For a code generation task, given the requirement x, we propose to perform ROCODE for LLMs to generate code y. ROCODE consists of three key steps:</p><p>• Incremental Error Detection focuses on continuously checking the generated code during the generation process to discover errors early. By implementing program analysis, we can detect potential errors in the generated code such as compile errors and runtime errors.</p><p>• Strategic Rollback, upon detecting an error, rolls back the generated code to an earlier error-free state. In this step, we design a series of specific rollback strategies to determine the rollback point.</p><p>• Constraint Regeneration formulates error-related constraints and combines them with the LLM decoding process to prevent previous errors from happening again. This step involves strategically penalizing the likelihood of the generated tokens that contributed to the errors. To track the code generation progression of ROCODE, we employ the structure of Trie Tree and and integrate operations of incremental error detection, strategic rollback, and constraint generation within the Trie Tree. This structure helps organize non-linear, tree-like code generation trajectories, allowing us to efficiently handle multiple rollback and regeneration cycles.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Incremental Error Detection</head><p>Considering LLMs are generated in an auto-regressive way, once an error occurs during the generation process, the LLMs will continue to generate content on the basis of the errors, leading to the propagation of errors. Since the occurred errors are inevitable in the final outputs, the subsequent generation derived from these erroneous contents can be almost considered redundant. Therefore, we employ incremental error detection to detect errors during generation in a timely manner and substantially reduce the cost of long rollbacks.</p><p>Incremental error detection employs the program analysis tool to incrementally detect errors following the generation of each detectable unit. Specifically, we use the statement as the smallest unit for detection, each representing the smallest code unit with independent functionality. The LLM M incrementally generates these statements step by step. Upon completion of each statement, we employ the program analysis tool C to conduct error detection. This process can be formulated as follows:</p><formula xml:id="formula_0">s i = M(x, S :i-1 ),<label>(1)</label></formula><formula xml:id="formula_1">e i = C(S :i-1 ∥ s i ),<label>(2)</label></formula><p>where s i is the i-th statement generated by M, S :i-1 = [s 0 , s 1 , . . . , s i-1 ], ∥ denotes the concatenation of statements, and e i is the report of incremental error detection for s i , which is defined as:</p><formula xml:id="formula_2">e i = {result, type, lineno, offset},<label>(3)</label></formula><p>where 'result' indicates the detection result of whether the generated code passes, with possible values being {success, failure}. If 'result' is 'success', the remaining items are not applicable, otherwise e i returns 'failure' along with its 'type', 'lineno', and 'offset'. Among them, 'type' indicates the type of error detected, 'lineno' represents the line number where the error occurs, and 'offset' represents the specific position of error within the 'lineno'. The program analysis tool determines the types of errors that can be detected during error detection. There are various tools designed for different errors and programming languages. In this paper, we choose the compiler to support our program analysis. The reason is that the compiler integrates some key and mature analysis techniques, which can effectively detect errors commonly found in LLMs (shown in Fig. <ref type="figure" target="#fig_0">1</ref>). Moreover, compilers support almost all programming languages and run fast. In the generation process, we use a compiler either without executing or with executing test input to check the generated code. Without executing, we can check for syntax errors, type mismatches, declaration errors, scope errors, and linking errors. With executing test input, we can further increase checks for runtime errors, including timeouts, recursion errors, division by zero errors, memory access errors, index out-of-bounds errors, and resource not found errors. Moreover, in practical scenarios, developers usually have access to publicly available test cases to better understand and validate requirements, we take this part into account. Once the code is completely generated, we execute the complete set of test cases (if available), which include both input and output, to thoroughly verify the program's logic.</p><p>Furthermore, we observe that repeat patterns problem occurs during the code generation process, characterized by the repetitive output of the same syntactic structure but meaningless code constructs like 'if-elif-elif...', 'print', etc., resulting in failure to generate a termination symbol (EOS) <ref type="bibr" target="#b11">[12]</ref>. This problem typically does not result in syntax and compile errors during generation, but it can significantly affect the semantics of the generated code, thereby introducing potential logic errors. Therefore, we design an additional analysis to detect repeat patterns problem. Specifically, we utilize the syntax parsing module of the compiler to extract the syntactic structure and identify repetitive patterns. According to Abstract Syntax Definition Language (ASDL) <ref type="bibr" target="#b23">[24]</ref>, if the same type of stmt appears consecutively more than a specified number of times, it is considered as an error with the error report including 'type' as repetition and 'lineno' as the line number where the first repeated stmt occurs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Strategic Rollback</head><p>When the error is detected, it is necessary to undo a part of the previously generated code to rectify the issue. To identify the specific point that requires to roll back to, we design a series of strategies to determine the rollback point.</p><p>Generally, for detected errors, incremental error detection can provide an error report including the location where the error occurs, offering an initial clue to resolve the error. Therefore, we first attempt to resolve the error by rolling back directly to this specific location. The rollback point r is defined as a two-dimensional value: r e = [e.lineno, e.offset] ,</p><formula xml:id="formula_3">𝑆 ! 𝑆 " 𝑆 # 𝑆 $ 𝑆 % 𝑆 % 𝑆 # 𝑆 $ 𝐸𝑂𝑆 𝑠 ! 𝑠 " 𝑠 # 𝑠 $ 𝑠 % 1. Incremental Error Detection 2. Rollback Mechanism 𝑠 ! 𝑠 " 𝑠 # 𝑠 $ 𝑠 % 3. Constraint Regeneration Program Analysis LLM s ! s " s # s $ s % s % s % s % s # ! High uncertainty Generate the next statement Rollback Point Error detection results 𝑠 &amp; = 𝑦 !"# 𝑦 ! 𝑦 |% ! |<label>(4)</label></formula><p>. . .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Check the statement</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>/</head><p>Nodes with penalty where e.lineno refers to the line number of error report e and e.offset represents the offset within that line, used to precisely locate the error. However, merely reverting to r e may not be sufficient for some complex errors, since the root cause of these errors might not actually originate from the reported location instead of an early location. These errors usually involve dependencies and semantics.</p><p>Given that LLMs are probabilistic models, i.e., LLMs predict the next token by calculating the conditional probability of each possible subsequent token given the preceding context, LLMs may exhibit high levels of uncertainty at certain points during the generation process, leading to fluctuating outputs <ref type="bibr" target="#b20">[21]</ref>- <ref type="bibr" target="#b22">[23]</ref>. Although high uncertainty increases the likelihood of erroneous decisions, it also facilitates the redistribution of probabilities to alter the output. Therefore, we can infer rollback points by analyzing the model's display of uncertainty. We can calculate the entropy at each position using the following formula:</p><formula xml:id="formula_4">H t = - |V | j=1 p(y t = v j | y &lt;t , x) log p(y t = v j | y &lt;t , x), (<label>5</label></formula><formula xml:id="formula_5">)</formula><p>where p(y t = v j | y &lt;t , x) denotes the probability of generating the t-th token y t as v j given the context x and previously generated tokens y &lt;t . The summation</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>|V |</head><p>j=1 iterates over all possible tokens v j in the vocabulary V that can be generated at this position. We roll back to the beginning of the statement containing the token with the highest entropy.</p><formula xml:id="formula_6">t * = argmax t∈[0,|y|] H t (<label>6</label></formula><formula xml:id="formula_7">) r h = [ConvertToLineno(t * , y), 0] ,<label>(7)</label></formula><p>where ConvertToLineno is a function that converts the token position to the corresponding line number within the code, and |y| denotes the length of generated code y. This strategy allows for an opportunity to refresh the most relevant context in the next generation, thereby avoiding the recurrence of this high-entropy point. The algorithm for the strategic rollback is shown in Algorithm 1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Algorithm 1</head><p>Algorithm of Strategic Rollback Require: Error Detection Reports E = {e i } 1:n and Generated Statements S = {s i } 1:n . Ensure: Rollback Point r. 1: Assert e n .result is 'failure'. 2: Initialize y ← s 1 || • • • ||s n . 3: if e n .lineno and e n ̸ = e n-1 then 4: r ← [e.lineno, e.offset]. 5: else ▷ e n .lineno is None or the error recurs. 6:</p><p>r ← [ConvertToLineno(t * , y), 0], where t * is computed via Eq. ( <ref type="formula" target="#formula_4">5</ref>) and Eq. ( <ref type="formula" target="#formula_6">6</ref>). 7: end if 8: return r D. Constraint Regeneration After error detection and rollback, we perform constraint regeneration to prevent the LLM from reproducing the same error. Constraint regeneration involves two parts: constructing constraints and integrating these constraints into the LLM's decoding process, thereby influencing the model's output behavior.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Constraint Construction:</head><p>We define constraints as penalties applied to the LLMs' output probabilities for previously generated erroneous code. In the process of code generation, the generated code can be considered as an output path of LLMs. To avoid the model generating incorrect paths, a naive approach is to set the probabilities of tokens on erroneous paths to zero, completely blocking those paths. However, this approach can penalize some benign tokens. Instead, we adopt a milder penalty approach, which applies an exponentially decaying penalty to each token from the point of error back to a rollback point,</p><formula xml:id="formula_8">PN(v | y &lt;t ) = λ t-r , if v = y t , 1, otherwise, (<label>8</label></formula><formula xml:id="formula_9">)</formula><p>where λ is a decay factor between 0 and 1 and t -r denotes the number of time steps from the rollback point r to the current token y t . This approach not only penalizes the tokens that directly cause errors but also applies lighter penalties to preceding tokens that may have indirectly contributed to the mistake, thereby preventing the model from repeating erroneous generation paths.</p><p>Decoding with Constraints: To avoid errors in the previous generation path, penalties are applied to the probability distribution of LLMs, adjusting the generation likelihood of each token. Then, this modified probability distribution is renormalized. Specifically, for each token y ′ t , its constrained probability distribution p c (y ′ t | y &lt;t ) is given by:</p><formula xml:id="formula_10">p c (y ′ t | y &lt;t ) = p(y ′ t | y &lt;t ) • PN(y ′ t | y &lt;t ) v p(v | y &lt;t ) • PN(v | y &lt;t )<label>(9)</label></formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E. Trie Tree Modeling</head><p>The generation process of ROCODE involves rollbacks and regeneration, resulting in a non-linear structure. Therefore, we use Trie Tree to model the entire process, as illustrated in Figure <ref type="figure" target="#fig_1">2</ref>. In the Trie Tree T = (U, E), each node u ∈ U represents a generated token in this process, and each edge (u, v) indicates that the token sequence from the root node to node u serve as the context to generate node v.</p><p>During the generation process of ROCODE, as each statement is generated, its corresponding tokens are sequentially appended to the Trie Tree. This addition is immediately followed by incremental error detection. If an error is identified, the affected path within the tree is flagged and the strategic rollback is activated, identifying the precise node to revert to. Subsequently, all descendant nodes of this rollback point, representing the erroneous sequence, are used to impose constraints. This penalization process effectively discourages the regeneration of the same erroneous sequences during subsequent iterations of code generation. Each new, errorfree statement is integrated into the tree as a distinct branch, aligning with existing paths that share a common prefix. This integration not only consolidates the tree structure but also accumulates the penalties associated with each erroneous path, reinforcing the deterrent against repeating past mistakes. It ensures that the generation process dynamically adapts, minimizing the recurrence of similar errors and optimizing code output over time.</p><p>Ultimately, each path from the root node to any terminal node represents an attempt at the generation process of ROCODE, and the last path of Trie Tree represents the final generated code y. The pseudocode of ROCODE during code generation is shown in Algorithm 2.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Algorithm 2</head><p>The Pseudocode of ROCODE Require: Input Requirement x, LLM M. Ensure: Generated Code y.</p><p>1: Initialize Trie Tree T ← ∅ and index i ← 0. 2: Statement s i ← M(x) 3: T .update stmt(s i ). 4: while s i does not include EOS token do 5: # Incremental Error Detection 6: e i ← C(T.stmts) via Eq. (2). 7: T .update report(e i ). 8: # Strategic Rollback 9: if e i .result is 'failure' then 10: r ← RollBack(T.stmts, T.reports) via Alg. 1. 11:</p><p>T .rollback to(r).</p><p>12:</p><p>end if 13:</p><p># Constraint Generation</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>14:</head><p>T .update pn(T .stmts, r) via Eq. ( <ref type="formula" target="#formula_8">8</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>15:</head><p>Sample s i+1 ← M(x, T.stmts, T.pn) via Eq. ( <ref type="formula" target="#formula_10">9</ref>). <ref type="bibr" target="#b15">16</ref>:</p><formula xml:id="formula_11">i ← i + 1.<label>17</label></formula><p>: T .update stmt(s i ). 18: end while 19: return T.get final gen code() III. EVALUATION ROCODE aims to effectively prevent error accumulation in the code generation process of LLMs and improve the quality of generated code by integrating backtracking mechanism and program analysis into LLMs. In this section, we present extensive experiments that span six representative code generation benchmarks, two program languages, and nine LLMs of varying series or sizes. We aim to investigate six research questions: • RQ1: How does ROCODE perform compared to baseline approaches on code generation benchmarks? • RQ2: How effective is ROCODE in improving LLMs in code generation tasks across different programming languages? • RQ3: How does ROCODE perform when applied to different LLMs? • RQ4: How about the cost and efficiency of ROCODE? • RQ5: How does each component of ROCODE contribute to the effectiveness? • RQ6: How does the hyperparameter decay factor affect the effectiveness of ROCODE? A. Evaluation Setup 1) Benchmark: We perform a comprehensive evaluation on six code generation benchmarks to demonstrate the superiority and generality of ROCODE.</p><p>HumanEval <ref type="bibr" target="#b0">[1]</ref> consists of 164 handwritten programming tasks, proposed by OpenAI. Each task includes a function signature, a requirement, use cases, a function body, and several unit tests (average of 8 per task). We use the use cases as public test cases for our approach and baseline approaches, while unit tests are used as private test cases for evaluation.</p><p>MBPP <ref type="bibr" target="#b24">[25]</ref> contains 974 Python programming tasks, covering programming fundamentals, standard library functionality, and more. The MBPP dataset does not specify public vs. private test cases. Following previous work <ref type="bibr" target="#b25">[26]</ref>, we use one input of the test cases for all baseline approaches and do not involve any ground-truth test case output.</p><p>CodeForces2305 <ref type="bibr" target="#b26">[27]</ref> comprises 90 of the competitionlevel programming problems collected from the CodeForces website. On average, each problem is accompanied by three public test cases and three private test cases. These problems are created after May 2023, which is after the training data cutoff of most LLMs, such as CodeLlama <ref type="bibr" target="#b3">[4]</ref> and CodeGen <ref type="bibr" target="#b4">[5]</ref>, mitigating the impact of data contamination on evaluation.</p><p>HumanEval-ET and MBPP-ET <ref type="bibr" target="#b27">[28]</ref> are expanded versions of HumanEval and MBPP with over 100 additional test cases per task. This updated version includes edge test cases that enhance the soundness of code evaluation compared to the original benchmark.</p><p>HumanEval-CPP <ref type="bibr" target="#b28">[29]</ref> is constructed based on the HumanEval benchmark to evaluate the code generation ability of LLMs on C++ programming language.</p><p>2) Baselines: Our approach works on the decoding phase of LLMs that does not require modification and training of the model. We use the three most common decoding approaches of LLMs and set them as baselines. Specifically, Temperature Sampling <ref type="bibr" target="#b29">[30]</ref> controls the randomness of the token selection process-higher temperatures T lead to more uniform distributions, while lower temperatures T make high-probability tokens even more likely.</p><formula xml:id="formula_12">P ′ (w) = exp(log(P (w | w &lt;t ))/T ) w ′ exp(log(P (w ′ | w &lt;t ))/T ) ,<label>(10)</label></formula><p>when T is 0, P ′ (w) is equivalent to 1(w = arg max w P (w | w &lt;t )), which means greedy sampling.</p><p>Topk Sampling <ref type="bibr" target="#b30">[31]</ref> limits the next-word selection to the top k most likely candidates as determined by the model.</p><formula xml:id="formula_13">P ′ (w) = P (w | w &lt;t ) if w ∈ Top-k, 0 otherwise. (<label>11</label></formula><formula xml:id="formula_14">)</formula><p>Nucleus Sampling <ref type="bibr" target="#b31">[32]</ref> involves choosing from a smaller set of plausible candidates by dynamically selecting a variablesized subset of tokens (the "nucleus") that cumulatively make up a certain probability mass (e.g., top 90%).</p><formula xml:id="formula_15">P ′ (w) = P (w | w &lt;t ) if w ′ ∈S P (w ′ | w &lt;t ) ≤ p, 0 otherwise. (<label>12</label></formula><formula xml:id="formula_16">)</formula><p>We also implement two baselines, representing the execution-based sampling approaches <ref type="bibr" target="#b25">[26]</ref>, <ref type="bibr" target="#b32">[33]</ref>, <ref type="bibr" target="#b33">[34]</ref> and the post-revising approaches <ref type="bibr" target="#b17">[18]</ref>, <ref type="bibr" target="#b18">[19]</ref>, <ref type="bibr" target="#b34">[35]</ref>, to demonstrate the efficiency of ROCODE, Specifically, Sampling+Filtering utilizes LLMs to generate a vast number of codes, which are then filtered by executing test cases.</p><p>Post-revising conducts testing after code is generated by LLMs, and further revises codes that fail these tests based on error messages.</p><p>Additionally, we also compare four state-of-the-art (SOTA) code generation approaches that operate during the decoding process, Specifically, PG-TD <ref type="bibr" target="#b33">[34]</ref> employs Monte Carlo Tree Search during the LLM decoding process, formulating rewards based on testing results to guide the generation of code.</p><p>MBR-EXEC <ref type="bibr" target="#b25">[26]</ref> introduces the execution result-based minimum Bayes risk decoding to select code from the samples generated by LLMs.</p><p>MGD <ref type="bibr" target="#b35">[36]</ref> utilizes static analysis tools to perform type analysis at pre-defined trigger points (specifically at dereference operations) during the code generation process of LLMs, enabling the selection of type-consistent variables.</p><p>AdapT <ref type="bibr" target="#b36">[37]</ref> dynamically adjusts the temperature during the LLMs' generation process, applying a higher temperature at points of low generation probability (challenging tokens) and a lower temperature at points of high generation probability (confident tokens).</p><p>3) Metrics: We used three metrics to evaluate our approach, including PassRate, AvgPassRate, and Compiler Correctness Percentage.</p><p>PassRate <ref type="bibr" target="#b0">[1]</ref> metric can measure the functional correctness of the generated code by executing private test cases. For each task, n ≥ 1 samples of code are generated, and the number of samples, c ≤ n, that pass the test cases are counted. The PassRate is then calculated using the following estimator:</p><formula xml:id="formula_17">PassRate = E Problems 1 - n -c 1 n 1 .<label>(13)</label></formula><p>AvgPassRatio <ref type="bibr" target="#b37">[38]</ref> calculates the average proportion of test cases that generated codes y ′ p s pass, which is a milder metric than PassRate, allowing to assess the partial correctness of the generated codes.</p><formula xml:id="formula_18">1 |P | p∈P 1 |C p | c∈Cp I {Eval (y p , I p,c ) = O p,c } ,<label>(14)</label></formula><p>where p represents a task within the test set P , and {(I p,c , O p,c )} Cp c=1 is the set of test cases for p, I(•) is an indicator function, which outputs 1 if the condition is true and 0 otherwise, and Eval (y p , I p,c ) represents an evaluation function that obtains outputs of code y p by way of executing it with I p,c as input.</p><p>Compiler Correctness Percentage (CCP) measures the proportion of generated code samples that are compilable (i.e., free of syntax errors and compilation errors). It is defined as:</p><formula xml:id="formula_19">CCP = N compilable N total ,<label>(15)</label></formula><p>TABLE I THE COMPARISON OF ROCODE AND BASELINE APPROACHES ON DIFFERENT CODE GENERATION BENCHMARKS. THE BOLD TEXT INDICATES THE HIGHEST VALUE FOR A PARTICULAR METRIC WITHIN A GIVEN DATASET, REGARDLESS OF THE BASELINE OR ITS CONFIGURATIONS. Approaches HumanEval (ET) MBPP (ET) CodeForces2305 PassRate AvgPassRate CCP PassRate AvgPassRate CCP PassRate AvgPassRate CCP PG-TD 46.3 (38.4) 64.7 (61.2) 82.3 ---0.0 0.0 6.7 MGD 31.4 (24.6) 57.7 (54.3) 79.5 34.9 (28.0) 39.8 (40.4) 82.4 0.0 0.0 0.0 MBR-EXEC 34.8 (28.1) 59.3 (54.7) 80.5 34.0 (27.6) 39.0 (40.0) 83.5 0.0 0.7 5.6 AdapT 31.9 (26.7) 59.2 (55.8) 78.2 32.4 (26.4) 38.6 (39.1) 80.9 0.0 0.1 5.6 Temperature Sampling (T = 0.0) 31.1 (24.4) 57.6 (54.5) 80.5 35.5 (29.3) 41.4 (42.0) 82.0 0.0 0.0 6.7 + Post-revising 31.3 (24.5) 57.5 (54.5) 79.9 35.7 (29.4) 41.6 (42.0) 82.1 0.0 0.0 6.7 ROCODE 53.8 (45.5) 66.3 (62.6) 95.8 40.5 (32.3) 46.7 (47.3) 98.7 8.3 21.2 85.9 Temperature Sampling (T = 0.6) 27.1 (22.9) 52.2 (47.2) 74.9 29.1 (23.3) 34.7 (35.7) 79.1 0.0 0.5 5.5 + Filtering 35.9 (30.5) 55.5 (51.5) 74.4 31.8 (25.4) 38.4 (38.9) 88.1 0.0 1.8 6.7 + Post-revising 32.3 (27.0) 57.0 (51.8) 75.7 30.2 (23.9) 36.0 (36.8) 83.9 0.0 0.4 4.3 ROCODE 55.8 (48.6) 71.4 (66.7) 96.4 35.7 (27.8) 41.9 (42.4) 98.3 8.9 22.3 88.7 Temperature Sampling (T = 0.8) 22.2 (18.9) 43.7 (38.4) 67.9 21.9 (17.6) 26.5 (27.3) 69.3 0.0 0.6 4.4 + Filtering 31.7 (29.9) 51.7 (47.2) 72.6 24.2 (20.1) 30.0 (30.5) 85.6 0.0 0.6 4.4 + Post-revising 29.6 (25.9) 51.8 (47.0) 70.1 22.9 (18.1) 29.4 (29.8) 84.1 0.1 0.3 3.2 ROCODE 54.4 (48.0) 70.9 (66.8) 98.2 30.3 (23.9) 39.5 (40.9) 97.9 8.4 21.4 86.8 Top-k Sampling (k = 10) 22.3 (18.5) 45.0 (40.1) 69.3 23.2 (18.4) 27.7 (28.5) 70.9 0.0 3.6 5.9 + Filtering 35.4 (30.5) 55.9 (51.2) 68.9 25.4 (20.4) 30.3 (31.6) 85.4 0.0 0.4 7.8 + Post-revising 27.1 (22.7) 50.1 (45.6) 70.5 25.5 (20.1) 30.5 (31.3) 83.1 0.0 0.6 5.4 ROCODE 53.1 (39.7) 67.7 (65.0) 97.0 32.6 (25.2) 40.7 (41.6) 97.6 7.7 20.1 86.6 Top-k Sampling (k = 40) 21.7 (19.0) 43.8 (39.2) 70.4 22.3 (17.7) 26.8 (27.6) 69.3 0.0 0.3 5.0 + Filtering 33.5 (29.3) 56.4 (51.6) 78.0 25.4 (20.2) 30.8 (31.2) 84.8 0.0 0.0 4.4 + Post-revising 29.3 (25.2) 52.3 (47.4) 69.1 24.5 (19.3) 29.5 (30.4) 82.1 0.1 0.4 4.4 ROCODE 55.0 (46.1) 67.6 (62.7) 96.4 31.5 (24.7) 39.8 (41.4) 98.1 8.1 20.8 87.2 Nucleus Sampling (p = 0.8) 28.8 (23.4) 54.7 (49.4) 76.3 31.2 (25.7) 37.0 (37.7) 81.2 0.0 5.2 6.1 + Filtering 34.8 (28.1) 63.4 (57.5) 78.7 31.9 (24.7) 38.5 (39.3) 88.8 0.0 0.8 4.4 + Post-revising 30.0 (24.2) 56.1 (50.8) 75.3 31.9 (25.2) 37.7 (38.3) 84.1 0.1 0.5 5.6 ROCODE 55.3 (46.8) 71.2 (68.0) 98.0 38.4 (30.5) 44.7 (45.6) 98.5 8.3 21.9 87.9 Nucleus Sampling (p = 0.9) 26.7 (22.2) 52.0 (47.5) 75.1 28.5 (22.5) 33.9 (35.0) 79.3 0.0 0.4 6.0 + Filtering 36.0 (30.5) 59.2 (54.9) 79.8 31.0 (24.1) 36.7 (37.5) 89.4 0.0 0.4 5.6 + Post-revising 32.5 (27.2) 58.0 (53.8) 76.3 29.4 (23.1) 34.8 (35.7) 82.8 0.1 0.4 4.9 ROCODE 57.3 (48.2) 72.4 (66.1) 97.6 36.1 (27.5) 42.1 (42.6) 99.1 8.7 23.4 88.2</p><p>where N compilable is the number of compilable code samples, and N total is the total number of generated codes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>4) Implementation Details:</head><p>In the evaluation, we use CodeLlama-7B <ref type="bibr" target="#b3">[4]</ref> as base model by default. The decay factor λ for constraint regeneration is set at 0.9. The maximum generation length of our approach and baselines is set to 512 on all benchmarks, except for CodeForces2305, where it is set to 1024. To mitigate the instability of the model sampling, we report the average results of three trials in the experiments. Due to space limits, we only present the results on the HumanEval dataset (other benchmarks follow similar trends) for RQ3, RQ4, and RQ5.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. RQ1. Comparing ROCODE to Baseline Approaches</head><p>To evaluate the effectiveness of ROCODE on code generation, we evaluate test correctness and compile correctness across various representative code generation benchmarks, including HumanEval, MBPP, HumanEval-ET, MBPP-ET, and CodeForces2305.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Settings:</head><p>We compare our approach with nine baselines, including Temperature Sampling, Topk Sampling, Nucleus Sampling, Sampling+Filtering, Post-revising, PG-TD, MBR-EXEC, MGD, and AdapT. For the HumanEval, MBPP, HumanEval-ET, and MBPP-ET benchmarks, CodeLlama-7B serves as our base model, while for the more challenging CodeForces2305 benchmark, we employ CodeLlama-34B as our base model. Since Temperature Sampling, Top-k Sampling, and Nucleus Sampling are sensitive to their parameter settings, we evaluate their performance under different settings. For the temperature (T) in Temperature Sampling, we use values of 0.0, 0.6, and 0.8. For the k value in Top-k Sampling, we use 10 and 40. For the p-value in Nucleus Sampling, we use 0.8 and 0.9. Our approach, Sampling+Filtering, and Post-revising can be combined with these three decoding methods. We set the token budget of ROCODE during generation to be twice the maximum generation length. Sampling+Filtering and Post-revising maintain the same token budget as ROCODE.</p><p>Results: The experimental results are shown in Table <ref type="table">I</ref>. These results demonstrate that our approach outperforms all baseline approaches across three metrics on five datasets, demonstrating the superior performance of ROCODE. Notably, our approach shows the best performance at 57.3% in pass rate under the Nucleus Sampling (p = 0.9) setting on HumanEval benchmark, exceeding the direct generation with LLMs by 30.6% in the same setting. Specifically, our approach exceeds those of Sampling+Filtering and Post-revising across three commonly used decoding methods: Temperature Sampling, Top-k Sampling, and Nucleus Sampling. The fact that our approach significantly surpasses the Sampling+Filtering approach proves that the improvement in performance is not merely due to repetitive sampling but is greatly aided by the backtracking mechanism. Compared to Post-revising, our approach can resolve errors in real-time during the generation process, which helps enhance the quality of generated code and prevents the accumulation of errors that can complicate error resolution. Among all baselines, PG-TD performs the best; however, it requires both test inputs and outputs for execution, limiting its applicability to benchmarks like MBPP that do not provide public test cases. It is also worth noting that all approaches generally perform worse on the CodeForces2305 dataset compared to other benchmarks. This may be due to two reasons: firstly, the code generation task in CodeForces2305 is inherently challenging, with even the powerful ChatGPT achieving only a 7.9% pass rate in the original paper <ref type="bibr" target="#b26">[27]</ref>; secondly, potential data contamination issues might have caused the LLMs to perform exceptionally well on other benchmarks, creating a significant disparity with CodeForces2305. Despite this, ROCODE successfully attains a performance level of pass rate up to 8.9%, which represents a substantial improvement over the baselines on the Code-Forces2305 benchmark. This enhancement underscores the significant potential of our approach to elevate the capabilities of LLMs in addressing complex problem-solving tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. RQ2. Performance on Multilingual Code Generation</head><p>For different programming languages, due to the unique characteristics of each language and the distribution of training data, there are variations in the performance of LLMs when generating code in different languages. In this evaluation, we examine the performance of our approach on multilingual code generation tasks.</p><p>Settings: In addition to Python language, we also evaluate our approach on C++ language utilizing HumanEval-CPP <ref type="bibr" target="#b28">[29]</ref> benchmark. The baseline approaches include Temperature Sampling, Sampling + Filtering, and Post-revising, all of which employ the best-performing configurations of PassRate as shown in Table <ref type="table">I</ref>.</p><p>TABLE II THE PERFORMANCE OF ROCODE ON DIFFERENT PROGRAMMING LANGUAGES (PL). PL Approaches PassRate AvgPassRate CCP C++ Temperature Sampling 26.8 45.2 85.8 Sampling + Filtering 29.5 49.8 84.6 Post-revising 28.9 48.8 85.4 ROCODE 39.6 60.7 95.5 Python Temperature Sampling 31.1 57.6 80.5 Sampling + Filtering 36.0 59.2 79.8 Post-revising 32.5 58.0 76.3 ROCODE 57.3 72.4 97.6</p><p>Results: The experimental results in Table <ref type="table">II</ref> show that our approach significantly improves performance in both languages. Our approach achieves greater improvement on Python, which is a language where LLMs excel, compared to C++. Nevertheless, our approach still outperforms all baselines in C++, with a relative increase of 34.2% over the bestperforming baseline, i.e., Sampleing + Filtering, in pass rate. Moreover, our approach achieves a 95.5% compilation pass rate on C++ code generation tasks, significantly higher than other baselines. Utilizing compiler-based program analysis for error detection proves effective across various languages, ensuring the robustness and versatility of our approach.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. RQ3. Performance on Different LLMs</head><p>ROCODE is model-agnostic and can be applied to a variety of LLMs. In this evaluation, we explore how ROCODE enhances code generation performances across different LLMs.</p><p>Settings: We employ several different series and sizes of representative general LLMs and Code LLMs to perform ROCODE. The general LLMs used are from the Llama series (Llama-2-7B, 13B, and 34B <ref type="bibr" target="#b38">[39]</ref>), while the Code LLMs include the multi-lingual CodeGen series (CodeGen-2B, 6B, and 16B <ref type="bibr" target="#b4">[5]</ref>), and the CodeLlama series (CodeLlama-7B, 13B, and 34B <ref type="bibr" target="#b3">[4]</ref>). Results: From the experimental results shown in Figure <ref type="figure" target="#fig_2">3</ref>, we can observe that ROCODE achieves significant improvements over temperature sampling across all series and on LLMs of various sizes. Our approach achieves higher performance on code LLMs compared to general LLMs, with a pass rate exceeding 70%. Furthermore, we observed a trend in the enhancement across different LLMs: the stronger the base model, the greater the improvement brought by ROCODE. This might suggest that more powerful LLMs have greater potential for enhancements through rollback corrections.</p><p>E. RQ4. Cost and Efficiency of ROCODE Besides performance, cost, and efficiency also influence whether a code generation approach will be widely adopted. Therefore, we discuss the cost and efficiency of ROCODE.</p><p>Settings: We measure the costs by the number of tokens consumed, since the computational resource usage for LLMs scales with the number of tokens and services that provide LLM access typically charge based on token usage. We also measure the efficiency by the speed of the running time (min). We compared ROCODE with seven baseline methods: PG-TD, MGD, MBR-EXEC, AdapT, Temperature Sampling, Sampling+Filtering, and Post-revising. For Temperature Sampling, Sampling+Filtering, and Post-revising, we configure them according to the parameter configurations that exhibit the best performance (PassRate) shown in Table <ref type="table">I</ref>.</p><p>TABLE III THE COST AND EFFICIENCY OF ROCODE, WHERE THE BOLD ITALIC INDICATES THE HIGHEST VALUE OTHER THAN ROCODE, WHICH IS ALSO THE BASELINE OF THE RELATIVE IMPROVEMENT. Approaches PassRate Token Consumption Time PG-TD 46.3 675.2 1.219 MGD 31.4 566.4 0.348 MBR-EXEC 34.8 438.5 0.314 AdapT 31.9 332.1 0.309 Temperature Sampling 31.1 445.8 0.313 Sampling + Filtering 36.0 532.2 0.334 Post-revising 32.5 623.4 0.498 ROCODE 57.3 (↑ 23.8%) 503.1 0.622</p><p>Results: The evaluation results on HumanEval benchmark are presented in Table <ref type="table">III</ref>. In terms of cost (token consumption), our approach shows clear advantages compared to most baselines. Compared to Temperature Sampling that is directly generated with LLMs, our cost increases by less than 1.1 times. Notably, our approach is substantially more efficient compared to Post-revising, with a cost reduction of 19.3%. More importantly, the cost of our approach is significantly lower than the state-of-the-art (SOTA) approach, PG-TD. In terms of time efficiency, although our approach is slightly slower than Sampling + Filtering and Post-revising, it is still faster than PG-TD. The additional time cost primarily stems from calling the compiler for incremental checks. Considering the generated code is in Python language, which is an interpreted language suitable for just-in-time execution and dynamic typing, we can perform incremental execution rather than starting from scratch each time to further optimize the speed of checks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F. RQ5. Ablation Study</head><p>ROCODE consists of three key components: incremental error detection, strategic rollback, and constraint generation. We evaluate the effectiveness of each component through ablation experiments.</p><p>Settings: We modify or remove different components while keeping the rest of ROCODE unchanged:</p><p>• For error detection, we replace the original program analysis-based detection with an entropy-based detection, which aligns with our rollback strategy, reporting errors at locations with the highest entropy (Entropy-based Error Detection).</p><p>• For the strategic rollback, we explore four other rollback strategies respectively: 1) Roll back directly to the beginning and generate from scratch (Full Restart Rollback). 2) Roll back only to the statement of the reported error (Error Statement Rollback). 3) Roll back only to the statement with the highest entropy (High Entropy Statement Rollback)). 4) Roll back to the token with the highest entropy and disable that token (High Entropy Token Disable Rollback).</p><p>• For constraint generation, we remove the constraints during generation but instead resample an output (Constraint-Free Resampling).</p><p>TABLE IV ABLATION RESULTS. Variants PassRate AvgPassRate CPP Entropy-based Error Detection 45.1 59.0 76.2 Full Restart Rollback 50.6 63.8 95.0 Error Statement Rollback 51.2 62.9 93.2 High Entropy Statement Rollback 49.4 61.9 92.8 High Entropy Token Disable Rollback 47.5 60.7 88.3 Constraint-Free Resampling 50.7 64.4 89.4 ROCODE 57.3 72.4 97.6</p><p>Results: The experimental results on the HumanEval benchmark are shown in Table <ref type="table">IV</ref>. From the experimental results, it is evident that all components of our approach are effective. In contrast to the entropy-based error detection approach, our program analysis-based error detection avoids the bias of labeling tokens as erroneous merely due to their high entropy, as not all high-entropy tokens lead to errors. The Full Restart Rollback cannot achieve the same performance as our approach under the same token budget as it lacks in efficiency. The performance decline observed in both Error Statement Rollback and High Entropy Statement Rollback further validates the effectiveness of combining program analysis with LLM-based entropy assessments in rollback strategies. Additionally, approaches that simply block high-entropy tokens have failed to effectively alter the entropy of the code, thus offering limited performance enhancement. Removing constraints during decoding also leads to a noticeable decline in performance, which confirms the efficacy of our Constraint Regeneration approach.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G. RQ6. Effect of Decay Factor</head><p>Since ROCODE involved one hyperparameter, the decay factor λ, we evaluate the impact of different values of this hyperparameter on the performance to analyze its sensitivity.</p><p>Settings: We choose {0.5, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95, 0.98, 0.99} as test values for λ. We conduct experiments on HumanEval benchmarks under the setting of greedy sampling.</p><p>Results: The experimental results of this evaluation are shown in Figure <ref type="figure" target="#fig_3">4</ref>. From the results we can observe that as the hyperparameter λ increases, the metrics PassRate and AvgPassRate show a slight downward trend, although the decline is not significant. On the other hand, the CCP metric, while fluctuating across different values of r, still maintains a high level overall, averaging over 90%. These observations suggest that our approach demonstrates strong robustness to adjustments in the hyperparameter λ. The downward trend in PassRate and AvgPassRate could be due to higher values of λ meaning looser constraint penalties during code generation, which decays the likelihood of previous errors less. Specifically, a larger λ value reduces the immediate penalty for errors, requiring more iterations to correct mistakes, which may affect the performance of generating correct code within a limited token budget.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>IV. THREATS TO VALIDITY</head><p>There are three major threats to the validity of our work. 1) Threats to external validity concern the quality of experimental datasets and the generalizability of our results. First, we use six public code generation datasets for evaluation, which are mainstream benchmarks and have been used in many related works <ref type="bibr" target="#b33">[34]</ref>, <ref type="bibr" target="#b39">[40]</ref>- <ref type="bibr" target="#b43">[44]</ref>. Moreover, to prevent the evaluation dataset from being affected by data contamination (i.e., the test data may have been included in the training data of LLMs), we used problems from CodeForces that were published after the cutoff date of LLM's training data for the assessment. Second, ROCODE can be applied to any LLMs, and we choose nine well-known LLMs <ref type="bibr" target="#b44">[45]</ref>- <ref type="bibr" target="#b47">[48]</ref> of different series and sizes for our experiments.</p><p>2) Threats to internal validity involve the impact of hyperparameters. For our approach, we introduce a hyperparameter, i.e. the decay factor in constrained regeneration. For this hyperparameter, we intuitively selected a specific value and observed that it enhances performance across multiple benchmarks. To further explore the impact of this hyperparameter, we conducted detailed experimental studies, which showed that this hyperparameter effectively improves experimental results over a broad range. As for other hyperparameters, such as maximum generation length and temperature, to ensure fairness in comparison, we maintained these parameters consistent with the baseline approaches.</p><p>3) Threats to construct validity pertain to the reliability of evaluation metrics. We use the test pass rate as the primary evaluation metric. However, due to the limited number of test cases, this method cannot fully assess the functional correctness of the generated code. To mitigate this issue, we adopted extended versions of some benchmarks, which significantly expanded the number of test cases to provide a more comprehensive functional evaluation. For PassRate metrics, we employ the unbiased version of PassRate <ref type="bibr" target="#b0">[1]</ref> to diminish evaluation errors that arise from sampling. On this basis, each experiment is run three times, and its average result is reported.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>V. RELATED WORK</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Code Generation with LLMs</head><p>General LLMs, represented by ChatGPT <ref type="bibr" target="#b48">[49]</ref>, have demonstrated significant potential in software engineering tasks such as code generation. This led to the development of specialized LLMs for code generation, such as AlphaCode <ref type="bibr" target="#b49">[50]</ref>, CodeGen <ref type="bibr" target="#b4">[5]</ref>, Incoder <ref type="bibr" target="#b5">[6]</ref>, CodeGeeX <ref type="bibr" target="#b28">[29]</ref>, Starcoder <ref type="bibr" target="#b40">[41]</ref>, WizardCoder <ref type="bibr" target="#b39">[40]</ref> and CodeLlama <ref type="bibr" target="#b3">[4]</ref>. These specialized LLMs are typically developed by further training general LLMs or by training them from scratch using code corpus. Furthermore, there is a series of research efforts for code generation that propose improvements to the decoding stage of general LLMs or Code LLMs. Zhang et al. <ref type="bibr" target="#b33">[34]</ref> proposed a planning-guided decoding algorithm to generate higher-quality programs. This algorithm is based on Monte Carlo Tree Search (MCTS) and explores different branches of the search tree to examine various possibilities for program generation. After generating a complete program, it is evaluated by executing test cases to obtain rewards. Shi et al. <ref type="bibr" target="#b25">[26]</ref> and Chen et al. <ref type="bibr" target="#b32">[33]</ref> generate a large number of program samples from LLMs and subsequently reranking them using public or generated test cases. Zhang et al. <ref type="bibr" target="#b34">[35]</ref> introduced Self-edit, which involves training another model to modify the programs generated by LLMs based on the results of executing test cases. Similarly, Cheng et al. <ref type="bibr" target="#b18">[19]</ref> also developed a post-processing technique for modifying the outputs of models. Those approach leverages the capabilities of LLMs to debug and correct their own errors.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Combining Program Analysis and LLMs</head><p>Combining emerging LLMs with traditional program analysis techniques to overcome existing technological limitations has become a new trend. Currently, there have been some efforts in this direction, which have been applied to various software engineering tasks including program synthesis, formal verification, and defect detection. Jain et al. <ref type="bibr" target="#b50">[51]</ref> proposed Jigsaw, an approach that performs several transformations and checks during the processing steps, thereby enhancing the program synthesis capabilities of LLMs and validating it through the synthesis of the Python Pandas API. Agrawal et al. <ref type="bibr" target="#b35">[36]</ref> incorporated type-based static analysis into the code generation process, enabling the provision of a candidate list that constrains LLMs to produce type-correct identifiers. Wen et al. <ref type="bibr" target="#b51">[52]</ref> utilize static analysis techniques to decompose programs, thereby facilitating incremental specification generation for program verification. Li et al. <ref type="bibr" target="#b52">[53]</ref> designed LLift, a framework that enables interaction between static analysis tools and LLMs, using use-before-initialization (UBI) bugs as a case study to demonstrate its effectiveness. Wang et al. <ref type="bibr" target="#b53">[54]</ref> proposed a resource leak detection approach that combined LLMs with static program analysis. This approach utilizes LLMs to infer the resource-oriented intentions (resource acquisition, release, and reachability verification) in code, instead of matching predefined APIs, and then inferred intentions are applied to enhance static resource leak detection techniques.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>VI. CONCLUSION</head><p>In this paper, we introduce ROCODE, a novel code generation approach based on LLMs that integrates backtracking mechanism and program analysis tools to eliminate errors in the code generation process. Our approach enables LLMs to generate programs incrementally, followed by incremental error detection through program analysis. When an error is detected, we perform rollback strategies, which provide an opportunity for LLMs to make modifications during the generation process. Furthermore, we impose constraints on the regeneration process to avoid repeating historical errors. Our approach is model-agnostic and does not require training, allowing for direct integration with LLMs. Experimental results show that our approach consistently outperforms baselines across various benchmarks, providing stable improvements for different decoding approaches and various LLMs.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Fig. 1 .</head><label>1</label><figDesc>Fig. 1. Statistics on the types of errors in code generated by LLM. The statistics are conducted based on the results generated by CodeLlama-7B and CodeGen-6B on HumanEval and MBPP benchmarks using greedy decoding.</figDesc><graphic coords="1,314.18,446.65,119.67,93.40" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Fig. 2 .</head><label>2</label><figDesc>Fig. 2. The Overview of ROCODE with Trie Tree.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Fig. 3 .</head><label>3</label><figDesc>Fig. 3. The performance of ROCODE on different LLMs.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Fig. 4 .</head><label>4</label><figDesc>Fig. 4. The performance of ROCODE with different values of the hyperparameter λ. We use the gray dashed line to represent the employed hyperparameters.</figDesc></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>The hallucination in code generation manifests as generated code that violates programming principles, resulting in code that cannot be compiled or executed, or that is inconsistent with user requirements or context, leading to failed tests<ref type="bibr" target="#b11">[12]</ref>. Recent research has demonstrated that all computable LLMs cannot prevent themselves from hallucinating<ref type="bibr" target="#b12">[13]</ref>.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>Code is available at https://github.com/jiangxxxue/ROCODE.</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Post-revising Approach</head><p>Iterate phases until the error detection is passed or the limit is reached</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Re-generate from scratch to revise</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Construct Prompt</head><p>Fig. <ref type="figure">6</ref>. An example of Post-revising approach.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 5</head><label>5</label><figDesc>APPENDIXA. Examples of ROCODE vs. Post-revising presents an example of ROCODE based on CodeLlama-7B, and Figure6shows an example of the Post-revising approach with the same LLMs for comparison. str(num): if int(i) % 2 == 0: Invalid literal for int() with base 10: '-' def even_odd_count(num):"""Given an integer. return a tuple that has the number of even and odd digits respectively</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Fig. 5 .</head><label>5</label><figDesc>An example of ROCODE.def even_odd_count(num):"""Given an integer. return a tuple that has the number of even and odd digits respectivelydef even_odd_count(num): """Given an integer. return a tuple that has the number of even and odd digits respectively. Example: even_odd_count(-12) ==&gt; (1, 1) even_odd_count(123) ==&gt; (1</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">P</forename><surname>De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Brockman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Puri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Petrov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Khlaaf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Pavlov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Power</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Winter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Tillet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">P</forename><surname>Such</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Cummings</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Chantzis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Barnes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Herbert-Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">H</forename><surname>Guss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Nichol</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Paino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Tezak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Babuschkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Saunders</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">N</forename><surname>Carr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Morikawa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Knight</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Brundage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Murati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Mayer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Welinder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mcgrew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zaremba</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2107.03374" />
+		<imprint/>
+	</monogr>
+	<note>Evaluating large language models trained on code,&quot; CoRR, 2021. [Online</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Incorporating domain knowledge through task augmentation for front-end javascript code generation</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ESEC/SIGSOFT FSE</title>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="1533" to="1543" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">CODEP: grammatical seq2seq model for general-purpose code generation</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ISSTA</title>
+		<imprint>
+			<biblScope unit="page" from="188" to="198" />
+			<date type="published" when="2023">2023</date>
+			<publisher>ACM</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Code llama: Open foundation models for code</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gehring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Gloeckle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sootla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Gat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">E</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Adi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Remez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Rapin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kozhevnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Evtimov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bitton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bhatt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Canton-Ferrer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Grattafiori</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Défossez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Copet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Azhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Usunier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Scialom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Synnaeve</surname></persName>
+		</author>
+		<idno>abs/2308.12950</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Codegen: An open large language model for code with multi-turn program synthesis</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Nijkamp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hayashi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xiong</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>in ICLR. OpenReview.net</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Incoder: A generative model for code infilling and synthesis</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Aghajanyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Wallace</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lewis</surname></persName>
+		</author>
+		<idno>abs/2204.05999</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Self-planning code generation with large language models</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Shang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Jiao</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3672456</idno>
+		<ptr target="https://doi.org/10.1145/3672456" />
+	</analytic>
+	<monogr>
+		<title level="j">ACM Trans. Softw. Eng. Methodol</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<date type="published" when="2024-09">Sep. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">SEED: customize large language models with sample-efficient adaptation for code generation</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+		<idno>abs/2403.00046</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Coder reviewer reranking for code generation</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Hashimoto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML, ser. Proceedings of Machine Learning Research</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">202</biblScope>
+			<biblScope unit="page" from="41" to="832" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Copilot</title>
+		<author>
+			<persName><surname>Github</surname></persName>
+		</author>
+		<ptr target="https://github.com/features/copilot" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Sea change in software development: Economic and productivity analysis of the ai-powered developer lifecycle</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Dohmke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Iansiti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Richards</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.15033</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Exploring and evaluating hallucinations in llm-powered code generation</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno>abs/2404.00971</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Hallucination is inevitable: An innate limitation of large language models</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">S</forename><surname>Kankanhalli</surname></persName>
+		</author>
+		<idno>abs/2401.11817</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Survey of hallucination in natural language generation</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Frieske</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Ishii</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Madotto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Fung</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Comput. Surv</title>
+		<imprint>
+			<biblScope unit="volume">55</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page">38</biblScope>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Adversarial sparse transformer for time series forecasting</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Huang</surname></persName>
+		</author>
+		<editor>NeurIPS</editor>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Pose transformers (POTR): human motion prediction with non-autoregressive transformers,&quot; in ICCVW</title>
+		<author>
+			<persName><forename type="first">Á</forename><surname>Martínez-González</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Villamizar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Odobez</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<publisher>IEEE</publisher>
+			<biblScope unit="page" from="2276" to="2284" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Self-collaboration code generation via chatgpt</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3672459</idno>
+		<ptr target="https://doi.org/10.1145/3672459" />
+	</analytic>
+	<monogr>
+		<title level="j">ACM Trans. Softw. Eng. Methodol</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<date type="published" when="2024-09">Sep. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Self-refine: Iterative refinement with self-feedback</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Tandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hallinan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wiegreffe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Prabhumoye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">P</forename><surname>Majumder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hermann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Welleck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Yazdanbakhsh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Clark</surname></persName>
+		</author>
+		<editor>NeurIPS</editor>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Teaching large language models to self-debug</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno>abs/2304.05128</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Is self-repair a silver bullet for code generation?</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">X</forename><surname>Olausson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">P</forename><surname>Inala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Solar-Lezama</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Detecting hallucinations in large language models using semantic entropy</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Farquhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kossen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Kuhn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gal</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nat</title>
+		<imprint>
+			<biblScope unit="volume">630</biblScope>
+			<biblScope unit="issue">8017</biblScope>
+			<biblScope unit="page" from="625" to="630" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Semantic uncertainty: Linguistic invariances for uncertainty estimation in natural language generation</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Kuhn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Farquhar</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>in ICLR. OpenReview.net</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Semantic entropy probes: Robust and cheap hallucination detection in llms</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kossen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Razzak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Schut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">A</forename><surname>Malik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gal</surname></persName>
+		</author>
+		<idno>abs/2406.15927</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">The zephyr abstract syntax description language</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">C</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">W</forename><surname>Appel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">L</forename><surname>Korn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">S</forename><surname>Serra</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">DSL. USENIX</title>
+		<imprint>
+			<date type="published" when="1997">1997</date>
+			<biblScope unit="page" from="213" to="228" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Program synthesis with large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Odena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">I</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">J</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Sutton</surname></persName>
+		</author>
+		<idno>abs/2108.07732</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Natural language to code translation with execution</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ghazvininejad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">I</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP</title>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="3533" to="3546" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Generalization or memorization: Data contamination and trustworthy evaluation for large language models</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: ACL 2024</title>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page">50</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Codescore: Evaluating code generation by learning code execution</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jin</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3695991</idno>
+		<ptr target="https://doi.org/10.1145/3695991" />
+	</analytic>
+	<monogr>
+		<title level="j">ACM Trans. Softw. Eng. Methodol</title>
+		<imprint>
+			<date type="published" when="2024-09">Sep. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Codegeex: A pre-trained model for code generation with multilingual evaluations on humanevalx</title>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+		<idno>abs/2303.17568</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Language gans falling short</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Caccia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Caccia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Fedus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Larochelle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Pineau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Charlin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations (ICLR)</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Hierarchical neural story generation</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">N</forename><surname>Dauphin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL (1)</title>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="889" to="898" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">The curious case of neural text degeneration</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Holtzman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Buys</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Forbes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Choi</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note>in ICLR. OpenReview.net</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Codet: Code generation with generated tests</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<idno>abs/2207.10397</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Planning with large language models for code generation</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Gan</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>in ICLR. OpenReview.net</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Self-edit: Fault-aware code editor for code generation</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL (1)</title>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="769" to="787" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Guiding language models of code with global context using monitors</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">A</forename><surname>Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kanade</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">K</forename><surname>Lahiri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">K</forename><surname>Rajamani</surname></persName>
+		</author>
+		<idno>abs/2306.10763</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Hot or cold? adaptive temperature sampling for code generation with large language models</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Mei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI</title>
+		<imprint>
+			<publisher>AAAI Press</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="437" to="445" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Measuring coding challenge competence with APPS</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mazeika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Puranik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Steinhardt</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS Datasets and Benchmarks</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">H</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Albert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Almahairi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Babaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Bashlykov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Bhargava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bhosale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Bikel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Blecher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Canton-Ferrer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Cucurull</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Esiobu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Fernandes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Fuller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Goswami</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hartshorn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hosseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Inan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kardas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Kerkez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Khabsa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Kloumann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Korenev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">S</forename><surname>Koura</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Liskovich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Martinet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Mihaylov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Molybog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Poulton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Reizenstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rungta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Saladi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Schelten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Silva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">M</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Subramanian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">E</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Taylor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Williams</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">X</forename><surname>Kuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Zarov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kambadur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Rodriguez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Stojnic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Edunov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Scialom</surname></persName>
+		</author>
+		<idno>abs/2307.09288</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>Llama 2: Open foundation and fine-tuned chat models,&quot; CoRR</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Wizardcoder: Empowering code large language models with evol-instruct</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Jiang</surname></persName>
+		</author>
+		<idno>abs/2306.08568</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">R</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">B</forename><surname>Allal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kocetkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Mou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Marone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Akiki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Zheltonozhskii</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">Y</forename><surname>Zhuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Dehaene</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Davaadorj</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lamy-Poirier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Monteiro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Shliazhko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Gontier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Meade</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zebaze</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">K</forename><surname>Umapathi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Lipkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Oblokulov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Stillerman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">S</forename><surname>Patel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Abulkhanov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zocca</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Dey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Moustafa-Fahmy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Bhattacharyya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Luccioni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Villegas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kunakov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Zhdanov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Romero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Timor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Schlesinger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Schoelkopf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ebert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Dao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Robinson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">J</forename><surname>Anderson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Dolan-Gavitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Contractor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Reddy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Bahdanau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Jernite</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">M</forename><surname>Ferrandis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hughes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Wolf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Guha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Werra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>De Vries</surname></persName>
+		</author>
+		<idno>abs/2305.06161</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>Starcoder: may the source be with you!&quot; CoRR</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Fault-aware neural code rankers</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">P</forename><surname>Inala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Codas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Encarnación</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">K</forename><surname>Lahiri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Musuvathi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gao</surname></persName>
+		</author>
+		<editor>NeurIPS</editor>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Bias assessment and mitigation in llm-based code generation</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Bu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Cui</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.14345</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Towards greener yet powerful code generation via quantization: An empirical study</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">K</forename><surname>Gonugondla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">U</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Athiwaratkun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Shang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">K</forename><surname>Ramanathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Bhatia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Xiang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ESEC/SIGSOFT FSE</title>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="224" to="236" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">When language model meets private library</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP (Findings)</title>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="277" to="288" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Grounding data science code generation with input-output specifications</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chaudhuri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Polozov</surname></persName>
+		</author>
+		<idno>abs/2402.08073</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<title level="m" type="main">Is your code generated by chatgpt really correct? rigorous evaluation of large language models for code generation</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">S</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhang</surname></persName>
+		</author>
+		<editor>NeurIPS</editor>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">CERT: continual pre-training on sketches for libraryoriented code generation</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="s">IJCAI. ijcai.org</title>
+		<imprint>
+			<biblScope unit="page" from="2369" to="2375" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<title level="m" type="main">ChatGPT</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://openai.com/blog/chatgpt/" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Competitionlevel code generation with alphacode</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Leblond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Eccles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Keeling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Gimeno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lago</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Science</title>
+		<imprint>
+			<biblScope unit="volume">378</biblScope>
+			<biblScope unit="issue">6624</biblScope>
+			<biblScope unit="page" from="1092" to="1097" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Jigsaw: Large language models meet program synthesis</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Vaidyanath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">S</forename><surname>Iyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Natarajan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Parthasarathy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">K</forename><surname>Rajamani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Sharma</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICSE</title>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="1219" to="1231" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<analytic>
+		<title level="a" type="main">Enchanting program specification synthesis by large language models using static analysis and program verification</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Cheung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Tian</surname></persName>
+		</author>
+		<idno>abs/2404.00762</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">The hitchhiker&apos;s guide to program analysis: A journey with large language models</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Qian</surname></persName>
+		</author>
+		<idno>abs/2308.00245</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Boosting static resource leak detection via llm-based resource-oriented intention inference</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lou</surname></persName>
+		</author>
+		<idno>abs/2311.04448</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Scaling LLM test-time compute optimally can be more effective than scaling model parameters</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Snell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kumar</surname></persName>
+		</author>
+		<idno>abs/2408.03314</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<analytic>
+		<title level="a" type="main">Large language monkeys: Scaling inference compute with repeated sampling</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">C A</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Juravsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">S</forename><surname>Ehrlich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Ré</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mirhoseini</surname></persName>
+		</author>
+		<idno>abs/2407.21787</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

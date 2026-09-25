@@ -1,0 +1,1532 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">TurnBench-MS: A Benchmark for Evaluating Multi-Turn, Multi-Step Reasoning in Large Language Models</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-11-25">25 Nov 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Yiran</forename><surname>Zhang</surname></persName>
+							<email>yiran.zhang@mq.edu.au</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Macquarie University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Mo</forename><surname>Wang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Macquarie University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xiaoyang</forename><surname>Li</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Macquarie University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Kaixuan</forename><surname>Ren</surname></persName>
+							<email>kaixuan.ren@mq.edu.au</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Macquarie University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Chencheng</forename><surname>Zhu</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">University of New South Wales</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Usman</forename><surname>Naseem</surname></persName>
+							<email>usman.naseem@mq.edu.au</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Macquarie University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">TurnBench-MS: A Benchmark for Evaluating Multi-Turn, Multi-Step Reasoning in Large Language Models</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-11-25">25 Nov 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">6EC6D4406BB3B36A8F821341700A5336</idno>
+					<idno type="arXiv">arXiv:2506.01341v2[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:07+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Despite impressive advances in large language models (LLMs), existing benchmarks often focus on single-turn or single-step tasks, failing to capture the kind of iterative reasoning required in real-world settings. To address this limitation, we introduce TurnBench, a novel benchmark that evaluates multi-turn, multi-step reasoning through an interactive code-breaking task inspired by the "Turing Machine Board Game." In each episode, a model must uncover hidden logical or arithmetic rules by making sequential guesses, receiving structured feedback, and integrating clues across multiple rounds. This dynamic setup requires models to reason over time, adapt based on past information, and maintain consistency across steps-capabilities underexplored in current benchmarks. TurnBench includes two modes: Classic, which tests standard reasoning, and Nightmare, which introduces increased complexity and requires robust inferential chains. To support fine-grained analysis, we provide ground-truth annotations for intermediate reasoning steps. Our evaluation of state-of-the-art LLMs reveals significant gaps: the best model achieves 84% accuracy in Classic mode, but performance drops to 18% in Nightmare mode. In contrast, human participants achieve 100% in both, underscoring the challenge TurnBench poses to current models. By incorporating feedback loops and hiding task rules, TurnBench reduces contamination risks and provides a rigorous testbed for diagnosing and advancing multi-step, multi-turn reasoning in LLMs 1 .</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="26" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="27" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="28" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="29" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="30" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="31" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="32" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Reasoning is central to human cognition and a key benchmark for evaluating the capabilities of artificial intelligence (AI) systems <ref type="bibr" target="#b32">(Wason and Johnson-Laird, 1972;</ref><ref type="bibr" target="#b4">Dunbar and Klahr, 2012)</ref>. In the context of large language models (LLMs), assessing reasoning ability is especially critical as these models are increasingly deployed in complex, realworld tasks. While a growing body of work has proposed datasets and evaluation methods for probing LLM reasoning <ref type="bibr" target="#b39">(Zeng et al., 2024;</ref><ref type="bibr">Wang et al., 2023a;</ref><ref type="bibr" target="#b34">Welleck et al., 2022)</ref>, such as Table <ref type="table">1</ref>, significant gaps remain in how we measure and interpret this ability-particularly in multi-step, multi-turn settings.</p><p>First, most existing evaluations focus on singleturn or single-step reasoning tasks, overlooking the iterative and interactive nature of real-world problem-solving. Human reasoning often involves cycles of information gathering, hypothesis testing, and adaptation to feedback. This is especially true in scenarios where information is incomplete or distributed across multiple interactions. While recent benchmarks attempt to assess multi-step reasoning <ref type="bibr" target="#b28">(Tang et al., 2025;</ref><ref type="bibr" target="#b39">Zeng et al., 2024)</ref>, they rarely simulate settings that require reasoning across multiple turns. Second, current evaluation metrics typically emphasize final-answer correctness, with little insight into the model's intermediate reasoning process <ref type="bibr" target="#b42">(Zhuang et al., 2023;</ref><ref type="bibr" target="#b8">Hao et al., 2024)</ref>. As complex reasoning often admits multiple valid paths, simply scoring final outputs fails to distinguish between genuine inference and lucky guesses. Though some methods attempt process-level evaluation via manual annotation or automated proxies <ref type="bibr" target="#b39">(Zeng et al., 2024;</ref><ref type="bibr" target="#b28">Tang et al., 2025)</ref>, these are limited by subjectivity and the absence of reliable ground truth for intermediate reasoning.</p><p>Third, data contamination poses a serious concern. Static benchmarks-often sourced from public datasets or templated questions-can overlap with pretraining corpora, making it difficult to disentangle memorization from actual reasoning <ref type="bibr" target="#b38">(Yang et al., 2025;</ref><ref type="bibr">Jain et al., 2024;</ref><ref type="bibr" target="#b10">Li et al., 2023)</ref>. This undermines the reliability of benchmark results and inflates perceived model performance.</p><p>To address these gaps, we introduce TurnBench, a novel benchmark designed to evaluate multi-turn, multi-step reasoning through an interactive codebreaking task inspired by the Turing Machine board game. In this game, a model must uncover a hidden three-digit code by engaging in multiple rounds of interaction with logical verifiers. Each verifier is governed by a hidden rule; only one rule per verifier is active in a given instance. To succeed, the model must iteratively guess codes, select verifiers, analyze feedback, and gradually infer the underlying logical or arithmetic constraints-mirroring how humans perform exploratory reasoning.</p><p>TurnBench explicitly addresses key shortcom-ings in existing benchmarks. First, it evaluates multi-turn, multi-step reasoning by requiring LLMs to adapt dynamically to feedback across multiple rounds and integrate partial clues to formulate and revise hypotheses over time. Second, it enables process-level evaluation through a rulebased mechanism that compares models' intermediate inferences-i.e., their identification of active rules in each verifier-against ground truth, allowing structured analysis of reasoning steps beyond final answer correctness. Finally, TurnBench offers strong contamination resistance due to its dynamic rule configurations: even under fixed game setups, varying rule activations lead to distinct reasoning trajectories, minimizing the risk of data leakage from LLM pretraining corpora. Our work makes the following key contributions:</p><p>• We propose TurnBench, the novel benchmark designed to evaluate multi-turn, multi-step reasoning in LLMs through dynamic, interactive tasks. TurnBench includes 540 game instances across two modes-Classic and Nightmare-with three difficulty levels each.</p><p>• We introduce a novel, automated evaluation method that leverages rule-based feedback to analyze intermediate reasoning steps, offering a grounded way to assess the internal thinking of LLMs.</p><p>• We benchmark a range of open-source and proprietary models, including GPT-o4-mini and Gemini-2.5-Flash, alongside human participants.</p><p>Results show a significant performance gap between humans (100%) and models (as low as</p><p>Table 1: Comparison of multi-round reasoning benchmarks across six key criteria. A indicates presence of the feature, a means no presence of the feature, and a indicates partial. The "Domain" column shows the task type of each benchmark.</p><p>18% in Nightmare mode), highlighting the challenge TurnBench presents (Figure <ref type="figure" target="#fig_0">1</ref>).</p><p>• We release a new dataset comprising not only game settings and final answers, but also detailed interaction logs and reasoning steps for both models and humans, providing a valuable resource for future research.</p><p>2 Related Work LLMs in Interactive Game Environments. Recent work has explored the use of LLMs as agents in interactive games to assess their planning, reasoning, and decision-making capabilities across diverse domains such as board games, card games, and social deduction settings <ref type="bibr" target="#b25">(Schultz et al., 2024;</ref><ref type="bibr" target="#b36">Xu et al., 2023;</ref><ref type="bibr" target="#b0">Akata et al., 2023;</ref><ref type="bibr" target="#b11">Light et al., 2023;</ref><ref type="bibr">, FAIR;</ref><ref type="bibr">Wang et al., 2023b;</ref><ref type="bibr" target="#b41">Zhuang et al., 2025;</ref><ref type="bibr" target="#b28">Tang et al., 2025)</ref>. These benchmarks typically present the game state in textual or structured formats and prompt LLMs to make the next move using natural language generation. For instance, PokerBench <ref type="bibr" target="#b41">(Zhuang et al., 2025)</ref> adopts classification-based decision scenarios, while AvalonBench <ref type="bibr" target="#b11">(Light et al., 2023)</ref> and BALROG <ref type="bibr" target="#b21">(Paglieri et al., 2025)</ref> evaluate agents through multi-turn, interactive gameplay. More recently, LMAct <ref type="bibr" target="#b24">(Ruoss et al., 2025)</ref> and Master-mindEval <ref type="bibr" target="#b6">(Golde et al., 2025)</ref> extend this line of work by framing game-based reasoning as multistep, multi-turn interaction tasks. Unlike benchmarks focused on win rate or action legality, these settings emphasize the process of rule discovery and iterative hypothesis testing in constrained domains. Common evaluation metrics include win rate, legality of actions, strategy optimality, and task completion.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Benchmarks for Multi-Step and Logical Reasoning.</head><p>To more directly evaluate reasoning capabilities, recent studies have proposed benchmarks focused on multi-step logical and mathematical inference. LogiEval <ref type="bibr" target="#b22">(Patel et al., 2024)</ref>, Belief-R1 <ref type="bibr">(Wilie et al., 2024)</ref>, MuSR <ref type="bibr" target="#b27">(Sprague et al., 2023)</ref>, and AIME (of Problem Solving, 2024) test multi-step reasoning in logical and mathematical domains, often revealing that even advanced LLMs struggle with deep inference. Complementary efforts such as CriticBench <ref type="bibr" target="#b13">(Lin et al., 2024)</ref> and MR-Ben <ref type="bibr" target="#b39">(Zeng et al., 2024)</ref> explore multi-round selfreflective prompting to enhance reasoning through critique and correction.</p><p>Rule-Based Inference and Tool-Augmented Reasoning. Several benchmarks focus on rule-based or structured inference tasks. GridPuzzle and Puz-zleEval <ref type="bibr" target="#b29">(Tyagi et al., 2024)</ref> utilize logic grid puzzles, while ZebraLogic <ref type="bibr" target="#b12">(Lin et al., 2025)</ref> frames reasoning as constraint satisfaction problems (CSPs). RuleArena <ref type="bibr" target="#b40">(Zhou et al., 2024)</ref> evaluates models on dynamic policy reasoning. Tool-augmented frameworks like LINC <ref type="bibr" target="#b19">(Olausson et al., 2023)</ref> and MATHSENSEI <ref type="bibr" target="#b1">(Das et al., 2024)</ref> enable LLMs to perform formal reasoning through external tools.</p><p>Meanwhile, self-reflection strategies such as Self-Refine <ref type="bibr" target="#b14">(Madaan et al., 2023)</ref> and ReFlexion <ref type="bibr" target="#b26">(Shinn et al., 2023)</ref> allow models to iteratively revise incorrect or incomplete outputs via internal critique loops.</p><p>While the above efforts have made significant strides in evaluating LLM reasoning, several important gaps remain. First, few benchmarks explicitly evaluate multi-step reasoning across multiple interaction rounds-a critical feature of real-world problem-solving. Most logic and tool-based tasks are static, single-shot evaluations that do not require models to gather and integrate information over time. Second, existing benchmarks often lack ground truth for intermediate reasoning steps, limiting analysis to final-answer accuracy. This makes it difficult to determine whether a correct answer results from genuine reasoning or chance. Third, many datasets are vulnerable to data contamination due to overlap with pretraining corpora. Finally, while game-based settings are promising, they rarely focus on rule-discovery and hypothesis refinement under feedback constraints.</p><p>TurnBench is designed to fill these gaps by offering a dynamic, interactive benchmark that simulates real-world multi-turn reasoning. It provides ground-truth for intermediate reasoning, minimizes contamination risk through dynamic rule configurations, and emphasizes logical consistency and rule inference across turns.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">TurnBench</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Turing Machine Game Mechanics</head><p>Turing Machine is a logic-based deduction game where the player's objective is to identify a unique three-digit code (digits 1-5), each digit associated with a distinct color (e.g., blue, yellow, purple). The challenge lies in interacting with a set of 4-6 verifiers, each governed by a single, hidden active criterion selected from a predefined rule pool. Players must deduce these hidden criteria and submit a code that satisfies all of them. The game rule and detailed example provided in Appendix A.</p><p>Each game unfolds in multiple rounds with four key phases: First, the player composes a proposed code (e.g., BLUE=2, YELLOW=4, PURPLE=3), which remains fixed for the current round. Next, the player queries up to three verifiers sequentially, each returning a binary judgment (PASS/FAIL) based on the verifier's active rule. Then, using this feedback, the player can either attempt a final answer or skip and continue to the next round for further testing. The game ends once a final answer is submitted.</p><p>TurnBench supports two game modes: Classic and Nightmare, each with Easy, Medium, and Hard difficulty levels. In Classic mode, verifier responses correspond directly to the selected verifier's criterion. In Nightmare mode, verifiers are secretly remapped; the player queries one verifier, but the response corresponds to another verifier's logic, unknown to the player. This mapping must</p><p>This Verifier verifiers… the number compared to the number yellow is less than purple yellow is equal to purple yellow is greater than purple 1 2 3 … Verifiers FAIL Verify 1 2 2 PASS Verify Detail Guess Code Guess Code</p><p>Figure <ref type="figure">3</ref>: Example of verification process. This verifier (Right) compares the values assigned to yellow and purple. There are three possible criteria: less than, equal to, or greater than. The Hidden Active Criterion (HAC) (Red) represents the specific constraint activated by a verifier in a given game setup. When a tested code satisfies this criterion, the verifier returns "PASS"; otherwise, it returns "FAIL" (Left).</p><p>be deduced as part of the reasoning process. The mode details provided in Appendix A.1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">TurnBench Construction</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.1">Game Setups</head><p>Each TurnBench game instance consists of a specific verifier combination, one hidden active rule per verifier, and the unique correct code. For Nightmare mode, each game additionally includes a fixed or dynamically generated hidden mapping between verifiers. We curated 270 Classic and 270 Nightmare game setups (90 per difficulty level), sourced from official materials 2 . All setups are reproducible, and Nightmare mappings are pre-fixed or regenerated at runtime to reduce memorization risk.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.2">Verifier Design</head><p>Verifiers are central to TurnBench and encode simple numerical rules (e.g., Figure <ref type="figure">3</ref>). We incorporate 48 official verifier types, each associated with 2 to 9 potential rules. Since the physical game's verifier logic isn't directly compatible with a simulation environment, we designed a Hidden Condition Selection Algorithm that selects one active rule per verifier to align with the game's design and balance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.3">LLM Interaction Flow</head><p>At game start, the system presents the LLM with the full game context: background, rules, objective, and all verifier definitions. The model then interacts turn-by-turn as described in Section 3.1 (e.g. Figure <ref type="figure" target="#fig_1">2</ref>), adhering to a strict output protocol. In each round: • In the Proposal step, the LLM outputs a code in the format &lt;CHOICE&gt;: BLUE=X, YELLOW=Y, PURPLE=Z.</p><p>• In the Verifier Query step, it selects verifiers with &lt;CHOICE&gt;: <ref type="bibr">[num]</ref>. Each verifier returns PASS or FAIL.</p><p>• In the Deduce step, the LLM either submits the code again using the same format as Proposal step or skips the round via &lt;CHOICE&gt;: SKIP.</p><p>• In Chain-of-Thought (CoT) mode, the LLM also outputs reasoning before decisions using &lt;REASONING&gt;.</p><p>If the LLM produces malformed output or illegal actions (e.g., invalid verifier ID), a retry mechanism prompts re-generation, while tracking error frequency. Detailed prompts and retry protocols are in the Appendix E.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.4">Evaluating Model Reasoning Process</head><p>While existing benchmarks focus solely on final answers, TurnBench introduces an automated method for evaluating intermediate reasoning. Specifically, in Classic mode, a model's reasoning involves two phases: (1) inferring each verifier's hidden criterion, and (2) using these to deduce the final code.</p><p>Since both ground truths (criteria and final code) are known, we can semantically compare model inferences with them.</p><p>Our evaluation pipeline (Figure <ref type="figure" target="#fig_2">4</ref>) involves two LLM-based components. First, an Inference Extractor (Gemini-2.5-Flash (DeepMind, 2025)) parses the model's &lt;REASONING&gt; output to identify its explicit claim about a verifier's hidden rule. Second, a Judger, also Gemini-2.5-Flash, compares the extracted rule to the ground truth and classifies it as: Correct (semantically equivalent), Incorrect (completely wrong or missing the correct rule), or Include (partial overlap with the ground truth).</p><p>We validated this automated process through manual inspection. Stratified sampling selected 120 outputs (5% of total), prioritizing failed games for robustness. Manual checks revealed the inference extractor missed 13.7% of applicable conclusions, but achieved 99.7% precision. The Judger reached 99.4% classification accuracy. These results confirm that TurnBench provides a reliable mechanism for process-level evaluation of LLM reasoning.  <ref type="bibr" target="#b16">(Mistral AI, 2024)</ref>, llama-3.1-8b-instruct <ref type="bibr" target="#b7">(Grattafiori et al., 2024)</ref>, and qwen-2.5-7b-instruct <ref type="bibr">(Yang et al., 2024)</ref>. We also evaluated two prompting strategies: Only Answer (OA) and Chain of Thought (CoT) <ref type="bibr" target="#b33">(Wei et al., 2022)</ref>. All models were evaluated through their publicly available APIs.</p><p>To thoroughly test the reasoning abilities of the state-of-the-art models, all "Thinking" models had their reasoning effort set to "high." Additionally, to compare the reasoning gap between the most advanced LLMs and humans, we invited five human participants with no prior experience with the game to take part in the experiment.</p><p>We evaluated two game modes: Classic and Nightmare. Each mode's scenarios were divided equally into three difficulty levels: easy, standard, and hard. For Classic mode, we constructed 270 benchmark scenarios (90 per difficulty). For Nightmare mode, 45 scenarios were selected (15 per difficulty). Human participants played 45 Classic mode games (15 per difficulty), with the Nightmare mode evaluation set matching the models'.</p><p>All models and human participants were tested under identical conditions, with the same task prompts and problem setups (Appendix F). To ensure parity in information access, we developed a user interface for humans that displayed exactly the same text as the models saw at each step. Humans were also asked to record their reasoning and thought processes throughout. Accuracy is calculated using scikit-learn <ref type="bibr" target="#b23">(Pedregosa et al., 2011)</ref>.</p><p>To specifically analyze the impact of model size on performance, we conducted a targeted follow-up experiment. We sampled 45 game setups from the Classic mode (15 from each difficulty level) and evaluated two additional large-scale open-source models: Llama-3.3-70B-instruct <ref type="bibr" target="#b7">(Grattafiori et al., 2024)</ref> and <ref type="bibr">Mistral-3.2-small (MistralAI, 2025)</ref>. This allows for a more direct comparison across a range of model parameters.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Results and Findings</head><p>Finding 1: LLMs significantly lag behind humans in multi-turn, multi-step reasoning.</p><p>We analyzed overall performance using average accuracy metrics segmented by difficulty (overall, easy, medium, hard), as well as the average number of turns and verifier uses in games won successfully. Fewer turns and verifier uses indicate stronger reasoning ability.</p><p>First, we discuss Classic mode results (Table <ref type="table" target="#tab_0">2</ref>).</p><p>Average Accuracy (CoT) Win Avg Turn (CoT) Win Avg VER (CoT) Total Easy Medium Hard gpt-o4-mini-high (Thinking) 0.11 0.13 0.20 0.00 21 8 gemini-2.5-flash (Thinking) 0.18 013 0.27 0.13 16 8 deepseek-r1 (Thinking) 0.07 0.07 0.07 0.07 12 6 Random Guess 0.0076 0.0074 0.0079 0.0075 --Best Human 1 1 1 1 40 20 Human Average 0.94 0.96 0.93 0.93 38 17 Table 3: Performance of different thinking models on the Nightmare Game setting (45 Games). Same metrics as Table 2, but exclusively featuring the Chain of Thought (CoT) prompting strategy. Compared to Classic mode, accuracy drops significantly. Human players maintain robust performance, while models struggle to generalize under this challenging scenario.</p><p>Smaller standard models struggled significantly despite understanding game rules and response format. They had difficulty leveraging verifier feedback to make effective inferences. Because Turn-Bench requires no external knowledge and relies solely on numerical rules, this suggests that complex reasoning needs models of a certain size and capacity.</p><p>Chain of Thought (CoT) prompting consistently improved performance across accuracy metrics and helped "Thinking" models as well. For example, the best-performing gpt-o4-mini-high increased its overall accuracy from 64% (OA) to 84% (CoT). Larger standard models also showed notable gains, e.g., gpt-4.1 rose from 9%(OA) to 69% (CoT), and llama-4 from 4% to 36%.</p><p>CoT prompting also helped models succeed with fewer turns and verifier uses (e.g., gpt-4.1) dropped from 41 to 15 turns and from 23 to 7 verifiers). However, "Thinking" models showed little difference between OA and CoT for turns and verifier use, possibly because they internally perform stepwise reasoning. CoT may mainly help them articulate their reasoning process more clearly and use it as memory for subsequent steps.</p><p>Despite improvements, a significant gap remains between LLMs and humans. The "Best Human" achieved 100% accuracy across all metrics, whereas gpt-o4-mini-high (CoT) reached only 84%. But models outperformed human in average turns (20) and verifier uses (11). Analysis of reasoning logs showed that while models sometimes integrated more clues, humans tended to take more turns (especially on hard tasks) but maintained nearperfect accuracy.</p><p>To further test limits, we compared "Thinking" models with CoT against humans in the more challenging Nightmare mode (Table <ref type="table">3</ref>). All LLMs' accuracy dropped drastically compared to Clas-sic mode. For example, gpt-o4-mini-high fell from 84%to 11% overall, and failed completely on Hard difficulty (0 accuracy). The best performing gemini-2.5-flash only reached 13%. Humans maintained extremely high performance, with the "Best Human" at 100% accuracy and the average human still achieving 94.2%.</p><p>These results clearly demonstrate that although "Thinking" models and CoT prompting improve performance, LLMs still lag far behind humans in complex multi-turn, multi-step reasoning tasks, especially under high difficulty. This highlights the substantial gap remaining between current models and human reasoning capabilities.</p><p>Finding 2: Once LLMs make a mistake in multi-turn reasoning, they struggle to recover.</p><p>In this experiment, we conducted an in-depth analysis of the persistence and evolution of error states in LLMs during multi-turn reasoning. This analysis is based on the thinking process evaluation method described in Section 3.2.4. The results clearly demonstrate that in complex multi-turn reasoning chains, once current LLMs make an initial error, they tend to "lose their way" and struggle to recover autonomously, significantly reducing their final task success rate.</p><p>Path Divergence after Initial Errors. Using a Sankey diagram (Figure <ref type="figure" target="#fig_3">6</ref>), we tracked model behavior following the First Incorrect Conclusion (FIC). The diagram shows that a large proportion of error paths led directly to "No Subsequent Conclusion," indicating that models often cease reasoning along that path after an initial mistake; indeed, as detailed in Table <ref type="table" target="#tab_1">4</ref>, the rate of "Ended with no final conclusion" ranged from 34.85% (gpt-o4-mini-high) to a striking 96.23% (qwen-2.5-7b) llama-3.1-8b gemini-2.5-flash gpt-o4-mini-high gpt-4.1 mistral-8b llama-4-maverick qwen-2. across various models. Another substantial fraction continued producing incorrect conclusions; for instance, the "Next-turn still incorrect" metric in the same table varied from 3.14% (qwen-2.5-7b) to 38.82% (mistral-8b). In contrast, paths that quickly shifted to "Include" or "Correct" were relatively rare. Examining how these paths evolved to the Final Conclusion State Before Submission (CSBS), we found that those with either "No Subsequent Conclusion" or "Subsequent Incorrect Conclusion" overwhelmingly ended in an incorrect final conclusion. Consequently, these error paths almost always resulted in "Game Lost." Only a small minority of paths that rapidly adjusted to correct or partially correct conclusions after the first error were associated with a higher likelihood of "Game Won." This divergence visually confirms that after the first mistake, models rarely self-correct and tend either to halt reasoning or perpetuate errors-an initial indication of "losing their way." The detailed definitions and examples are provided in Appendix C.</p><p>Figure <ref type="figure">5</ref>: Probability of a model remaining incorrect in each subsequent round after its initial error, conditioned on it being incorrect in the previous round. The likelihood of continuing in an incorrect state increases with each turn, approaching near certainty beyond the fifth round. This trend highlights the models' limited capacity for self-correction once they enter an error state.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Solidification and Persistence of Error States.</head><p>To further investigate error dynamics, we analyzed model behavior after making an error. Error states proved extremely "sticky." Figure <ref type="figure">5</ref> depicts the probability that a model continues to produce incorrect conclusions in subsequent relative rounds, given that it is currently incorrect. In the first relative round after the initial error (X=1), if the model outputs a conclusion, there is already approximately a 65-70% chance it is incorrect. Alarmingly, this probability rises sharply with additional rounds, nearing 100% by the fifth relative round. This suggests that once a model enters several consecutive rounds of incorrect reasoning, it almost completely loses the ability to break the error cycle.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Further Analysis of Reasoning Failures</head><p>To better understand the sources of the performance gaps and the persistence of errors documented in Findings 1 and 2, we conducted additional analyses on both the qualitative nature of LLM errors and the quantitative effect of model scale.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.1">Qualitative Error Analysis</head><p>We examined failure cases across different models and difficulty levels to investigate the causes of the performance gaps identified in Finding 1 and the error persistence highlighted in Finding 2. This analysis revealed five recurring categories of reasoning errors that illustrate the challenges LLMs face in multi-turn, multi-step tasks. Illustrative examples are provided in Appendix D.</p><p>Reasoning Biases. These errors occur when a model attempts to make inferences from insufficient evidence. In our setting, verifier rules often share implicit relationships. Some models, seeking efficiency, try to deduce the hidden criteria of untested verifiers based on already verified conditions or by exploiting the uniqueness of the final answer. While such "shortcut" strategies can be effective, they frequently lead to mistakes when models fail to account for alternative logical paths or conditions.</p><p>Task Misconception. A small subset of models fail to fully grasp the core game mechanics or specific requirements, leading to misinterpretation of clues and ultimately to erroneous conclusions. This type of error is more common in smaller models, and is rarely observed in larger ones, pointing to limitations in complex instruction following and sustained task comprehension.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Information Hallucination.</head><p>Here the model fabricates unverified information or erroneously assumes that a verification step has been completed.</p><p>For instance, a model may conclude that a certain verifier's criterion is active simply because its current solution happens to satisfy it, despite never explicitly testing that verifier. This highlights LLMs' difficulties in managing uncertainty and preserving factual correctness.</p><p>Overconfident Inference. In some cases, models display unwarranted certainty in their final predictions even without completing all required verification steps. They submit premature answers based on partial or speculative reasoning, revealing a tendency toward overconfidence.</p><p>Long-term Memory Decay. In extended multiturn reasoning, certain models struggle to retain and integrate crucial information across turns. This often results in forgotten or confused clues from earlier steps, which compromises downstream reasoning. Such cases point to ongoing challenges in maintaining contextual coherence and reliable recall in multi-turn interactions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.2">The Impact of Model Scale</head><p>Our main experiments (Table <ref type="table" target="#tab_0">2</ref>) showed a stark contrast in performance, particularly with smaller open-source models failing completely. To systematically investigate this, we analyzed the performance of several open-source models across a spectrum of sizes on a representative subset of 45 Classic mode games. The results (Table <ref type="table">5</ref>) reveal a strong positive correlation between model size and accuracy on TurnBench. Our key observations are as follows:</p><p>Significant Performance Gap for Smaller Models Models in the 7B-8B parameter range consistently achieve near-zero accuracy (0-4%). This</p><p>Model Model Size Avg Acc deepseek-r1 (Thinking) (MoE) 671B (37B) 0.53 llama-4-maverick (MoE) 400B (17B) 0.36 llama-3.3-70b-instruct 70B 0.36 mistral 3.2 small 24B 0.27 llama-3.1-8b-instruct 8B 0.00 mistral-8b 8B 0.02 qwen-2.5-7b-instruct 7B 0.04 Table 5: A Comparative Analysis of Large Language Models at Various Scales.</p><p>suggests that smaller LLMs largely lack the capacity for the complex, multi-turn reasoning required by TurnBench, possibly due to limitations in maintaining complex contexts, performing intricate deductions, or recovering from early errors.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Improved Performance with Increasing Scale</head><p>As model size increases to 24B (Mistral 3.2 Small) and 70B (Llama 3.3 70B), we observe a substantial improvement in average accuracy, reaching 27% and 36%, respectively. This indicates that larger models are better equipped to handle the game's complexities, benefiting from increased capacity for reasoning, memory, and instruction following.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Effectiveness of Large-Scale MoE Architectures</head><p>The Mixture-of-Experts (MoE) models, deepseek-r1 and llama-4-maverick, achieve high accuracies of 53% and 36%. Notably, deepseek-r1, with its massive 671B total parameters, is the top performer among this set, demonstrating that large-scale architectures, particularly those leveraging MoE, possess superior capabilities for this type of reasoning task. This analysis supports the conclusion that scaling effects play a crucial role in LLM performance on complex, multi-turn reasoning tasks. It provides deeper insight into the current limitations of smaller models and underscores the benefits of larger model architectures for tackling such challenges.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>In this paper, our investigation using TurnBench has clarified the capabilities and limitations of Large Language Models (LLMs) in multi-turn, multi-step reasoning. TurnBench addresses several key limitations of current benchmarks and offers an effective method for automatically analyzing the reasoning processes of LLMs. Using this framework, we evaluated multiple standard chat models and thinking models, uncovering key findings that highlight the limitations of existing models. In summary, TurnBench fills a gap in the evaluation of LLMs' multi-turn, multi-step reasoning capabilities and provides a novel solution for assessing model reasoning processes. We hope that our work will inspire further research into multi-turn reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitation</head><p>Effectively and accurately measuring a model's thinking process has always been a challenge. The automated evaluation of model thinking processes proposed in this paper requires an evaluation framework built on rules, which lacks generality. Furthermore, using Gemini 2.5 Flash for model inference extraction still has certain limitations. Although the extracted results have shown high accuracy after manual evaluation, further research and optimization are still needed. In addition, since our work involves benchmarking large language models, there are potential risks such as the models producing biased outputs, which should be carefully considered when interpreting the results.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Game Explanation</head><p>This appendix provides detailed explanation includes Game mode explanation, Game Example,</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 Mode Explanation</head><p>In Classic mode, there's a direct, one-to-one correspondence between the verifier a player selects and the actual verifier that processes the code. If a player tests Verifier 1 and receives a "PASS" result, they can confidently conclude that their code passed Verifier 1's specific validation.</p><p>In Nightmare mode, a "verifier mapping" is generated at the start of the game. This mapping randomly shuffles the verifier numbers and their actual underlying verifiers. This means that if a player tests "Verifier 1" in Nightmare mode and receives a "PASS" result, that result could have come from any of the active verifiers, not necessarily the one labeled "Verifier 1."</p><p>In Nightmare mode, players must first infer the correspondence between the verifier results and the actual verifiers before they can even begin to deduce each verifier's hidden active criterion. Only after resolving this mapping can they then proceed to infer the rules and ultimately the correct three-digit code, adding an extra layer of complexity and uncertainty to the reasoning process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Game Rules</head><p>The objective of the game The goal is to infer a unique three-digit code, composed of numbers from 1 to 5, using the fewest possible rounds and verifier uses. While speed is a factor, accuracy in deduction is paramount.</p><p>Game Setup In both Classic and Nightmare modes, each game involves 4-6 verifiers. Each verifier secretly activates a single criterion that restricts the final code. As mentioned, for Nightmare mode, a random verifier mapping is applied at the start, obscuring which labeled verifier corresponds to which actual criterion.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>3-digit-code Rules</head><p>The three-digit code consists of numbers from 1 to 5, which can be repeated (e.g., 123, 221). Each digit is associated with a specific color: Blue for the first digit, Yellow for the second, and Purple for the third. This code is the unique combination that satisfies the hidden active criterion of all verifiers, and importantly, the active criteria of different verifiers are never conflicting.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Verifier Rules</head><p>• Active Criteria: Each verifier has multiple potential criteria (as shown in Figure <ref type="figure" target="#fig_1">2</ref>), but only one is secretly chosen as "active" for a given game. Players are unaware of which criterion is active for any specific verifier.</p><p>• Validation Focus: When a player's proposed code is tested against a verifier, only whether the code satisfies the active criterion is checked. For instance, if an active criterion is "Blue = 3" and the player submits "211" (Blue=2, Yellow=1, Purple=1), a "FAIL" result only indicates that the Blue digit did not satisfy "Blue = 3." It does not imply that the Yellow or Purple digits are incorrect.</p><p>• Non-Overlapping Information: The active criteria selected across different verifiers in a game provide distinct information. For example, Verifier 1 will not have "Blue &lt; 3" as its active criterion if Verifier 2 also has "Blue &lt; 3" as its active criterion.</p><p>Game Structure (Rounds) Before the game begins, players can see the details of the verifiers set up for the current game. Each game round consists of four stages, as show in Figure <ref type="figure" target="#fig_0">1</ref> in the paper:</p><p>• Proposal: The player designs a three-digit code for testing in the current round. This code cannot be changed within the round.</p><p>• Question: The player can choose to test up to three verifiers sequentially with the proposed code. After each test, the player sees the result (PASS/FAIL) and can then decide whether to test another verifier or which one to test next. This stage can also be skipped entirely.</p><p>• Deduce: In this stage, the player can either submit a final three-digit code (which can be different from the proposed code in Stage 1) or choose to proceed to the next round. Once a code is submitted, the game concludes immediately, regardless of success or failure.</p><p>• End of Round: If the player chooses not to submit a final answer in the Deduce stage, the current round ends, and a new round begins.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3 Game Example</head><p>To provide a concrete understanding of gameplay and human reasoning, below is a step-by-step example from a Classic mode game. Please note that this example illustrates a possible thought process, not necessarily the most optimal one, and is designed for clarity of rules. The correct answer for this game is "241" and the Hidden Active Criteria (HACs) for each verifier are marked.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3.1 Game Setup</head><p>Final Answer: "241" Verifiers:</p><p>• Verifier &lt;1&gt;: Verifies the YELLOW number compared to 4.</p><p>-Possible criteria: YELLOW is less than 4.</p><p>-Possible criteria: YELLOW is equal to 4. (HAC) -Possible criteria: YELLOW is greater than 4.</p><p>• Verifier &lt;2&gt;: Verifies the number of 3s in the code.</p><p>-Possible criteria: There are zero 3s in the code. (HAC) -Possible criteria: There is one 3 in the code.</p><p>-Possible criteria: There are two 3s in the code.</p><p>-Possible criteria: There are three 3s in the code.</p><p>• Verifier &lt;3&gt;: Verifies the BLUE number compared to the YELLOW number.</p><p>-Possible criteria: BLUE is less than YELLOW. (HAC) -Possible criteria: BLUE is equal to YELLOW.</p><p>-Possible criteria: BLUE is greater than YELLOW.</p><p>• Verifier &lt;4&gt;: Verifies which color's number is smaller than either of the others.</p><p>-Possible criteria: BLUE is smaller than PURPLE and YELLOW.</p><p>-Possible criteria: YELLOW is smaller than BLUE and PURPLE.</p><p>-Possible criteria: PURPLE is smaller than YELLOW and BLUE. (HAC)</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3.2 Example Details</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ROUND 1 -Stage 1: Proposal</head><p>Player's Thinking: I want to test Verifiers 1, 2, and 3. For Verifier 1, "Yellow = 4" is a good test. For Verifier 2, by using two '3's (Blue and Purple), I can test if there are two 3s in the code. For Verifier 3, "Blue = 3" and "Yellow = 4" will help check "Blue &lt; Yellow."</p><p>↩→ ↩→ ↩→ Proposed Code: 343 ROUND 1 -Stage 2: Question Verifier Choose: 1, Result: PASS Player's Thinking: Verifier 1 passed. I now know Yellow = 4. Verifier Choose: 2, Result: FAIL Player's Thinking: Verifier 2 failed. This means there are not two 3s in the code. Since I already know Yellow = 4 (from Verifier 1), the number of 3s can only be zero, one, or three. Given my proposed code 343, and knowing Yellow is 4, it's either zero 3s (if Blue and Purple aren't 3s) or one 3 (if one of Blue or Purple is a 3). ↩→ ↩→ ↩→ ↩→ Verifier Choose: 3, Result: PASS Player's Thinking: Verifier 3 passed. I now know Blue &lt; Yellow. Since I already know Yellow = 4, Blue can be 1, 2, or 3. ↩→ ROUND 1 -Stage 3: Deduce Player's Thinking: Based on results from Verifiers 1, 2, and 3: Yellow = 4, Blue can be 1, 2, or 3. The code has zero or one '3'. I need more information, especially about Verifier 4 and to narrow down Blue/Purple. ↩→ ↩→ Deduce Choice: Continue to the next round. ROUND 1 -Stage 4: End of Round. ROUND 2 -Stage 1: Proposal Player's Thinking: I need to test Verifier 2 further and Verifier 4. Using "345" will test if there's one '3' (for Verifier 2). For Verifier 4, if it passes, Blue (3) is the smallest. If it fails, then Purple (5) must be the smallest (since Blue &lt; Yellow, Yellow cannot be the smallest). ↩→ ↩→ ↩→ Proposed Code: 345 ROUND 2 -Stage 2: Question Verifier Choose: 2, Result: FAIL Player's Thinking: Verifier 2 failed. Since I used '3' in the Blue position, and it failed, I now know there are zero 3s in the code. ↩→ Verifier Choose: 4, Result: FAIL Player's Thinking: Verifier 4 failed. This means Purple is the smallest number (among Blue, Yellow, Purple). ↩→ Verifier Choose: SKIP Player's Thinking: I have enough information now. I know all the HACs. ROUND 2 -Stage 3: Deduce Player's Thinking: Combining all results: Yellow = 4 (from Round 1, Verifier 1) Blue &lt; Yellow (from Round 1, Verifier 3) =&gt; Blue can be 1, 2, or 3. Zero 3s in the code (from Round 2, Verifier 2) =&gt; Blue cannot be 3. So, Blue can be 1 or 2. ↩→ Purple is the smallest number (from Round 2, Verifier 4) =&gt; Since Purple must be smaller than Blue (1 or 2) and Yellow (4), Purple must be 1, Blue must be 2. ↩→ Final Deduction: Blue = 2, Yellow = 4, Purple = 1. Deduce Choice: Submit 241 Game Over. Result: Player wins the game!</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Additional experimental results</head><p>This appendix provides additional experimental results for classic game mode. We evaluated the reasoning performance of the model on the full dataset (270 Games) (Table <ref type="table" target="#tab_2">6</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Definitions and Examples for Reasoning Path Evaluation</head><p>This appendix provides the detailed definitions and flow analysis figure (Figure <ref type="figure" target="#fig_3">6</ref>, and examples of the flow analysis of verifier reasoning paths originating from the First incorrect Conclusion.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1 First Incorrect Conclusion (FIC)</head><p>First Incorrect Conclusion(FIC) refers to the instances within a single game where the model makes an incorrect inference regarding a verifier's Hidden Active Criterion (HAC), HAC refer to Figure <ref type="figure">3</ref>. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.2 Next Conclusion Status (NCS)</head><p>The Next Conclusion Status (NCS) evaluates the outcome of an LLM's subsequent reasoning attempt on a specific verifier's Hypothesized Active Criteria (HAC) after a prior conclusion. Each attempt is classified into one of four categories, illustrated with examples referencing the verifier in Figure <ref type="figure">3</ref>.</p><p>Correct: The inferred HAC is semantically equivalent to the ground truth rule. Incorrect: The inferred HAC is logically inconsistent with or fails to capture the ground truth. Include: The inferred HAC is a superset of or partially overlaps with the ground truth. It is consistent with the available evidence but is not yet the most specific or precise rule. No Subsequent Conclusion: The model does not revisit its reasoning for that specific verifier in any subsequent turn, effectively abandoning that line of inquiry.</p><p>To illustrate these categories, consider a verifier whose unknown ground truth HAC is "Yellow = Purple". Suppose the model tests an input where Yellow=1 and Purple=3, causing the verifier to return FAIL (which indicates the HAC was not met).</p><p>If the model infers a broad but consistent rule like Yellow &gt;= Purple, the status is Include. Because the conclusion includes the correct answer "Yellow = Purple" as a possibility. If the model infers Yellow &gt; Purple, the status is Incorrect, as this hypothesis is missing the correct answer. A Correct status is achieved only when the model, perhaps by synthesizing evidence from multiple tests, precisely identifies the HAC as Yellow = Purple.</p><p>Finally, the No Subsequent Conclusion status is applied if the model, after making an initial incorrect inference about this verifier, fails to re-evaluate or correct its reasoning in later turns. This represents a failure of self-correction, where an erroneous path of reasoning is permanently dropped.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.3 Conclusion Status Before Submit (CSBS)</head><p>Conclusion Status Before Submit (CSBS) is the final inferred status of the initially misjudged verifier before the LLM submitted its overall game answer. In this case, there are no "No Subsequent Conclusion" status anymore.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.4 Game Status (GS)</head><p>Game Status (GS) is the ultimate outcome (Won or Lost) of the game in which the FIC occurred.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Examples of LLM Error Types</head><p>This appendix provides illustrative examples of the error categories discussed in Finding 3. The Hidden Active Criterion (HAC) refers to the secret rule a verifier uses to validate a code.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.1 Reasoning Biases Example</head><p>The correct answer is 344 for this example. Model's Known Information (from tested verifiers): • V1: BLUE is odd (B in 1, 3, 5) (Comment: Correctly inferred HAC for V1) • V0: YELLOW is ge 4 (Y in 4, 5) (Comment: Correct path, true HAC is Y=4) • V3: YELLOW ge PURPLE (Y ge P) (Comment: Correct path, true HAC is Y=P) • V2: zero 1s (Digits must be from 2, 3, 4, 5) (Comment: Correctly inferred HAC for V2) • V4: Smallest is not PURPLE (P ge min(B, Y)) (Comment: Correct path, true HAC is Blue is smallest)</p><p>Model's Reasoning (Error Highlighted):</p><p>• "Let's test the combinations: V3: Y=P, V4: B &lt; Y&amp;P.</p><p>• Apply Y=P to the list: (3,4,4), (3,5,5), (5,4,4), (5,5,5).</p><p>• Apply V4: B &lt; Y&amp;P to this new list:</p><p>-(3,4,4): 3 &lt; 4 &amp; 3 &lt; 4 (Yes) to (3,4,4) is a candidate.</p><p>-(3,5,5): 3 &lt; 5 &amp; 3 &lt; 5 (Yes) to (3,5,5) is a candidate.</p><p>-(5,4,4): 5 &lt; 4 &amp; 5 &lt; 4 (No).</p><p>-(5,5,5): 5 &lt; 5 &amp; 5 &lt; 5 (No).</p><p>• If V3 is Y=P and V4 is B &lt; Y&amp;P, there are two possible codes: (3,4,4), (3,5,5). Not unique."</p><p>Analysis: The model fails to consider the constraint from V0 (YELLOW is ge 4) in combination with Y=P, leading it to miss the unique solution. If Y=4, then Y=P implies P=4, which makes (3,4,4) the unique answer. The model did not fully capture all potential conditions, thus incorrectly excluding the correct answer.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.2 Task Misconception</head><p>The model submits code "123" to a verifier checking "how many 3s in the code." The verifier returns "PASS."</p><p>Model's Incorrect Analysis: "Since the code 123 passed Verifier &lt;0&gt;, we know that the code does not contain any 3s."</p><p>Analysis: This directly contradicts the expected logical interpretation (a 'PASS' implies the presence of a '3').</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.3 Information Hallucination</head><p>In a game, the model only tested 3 out of 4 verifiers. Its deduction for the last verifier is:</p><p>Model's Hallucination: "The only remaining verifier is Verifier &lt;3&gt;, which checks the number of even numbers compared to the number of odd numbers. Since our code is BLUE=2, YELLOW=3, and PURPLE=4, we have 2 even numbers (2, 4) and 1 odd number (3). This satisfies the condition of having more even numbers than odd numbers. Therefore, the active criterion for Verifier &lt;3&gt; is that there are more even numbers."</p><p>Analysis: The model infers the active criterion for Verifier &lt;3&gt; based solely on its proposed code, without actually testing Verifier &lt;3&gt; or receiving feedback, hallucinating a verified state.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.4 Overconfident Inference</head><p>In a game where only 3 out of 4 verifiers were tested, the model concludes:</p><p>Model's Overconfidence: "Therefore, the code 324 satisfies all the known criteria and is likely to satisfy the hidden criteria of all verifiers."</p><p>Analysis: The model expresses high confidence ("likely to satisfy") despite not having complete information or having fully tested all verifiers, indicating a bias in self-assessment regarding the reliability of its deductions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.5 Long-term Memory Decay</head><p>Model tested Verifier 2 in the first round but forget in the second round Model's Deduction in Round 1: "Verifier &lt;2&gt;: The result was &lt;FAIL&gt;, and since the sum of the digits (3+2+1 = 6) is a multiple of 3, the active criterion is either 'the sum is a multiple of 4' or 'the sum is a multiple of 5'"</p><p>Model's Deduction in Round 2: "We have not tested Verifier &lt;2&gt; yet. Our code's sum is 7, which is not a multiple of 3, 4, or 5, so we expect &lt;FAIL&gt; for Verifier &lt;2&gt; if tested." AND "the fact that we haven't tested Verifier &lt;2&gt;"</p><p>Analysis: The model clearly loses track of its prior interaction and deduction regarding Verifier &lt;2&gt;, indicating a failure to integrate past information into its current reasoning state. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E Prompts Used in Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>↩→</head><p>Your goal is to win first place by deducing a secret 3-digit code with minimal rounds and verifier usage, but accuracy takes priority over speed.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>↩→</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Game Objective:</head><p>-Deduce the secret 3-digit code made up of digits 1-5.</p><p>-BLUE = first digit, YELLOW = second digit, PURPLE = third digit.</p><p>-Each digit can be 1, 2, 3, 4, or 5 (digits may repeat).</p><p>-The code is the ONLY combination that satisfies the active criterion of ALL chosen verifiers.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>↩→</head><p>Game Structure (Rounds): 1. Proposal: Design a 3-digit code to test (format: BLUE=X, YELLOW=Y, PURPLE=Z, where X, Y, Z are digits from 1 to 5).</p><p>↩→ 2. Question: Sequentially choose 0 to 3 verifiers to test your proposed code each round. After each selection, you will see the result, and then you can decide whether to select the next one. ↩→ ↩→ 3. Deduce: Based on verifier results, you can submit a final answer or continue to the next round. ↩→ 4. End Round: If you didn't submit a final answer, a new round begins. Verifier Rules: -Each verifier checks ONE specific property (criterion) about the code. -Each verifier has multiple potential criteria, but for each game, only ONE is secretly selected as 'active'. You don't know which criterion is active for any given verifier. ↩→ ↩→ -Focus of Verification: When testing your code against a verifier, it exclusively evaluates it against its single, active criterion. The verifier completely ignores all other potential criteria, including its own inactive ones. ↩→ ↩→ ↩→ -PASS Condition: A verifier returns `&lt;PASS&gt;`if and only if your code satisfies this single active criterion. ↩→ -FAIL Condition: A verifier returns `&lt;FAIL&gt;`if and only if your code does not satisfy this single active criterion. ↩→ -Non-Overlapping Information: The active criteria selected across different verifiers for a game will provide distinct information. ↩→ Winning Strategy: -It is possible to deduce the solution through joint reasoning, utilizing the combined results of multiple verifiers along with system rules such as the existence of a unique solution and the principle that no two verifiers offer redundant information. ↩→ ↩→ ↩→ -Only submit a final guess when you have either tested all verifiers and received &lt;PASS&gt; for each, or when your reasoning clearly proves your code satisfies all possible active verifier criteria. Accuracy takes priority over speed. ↩→ ↩→ ↩→ Current Game Setup: {game_setup} E.1.2 Classic proposal step prompt Classic -Proposal step -Step prompt -OA You are now entering the ** Proposal Stage ** of this round. ** Stage Purpose ** : In this stage, you need to compose a 3-digit code to help you to gather information from the verifiers. The code can NOT be changed in the subsequent stages of this round. ↩→ ↩→ ** 3-digit code rules ** : -BLUE = first digit (X), YELLOW = second digit (Y), PURPLE = third digit (Z). -Each digit (X, Y, Z) can be 1, 2, 3, 4, or 5. Digits may repeat. ** Your Goal in This Stage ** : -Design a code that will test a specific hypothesis. -Think about what a &lt;PASS&gt; or &lt;FAIL&gt; would tell you. -Choose a code that lets you learn something meaningful from verifiers. ** What You Must Do Now ** : -Reply the code you want to use in this round with required response format. For example, &lt;CHOICE&gt;: BLUE=1, YELLOW=1, PURPLE=1 ↩→ -DO NOT include any explanation, only follow the response format. ** Response format ** : &lt;CHOICE&gt;: BLUE=X, YELLOW=Y, PURPLE=Z Classic -Proposal step -Not valid format prompt -OA You did not follow the required response format. Please try again with same code. ** What You Must Do Now ** : -Reply the code you want to use in this round with required response format. For example, &lt;PROPOSAL&gt;: BLUE=1, YELLOW=1, PURPLE=1 ↩→ -DO NOT include any explanation, only follow the response format. ** Response format ** : &lt;CHOICE&gt;: BLUE=[X], YELLOW=[Y], PURPLE=[Z] Classic -Proposal step -Step prompt -CoT You are now entering the ** Proposal Stage ** of this round. ** Stage Purpose ** : In this stage, you need to compose a 3-digit code to help you to gather information from the verifiers. The code can NOT be changed in the subsequent stages of this round. ↩→ ↩→ ** 3-digit code rules ** : -BLUE = first digit (X), YELLOW = second digit (Y), PURPLE = third digit (Z). -Each digit (X, Y, Z) can be 1, 2, 3, 4, or 5. Digits may repeat. ** Your Goal in This Stage ** : -Design a code that will test a specific hypothesis. -Think about what a &lt;PASS&gt; or &lt;FAIL&gt; would tell you. -Choose a code that lets you learn something meaningful from verifiers. ** What You Must Do Now ** : -Reply the code you want to use in this round with required response format. For example, &lt;PROPOSAL&gt;: BLUE=1, YELLOW=1, PURPLE=1 ↩→ -Explain your reasoning step by step with &lt;REASONING&gt; tag, then provide your code. ↩→ ** Response format ** : &lt;REASONING&gt;: [Explain your reasoning step by step for choosing this code] &lt;CHOICE&gt;: BLUE=[X], YELLOW=[Y], PURPLE=[Z] Classic -Proposal step -Not valid format prompt -CoT You did not follow the required response format. Please try again with same code. ** What You Must Do Now ** : -Reply the code you want to use in this round with required response format. For example, &lt;PROPOSAL&gt;: BLUE=1, YELLOW=1, PURPLE=1 ↩→ -Explain your reasoning step by step with &lt;REASONING&gt; tag, then provide your code. ↩→ ** Response format ** : &lt;REASONING&gt;: [Explain your reasoning step by step for choosing this code] &lt;CHOICE&gt;: BLUE=[X], YELLOW=[Y], PURPLE=[Z] E.1.3 Classic question step prompt Classic -Question step -First question prompt -OA You are now entering the ** Verifier Questioning Stage ** of this round. ** Current Verifiers ** : {verifier_descriptions} ** Stage Purpose ** : In this stage, you can test your proposed 3-digit code using verifiers. Each verifier checks one hidden criterion. Use the test results to gather information and refine your deduction. ↩→ ↩→ ** Verifier Rules Summary ** : -Each verifier has ONE secretly selected active criterion. -&lt;PASS&gt; means your code satisfies this rule; &lt;FAIL&gt; means it does not. -Active rules do NOT overlap between verifiers. ** Your Goal in This Stage ** : -Choosing verifiers is optional; testing 0 verifiers is allowed. If you want to choose the verifier, you must choose verifiers ** one at a time ** . After each result, you may decide whether to test another. You may choose to test 0 to 3 verifiers ** in total ** during this round. ↩→ ↩→ ↩→ -** Passing all tested verifiers does NOT mean the code is correct. ** To win, your code must satisfy the hidden criterion of ** all verifiers ** , whether tested or not. ↩→ ↩→ ** What You Must Do Now ** : -If you want to choose a verifier to test your proposed code, reply with verifier_num after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: 1. ↩→ -If you want to skip verifier testing for this round, reply with SKIP after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: SKIP. ↩→ -DO NOT include any explanation, only follow the response format. ** Response format ** : &lt;CHOICE&gt;: [your_choice] Classic -Question step -Following questions prompt -OA You chose Verifier &lt;{verifier_num}&gt; and the result is &lt;{verifier_result}&gt;. ** What You Must Do Now ** : -If you want to choose the next verifier to test, reply with verifier_num after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: 1. ↩→ -If you want to skip verifier testing for this round, reply with SKIP after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: SKIP. ↩→ -DO NOT include any explanation, only follow the response format. ** Response format ** : &lt;CHOICE&gt;: [your_choice] Classic -Question step -Last question prompt -OA You chose Verifier &lt;{verifier_num}&gt; and the result is &lt;{verifier_result}&gt;. You have now tested the maximum number of three verifiers for this round. The next stage is the Deduce Stage. If you want to test more verifiers or new code, you can choose SKIP during the Deduce Stage to move on to the next round. ↩→ ↩→ ↩→ Classic -Question step -Not valid format prompt -OA You did not follow the required response format. Please try again with same choice. ↩→ ** What You Must Do Now ** : -If you want to choose the next verifier to test, reply with verifier_num after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: 1. ↩→ -If you want to skip verifier testing for this round, reply with SKIP after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: SKIP. ↩→ -DO NOT include any explanation, only follow the response format. ** Response format ** : &lt;CHOICE&gt;: [your_choice] Classic -Question step -Not valid verifier choice prompt -OA You selected Verifier &lt;{verifier_num}&gt;, which is not a valid verifier number. Please choose a valid verifier or SKIP to next stage. ** What You Must Do Now ** : -If you want to choose the next verifier to test, reply with verifier_num after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: 1. ↩→ -If you want to skip verifier testing for this round, reply with SKIP after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: SKIP. ↩→ -DO NOT include any explanation, only follow the response format. ** Response format ** : &lt;CHOICE&gt;: [your_choice] Classic -Question step -First question prompt -CoT You are now entering the ** Verifier Questioning Stage ** of this round. Current Verifiers: {verifier_descriptions} ** Stage Purpose ** : In this stage, you can test your proposed 3-digit code using verifiers. Each verifier checks one hidden criterion. Use the test results to gather information and refine your deduction. ↩→ ↩→ ** Verifier Rules Summary ** : -Each verifier has ONE secretly selected active criterion. -&lt;PASS&gt; means your code satisfies this rule; &lt;FAIL&gt; means it does not. -Active rules do NOT overlap between verifiers. ** Your Goal in This Stage ** : -Choosing verifiers is optional; testing 0 verifiers is allowed. If you want to choose the verifier, you must choose verifiers ** one at a time ** . After each result, you may decide whether to test another. You may choose to test 0 to 3 verifiers ** in total ** during this round. ↩→ ↩→ ↩→ -** Passing all tested verifiers does NOT mean the code is correct. ** To win, your code must satisfy the hidden criterion of ** all verifiers ** , whether tested or not. ↩→ ↩→ ** What You Must Do Now ** : -If you want to choose a verifier to test your proposed code, reply with verifier_num after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: 1. ↩→ -If you want to skip verifier testing for this round, reply with SKIP after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: SKIP. ↩→ -Explain your reasoning step by step with &lt;REASONING&gt; tag, then provide your choice. ↩→ ** Response format ** : &lt;REASONING&gt;: [Explain your reasoning step by step for choosing the verifier or skipping verifiers] ↩→ &lt;CHOICE&gt;: [your_choice] Classic -Question step -Following questions prompt -CoT You chose Verifier &lt;{verifier_num}&gt; and the result is &lt;{verifier_result}&gt;. ** What You Must Do Now ** : -If you want to choose the next verifier to test, reply with verifier_num after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: 1. ↩→ -If you want to skip verifier testing for this round, reply with SKIP after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: SKIP. ↩→ -Explain your reasoning step by step based on verifier result after &lt;REASONING&gt; tag, then provide your choice. ↩→ ** Response format ** : &lt;REASONING&gt;: [Explain your reasoning step by step for choosing the verifier or skipping verifiers] ↩→ &lt;CHOICE&gt;: [your_choice] Classic -Question step -Last question prompt -CoT You chose Verifier &lt;{verifier_num}&gt; and the result is &lt;{verifier_result}&gt;. You have now tested the maximum number of three verifiers for this round. The next stage is the Deduce Stage. If you want to test more verifiers or new code, you can choose SKIP during the Deduce Stage to move on to the next round. ↩→ ↩→ ↩→ Classic -Question step -Not valid format prompt -CoT You did not follow the required response format. Please try again with same choice. ↩→ ** What You Must Do Now ** : -If you want to choose the next verifier to test, reply with verifier_num after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: 1. ↩→ -If you want to skip verifier testing for this round, reply with SKIP after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: SKIP. ↩→ -Explain your reasoning step by step based on verifier result after &lt;REASONING&gt; tag, then provide your choice. ↩→ ** Response format ** : &lt;REASONING&gt;: [Explain your reasoning step by step for choosing the verifier or skipping verifiers] ↩→ &lt;CHOICE&gt;: [your_choice] Classic -Question step -Not valid verifier choice prompt -CoT You selected Verifier &lt;{verifier_num}&gt;, which is not a valid verifier number. Please choose a valid verifier or SKIP to next stage. ** What You Must Do Now ** : -If you want to choose the next verifier to test, reply with verifier_num after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: 1. ↩→ -If you want to skip verifier testing for this round, reply with SKIP after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: SKIP. ↩→ -Explain your reasoning step by step based on verifier result after &lt;REASONING&gt; tag, then provide your choice. ↩→ ** Response format ** : &lt;REASONING&gt;: [Explain your reasoning step by step for choosing the verifier or skipping verifiers] ↩→ &lt;CHOICE&gt;: [your_choice]</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.1.4 Classic deduce step prompt Classic -Deduce step -Deduce result prompt</head><p>The final guess is {submitted_code}. The answer is {answer}, the guess is {is_correct}.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>↩→</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Classic -Deduce step -Step prompt -OA</head><p>You are now entering the ** Deduce Stage ** of this round. ** Stage Purpose ** : In this stage, you can analyze all the information gathered then decide whether to continue to the next round or submit a final guess. ↩→ ** Hint ** : -Passing all tested verifiers does not mean the code is correct if not all verifiers were tested. To be correct, the code must satisfy the hidden criteria of all verifiers, not just the ones you tested. ↩→ ↩→ -You may choose not to test some verifiers if you can clearly reason that your code meets their requirements. But you must ensure every verifier is either tested and passed, or clearly justified through reasoning. Testing and passing only part of the verifiers is not enough if others are ignored. ↩→ ↩→ ↩→ -This stage ** is not for testing ** , you don't have to submit an answer; you can proceed to the next round to continue gathering information. ↩→ -Accuracy takes priority over speed. If you submit, the game will end, and an incorrect guess will result in immediate failure. ↩→ ** Your Goal in This Stage ** : -Decide whether to submit the final guess or continue to the next round. Submit the final guess will end the game, continue to the next round will help you gather more information. ↩→ ↩→ -Submission is not mandatory, you must make this decision based on your own reasoning. ↩→ ** What You Must Do Now ** : -If you want to continue to the next round, reply with SKIP after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: SKIP ↩→ -If you want to submit a final guess to end the game, reply with BLUE=X, YELLOW=Y, PURPLE=Z after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: BLUE=1, YELLOW=1, PURPLE=1. ↩→ ↩→ -DO NOT include any explanation, only follow the response format. ** Response format ** : &lt;CHOICE&gt;: [your_choice] Classic -Deduce step -Not valid format prompt -OA You did NOT follow the response format. Please try again. ** What You Must Do Now ** : -If you want to continue to the next round, reply with SKIP after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: SKIP ↩→ -If you want to submit a final guess to end the game, reply with BLUE=X, YELLOW=Y, PURPLE=Z after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: BLUE=1, YELLOW=1, PURPLE=1. ↩→ ↩→ -DO NOT include any explanation, only follow the response format. ** Response format ** : &lt;CHOICE&gt;: [your_choice] Classic -Deduce step -Step prompt -CoT You are now entering the ** Deduce Stage ** of this round. ** Stage Purpose ** : In this stage, you can analyze all the information gathered then decide whether to submit a final guess or continue to the next round. ↩→ ** Hint ** : -Passing all tested verifiers does not mean the code is correct if not all verifiers were tested. To be correct, the code must satisfy the hidden criteria of all verifiers, not just the ones you tested. ↩→ ↩→ -You may choose not to test some verifiers if you can clearly reason that your code meets their requirements. But you must ensure every verifier is either tested and passed, or clearly justified through reasoning. Testing and passing only part of the verifiers is not enough if others are ignored. ↩→ ↩→ ↩→ -This stage ** is not for testing ** , you don't have to submit an answer; you can proceed to the next round to continue gathering information. ↩→ -Accuracy takes priority over speed. If you submit, the game will end, and an incorrect guess will result in immediate failure. ↩→ ** Your Goal in This Stage ** : -Analysis all information gathered. -Decide whether to submit the final guess or continue to the next round. -Submission is not mandatory, you must make this decision based on your own reasoning. ↩→ ** What You Must Do Now ** : -If you want to continue to the next round, reply with SKIP after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: SKIP ↩→ -If you want to submit a final guess to end the game, reply with BLUE=X, YELLOW=Y, PURPLE=Z after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: BLUE=1, YELLOW=1, PURPLE=1. ↩→ ↩→ -Explain your reasoning step by step with &lt;REASONING&gt; tag, then provide your choice. If you want to submit a final guess, you must provide the reasons for not proceeding to the next round. ↩→ ↩→ ** Response format ** : &lt;REASONING&gt;: [Analysis and explain your reasoning step by step for continue to next round or submit final guess] ↩→ &lt;CHOICE&gt;: [your_choice] Classic -Deduce step -Not valid format prompt -CoT You did NOT follow the response format. Please try again. ** What You Must Do Now ** : -If you want to continue to the next round, reply with SKIP after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: SKIP ↩→ -If you want to submit a final guess to end the game, reply with BLUE=X, YELLOW=Y, PURPLE=Z after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: BLUE=1, YELLOW=1, PURPLE=1. ↩→ ↩→ -Explain your reasoning step by step with &lt;REASONING&gt; tag, then provide your choice. ↩→ ** Response format ** : &lt;REASONING&gt;: [Analysis and explain your reasoning step by step for submitting the final guess or continue to next round] ↩→ &lt;CHOICE&gt;: [your_choice] E.2 Nightmare Prompts with Only-Answer (OA) and Chain-of-Thought (CoT) E.2.1 Nightmare system prompt You are participating in a competitive logic deduction game called Turing Machine.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>↩→</head><p>Your goal is to win first place by deducing a secret 3-digit code with minimal rounds and verifier usage, but accuracy takes priority over speed.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>↩→</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Game Objective:</head><p>-Deduce the secret 3-digit code made up of digits 1-5.</p><p>-BLUE = first digit, YELLOW = second digit, PURPLE = third digit.</p><p>-Each digit can be 1, 2, 3, 4, or 5 (digits may repeat).</p><p>-The code is the ONLY combination that satisfies the active criterion of ALL chosen verifiers.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>↩→</head><p>Game Structure (Rounds): 1. Proposal: Design a 3-digit code to test (format: BLUE=X, YELLOW=Y, PURPLE=Z, where X, Y, Z are digits from 1 to 5).</p><p>↩→ 2. Question: Sequentially choose 0 to 3 verifiers to test your proposed code each round. After each selection, you will see the result from an unknown verifier. The verifier identity will be hidden.</p><p>↩→ ↩→ 3. Deduce: Based on verifier results, you can submit a final answer or continue to the next round. ↩→ 4. End Round: If you didn't submit a final answer, a new round begins. Verifier Rules: -Each verifier checks ONE specific property (criterion) about the code. -Each verifier has multiple potential criteria, but for each game, only ONE is secretly selected as 'active'. You don't know which criterion is active for any given verifier. ↩→ ↩→ -Focus of Verification: When testing your code against a verifier, it EXCLUSIVELY evaluates it against its SINGLE, ACTIVE criterion. The verifier completely ignores all other potential criteria, including its own inactive ones. ↩→ ↩→ ↩→ -In this game, you don't know which Verifier's result you're actually seeing -the mapping between Verifiers and their displayed results is randomized and hidden from the player, though fixed for the entire game. ↩→ ↩→ -PASS Condition: A verifier returns `&lt;PASS&gt;`if and only if your code satisfies the active criterion of the actual Verifier it is mapped to. For example, if Verifier 1 is secretly mapped to Verifier 2, then a &lt;PASS&gt; from Verifier 1 means your code met Verifier 2's hidden active rule. ↩→ ↩→ ↩→ -FAIL Condition: A verifier returns `&lt;FAIL&gt;`if and only if your code does not satisfy the active criterion of the actual Verifier it is mapped to. A &lt;FAIL&gt; simply means the mapped Verifier's rule was not met. ↩→ ↩→ -Non-Overlapping Information: The active criteria selected across different verifiers for a game will provide distinct information. ↩→ Winning Strategy: -It is possible to deduce the solution through joint reasoning, utilizing the combined results of multiple verifiers along with system rules such as the existence of a unique solution and the principle that no two verifiers offer redundant information. ↩→ ↩→ ↩→ -One possible strategy is to carefully modify your code across multiple rounds and observe how each Verifier's output changes. By analyzing the pattern of responses, you can infer the hidden mapping between Verifiers and their actual criteria. ↩→ ↩→ ↩→ -Only submit a final guess when you have either tested all verifiers and received &lt;PASS&gt; for each, or when your reasoning clearly proves your code satisfies all possible active verifier criteria. Accuracy takes priority over speed. ↩→ ↩→ ↩→ Current Game Setup: {game_setup} E.2.2 Nightmare proposal step prompt Nightmare -Proposal step -Step prompt -OA You are now entering the ** Proposal Stage ** of this round. ** Stage Purpose ** : In this stage, you need to compose a 3-digit code to help you to gather information from the verifiers. The code can NOT be changed in the subsequent stages of this round. ↩→ ↩→ ** 3-digit code rules ** : -BLUE = first digit (X), YELLOW = second digit (Y), PURPLE = third digit (Z). -Each digit (X, Y, Z) can be 1, 2, 3, 4, or 5. Digits may repeat. ** Your Goal in This Stage ** : -Design a code that will test a specific hypothesis. -Think about what a &lt;PASS&gt; or &lt;FAIL&gt; would tell you, but you don't know which Verifier's result you're actually seeing --the mapping between Verifiers and their displayed results is randomized and hidden from the player, though fixed for the entire game. ↩→ ↩→ ↩→ -Choose a code that lets you learn something meaningful from verifiers. ** What You Must Do Now ** : -Reply the code you want to use in this round with required response format. For example, &lt;CHOICE&gt;: BLUE=1, YELLOW=1, PURPLE=1 ↩→ -DO NOT include any explanation, only follow the response format. ** Response format ** : &lt;CHOICE&gt;: BLUE=X, YELLOW=Y, PURPLE=Z Nightmare -Proposal step -Not valid format prompt -OA You did not follow the required response format. Please try again with same code. ** What You Must Do Now ** : -Reply the code you want to use in this round with required response format. For example, &lt;PROPOSAL&gt;: BLUE=1, YELLOW=1, PURPLE=1 ↩→ -DO NOT include any explanation, only follow the response format. ** Response format ** : &lt;CHOICE&gt;: BLUE=[X], YELLOW=[Y], PURPLE=[Z] Nightmare -Proposal step -Step prompt -CoT You are now entering the ** Proposal Stage ** of this round. ** Stage Purpose ** : In this stage, you need to compose a 3-digit code to help you to gather information from the verifiers. The code cannot be changed in the subsequent stages of this round. ↩→ ↩→ ** 3-digit code rules ** : -BLUE = first digit (X), YELLOW = second digit (Y), PURPLE = third digit (Z). -Each digit (X, Y, Z) can be 1, 2, 3, 4, or 5. Digits may repeat. ** Your Goal in This Stage ** : -Design a code that will test a specific hypothesis. -Think about what a &lt;PASS&gt; or &lt;FAIL&gt; would tell you, but you don't know which Verifier's result you're actually seeing --the mapping between Verifiers and their displayed results is randomized and hidden from the player, though fixed for the entire game. ↩→ ↩→ ↩→ -Choose a code that lets you learn something meaningful from verifiers. ** What You Must Do Now ** : -Reply the code you want to use in this round with required response format. For example, &lt;PROPOSAL&gt;: BLUE=1, YELLOW=1, PURPLE=1 ↩→ -Explain your reasoning step by step with &lt;REASONING&gt; tag, then provide your code. ↩→ ** Response format ** : &lt;REASONING&gt;: [Explain your reasoning step by step for choosing this code] &lt;CHOICE&gt;: BLUE=[X], YELLOW=[Y], PURPLE=[Z] Nightmare -Proposal step -Not valid format prompt -CoT You did not follow the required response format. Please try again with same code. ** What You Must Do Now ** : -Reply the code you want to use in this round with required response format. For example, &lt;PROPOSAL&gt;: BLUE=1, YELLOW=1, PURPLE=1 ↩→ -Explain your reasoning step by step with &lt;REASONING&gt; tag, then provide your code. ↩→ ** Response format ** : &lt;REASONING&gt;: [Explain your reasoning step by step for choosing this code] &lt;CHOICE&gt;: BLUE=[X], YELLOW=[Y], PURPLE=[Z] E.2.3 Nightmare question step prompt Nightmare -Question step -First question prompt -OA You are now entering the ** Verifier Questioning Stage ** of this round. ** Current Verifiers ** : {verifier_descriptions} ** Stage Purpose ** : In this stage, you can test your proposed 3-digit code using verifiers. Each verifier checks one hidden criterion. Use the test results to gather information and refine your deduction. ↩→ ↩→ ** Verifier Rules Summary ** : -Each verifier has ONE secretly selected active criterion. -Each verifier shows results for a different, hidden verifier (the mapping is randomized but fixed for the entire game). ↩→ -&lt;PASS&gt; means your code satisfies the active criterion of the secretly mapped verifier. &lt;FAIL&gt; means your code does not satisfy that criterion. ↩→ -Active rules do NOT overlap between verifiers. ** Your Goal in This Stage ** : -Choosing verifiers is optional; testing 0 verifiers is allowed. If you want to choose the verifier, you must choose verifiers ** one at a time ** . After each result, you may decide whether to test another. You may choose to test 0 to 3 verifiers ** in total ** during this round. ↩→ ↩→ ↩→ -** Passing all tested verifiers does NOT mean the code is correct. ** To win, your code must satisfy the hidden criterion of ** all verifiers ** , whether tested or not. ↩→ ↩→ ** What You Must Do Now ** : -If you want to choose a verifier to test your proposed code, reply with verifier_num after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: 1. ↩→ -If you want to skip verifier testing for this round, reply with SKIP after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: SKIP. ↩→ -DO NOT include any explanation, only follow the response format. ** Response format ** : &lt;CHOICE&gt;: [your_choice] Nightmare -Question step -Following questions prompt -OA You chose Verifier &lt;{verifier_num}&gt; and the result is &lt;{verifier_result}&gt;. ** Hint ** : -`&lt;PASS&gt;`means your code satisfies the active criterion of the actual Verifier it is mapped to. For example, if Verifier 1 is secretly mapped to Verifier 2, then a &lt;PASS&gt; from Verifier 1 means your code met Verifier 2's hidden active rule. ↩→ ↩→ ↩→ -`&lt;FAIL&gt;`means your code does not satisfy the active criterion of the actual Verifier it is mapped to. ↩→ ** What You Must Do Now ** : -If you want to choose the next verifier to test, reply with verifier_num after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: 1. ↩→ -If you want to skip verifier testing for this round, reply with SKIP after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: SKIP. ↩→ -DO NOT include any explanation, only follow the response format. ** Response format ** : &lt;CHOICE&gt;: [your_choice] Nightmare -Question step -Last question prompt -OA You chose Verifier &lt;{verifier_num}&gt; and the result is &lt;{verifier_result}&gt;. You have now tested the maximum number of three verifiers for this round. The next stage is the Deduce Stage. If you want to test more verifiers or new code, you can choose SKIP during the Deduce Stage to move on to the next round. ↩→ ↩→ ↩→ Nightmare -Question step -Not valid format prompt -OA You did not follow the required response format. Please try again with same choice. ↩→ ** What You Must Do Now ** : -If you want to choose the next verifier to test, reply with verifier_num after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: 1. ↩→ -If you want to skip verifier testing for this round, reply with SKIP after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: SKIP. ↩→ -DO NOT include any explanation, only follow the response format. ** Response format ** : &lt;CHOICE&gt;: [your_choice] Nightmare -Question step -Not valid verifier choice prompt -OA You selected Verifier &lt;{verifier_num}&gt;, which is not a valid verifier number. Please choose a valid verifier or SKIP to next stage. ** What You Must Do Now ** : -If you want to choose the next verifier to test, reply with verifier_num after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: 1. ↩→ -If you want to skip verifier testing for this round, reply with SKIP after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: SKIP. ↩→ -DO NOT include any explanation, only follow the response format. ** Response format ** : &lt;CHOICE&gt;: [your_choice] Nightmare -Question step -First question prompt -CoT You are now entering the ** Verifier Questioning Stage ** of this round. ** Current Verifiers ** : {verifier_descriptions} ** Stage Purpose ** : In this stage, you can test your proposed 3-digit code using verifiers. Each verifier checks one hidden criterion. Use the test results to gather information and refine your deduction. ↩→ ↩→ ** Verifier Rules Summary ** : -Each verifier has ONE secretly selected active criterion. -Each verifier shows results for a different, hidden verifier (the mapping is randomized but fixed for the entire game). ↩→ -&lt;PASS&gt; means your code satisfies the active criterion of the secretly mapped verifier. &lt;FAIL&gt; means your code does not satisfy that criterion. ↩→ -Active rules do NOT overlap between verifiers. ** Your Goal in This Stage ** : -Choosing verifiers is optional; testing 0 verifiers is allowed. If you want to choose the verifier, you must choose verifiers ** one at a time ** . After each result, you may decide whether to test another. You may choose to test 0 to 3 verifiers ** in total ** during this round. ↩→ ↩→ ↩→ -** Passing all tested verifiers does NOT mean the code is correct. ** To win, your code must satisfy the hidden criterion of ** all verifiers ** , whether tested or not. ↩→ ↩→ ** What You Must Do Now ** : -If you want to choose a verifier to test your proposed code, reply with verifier_num after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: 1. ↩→ -If you want to skip verifier testing for this round, reply with SKIP after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: SKIP. ↩→ -Explain your reasoning step by step based on verifier result after &lt;REASONING&gt; tag, then provide your choice. ↩→ ** Response format ** : &lt;REASONING&gt;: [Explain your reasoning step by step for choosing the verifier or skipping verifiers] ↩→ &lt;CHOICE&gt;: [your_choice] Nightmare -Question step -Following questions prompt -CoT You chose Verifier &lt;{verifier_num}&gt; and the result is &lt;{verifier_result}&gt;. ** Hint ** : -`&lt;PASS&gt;`means your code satisfies the active criterion of the actual Verifier it is mapped to. For example, if Verifier 1 is secretly mapped to Verifier 2, then a &lt;PASS&gt; from Verifier 1 means your code met Verifier 2's hidden active rule. ↩→ ↩→ ↩→ -`&lt;FAIL&gt;`means your code does not satisfy the active criterion of the actual Verifier it is mapped to. ↩→ ** What You Must Do Now ** : -If you want to choose the next verifier to test, reply with verifier_num after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: 1. ↩→ -If you want to skip verifier testing for this round, reply with SKIP after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: SKIP. ↩→ -Explain your reasoning step by step based on verifier result after &lt;REASONING&gt; tag, then provide your choice. ↩→ ** Response format ** : &lt;REASONING&gt;: [Explain your reasoning step by step for choosing the verifier or skipping verifiers] ↩→ &lt;CHOICE&gt;: [your_choice] Nightmare -Question step -Last question prompt -CoT You chose Verifier &lt;{verifier_num}&gt; and the result is &lt;{verifier_result}&gt;. You have now tested the maximum number of three verifiers for this round. The next stage is the Deduce Stage. If you want to test more verifiers or new code, you can choose SKIP during the Deduce Stage to move on to the next round. ↩→ ↩→ ↩→ Nightmare -Question step -Not valid format prompt -CoT You did not follow the required response format. Please try again with same choice. ↩→ ** What You Must Do Now ** : -If you want to choose the next verifier to test, reply with verifier_num after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: 1. ↩→ -If you want to skip verifier testing for this round, reply with SKIP after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: SKIP. ↩→ -Explain your reasoning step by step based on verifier result after &lt;REASONING&gt; tag, then provide your choice. ↩→ ** Response format ** : &lt;REASONING&gt;: [Explain your reasoning step by step for choosing the verifier or skipping verifiers] ↩→ &lt;CHOICE&gt;: [your_choice] Nightmare -Question step -Not valid verifier choice prompt -CoT You selected Verifier &lt;{verifier_num}&gt;, which is not a valid verifier number. Please choose a valid verifier or SKIP to next stage. ** What You Must Do Now ** : -If you want to choose the next verifier to test, reply with verifier_num after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: 1. ↩→ -If you want to skip verifier testing for this round, reply with SKIP after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: SKIP. ↩→ -Explain your reasoning step by step based on verifier result after &lt;REASONING&gt; tag, then provide your choice. ↩→ ** Response format ** : &lt;REASONING&gt;: [Explain your reasoning step by step for choosing the verifier or skipping verifiers] ↩→ &lt;CHOICE&gt;: [your_choice] E.2.4 Nightmare deduce step prompt Nightmare -Deduce step -Deduce result prompt The final guess is {submitted_code}. The answer is {answer}, the guess is {is_correct}. ↩→ Nightmare -Deduce step -Step prompt -OA You are now entering the ** Deduce Stage ** of this round. ** Stage Purpose ** : In this stage, you can analyze all the information gathered then decide whether to continue to the next round or submit a final guess. ↩→ ** Hint ** : -Passing all tested verifiers does not mean the code is correct if not all verifiers were tested. To be correct, the code must satisfy the hidden criteria of all verifiers, not just the ones you tested. ↩→ ↩→ -You may choose not to test some verifiers if you can clearly reason that your code meets their requirements. But you must ensure every verifier is either tested and passed, or clearly justified through reasoning. Testing and passing only part of the verifiers is not enough if others are ignored. ↩→ ↩→ ↩→ -This stage ** is not for testing ** , you don't have to submit an answer; you can proceed to the next round to continue gathering information. ↩→ -Accuracy takes priority over speed. If you submit, the game will end, and an incorrect guess will result in immediate failure. ↩→ ** Your Goal in This Stage ** : -Decide whether to submit the final guess or continue to the next round. Submit the final guess will end the game, continue to the next round will help you gather more information. ↩→ ↩→ -Submission is not mandatory, you must make this decision based on your own reasoning. ↩→ ** What You Must Do Now ** : -If you want to continue to the next round, reply with SKIP after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: SKIP ↩→ -If you want to submit a final guess to end the game, reply with BLUE=X, YELLOW=Y, PURPLE=Z after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: BLUE=1, YELLOW=1, PURPLE=1. ↩→ ↩→ -DO NOT include any explanation, only follow the response format. ** Response format ** : &lt;CHOICE&gt;: [your_choice] Nightmare -Deduce step -Not valid format prompt -OA You did NOT follow the response format. Please try again. ** What You Must Do Now ** : -If you want to continue to the next round, reply with SKIP after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: SKIP ↩→ -If you want to submit a final guess to end the game, reply with BLUE=X, YELLOW=Y, PURPLE=Z after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: BLUE=1, YELLOW=1, PURPLE=1. ↩→ ↩→ -DO NOT include any explanation, only follow the response format. ** Response format ** : &lt;CHOICE&gt;: [your_choice] Nightmare -Deduce step -Step prompt -CoT You are now entering the ** Deduce Stage ** of this round. ** Stage Purpose ** : In this stage, you can analyze all the information gathered then decide whether to submit a final guess or continue to the next round. ↩→ ** Hint ** : -Passing all tested verifiers does not mean the code is correct if not all verifiers were tested. To be correct, the code must satisfy the hidden criteria of all verifiers, not just the ones you tested. ↩→ ↩→ -You may choose not to test some verifiers if you can clearly reason that your code meets their requirements. But you must ensure every verifier is either tested and passed, or clearly justified through reasoning. Testing and passing only part of the verifiers is not enough if others are ignored. ↩→ ↩→ ↩→ -This stage ** is not for testing ** , you don't have to submit an answer; you can proceed to the next round to continue gathering information. ↩→ -Accuracy takes priority over speed. If you submit, the game will end, and an incorrect guess will result in immediate failure. ↩→ ** Your Goal in This Stage ** : -Analysis all information gathered. -Decide whether to submit the final guess or continue to the next round. -Submission is not mandatory, you must make this decision based on your own reasoning. ↩→ ** What You Must Do Now ** : -If you want to continue to the next round, reply with SKIP after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: SKIP ↩→ -If you want to submit a final guess to end the game, reply with BLUE=X, YELLOW=Y, PURPLE=Z after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: BLUE=1, YELLOW=1, PURPLE=1. ↩→ ↩→ -Explain your reasoning step by step with &lt;REASONING&gt; tag, then provide your choice. If you want to submit a final guess, you must provide the reasons for not proceeding to the next round. ↩→ ↩→ ** Response format ** : &lt;REASONING&gt;: [Analysis and explain your reasoning step by step for continue to next round or submit final guess] ↩→ &lt;CHOICE&gt;: [your_choice] Nightmare -Deduce step -Not valid format prompt -CoT You did NOT follow the response format. Please try again. ** What You Must Do Now ** : -If you want to continue to the next round, reply with SKIP after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: SKIP ↩→ -If you want to submit a final guess to end the game, reply with BLUE=X, YELLOW=Y, PURPLE=Z after &lt;CHOICE&gt; tag, such as &lt;CHOICE&gt;: BLUE=1, YELLOW=1, PURPLE=1. ↩→ ↩→ -Explain your reasoning step by step with &lt;REASONING&gt; tag, then provide your choice. ↩→ ** Response format ** : &lt;REASONING&gt;: [Analysis and explain your reasoning step by step for submitting the final guess or continue to next round] ↩→ &lt;CHOICE&gt;: [your_choice] F Human Player Interface Verifier &lt;0&gt;: This Verifier verifies the BLUE number compared to 3 -Possible criteria: BLUE is less than 3 -Possible criteria: BLUE is equal to 3 -Possible criteria: BLUE is greater than 3 Verifier &lt;2&gt;: This Verifier verifies which colour's number is smaller than either of the others -Possible criteria: BLUE is smaller than PURPLE and YELLOW -Possible criteria: YELLOW is smaller than BLUE and PURPLE -Possible criteria: PURPLE is smaller than YELLOW and BLUE Verifier &lt;1&gt;: This Verifier verifies if YELLOW number is even or odd -Possible criteria: YELLOW is even -Possible criteria: YELLOW is odd Verifier &lt;3&gt;: This Verifier verifies the number of even numbers compared to the number of odd numbers -Possible criteria: there are more even numbers, such as 245 -Possible criteria: there are more odd numbers, such as 332</p><p>Now entering the Proposal stage. During this stage, you will need to compose a 3-digit code to help you learn as much as possible from the verifiers. BLUE = first digit(X), YELLOW = second digit(Y), PURPLE = third digit(Z). Each digit(X, Y, Z) can be 1, 2, 3, 4, or 5 (digits may repeat).</p><p>Explain why you chose this code first, then enter your 3-digit guess code.</p><p>Next Step Setup ID: XXXX Mode: classic Difficulty: Easy Time: 00.00.00 Round 1 Compose the Proposal Thinking Process Record: Record your thinking process here … Record your guess code here … Guess Code:</p><p>Figure <ref type="figure">7</ref>: The interface for a human player in the game, providing exactly the same information as an LLM player. The top section displays the basic information of the current game, the left side shows the verifier information, and the right side includes stage introduction and the interaction panel. The human player first needs to think according to the requirements of the round and record their reasoning process, then provide their decision, and finally click "next step" to move on to the next phase. This process is fully consistent with the LLM player's flow.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Accuracy versus average turns for leading LLMs and human evaluators (Best, Average) on Turn-Bench in both "Classic" and "Nightmare" modes. Insets show the relative accuracy drop of LLMs compared to the Best Human. Results highlight that LLMs remain substantially less accurate than humans, especially under the "Nightmare" setting, underscoring current limitations in complex multi-turn reasoning.</figDesc><graphic coords="1,455.94,281.18,50.99,52.72" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Overview of the TurnBench game framework.The LLM's objective is to deduce a secret 3-digit code composed of digits from 1 to 5. The game proceeds in iterative rounds, each comprising: 1) Proposal Step: The LLM submits a candidate 3-digit code. 2) Question Step: The LLM queries up to three verifiers, each providing Pass/Fail feedback based on its unique Hidden Active Criterion (HAC). 3) Deduce Step: The LLM analyzes the collective feedback to either Submit the final code if confident in its correctness, or 4) Continue (End of the round to the next round with a revised proposal. This iterative process continues until the LLM successfully deduces and submits the correct code.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: The Reasoning Process Evaluation Pipeline in TurnBench. This pipeline analyzes the LLM's Chain-of-Thought (CoT) generated as it deduces verifier properties during game process (blue). The evaluation proceeds in three steps: 1) Inference Extraction (red): The LLM's CoT, detailing its reasoning for each verifier's Hidden Active Criterion (HAC), is processed by the Inference Extractor. This yields "Extracted Conclusions" -the LLM's inferred HAC for each verifier. 2) Ground Truth Collection (orange): Simultaneously, the "Current Game Setup ID" is used to retrieve the definitive "Ground Truth HAC" for each verifier from the "Game Metadata". 3) Judge (green): The Judger then semantically compares the "Extracted Conclusions" from Step 1 with the corresponding "Ground Truth HAC" from Step 2. Each inferred HAC is categorized as: Correct (semantically equivalent to the ground truth), Incorrect (completely wrong), or Include (the conclusion contains the correct answer but is not yet fully refined to the precise ground truth).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Flow analysis of verifier reasoning paths originating from a First Incorrect Conclusion (FIC). There are three subsequent stages: 1) Next Conclusion Status (NCS): the outcome of the LLM's next reasoning attempt on the same verifier. 2) Conclusion Status Before Submit (CSBS): the final inferred status of the initially misjudged verifier before the LLM submitted its overall answer. 3) Game Status (GS): the ultimate outcome (Won or Lost) of the game in which the FIC occurred. More detailed definitions and examples are provided in Appendix C.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>E. 1</head><label>1</label><figDesc>Classic prompts with Only-Answer (OA) and Chain-of-Thought (CoT) E.1.1 Classic system prompt You are participating in a competitive logic deduction game called Turing Machine.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 2 :</head><label>2</label><figDesc>Performance of different models on the Classic Game setting (45 Games). Metrics include total, easy, medium, and hard average accuracy, as well as average number of turns and average number of verifiers used in successfully won games. Fewer average turns and verifier uses in winning games suggest greater reasoning efficiency. Human and random guess baselines are included for comparison. We evaluated two prompting strategies: Only Answer (OA) and Chain of Thought (CoT). The bold text represents the best results in LLM, the underline text represents the best-performing result in the non-thinking model. Full test results for 270 setups are in Table6.</figDesc><table><row><cell>Models</cell><cell>Total</cell><cell cols="2">Average Accuracy Easy Medium</cell><cell>Hard</cell><cell cols="2">Win Avg Turn</cell><cell cols="2">Win Avg VER</cell></row><row><cell></cell><cell>OA CoT</cell><cell>OA CoT</cell><cell>OA CoT</cell><cell>OA CoT</cell><cell>OA</cell><cell>CoT</cell><cell>OA</cell><cell>CoT</cell></row><row><cell>gpt-o4-mini-high (Thinking)</cell><cell>0.64 0.84</cell><cell>0.80 0.93</cell><cell>0.73 0.93</cell><cell>0.40 0.67</cell><cell>15</cell><cell>16</cell><cell>7</cell><cell>6</cell></row><row><cell>gemini-2.5-flash (Thinking)</cell><cell>0.64 0.76</cell><cell>0.87 0.87</cell><cell>0.73 0.93</cell><cell>0.33 0.47</cell><cell>14</cell><cell>13</cell><cell>6</cell><cell>6</cell></row><row><cell>deepseek-r1 (Thinking)</cell><cell>0.49 0.53</cell><cell>0.80 0.80</cell><cell>0.33 0.53</cell><cell>0.33 0.27</cell><cell>12</cell><cell>14</cell><cell>6</cell><cell>6</cell></row><row><cell>gpt-4.1</cell><cell>0.09 0.69</cell><cell>0.20 0.80</cell><cell>0.07 0.73</cell><cell>0.00 0.53</cell><cell>46</cell><cell>15</cell><cell>23</cell><cell>7</cell></row><row><cell>llama-4-maverick</cell><cell>0.04 0.36</cell><cell>0.13 0.60</cell><cell>0.00 0.40</cell><cell>0.00 0.07</cell><cell>32</cell><cell>18</cell><cell>12</cell><cell>8</cell></row><row><cell>qwen-2.5-7b-instruct</cell><cell>0.04 0.04</cell><cell>0.00 0.13</cell><cell>0.13 0.00</cell><cell>0.00 0.00</cell><cell>42</cell><cell>7</cell><cell>21</cell><cell>3</cell></row><row><cell>mistral-8b</cell><cell>0.00 0.02</cell><cell>0.00 0.00</cell><cell>0.00 0.00</cell><cell>0.00 0.07</cell><cell>-</cell><cell>6</cell><cell>-</cell><cell>3</cell></row><row><cell>llama-3.1-8b-instruct</cell><cell>0.00 0.00</cell><cell>0.00 0.00</cell><cell>0.00 0.00</cell><cell>0.00 0.00</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>Random Guess</cell><cell>0.0085</cell><cell>0.0079</cell><cell>0.0098</cell><cell>0.0077</cell><cell>-</cell><cell></cell><cell>-</cell><cell></cell></row><row><cell>Best Human</cell><cell>1</cell><cell>1</cell><cell>1</cell><cell>1</cell><cell cols="2">18</cell><cell>8</cell><cell></cell></row><row><cell>Human Average</cell><cell>0.96</cell><cell>0.98</cell><cell>0.95</cell><cell>0.95</cell><cell cols="2">20</cell><cell cols="2">11</cell></row><row><cell>4 Experiment</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>4.1 Experiment Setup</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">To comprehensively explore the limitations of cur-</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">rent large language models (LLMs) in multi-turn</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">and multi-step reasoning tasks, we selected both</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">commercial and widely-used open-source mod-</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">els for evaluation, employing different prompting</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">methods. The commercial models include gemini-</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">2.5-flash-preview-04-17 (thinking) (DeepMind,</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">2025), gpt-o4-mini-high-0416 (thinking) (Ope-</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">nAI, 2025), and gpt-4.1-2025-04-14. The open-</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">source models tested are deepseek-r1 (thinking)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">(DeepSeek-AI, 2025), llama-4-maverick (Meta AI,</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>2025), mistral-8b</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 4 :</head><label>4</label><figDesc>5-7b deepseek-r1Comparison of large language models on their ability to handle verifier errors during multi-turn reasoning. Metrics include the number of initial verifier errors, error persistence rate, likelihood of remaining incorrect in the next turn, and task success rates depending on error persistence or correction.</figDesc><table><row><cell>Initial verifier errors</cell><cell>368</cell><cell>96</cell><cell>66</cell><cell>141</cell><cell>255</cell><cell>142</cell><cell>318</cell><cell>144</cell></row><row><cell>Persistence of initial errors (%)</cell><cell>89.94</cell><cell>91.67</cell><cell>53.03</cell><cell>86.52</cell><cell>90.20</cell><cell>63.38</cell><cell>99.06</cell><cell>93.06</cell></row><row><cell>Ended with no final conclusion (%)</cell><cell>74.18</cell><cell>71.87</cell><cell>34.85</cell><cell>54.61</cell><cell>53.33</cell><cell>45.77</cell><cell>96.23</cell><cell>86.11</cell></row><row><cell>Next-turn still incorrect (%)</cell><cell>17.66</cell><cell>19.79</cell><cell>27.27</cell><cell>33.33</cell><cell>38.82</cell><cell>25.35</cell><cell>3.14</cell><cell>6.94</cell></row><row><cell>Success despite persistent errors (%)</cell><cell>1.08</cell><cell>12.72</cell><cell>32.14</cell><cell>13.41</cell><cell>0.66</cell><cell>8.11</cell><cell>0.54</cell><cell>7.87</cell></row><row><cell>Success when no / fixed errors (%)</cell><cell>1.75</cell><cell>95.34</cell><cell>87.55</cell><cell>84.57</cell><cell>3.13</cell><cell>41.75</cell><cell>8.00</cell><cell>90.56</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 6 :</head><label>6</label><figDesc>Performance of different models on the Classic Game setting (270 Games). Metrics include total, easy, medium, and hard average accuracy, as well as average number of turns and average number of verifiers used in successfully won games. Fewer average turns and verifier uses in winning games suggest greater reasoning efficiency. Human and random guess baselines are included for comparison. We evaluated two prompting strategies: Only Answer (OA) and Chain of Thought (CoT). The bold text represents the best results in LLM, the underline text represents the best-performing result in the non-thinking model.</figDesc><table><row><cell>Models</cell><cell cols="2">Total</cell><cell cols="4">Average Accuracy Easy Medium</cell><cell cols="2">Hard</cell><cell cols="2">Win Avg Turn</cell><cell cols="2">Win Avg VER</cell></row><row><cell></cell><cell>OA</cell><cell>CoT</cell><cell>OA</cell><cell>CoT</cell><cell>OA</cell><cell>CoT</cell><cell>OA</cell><cell>CoT</cell><cell>OA</cell><cell>CoT</cell><cell>OA</cell><cell>CoT</cell></row><row><cell>gpt-o4-mini-high (Thinking)</cell><cell cols="2">0.578 0.815</cell><cell cols="2">0.756 0.933</cell><cell>0.7</cell><cell>0.9</cell><cell cols="2">0.278 0.611</cell><cell>16</cell><cell>16</cell><cell>7</cell><cell>7</cell></row><row><cell>gemini-2.5-flash (Thinking)</cell><cell cols="2">0.652 0.785</cell><cell>0.844</cell><cell>0.9</cell><cell cols="2">0.756 0.867</cell><cell cols="2">0.356 0.589</cell><cell>13</cell><cell>13</cell><cell>6</cell><cell>6</cell></row><row><cell>deepseek-r1 (Thinking)</cell><cell cols="2">0.511 0.63</cell><cell cols="2">0.733 0.756</cell><cell cols="2">0.511 0.722</cell><cell cols="2">0.289 0.411</cell><cell>12</cell><cell>13</cell><cell>6</cell><cell>6</cell></row><row><cell>gpt-4.1</cell><cell cols="2">0.052 0.63</cell><cell cols="2">0.078 0.80</cell><cell cols="2">0.033 0.689</cell><cell>0.044</cell><cell>0.4</cell><cell>41</cell><cell>15</cell><cell>21</cell><cell>7</cell></row><row><cell>llama-4-maverick</cell><cell cols="2">0.07 0.326</cell><cell cols="2">0.133 0.444</cell><cell cols="2">0.056 0.367</cell><cell cols="2">0.022 0.167</cell><cell>28</cell><cell>17</cell><cell>12</cell><cell>8</cell></row><row><cell>llama-3.1-8b-instruct</cell><cell cols="2">0.007 0.015</cell><cell cols="2">0.011 0.022</cell><cell>0.011</cell><cell>0</cell><cell>0</cell><cell>0.022</cell><cell>23</cell><cell>13</cell><cell>11</cell><cell>6</cell></row><row><cell>mistral-8b</cell><cell>0</cell><cell>0.015</cell><cell>0</cell><cell>0.011</cell><cell>0</cell><cell>0.022</cell><cell>0</cell><cell>0.011</cell><cell>-</cell><cell>8</cell><cell>-</cell><cell>4</cell></row><row><cell>qwen-2.5-7b-instruct</cell><cell cols="2">0.015 0.022</cell><cell cols="2">0.011 0.067</cell><cell>0.022</cell><cell>0</cell><cell>0.011</cell><cell>0</cell><cell>34</cell><cell>6</cell><cell>17</cell><cell>3</cell></row><row><cell>Random Guess</cell><cell cols="2">0.0085</cell><cell cols="2">0.0079</cell><cell cols="2">0.0098</cell><cell cols="2">0.0077</cell><cell>-</cell><cell></cell><cell>-</cell><cell></cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>Our code and data is available at: https://github. com/grantzyr/TurnBench-MS</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Elif</forename><surname>Akata</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lion</forename><surname>Schulz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Coda-Forno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Seong</forename><surname>Joon Oh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Bethge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Schulz</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.16867</idno>
+		<title level="m">Playing repeated games with large language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Debrup</forename><surname>Das</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Debopriyo</forename><surname>Banerjee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Somak</forename><surname>Aditya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Kulkarni</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.17231</idno>
+		<title level="m">Mathsensei: a toolaugmented large language model for mathematical reasoning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">Google</forename><surname>Deepmind</surname></persName>
+		</author>
+		<ptr target="https://storage.googleapis.com/model-cards/documents/gemini-2" />
+		<title level="m">Gemini 2.5 flash preview</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Deepseek-Ai</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.12948</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">701 scientific thinking and reasoning</title>
+		<author>
+			<persName><forename type="first">Kevin</forename><forename type="middle">N</forename><surname>Dunbar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Klahr</surname></persName>
+		</author>
+		<idno type="DOI">10.1093/oxfordhb/9780199734689.013.0035</idno>
+	</analytic>
+	<monogr>
+		<title level="m">The Oxford Handbook of Thinking and Reasoning</title>
+		<imprint>
+			<publisher>Oxford University Press</publisher>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Human-level play in the game of diplomacy by combining language models with strategic reasoning</title>
+		<author>
+			<persName><forename type="first">†</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anton</forename><surname>Bakhtin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emily</forename><surname>Dinan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriele</forename><surname>Farina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Flaherty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Goff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hengyuan</forename><surname>Hu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Meta Fundamental AI Research Diplomacy Team (FAIR)</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">378</biblScope>
+			<biblScope unit="page" from="1067" to="1074" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Golde</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Haller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Barth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Akbik</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.05891</idno>
+		<title level="m">Mastermindeval: A simple but scalable reasoning benchmark</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Grattafiori</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhimanyu</forename><surname>Dubey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Jauhri</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.21783</idno>
+		<title level="m">The llama 3 herd of models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shibo</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiyan</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuhua</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haodi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adithya</forename><surname>Samavedhi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiyue</forename><surname>Gao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.05221</idno>
+		<title level="m">Llm reasoners: New evaluation, library, and analysis of step-by-step reasoning with large language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Armando Solar-Lezama, Koushik Sen, and Ion Stoica. 2024. Livecodebench: Holistic and contamination free evaluation of large language models for code</title>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">King</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Ding</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fanjia</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianjun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sida</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.07974</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">Raymond</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Loubna</forename><surname>Ben Allal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangtian</forename><surname>Zi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denis</forename><surname>Kocetkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenghao</forename><surname>Mou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Marone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Akiki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jenny</forename><surname>Chim</surname></persName>
+		</author>
+		<title level="m">Starcoder: may the source be with you! Transactions on Machine Learning Research</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>Reproducibility Certification</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Light</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sheng</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziniu</forename><surname>Hu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.05036</idno>
+		<title level="m">Avalonbench: Evaluating llms playing the game of avalon</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Zebralogic: On the scaling limits of llms for logical reasoning</title>
+		<author>
+			<persName><forename type="first">Ronan</forename><surname>Bill Yuchen Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Le Bras</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Richardson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Radha</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Poovendran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Choi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.01100</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zicheng</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhibin</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tian</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruilin</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujiu</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.14809</idno>
+		<title level="m">Criticbench: Benchmarking llms for critique-correct reasoning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Self-refine: Iterative refinement with self-feedback</title>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niket</forename><surname>Tandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prakhar</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Skyler</forename><surname>Hallinan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Wiegreffe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouha</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shrimai</forename><surname>Prabhumoye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="46534" to="46594" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">I</forename><surname>Meta</surname></persName>
+		</author>
+		<ptr target="https://ai.meta.com/blog/llama-4-multimodal-intelligence/" />
+		<title level="m">LLaMA 4: Multimodal Intelligence</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2025" to="2025" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">I</forename><surname>Mistral</surname></persName>
+		</author>
+		<ptr target="https://mistral.ai/news/ministraux" />
+		<title level="m">Un Ministral, des Ministraux</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="2025" to="2025" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Mistral-small-3.2-24binstruct-2506</title>
+		<author>
+			<persName><surname>Mistralai</surname></persName>
+		</author>
+		<ptr target="https://huggingface.co/mistralai/Mistral-Small-3" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Aime problems and solutions</title>
+		<ptr target="https://artofproblemsolving.com/wiki/index.php/AIME_Problems_and_Solutions" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<publisher>Art of Problem Solving</publisher>
+			<biblScope unit="page" from="2025" to="2025" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Linc: A neurosymbolic approach for logical reasoning by combining language models with first-order logic provers</title>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Theo X Olausson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cedegao</forename><forename type="middle">E</forename><surname>Lipkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armando</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Solar-Lezama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roger</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Levy</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.15164</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<idno>875-02dc-4789-800b-e7758f3722c1/ o3-and-o4-mini-system-card.pdf. Ac- cessed: 2025-05-01</idno>
+		<ptr target="https://cdn.openai.com/pdf/2221" />
+		<title level="m">Openai o3 and o4-mini system card</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">Davide</forename><surname>Paglieri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bartłomiej</forename><surname>Cupiał</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><surname>Coward</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ulyana</forename><surname>Piterbarg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maciej</forename><surname>Wolczyk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akbir</forename><surname>Khan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eduardo</forename><surname>Pignatelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Łukasz</forename><surname>Kuciński</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lerrel</forename><surname>Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rob</forename><surname>Fergus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakob</forename><forename type="middle">Nicolaus</forename><surname>Foerster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Parker-Holder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Rocktäschel</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2411.13543</idno>
+		<title level="m">Balrog: Benchmarking agentic llm and vlm reasoning on games</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">Nisarg</forename><surname>Patel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohith</forename><surname>Kulkarni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mihir</forename><surname>Parmar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aashna</forename><surname>Budhiraja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mutsumi</forename><surname>Nakamura</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Neeraj</forename><surname>Varshney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chitta</forename><surname>Baral</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.17169</idno>
+		<title level="m">Multi-logieval: Towards evaluating multi-step logical reasoning ability of large language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Scikit-learn: Machine learning in python</title>
+		<author>
+			<persName><forename type="first">Fabian</forename><surname>Pedregosa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaël</forename><surname>Varoquaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandre</forename><surname>Gramfort</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Michel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bertrand</forename><surname>Thirion</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Grisel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mathieu</forename><surname>Blondel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Prettenhofer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ron</forename><surname>Weiss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Dubourg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jake</forename><surname>Vanderplas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandre</forename><surname>Passos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Cournapeau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthieu</forename><surname>Brucher</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Mach. Learn. Res</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="page" from="2825" to="2830" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+	<note>Matthieu Perrot, and Édouard Duchesnay</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Lmact: A benchmark for in-context imitation learning with long multimodal demonstrations</title>
+		<author>
+			<persName><forename type="first">Anian</forename><surname>Ruoss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Pardo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harris</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bonnie</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Volodymyr</forename><surname>Mnih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Genewein</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.01441</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Mastering board games by external and internal planning with language models</title>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schultz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakub</forename><surname>Adamek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matej</forename><surname>Jusup</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Lanctot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Kaisers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Perrin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Hennes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeremy</forename><surname>Shar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cannada</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anian</forename><surname>Ruoss</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.12119</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Reflexion: Language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="8634" to="8652" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Musr: Testing the limits of chain-of-thought with multistep soft reasoning</title>
+		<author>
+			<persName><forename type="first">Zayne</forename><surname>Sprague</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaj</forename><surname>Bostrom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swarat</forename><surname>Chaudhuri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Durrett</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.16049</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Dsgbench: A diverse strategic game benchmark for evaluating llmbased agents in complex decision-making environments</title>
+		<author>
+			<persName><forename type="first">Wenjie</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erqiang</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keyan</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minne</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liquan</forename><surname>Xiao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.06047</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Arindam Mitra, and Chitta Baral</title>
+		<author>
+			<persName><forename type="first">Nemika</forename><surname>Tyagi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mihir</forename><surname>Parmar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohith</forename><surname>Kulkarni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aswin</forename><surname>Rrv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nisarg</forename><surname>Patel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mutsumi</forename><surname>Nakamura</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.14790</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Step-by-step reasoning to solve grid puzzles: Where do llms falter? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">2023a. Can ChatGPT defend its belief in truth? evaluating LLM reasoning via debate</title>
+		<author>
+			<persName><forename type="first">Boshi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Sun</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.findings-emnlp.795</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: EMNLP 2023</title>
+		<meeting><address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<biblScope unit="page" from="11865" to="11881" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">2023b. Describe, explain, plan and select: Interactive planning with large language models enables open-world multi-task agents</title>
+		<author>
+			<persName><forename type="first">Zihao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaofei</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanzhou</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anji</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojian</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yitao</forename><surname>Liang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.01560</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Psychology of Reasoning: Structure and Content</title>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Cathcart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wason</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philip</forename><surname>Nicholas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johnson-Laird</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1972">1972</date>
+			<publisher>Harvard University Press</publisher>
+			<pubPlace>Cambridge, MA, USA</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24824" to="24837" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Naturalprover: Grounded mathematical proof generation with language models</title>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Welleck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiacheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ximing</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="4913" to="4927" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">Bryan</forename><surname>Wilie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><surname>Cahyawijaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Etsuko</forename><surname>Ishii</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.19764</idno>
+		<title level="m">Junxian He, and Pascale Fung. 2024. Belief revision: The adaptability of large language models reasoning</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuzhuang</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fuwen</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaolong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weidong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.04658</idno>
+		<title level="m">Exploring large language models for communication games: An empirical study on werewolf</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baosong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beichen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianhong</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianwei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianxin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingren</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keming</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keqin</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingfeng</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qin</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Men</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runji</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tingyu</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingzhang</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuancheng</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqiong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenru</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.15115</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>and Zihan Qiu. 2024. Qwen2.5 technical report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuibai</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenqi</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaipeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Bin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ping</forename><surname>Luo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.08695</idno>
+		<title level="m">Dynamic multimodal evaluation with flexible complexity by vision-language bootstrapping</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhongshen</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinhong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingjia</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengguang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianbo</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rongwu</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zehan</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanru</forename><surname>Zhao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.13975</idno>
+		<title level="m">Mr-ben: A meta-reasoning benchmark for evaluating system-2 thinking in llms</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ruiwen</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenyue</forename><surname>Hua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liangming</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sitao</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaobao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">En</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.08972</idno>
+		<title level="m">Rulearena: A benchmark for rule-guided reasoning with llms in real-world scenarios</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akshat</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aniket</forename><surname>Rahane</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengyu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gopala</forename><surname>Anumanchipalli</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.08328</idno>
+		<title level="m">Pokerbench: Training large language models to become professional poker players</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Toolqa: A dataset for llm question answering with external tools</title>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="50117" to="50143" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

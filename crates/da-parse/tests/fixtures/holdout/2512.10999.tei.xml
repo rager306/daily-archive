@@ -1,0 +1,2506 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">KBQA-R1: Reinforcing Large Language Models for Knowledge Base Question Answering</title>
+				<funder ref="#_eRmD3UT #_k9dneqM">
+					<orgName type="full">National Natural Science Foundation of China</orgName>
+				</funder>
+				<funder ref="#_5XxRFVz">
+					<orgName type="full">Beijing Natural Science Foundation</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-06-22">22 Jun 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Xin</forename><surname>Sun</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Science and Technology of China</orgName>
+								<address>
+									<settlement>Hefei</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhongqi</forename><surname>Chen</surname></persName>
+							<affiliation key="aff1">
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xing</forename><surname>Zheng</surname></persName>
+							<affiliation key="aff1">
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Bowen</forename><surname>Song</surname></persName>
+							<affiliation key="aff1">
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Qiang</forename><surname>Liu</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="department">Institute of Automation</orgName>
+								<orgName type="institution">Chinese Academy of Sci- ences</orgName>
+								<address>
+									<settlement>Beijing</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author role="corresp">
+							<persName><forename type="first">Shu</forename><surname>Wu</surname></persName>
+							<email>&lt;shu.wu@nlpr.ia.ac.cn&gt;.</email>
+							<affiliation key="aff2">
+								<orgName type="department">Institute of Automation</orgName>
+								<orgName type="institution">Chinese Academy of Sci- ences</orgName>
+								<address>
+									<settlement>Beijing</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zilei</forename><surname>Wang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Science and Technology of China</orgName>
+								<address>
+									<settlement>Hefei</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Weiqiang</forename><surname>Wang</surname></persName>
+							<affiliation key="aff1">
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Liang</forename><surname>Wang</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="department">Institute of Automation</orgName>
+								<orgName type="institution">Chinese Academy of Sci- ences</orgName>
+								<address>
+									<settlement>Beijing</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">KBQA-R1: Reinforcing Large Language Models for Knowledge Base Question Answering</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-06-22">22 Jun 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">2E7527EE6715B9CDDBA1E3024BB37006</idno>
+					<idno type="arXiv">arXiv:2512.10999v4[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:16+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Knowledge Base Question Answering (KBQA) challenges models to bridge the gap between natural language and strict knowledge graph schemas by generating executable logical forms. While Large Language Models (LLMs) have advanced this field, current approaches often struggle with a dichotomy of failure: they either generate hallucinated queries without verifying schema existence or exhibit rigid, template-based reasoning that mimics synthesized traces without true comprehension of the environment. To address these limitations, we present KBQA-R1, a framework that shifts the paradigm from text imitation to interaction optimization via Reinforcement Learning. Treating KBQA as a multi-turn decision process, our model learns to autonomously navigate the knowledge base using a structured action space, refining its reasoning strategies based on concrete execution feedback rather than static supervision. Furthermore, we introduce Referenced Rejection Sampling (RRS), a data synthesis method that resolves cold-start challenges by strictly aligning reasoning traces with ground-truth action sequences. Extensive experiments on WebQSP, GrailQA, and GraphQuestions demonstrate that KBQA-R1 achieves stateof-the-art performance.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>Knowledge Base Question Answering (KBQA) aims to answer natural language questions by retrieving facts from large-scale Knowledge Bases (KBs) such as Freebase and Wikidata. Unlike Retrieval-Augmented Generation (RAG), which augments Large Language Models (LLMs) with unstructured text snippets, KBQA requires the model to produce executable logical forms (e.g., SPARQL or S-Expressions) that precisely navigate a KB schema. Here, schema elements refer to the exact relation names, entity types, and attributes that define the graph vocabulary (e.g., film.actor.film). This makes KBQA a stringent reasoning task: a model must understand the question, choose schema-consistent relations, and compose multi-hop queries without violating the executor's syntax or semantics.</p><p>Recent LLM-based KBQA systems have made substantial progress, but three limitations remain. First, end-toend approaches such as KB-BINDER <ref type="bibr" target="#b18">(Li et al., 2023)</ref>, KB-Coder <ref type="bibr" target="#b28">(Nie et al., 2024)</ref>, and ChatKBQA <ref type="bibr" target="#b20">(Luo et al., 2024)</ref> generate an entire logical form in one pass. They are efficient, but they cannot verify schema elements during generation, which often leads to schema hallucinations: executable-looking queries that mention invalid or irrelevant relations. Second, prompting-based step-by-step approaches <ref type="bibr" target="#b39">(Sun et al., 2023;</ref><ref type="bibr" target="#b24">Luo et al., 2023)</ref> decompose reasoning into intermediate graph-exploration steps, but they rely heavily on in-context heuristics and strong commercial APIs rather than learning a task-specific policy for KB navigation. Third, supervised or search-augmented agentic approaches <ref type="bibr">(Luo et al., 2025c)</ref> improve executability with synthesized traces or test-time search, but their traces can become template-driven action announcements rather than genuine analysis of KB feedback, and search-based inference adds substantial overhead. Recent graph-retrieval and GraphRAG methods <ref type="bibr" target="#b26">(Mavromatis &amp; Karypis, 2025;</ref><ref type="bibr">Li et al., 2024b;</ref><ref type="bibr">a)</ref> reduce hallucination by retrieving or decoding over local subgraphs, yet they still depend on offline subgraph construction or retrieval pipelines whose policies are not directly optimized for online KB interaction.</p><p>We present KBQA-R1, an action-centric reinforcement learning framework that turns KBQA into a closed-loop interaction problem. Instead of generating raw query code in one shot, KBQA-R1 operates over a compact, typed action space, where actions such as Find_Relation and Merge are executed against the KB and converted into verifiable S-Expression fragments. At each turn, the model emits reasoning and actions, receives concrete KB feedback, and updates its trajectory until it produces a final answer. By optimizing the policy with outcome-oriented reinforcement learning rather than static imitation alone, KBQA-R1 encourages adaptive reasoning that interprets observations and justifies action choices based on executable feedback.</p><p>To make this reinforcement learning process stable, we introduce Referenced Rejection Sampling (RRS) as a warmstart data synthesis strategy. Standard rejection sampling from raw prompts is inefficient for KBQA because most zero-shot trajectories contain malformed actions, hallucinated relations, or invalid query structures. RRS addresses this cold-start problem by conditioning trajectory generation on a reference sequence of ground-truth actions while requiring the model to reconstruct a coherent reasoning trace around those executable steps. Accepted trajectories are then stripped of reference hints before supervised finetuning, so the policy learns KB-grounded reasoning patterns without depending on hidden guidance at inference time.</p><p>Our main contributions are summarized as follows:</p><p>• We propose KBQA-R1, a multi-turn reinforcement learning framework that grounds LLM reasoning in verifiable KB actions, enabling closed-loop interaction with the knowledge base.</p><p>• We introduce Referenced Rejection Sampling (RRS), a data synthesis strategy that aligns reasoning traces with ground-truth action sequences and mitigates hallucinated logic during warm-start training.</p><p>• Extensive experiments on WebQSP, GrailQA, and GraphQuestions demonstrate that KBQA-R1 achieves state-of-the-art performance. Moreover, RL training enables precise navigation on the knowledge graph: KBQA-R1 requires over 70% fewer LLM calls than GPT-4-based prompting methods <ref type="bibr">(ToG, PoG)</ref>, while achieving superior accuracy with only a Llama-3.1-8B backbone.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Related Work</head><p>KBQA has been studied through semantic parsing and retrieval-based methods, and recent LLM-based systems mainly fall into three lines: end-to-end logical-form generation <ref type="bibr" target="#b18">(Li et al., 2023;</ref><ref type="bibr" target="#b28">Nie et al., 2024;</ref><ref type="bibr" target="#b20">Luo et al., 2024;</ref><ref type="bibr" target="#b12">Jiang et al., 2023)</ref>, agentic graph exploration with interleaved reasoning and tool feedback <ref type="bibr">(Gu et al., 2023b;</ref><ref type="bibr" target="#b11">Huang et al., 2024;</ref><ref type="bibr" target="#b39">Sun et al., 2023;</ref><ref type="bibr" target="#b24">Luo et al., 2023;</ref><ref type="bibr" target="#b46">Xiong et al., 2024;</ref><ref type="bibr" target="#b1">Chen et al., 2024;</ref><ref type="bibr" target="#b13">Jiang et al., 2024)</ref>, and searchor graph-augmented reasoning methods that use MCTS, GraphRAG, or local subgraph retrieval to improve robustness <ref type="bibr">(Luo et al., 2025c;</ref><ref type="bibr" target="#b26">Mavromatis &amp; Karypis, 2025;</ref><ref type="bibr">Li et al., 2024b;</ref><ref type="bibr">a;</ref><ref type="bibr">Luo et al., 2025a)</ref>. These approaches reduce schema hallucination in different ways, but they either rely on one-shot generation, test-time prompting/search, or external retrieval pipelines whose policies are not directly optimized for executable KB interaction. Recent variational views of language-model reasoning also connect rejection sampling and RL-style training objectives through probabilistic inference <ref type="bibr" target="#b61">(Zhou et al., 2025)</ref>; our RRS module shares the high-level insight that sampled reasoning traces can provide useful training signal, while grounding this idea in executable KB actions. KBQA-R1 instead trains a single policy to act in a typed KB environment with verifiable feedback, so the model internalizes schema-aware navigation during training rather than relying on heuristic exploration at inference time. We provide a more detailed comparison with these lines of work in Appendix A.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Preliminaries</head><p>Knowledge Base and Executor. We consider a knowledge base (KB) as a directed multi-relational graph K = (E, R, F), where E is the set of entities, R is the set of relations, and F is the set of factual triples. Each triple f ∈ F has the form (h, r, t) with head entity h ∈ E, relation r ∈ R, and tail entity t ∈ E. An executor E (e.g., a SPARQL endpoint) takes a structured query over K and returns an answer set, which serves as the environment feedback in our framework.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>KBQA Task.</head><p>Given a natural language question q, the KB K, and a set of topic entities E q ⊆ E mentioned in q, the goal of Knowledge Base Question Answering (KBQA) is to produce an answer set A q ⊆ E that correctly responds to the question. Following the standard KGQA setting used by prior systems such as ToG, RoG, PoG, GNN-RAG, Sub-graphRAG, and KBQA-o1 <ref type="bibr" target="#b39">(Sun et al., 2023;</ref><ref type="bibr" target="#b24">Luo et al., 2023;</ref><ref type="bibr" target="#b1">Chen et al., 2024;</ref><ref type="bibr" target="#b26">Mavromatis &amp; Karypis, 2025;</ref><ref type="bibr">Li et al., 2024b;</ref><ref type="bibr">Luo et al., 2025c)</ref>, we assume that entity mentions in q are already linked to the KB and the corresponding topic entities E q are given as input. In classic semanticparsing based KBQA, this task is realized by generating a logical form (e.g., SPARQL or S-Expression) in one shot and executing it against the KB. In contrast, our framework rephrases the task as learning a multi-step interaction policy.</p><p>Agentic KBQA as Sequential Decision Making. In our framework, we view the large language model as a stochastic policy π θ that interacts with the KB environment via a compact, validated action space. At each step t, the agent observes a context c t summarizing the dialogue history, including prior reasoning (&lt;think&gt; blocks), actions (&lt;action&gt; blocks), and tool feedback (&lt;information&gt; blocks). Conditioned on c t and the original question q, the policy samples an action a t :</p><formula xml:id="formula_0">a t ∼ π θ (• | q, c t ).</formula><p>The action a t is grounded into an S-Expression fragment and executed by the executor E over K, yielding an observation o t (e.g., retrieved entities or diagnostic messages). The triple (c t , a t , o t ) is appended to the trajectory, and the context is updated accordingly. This interactive loop continues until the agent outputs a final answer Âq or a maximum number of steps T is reached. We denote a complete trajectory by τ = {(c 1 , a 1 , o 1 ), . . . , (c T , a T , o T )}.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Method: The KBQA-R1 Framework</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.">Prompt and System Workflow</head><p>Our system is a multi-turn agent system inspired by the ReAct paradigm <ref type="bibr" target="#b48">(Yao et al., 2022)</ref>. At each turn, the LLM emits one or more actions to interact with the KB environment, and the environment returns the corresponding observations, forming the Think-Action-Information loop shown in Figure <ref type="figure" target="#fig_3">1</ref>. After multiple turns of KB exploration, the model outputs the final answer. Algorithm 2 in Appendix B.8 gives the formal execution loop, and Appendix B.9 provides a complete step-by-step interaction trace.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.1.">PROMPTING TEMPLATE FOR ACTION-BASED REASONING</head><p>We use a structured, action-based prompting format to support multi-turn interaction with the Freebase executor. At each turn, the model produces (i) a rationale in &lt;think&gt;...&lt;/think&gt;, (ii) one or more executable KB exploration actions in &lt;action&gt;...&lt;/action&gt;, and is then conditioned on the environment feedback returned in &lt;information&gt;...&lt;/information&gt;.</p><p>The loop repeats until the model outputs the final answer in &lt;answer&gt;...&lt;/answer&gt;. Table <ref type="table">2</ref> summarizes the prompt template.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.2.">ACTION SPACE</head><p>Prior semantic parsing approaches to KBQA <ref type="bibr" target="#b3">(Gu &amp; Su, 2022;</ref><ref type="bibr" target="#b20">Luo et al., 2024;</ref><ref type="bibr" target="#b50">Ye et al., 2022)</ref> typically require the model to emit a full, nested S-expression in a single pass. This design is notoriously brittle: a single token-level error (e.g., a typo in a relation name or a mismatched parenthesis) can render the entire program unexecutable and cause the query to fail.</p><p>Following the recent KBQA-o1 framework <ref type="bibr">(Luo et al., 2025c)</ref>, we instead adopt a compact, discrete action space that decomposes logical-form construction into a sequence of simple, verifiable steps. Concretely, each action corresponds to an atomic operation over the evolving logical expression, such as extending from an entity along a relation (Find_relation), intersecting two partial expressions (Merge), or applying aggregation and comparison operators (Order, Compare, Count, Time_constraint).</p><p>As summarized in Table <ref type="table">1</ref>, every action is defined by (i) its arguments, (ii) a target functional update on the current expression (e.g., JOIN, AND, ARG, CMP, TC, COUNT), and (iii) the corresponding S-expression template.</p><p>Actions are converted into an S-Expression list, then translated into SPARQL queries <ref type="bibr" target="#b30">(Pérez et al., 2009)</ref> executed against the KB. The resulting observations are appended to the dialogue state visible to the model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.3.">RELATION RETRIEVAL AND CONFIDENCE GATING</head><p>LLM-proposed relations can be noisy or ambiguous due to the well-known hallucination problem <ref type="bibr">(Zhang et al., 2023b)</ref>.</p><p>To mitigate this, we introduce the Relation Retrieval and Confidence Gating (RRCG) module. The RRCG module acts as a validation layer, verifying the agent's proposed textual relation before execution. Let r agent be the original textual relation proposed by the agent for the current entity e c . Let R(e c ) be the set of all neighboring schema relations of e c in the knowledge base. The core of the RRCG module is a similarity function Sim(•, •), implemented using dense retrieval techniques (Karpukhin et al., 2020; Zhao et al., 2024), which scores r agent against every schema relation r s ∈ R(e c ). We define s max = max rs∈R(ec) Sim(r agent , r s ) as the highest similarity score, with r * s = arg max rs∈R(ec) Sim(r agent , r s ) being the bestmatching schema relation.</p><p>Based on s max and predefined thresholds τ high and τ low (where τ high &gt; τ low ), the action is categorized into three confidence tiers: (1) Auto-Validation: If s max ≥ τ high , the action is directly executed using r * s .</p><p>(2) Tentative Acceptance: If τ low ≤ s max &lt; τ high , the action proceeds but the observation includes top-k candidates to signal uncertainty.</p><p>(3) Rejection: If s max &lt; τ low , the action is marked invalid and a diagnostic message with neighboring relations is returned to guide re-selection.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2.">Rejection Sampling and Supervised Fine-Tuning Warm-Start</head><p>To effectively warm-start the policy before RL and resolve the "cold start" problem, we propose Referenced Rejection Sampling (RRS), a data synthesis strategy that grounds the model's reasoning in verifiable execution steps. The key in-    Action Arguments Target Function Equivalent Logical Form Find_relation entity | relation expression = JOIN('relation', START(entity)) (JOIN relation entity) Merge expression1 | expression expression = AND(expression1, expression) (AND (expression1) (expression)) Order MAX/MIN | expression | relation expression = ARG('mode', expression, 'relation') (mode (expression) relation) Compare le/lt/ge/gt | relation | number expression = CMP('mode', 'relation', number, expression) (mode relation number (expression)) Time_constraint relation | time expression = TC(expression, 'relation', 'time') (TC (expression) relation time) Count expression expression = COUNT(expression) (COUNT (expression))</p><p>Table <ref type="table">1</ref>. Action space of KBQA-R1.</p><p>Table 2. Action-based reasoning prompt template for KBQA-R1. You are an expert assistant for querying the Freebase knowledge base using structured reasoning actions. Answer the given question about Freebase knowledge base. Conduct reasoning inside &lt;think&gt;...&lt;/think&gt; before emitting actions. Provide structured actions inside &lt;action&gt;...&lt;/action&gt;. The system returns query results between &lt;information&gt;...&lt;/information&gt;. Return the final answer inside &lt;answer&gt;...&lt;/answer&gt; using MIDs or literal values. Available Actions: {Action Descriptions}; Question: {QUESTION}.</p><p>sight behind RRS is that successful KBQA trajectories must align with executable action sequences. Standard rejection sampling <ref type="bibr" target="#b55">(Yuan et al., 2023)</ref> from raw prompts suffers from very low acceptance rates due to the task complexity and the base LLM's weak zero-shot ability on structured KB queries. Simply increasing sampling temperature or budget yields diminishing returns, as most generated trajectories contain hallucinated relations or malformed S-Expressions.</p><p>RRS addresses this by providing the model with a reference action sequence as implicit guidance during generation. This constraint forces the model to: ❶ Ground reasoning in execution: The model must justify why each reference action leads toward the correct answer, rather than fabricating post-hoc explanations. ❷ Learn action-observation correspondence: By observing the actual KB feedback for each ground-truth action, the model internalizes the mapping between actions and their environmental consequences.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2.1.">RRS PIPELINE</head><p>Given a training example (q, A, S * ) where q is the question, A is the gold answer set, and S * is the gold S-Expression, the RRS pipeline proceeds as follows:</p><p>Step 1: Action Extraction. Parse S * to extract the ground-truth action sequence a * = (a * 1 , a * 2 , . . . , a * k ), where each a * i corresponds to an atomic operation (e.g., Find_relation, Merge).</p><p>Task Description Pretend you CANNOT see this reference sequence -generate your own natural reasoning path as if solving from scratch. Action1 Action2 ••• Action Space Question Multi-turn KB Rollout Exact Match &amp; Correct Structure Filter Remove Reference Post-processor Finetuned-LLM GRPO Question: XXX Action List: Action1, Action2, ••• Answer: xxx Raw Data wo &lt;think&gt; &amp;&amp; &lt;info&gt; Question: XXX &lt;think&gt; XXX &lt;/think&gt; &lt;action&gt; XXX &lt;/action&gt; &lt;info&gt; XXX &lt;/info&gt; &lt;think&gt; XXX &lt;/think&gt; ••• &lt;answer&gt; xxx &lt;/answer&gt; Rollout Data For SFT Referenced Rejection Sampling Finetuned-KBQA LM Reward S1 Advantage A1 Reward S1 Advantage A1 Reward S1 Advantage A1 Supervised Finetune Reinforcement Learning Pretrained LM Rollout Data For SFT Step 2: Referenced Rollout. Execute a rollout where the model generates reasoning traces (&lt;think&gt;) conditioned on observing the reference actions. At each step t, the prompt includes the next ground-truth action a * t as a reference.</p><p>Step 3: Trajectory Filtering. Accept trajectories that (a) successfully reach the correct answer with F1( Â, A) ≥ τ , and (b) maintain correct structure format of the tags.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Step 4: Reference Stripping.</head><p>Before adding accepted trajectories to the SFT dataset, we strip all reference hints from the prompts. This ensures the model learns to reason independently at inference time.</p><p>The resulting SFT dataset S RRS contains high-quality trajectories where each reasoning step is grounded in verifiable KB interactions. This approach achieves significantly higher acceptance rates compared to raw rejection sampling while producing more robust reasoning patterns. 4.2.2. SFT TRAINING Each turn in the accepted trajectory is converted into an independent training sample, where the context (including prior turns and KB feedback) serves as input and the model's response serves as the target. The SFT loss is computed only on response tokens. The resulting checkpoint initializes the policy for GRPO optimization.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.">Reinforcement Learning Optimization</head><p>The policy is further refined via Reinforcement Learning <ref type="bibr" target="#b15">(Kaelbling et al., 1996)</ref>, optimizing a composite reward signal using our GRPO algorithm <ref type="bibr" target="#b34">(Shao et al., 2024)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.1.">REWARD FORMULATION</head><p>We define a composite reward R to guide the policy, composed of three main components: an outcome reward (r outcome ), a format reward (r format ). The primary component is r outcome , which measures the factual accuracy of the final answer. To make this signal robust against annotation variations, it is calculated as the F1 score between the predicted answers Â and all available gold answer variants A for a given prompt. The second component is the r format . This provides a bonus based on desirable structural properties, such as tag completeness and correct tag order. Crucially, this reward is applied only when r outcome &gt; 0, ensuring the agent is not rewarded for good syntax when the answer is completely wrong.</p><p>The total reward R for a trajectory is the weighted sum of these components, where I[•] is the indicator function:</p><formula xml:id="formula_1">R = λ outcome • r outcome + λ format • I[r outcome &gt; 0] • r format (1) 4.3.2. POLICY OPTIMIZATION (GRPO)</formula><p>We optimize the policy π θ using GRPO <ref type="bibr" target="#b34">(Shao et al., 2024)</ref>. The overall objective maximizes the expected clipped advantage, regularized by a KL-divergence term against a frozen reference policy π ref to ensure training stability <ref type="bibr" target="#b29">(Ouyang et al., 2022)</ref>:</p><formula xml:id="formula_2">max θ E min r t Ât , clip(r t , 1-ϵ, 1+ϵ) Ât -β D KL [π θ ∥π ref ]<label>(2)</label></formula><p>where r t = π θ (a t |s t )/π θold (a t |s t ) is the importance sampling ratio, ϵ is the clipping threshold, and β controls the KL penalty strength.</p><p>The key feature of GRPO is its definition of the advantage function Ât . For a given prompt x, we execute n rollouts with the current policy π θ to generate n candidate trajectories {y i } n i=1 and their corresponding scalar rewards {r i } n i=1 . Instead of using a learned value function (as in standard actor-critic methods <ref type="bibr" target="#b33">(Schulman et al., 2015)</ref>), GRPO computes the advantage by centering the rewards within this group, using the group's mean reward as a baseline:</p><formula xml:id="formula_3">Âi = r i - 1 n n j=1 r j<label>(3)</label></formula><p>5. Experiments</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1.">Experimental Setup</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1.1.">DATASETS</head><p>We conduct experiments on three widely-used KBQA benchmarks grounded on Freebase <ref type="bibr" target="#b0">(Bollacker et al., 2008)</ref>: GrailQA <ref type="bibr" target="#b4">(Gu et al., 2021)</ref>, WebQSP <ref type="bibr" target="#b52">(Yih et al., 2016)</ref>, and GraphQuestions <ref type="bibr" target="#b36">(Su et al., 2016)</ref>. Following the experimental setup of KBQA-o1 <ref type="bibr">(Luo et al., 2025c)</ref>, we use the official splits and evaluation protocols (with GrailQA evaluated on the dev set as in prior work). Detailed dataset statistics and split sizes are provided in Appendix B.1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1.2.">BASELINES</head><p>We compare KBQA-R1 with representative KBQA baselines, including (i) fine-tune-based methods trained with full supervision: RnG-KBQA <ref type="bibr" target="#b50">(Ye et al., 2022)</ref>, DecAF <ref type="bibr" target="#b53">(Yu et al., 2022)</ref>, TIARA <ref type="bibr" target="#b35">(Shu et al., 2022)</ref>, SPARQA <ref type="bibr" target="#b40">(Sun et al., 2020)</ref>, BERT+Ranking <ref type="bibr" target="#b4">(Gu et al., 2021)</ref>, ArcaneQA <ref type="bibr" target="#b3">(Gu &amp; Su, 2022)</ref>, and KBQA-o1 <ref type="bibr">(Luo et al., 2025c)</ref>; (ii) prompting-based methods: KB-BINDER <ref type="bibr" target="#b18">(Li et al., 2023)</ref>, KB-Coder <ref type="bibr" target="#b28">(Nie et al., 2024)</ref>, and ARG-KBQA <ref type="bibr" target="#b41">(Tian et al., 2024)</ref>; and (iii) recent graphretrieval and agentic reasoning methods such as RoG <ref type="bibr" target="#b24">(Luo et al., 2023)</ref>, GNN-RAG <ref type="bibr" target="#b26">(Mavromatis &amp; Karypis, 2025)</ref>, and SubgraphRAG <ref type="bibr">(Li et al., 2024b)</ref>. Detailed baseline descriptions are provided in Appendix B.2.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1.3.">EVALUATION METRICS</head><p>We evaluate all methods using standard KBQA metrics: Exact Match (EM) measures the percentage of questions where the predicted answer set exactly matches the gold answer set. F1 Score computes the harmonic mean of precision and recall at the entity level, providing a more lenient measure that accounts for partial correctness.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1.4.">TRAINING SETUP</head><p>We use Llama-3.1-8B-Instruct as the default backbone. We run RRS with a stronger instruction-following backbone (Qwen-2.5-72B-Instruct) to obtain high-quality trajectories, and then distill these trajectories into our Llama-3.1-8B-Instruct policy via supervised fine-tuning. Full hyperparameters (e.g., epochs, learning-rate schedules, batch sizes, KL coefficient β, and clipping ratios) as well as infrastructure details are reported in Appendix B.3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.">Main Results Analysis</head><p>For GrailQA dataset (Table <ref type="table" target="#tab_0">3</ref>), KBQA-R1 delivers consistent gains over the strongest fine-tuned baseline KBQA-o1 across all three generalization levels. In the i.i.d. split, KBQA-R1 improves EM by about +12% and F1 by roughly +6%. In the compositional split, which stresses recombining seen schema elements, KBQA-R1 still achieves a solid margin of around +5% F1. Most notably, in the zero-shot setting-where relations and compositions are unseen during training-KBQA-R1 boosts EM by more than +15% and F1 by about +9% over KBQA-o1. Overall on GrailQA, these improvements translate into gains of roughly +8% F1 and +12% EM, highlighting that execution-grounded reinforcement learning significantly enhances out-of-distribution generalization rather than merely fitting the training distribution. On WebQSP (Table <ref type="table">4</ref>), KBQA-R1 attains 83.4% F1, outperforming graph-retrieval methods such as RoG, GNN-RAG, and SubgraphRAG, while exceeding fine-tuned systems such as TIARA and DecAF. Compared with the Llama-3.1-8B-based MCTS-KBQA, KBQA-R1 achieves about +7% absolute F1 improvement, suggesting that learned policies are more effective than MCTS search heuristics under the same backbone. On GraphQuestions (Table <ref type="table">5</ref>), which emphasizes long multi-hop queries, KBQA-R1 yields around +5% absolute F1 gain over KBQA-o1 and consistently surpasses earlier graph-based methods such as CoTKR and ArcaneQA. These results indicate that KBQA-R1 effectively enhances reasoning capabilities across diverse KBQA challenges, including complex multi-hop queries.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3.">Ablation Study</head><p>We conduct ablation studies to quantify the contribution of the key components introduced in Section 4, including RRCG, the structured action space, the RRS warm-start, and GRPO-based RL optimization.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Agent Architecture Ablations.</head><p>The most significant performance drops occur when removing core architectural components.</p><p>(1) w/o RRCG results in an average F1 drop of about 18%, with GrailQA suffering the largest degradation (-19.0%). Without relation retrieval and confidence gating, Table 4. Results on the test set of WebQSP. The Bold and underlined numbers indicate the best and second-best performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Method LLM F1</head><p>Prompting Methods KB-BINDER <ref type="bibr" target="#b18">(Li et al., 2023)</ref> Codex-davinci-002 52.6 KB-Coder <ref type="bibr" target="#b28">(Nie et al., 2024)</ref> GPT-3.5-turbo 55.7 ARG-KBQA <ref type="bibr" target="#b41">(Tian et al., 2024)</ref> GPT-3.5-turbo 58.8 Interactive-KBQA <ref type="bibr" target="#b46">(Xiong et al., 2024)</ref> GPT-4-turbo 71.2</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Graph Retrieval / Reasoning Methods</head><p>RoG <ref type="bibr" target="#b24">(Luo et al., 2023)</ref> Llama2-7B 70.8 GNN-RAG <ref type="bibr" target="#b26">(Mavromatis &amp; Karypis, 2025)</ref> Llama2-7B 71.3 SubgraphRAG <ref type="bibr">(Li et al., 2024b)</ref> Llama-3.1-8B 70.6 SubgraphRAG <ref type="bibr">(Li et al., 2024b)</ref> GPT-4o 78.2</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Fine-tune-based Methods</head><p>RnG-KBQA <ref type="bibr" target="#b50">(Ye et al., 2022)</ref> T5-large 75.6 DecAF <ref type="bibr" target="#b53">(Yu et al., 2022)</ref> T5-large 76.7 TIARA <ref type="bibr" target="#b35">(Shu et al., 2022)</ref> T5-large 78.9 MCTS-KBQA <ref type="bibr">(Gu et al., 2023a)</ref> Llama-3.1-8B 76.0 KBQA-o1 <ref type="bibr">(Luo et al., 2025c)</ref> Llama-3.1-8B 57.8</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>KBQA-R1</head><p>Llama-3.1-8B 83.4 ±0.3 Improv. over KBQA-o1 +25.6%</p><p>Table <ref type="table">5</ref>. Results on the test set of GraphQ. The Bold and underlined numbers indicate the best and second-best performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Method LLM F1</head><p>Prompting Methods KB-BINDER <ref type="bibr" target="#b18">(Li et al., 2023)</ref> Codex-davinci-002 27.1 KB-Coder <ref type="bibr" target="#b28">(Nie et al., 2024)</ref> GPT-3.5-turbo 31.1</p><p>Fine-tune-based Methods SPARQA <ref type="bibr" target="#b40">(Sun et al., 2020)</ref> BERT-base 21.5 BERT+Ranking <ref type="bibr" target="#b4">(Gu et al., 2021)</ref> BERT-base 25.0 ArcaneQA <ref type="bibr" target="#b3">(Gu &amp; Su, 2022)</ref> BERT-base 31.8 CoTKR <ref type="bibr" target="#b45">(Wu et al., 2024)</ref> Llama-3-8B 47.5 KBQA-o1 <ref type="bibr">(Luo et al., 2025c)</ref> Llama-3.</p><p>1-8B 48.7 KBQA-R1 Llama-3.1-8B 53.8 ±0.7 Improv. over KBQA-o1 +5.1% the agent must rely solely on the LLM's parametric knowledge to select relations, leading to frequent hallucinations on unseen schema elements. The impact is particularly severe on GraphQ (-16.1%), where complex multi-hop queries re-quire precise relation grounding. (2) w/o Multi-turn causes the most dramatic decline (about -25% on average), confirming that iterative refinement through KB feedback is essential. Single-turn generation forces the model to produce complete S-Expressions without intermediate validation, resulting in cascading errors. GrailQA shows the steepest drop (-36.3%), as its compositional and zero-shot questions inherently require exploratory reasoning that cannot be captured in a single generation step. Training Strategy Ablations. Both training components contribute meaningfully to final performance. (1) w/o RRS (using standard rejection sampling instead of Referenced Rejection Sampling) reduces average F1 by about 5.6%. This validates our hypothesis that leveraging reference action list during warm-start trajectory generation produces higher-quality training signals. Standard rejection sampling often generates syntactically valid but semantically suboptimal trajectories that provide weaker supervision. (2) w/o SFT warm-start (training RL from scratch) incurs a larger penalty (about -8.6% on average). Without warm-start initialization, the RL agent begins with near-random behavior, requiring substantially more exploration to discover viable reasoning strategies.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reward Design Ablations.</head><p>Removing the format reward (r format = 0) causes a moderate but consistent drop (about -2.1% on average). The format reward supplies dense intermediate feedback that steers the agent toward syntactically well-formed actions and encourages necessary thinking before acting, thereby complementing the sparse outcome reward. Without this signal, the agent can produce incorrect tag ordering or incomplete tags, which prevent the system from correctly extracting information. The relatively smaller impact compared to architectural ablations suggests that the outcome reward remains the primary driver of learning, with format rewards serving as a stabilizing auxiliary signal.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Referenced RS vs. Standard RS</head><p>To better understand the effect of Referenced Rejection Sampling (RRS) compared to standard Rejection Sampling (RS), we compare three aspects of the training pipeline on all three datasets: (1) the raw F1 score obtained directly from RS trajectories before any SFT, (2) the number of trajectories that pass both the outcome filter (F1 &gt; 0.9) and the structure reward filter (r format = 0.1) and are used for SFT, and (3) the initial testset F1 after SFT trained on the corresponding RS data. As shown in Table <ref type="table" target="#tab_2">7</ref>, RRS consistently improves the quality and efficiency of trajectory collection across all datasets. The acceptance statistics reveal that RRS yields markedly more usable trajectories under the same filtering criteria, demonstrating that RRS is substantially more sample-efficient than standard RS. Finally, these higher-quality and denser trajectories translate into stronger SFT initialization. Starting RL from an RRS-initialized SFT checkpoint places the policy closer to a good solution, which complements the ablation result that removing RRS leads to a noticeable drop in final performance. Together, these observations justify RRS as a key component for obtaining stable and high-performing RL training in KBQA-R1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.4.">Compared with Llama-3.1-8B based Methods</head><p>Following the experimental setup of KBQA-o1 <ref type="bibr">(Luo et al., 2025c)</ref>, we conduct a focused comparison among methods that share the same Llama-3.1-8B backbone and Freebase execution environment. The compared baselines can be grouped into three categories. (1) End-to-end generation methods: RG-E2E and GR-E2E are adapted from DecAF <ref type="bibr" target="#b53">(Yu et al., 2022)</ref> and ChatKBQA <ref type="bibr" target="#b20">(Luo et al., 2024)</ref>, respectively. RG-E2E follows a retrieve-then-generate</p><p>Comp. I.I.D GraphQ WebQSP GrailQA ZeroS. 10 30 50 70 90 RG-E2E GR-E2E CoT-SbS ToT-SbS MCTS KBQA-o1 KBQA-R1 (a) F1 scores across datasets and generalization levels. JOIN AND ARG CMP TC COUNT 10 30 50 70 90 RG-E2E GR-E2E CoT-SbS ToT-SbS MCTS KBQA-o1 KBQA-R1 (b) F1 scores across logical operation types. (3) MCTSbased agentic method: MCTS corresponds to the MCTSoptimized variant in KBQA-o1 <ref type="bibr">(Luo et al., 2025c</ref>) without incremental Finetuning. Figure <ref type="figure" target="#fig_6">3a</ref> visualizes F1 scores across six evaluation dimensions. KBQA-R1 achieves the largest coverage area, demonstrating superior overall performance across all settings, with the most pronounced gap in zero-shot dimensions. This validates our hypothesis that RL-based training fosters more robust reasoning capabilities than SFT. In contrast, end-to-end and step-by-step baselines cluster in the inner region, reflecting limited generalization.   Figure <ref type="figure" target="#fig_5">3b</ref> breaks down performance by logical operation type. KBQA-R1 dominates across all categories, showing significant advantages in complex operations. Conversely, baselines struggle with rare operations, underscoring their inability to generalize to infrequent query patterns.</p><p>Frontier-agent comparison. We further evaluate whether a strong off-the-shelf agent can close the gap when equipped with the same KBQA-R1 harness. The experiments in Table <ref type="table" target="#tab_3">8</ref> use a fixed 500-query subset <ref type="bibr">(200 GrailQA,</ref><ref type="bibr">200</ref> WebQSP, and 100 GraphQ) because multi-turn proprietaryagent evaluation is expensive. The structured harness improves every frontier model over direct SPARQL ReAct, confirming that the action space and feedback state are useful independently of RL. However, even the best harnessequipped frontier model remains below the learned KBQA-R1 policy while using more turns and substantially more tokens, indicating that KBQA-R1 internalizes graph navigation instead of relying on test-time trial and error.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.5.">Training Dynamics Analysis</head><p>Figure <ref type="figure" target="#fig_7">4a</ref> shows that the top-1 relation similarity of We-bQSP dataset improves steadily from ∼0.94 at the SFT warm-start checkpoint to ∼0.98 at convergence, indicating that GRPO consistently strengthens relation grounding rather than introducing unstable fluctuations. Figure <ref type="figure" target="#fig_7">4b</ref> further confirms this trend: compared with the first step (mean=0.9400), the last-step distribution becomes more concentrated near 1.0 (mean=0.9827) with reduced variance, suggesting fewer low-confidence relation choices and more reliable query generation. We defer the training reward curve and its detailed discussion to Appendix B.6.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.">Conclusion</head><p>We presented KBQA-R1, a reinforcement learning framework for agentic knowledge base question answering. By integrating a structured action space, a relation retrieval and confidence gating module, and a novel Referenced Rejection Sampling warm-start strategy, KBQA-R1 effectively leverages execution feedback from the knowledge base to learn robust reasoning policies via the GRPO algorithm. Extensive experiments on three challenging KBQA benchmarks demonstrate that KBQA-R1 significantly outperforms stateof-the-art prompting and fine-tuning baselines, particularly in out-of-distribution generalization settings.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Impact Statement</head><p>This paper presents KBQA-R1, a method for training language-model agents to answer questions by interacting with structured knowledge bases. Its intended benefit is to make factual question answering more reliable and auditable: instead of relying only on free-form generation, the model is encouraged to use executable actions and database feedback. This may support scientific, enterprise, and educational settings where users need answers that can be traced to maintained knowledge sources.</p><p>Potential negative impacts arise when such systems are de-ployed on sensitive, proprietary, outdated, or biased knowledge bases. Fluent answers from structured data can appear authoritative even when the underlying records are incomplete or skewed, and automated access to private knowledge bases may raise privacy, licensing, or access-control concerns. Training agents with repeated knowledge-base execution also incurs computational and energy costs.</p><p>To mitigate these risks, deployments should expose provenance and execution failures, report uncertainty when grounding is weak, enforce privacy and licensing constraints, and keep humans in the loop for high-stakes decisions. We release this work in the context of public benchmarks and encourage downstream users to audit the data sources and policies before applying the method in real-world systems.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Extended Related Work</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1. Knowledge Base Question Answering (KBQA).</head><p>Before the rise of LLMs, KBQA studies are commonly categorized into information-retrieval-based (IR-based) methods <ref type="bibr" target="#b37">(Sun et al., 2018;</ref><ref type="bibr" target="#b38">2019;</ref><ref type="bibr" target="#b56">Zhang et al., 2022;</ref><ref type="bibr" target="#b9">He et al., 2021;</ref><ref type="bibr" target="#b31">Saxena et al., 2020)</ref> and semantic-parsing-based (SP-based) methods <ref type="bibr" target="#b50">(Ye et al., 2022;</ref><ref type="bibr" target="#b35">Shu et al., 2022;</ref><ref type="bibr" target="#b3">Gu &amp; Su, 2022;</ref><ref type="bibr">Zhang et al., 2023a)</ref>. With LLMs, three paradigms have emerged: (i) end-to-end approaches that directly generate logical forms via in-context learning or fine-tuning <ref type="bibr" target="#b18">(Li et al., 2023;</ref><ref type="bibr" target="#b28">Nie et al., 2024;</ref><ref type="bibr" target="#b20">Luo et al., 2024;</ref><ref type="bibr" target="#b12">Jiang et al., 2023)</ref>; (ii) step-by-step (agentic) approaches that interleave reasoning with graph exploration and tool use <ref type="bibr">(Gu et al., 2023b;</ref><ref type="bibr" target="#b11">Huang et al., 2024;</ref><ref type="bibr" target="#b39">Sun et al., 2023;</ref><ref type="bibr" target="#b24">Luo et al., 2023;</ref><ref type="bibr" target="#b46">Xiong et al., 2024;</ref><ref type="bibr" target="#b1">Chen et al., 2024;</ref><ref type="bibr" target="#b13">Jiang et al., 2024)</ref>; and (iii) search-augmented approaches that leverage tree search algorithms such as Monte Carlo Tree Search (MCTS) for systematic exploration <ref type="bibr">(Luo et al., 2025c)</ref>.</p><p>While MCTS-based methods like KBQA-o1 <ref type="bibr">(Luo et al., 2025c)</ref> achieve strong performance through heuristic exploration, they exhibit two key limitations. First, they incur significant computational overhead from multiple rollouts per query and require separate policy and reward models during inference. Second, their reasoning traces are often template-driven (e.g., "At this step, we should find the relation...") rather than genuinely analytical-the model announces what action to take without explaining why based on observations. In contrast, we train a single policy via RL with outcome-based rewards, encouraging the model to develop adaptive reasoning that analyzes environmental feedback and justifies action choices, while eliminating test-time search overhead.</p><p>A.2. LLMs, tool use, and agentic reasoning.</p><p>Chain-of-Thought (CoT) prompting improves reasoning by eliciting intermediate steps <ref type="bibr">(Wei et al., 2022)</ref>; ReAct <ref type="bibr" target="#b48">(Yao et al., 2022)</ref> interleaves "think" and "act" to ground reasoning in environment feedback; and heuristic search has been applied to agent traces (e.g., MCTS-style selection in <ref type="bibr" target="#b7">(Hao et al., 2023)</ref> and tree-structured deliberation in <ref type="bibr" target="#b49">(Yao et al., 2023)</ref>). Recent graph-augmented approaches such as Plan-on-Graph <ref type="bibr" target="#b1">(Chen et al., 2024)</ref> incorporate self-correcting mechanisms with dynamic memory for adaptive planning on knowledge graphs. While these methods expand the search space or stabilize multi-step reasoning, free-form thoughts can overfit prompt templates and do not guarantee executability. We keep the interleaved think-act design but require typed, schema-aware actions with validators and an executor, turning traces into verifiable computations rather than narrative justifications.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3. Retrieval-augmented generation and search-as-a-tool.</head><p>Classical RAG pipelines retrieve text snippets and feed them to the model for generation <ref type="bibr" target="#b17">(Lewis et al., 2020)</ref>. Recent work moves toward search-as-a-tool, prompting or training LLMs to issue search calls and iterate <ref type="bibr" target="#b43">(Trivedi et al., 2022;</ref><ref type="bibr" target="#b48">Yao et al., 2022;</ref><ref type="bibr" target="#b32">Schick et al., 2023;</ref><ref type="bibr" target="#b19">Li et al., 2025;</ref><ref type="bibr" target="#b14">Jin et al., 2025;</ref><ref type="bibr">Luo et al., 2025a)</ref>. GraphRAG and graph-decoding approaches <ref type="bibr" target="#b10">(He et al., 2024;</ref><ref type="bibr" target="#b25">Ma et al., 2025;</ref><ref type="bibr" target="#b26">Mavromatis &amp; Karypis, 2025;</ref><ref type="bibr">Li et al., 2024b;</ref><ref type="bibr">a;</ref><ref type="bibr">Luo et al., 2025a;</ref><ref type="bibr">b)</ref> further integrate graph retrieval with LLM reasoning, enabling tighter coupling between structured knowledge and text-based evidence. These approaches reduce hallucination but depend heavily on retrieval quality, local subgraph construction, or constrained decoding at inference time. Our setting differs fundamentally by treating a knowledge graph as the environment: actions are typed and executable against the KB schema, observations are structure-grounded entity sets rather than text passages, and step-wise executability can be validated programmatically rather than inferred from unstructured documents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Experimental Details</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1. Datasets and Statistics</head><p>We conduct experiments on three widely-used KBQA benchmarks, each designed to evaluate different aspects of model generalization and reasoning capabilities. All datasets are grounded on Freebase <ref type="bibr" target="#b0">(Bollacker et al., 2008)</ref>. GrailQA <ref type="bibr" target="#b4">(Gu et al., 2021)</ref> is a large-scale dataset specifically designed to evaluate KBQA models across three generalization levels: i.i.d., compositional, and zero-shot. It contains 64,331 questions in total, with 44,337 training questions, 13,231 validation questions and 6,763 test questions. Following prior work <ref type="bibr" target="#b20">(Luo et al., 2024;</ref><ref type="bibr">2025c)</ref>, we use the dev set for evaluation. The compositional and zero-shot settings are particularly challenging, requiring models to handle unseen combinations of entities and relations. WebQSP <ref type="bibr" target="#b52">(Yih et al., 2016)</ref> is an enriched version of WebQuestions, providing semantic parses for 4,737 questions. The dataset is split into 3,098 training questions and 1,639 test questions. GraphQuestions <ref type="bibr" target="#b36">(Su et al., 2016)</ref> tests KBQA models on complex graph-structured reasoning. It contains 5,166 questions in total, with 2,508 for training and 2,658 for testing. The dataset challenges models to navigate multi-hop relationships.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2. Baselines (Detailed Descriptions)</head><p>We compare KBQA-R1 with both fine-tune-based and prompting-based KBQA methods.</p><p>Fine-tune-based methods. These methods are trained on the full supervision of the corresponding benchmark and are included as upper-bound references.</p><p>• RnG-KBQA <ref type="bibr" target="#b50">(Ye et al., 2022)</ref>: a retrieve-and-generate framework that first retrieves relevant KB evidence and then generates executable logical forms.</p><p>• DecAF <ref type="bibr" target="#b53">(Yu et al., 2022)</ref>: a multi-granular retrieval and refinement approach that progressively improves retrieved knowledge for robust KBQA.</p><p>• TIARA <ref type="bibr" target="#b35">(Shu et al., 2022)</ref>: a semantic parsing method that maps questions to structured queries through iterative refinement.</p><p>• CoTKR <ref type="bibr" target="#b45">(Wu et al., 2024)</ref>: a Chain-of-Thought enhanced knowledge rewriting method that trains a knowledge rewriter via SFT and DPO to convert KB triples into natural language reasoning text for improved QA.</p><p>• KBQA-o1 <ref type="bibr">(Luo et al., 2025c)</ref>: an agentic KBQA approach based on Monte-Carlo Tree Search (MCTS) with policy and reward models for heuristic search.</p><p>For GraphQuestions, following the setup in KBQA-o1 <ref type="bibr">(Luo et al., 2025c)</ref>, we additionally report results of SPARQA <ref type="bibr" target="#b40">(Sun et al., 2020)</ref>, BERT+Ranking <ref type="bibr" target="#b4">(Gu et al., 2021)</ref>, and ArcaneQA <ref type="bibr" target="#b3">(Gu &amp; Su, 2022)</ref>.</p><p>Prompting-based methods. These methods operate under limited or no task-specific gradient updates and are compared under a similar low-annotation constraint.</p><p>• KB-BINDER <ref type="bibr" target="#b18">(Li et al., 2023)</ref>: an in-context learning method (GPT-3.5-turbo) that binds questions to KB entities and relations.</p><p>• KB-Coder <ref type="bibr" target="#b28">(Nie et al., 2024)</ref>: a code-style in-context learning method (GPT-3.5-turbo) that generates executable logical forms.</p><p>• ARG-KBQA <ref type="bibr" target="#b41">(Tian et al., 2024)</ref>: a prompting approach (GPT-3.5-turbo) that uses augmented reasoning graphs to improve KBQA.</p><p>• Interactive-KBQA <ref type="bibr" target="#b46">(Xiong et al., 2024)</ref>: an interactive framework that decomposes complex questions into subquestions and iteratively queries the KB to gather evidence for answer generation.</p><p>• ToG (Think-on-Graph) <ref type="bibr" target="#b39">(Sun et al., 2023)</ref>: a beam search-based method that prompts LLMs to explore multiple reasoning paths on the knowledge graph, selecting the most promising path at each step.</p><p>• PoG (Plan-on-Graph) <ref type="bibr" target="#b1">(Chen et al., 2024)</ref>: an advanced graph reasoning method that first generates a reasoning plan and then executes it on the knowledge graph with self-correction capabilities.</p><p>• RoG <ref type="bibr" target="#b24">(Luo et al., 2023)</ref>: a reasoning-on-graphs framework that asks LLMs to reason over graph-derived paths and evidence.</p><p>• GNN-RAG <ref type="bibr" target="#b26">(Mavromatis &amp; Karypis, 2025)</ref>: a graph neural retrieval method that retrieves question-relevant graph paths before LLM reasoning.</p><p>• SubgraphRAG <ref type="bibr">(Li et al., 2024b)</ref>: a graph-centric RAG method that retrieves compact subgraphs for LLM answer prediction.</p><p>• DoG <ref type="bibr">(Li et al., 2024a)</ref>: a constrained graph-decoding method that encourages LLMs to generate well-formed chains on knowledge graphs. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Critic Mean Reward</head><p>Training Reward Curve Raw Data Smoothed (EMA) Table <ref type="table">10</ref>, ToG requires 15.9 and 11.1 LLM calls per sample on WebQSP and GrailQA respectively, while PoG requires 9.0 and 6.5 calls. In contrast, KBQA-R1 achieves 2.65 and 3.08 calls on the same datasets-a reduction of over 50% compared to PoG and over 70% compared to ToG. This significant efficiency gain stems from RL training, which enables the model to learn precise, goal-directed navigation on the knowledge graph rather than relying on exploratory search or iterative self-correction. The GRPO-trained policy internalizes effective reasoning strategies, allowing it to reach correct answers with fewer interaction steps.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.5. Extended System Comparisons</head><p>We conduct supplementary evaluations to clarify the role of RL training and backend transfer. Unless otherwise noted, scores are F1 percentages. short story has a character who also is in Doing Clarence a Bit of Good? Topic Entity: 'Doing Clarence a Bit of Good' (m.09gs5j0) Gold: 6 MIDs (m.09gs5hv, m.09gs5hy, m.09gs5hr, m.010r9gwy, m.010rlht0, m.010rlh9d) KBQA-o1 (Incorrect, F1 = 0.0) Step 1 Thought: At this step, we should identify a topic entity from the question to start a new expression. ✗ Rigid template Action: Extract_entity [ Doing Clarence a Bit of Good ] Obs: expression = START('m.09gs5j0') ✗ Action echo, not KB results Step 2 Thought: At this step, we should find the one-hop relation connected to the current expression. ✗ Rigid template Action: Find_relation [ book.short_story.characters ] Obs: expression = JOIN('(R book.short_story.characters)', expr) ✗ Action echo -wrong direction undetected Step 3 Thought: At this step, we should identify a topic entity from the question. ✗ Rigid template Action: Extract_entity [ book.short_story ] Obs: expression1 = START('book.short_story') ✗ Action echo, not KB results Step 4 Thought: At this step, we conclude that it is appropriate to end and output the expression. ✗ Rigid template Action: Finish [ expression1 ] ✗ Finishes expression1, discards JOIN pred_answer = [ ] ✗ Empty result (F1 = 0.0) KBQA-R1 (Correct, F1 = 1.0) Step 1 Think: To find the short story that shares a character with "Doing Clarence a Bit of Good," I first need to identify the characters that appear in "Doing Clarence a Bit of Good." ✓ Genuine reasoning Action: Find_relation [ m.09gs5j0 | book.book_character.appears_in_stories ] Info: result_mid_list: [ m.0dzx0p (Reggie Pepper) ] ✓ Real KB results returned Key Insight. This case study illustrates that grounded environment feedback is the decisive factor. Without it, KBQA-o1's MCTS search is "flying blind"-the policy model generates plausible-looking action sequences, but neither the policy nor the reward model ever observes actual KB execution results. This makes errors like wrong relation directions impossible to detect. KBQA-R1's multi-turn interaction paradigm enables genuine closed-loop reasoning that is both more accurate and dramatically more efficient.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><figDesc>expression1 = AND(expression2, expression1) expression2 = START('m.01fkfkhÕ) expression2 = JOIN('music.album_content_type.albums', expression2) Q:Music as a Weapon II and Chobits Character Song Collection share what content type between albums? KB To determine the shared content type between Music as a Weapon II and Chobits Character Song Collection, I will first find the content types associated with Chobits Character Song Collection. Find_relation [ m.01g1mj3 | music.album_content_type.albums ]</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Think</head><figDesc>Result：[ m.02jbfk (Compilation album), m.0l14gg (Soundtrack) ] expression1 = START('m.01g1mj3') expression1 = JOIN('music.album_content_type.albumsÕ, expression1) Information Action KB The content types associated with Chobits Character Song Collection are Compilation album and Soundtrack. Next, I will find the content types associated with Music as a Weapon II. Find_relation [ m.01fkfkh | music.album_content_type.albums ]</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Think</head><figDesc>Result： [ m.02jbfk (Compilation album), m.0l14g2 (Live Album) ] Information Action KB The content types associated with Music as a Weapon II are Compilation album and Live Album. To find the shared content type, I will merge the results from both albums. Merge [ expression2 | expression1 ]</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>ThinkFigure 1 .</head><label>1</label><figDesc>Figure 1. Overview of KBQA-R1. The agent iteratively executes a Think-Action-Information loop, selecting atomic actions and receiving KB feedback.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 2 .</head><label>2</label><figDesc>Figure 2. Two-stage training pipeline. Stage 1: Referenced Rejection Sampling generates trajectories conditioned on gold action sequences, filtered by correctness for SFT. Stage 2: GRPO optimizes the policy via outcome-based rewards from multi-turn KB rollouts.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 3 .</head><label>3</label><figDesc>Comprehensive performance comparison of KBQA-R1 with baseline methods using Llama-3.1-8B. paradigm, while GR-E2E first generates a preliminary logical form and then refines it with KB retrieval. (2) Step-bystep prompting methods: CoT-SbS and ToT-SbS are implemented by instantiating the CoT-based QueryAgent (Huang et al., 2024) and the ToT-based ToG framework (Sun et al., 2023) on Llama-3.1-8B, prompting the model to alternate between intermediate thoughts and KB queries.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>( a )</head><label>a</label><figDesc>Relation similarity score evolution during training. (b) Distribution shift of similarity scores: first step vs. last step.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 4 .</head><label>4</label><figDesc>Relation similarity analysis during RL.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 5 .</head><label>5</label><figDesc>Figure 5. Training reward curve on GrailQA during GRPO.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Step 2</head><label>2</label><figDesc>Think: I found that Reggie Pepper is a character in "Doing Clarence a Bit of Good." Next, I need to find out which short stories this character appears in. ✓Adapts based on resultsAction: Find_relation[ m.0dzx0p | book.short_story.characters ] Info: result_mid_list: [ m.09gs5hv (Helping Freddie), m.09gs5j0 (Doing Clarence a Bit of Good), m.09gs5hy (Rallying Round Old George), m.09gs5hr (Absent Treatment), m.010r9gwy (Disentangling Old Duggie), m.010rlht0 (The Test Case), m.010rlh9d (Concealed Art) ] ✓ Real KB results -7 entities Step 3 Think: I have a list of short stories that feature Reggie Pepper, including "Doing Clarence a Bit of Good." Now, I need to filter this list to only include stories that are of the type "short story" and not "Doing Clarence a Bit of Good" itself. ✓ Plans type constraint Action: Merge [ expression2 | book.short_story ] Info: result_mid_list: [ m.09gs5hv (Helping Freddie), m.09gs5j0 (Doing Clarence a Bit of Good), m.09gs5hy (Rallying Round Old George), m.09gs5hr (Absent Treatment), m.010r9gwy (Disentangling Old Duggie), m.010rlht0 (The Test Case), m.010rlh9d (Concealed Art) ] ✓ Type verified Step 4 (Final) Think: The merged results now confirm all short stories featuring Reggie Pepper. Since the question asks for stories that share a character with "Doing Clarence a Bit of Good," I should exclude the story itself from the final answer and report the remaining six. ✓ Reasons about exclusion Answer: m.09gs5hv m.09gs5hy m.09gs5hr m.010r9gwy m.010rlht0 m.010rlh9d pred_answer: 6 MIDs (all correct) ✓ Correct (F1 = 1.0)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 3 .</head><label>3</label><figDesc>Performance on the dev set of GrailQA. The Bold and underlined numbers indicate the best and second-best performance.±0.5 85.5 ±0.4 76.3 ±0.6 77.6 ±0.5 68.1 ±0.8 76.1 ±0.4 71.9 ±0.3 78.5 ±1.0 ±0.6 91.5 ±0.4 78.0 ±0.4 82.5 ±0.7 83.6 ±0.3 85.2 ±0.4 83.9 ±0.4 86.1 ±0.6</figDesc><table><row><cell>Method</cell><cell>LLM</cell><cell>I.I.D</cell><cell></cell><cell cols="2">Compositional</cell><cell cols="2">Zero-shot</cell><cell cols="2">Overall</cell></row><row><cell></cell><cell></cell><cell>EM</cell><cell>F1</cell><cell>EM</cell><cell>F1</cell><cell>EM</cell><cell>F1</cell><cell>EM</cell><cell>F1</cell></row><row><cell></cell><cell></cell><cell cols="3">Prompting Methods</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>KB-BINDER (Li et al., 2023)</cell><cell>Codex-davinci-002</cell><cell>40.0</cell><cell>43.3</cell><cell>33.9</cell><cell>36.6</cell><cell>40.1</cell><cell>44.0</cell><cell>38.7</cell><cell>42.2</cell></row><row><cell>KB-Coder (Nie et al., 2024)</cell><cell>GPT-3.5-turbo</cell><cell>40.6</cell><cell>45.5</cell><cell>34.5</cell><cell>38.6</cell><cell>42.2</cell><cell>47.3</cell><cell>40.1</cell><cell>44.9</cell></row><row><cell cols="2">ARG-KBQA (Tian et al., 2024) GPT-3.5-turbo</cell><cell>46.6</cell><cell>51.5</cell><cell>36.4</cell><cell>41.8</cell><cell>46.6</cell><cell>52.1</cell><cell>43.8</cell><cell>48.5</cell></row><row><cell></cell><cell></cell><cell cols="3">Fine-tune-based Methods</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>RnG-KBQA (Ye et al., 2022)</cell><cell>T5-large</cell><cell>86.7</cell><cell>89.0</cell><cell>61.7</cell><cell>68.9</cell><cell>68.8</cell><cell>74.7</cell><cell>69.5</cell><cell>76.9</cell></row><row><cell>DecAF (Yu et al., 2022)</cell><cell>T5-large</cell><cell>88.7</cell><cell>92.4</cell><cell>71.5</cell><cell>79.8</cell><cell>65.9</cell><cell>77.3</cell><cell>72.5</cell><cell>81.4</cell></row><row><cell>TIARA (Shu et al., 2022)</cell><cell>T5-large</cell><cell>88.4</cell><cell>91.2</cell><cell>66.4</cell><cell>74.8</cell><cell>73.3</cell><cell>80.7</cell><cell>75.3</cell><cell>81.9</cell></row><row><cell cols="3">KBQA-o1 (Luo et al., 2025c) 77.8 KBQA-R1 Llama-3.1-8B Llama-3.1-8B 90.0 Improv. over KBQA-o1 +12.8%</cell><cell>+7.0%</cell><cell>+1.7%</cell><cell>+6.3%</cell><cell>+15.5%</cell><cell>+9.1%</cell><cell>+12.0%</cell><cell>+7.6%</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 6 .</head><label>6</label><figDesc>Component ablation study of KBQA-R1. We report Overall F1 (%) on three datasets.</figDesc><table><row><cell>Variant</cell><cell>WebQSP</cell><cell>GraphQ</cell><cell>GrailQA</cell></row><row><cell>Full KBQA-R1 (ours)</cell><cell>83.4</cell><cell>53.8</cell><cell>86.1</cell></row><row><cell>Agent Architecture Ablations</cell><cell></cell><cell></cell><cell></cell></row><row><cell>w/o RRCG (no relation retrieval &amp; gating)</cell><cell>64.1</cell><cell>37.7</cell><cell>67.1</cell></row><row><cell>w/o Multi-turn (single-turn action generation)</cell><cell>63.2</cell><cell>34.1</cell><cell>49.8</cell></row><row><cell>Training Strategy Ablations</cell><cell></cell><cell></cell><cell></cell></row><row><cell>w/o RRS (standard rejection sampling)</cell><cell>78.9</cell><cell>49.2</cell><cell>78.3</cell></row><row><cell>w/o SFT warm-start (RL from scratch)</cell><cell>75.2</cell><cell>47.3</cell><cell>75.1</cell></row><row><cell>w/o GRPO (only SFT)</cell><cell>72.1</cell><cell>47.8</cell><cell>80.2</cell></row><row><cell>Reward Design Ablations</cell><cell></cell><cell></cell><cell></cell></row><row><cell>w/o Format Reward (r format = 0)</cell><cell>81.1</cell><cell>51.6</cell><cell>84.2</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 7 .</head><label>7</label><figDesc>Standard Rejection Sampling (RS) vs. Referenced RS (RRS) across three datasets. "RS F1 (pre-SFT)" is the average F1 of raw RS trajectories before fine-tuning. "Filtered SFT Samples" counts trajectories with F1 &gt; 0.9 and rformat = 0.1 used for SFT. "SFT Init F1" reports dev-set F1 after SFT initialized from the corresponding RS data.</figDesc><table><row><cell>Dataset</cell><cell>Method</cell><cell>RS F1 (pre-SFT)</cell><cell># Accepted / Total</cell><cell>Acceptance (%)</cell><cell>SFT Init F1</cell></row><row><cell>GrailQA</cell><cell>Standard RS Referenced RS (RRS)</cell><cell>54.2 70.2</cell><cell>17248 / 43851 29384 / 43851</cell><cell>39.3 67.0</cell><cell>73.8 80.2</cell></row><row><cell>WebQSP</cell><cell>Standard RS Referenced RS (RRS)</cell><cell>49.1 62.5</cell><cell>1120 / 2929 1505 / 2929</cell><cell>38.3 51.4</cell><cell>65.8 72.1</cell></row><row><cell>GraphQ</cell><cell>Standard RS Referenced RS (RRS)</cell><cell>48.1 73.1</cell><cell>986 / 2332 1562 / 2332</cell><cell>42.3 67.0</cell><cell>41.1 47.8</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 8 .</head><label>8</label><figDesc>Comparison with frontier generalist agents on the 500-query subset. "Harness" uses the KBQA-R1 action space and feedback format with an off-the-shelf model, while KBQA-R1 uses the learned RL policy.</figDesc><table><row><cell cols="2">Group</cell><cell></cell><cell>Model</cell><cell cols="5">WebQSP GrailQA GraphQ Avg. Turns Tokens In / Out</cell></row><row><cell cols="3">SPARQL ReAct</cell><cell>GLM-5</cell><cell>48.6</cell><cell>63.8</cell><cell>37.9</cell><cell>52.5</cell><cell>7.10</cell><cell>10,792 / 1,952</cell></row><row><cell cols="3">SPARQL ReAct</cell><cell>Kimi-K2.5</cell><cell>49.1</cell><cell>62.3</cell><cell>36.5</cell><cell>51.9</cell><cell>6.05</cell><cell>7,583 / 4,615</cell></row><row><cell cols="3">SPARQL ReAct</cell><cell>gpt-5.3-codex</cell><cell>54.5</cell><cell>65.6</cell><cell>42.7</cell><cell>56.6</cell><cell>5.20</cell><cell>4,994 / 454</cell></row><row><cell cols="3">SPARQL ReAct</cell><cell>Claude 4.6 Sonnet</cell><cell>54.2</cell><cell>65.4</cell><cell>36.4</cell><cell>55.1</cell><cell>5.79</cell><cell>8,546 / 824</cell></row><row><cell cols="4">KBQA-R1 Harness GLM-5</cell><cell>64.5</cell><cell>70.2</cell><cell>48.5</cell><cell>63.6</cell><cell>8.43</cell><cell>14,235 / 977</cell></row><row><cell cols="4">KBQA-R1 Harness Kimi-K2.5</cell><cell>73.3</cell><cell>73.9</cell><cell>53.3</cell><cell>69.5</cell><cell>7.24</cell><cell>12,880 / 2,928</cell></row><row><cell cols="4">KBQA-R1 Harness gpt-5.3-codex</cell><cell>71.1</cell><cell>73.5</cell><cell>51.5</cell><cell>68.1</cell><cell>3.43</cell><cell>4,537 / 374</cell></row><row><cell cols="4">KBQA-R1 Harness Claude 4.6 Sonnet</cell><cell>76.7</cell><cell>76.3</cell><cell>51.8</cell><cell>71.6</cell><cell>5.45</cell><cell>15,325 / 2,959</cell></row><row><cell cols="3">KBQA-R1</cell><cell>Llama-3.1-8B</cell><cell>84.2</cell><cell>85.6</cell><cell>55.4</cell><cell>79.0</cell><cell>2.91</cell><cell>3,994 / 328</cell></row><row><cell>Similarity Score</cell><cell>0.94 0.96 0.98</cell><cell>Raw Data Smoothed (EMA)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell>0</cell><cell cols="2">20 40 60 80 Training Steps</cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 11 .</head><label>11</label><figDesc>Hits@1 (%) comparison with graph reasoning methods on GrailQA and WebQSP. ToG and PoG results are from<ref type="bibr" target="#b1">(Chen et al., 2024)</ref>.</figDesc><table><row><cell>Method</cell><cell>LLM</cell><cell>WebQSP</cell><cell></cell><cell cols="2">GrailQA</cell><cell></cell></row><row><cell></cell><cell></cell><cell cols="5">Overall I.I.D Comp. Zero-shot</cell></row><row><cell></cell><cell cols="4">Prompting KG-Augmented LLM w/GPT-3.5</cell><cell></cell><cell></cell></row><row><cell>ToG (Sun et al., 2023)</cell><cell>GPT-3.5</cell><cell>76.2</cell><cell>68.7</cell><cell>70.1</cell><cell>56.1</cell><cell>72.7</cell></row><row><cell cols="2">PoG (Chen et al., 2024) GPT-3.5</cell><cell>82.0</cell><cell>76.5</cell><cell>76.3</cell><cell>62.1</cell><cell>81.7</cell></row><row><cell></cell><cell cols="4">Prompting KG-Augmented LLM w/GPT-4</cell><cell></cell><cell></cell></row><row><cell>ToG (Sun et al., 2023)</cell><cell>GPT-4</cell><cell>82.6</cell><cell>81.4</cell><cell>79.4</cell><cell>67.3</cell><cell>86.5</cell></row><row><cell cols="2">PoG (Chen et al., 2024) GPT-4</cell><cell>87.3</cell><cell>84.7</cell><cell>87.9</cell><cell>69.7</cell><cell>88.6</cell></row><row><cell></cell><cell cols="2">Fine-tuned Methods</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>KBQA-R1 (Ours)</cell><cell>Llama-3.1-8B</cell><cell>88.2</cell><cell>86.2</cell><cell>91.2</cell><cell>80.1</cell><cell>86.7</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 12 .</head><label>12</label><figDesc>Comparison with a Search-R1-style RL baseline adapted to the same action space and executor..10. Case Study: KBQA-o1 vs. KBQA-R1We compare KBQA-o1 and KBQA-R1 on the same GrailQA question to illustrate the impact of grounded environment feedback.</figDesc><table><row><cell>Method</cell><cell>Warm-start / Gating</cell><cell>WebQSP</cell><cell>GraphQ</cell><cell>GrailQA</cell></row><row><cell>Search-R1 adapted</cell><cell>Standard RS, no RRCG</cell><cell>57.0</cell><cell>30.3</cell><cell>54.1</cell></row><row><cell>KBQA-R1</cell><cell>RRS + RRCG</cell><cell>83.4</cell><cell>53.8</cell><cell>86.1</cell></row></table><note><p>B</p></note></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgements</head><p>This work was supported by the <rs type="funder">Beijing Natural Science Foundation</rs> (<rs type="grantNumber">L252033</rs>) and the <rs type="funder">National Natural Science Foundation of China</rs> (<rs type="grantNumber">62576339</rs>, <rs type="grantNumber">92570204</rs>).</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_5XxRFVz">
+					<idno type="grant-number">L252033</idno>
+				</org>
+				<org type="funding" xml:id="_eRmD3UT">
+					<idno type="grant-number">62576339</idno>
+				</org>
+				<org type="funding" xml:id="_k9dneqM">
+					<idno type="grant-number">92570204</idno>
+				</org>
+			</listOrg>
+
+			<div type="availability">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Code and project page are available at <ref type="url" target="https://github.com/sunxin000/KBQA-R1">https://github.  com/sunxin000/KBQA-R1</ref> and <ref type="url" target="https://sunxin000.github.io/KBQA-R1/">https://  sunxin000.github.io/KBQA-R1/</ref>.</p></div>
+			</div>
+
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3. Training Hyperparameters and Infrastructure</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3.1. GRPO CONFIGURATION</head><p>We adopt the GRPO algorithm <ref type="bibr" target="#b34">(Shao et al., 2024)</ref> with the following hyperparameters: (1) Rollout sampling: n = 5 responses per prompt with temperature τ = 1.0 and top-p = 1.0; (2) Clipping: asymmetric clip ratios ϵ low = 0.2, ϵ high = 0.28 following DAPO <ref type="bibr" target="#b54">(Yu et al., 2025)</ref>; (3) KL regularization: KL loss coefficient β = 0.001; (4) Reward weights and gating: we set λ outcome = 1.0 and λ format = 0.1, and use RRCG confidence thresholds τ high = 0.95 and τ low = 0.3 across all datasets;</p><p>(5) Batch configuration: train batch size 256, PPO mini-batch size 128, with dynamic micro-batching enabled.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3.2. INFRASTRUCTURE</head><p>Training is conducted on 8×NVIDIA A100-80GB GPUs with FSDP <ref type="bibr" target="#b60">(Zhao et al., 2023)</ref> for model sharding. The Freebase KB backend uses Virtuoso <ref type="bibr" target="#b2">(Erling &amp; Mikhailov, 2009)</ref> with ODBC connection pooling (pool size 48, query timeout 600s). Table <ref type="table">10</ref>. Average number of LLM forward calls per question. ToG and PoG results are from <ref type="bibr" target="#b1">(Chen et al., 2024)</ref>.</p><p>Dataset Method Avg. LLM calls ↓ WebQSP ToG (GPT-4) 15.9 PoG (GPT-4) 9.0 KBQA-o1 (Llama-3.1-8B) 28.8 KBQA-R1 (Llama-3.1-8B) 2.65 GrailQA ToG (GPT-4) 11.1 PoG (GPT-4) 6.5 KBQA-o1 (Llama-3.1-8B) 32.3 KBQA-R1 (Llama-3.1-8B) 3.08 GraphQ KBQA-o1 (Llama-3.1-8B) 78.0 KBQA-R1 (Llama-3.1-8B) 3.16</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.4. LLM Call Efficiency</head><p>To quantify the computational overhead between KBQA-R1 and existing methods, we compare the number of LLM forward calls required during inference. Table <ref type="table">10</ref> reports average calls per question on 200 randomly sampled examples for each dataset.</p><p>Comparison with MCTS-based Methods. KBQA-o1 performs many LLM calls per query and additionally invokes separate policy and reward models, leading to substantially more LLM evaluations. In contrast, KBQA-R1 uses a single GRPO-trained policy without test-time search, reducing LLM calls by over 80% while achieving higher accuracy. In a 8-A100 GPU setup, KBQA-R1 processes about 155.6 questions per minute on GrailQA, compared to only 5.9 questions per minute for KBQA-o1.</p><p>Comparison with GPT-4 Prompting Methods. We further compare with state-of-the-art prompting-based methods ToG <ref type="bibr" target="#b39">(Sun et al., 2023)</ref> and PoG <ref type="bibr" target="#b1">(Chen et al., 2024)</ref> that leverage GPT-4 for knowledge graph reasoning. As shown in </p><formula xml:id="formula_4">for each prompt x in batch do 19: Generate n trajectories {y i } n i=1 ∼ π θ (•|x) using E 20: Compute rewards {R i } n i=1 using composite reward R 21: Compute advantages { Âi } n i=1 where Âi = R i -1 n n j=1 R j 22:</formula><p>end for 23:</p><p>Update π θ by maximizing: J GRPO = E[min(r t Ât , clip(r t , 1-ϵ, 1+ϵ) Ât )] -βD KL 24: end for 25: return π θ B.6. Training Dynamics Figure <ref type="figure">5</ref> reports the training reward curve during GRPO on GrailQA. The rewards mean curves shows a clear upward trend as training progresses, and stabilizes toward the end of training, indicating policy convergence. The reward signal, which combines outcome reward (F1-based) and format reward, shows a clear upward trajectory from approximately 0.89 to 1.00. The reward briefly decreases during steps 0-5, reflecting the exploration phase where the agent deviates from the SFT-initialized policy to discover potentially better strategies. Between steps 5-60, the reward increases rapidly, indicating successful policy refinement through the GRPO objective. After step 140, the reward stabilizes around 1.00 with reduced variance. Given the maximum achievable reward of 1.10 (1.0 for outcome and 0.1 for structure), this suggests that the policy has converged to a near-optimal state. B.7. Comparison with SOTA Graph Reasoning Methods (Hits@1)</p><p>We additionally compare KBQA-R1 with prompting-based graph reasoning methods ToG <ref type="bibr" target="#b39">(Sun et al., 2023)</ref> and PoG <ref type="bibr" target="#b1">(Chen et al., 2024)</ref> using the Hits@1 metric, which measures whether the top-1 predicted answer matches the gold answer. As shown in Table <ref type="table">11</ref>, we report results on GrailQA and WebQSP following the experimental setup in <ref type="bibr" target="#b1">(Chen et al., 2024)</ref>. Note that ToG and PoG use Hits@1 as their primary metric, which differs from the F1 metric used in our main experiments. As Algorithm 2 KBQA-R1 Multi-Turn Rollout Require: Question q, policy model π θ , executor E, retrieval R, thresholds (τ low , τ high ), max turns T Ensure: Answer, trajectory 1: Initialize context C 0 from template(q); function list F ← ∅; t ← 0 2: while t &lt; T do</p><p>3: Generate continuation y t with π θ until termination token 4: if &lt;/answer&gt; in y t then 5: Extract Â; break 6: end if 7: Parse actions A t = {a (1) , . . . , a (m) } from &lt;action&gt; 8: for i = 1 to m do 9: if action contains relation parameter then 10: Retrieve via R; let r best , s best be top-1 11: if s best &lt; τ low then 12: Mark invalid; continue {Rejected} 13: else if s best &lt; τ high then 14: Flag uncertainty {Tentative} 15: end if 16: end if 17: if action is Find_relation then 18: Append JOIN(r best , expr/entity) to F 19: else if action is Merge then 20: Append AND(expr 1 , expr 2 ) to F 21: else if action is Compare then 22: Append CMP(mode, r best , expr) to F 23: else if action is Time_constraint then 24: Append TC(expr, r best , time) to F 25: else if action is Order then 26: Append ARG(mode, expr, r best ) to F 27: else if action is Count then 28: Append COUNT(expr) to F 29: end if 30: end for 31: Build S-Expression S t from F ; execute with E 32: Build &lt;information&gt; block with results 33:</p><p>Append to context C t+1 ; t ← t + 1 34: end while 35: return answer, trajectory shown in Table <ref type="table">11</ref>, KBQA-R1 achieves competitive or superior performance compared to GPT-4-based methods despite using a significantly smaller Llama-3.1-8B backbone. On WebQSP, KBQA-R1 achieves 88.2% Hits@1, outperforming PoG (GPT-4) by 0.9%. On GrailQA, KBQA-R1 demonstrates particularly strong performance on the I.I.D (91.2%) and Compositional (80.1%) settings, surpassing PoG (GPT-4) by 3.3% and 10.4% respectively. These results highlight the effectiveness of RL-based training: by learning precise knowledge graph navigation through environmental feedback, KBQA-R1 can match or exceed the reasoning capabilities of much larger commercial models while requiring substantially fewer LLM calls (see Table <ref type="table">10</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.8. Algorithm Pseudocode</head><p>We provide detailed pseudocode for two core components of KBQA-R1. Algorithm 1 presents the complete training recipe, which includes three phases: (1) Referenced Rejection Sampling (RRS) for generating high-quality warm-start data, (2) SFT warm-start to initialize the policy, and (3) GRPO-based reinforcement learning for policy optimization. Algorithm 2 describes the multi-turn rollout procedure during inference, detailing how the agent interacts with the knowledge base through action parsing, relation retrieval with confidence gating (RRCG), and S-Expression construction.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.9. Sample Interaction Trace</head><p>We provide a complete example of a KBQA-R1 agent interaction trace to illustrate the multi-turn reasoning process. The question is drawn from GrailQA. This example showcases four interaction turns, including an unsuccessful action attempt and subsequent error recovery, demonstrating the agent's ability to adapt its strategy based on environment feedback. We highlight four key modules: &lt;think&gt; (model reasoning), &lt;action&gt; (KB queries), &lt;information&gt; (environment feedback), and &lt;answer&gt; (final output). The agent achieves F1 = 1.0 on this example.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>PROMPT</head><p>You are an expert assistant for querying the Freebase knowledge base using structured reasoning actions. Answer the given question about Freebase knowledge base. You must conduct reasoning inside &lt;think&gt;...&lt;/think&gt; first every time you get new information. After reasoning, provide structured actions inside &lt;action&gt;...&lt;/action&gt; tags. The system will return query results between &lt;information&gt;...&lt;/information&gt;. When ready, provide the answer inside &lt;answer&gt;...&lt;/answer&gt; using MIDs or literal values.</p><p>Available Actions: Find_relation, Merge, Order, Compare, TIME_Constraint, Count Topic Entities: [ 'Doing Clarence a Bit of Good' (m.09gs5j0) ] Question: What short story has a character who also is in Doing Clarence a Bit of Good?</p><p>AGENT -Turn 1 &lt;think&gt; To find the short story that shares a character with "Doing Clarence a Bit of Good," I first need to identify the characters that appear in "Doing Clarence a Bit</p><p>of Good." &lt;/think&gt; &lt;action&gt; Find_relation [ m.09gs5j0 | book.book_character.character_appearing ] &lt;/action&gt; ENVIRONMENT FEEDBACK &lt;information&gt; functions: expression1 = START('m.09gs5j0') expression1 = JOIN('book.book_character.appears_in_stories', expression1) result_mid_list: [ m.0dzx0p (Reggie Pepper) ] &lt;/information&gt; AGENT -Turn 2 &lt;think&gt; I found that Reggie Pepper is a character in "Doing Clarence a Bit of Good." Next, I need to find out which short stories this character appears in. &lt;/think&gt; &lt;action&gt; Find_relation [ m.0dzx0p | book.short_story.characters ] &lt;/action&gt; ENVIRONMENT FEEDBACK &lt;information&gt; functions: expression1 = START('m.09gs5j0') expression1 = JOIN('book.book_character.appears_in_stories', expression1) expression2 = START('m.0dzx0p') expression2 = JOIN('book.short_story.characters', expression2) result_mid_list: [ m. </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>&lt;think&gt;</head><figDesc>09gs5hv (Helping Freddie), m.09gs5j0 (Doing Clarence a Bit of Good), m.09gs5hy (Rallying Round Old George), m.09gs5hr (Absent Treatment), m.010r9gwy (Disentangling Old Duggie), m.010rlht0 (The Test Case), m.010rlh9d (Concealed Art) ] a list of short stories that feature Reggie Pepper, including "Doing Clarence a Bit of Good." Now, I need to filter this list to only include stories that are of the type "short story" and not "Doing Clarence a Bit of Good" itself. &lt;/think&gt; &lt;action&gt; Merge [ expression2 | book.short_story ] &lt;/action&gt; ENVIRONMENT FEEDBACK &lt;information&gt; functions: ... (previous expressions omitted) expression3 = START('book.short_story') expression2 = AND(expression2, expression3) result_mid_list: [ m.09gs5hv (Helping Freddie), m.09gs5j0 (Doing Clarence a Bit of Good), m.09gs5hy (Rallying Round Old George), m.09gs5hr (Absent Treatment), m.010r9gwy (Disentangling Old Duggie), m.010rlht0 (The Test Case), m.010rlh9d (Concealed Art) ]The merged results now confirm all short stories featuring Reggie Pepper. Since the question asks for stories that share a character with "Doing Clarence a Bit of Good," I should exclude the story itself from the final answer and report the remaining six. &lt;/think&gt; &lt;answer&gt; m.09gs5hv m.09gs5hy m.09gs5hr m.010r9gwy m.010rlht0 m.010rlh9d &lt;/answer&gt; Figure6. Sample KBQA-R1 interaction trace on a GrailQA question. The trace illustrates multi-turn reasoning with executable actions, environment feedback, error recovery, and final answer generation.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 9 .</head><label>9</label><figDesc>Hyperparameters for KBQA-R1 training and inference.</figDesc><table><row><cell>Category</cell><cell>Hyperparameter</cell><cell>Value</cell></row><row><cell></cell><cell>Rollout samples per prompt (n)</cell><cell>5</cell></row><row><cell></cell><cell>Temperature (τ )</cell><cell>1.0</cell></row><row><cell>GRPO</cell><cell>Top-p</cell><cell>1.0</cell></row><row><cell></cell><cell>Clip ratio (low / high)</cell><cell>0.2 / 0.28</cell></row><row><cell></cell><cell>KL coefficient (β)</cell><cell>0.001</cell></row><row><cell>Reward</cell><cell>Outcome weight (λoutcome) Format weight (λ format )</cell><cell>1.0 0.1</cell></row><row><cell>RRCG</cell><cell>High threshold (τ high ) Low threshold (τ low )</cell><cell>0.95 0.3</cell></row><row><cell>Batch</cell><cell>Train batch size PPO mini-batch size</cell><cell>256 128</cell></row><row><cell></cell><cell>Max prompt length</cell><cell>14,336</cell></row><row><cell>Inference</cell><cell>Max response length</cell><cell>1,024</cell></row><row><cell></cell><cell>Max agent turns</cell><cell>6</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_8"><head>Table 13 .</head><label>13</label><figDesc>WebQSP Hits@1 comparison after transferring the executor backend from Freebase to Wikidata.</figDesc><table><row><cell>Method</cell><cell>LLM</cell><cell>KG Backend</cell><cell>Hits@1</cell></row><row><cell>ToG</cell><cell>GPT-3.5</cell><cell>Freebase</cell><cell>76.2</cell></row><row><cell>ToG</cell><cell>GPT-3.5</cell><cell>Wikidata</cell><cell>68.6</cell></row><row><cell>KBQA-R1</cell><cell>Llama-3.1-8B</cell><cell>Freebase</cell><cell>88.2</cell></row><row><cell>KBQA-R1</cell><cell>Llama-3.1-8B</cell><cell>Wikidata</cell><cell>77.3</cell></row><row><cell cols="2">Algorithm 1 RRS Warm-Start + GRPO Training Recipe</cell><cell></cell><cell></cell></row></table><note><p>Require: Base LLM π base , Training data D = {(q i , A i , S * i )}, Executor E, Reward threshold τ , Num rollouts n Ensure: Optimized policy π θ 1: // Phase 1: Referenced Rejection Sampling (RRS) 2: S RRS ← ∅ 3: for each (q, A, S * ) in D do 4: Extract ground-truth action sequence a * = (a * 1 , . . . , a * k ) from S * 5: // Run referenced rollout with ground-truth actions as guidance 6: Generate trajectory y conditioned on a * using E 7: if R(y) ≥ τ and valid S-Expression then 8: Strip reference hints from y; add to S RRS 9: end if 10: end for 11: // Phase 2: SFT Warm-Start 12: π θ0 ← SFT(π base , S RRS ) 13: // Phase 3: Reinforcement Learning (GRPO) 14: Initialize policy π θ ← π θ0 15: Initialize reference policy π ref ← π θ0 16: for RL iteration k = 1, . . . , N do 17: Sample batch of prompts {x} from D 18:</p></note></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Freebase: a collaboratively created graph database for structuring human knowledge</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Bollacker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Evans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Paritosh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Sturge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Taylor</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/1376616.1376746</idno>
+		<ptr target="https://doi.org/10.1145/1376616.1376746" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2008 ACM SIGMOD International Conference on Management of Data, SIGMOD &apos;08</title>
+		<meeting>the 2008 ACM SIGMOD International Conference on Management of Data, SIGMOD &apos;08<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+			<biblScope unit="page" from="1247" to="1250" />
+		</imprint>
+	</monogr>
+	<note>Association for Computing Machinery. ISBN 9781605581026</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Plan-on-graph: Self-correcting adaptive planning of large language model on knowledge graphs</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Tong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Xiong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 38th Conference on Neural Information Processing Systems</title>
+		<meeting>the 38th Conference on Neural Information Processing Systems</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Virtuoso: RDF support in a native RDBMS</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Erling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Mikhailov</surname></persName>
+		</author>
+		<ptr target="https://dblp.org/rec/books/sp/virgilio09/ErlingM09" />
+	</analytic>
+	<monogr>
+		<title level="m">Semantic Web Information Management: A Model-Based Perspective</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="501" to="519" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Dynamic program induction and contextualized encoding for knowledge base question answering</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Arcaneqa ; Calzolari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C.-R</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Pustejovsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wanner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K.-S</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P.-M</forename><surname>Ryu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H.-H</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Donatelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kurohashi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Paggio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Hahm</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">K</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Santus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Bond</surname></persName>
+		</author>
+		<ptr target="https://aclanthology.org/2022.coling-1.148/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 29th International Conference on Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">S.-H</forename><surname>Na</surname></persName>
+		</editor>
+		<meeting>the 29th International Conference on Computational Linguistics<address><addrLine>Gyeongju, Republic of Korea</addrLine></address></meeting>
+		<imprint>
+			<publisher>International Committee on Computational Linguistics</publisher>
+			<date type="published" when="2022-10">October 2022</date>
+			<biblScope unit="page" from="1718" to="1731" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Three levels of generalization for question answering on knowledge bases</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kase</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Vanni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Sadler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Beyond I.I.D</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3442381.3449992</idno>
+		<ptr target="https://doi.org/10.1145/3442381.3449992" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Web Conference 2021, WWW &apos;21</title>
+		<meeting>the Web Conference 2021, WWW &apos;21<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="3477" to="3488" />
+		</imprint>
+	</monogr>
+	<note>Association for Computing Machinery</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Don&apos;t generate, discriminate: A proposal for grounding language models to real-world environments</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Su</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 61st annual meeting of the association for computational linguistics</title>
+		<meeting>the 61st annual meeting of the association for computational linguistics</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="4928" to="4949" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Don&apos;t generate, discriminate: A proposal for grounding language models to realworld environments</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Su</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.acl-long.270</idno>
+		<ptr target="https://aclanthology.org/2023.acl-long.270" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Rogers</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Boyd-Graber</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">N</forename><surname>Okazaki</surname></persName>
+		</editor>
+		<meeting>the 61st Annual Meeting of the Association for Computational Linguistics<address><addrLine>Toronto, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023-07">July 2023</date>
+			<biblScope unit="page" from="4928" to="4949" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Reasoning with language model is planning with world model</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Hu</surname></persName>
+		</author>
+		<idno>doi: 10.18653</idno>
+		<ptr target="1/2023.emnlp-main" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing</title>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Bouamor</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Pino</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Bali</surname></persName>
+		</editor>
+		<meeting>the 2023 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023-12">December 2023</date>
+			<biblScope unit="page" from="8154" to="8173" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<ptr target="https://aclanthology.org/2023.emnlp-main.507" />
+		<title level="m">URL</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Improving multi-hop knowledge base question answering by learning intermediate supervision signals</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">X</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-R</forename><surname>Wen</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3437963.3441753</idno>
+		<ptr target="https://doi.org/10.1145/3437963.3441753" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 14th ACM International Conference on Web Search and Data Mining, WSDM &apos;21</title>
+		<meeting>the 14th ACM International Conference on Web Search and Data Mining, WSDM &apos;21<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="553" to="561" />
+		</imprint>
+	</monogr>
+	<note>Association for Computing Machinery</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">G-retriever: Retrievalaugmented generation for textual graph understanding and question answering</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">V</forename><surname>Chawla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Laurent</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lecun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Bresson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Hooi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">37</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">QueryAgent: A reliable and efficient reasoning framework with environmental feedback based self-correction</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Qu</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.acl-long.274</idno>
+		<ptr target="https://aclanthology.org/2024.acl-long.274" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">L.-W</forename><surname>Ku</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Martins</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">V</forename><surname>Srikumar</surname></persName>
+		</editor>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics<address><addrLine>Bangkok, Thailand</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024-08">August 2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="5014" to="5035" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">A general framework for large language model to reason over structured data</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-R</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Structgpt</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.emnlp-main.574</idno>
+		<ptr target="https://aclanthology.org/2023.emnlp-main.574" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing</title>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Bouamor</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Pino</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Bali</surname></persName>
+		</editor>
+		<meeting>the 2023 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023-12">December 2023</date>
+			<biblScope unit="page" from="9237" to="9251" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Kg-agent: An efficient autonomous agent framework for complex reasoning over knowledge graph</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">X</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-R</forename><surname>Wen</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2402.11163" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Search-r1: Training llms to reason and leverage search engines with reinforcement learning</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yoon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Arik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zamani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Han</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.09516</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Reinforcement learning: A survey</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">P</forename><surname>Kaelbling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">L</forename><surname>Littman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">W</forename><surname>Moore</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of artificial intelligence research</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="page" from="237" to="285" />
+			<date type="published" when="1996">1996</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Dense passage retrieval for open-domain question answering</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Karpukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Oguz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">S</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Edunov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-T</forename><surname>Yih</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="6769" to="6781" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Retrieval-augmented generation for knowledge-intensive nlp tasks</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Piktus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Karpukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Küttler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-T</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Rocktäschel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Riedel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kiela</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Larochelle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ranzato</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Hadsell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Balcan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Pdf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Glass</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Meng</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2410.18415</idno>
+		<idno type="arXiv">arXiv:2410.18415</idno>
+		<ptr target="https://arxiv.org/abs/2410.18415" />
+	</analytic>
+	<monogr>
+		<title level="m">Decoding on graphs: Faithful and sound reasoning on knowledge graphs through generation of well-formed chains</title>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Lin</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2020">2020. 2024</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="9459" to="9474" />
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>b493230205f780e1bc26945df7481e5-Paper Advances in Neural Information Processing Systems</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Simple is effective: The roles of graphs and large language models in knowledge-graphbased retrieval-augmented generation</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Miao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2410.20724</idno>
+		<idno type="arXiv">arXiv:2410.20724</idno>
+		<idno>doi: 10.18653/v1/2023.acl-long.385</idno>
+		<ptr target="https://aclanthology.org/2023.acl-long.385" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Rogers</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Boyd-Graber</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">N</forename><surname>Okazaki</surname></persName>
+		</editor>
+		<meeting>the 61st Annual Meeting of the Association for Computational Linguistics<address><addrLine>Toronto, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023">2024. July 2023</date>
+			<biblScope unit="page" from="6966" to="6980" />
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>Few-shot in-context learning on knowledge base question answering</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">X</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Dou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.05366</idno>
+		<title level="m">Search-o1: Agentic search-enhanced large reasoning models</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">ChatKBQA: A generate-then-retrieve framework for knowledge base question answering with fine-tuned large language models</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Luu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">T</forename></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.findings-acl.122</idno>
+		<ptr target="https://aclanthology.org/2024.findings-acl.122" />
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics ACL 2024</title>
+		<editor>
+			<persName><forename type="first">L.-W</forename><surname>Ku</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Martins</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">V</forename><surname>Srikumar</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Bangkok, Thailand</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024-08">August 2024</date>
+			<biblScope unit="page" from="2039" to="2056" />
+		</imprint>
+	</monogr>
+	<note>and virtual meeting</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Graphr1: Towards agentic graphrag framework via end-to-end reinforcement learning</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Kuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">A</forename><surname>Tuan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.21892</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Hypergraphrag: Retrieval-augmented generation via hypergraph-structured knowledge representation</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Kuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.21322</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Kbqa-o1: Agentic knowledge base question answering with monte carlo tree search</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">A</forename><surname>Tuan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.18922</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">L</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y.-F</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Haffari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Pan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.01061</idno>
+		<title level="m">Reasoning on graphs: Faithful and interpretable large language model reasoning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Think-on-graph 2.0: Deep and faithful large language model reasoning with knowledge-guided retrieval augmented generation</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ma</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">GNN-RAG: Graph neural retrieval for efficient large language model reasoning on knowledge graphs</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Mavromatis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Karypis</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2025.findings-acl</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: ACL 2025, KBQA-R1: Reinforcing Large Language Models for Knowledge Base Question Answering</title>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="16682" to="16699" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<ptr target="https://aclanthology.org/2025.findings-acl.856/" />
+		<title level="m">URL</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Code-style incontext learning for knowledge-based question answering</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="DOI">10.1609/aaai.v38i17.29848</idno>
+		<ptr target="https://ojs.aaai.org/index.php/AAAI/article/view/29848" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2024-03">Mar. 2024</date>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page" from="18833" to="18841" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Training language models to follow instructions with human feedback</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ray</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="27730" to="27744" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Semantics and complexity of sparql</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Pérez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Arenas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Gutierrez</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/1567274.1567278</idno>
+		<ptr target="https://doi.org/10.1145/1567274.1567278" />
+	</analytic>
+	<monogr>
+		<title level="j">ACM Trans. Database Syst</title>
+		<idno type="ISSN">0362-5915</idno>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<date type="published" when="2009-09">September 2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Improving multihop question answering over knowledge graphs using knowledge base embeddings</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Saxena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Tripathi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Talukdar</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2020.acl-main.412</idno>
+		<ptr target="https://aclanthology.org/2020.acl-main.412" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 58th Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<date type="published" when="2020-07">July 2020</date>
+			<biblScope unit="page" from="4498" to="4507" />
+		</imprint>
+	</monogr>
+	<note>Association for Computational Linguistics</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Toolformer: Language models can teach themselves to use tools</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Scialom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="68539" to="68551" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">High-dimensional continuous control using generalized advantage estimation</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Moritz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Jordan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1506.02438</idno>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.03300</idno>
+		<title level="m">Deepseekmath: Pushing the limits of mathematical reasoning in open language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Multi-grained retrieval for robust question answering over large knowledge base</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Karlsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C.-Y</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tiara</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2022.emnlp-main.555</idno>
+		<ptr target="https://aclanthology.org/2022.emnlp-main.555" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2022 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Abu Dhabi, United Arab Emirates</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2022-12">December 2022</date>
+			<biblScope unit="page" from="8108" to="8121" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">On generating characteristic-rich question sets for QA evaluation</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Sadler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Srivatsa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Gür</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Yan</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/D16-1054</idno>
+		<ptr target="https://aclanthology.org/D16-1054/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2016 Conference on Empirical Methods in Natural Language Processing</title>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Su</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Duh</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">X</forename><surname>Carreras</surname></persName>
+		</editor>
+		<meeting>the 2016 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Austin, Texas</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2016-11">November 2016</date>
+			<biblScope unit="page" from="562" to="572" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Open domain question answering using early fusion of knowledge bases and text</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Dhingra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zaheer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Mazaitis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Cohen</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/D18-1455</idno>
+		<ptr target="https://aclanthology.org/D18-1455" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2018 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Brussels, Belgium</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2018-11">October-November 2018</date>
+			<biblScope unit="page" from="4231" to="4242" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Open domain question answering with iterative retrieval on knowledge bases and text</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Bedrax-Weiss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Pullnet</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/D19-1242</idno>
+		<ptr target="https://aclanthology.org/D19-1242" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing and the 9th International Joint Conference on Natural Language Processing (EMNLP-IJCNLP)</title>
+		<meeting>the 2019 Conference on Empirical Methods in Natural Language Processing and the 9th International Joint Conference on Natural Language Processing (EMNLP-IJCNLP)<address><addrLine>Hong Kong, China</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2019-11">November 2019</date>
+			<biblScope unit="page" from="2380" to="2390" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H.-Y</forename><surname>Shum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Guo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.07697</idno>
+		<title level="m">Deep and responsible reasoning of large language model on knowledge graph</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Sparqa: Skeletonbased semantic parsing for complex questions over knowledge bases</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Qu</surname></persName>
+		</author>
+		<ptr target="https://ojs.aaai.org/index.php/AAAI/article/view/6426" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2020-04">Apr. 2020</date>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="5" to="6426" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Augmenting reasoning capabilities of LLMs with graph structures in knowledge base question answering</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<idno>doi: 10.18653</idno>
+		<ptr target="1/2024.findings-emnlp" />
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: EMNLP 2024</title>
+		<editor>
+			<persName><forename type="first">Y</forename><surname>Al-Onaizan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Bansal</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Y.-N</forename><surname>Chen</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Miami, Florida, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024-11">November 2024</date>
+			<biblScope unit="page" from="11967" to="11977" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<ptr target="https://aclanthology.org/2024.findings-emnlp.699/" />
+		<title level="m">URL</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">Interleaving retrieval with chain-of-thought reasoning for knowledge-intensive multi-step questions</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Trivedi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Balasubramanian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.10509</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Koyejo</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Mohamed</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Agarwal</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">D</forename><surname>Belgrave</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Cho</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Oh</surname></persName>
+		</editor>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24824" to="24837" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought enhanced knowledge rewriting for complex knowledge graph question answering</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Hua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">Z</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cotkr</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP</title>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="3501" to="3520" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Multiturn interactions for knowledge base question answering with large language models</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Interactive-Kbqa</surname></persName>
+		</author>
+		<idno>doi: 10.18653</idno>
+		<ptr target="1/2024.acl-long" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">L.-W</forename><surname>Ku</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Martins</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">V</forename><surname>Srikumar</surname></persName>
+		</editor>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics<address><addrLine>Bangkok, Thailand</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024-08">August 2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="10561" to="10582" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<ptr target="https://aclanthology.org/2024.acl-long.569" />
+		<title level="m">URL</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>React</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03629</idno>
+		<title level="m">Synergizing reasoning and acting in language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Tree of thoughts: Deliberate problem solving with large language models</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Oh</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">T</forename><surname>Naumann</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Globerson</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Saenko</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Hardt</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="11809" to="11822" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Generation augmented iterative ranking for knowledge base question answering</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yavuz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hashimoto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rng-Kbqa</surname></persName>
+		</author>
+		<idno>doi: 10.18653</idno>
+		<ptr target="1/2022.acl-long" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 60th Annual Meeting of the Association for Computational Linguistics<address><addrLine>Dublin, Ireland</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2022-05">May 2022</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="6032" to="6043" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<ptr target="https://aclanthology.org/2022.acl-long.417" />
+		<title level="m">URL</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">The value of semantic parse labeling for knowledge base question answering</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><surname>-T</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Richardson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Meek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-W</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Suh</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/P16-2033</idno>
+		<ptr target="https://aclanthology.org/P16-2033" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 54th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 54th Annual Meeting of the Association for Computational Linguistics<address><addrLine>Berlin, Germany</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2016-08">August 2016</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="201" to="206" />
+		</imprint>
+	</monogr>
+	<note>Short Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Ng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">H</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hakkani-Tur</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Decaf</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.00063</idno>
+		<title level="m">Joint decoding of answers and logical forms for question answering over knowledge bases</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<title level="m" type="main">Dapo: An opensource llm reinforcement learning system at scale</title>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.14476</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<title level="m" type="main">Scaling relationship on learning mathematical reasoning with large language models</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.01825</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<analytic>
+		<title level="a" type="main">Subgraph retrieval enhanced model for multi-hop knowledge base question answering</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2022.acl-long.396</idno>
+		<ptr target="https://aclanthology.org/2022.acl-long.396" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 60th Annual Meeting of the Association for Computational Linguistics<address><addrLine>Dublin, Ireland</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2022-05">May 2022</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="5773" to="5784" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<analytic>
+		<title level="a" type="main">A fine-to-coarse composition framework for knowledge base question answering</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Fc-Kbqa</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.acl-long.57</idno>
+		<ptr target="https://aclanthology.org/2023.acl-long.57" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 61st Annual Meeting of the Association for Computational Linguistics<address><addrLine>Toronto, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023-07">July 2023</date>
+			<biblScope unit="page" from="1002" to="1017" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<monogr>
+		<title level="m" type="main">Siren&apos;s song in the ai ocean: A survey on hallucination in large language models</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">T</forename><surname>Luu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Shi</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2309.01219" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<analytic>
+		<title level="a" type="main">Dense text retrieval based on pretrained language models: A survey</title>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">X</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-R</forename><surname>Wen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Information Systems</title>
+		<imprint>
+			<biblScope unit="volume">42</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="1" to="60" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<analytic>
+		<title level="a" type="main">Pytorch fsdp: Experiences on scaling fully sharded data parallel</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Varma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C.-C</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Shojanazeri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Shleifer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the VLDB Endowment</title>
+		<meeting>the VLDB Endowment</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">16</biblScope>
+			<biblScope unit="page" from="3848" to="3860" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<monogr>
+		<title level="m" type="main">Variational reasoning for language models</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Pang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2509.22637" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

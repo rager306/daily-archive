@@ -1,0 +1,1161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Fast ECoT: Efficient Embodied Chain-of-Thought via Thoughts Reuse</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-09-21">21 Sep 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Zhekai</forename><surname>Duan</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">University College London</orgName>
+								<address>
+									<country key="GB">UK</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yuan</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">University of Freiburg</orgName>
+								<address>
+									<country key="DE">Germany</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Shikai</forename><surname>Geng</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">University College London</orgName>
+								<address>
+									<country key="GB">UK</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Gaowen</forename><surname>Liu</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">Cisco Research</orgName>
+								<address>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Joschka</forename><surname>Boedecker</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">University of Freiburg</orgName>
+								<address>
+									<country key="DE">Germany</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Chris</forename><forename type="middle">Xiaoxuan</forename><surname>Lu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">University College London</orgName>
+								<address>
+									<country key="GB">UK</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Fast ECoT: Efficient Embodied Chain-of-Thought via Thoughts Reuse</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-09-21">21 Sep 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">B32FC0CB95156E76388139E0386557A5</idno>
+					<idno type="arXiv">arXiv:2506.07639v2[cs.RO]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:08+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Embodied Chain-of-Thought (ECoT) reasoning enhances vision-language-action (VLA) models by improving performance and interpretability through intermediate reasoning steps. However, its sequential autoregressive token generation introduces significant inference latency, limiting realtime deployment. We propose Fast ECoT, an inference-time acceleration method that exploits the structured and repetitive nature of ECoT to (1) cache and reuse high-level reasoning across timesteps and (2) parallelise the generation of modular reasoning steps. Additionally, we introduce an asynchronous scheduler that decouples reasoning from action decoding, further boosting responsiveness. Fast ECoT requires no model changes or additional training and easily integrates into existing VLA pipelines. Experiments in both simulation (LIBERO) and real-world robot tasks show up to a 7.5× reduction in latency with comparable or improved task success rate and reasoning faithfulness, bringing ECoT policies closer to practical real-time deployment. The code will be released upon acceptance.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I. INTRODUCTION</head><p>Large-scale vision-language-action (VLA) models have recently advanced robotic control by leveraging internetscale visual and textual knowledge <ref type="bibr" target="#b0">[1]</ref>, <ref type="bibr" target="#b1">[2]</ref>, <ref type="bibr" target="#b2">[3]</ref>. By combining pre-trained vision-language backbones with policy learning, these models exhibit impressive generalisation across open-world tasks. Among their most powerful capabilities is chain-of-thought (CoT) reasoning-the ability to iteratively generate intermediate reasoning steps before taking an action. In robotics, Embodied Chain-of-Thought (ECoT) <ref type="bibr" target="#b3">[4]</ref> extends this concept by enabling robots to "think out loud"-generating step-by-step textual reasoning traces (e.g., plans, subgoals, grounded visual inferences) at each time step, explicitly encoding the robot's thought process before emitting an action. This augmentation improves model interpretability and boosts success rates.</p><p>While ECoT offers these benefits, they come at a steep computational cost. Generating reasoning traces involves producing dozens of tokens autoregressively at each time step, resulting in sequential generation delays. As tasks grow more complex, the length of these reasoning chains increases, compounding the latency. In real-time robotic control, policies must react quickly to new observations; the inference overhead introduced by ECoT can slow the control loop to impractical speeds. In other words, the robot idles much of its time "thinking" rather than acting. Reducing this latency without sacrificing reasoning quality or task performance is essential for making ECoT viable in real-world deployments.</p><p>In this work, we address this inference bottleneck by proposing Fast ECoT, a novel method for accelerating embodied chain-of-thought reasoning through thought reuse and parallelised reasoning. Our key insight is that ECoT outputs structurally and exhibits a high degree of temporal locality: many reasoning steps-such as recalling the task goal or rechecking the state of a target object-are repeated across time steps. Rather than regenerating the full reasoning trace at every step, we identify and cache recurring reasoning segments, reusing them in subsequent time steps. This reduces redundant computation while preserving the structure and interpretability of the thought process.</p><p>Building on this reuse, we introduce a partial parallelisation strategy that transforms the traditionally sequential reasoning process into a batched one. By branching only when necessary to handle novel information, Fast ECoT enables multiple reasoning steps to be generated in parallel-substantially reducing inference latency. We further introduce an asynchronous scheduling mechanism that decouples action and reasoning generation. Recognising that robot actions evolve faster than reasoning traces, we prioritise fast action decoding while allowing reasoning traces to update asynchronously in the background. This design reduces latency without compromising decision quality, as the cached reasoning remains stable over short time horizons.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>II. RELATED WORK</head><p>Foundation Models for Robotic Manipulation. Recent advances in robot learning have produced large-scale generalist policies that excel at robotic manipulation tasks, by first pre-training on diverse multimodal datasets <ref type="bibr" target="#b0">[1]</ref>, <ref type="bibr" target="#b1">[2]</ref>, <ref type="bibr" target="#b2">[3]</ref>, and further fine-tuning on extensive robot-specific data collections <ref type="bibr" target="#b4">[5]</ref>, <ref type="bibr" target="#b5">[6]</ref>. Vision-language-action (VLA) architectures <ref type="bibr" target="#b0">[1]</ref>, <ref type="bibr" target="#b1">[2]</ref>, <ref type="bibr" target="#b2">[3]</ref>-which integrate vision-language models pretrained on internet-scale corpora <ref type="bibr" target="#b6">[7]</ref>, <ref type="bibr" target="#b7">[8]</ref>-unify perception, language, and control into a single transformer-based policy, achieving state-of-the-art performance.</p><p>Current VLA methods can be broadly categorized into two families: (1) monolithic models, which integrate perception, language, and action within either single-or dual-system architectures <ref type="bibr" target="#b0">[1]</ref>, <ref type="bibr" target="#b1">[2]</ref>, <ref type="bibr" target="#b2">[3]</ref>; and (2) hierarchical models, which explicitly decouple planning from policy execution by producing interpretable intermediate representations such as subtasks, keypoints, or programs <ref type="bibr" target="#b8">[9]</ref>, <ref type="bibr" target="#b9">[10]</ref>. While monolithic approaches highlight simplicity and end-to-end generalisation, hierarchical designs emphasise interpretability and modularity for long-horizon control.</p><p>Reasoning for Robotic Control. Chain-of-thought (CoT) prompting <ref type="bibr" target="#b10">[11]</ref>, <ref type="bibr" target="#b11">[12]</ref> has proven effective in enhancing large</p><p>Instruction 𝐼 ! Put the hammer in the basket Task 𝑟 " ! Place the hammer in the basket Plan 𝑟 # ! 1 Move to hammer 2 Grasp the hammer 3 Move to basket 4 Drop hammer into the basket Subtask Reasoning 𝑟 $ ! The hammer is the first object the robot needs to interact with. The robot is not yet close enough to close … Subtask 𝑟 % ! Move to the hammer Move Reasoning 𝑟 &amp; ! The hammer is below the robot, so it needs to move downward Move 𝑟 ' ! Move downward Gripper Position 𝑟 ( ! [164, 102] Visible objects 𝑟 ) ! Hammer [156, 166, 133 … Action 𝐴 ! [Δx, Δ𝜃, ΔGrip] language models by encouraging step-by-step reasoning.</p><p>Prior methods employ pre-trained language models for highlevel planning <ref type="bibr" target="#b12">[13]</ref>, <ref type="bibr" target="#b13">[14]</ref>, <ref type="bibr" target="#b14">[15]</ref>, often requiring separate low-level controllers for execution. Recent work begins to integrate explicit reasoning end-to-end: ECoT introduces embodied chain-of-thought traces grounded in observations <ref type="bibr" target="#b3">[4]</ref>, CoT-VLA predicts visual subgoal observations <ref type="bibr" target="#b15">[16]</ref>, and RAD <ref type="bibr" target="#b16">[17]</ref> and ThinkAct <ref type="bibr" target="#b17">[18]</ref> curate or align language reasoning for low-level action; however, these often rely on latent embeddings, generated sub-goals, or textual descriptions that are hard to precisely ground for manipulation. EMMAX <ref type="bibr" target="#b18">[19]</ref> embeds reasoning as subtasks and predicted gripper states (2D/3D), but leverages limited full-scene context. In contrast, MolmoAct <ref type="bibr" target="#b19">[20]</ref> performs "reasoning in space," explicitly grounding each step in the scene so it can be decoded and visualised on the image plane and within the 3D environment, improving explainability and action prediction. Orthogonal to reasoning design, efficiencyoriented VLAs such as Spec-VLA <ref type="bibr" target="#b20">[21]</ref> and FlashVLA <ref type="bibr" target="#b21">[22]</ref> boost responsiveness by replacing strictly sequential decoding with speculative, parallel, or retraining-free acceleration. Our work builds on the ECoT but targets its chief bottleneck-autoregressive latency-via a partially parallelised reasoning framework that preserves interpretability while substantially reducing inference time.</p><p>Inference Optimisation in Language and Multimodal Models. A wide range of techniques has been proposed to speed up inference in autoregressive models. Speculative decoding <ref type="bibr" target="#b22">[23]</ref>, <ref type="bibr" target="#b23">[24]</ref> accelerates generation by predicting tokens with a lightweight draft model and verifying them with the full model. Non-autoregressive and parallel decoding strategies have also been adopted, particularly in machine translation and, more recently, in robotic control <ref type="bibr" target="#b8">[9]</ref>, <ref type="bibr" target="#b24">[25]</ref>. Quantisation methods <ref type="bibr" target="#b25">[26]</ref>, <ref type="bibr" target="#b26">[27]</ref>, <ref type="bibr" target="#b27">[28]</ref> are widely used to reduce model precision for faster computation. In contrast to these methods, which typically operate at the token or model level, our work focuses on reasoning-level acceleration-breaking CoT generation into reusable, semantically meaningful segments that can be cached and executed in parallel. This approach is model-agnostic and does not rely on auxiliary models, fine-tuning, or precision reduction. By enabling efficient reuse and branching during reasoning, our method offers a lightweight and integrable solution for speeding up VLA policies with CoT reasoning, without compromising interpretability or task success.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>III. PRELIMINARIES</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Embodied Chain-of-Thought Reasoning (ECoT)</head><p>Vision-Language-Action (VLA) models <ref type="bibr" target="#b0">[1]</ref> build on large pre-trained vision-language models, fine-tuning them to map a natural language instruction I t and image observation O t directly to low-level robot actions A t via autoregressive token prediction at each control step t. Embodied Chain-of-Thought (ECoT) <ref type="bibr" target="#b3">[4]</ref> reasoning augments this reactive paradigm by supervising the model to generate a structured sequence of N intermediate reasoning steps R t = { r t i | i = 1, 2, . . . , N }, e.g. rephrased task, high-level plan, grounded sub-task, low-level move command, visual features, before emitting the final action A t . The reasoning steps are separated into high-and low-level steps (see Fig. <ref type="figure" target="#fig_0">1</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Continuous Batching</head><p>In autoregressive models, batching improves throughput, but static batching can be inefficient when sequence lengths vary-shorter sequences must wait for longer ones, wasting compute on padding. Continuous batching <ref type="bibr" target="#b28">[29]</ref> addresses this by dynamically replacing completed sequences with new ones, maintaining high GPU utilization and minimising idle time. This strategy, adopted by the work <ref type="bibr" target="#b29">[30]</ref>, <ref type="bibr" target="#b30">[31]</ref>, has shown 2-4× throughput gains in LLM serving.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>IV. METHOD</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Inference Characteristics of ECoT Reasoning</head><p>Unlike traditional chain-of-thought approaches in language modelling <ref type="bibr" target="#b32">[33]</ref>, <ref type="bibr" target="#b33">[34]</ref> and vision-language modelling <ref type="bibr" target="#b34">[35]</ref>, <ref type="bibr" target="#b35">[36]</ref>, which yield diverse, dynamic reasoning patterns that rarely recur, ECoT consistently follows a structured, periodically recurring workflow: planning, sub-task identification, motion reasoning, and visual-feature processing, before predicting subsequent robot actions. To analyse this behaviour quantitatively, we sample all episodes containing reasoning from the Bridge V2 dataset <ref type="bibr" target="#b4">[5]</ref> and compute the average and the standard deviation of the update ratio (percentage of reasoning content updated at the next time   <ref type="bibr" target="#b31">[32]</ref> and Bridge V2 <ref type="bibr" target="#b4">[5]</ref>. step) and token length for each reasoning step. As depicted in Fig. <ref type="figure" target="#fig_2">2a</ref>, higher-level reasoning components in ECoT (e.g., planning and subtask reasoning) remain relatively similar across multiple time steps within an episode <ref type="foot" target="#foot_0">1</ref> . For example, the planning module exhibits an average update ratio of only 8.4%, meaning 91.6% of its reasoning content is unchanged and can be reused in subsequent inference steps without autoregressive regeneration. Leveraging this temporal locality, we propose to cache ECoT reasoning for reuse in successive time steps, thus potentially enabling the parallel generation of each reasoning step. We observe a similar trend in the simulated environment, LIBERO-Goal <ref type="bibr" target="#b31">[32]</ref>: high-level reasoning updates rarely while low-level components refresh more frequently (see Fig. <ref type="figure" target="#fig_2">2</ref>); This consistency supports caching high-level reasoning and densely updating low-level content.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Parallelising Reasoning and Action Generation</head><p>Compared to the original ECoT-which generates the full reasoning sequence sequentially and autoregressively at every timestep (see Fig. <ref type="figure" target="#fig_3">3</ref> left)-our Fast ECoT reformulates each reasoning step r t n as a standalone generation task. For each step, we construct the input by combining the current observation O t , instruction I t , and the previously generated reasoning steps R t-1 = {r t-1 i | i = 1, 2, . . . , n-1} from the last timestep as prefix context. This allows all reasoning steps and the action at timestep t to be generated independently and in parallel, rather than waiting for preceding components to finish (see Fig. <ref type="figure" target="#fig_3">3</ref> </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>right).</head><p>While conceptually straightforward, this strategy introduces performance overhead. Since each reasoning module prepends a growing context of prior thoughts, the resulting input lengths vary significantly-early steps have short prompts, while later ones accumulate more history. Additionally, output lengths also differ across reasoning steps: lowlevel steps like gripper commands may require fewer than 20 tokens, while object-grounding reasoning can exceed 120 (see Fig. <ref type="figure" target="#fig_2">2b</ref>). Traditional static batching <ref type="bibr" target="#b28">[29]</ref> (see Fig. <ref type="figure" target="#fig_4">4</ref>) handles such variability by padding all sequences in a batch to match the longest, which leads to substantial inefficiency on modern accelerators. This results in wasted compute on padding tokens, poor GPU utilisation, and offsets the gains from parallel generation.</p><p>To address inefficiencies from padding, we adopt continuous batching <ref type="bibr" target="#b28">[29]</ref>, a dynamic scheduling strategy used in modern LLM serving engines <ref type="bibr" target="#b29">[30]</ref>, <ref type="bibr" target="#b30">[31]</ref>. Instead of padding all sequences to a fixed length, continuous batching maintains a queue where completed sequences are immediately replaced by new ones, allowing variable-length inputs to be processed efficiently. This minimises wasted computation on padding tokens, significantly improves GPU utilisation, and can reduce the total number of tokens processed by up to 6× (see Fig. <ref type="figure" target="#fig_4">4</ref>). We use vLLM <ref type="bibr" target="#b30">[31]</ref> as our inference backend, and the pseudocode of Fast ECoT is shown in Alg. 1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Asynchronous Reasoning and Action Updates</head><p>So far we formulate reasoning and action generation at each time step as batched requests that can be processed in parallel. However, reasoning traces typically span hundreds of tokens, while action decoding involves only a few (around 7) tokens. In a synchronised setup, this mismatch causes unnecessary latency: the agent must wait for all reasoning steps to complete before it can act (see Fig. <ref type="figure">6</ref>). Algorithm 1 Parallel Embodied Chain-of-Thought Require: Time step t, Instruction I t , Observation O t , Last reasoning steps R</p><p>t-1 1: c t ← encode(I t , O t ) 2: R t ← [ ] 3: for i = 1 to N + 1 concurrently do 4: Autoregressively sample r t i ∼ P r t i | c t , R t-1 [: i] 5: end for 6: Synchronize 7: R t , A t ← decode(R t [: -1], R t [-1]) 8: return R t , A t End of Generation Token Image/Instruction Token Reasoning Token Pad Token 4 x 11=44 Tokens 3+6+8+9=26 Tokens Start of Generation While ECoT couples reasoning and action for interpretability and causal grounding, this coupling need not be time-synchronous. Empirically, high-level elements (e.g., TASK, PLAN) change slowly across steps; their influence on actions persists even with infrequent updates-see rollouts in Fig. <ref type="figure" target="#fig_5">5</ref>, where reasoning traces and visible objects remain stable as actions evolve. Inspired by VLA systems that separate a fast action module from a slower VLM (SmolVLA <ref type="bibr" target="#b36">[37]</ref>; GR00T <ref type="bibr" target="#b37">[38]</ref>), we adopt an asynchronous split: the controller decodes actions from the current observation O t and a cached high-level reasoning R c , while R c is refreshed in the</p><p>Task: Pick up the banana and place it on the plate Plan: 1 Approach banana. 2 Grasp banana. 3 Transport to plate. 4 Release. Subtask: Approach banana Move: Move downward t = 1 t = 10 Task: Pick up the banana and place it on the plate Plan: 1 Approach banana. 2 Grasp banana. 3 Transport to plate. 4 Release. Subtask: Approach banana Move: Move downward t = 24 Task: Pick up the banana and place it on the plate Plan: 1 Approach banana. 2 Grasp banana. 3 Transport to plate. 4 Release. Subtask: Grasp banana Move: Close gripper Task: Pick up the banana and place it on the plate Plan: 1 Approach banana. 2 Grasp banana. 3 Transport to plate. 4 Release. Subtask: Grasp banana Move: Move up t = 31 t = 33 Task: Pick up the banana and place it on the plate Plan: 1 Approach banana. 2 Grasp banana. 3 Transport to plate. 4 Release. Subtask: Transport to plate Move: Move left up t = 42 Task: Pick up the banana and place it on the plate Plan: 1 Approach banana. 2 Grasp banana. 3 Transport to plate. 4 Release. Subtask: Release Move: Open gripper background. As shown in Fig. <ref type="figure">6</ref>, asynchronous reasoning action generation effectively reduces stalls and increases action throughput without sacrificing interpretability. Full pseudocode of the above is shown in Alg. 2.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>V. RESULTS</head><p>In this section, we conduct experiments to evaluate the effectiveness of Fast ECoT. Our evaluation focuses on the following key questions: <ref type="bibr" target="#b0">(1)</ref> To what extent does parallel reasoning generation improve computational efficiency? (2) Does the proposed method preserve task performance comparable to the sequential baseline? (3) What is the impact of reasoning step parallelization on the overall quality of reasoning?</p><p>A. LIBERO Experiments Task Setup. We conduct experiments using a Franka Emika Panda robotic arm within the LIBERO environment <ref type="bibr" target="#b31">[32]</ref>, a widely adopted benchmark for evaluating generalizable robotic policies. To comprehensively assess policy</p><p>reasoning latency 𝑅 ! ⋯ O ! 𝑂 " 𝑂 # 𝑡 𝑡 𝑅 " Generate action 𝑎 ! based on past reasoning 𝑅 " and latest observation 𝑂 ! Active Stalled reasoning latency 𝑅 ! 𝑂 " 𝑅 " O ! 𝑎 " 𝑡 𝑎 # 𝑎 " 𝑎 # 𝑎 $ 𝑡 Reasoning Thread Action Thread Reasoning Thread Action Thread (a) Synchronous inference. reasoning latency 𝑅 ! ⋯ O ! 𝑂 " 𝑂 # 𝑡 𝑡 𝑅 " Generate action 𝑎 ! based on past reasoning 𝑅 " and latest observation 𝑂 ! Active Stalled reasoning latency 𝑅 ! 𝑂 " 𝑅 " O ! 𝑎 " 𝑡 𝑎 # 𝑎 " 𝑎 # 𝑎 $ 𝑡 Reasoning Thread Action Thread Reasoning Thread Action Thread (b) Asynchronous inference. Fig. 6: Illustration of inference stacks. Asynchronous overlap reduces stall time (green dashed) of robot operation and increases action throughput within the same time window compared to synchronous execution. Algorithm 2 Asynchronous Parallel Embodied Chain-of-Thought Require: Time step t, Instruction I t , Observation O t , History Reasoning R c 1: c t ← encode(I t , O t ) 2: for i = 1 to N + 1 concurrently do 3: Lock R c and autoregressively sample r t i ∼ P r t i | c t , R c [: i] 4: if i = N + 1 then 5: A t = r t i 6: else 7: Lock R c and update R c with r t i 8: end if 9: end for 10: wait until A t is finished 11: A t ← decode(A t ) 12: return R c , A t</p><p>generalisation, we select four diverse task suites-LIBERO-Spatial, LIBERO-Object, LIBERO-Goal, and LIBERO-Long-each targeting distinct challenges, including spatial configuration, object manipulation, goal specification, and long-horizon task execution.</p><p>Training Data and Training Recipe. ECoT models require fine-tuning on each task for optimal performance <ref type="bibr" target="#b0">[1]</ref>, <ref type="bibr" target="#b3">[4]</ref>. Training data is generated following the ECoT pipeline <ref type="bibr" target="#b3">[4]</ref>, with modifications for reproduction: we integrate Janus <ref type="bibr" target="#b38">[39]</ref> for automated scene description and Deepseek-Reasoner <ref type="bibr" target="#b33">[34]</ref> for generating CoT reasoning trajectories from successful demonstrations. We initialise ECoT models from the open-sourced checkpoint <ref type="bibr" target="#b3">[4]</ref>, which was pre-trained on Bridge V2 <ref type="bibr" target="#b4">[5]</ref> and OXE dataset <ref type="bibr" target="#b5">[6]</ref>. Then we apply LoRA <ref type="bibr" target="#b39">[40]</ref> with rank 32 and train for 200, 000 gradient steps using a batch size of 1 distributed across 4 NVIDIA A6000 GPUs.</p><p>Baselines. We compare our proposed method, Fast ECoT, against four baselines: ECoT, the original ECoT model that autoregressively generates the full reasoning chain; ECoT (5-step), a variant that updates low-level reasoning at every timestep but updates high-level reasoning only every 5 timesteps; ECoT (async), a variant originally designed to use two GPUs to asynchronously compute high-level and low-level reasoning, which we adapt to run entirely on a single GPU for fair comparison; and ECoT (Quant), a post-training quantized version of ECoT utilizing Huggingface's Bitsandbytes <ref type="bibr" target="#b40">[41]</ref>, selected due to its best acceleration performance compared to other quantization approaches tested <ref type="bibr" target="#b25">[26]</ref>, <ref type="bibr" target="#b26">[27]</ref>. For fairness, we exclude methods requiring additional training or architectural changes, such as speculative decoding <ref type="bibr" target="#b22">[23]</ref>, <ref type="bibr" target="#b23">[24]</ref>, and action chunking <ref type="bibr" target="#b24">[25]</ref>, <ref type="bibr" target="#b41">[42]</ref>.</p><p>Inference Speedup. As shown in the last column of Tab. I, OpenVLA achieves the lowest latency (184 ± 37 ms) since it directly maps observations to actions without generating intermediate reasoning. In contrast, reasoningbased models such as ECoT incur substantially higher costs.</p><p>Our method substantially narrows this gap: Fast ECoT reduces latency to 2156±353 ms, a 2.3× speedup over ECoT (4997 ± 691 ms), while Fast ECoT (Async) further reduces it to 686 ± 412 ms (nearly 7× faster), all while retaining reasoning capability. This demonstrates that parallel reasoning effectively amortises the overhead of structured reasoning, bringing latency closer to non-reasoning policies.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Performance.</head><p>Our method consistently improves task performance relative to prior baselines. Fast ECoT achieves the highest average success rate (80.0%), surpassing all ECoT variants and non-reasoning OpenVLA. We attribute this to our parallel reasoning strategy, which smooths temporal inconsistencies and leverages prior reasoning steps. Fast ECoT (Async) remains competitive (77.5%) and achieves the best result on LIBERO-Long (69%), though at some cost in LIBERO-Object due to greater sensitivity to object layouts and temporal mismatch. Interestingly, ECoT (Quant) also improves over vanilla ECoT, likely due to quantisation regularising model behaviour <ref type="bibr" target="#b42">[43]</ref>. Fig. <ref type="figure" target="#fig_7">7</ref> shows that both ECoT and Fast ECoT (Async) produce coherent, grounded reasoning, but the latter reaches comparable states much quicker.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Real-world Experiments</head><p>Setup. We validate Fast ECoT on a physical Franka Emika Panda robotic arm equipped with a RealSense D455 camera, providing third-person RGB-D observations. We design six manipulation tasks representative of common household scenarios. The evaluation includes both in-distribution and out-of-distribution tasks featuring unseen objects and instructions.We collect 50 expert demonstrations via Droid teleoperation pipeline <ref type="bibr" target="#b43">[44]</ref> to fine-tune ECoT models. We follow the same training data generation process, training recipe, and baselines used in Sec. V-A.</p><p>Method LIBERO-Object SR (%) ↑ LIBERO-Spatial SR (%) ↑ LIBERO-Goal SR (%) ↑ LIBERO-Long SR (%) ↑ Average SR (%) ↑ Latency per Step (ms) ↓ OpenVLA 87 83 74 55 75.3 184 ± 37 ECoT 77 84 75 57 73.3 4997 ± 691 ECoT (5-step) 79 75 72 56 70.5 3514 ± 969 ECoT (Async) 70 83 80 47 70.0 3655 ± 773 ECoT (Quant) 82 82 84 57 76.3 2180 ± 207 Fast ECoT 83 85 83 69 80.0 2156 ± 353 Fast ECoT (Async) 75 83 83 69 77.5 686 ± 412 TABLE I: LIBERO simulation experimental results. SR = Success Rate.  Method ID SR (%) ↑ OOD Objects SR (%) ↑ OOD Instruction SR (%) ↑ Average SR (%) ↑ Latency per Step (ms) ↓ OpenVLA 83.3 68.3 42.7 64.7 196 ± 32 ECoT 78.3 73.3 40.0 64.0 5556 ± 384 ECoT (5-step) 56.6 51.7 35.0 47.8 4327 ± 619 ECoT (Async) 76.6 70.0 41.7 62.8 4206 ± 323 ECoT (Quant) 75.0 63.3 48.3 62.2 2437 ± 171 Fast ECoT 81.6 73.3 50.0 68.3 2479 ± 520 Fast ECoT (Async) 78.3 75.0 42.7 65.3 716 ± 529</p><p>TABLE II: Real-world experimental results on selected household tasks. SR = Success Rate. ID = In distribution. OOD = Out of distribution.</p><p>Results. Tab. II summarises the performance of our method against baseline approaches on real-world manipulation tasks. Fast ECoT achieves the highest overall success rate (68.3%), with strong improvements in OOD instruction tasks (50.0%, +10 points over OpenVLA). Meanwhile, the Async version of Fast ECoT yields the best trade-off between performance and efficiency: although its average success rate is slightly lower (65.3%), it delivers the lowest latency of 716 ± 529 ms per step-a 7.7× speedup compared to the original ECoT baseline (5556 ± 384 ms). This highlights the benefit of asynchronous parallel reasoning in real-world deployment, where rapid, low-variance inference is critical. In contrast, prior ECoT variants either sacrifice task performance (ECoT 5-step) or still suffer from high inference latency (ECoT and ECoT-Async), making them less practical for on-robot use. Consistent with the simulation examples, Fig. <ref type="figure" target="#fig_9">8</ref> shows that both methods produce coherent, grounded reasoning; again, the asynchronous variant reaches comparable task states much quicker.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. AutoEval Real-world Experiments</head><p>Setup. We use AutoEval <ref type="bibr" target="#b44">[45]</ref>, an online platform for standardised real-robot policy evaluation. We choose Auto-Eval both for reproducible, third-party benchmarking and because its tasks/environments are drawn from Bridge-Data V2 <ref type="bibr" target="#b4">[5]</ref>-the same distribution on which ECoT <ref type="bibr" target="#b3">[4]</ref> was trained. This lets us run the vanilla ECoT without any finetuning and directly apply our accelerations (Fast ECoT and Fast ECoT (Async)) as drop-in replacements. Concretely, we evaluate four tabletop tasks in two accessible environment (Drawer, Sink) with 10 trials per task.</p><p>Method Drawer SR (%) ↑ Sink SR (%) ↑ Latency (ms) ↓ ECoT 30 30 4030 ± 270 Fast ECoT 30 35 2105 ± 324 Fast ECoT (Async) 20 25 790 ± 331 TABLE III: AutoEval results on BridgeData V2 tabletop tasks. SR = Success Rate. Results. Fast ECoT and Fast ECoT (Async) achieve performance comparable to ECoT under AutoEval  (Tab. III): Fast ECoT matches ECoT on Drawer (30%) and slightly exceeds it on Sink (35%), while the asynchronous variant is modestly lower (20-25%) but offers a favourable accuracy-efficiency trade-off. Note that AutoEval's environment reset policy introduces distribution shift-e.g., altered object poses/orientations, handle angles, and initial camera/scene configurations-relative to the canonical starts used in the original evaluation. These OOD initialisations make perception and short-horizon control more volatile, reducing absolute SRs across all methods (including ECoT) even though their relative behaviour remains similar.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. Updating Frequency of Across-level Reasoning</head><p>Reusing past reasoning steps yields a temporal smoothing effect that dampens noisy fluctuations in planning and stabilises control. We perform a controlled ablation on LIBERO-Object (see Tab. IV) to examine performance differences resulting from varying the update frequency of high-level and low-level reasoning steps. When high-level reasoning is refreshed less frequently (every 5 frames), while low-level reasoning remains updated at every step, success rates increase from 77% (baseline with updates at every step) to 79%. In Fast ECoT, each reasoning step similarly leverages current visual observations combined with cached reasoning from previous steps, achieving an even higher success rate of 83%. However, excessively infrequent updates reduce performance. Updating both high-level and low-level reasoning every 5 frames lowers success to 70%, and completely infrequent updates (∞/∞) dramatically drop success to 35%. Common failures in such scenarios involve delayed task transitions-for instance, after grasping an object, the robot may stall indefinitely rather than moving promptly to the placement step. This underscores the critical balance between beneficial temporal smoothing and necessary action responsiveness.</p><p>Our findings (see Tab. IV) align with the results in SmolVLA <ref type="bibr" target="#b36">[37]</ref> and Tab. 2 of the original ECoT work, where the reuse of historical reasoning similarly improved task performance. Thus, moderate reuse of recent reasoning can maintain or even enhance robot performance.</p><p>High-level step Low-level step Success (%) ↑ 1 1 77 5 1 79 5 2 78 5 3 75 5 5 70 ∞ ∞ 35 Fast ECoT Fast ECoT 83 TABLE IV: Ablation on update frequency. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E. Action Faithfulness in ECoT Reasoning</head><p>To validate that the generated chain-of-thought (CoT) not only improves performance but also faithfully explains the model's decision-making process, we build on the faithfulness criteria for language models <ref type="bibr" target="#b45">[46]</ref> and introduce a novel quantitative metric -action faithfulness (AF) -to measure the faithfulness of the CoT reasoning for robotic tasks. Formally, given a complete CoT consisting of N intermediate reasoning steps that culminate in a final robot action A, we enforce the model to directly predict an action A i after generating only the first i reasoning steps, where i = 0, 1, . . . , N . We then compute the L1 distance between A i and A as the faithfulness score AF i = ∥A i -A∥ 1 . Higher L1 distances indicate a greater dependence on subsequent reasoning steps, thereby suggesting higher CoT faithfulness.</p><p>We plot action faithfulness scores of Fast ECoT and ECoT for all reasoning steps {AF i } in Fig. <ref type="figure" target="#fig_10">9</ref>. Fast ECoT preserves the faithfulness of the base ECoT model during parallel reasoning generation for most reasoning steps. The action faithfulness without predicting "Visible Objects" is slightly lower for Fast ECoT, since the high update ratio and one-step delay in visual features might increase its chances to be post-hoc. Meanwhile, the asynchronous variant of Fast ECoT generally exhibits a lower faithfulness, probably due to the larger temporal mismatch introduced in async reasoning. Faithfulness is notably low when no reasoning steps are generated (i.e., at "Task"), likely due to fine-tuning from the OpenVLA <ref type="bibr" target="#b0">[1]</ref> checkpoint, which did not require reasoning steps.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>VI. CONCLUSION</head><p>We present Fast ECoT, an inference-time acceleration method for Embodied Chain-of-Thought (ECoT) reasoning in VLA models. By exploiting structural and temporal locality, Fast ECoT enables (1) reuse of cached high-level reasoning and (2) parallel generation of modular steps. An asynchronous scheduler further decouples reasoning from action decoding, enhancing real-time responsiveness. Requiring no architectural changes or retraining, Fast ECoT integrates easily into existing VLA pipelines. Across simulations and real-world tests, it reduces inference latency by up to 7.5× while maintaining task performance and interpretability, advancing ECoT toward real-time deployment.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Fig. 1 :</head><label>1</label><figDesc>Fig. 1: ECoT [4] reasoning autoregressively generates high-level (green) and low-level (purple) reasoning steps to enhance VLA performance.</figDesc><graphic coords="2,494.68,106.87,57.06,57.08" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><figDesc>(a) Mean update ratio (±1 standard deviation) per reasoning step, showing high-level stability versus frequent low-level updates. (b) Mean length (±1 standard deviation) of different reasoning steps, showing significant disparities in token counts.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Fig. 2 :</head><label>2</label><figDesc>Fig.2: Statistics illustrating the pattern of ECoT reasoning steps under Libero Goal<ref type="bibr" target="#b31">[32]</ref> and Bridge V2<ref type="bibr" target="#b4">[5]</ref>.</figDesc><graphic coords="3,54.00,143.76,241.91,121.90" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Fig. 3 :</head><label>3</label><figDesc>Fig. 3: Comparison between ECoT (left) and our proposed Fast ECoT (right). Both decompose reasoning into fixed stages (e.g., task, plan, object grounding), but ECoT generates these sequentially at every step, while Fast ECoT enables parallel generation and reuses cached higher-level reasoning from previous timesteps as context. The dotted lines coloured in green/magenta represent token copying.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Fig. 4 :</head><label>4</label><figDesc>Fig. 4: Illustratively comparing static vs. continuous batching for reasoning generation. Left: Static batching pads to the longest sequence, processing 4×11=44 tokens. Right: Continuous batching processes only actual tokens (3, 6, 8, 9), adding up to 26 tokens, which reduces padding and improves efficiency.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Fig. 5 :</head><label>5</label><figDesc>Fig. 5: Generated robot rollouts at successive time steps (top row) alongside its reasoning (bottom row). Between frames, a large part of the reasoning remains unchanged (Green). At each timestep (t=1, 10, 24, 31, 33, 42), the Subtask updates intermittently, and the low-level Move command adapts continuously as it picks up the banana and places it on the plate.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><figDesc>(a) ECoT at t = 143.7s. (b) Fast ECoT (Async) at t = 21.4s.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Fig. 7 :</head><label>7</label><figDesc>Fig. 7: Qualitative examples in LIBERO experiments. Fast ECoT (Async) reaches comparable task states much quicker.</figDesc><graphic coords="6,54.00,181.81,246.96,112.23" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><figDesc>(a) ECoT at t = 84.8s. (b) Fast ECoT (Async) at t = 18.7s.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Fig. 8 :</head><label>8</label><figDesc>Fig. 8: Real-world qualitative examples. Fast ECoT (Async) reaches comparable task states much quicker.</figDesc><graphic coords="7,54.00,50.08,246.97,107.38" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Fig. 9 :</head><label>9</label><figDesc>Fig. 9: Action faithfulness (AF) on LIBERO tasks. All graphs are plotted with mean and standard deviation shading across 1000 timesteps.</figDesc><graphic coords="7,325.44,330.89,220.32,146.88" type="bitmap" /></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>While profiling the update ratios, we observed substantial variability in the visible detection module. This counterintuitive result stems from the instability inherent in the visual reasoning module of ECoT and the open-vocabulary nature of object labels, whereby identical objects may be assigned varying labels over time.</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Openvla: An Open-Source Vision-Language-Action Model</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">J</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">A</forename><surname>Pertsch</surname></persName>
+		</author>
+		<idno>abs/2406.09246</idno>
+	</analytic>
+	<monogr>
+		<title level="m">8th Annual Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">π 0 : A vision-language-action flow model for general robot control</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Black</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">B</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Gr00t n1: An open foundation model for generalist humanoid robots</title>
+		<author>
+			<persName><surname>Nvidia</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Robotic Control via Embodied Chainof-Thought Reasoning</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zawalski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">E A</forename><surname>Chen</surname></persName>
+		</author>
+		<idno>abs/2407.08693</idno>
+	</analytic>
+	<monogr>
+		<title level="m">8th Annual Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Bridgedata v2: A dataset for robot learning at scale</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Walke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">E A</forename><surname>Black</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning (CoRL)</title>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Open x-embodiment: Robotic learning datasets and rt-x models</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>O'neill</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">R</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Visual instruction tuning</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">J</forename><surname>Lee</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Prismatic vlms: Investigating the design space of visuallyconditioned language models</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Karamcheti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Nair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Balakrishna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kollar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Sadigh</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Accelerating vision-language-action model integrated with action chunking via parallel decoding</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Li</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Hamster: Hierarchical action models for openworld robot manipulation</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">D</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">W</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Skeleton-of-thought: Prompting llms for efficient parallel generation</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><forename type="middle">L</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Not As I Say: Grounding Language in Robotic Affordances</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">E A</forename><surname>Brohan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="287" to="318" />
+		</imprint>
+	</monogr>
+	<note>Do As I Can</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Socratic models: Composing zero-shot multimodal reasoning with language</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Grounding language with visual affordances over unstructured data</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Mees</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Borja-Diaz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Burgard</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Cot-vla: Visual chain-of-thought reasoning for vision-language-action models</title>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">E A</forename><surname>Lu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.22020</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Rad: Training an end-to-end driving policy via large-scale 3dgs-based reinforcement learning</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">C</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Thinkact: Vision-language-action reasoning via reinforced visual latent planning</title>
+		<author>
+			<persName><forename type="first">C.-P</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y.-H</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-H</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y.-C</forename><forename type="middle">F</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F.-E</forename><surname>Yang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Emma-x: An embodied multimodal action model with grounded chain of thought and look-ahead spatial reasoning</title>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">D</forename><surname>Pala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Toh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U.-X</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ghosal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Poria</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Molmoact: Action reasoning models that can reason in space</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Spec-vla: Speculative decoding for vision-language-action models with relaxed acceptance</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">F</forename><surname>Wong</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Think twice, act once: Token-aware compression and action reuse for efficient inference in vision-language-action models</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Chen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Fast inference from transformers via speculative decoding</title>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">L</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Speculative decoding with big little decoder</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">M</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Fine-Tuning Vision-Language-Action Models: Optimizing Speed and Success</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">J</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">arXiv.org</title>
+		<imprint>
+			<date type="published" when="2025">2502.19645, 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Awq: Activation-aware weight quantization for llm compression and acceleration</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-C</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Gan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Han</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Smoothquant: Accurate and Efficient Post-Training Quantization for Large Language Models</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Seznec</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Demouth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Han</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning (ICML)</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page">99</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Bitsandbytes</title>
+		<author>
+			<persName><surname>Huggingface</surname></persName>
+		</author>
+		<ptr target="https://huggingface.co/docs/bitsandbytes/main/en/index" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Orca: A distributed serving system for Transformer-Based generative models</title>
+		<author>
+			<persName><forename type="first">G.-I</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">S J</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">16th USENIX Symposium on Operating Systems Design and Implementation</title>
+		<meeting><address><addrLine>Carlsbad, CA</addrLine></address></meeting>
+		<imprint>
+			<publisher>USENIX Association</publisher>
+			<date type="published" when="2022-07">July 2022</date>
+			<biblScope unit="page" from="521" to="538" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Tensorrt-llm</title>
+		<author>
+			<persName><surname>Nvidia</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Efficient memory management for large language model serving with pagedattention</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Kwon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">H</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Stoica</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">B</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Stone</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.03310</idno>
+		<title level="m">Libero: Benchmarking knowledge transfer for lifelong robot learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Chain-of-Thought Prompting Elicits Reasoning in Large Language Models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">H</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Neural Information Processing Systems (NeurIPS)</title>
+		<imprint>
+			<biblScope unit="page">2022</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Deepseek-Ai</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">Y</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Chameleon: Plug-and-play compositional reasoning with large language models</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Galley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K.-W</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">N</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S.-C</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gao</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Llava-cot: Let vision language models reason step-by-step</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yuan</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Smolvla: A vision-language-action model for affordable and efficient robotics</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">S</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Gr00t n1: An open foundation model for generalist humanoid robots</title>
+		<author>
+			<persName><forename type="first">:</forename><surname>Nvidia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">B</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Janus-pro: Unified multimodal understanding and generation with data and model scaling</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Ruan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.17811</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Lora: Low-rank adaptation of large language models</title>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">J</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wallis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Allen-Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Bitsandbytes</title>
+		<author>
+			<persName><surname>Huggingface</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Learning fine-grained bimanual manipulation with low-cost hardware</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">Z</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">QuaRL: Quantization for fast and environmentally sustainable reinforcement learning</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">K</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions on Machine Learning Research</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">Droid: A large-scale in-the-wild robot manipulation dataset</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Khazatsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">P</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Autoeval: Autonomous evaluation of generalist robot manipulation policies in the real world</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">A</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Faithful chain-of-thought reasoning</title>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Havaldar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Stein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Apidianaki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Callison-Burch</surname></persName>
+		</author>
+		<idno>abs/2301.13379</idno>
+	</analytic>
+	<monogr>
+		<title level="j">ArXiv</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

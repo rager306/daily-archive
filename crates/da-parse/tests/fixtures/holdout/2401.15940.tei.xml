@@ -1,0 +1,1264 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Knowledge-Aware Code Generation with Large Language Models</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-02-01">1 Feb 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Tao</forename><surname>Huang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">School of Information Science and Engineering</orgName>
+								<orgName type="institution">Shandong Normal University</orgName>
+								<address>
+									<settlement>Jinan</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhihong</forename><surname>Sun</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">School of Information Science and Engineering</orgName>
+								<orgName type="institution">Shandong Normal University</orgName>
+								<address>
+									<settlement>Jinan</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+							<email>zhijin@pku.edu.cn</email>
+							<affiliation key="aff2">
+								<orgName type="laboratory">Key Lab of HCST (PKU)</orgName>
+								<orgName type="institution">MOE; SCS, Peking University Beijing</orgName>
+								<address>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+							<email>lige@pku.edu.cn</email>
+							<affiliation key="aff3">
+								<orgName type="laboratory">Key Lab of HCST (PKU)</orgName>
+								<orgName type="institution">MOE; SCS, Peking University Beijing</orgName>
+								<address>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Chen</forename><surname>Lyu</surname></persName>
+							<affiliation key="aff4">
+								<orgName type="department">School of Information Science and Engineering</orgName>
+								<orgName type="institution">Shandong Normal University</orgName>
+								<address>
+									<settlement>Jinan</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Knowledge-Aware Code Generation with Large Language Models</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-02-01">1 Feb 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">D95A7587F6082F5BC367B8FAAB54ECDC</idno>
+					<idno type="arXiv">arXiv:2401.15940v3[cs.SE]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:37+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>CCS CONCEPTS</term>
+					<term>Software and its engineering → Automatic programming Code Generation</term>
+					<term>Large Language Models</term>
+					<term>Knowledge Library</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large Language Models (LLMs) perform well on basic programming problems. However, they encounter challenges when dealing with complex tasks involving the use of diverse algorithmic and data structure skills, particularly programming competition-level problems. Notably, ChatGPT exhibits proficient performance on problems it has encountered during its pre-training phase, but this performance deteriorates when faced with novel problems. Consequently, enhancing the ability of LLMs to address unfamiliar problems has emerged as a pivotal research focus. The problem-solving process of LLMs mirrors human programmers' approach to a certain extent. When confronted with new programming tasks, human programmers engage in task planning and code writing with the previously acquired knowledge about algorithms and data structures. Despite having learned such knowledge, LLMs struggle to effectively apply it when faced with specific new problems. To address this issue, we constructed a novel dataset, CodeF, which contains a portion of programming problems that ChatGPT has not previously encountered. Furthermore, we developed a Knowledge Library tailored for Python programming contest problems and introduced the concept of Knowledge-Aware Code Generation (KareCoder). KareCoder bolsters the models' understanding and problem-solving capabilities by integrating prompt and knowledge from the library into the LLMs' code generation reasoning process, especially on Pass@1 metrics. Upon testing on the CodeF and APPS datasets, KareCoder demonstrated outstanding performance in handling novel problems previously unencountered by LLMs. In contrast with the code directly generated by ChatGPT, KareCoder achieved a relative improvement of 23.3% on the Pass@1 metric on the CodeF * This work was done when Chen Lyu was a visiting scholar at Peking University.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>(a) Simple (b) Medium (c) Hard (d) Average outcomes would be compromised due to this potential data overlap constitutes an issue warranting our thorough exploration. Based on the above thinking, we construct CodeF to investigate the potential overlap of test data included in the training data of ChatGPT. This research aims to decipher whether this overlap could result in an inflation of actual results. We employ the "gpt-3.5-turbo-0613" model of ChatGPT and use the cutoff time (September 2021) of ChatGPT's training data [13] as disclosed by OpenAI. This date serves as the limit to divide our dataset CodeF 1 . We used a direct generation approach with ChatGPT to produce codes for both parts of the dataset and evaluated the results using Pass@1, Pass@5 and Pass@10. The results are shown in Figure <ref type="figure" target="#fig_0">1</ref>. As Figure <ref type="figure" target="#fig_0">1</ref> demonstrates, the experimental results on CodeF pre2021-9 outperform those on CodeF post2021-9, especially regarding problems of easy difficulty, where the relative difference of Pass@1 between the two reaches an astonishing 92.7%. The somewhat lower Pass@1 score for hard difficulty problems in CodeF pre2021-9 might be due to the excessive complexity of these problems, ChatGPT may not have successfully captured the features of these problems.</p><p>Drawing on the aforementioned results, LLMs have indeed acquired knowledge of problems they encountered during the training phase. Nonetheless, they appear to lack a strategy for addressing unencountered problems. This results in the disparity in outcomes between the two parts of data depicted in Figure <ref type="figure" target="#fig_0">1</ref>. The situation is akin to a student sitting for an examination: they may effortlessly solve problems they have previously reviewed, yet struggle with new and unreviewed problems. With the tutors provide guidance, the student has a significantly enhanced likelihood of successfully completing the problems. We know that algorithms and structures serve as important features of code, so can code generation be enhanced by incorporating algorithms and structures? Hence, we 1 CodeF is a novel dataset we have independently designed to meet task requirements, resolving the issue of potential data obsolescence that may exist in extant datasets (specifically, the data may be incorporated in the training data of LLMs like ChatGPT). Detailed information of the dataset can be found in the "Dataset Collection" subsection in Section 3.1. consider infusing some knowledge into the problems in the assistance of in-context learning. This approach can serve to augment ChatGPT's relevant knowledge, thereby ameliorating its proficiency in solving previously unencountered problems.</p><p>In previous research, Jiang et al. <ref type="bibr" target="#b12">[14]</ref> put forth a code generation method termed "Self-planning". This technique harnesses the innate capability of LLMs to strategize the programming problem, thereby guiding the code generation process. Concurrently, Li et al. <ref type="bibr" target="#b13">[15]</ref> proposed a method called "Brainstorming Boost", aimed at stimulating LLMs for deeper introspection. Dong et al. <ref type="bibr" target="#b14">[16]</ref> employed a multi-role interaction model to facilitate cooperation and interaction amongst LLMs during code generation tasks. Drawing inspiration from these methods, we opted to enhance the input information fed into LLMs to improve their inferential capabilities when addressing previously unencountered problems. This in turn improves their generalization capacities for handling new programming problems. Consequently, we are introducing a new approach named Knowledge-Aware Code Generation (KareCoder).</p><p>Specifically, we first organized and built a Knowledge Library involving algorithms and data structures information based on the tags of algorithms and data structures that may be used in complex programming problems. Subsequently, KareCoder exploits the planning capabilities of LLMs in conjunction with the external Knowledge Library to direct code generation. The operational process of KareCoder unfolds over two distinct stages:</p><p>• Prompt Engineering Stage: In this stage, the LLMs learn the one-shot example prompt that we furnish and subsequently generate knowledge-aware prompt pertinent to the problem based on the algorithms and data structures information in the Knowledge Library.</p><p>• Coding Stage: In this stage, we guide the LLMs to incorporate the problem and the prompt generated in the preceding step. Then, under the guidance of the prompt, the model systematically generates code which addresses the corresponding programming problems.</p><p>In summary, the main contributions of this paper are as follows:</p><p>(1) We constructed a novel code generation dataset, CodeF, consisting of problems manually crawled, cleaned and inspected to mitigate the issue of data overlap with the training data of LLMs. For each programming problem, we extracted pertinent information relating to the algorithms and data structures tags, difficulty and date (time of release). </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">RELATED WORK 2.1 Code Generation</head><p>Model size divides code generation tasks into those using small to medium models and LLMs. Ling et al. <ref type="bibr" target="#b16">[18]</ref> first introduced a method to translate natural language into code fragments utilizing a sequence-to-sequence model. Sun et al. <ref type="bibr" target="#b17">[19]</ref> adopted the Transformer architecture to resolve the issue of long-term dependencies amongst code elements, proposing TreeGen to enhance the model and incorporate information regarding the code structure. Wang et al. <ref type="bibr" target="#b18">[20]</ref> proposed CodeT5, which integrates the code's features during the pre-training phase, emphasizing the model's reasoning about tokens with practical significance during the generation phase. Dong et al. <ref type="bibr" target="#b3">[4]</ref> devised a PDA-based approach to guarantee the syntactic correctness of code generation.</p><p>As the volume of training data for language models proliferates, more LLMs are being utilized for code generation. The emergence of CodeBERT <ref type="bibr" target="#b19">[21]</ref> has marked a new epoch in the use of pre-trained LLMs. Pre-trained LLMs such as CodeGen <ref type="bibr" target="#b5">[6]</ref>, InCoder <ref type="bibr" target="#b20">[22]</ref>, CodeX <ref type="bibr" target="#b6">[7]</ref>, AlphaCode <ref type="bibr" target="#b21">[23]</ref>, Code Llama <ref type="bibr" target="#b22">[24]</ref> and StarCoder <ref type="bibr" target="#b23">[25]</ref> have yielded significant enhancements in code generation performance. Beyond these models tailored for code-related tasks, ChatGPT <ref type="bibr" target="#b7">[8]</ref>, a model designed for problem-and-answer applications, has also demonstrated remarkable code generation capabilities.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Code Generation Dataset</head><p>MBPP <ref type="bibr" target="#b10">[11]</ref> and HumanEval <ref type="bibr" target="#b6">[7]</ref> are datasets commonly utilized in code generation related research <ref type="bibr" target="#b2">[3,</ref><ref type="bibr" target="#b12">14,</ref><ref type="bibr" target="#b14">16]</ref>. They comprise handwritten programming problems, which are intrinsically simple. They include only rudimentary task descriptions and provide relatively short solutions, thereby not meeting the complexity required for our daily tasks. Conversely, datasets like APPS <ref type="bibr" target="#b11">[12]</ref>, derived from several open-source programming competition websites, offer considerably more challenging and lengthier problems, thus serving as a more objective measure. CodeContest <ref type="bibr" target="#b21">[23]</ref>, designed to fine-tune and evaluate the AlphaCode model, has observed a significant enhancement in the quality of test cases compared to previous datasets. Despite the satisfactory performance of these datasets, there exists a need for a new dataset that will not overlap with the training data of ChatGPT. The cutoff time for the training data of ChatGPT, which OpenAI has made public [13], is September 2021. In order to circumvent a substantial count of false positives in the training data when working with LLMs, there is an immediate requirement for a new dataset encompassing data from September 2021 onwards. Furthermore, the dataset also needs to include the algorithms and data structures tags recommended for the problems to enable more effective integration of algorithms and data structures information.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">Prompt Techniques</head><p>As LLMs grow in size and parameters, fine-tuning them needs more resource and time. Numerous recent studies <ref type="bibr" target="#b24">[26]</ref><ref type="bibr" target="#b25">[27]</ref><ref type="bibr" target="#b26">[28]</ref> have explored enhancing the performance of LLMs by integrating prompts. For instance, Zhang et al. <ref type="bibr" target="#b27">[29]</ref> introduced an automated COT prompting method, AutoCoT, which samples diverse problems and generates inference chains to construct examples. Concurrently, Zhou et al. <ref type="bibr" target="#b28">[30]</ref> proposed a least-to-most prompting strategy, where complex problems are segmented into a series of sub-problems that are then sequentially addressed. Similarly, Liu et al. <ref type="bibr" target="#b29">[31]</ref> delved into the feasibility of guiding ChatGPT in code generation tasks through manually crafted prompts. By incorporating some external information, we could offer prompts to LLMs, thereby enabling them to generate superior prompts for task planning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">SUPPORT DATA DESIGN</head><p>In this section, we delineate the dataset CodeF and Knowledge Library that we assembled. Specifically, we expound on the reasons behind constructing a new dataset for a programming competition problem, the sources of CodeF and the three distinct types of Knowledge Libraries that we formulated.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Dataset Collection</head><p>Models are conventionally divided into two crucial phases: training and testing. Our research aims to explore the intricate interplay between algorithms, data structures and the overlap between training and testing sets, and their influence on the code generation capability of large models. We undertook the creation of a specialized dataset for an algorithm-centered programming competition, which we named CodeF. This dataset is informed by the methodologies and insights gained from creating the TACO dataset <ref type="bibr" target="#b30">[32]</ref>. Taking September 2021 (the cutoff date for ChatGPT's training data [13]) as the node, we divided CodeF into two parts: CodeF pre2021-9 whose problems ChatGPT might have encountered during its training, CodeF post2021-9 which consists of problems that ChatGPT would not have previously seen.</p><p>In this study, we have constructed a new dataset of Python programming problems, CodeF, which incorporates 1523 problems  <ref type="figure" target="#fig_4">2</ref>, the creation of CodeF primarily involves two phases: data acquisition and processing. During the data acquisition phase, we evaluated several programming contest platforms, including Codeforces, HackerRank and Geeksforgeeks. Factors such as legal restrictions, interface complexities of the platforms and our specific requirement for algorithms and data structures tag for the problems, as well as the release time information, led us to select CodeForces (a programming competition website) as our data source. In order to ensure dataset quality, we designed an HTML parser specifically tailored for the CodeForces site. We crawled the site for problem description, solution, input and output examples and a set of associated labels, which include difficulty, date and tag (indicating algorithms and data structures suitable for solving the problem), etc. We consolidated all the problems into a standardized format.</p><p>During the data acquisition process, we endeavoured to ensure the consistency of our data with that of the CodeForces website. However, since the code was sourced from user submissions, often embedded with comments and potential error codes, we implemented the following measures during the data processing phase:</p><p>• Code De-commenting: For a cleaner CodeF and to remove comments that are considered invalid information, we employed Abstract Syntax Tree (AST) parsing to remove comment nodes from code that was heavily annotated.</p><p>• Code De-duplication: We collected codes from various users, leading to potential duplicates. Using the MinHash algorithm and Jaccard index, with a threshold of 0.85, we minimized these duplicates to unique files.</p><p>• Unit Test Validation: Although we extracted code that was verified as correct by the website, we conducted unit tests on all codes to prevent errors during parsing. This step assured the accuracy of the test cases and codes. According to the cutoff date of ChatGPT's training data -September 2021, we partitioned the dataset into CodeF pre2021-9 (comprising 805 problems) and CodeF post2021-9 (consisting of 718 problems). We got the raw data on the difficulty of the problems from the CodeForces website. The difficulty level of all problems is denoted in the format "*xxx" (ranging from *800-*3100<ref type="foot" target="#foot_0">foot_0</ref> ). In order to explore the rules of different difficulty problems, we classified the datasets according to the level of difficulty and extracted one hundred problems each from the Simple, Medium and Hard difficulty categories from both datasets, as depicted in Table <ref type="table" target="#tab_0">1</ref>.</p><p>To verify the reasonableness of the two parts of the data after we divided CodeF with the time of September 2021 as the node, we analyzed the average problem length and the average number of algorithm tags of the CodeF and the two parts of CodeF, as shown in Table <ref type="table" target="#tab_1">2</ref>. We invited eight students with proficient knowledge of algorithms and data structures to examine the algorithm and data structures tags in our CodeF dataset, and eventually summarized 33 categories of tags. Meanwhile, in order to show the distribution of various types of algorithms and data structures on the problems of our dataset more intuitively, the distribution of tags was also summarized using statistical methods. The classification of all 33 ¨ 1 // Knowledge Description: 2 // This is the default Knowledge Library of KareCoder.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>3</head><p>Greedy:The greedy algorithm is a heuristic approach that selects the best available option at each step without considering the long-term impact. It is useful for optimization problems where finding an exact solution is intractable, but may not always lead to the optimal solution. Greedy algorithms are easy to implement and efficient.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">----------------------------------------------------------------------------</head><p>5 // Knowledge pseudo-code: 6 Greedy:function Greedy(problem): 7 solution = empty_solution() 8 while not problem_solved(problem, solution): 9 candidate = find_best_candidate(problem, solution) 10 add_candidate_to_solution(candidate, solution) 11 return solution 12 <ref type="figure">---------------------------------------------------------------------------</ref>      algorithms and data structures tags in different parts of the CodeF dataset is shown in Figure <ref type="figure" target="#fig_5">3</ref>.</p><p>Although our original intention of creating CodeF was to test the effectiveness of LLMs on programming problems of different vintages. After a series of rigorous processing during the construction of our dataset, in the end, CodeF dataset can be used as training data for code generation models, and the algorithms and data structures information in it is also can be applied to the fields of code understanding and code algorithm recommendation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Knowledge Library</head><p>To enhance ChatGPT's proficiency in tackling novel programming problems, it is necessary to equip it with knowledge about algorithms and data structures. This knowledge serves as contextual reference information during the generation of prompts to address these problems. Specifically, we have conceptualized three formats of the Knowledge Library and investigated the effectiveness of these varying formats for prompt generation in RQ2 (see Section 6.2).</p><p>We used resources such as ChatGPT and Google search engines to gather initial information and refer to the book Competitive Programmer's Handbook <ref type="bibr" target="#b31">[33]</ref> for organization. Concurrently, we invited a group of individuals proficient in competitive programming knowledge. We manually refined and summarized the descriptions of each algorithm and data structure tag (these tags include all tags of CodeF problems). Our Knowledge Library of algorithms and data structures covers as much as possible the knowledge used in common programming problems. We invited seven employees and interns from companies in the programming industry to manually evaluate the correctness of the knowledge in our Knowledge Library. They evaluated all 33 pieces of knowledge and revised the final Knowledge Library to correctly explain each algorithm or data structure.</p><p>Our Knowledge Library is stored in the form of a dictionary, with each tag and its knowledge forming a one-to-one correspondence, i.e., {"tag": "knowledge"}. Ultimately, we integrated the information from the manually evaluated knowledge to build our Knowledge Library. Figure <ref type="figure" target="#fig_6">4</ref> provides a few examples from the Knowledge Library. The Knowledge Library we devised principally assumes the following three formats:</p><p>• Knowledge Description: This format provides a definitive overview of algorithms and data structures knowledge, encompassing descriptions of their properties and definitions. With this type of Knowledge Library, ChatGPT can comprehend the basic characteristics and applications of the corresponding algorithms and data structures, thereby generating appropriate problem-solving prompts.</p><p>• Knowledge Pseudo-Code: This Knowledge Library offers pseudo-code explanations of algorithms and data structures, emulating programming syntax to describe the steps and procedures involved in algorithms and data structures. By exploring this library, ChatGPT can understand the specific implementation of the corresponding programming knowledge, resulting in prompt skewed towards solution steps.</p><p>• Knowledge Step of Pseudo-Code: This form of Knowledge Library provides a textual step-by-step explanation of the pseudo-code associated with algorithms and data structures knowledge. With its assistance, ChatGPT can understand the steps and flow of programming knowledge from a natural language perspective.</p><p>In our Knowledge Library, we offered descriptions, pseudo-code examples and steps of pseudo-code for 33 algorithms and data structure categories, such as greedy and dynamic programming. Essential to the KareCoder method, this content complements CodeF. Additionally, it can be integrated with the CodeF to train models for applications in code generation and code evaluation domains.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">APPROACH</head><p>In this section, we present a new method: KareCoder. We begin with an overview of KareCoder and present it in two stages.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Overview</head><p>Code generation aims to help solve programming problems. We postulate that the thought process of LLMs parallels that of human programmers, which can be bifurcated into two stages when tackling programming problems: initially, comprehending the problem and learning or recalling knowledge that may be applied to its solution, followed by formulating a preliminary plan; secondly, executing code writing based on this plan.</p><p>While a majority of problems on programming platforms come with algorithmic or data structure tags, there exists a subset of problems from non-programming platforms or datasets, such as APPS, lacking these algorithmic tags. To enhance the adaptability of KareCoder, we developed a tag generator, drawing from Chat-GPT and Prompt technologies and based on our Knowledge Library. This generator can formulate or rectify tags, especially for problems that either lack them or have tags misaligned with our Knowledge Library. We evaluated the tag generator's accuracy with Cohen's Kappa and manual evaluation methods. Leveraging this tag generator, we ensure a seamless integration of each programming problem into KareCoder's processing framework. Consequently, as depicted in Figure <ref type="figure" target="#fig_7">5</ref>, we connected a tag generator in front of KareCoder and partitioned the workflow of KareCoder into two stages, Prompt</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Knowledge Prompt</head><note type="other">Examples Problem Knowledge Library Solution Examples Problem Knowledge</note><p>Prompt 1. Read t, the number of test cases. 2. Loop t times. (more...) 7. Print the value of count as the output. 8. End the loop. Prompt Engineer Coder Without Tag With Tag Problem KareCoder Codes How to solve the problem？ Do we need these knowledges? How to complete the code? t=int(input()) for i in range(t): count=0 (more...) print(count) Engineering and Coding, adhering to a sequential approach to the task:</p><note type="other">Prompt Code Tag Generator</note><p>• In Prompt Engineering Stage, we designate ChatGPT as a prompt engineer, accountable for comprehending the problem and learning as well as reviewing the algorithms and data structures knowledge pertinent to resolving the problem, subsequently generating a problem-solving prompt.</p><p>• In Coding Stage, we assign ChatGPT the role of a coder, tasked with perusing the problem and implementing this solution in a programming language, guided by the prompt provided by the prompt engineer.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Prompt Engineering Stage</head><p>In Prompt Engineering Stage, we regard ChatGPT as a prompt engineer. We anticipate that ChatGPT will acquire the relevant knowledge needed for resolving programming problems, subsequently, based on its pre-existing knowledge complemented by newly recalled information, it will develop a prompt for addressing the problem. Given ChatGPT's input window constraints, inputting the entire Knowledge Library isn't viable. Therefore, we update and customize the knowledge for each problem by performing absolute value matching via dictionaries to associate the tags of the problem with the tags in the Knowledge Library. The working principle of dictionary matching is as follows: The corresponding relationships between the dataset and the Knowledge Library are &lt;problem, tag&gt; and &lt;tag, knowledge&gt;, respectively. We can achieve matching through the tag in both of them.</p><p>As depicted in Figure <ref type="figure" target="#fig_17">6</ref>, we manually constructed a one-shot example (𝑋 ) that generates a knowledge-aware prompt (𝑃) based on the problem (𝑄) and the knowledge description (𝐾 ′ ) in our Knowledge Library (𝐾). The one-shot example (𝑋 ) we developed was curated by eight students involved in the review of CodeF's algorithm and data structure tags. Following the review, we identified four representative examples for experimentation, ultimately selecting one as the one-shot example. Subsequently, we concatenated</p><formula xml:id="formula_0">¨ 1 // Problem (Q): 2</formula><p>There is a string s of length 3, consisting of uppercase and lowercase English letters. Check if it is equal to "YES" (without quotes), where each letter can be in any case. For example, "yES", "Yes", "yes" are all allowable. (more ...) </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">------------------------------------------------Example (X)-----------------</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>7</head><p>//Knowledge-aware Prompt (P):    <ref type="figure">------------------------------------------------Prompt Engineer------------</ref>-6 // Knowledge-aware Prompt (P): 7 (more...) 8 6.Initialize an array dp of size m+1 with zeros. # DP initialization. 9 7.Loop n times, set dp[0] to 1 if i=0, else 0. # DP boundary conditions. 10 8.Loop m times, compute the value of dp[j + 1] based on dp[j], dp[j + 1] and the element at a[i][j]. The bit shift operation is used here to handle the state transition. # DP status transfer.  the new problem with a DP (dynamic programming) knowledge description derived from the Knowledge Library. Relying on the</p><formula xml:id="formula_1">¨ 1 // Problem (Q): 2</formula><p>There is a string s of length 3, consisting of uppercase and lowercase English letters. Check if it is equal to "YES" (without quotes), where each letter can be in any case. For example, "yES", "Yes", "yes" are all allowable. (more ...)  3. Convert the string s to lowercase using the built-in function lower(). 4. Check if the string s is equal to "yes".</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>8</head><p>(more...)</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="9">------------------------------------------------Example (Y)------------------</head><p>10 // Solution Code (C): 11 (more...) 12 for i in range(t): 13 s = input() 14 s = s.lower() 15 print('YES' if s == 'yes' else 'NO') 16 (more...) © ¨ 1 // Problem (Q): 2 You are given a grid with n rows and m columns. We denote the square on the i -th (1 ≤ 𝑖 ≤ 𝑛) row and j-th (1 ≤ 𝑗 ≤ 𝑚) column by (i, j) and the number there by 𝑎 𝑖 𝑗 . All numbers are equal to 1 or to -1. You start from the square (1, 1) and can move one square down or one square to the right at a time. You want to end up at the square (n, m). Is it possible to move in such a way so that the sum of the values written in all the visited cells (including 𝑎 11 and 𝑎𝑛𝑚 ) is 0? (more...) 3 // Knowledge-aware Prompt (P): 4 (more...) 5 6.Initialize an array dp of size m+1 with zeros. # DP initialization. 6 7.Loop n times, set dp[0] to 1 if i=0, else 0. # DP boundary conditions. 7 8.Loop m times, compute the value of dp[j + 1] based on dp[j], dp[j + 1] and the element at a[i][j]. The bit shift operation is used here to handle the state transition. # DP status transfer. 8 9.Check the (n+m-1)//2 bit of dp[-1]. If it is 1, print "YES"; otherwise, print "NO". # DP result check. 9 (more...) 10</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>------------------------------------------------Coder---------------------</head><p>11 // Solution Code (C): 12 (more...) 13 dp = [0] * (m + 1) # DP initialization. 14 for i in range(n): # DP body. 15 dp[0] = int(not i) # DP boundary conditions. 16 for j in range(m): # DP status transfer. 17 dp[j + 1] = (dp[j] | dp[j + 1]) &lt;&lt; (a[i][j] == -1) 18 if dp[-1] &amp; (1 &lt;&lt; ((n + m -1) // 2)): # DP result check. The input includes a sample, a new problem and their corresponding prompts for generating code, the output is the solution code for the new problem.</p><p>one-shot example we provided and the DP algorithms pertinent to the new problem, we crafted a step-by-step problem-solving, knowledge-aware prompt. Full details are available on our GitHub 4 . Let 𝑄 represent the problem, 𝑃 represent the knowledge-aware prompt, 𝐾 signify the Knowledge Library, 𝐾 ′ signify the knowledge description, 𝑋 denote a set of examples utilized to generate prompts based on the problem and the knowledge description, i.e., 𝑋 = 𝑄 𝑥 , 𝐾 ′ 𝑥 , 𝑃 𝑥 𝑛 𝑥=1 . Consequently, the knowledge-aware prompt generation problem can be modelled as:</p><formula xml:id="formula_2">𝑓 (𝑃 | 𝑄, 𝐾, 𝑋 ) ≜ 𝑓 𝑃 | 𝑄, 𝐾 ′ , 𝑋 • 𝑚 𝐾 ′ | 𝑄, 𝐾<label>(1)</label></formula><p>Herein, 𝑓 represents the generative tasks completed using Chat-GPT, 𝑚 signifies the dictionary-matching tasks of knowledge. 4 <ref type="url" target="https://github.com/CodeGeneration3/KareCoder">https://github.com/CodeGeneration3/KareCoder</ref> </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Coding Stage</head><p>During Coding Stage, we conceptualize ChatGPT as a Coder, with the expectation that it can integrate the problem and the knowledgeaware prompt to generate code that resolves the problem. The objective of this stage is to transform a step-by-step prompt, represented in natural language, into an executable program. As illustrated in Figure <ref type="figure" target="#fig_18">7</ref>, this diagram schematically portrays the Coding Stage. Full details are available on our GitHub.</p><p>Let 𝑄 represent the problem, 𝑃 stand for the knowledge-aware prompt, 𝐶 symbolize the generated code, and 𝑌 correspond to a set of examples pertaining to code generation, which are predicated on the problem and the associated prompt, i.e., 𝑌 = 𝑄 𝑦 , 𝑃 𝑦 , 𝐶 𝑦 𝑛 𝑦=1 . The one-shot example (𝑌 ) was summarized using the same approach as one-shot example (𝑋 ). Therefore, the task of code generation based on the prompt can be mathematically formulated as :</p><formula xml:id="formula_3">𝑓 (𝐶 | 𝑄, 𝑃, 𝑌 )<label>(2)</label></formula><p>Subsequently, the comprehensive KareCoder approach can be mathematically represented as:</p><formula xml:id="formula_4">𝑓 (𝐶 | 𝑄, 𝐾) ≜ 𝑓 (𝐶 | 𝑄, 𝑃, 𝑌 )• Generate-Code 𝑓 (𝑃 | Q, K ′ , X)• Generate-Prompt 𝑚(𝐾 ′ | 𝑄, 𝐾) Match-Knowledge (3)</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">ENVIRONMENT SETUP 5.1 Reserach Questions</head><p>In this research, we introduce KareCoder that supplements Chat-GPT with a Knowledge Library to guide its operation. To evaluate the efficacy of KareCoder and to analyze the associated influencing factors, we explore the following research questions (RQs):</p><p>RQ1: How does the KareCoder perform compared to other baselines? The objective of this RQ is to ascertain whether Kare-Coder can produce programs of greater accuracy than other methods. We conducted comparisons using the CodeF post2021-9 dataset as well as subsets of the dataset delineated by levels of difficulty -Simple, Medium and Hard.</p><p>RQ2: What is the better choice for the Knowledge Library? Determining how to enable ChatGPT to better utilize programming knowledge without constraining its innate reasoning abilities is a challenge we need to address. Consequently, we have designed three distinctive forms of the Knowledge Library for evaluation.</p><p>RQ3: Will different shot times and ChatGPT Settings affect the KareCoder performance? Within this RQ, we examined the impact of employing k-shot examples on the effectiveness of KareCoder and whether variations in parameter settings affect KareCoder's performance under a 1-shot example condition.</p><p>RQ4: Is KareCoder only valid because of the datasets we used? This can be a confusing issue for many people. Hence, we also tested our methods on the first 500 problems from the APPS test set to demonstrate that the efficacy of KareCoder is not contingent upon a specific dataset.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Benchmarks</head><p>CodeF Dataset: CodeF is a Python task dataset that we developed. These problems are sourced from the CodeForces website and range from January 2020 to April 2023, encompassing a total of 1523 problems. Of these, 805 problems are from the period prior to September 2021 and 718 problems are from the subsequent period. Our experiments are primarily focused on the problems posed after September 2021. From these problems, we extracted three subsets, namely Simple, Medium and Hard, based on the level of difficulty.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>APPS Dataset:</head><p>We used the APPS dataset as an auxiliary validation source in our experiments. The APPS dataset is derived from various programming competition websites, including CodeForces, LeetCode, CodeChef, etc. The training set comprises 5,000 problems, while the test set also contains 5,000 problems. In our experiments, we selected the first 500 problems of the test set for our tests.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Comparison Baselines</head><p>For the purposes of comparison, we selected ChatGPT, two recently proposed methods for code generation, specifically, Self-planning <ref type="bibr" target="#b12">[14]</ref> and SCOT <ref type="bibr" target="#b15">[17]</ref>, and SCOT&amp;KareCoder which combines the Structured COT and Knowledge-aware method as baselines. Simultaneously, to further investigate the capabilities of each method, we crafted a system prompt tailored for the four baselines methods with the aim of enhancing the quality of the generation results.</p><p>ChatGPT <ref type="bibr" target="#b7">[8]</ref> is an LLM proposed by OpenAI, it exhibits characteristics similar to a question-and-answer system, with a powerful code-writing ability. It exhibits exceptional performance in fewshot cases. For our experiments, we utilized OpenAI's API to call ChatGPT with the specific model "gpt-3.5-turbo-0613".</p><p>Plan is our implementation inspired by Self-planning <ref type="bibr" target="#b12">[14]</ref>. The Self-planning strategy encompasses two phases: planning phase and implementation phase. Drawing from its idea, we fashioned a two-phase process: initially, we allow ChatGPT to generate a stepby-step prompt for problem-solving, following which, the code of the problem is generated under the guidance of the prompt.</p><p>SCOT <ref type="bibr" target="#b15">[17]</ref> aimed at investigating how to access the coding mindset of LLMs in the context of code generation. SCOT first generates a Structured COT, delineating the solution process in programming logic, then transmutes this Structured COT into a program using a specific programming language. SCOT specifies a temperature setting of 0.8 and a Top_P value of 0.95, we adhered to these parameters in our experiments.</p><p>SCOT&amp;KareCoder is a way to combine KareCoder's knowledgeaware prompt with SCOT's Structured COT. This baseline differs from KareCoder in that instead of generating a step-by-step prompt similar to the Plan approach in the Prompt Engineering Stage, we generate a Knowledge-aware Structured COT to guide the code generation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.4">Metrics</head><p>To evaluate the accuracy of the generated code, we used Pass@k as an evaluation metric, as shown in the formula below. For each problem, we generate n ≥ k copies of code and calculate the number of correct samples that pass the test sample, c (where c ≥ n). In our experiments, we generated 5 copies of code for each problem and evaluated our approach using Pass@1, Pass@3 and Pass@5. Notably, Pass@1 is especially important as it aligns more with practical application needs.</p><formula xml:id="formula_5">𝑃𝑎𝑠𝑠@𝑘 = E 𝑃𝑟𝑜𝑏𝑙𝑒𝑚𝑠         1 - 𝑛 -𝑐 𝑘 𝑛 𝑘         .<label>(4)</label></formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">RESULT AND ANALYSIS</head><p>In conducting the experiments for these research questions, we adhere to a default configuration of a one-shot setting, with the temperature parameter set to 1 and the Top_p parameter also set to 1. Should there be alterations to this configuration, we will explicitly specify them. The comparative rule utilized in our study involves contrasting KareCoder (marked in blue in the tables) with the other best methods (marked in yellow in the tables).</p><p>6.1 RQ1: Performance Comparison 1) Evaluation on Simple, Medium and Hard difficulties of CodeF Post2021-9. Within RQ1, we examined the effectiveness of the knowledge introduced by KareCoder on three difficulty levels (Simple, Medium and Hard) within the CodeF post2021-9 dataset through a series of comparative experiments, which are depicted in Table <ref type="table" target="#tab_2">3</ref>. We assessed the outcomes of direct code generation by ChatGPT with 1-shot, as well as Plan, SCOT, SCOT&amp;KareCoder and KareCoder under 1-shot and 3-shot conditions, respectively. The analyses of these results are as follows:</p><p>• KareCoder approach markedly excelled beyond other approaches in terms of the Pass@1 performance metric. This enhancement is largely ascribed to the creation of a knowledgeaware prompt, individually tailored to each programming problem. Such prompts not only directed the code generation process but also markedly bolstered the code's correctness, aligning with our objective of augmenting the Pass@1 performance index.</p><p>• Nevertheless, in Pass@3 and Pass@5 metrics, KareCoder still outperformed other methods, but it didn't achieve the significant gains that direct code generation with ChatGPT did. This results likely arises from the inherent risks associated with the intermediate step of prompt or Structured COT generation. Though designed to facilitate code production, inaccuracies in these generated elements have the potential to compromise the precision of all subsequent code generation pertaining to the specific problem at hand.</p><p>• In our study, KareCoder outshone in 1-shot Pass@k metrics, except Hard level, with over 20% advantages in Pass@3 and Pass@5 in simple and medium level. In addition, Kare-Coder's in the 3-shot experiment did not result in an absolute advantage. However, multiple shots may lead to waste of resources caused by long input length. Thus, we favor fewer-shot techniques, a preference supported by our RQ3 experiment assessing KareCoder's efficiency.</p><p>2) Evaluation on the CodeF Post2021-9. Further tests on the CodeF Post2021-9 dataset confirm KareCoder's efficacy. As Table <ref type="table" target="#tab_3">4</ref> illustrates, on the Pass@1 metric, KareCoder and the Plan method achieve 15.9% and 14.2% respectively, ranking first and second, far more than the results generated directly by ChatGPT; conversely, 6.2 RQ2: Effectiveness of Knowledge Type 1) Library Variants. The Knowledge Library is a critical component of KareCoder. This research proposes a Knowledge Library dedicated to algorithms and data structures, specifically designed for programming problems. This innovation aims to addresses Chat-GPT's "knowledge forgetting" during solution planning, specifically the loss of necessary programming knowledge. For this research question, we investigated various Knowledge Library alternatives and contrasted different design possibilities. We built three distinct Knowledge Libraries, namely: Knowledge Pseudo-code, Knowledge Steps of Pseudo-code and the Knowledge Description employed by KareCoder. Further details regarding these diverse Knowledge Libraries can be found in Section 3.2.</p><p>2) Results. As demonstrated in Table <ref type="table" target="#tab_4">5</ref>, among the three Knowledge Librarys, the Knowledge Description yielded the most superior performance, achieving the highest scores across all difficulty levels on the Pass@1, Pass@3 and Pass@5 metrics. Notably, its relative improvement reached 15.1%, 16.7% and 13.8% on the Pass@1 metric. Moreover, KareCoder utilizing the Knowledge Description consistently outperforms the Plan method without a Knowledge Library. These results suggest that LLMs exhibit improved performance in handling novel problems when suitable external information is integrated. Conversely, the integration of unsuitable external information could potentially yield adverse effects.</p><p>Answer to RQ2: Based on the current analysis, the Knowledge Description of the Knowledge Library has exhibited the most promising results. Nonetheless, we conjecture that the performance of KareCoder could be further enhanced by constructing more refined Knowledge Libraries and implementing superior knowledgeimporting techniques in the future.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.3">RQ3: Influence of Shot Times and Settings</head><p>In this RQ, we scrutinize the performance of KareCoder in relation to varying shot times and parameter settings for ChatGPT, thereby performing a stability analysis of the KareCoder method.</p><p>1) Impact of Shot Times. As indicated in Table <ref type="table" target="#tab_5">6</ref>, the results derived from 1-shot, 2-shot and 3-shot experiments show that, Kare-Coder's effectiveness does not significantly fluctuate in response to variations in shot times. When implementing ChatGPT, we must also account for constraints related to maximum input length. While the "gpt-3.5-turbo-16k-0613" model can accommodate greater input length, it is crucial to strike a balance between shot times and performance, taking into account considerations related to computational resources and associated costs. Taking these factors into account, it is reasonable to conclude that the 1-shot setting adequately caters to the vast majority of the method's requirements. 2) Impact of ChatGPT Settings. Within the RQ, we investigate the degree to which various parameter settings, such as Temperature and Top_P, impact the efficacy of KareCoder. As illustrated in Table <ref type="table" target="#tab_6">7</ref>, KareCoder performs optimally when both Temperature and Top_P are designated as 1. This may be attributed to the fact that we furnished ChatGPT with an external Knowledge Library and we did not impose stringent restrictions on the implementation of algorithms and data structures within the Knowledge Library. Instead, we intended the Knowledge Library to serve as a guide, while KareCoder necessitated a significant degree of randomness. Establishing Temperature=1 and Top_P=1 endows ChatGPT with greater randomness, thereby circumventing the generation of chained error code owing to errors encountered during the production of knowledge-aware prompt.</p><p>Answer to RQ3: Varying Shot times, 1-shot, 2-shot and 3-shot, each setting exhibits unique benefits and limitations. Nonetheless, when considering computational resource constraints, the 1-shot setting is already sufficient to meet the accuracy demands of code generation. As for the parameter configurations of ChatGPT, we select the default settings, specifically, Temperature=1 and Top_P=1, to preserve the randomness of the outputs generated by ChatGPT to enhance the effectiveness of KareCoder.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.4">RQ4: Impact of Different Datasets</head><p>In an effort to comprehensively assess the efficacy of KareCoder, we selected the first 500 problems from the open-source dataset, the APPS test set and contrasted KareCoder's performance with other methods on these problems. As indicated in Table <ref type="table" target="#tab_7">8</ref>, five methods were employed: direct code generation using ChatGPT, Plan, SCOT, SCOT&amp;KareCoder and KareCoder, the performance of the other four methods has not been able to surpass ChatGPT, the phenomenon that has been verified in previous research <ref type="bibr" target="#b13">[15]</ref>. In light of the experimental results, we hypothesize that this may be attributed to overlapping data within APPS that is present in the ChatGPT training set. During the training process of ChatGPT, the massive number of natural language-code pairs (&lt;Text, Code&gt;) serve as training data. Consequently, ChatGPT can resolve these problems without the prerequisite for problem planning.</p><p>In a comprehensive evaluation, KareCoder's performance is approximately on par with the best of other methods and does not manifest a marked superiority. This condition potentially be ascribed to ChatGPT's prior exposure to open-source problems in APPS, resulting in the additional knowledge failing to deliver anticipated guidance. Nonetheless, in the experiments contrasting these methods, KareCoder exhibits superior performance across the Pass@k metric compared to the Plan method, which employs Answer to RQ4: Through experimentation on the first 500 problems drawn from the APPS test set, the outcomes directly generated by ChatGPT markedly exceed those of the other four methods. Despite this, KareCoder retained advantages over the other three methods, KareCoder's performance is approximately on par with the best of other methods.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">THREATS TO VALIDITY 7.1 Internal Validity</head><p>Limited algorithms and data structures tags. Our experiments were conducted mainly on the CodeF dataset, the algorithms and data structures tags of CodeF are sourced from the CodeForces programming website. When testing on dataset with no tags, e.g., APPS, matching programing problems with the Knowledge Library is not feasible. To mitigate this issue, we devised prompts and 3shot examples to aid ChatGPT in predicting tags, recommending suitable algorithms and data structures for problems lacking these tags. Although we have checked the tags generated by tag generator manually, the algorithms and data structures recommended may not always be the most fitting. The issue of recommending more appropriate algorithms and data structures for new problems remains an ongoing research challenge.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limited Knowledge Library and methods of integrating knowledge.</head><p>KareCoder has yet to achieve optimality in terms of the comprehensiveness of its Knowledge Library and the methods of knowledge integration. The current Knowledge Library equipped with KareCoder comprises information on algorithms and data structures. We use contextual prompts to integrate knowledge and problems and generate prompts that help solve programming problems. However, certain programming problems might necessitate using internet resources or extensions from Python's library. In the future, we intend to expand our Knowledge Library and enhance its quality, enabling KareCoder to access broader knowledge and constantly updating the ways in which KareCoder acquires knowledge to solve more complex programming problems.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.2">External Validity</head><p>Limited dataset. At present, the specific training data of ChatGPT is not publicly available, leaving us uncertain if there is an overlap between the existing datasets and the training data of ChatGPT. If we use the training data as the test set for inference, the value of the research done would significantly diminish. Currently, we can only test using the CodeF dataset, and we are lacking other entirely new datasets to verify KareCoder's effectiveness in code generation. As the training data of ChatGPT gets updated, we may need to continually explore new data for research.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8">DISSCUCCION</head><p>In this study, we assess the effectiveness of KareCoder by multiple RQs. Initially, we conducted preliminary exploration on "gpt-3.5turbo-0301", which was followed by expanded experiments on "gpt-3.5-turbo-0613". However, our investigation was constrained by limited computational resources, preventing tests on a broader range of LLMs. We aim to extend our testing to additional LLMs to ascertain the scalability and practicality of KareCoder. The code generation dataset CodeF, proposed in this research, is based on the ChatGPT3.5 training data until September 2021. It is important to note that the existing dataset partitioning might lose relevance due to updates in the ChatGPT training data. To address this, we have included release timestamps for each problem in the dataset. Users are encouraged to download CodeF from our GitHub repository and can re-split the dataset to ensure it remains uncontaminated and relevant for their specific model requirements. Leveraging our Knowledge Library, researchers can apply the approach of integrating programming knowledge to diverse tasks. Nonetheless, it is essential to acknowledge that creating new datasets for other tasks, incorporating algorithms and data structures tags for these tasks, demands a certain amount of human resource investment.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Experimental validation of split-difficulties on CodeF post2021-9 and CodeF pre2021-9 datasets.</figDesc><graphic coords="2,54.10,179.90,114.26,80.38" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>( 2 )Figure 2 :</head><label>22</label><figDesc>Figure 2: Schematic diagram of CodeF acquisition and processing. The processing part includes data cleaning and splitting.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>9 Figure 3 :</head><label>93</label><figDesc>Figure3: Distribution of algorithms and data structure tags.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>- 13 / 14 Greedy: 1 .</head><label>13141</label><figDesc>/ Knowledge Step of pseudo-code:Initializes an empty solution.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>15 2 .</head><label>2</label><figDesc>Enters a loop until the problem is solved, based on the solution.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>16 3 .</head><label>3</label><figDesc>Finds the best candidate for the next step based on the problem and the current solution.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>17 4 .</head><label>4</label><figDesc>Adds the best candidate to the solution.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>18 5 .</head><label>5</label><figDesc>Continues to the next iteration of the loop.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>19 6 .©Figure 4 :</head><label>64</label><figDesc>Figure 4: Examples of different Knowledge Libraries. The corresponding Greedy algorithm is shown here.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 5 :</head><label>5</label><figDesc>Figure5: An overview of KareCoder. Given a programming problem, KareCoder matches the Knowledge Library appropriate to the problem and then generates a prompt for solving the problem. Finally, the prompt is used to guide the generation of code.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>3 // 4 5 Strings:</head><label>345</label><figDesc>Knowledge Description (K'): Brute force: Brute force is a straightforward approach to problem-solving that exhaustively searches all possible solutions. (more ...) Strings are sequences of characters used to represent text or other data in a computer program. (more ...)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>8 (more...) 9 2.</head><label>89</label><figDesc>Loop t times to read each test case string s.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>10 3 .</head><label>3</label><figDesc>Convert the string s to lowercase using the built-in function lower().</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><head>11 4 . 12 (2 3 / 4 DP:</head><label>41234</label><figDesc>Check if the string s is equal to "yes".You are given a grid with n rows and m columns. We denote the square on the i -th (1 ≤ 𝑖 ≤ 𝑛) row and j-th (1 ≤ 𝑗 ≤ 𝑚) column by (i, j) and the number there by 𝑎𝑖 𝑗 . All numbers are equal to 1 or to -1. You start from the square (1, 1) and can move one square down or one square to the right at a time. You want to end up at the square (n, m). Is it possible to move in such a way so that the sum of the values written in all the visited cells (including 𝑎11 and 𝑎𝑛𝑚 ) is 0? (more...) / Knowledge Description (K'): Dynamic programming is a technique used to solve complex problems by breaking them down into smaller, simpler sub-problems. It involves solving each sub-problem only once and storing the solutions in a table for future use. (more...) 5</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_14"><head>11 9 .</head><label>9</label><figDesc>Check the (n+m-1)//2 bit of dp[-1]. If it is 1, print "YES"; otherwise, print "NO". # DP result check.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_15"><head>12 (Figure 6 :</head><label>126</label><figDesc>Figure6: Illustration of the input and output of Prompt Engineering Stage. The input includes a sample, a new problem and its corresponding Knowledge Library, the output is the knowledge-aware prompt for the new problem.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_16"><head>3 / 2 .</head><label>32</label><figDesc>Loop t times to read each test case string s.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_17"><head>6</head><label>6</label></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_18"><head>7</head><label>7</label></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_19"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Illustration of the input and output of Coding Stage.The input includes a sample, a new problem and their corresponding prompts for generating code, the output is the solution code for the new problem.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Subsets of Simple, Medium and Hard difficulties in CodeF Post2021-9 and CodeF Pre2021-9 datasets.</figDesc><table><row><cell cols="4">Dataset Difficulty Difficulty Range Problem Number</cell></row><row><cell>CodeF Post2021-9</cell><cell>Simple Medium Hard</cell><cell>*800 *1300-*1600 *1900-*2500</cell><cell>000-099 400-499 600-699</cell></row><row><cell>CodeF Pre2021-9</cell><cell>Simple Medium Hard</cell><cell>*800 *1300-*1600 *1900-*2200</cell><cell>000-099 400-499 640-739</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Descriptive statistics of CodeF.</figDesc><table><row><cell>Dataset</cell><cell>Average question token</cell><cell>Average algorithm tags number</cell></row><row><cell>CodeF</cell><cell>2047.1</cell><cell>3.1</cell></row><row><cell>CodeF pre2021-9</cell><cell>2018.7</cell><cell>3.2</cell></row><row><cell>CodeF post2021-9</cell><cell>2079.0</cell><cell>3.0</cell></row><row><cell cols="3">posted from January 2020 to April 2023 on the CodeForces 2 pro-</cell></row><row><cell cols="2">gramming website. As depicted in Figure</cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Comparative evaluation of KareCoder and other methods on Simple, Medium and Hard difficulties of CodeF Post2021-9.</figDesc><table><row><cell>Simple</cell><cell>Medium</cell><cell>Hard</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 :</head><label>4</label><figDesc>Comparative evaluation of KareCoder with other methods on the CodeF post2021-9.</figDesc><table><row><cell>Method</cell><cell cols="3">Pass@1 Pass@3 Pass@5</cell></row><row><cell>ChatGPT</cell><cell>12.9</cell><cell>22.4</cell><cell>26.9</cell></row><row><cell>ChatGPT+Plan</cell><cell>14.2</cell><cell>17.3</cell><cell>18.3</cell></row><row><cell>ChatGPT+SCOT</cell><cell>11.2</cell><cell>14.2</cell><cell>15.0</cell></row><row><cell>ChatGPT+SCOT&amp;KareCoder</cell><cell>14.0</cell><cell>15.2</cell><cell>15.5</cell></row><row><cell>ChatGPT+KareCoder</cell><cell>15.9</cell><cell>19.8</cell><cell>21.3</cell></row><row><cell>Relative Improvement</cell><cell>12.0% ↑</cell><cell>14.5% ↑</cell><cell>16.4% ↑</cell></row><row><cell cols="4">in terms of the Pass@3 and Pass@5 metrics, ChatGPT's direct gen-</cell></row><row><cell cols="4">eration remains the most effective. The rationale behind this phe-</cell></row><row><cell cols="4">nomenon has been comprehensively discussed in the previous part</cell></row><row><cell cols="4">of this RQ. Compared with the Plan, SCOT and SCOT&amp;KareCoder</cell></row><row><cell cols="4">methods, KareCoder attains a relative improvement of 12.0%, 14.5%</cell></row><row><cell cols="4">and 16.4% on the Pass@1, Pass@3 and Pass@5 metrics, respectively.</cell></row><row><cell cols="4">Answer to RQ1: Experiments on CodeF post2021-9 and its sub-</cell></row><row><cell cols="4">sets-Simple, Medium and Hard show that KareCoder considerably</cell></row><row><cell cols="4">enhances ChatGPT's performance on the Pass@1 metric. Never-</cell></row><row><cell cols="4">theless, due to constraints arising from the intermediate process,</cell></row><row><cell cols="4">KareCoder does not outperform the direct usage of ChatGPT on</cell></row><row><cell cols="4">the Pass@3 and Pass@5 metrics but maintains advantage over</cell></row><row><cell cols="4">other methods when evaluated on the Pass@3 and Pass@5 metrics.</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 5 :</head><label>5</label><figDesc>Performance of KareCoder utilizing different Knowledge Libraries.</figDesc><table><row><cell></cell><cell></cell><cell>Simple</cell><cell></cell><cell></cell><cell>Medium</cell><cell></cell><cell></cell><cell>Hard</cell><cell></cell></row><row><cell>Knowledge Library</cell><cell cols="9">Pass@1 Pass@3 Pass@5 Pass@1 Pass@3 Pass@5 Pass@1 Pass@3 Pass@5</cell></row><row><cell>Knowledge Description</cell><cell>30.5</cell><cell>38.8</cell><cell>41.8</cell><cell>10.5</cell><cell>14.4</cell><cell>16.4</cell><cell>7.4</cell><cell>11.1</cell><cell>12.5</cell></row><row><cell>Knowledge Pseudo-code</cell><cell>23.5</cell><cell>27.3</cell><cell>28.7</cell><cell>9.0</cell><cell>12.7</cell><cell>14.2</cell><cell>6.5</cell><cell>8.0</cell><cell>8.6</cell></row><row><cell>Knowledge Step of Pseudo-code</cell><cell>26.5</cell><cell>29.3</cell><cell>29.8</cell><cell>7.4</cell><cell>10.7</cell><cell>12.0</cell><cell>5.9</cell><cell>7.9</cell><cell>8.8</cell></row><row><cell>Relative Improvement</cell><cell>15.1% ↑</cell><cell>32.4% ↑</cell><cell>40.3% ↑</cell><cell>16.7% ↑</cell><cell>13.4% ↑</cell><cell>15.5% ↑</cell><cell>13.8% ↑</cell><cell>38.8% ↑</cell><cell>42.0% ↑</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 6 :</head><label>6</label><figDesc>Comparative evaluation of KareCoder with different shot times on various difficulties of CodeF post2021-9.</figDesc><table><row><cell></cell><cell></cell><cell>Simple</cell><cell></cell><cell></cell><cell>Medium</cell><cell></cell><cell></cell><cell>Hard</cell><cell></cell></row><row><cell>Shot Times</cell><cell cols="9">Pass@1 Pass@3 Pass@5 Pass@1 Pass@3 Pass@5 Pass@1 Pass@3 Pass@5</cell></row><row><cell>1-shot</cell><cell>30.5</cell><cell>38.8</cell><cell>41.8</cell><cell>10.5</cell><cell>14.4</cell><cell>16.4</cell><cell>7.4</cell><cell>11.1</cell><cell>12.5</cell></row><row><cell>2-shot</cell><cell>30.7</cell><cell>34.2</cell><cell>36.1</cell><cell>12.6</cell><cell>15.5</cell><cell>16.8</cell><cell>6.0</cell><cell>8.0</cell><cell>9.0</cell></row><row><cell>3-shot</cell><cell>31.5</cell><cell>34.1</cell><cell>34.9</cell><cell>9.3</cell><cell>10.9</cell><cell>11.5</cell><cell>9.6</cell><cell>11.7</cell><cell>12.5</cell></row><row><cell cols="2">Relative Improvement -3.2% ↓</cell><cell>13.5% ↑</cell><cell cols="2">15.8% ↑ -16.7% ↓</cell><cell>-7.1% ↓</cell><cell>-2.4% ↓</cell><cell>-22.9% ↓</cell><cell>-5.1% ↓</cell><cell>0%</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 7 :</head><label>7</label><figDesc>Comparative evaluation of KareCoder with different ChatGPT Settings on various difficulties of CodeF post2021-9. For convenience of representation, we use "Tem" to represent "Temperature".</figDesc><table><row><cell></cell><cell></cell><cell></cell><cell>Simple</cell><cell></cell><cell></cell><cell>Medium</cell><cell></cell><cell></cell><cell>Hard</cell><cell></cell></row><row><cell cols="2">ChatGPT Setings</cell><cell cols="9">Pass@1 Pass@3 Pass@5 Pass@1 Pass@3 Pass@5 Pass@1 Pass@3 Pass@5</cell></row><row><cell cols="2">Tem=0.8 Top_P=0.95</cell><cell>29.4</cell><cell>33.7</cell><cell>35.4</cell><cell>8.7</cell><cell>10.6</cell><cell>11.8</cell><cell>8.6</cell><cell>10.2</cell><cell>10.7</cell></row><row><cell cols="2">Tem=0.9 Top_P=0.95</cell><cell>29.3</cell><cell>31.5</cell><cell>32.2</cell><cell>8.8</cell><cell>10.5</cell><cell>11.7</cell><cell>6.2</cell><cell>7.6</cell><cell>8.0</cell></row><row><cell>Tem=1</cell><cell>Top_P=1</cell><cell>30.5</cell><cell>38.8</cell><cell>41.8</cell><cell>10.5</cell><cell>14.4</cell><cell>16.4</cell><cell>7.4</cell><cell>11.1</cell><cell>12.5</cell></row><row><cell cols="2">Relative Improvement</cell><cell>3.7% ↑</cell><cell>15.1% ↑</cell><cell>18.1% ↑</cell><cell>19.3% ↑</cell><cell>35.8% ↑</cell><cell cols="2">39.0% ↑ -14.0% ↓</cell><cell>8.8% ↑</cell><cell>16.8% ↑</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_7"><head>Table 8 :</head><label>8</label><figDesc>Comparative evaluation of KareCoder with other methods on the top 500 problems in the APPS test set.the same step-by-step prompt. Furthermore, the SCOT&amp;KareCoder, which incorporates external knowledge, exhibits a slightly lower performance than SCOT alone on the Pass@1 metric but significantly surpasses SCOT on the Pass@3 and Pass@5 metrics. From this phenomenon, we can still discover the role of incorporating knowledge into code generation through a two-by-two comparison of Plan and KareCoder, SCOT and SCOT&amp;KareCoder.</figDesc><table><row><cell>Method</cell><cell cols="3">Pass@1 Pass@3 Pass@5</cell></row><row><cell>ChatGPT</cell><cell>19.5</cell><cell>30.0</cell><cell>34.4</cell></row><row><cell>ChatGPT+Plan</cell><cell>9.2</cell><cell>11.1</cell><cell>11.9</cell></row><row><cell>ChatGPT+SCOT</cell><cell>13.3</cell><cell>14.2</cell><cell>14.4</cell></row><row><cell>ChatGPT+SCOT&amp;KareCoder</cell><cell>13.0</cell><cell>15.0</cell><cell>16.1</cell></row><row><cell>ChatGPT+KareCoder</cell><cell>13.1</cell><cell>15.2</cell><cell>15.8</cell></row><row><cell>Relative Improvement</cell><cell>-1.5% ↓</cell><cell>1.3% ↑</cell><cell>-1.9% ↓</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_0"><p>The difficulty level of which were sourced from the CodeForces programming website.</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="9">CONCLUSION</head><p>In this research, we aimed to circumvent the utilization of LLMs' training data and thus constructed a new code generation dataset CodeF. The experiment indicated that problems predating September 2021 surpassed those following this date in terms of the Pass@k metric. We crafted a Knowledge Library specifically tailored for programming algorithm problems, and introduced KareCoder. This method integrates algorithms and data structures knowledge into the intermediate process of code generation, specifically, during the generation of knowledge-aware prompt. Experimental results demonstrated that KareCoder notably outperforms other code generation methods based on LLMs, on the CodeF post2021-9 and the first 500 problems of APPS datasets. This substantiates the research value of integrating algorithms and data structures knowledge into the code generation process.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Synchromesh: Reliable code generation from pretrained language models</title>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Poesia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Polozov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vu</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Tiwari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gustavo</forename><surname>Soares</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Meek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sumit</forename><surname>Gulwani</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Incorporating domain knowledge through task augmentation for front-end javascript code generation</title>
+		<author>
+			<persName><forename type="first">Sijie</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihong</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qizhi</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankun</forename><surname>Zhen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 30th ACM Joint European Software Engineering Conference and Symposium on the Foundations of Software Engineering</title>
+		<meeting>the 30th ACM Joint European Software Engineering Conference and Symposium on the Foundations of Software Engineering</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="1533" to="1543" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Codet: Code generation with generated tests</title>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fengji</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anh</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daoguang</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeqi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian-Guang</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Codep: grammatical seq2seq model for generalpurpose code generation</title>
+		<author>
+			<persName><forename type="first">Yihong</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 32nd ACM SIGSOFT International Symposium on Software Testing and Analysis</title>
+		<meeting>the 32nd ACM SIGSOFT International Symposium on Software Testing and Analysis</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="188" to="198" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Embedding api dependency graph for neural code generation</title>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruyun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanwen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Songlin</forename><surname>Hu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Empirical Software Engineering</title>
+		<imprint>
+			<biblScope unit="volume">26</biblScope>
+			<biblScope unit="page" from="1" to="51" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Codegen: An open large language model for code with multi-turn program synthesis</title>
+		<author>
+			<persName><forename type="first">Erik</forename><surname>Nijkamp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hiroaki</forename><surname>Hayashi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lifu</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingbo</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvio</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.13474</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henrique</forename><surname>Ponde De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harri</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chatgpt</surname></persName>
+		</author>
+		<ptr target="https://OpenAI.com/chatgpt" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="2023" to="2027" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Biobert: a pre-trained biomedical language representation model for biomedical text mining</title>
+		<author>
+			<persName><forename type="first">Jinhyuk</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wonjin</forename><surname>Yoon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sungdong</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donghyeon</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sunkyu</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chan</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">So</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaewoo</forename><surname>Kang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Bioinformatics</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="1234" to="1240" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Don&apos;t stop pretraining: Adapt language models to domains and tasks</title>
+		<author>
+			<persName><forename type="first">Suchin</forename><surname>Gururangan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ana</forename><surname>Marasović</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swabha</forename><surname>Swayamdipta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iz</forename><surname>Beltagy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Doug</forename><surname>Downey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 58th Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="8342" to="8360" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Program synthesis with large language models</title>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Augustus</forename><surname>Odena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carrie</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2108.07732</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Measuring coding challenge competence with apps</title>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurav</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mantas</forename><surname>Mazeika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akul</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samir</forename><surname>Puranik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Horace</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Thirty-fifth Conference on Neural Information Processing Systems Datasets and Benchmarks Track</title>
+		<imprint>
+			<biblScope unit="page">2021</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Self-planning code generation with large language model</title>
+		<author>
+			<persName><forename type="first">Xue</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihong</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lecheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiwei</forename><surname>Shang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.06689</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xin-Ye</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiang-Tian</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.10679</idno>
+		<title level="m">Think outside the code: Brainstorming boosts large language models in code generation</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Self-collaboration code generation via chatgpt</title>
+		<author>
+			<persName><forename type="first">Yihong</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xue</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.07590</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Structured chain-of-thought prompting for code generation</title>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongmin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.06599</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Latent predictor networks for code generation</title>
+		<author>
+			<persName><forename type="first">Wang</forename><surname>Ling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phil</forename><surname>Blunsom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Grefenstette</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><forename type="middle">Moritz</forename><surname>Hermann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomáš</forename><surname>Kočiskỳ</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fumin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Senior</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 54th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 54th Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="599" to="609" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">r18treegen: A tree-based transformer architecture for code generation</title>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingfei</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yican</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lili</forename><surname>Mou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="8984" to="8991" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Identifieraware unified pre-trained encoder-decoder models for code understanding and generation</title>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weishi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shafiq</forename><surname>Joty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven Ch</forename><surname>Hoi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2021 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="page" from="8696" to="8708" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Codebert: A pre-trained model for programming and natural languages</title>
+		<author>
+			<persName><forename type="first">Zhangyin</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daya</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Duyu</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaocheng</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linjun</forename><surname>Shou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ting</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daxin</forename><surname>Jiang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: EMNLP 2020</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="1536" to="1547" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Incoder: A generative model for code infilling and synthesis</title>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armen</forename><surname>Aghajanyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jessy</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sida</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Wallace</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Freda</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiqi</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Competition-level code generation with alphacode</title>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyoung</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nate</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rémi</forename><surname>Leblond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Eccles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Keeling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Gimeno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Agustin</forename><surname>Dal Lago</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Science</title>
+		<imprint>
+			<biblScope unit="volume">378</biblScope>
+			<biblScope unit="issue">6624</biblScope>
+			<biblScope unit="page" from="1092" to="1097" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Code llama: Open foundation models for code</title>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Baptiste Roziere</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabian</forename><surname>Gehring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sten</forename><surname>Gloeckle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Itai</forename><surname>Sootla</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Xiaoqing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yossi</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyu</forename><surname>Adi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tal</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jérémy</forename><surname>Remez</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rapin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.12950</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Raymond</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Loubna</forename><surname>Ben Allal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangtian</forename><surname>Zi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denis</forename><surname>Kocetkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenghao</forename><surname>Mou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Marone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Akiki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jenny</forename><surname>Chim</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.06161</idno>
+		<title level="m">Starcoder: may the source be with you! arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Pre-train, prompt, and predict: A systematic survey of prompting methods in natural language processing</title>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhe</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinlan</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengbao</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hiroaki</forename><surname>Hayashi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Computing Surveys</title>
+		<imprint>
+			<biblScope unit="volume">55</biblScope>
+			<biblScope unit="issue">9</biblScope>
+			<biblScope unit="page" from="1" to="35" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shuofei</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixin</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ningyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunzhi</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shumin</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuanqi</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huajun</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.09597</idno>
+		<title level="m">Reasoning with language model prompting: A survey</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Plan-and-solve prompting: Improving zero-shot chain-of-thought reasoning by large language models</title>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanyu</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihuai</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqiang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunshi</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roy</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ka-Wei</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ee-Peng</forename><surname>Lim</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.04091</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Automatic chain of thought prompting in large language models</title>
+		<author>
+			<persName><forename type="first">Zhuosheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aston</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Smola</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Least-to-most prompting enables complex reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claire</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Bousquet</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Quoc V Le</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Improving chatgpt prompt for code generation</title>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanlin</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Neng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haibo</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meng</forename><surname>Yan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.08360</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Rongao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo-Wen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Taco</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.14852</idno>
+		<title level="m">Topics in algorithmic code generation dataset</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Competitive programmer&apos;s handbook</title>
+		<author>
+			<persName><forename type="first">Antti</forename><surname>Laaksonen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="volume">5</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,1593 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">SeeClick: Harnessing GUI Grounding for Advanced Visual GUI Agents</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-02-23">23 Feb 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Kanzhi</forename><surname>Cheng</surname></persName>
+							<email>chengkz@smail.nju.edu</email>
+						</author>
+						<author>
+							<persName><forename type="first">Qiushi</forename><surname>Sun</surname></persName>
+							<email>qiushisun@u.nus.edu</email>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Shanghai AI Laboratory</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yougang</forename><surname>Chu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science and Technology</orgName>
+								<orgName type="institution">Nanjing University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Fangzhi</forename><surname>Xu</surname></persName>
+							<email>fangzhixu98@gmail.com</email>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Shanghai AI Laboratory</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yantao</forename><surname>Li</surname></persName>
+							<email>li_yantao@smail.nju.edu</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science and Technology</orgName>
+								<orgName type="institution">Nanjing University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jianbing</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science and Technology</orgName>
+								<orgName type="institution">Nanjing University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhiyong</forename><surname>Wu</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Shanghai AI Laboratory</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">SeeClick: Harnessing GUI Grounding for Advanced Visual GUI Agents</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-02-23">23 Feb 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">1092053C05F66DC554DB76BBC7AEC5B9</idno>
+					<idno type="arXiv">arXiv:2401.10935v2[cs.HC]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:37+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>Large Vision-Language Model (LVLM) Vision-Language Adapter</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Graphical User Interface (GUI) agents are designed to automate complex tasks on digital devices, such as smartphones and desktops. Most existing GUI agents interact with the environment through extracted structured data, which can be notably lengthy (e.g., HTML) and occasionally inaccessible (e.g., on desktops). To alleviate this issue, we propose a novel visual GUI agent -SeeClick, which only relies on screenshots for task automation. In our preliminary study, we have discovered a key challenge in developing visual GUI agents: GUI grounding -the capacity to accurately locate screen elements based on instructions. To tackle this challenge, we propose to enhance SeeClick with GUI grounding pre-training and devise a method to automate the curation of GUI grounding data. Along with the efforts above, we have also created ScreenSpot, the first realistic GUI grounding benchmark that encompasses mobile, desktop, and web environments. After pre-training, SeeClick demonstrates significant improvement in ScreenSpot over various baselines. Moreover, comprehensive evaluations on three widely used benchmarks consistently support our finding that advancements in GUI grounding directly correlate with enhanced performance in downstream GUI agent tasks. 1  </p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>A perennial topic in machine intelligence is the development of Graphical User Interface (GUI) agent systems, like Siri and Copilot, to automate complex tasks on computing devices, thereby reducing human workload <ref type="bibr" target="#b27">(Shi et al., 2017;</ref><ref type="bibr">Li et al., 2020a)</ref>. Recent advances in Large Language Models (LLMs) such as <ref type="bibr">GPT-4 (OpenAI, 2023)</ref> have significantly propelled the evolution of GUI agents <ref type="bibr" target="#b9">(Gur et al., 2023;</ref><ref type="bibr" target="#b43">Zhou et al., 2023)</ref>. These * Work done during internship at Shanghai AI Laboratory. 1 The model, data and code are available at <ref type="url" target="https://github.com/njucckevin/SeeClick">https://  github.com/njucckevin/SeeClick</ref>. agents interact with the environment by interpreting structured texts, e.g., HTML from webpages, then elicit LLM for planning, reasoning, and execution <ref type="bibr" target="#b13">(Kim et al., 2023;</ref><ref type="bibr" target="#b42">Zheng et al., 2023)</ref>.</p><p>However, GUI agents depend on structured text face three inherent limitations: (1) Structured text is not always accessible, especially for iOS or desktop applications where acquiring such information is challenging <ref type="bibr" target="#b26">(Shaw et al., 2023)</ref> ; (2) The verbose nature of structured text constitutes an inefficient context for LLMs, while also omitting crucial information such as layout, images, and icons <ref type="bibr" target="#b6">(Deng et al., 2023)</ref> ; (3) The variety of structured textincluding HTML, DOM, and Android VH -necessitates the curation of task-specific observation and action spaces <ref type="bibr" target="#b13">(Kim et al., 2023;</ref><ref type="bibr" target="#b43">Zhou et al., 2023)</ref>. These entrenched deficiencies in text-based approaches call for an alternative solution.</p><p>In this paper, we introduce SeeClick, a visual GUI agent built on Large Vision-Language Models (LVLMs). Inspired by human interaction with GUIs, as illustrated in Figure <ref type="figure">1</ref>, SeeClick is designed to perform low-level actions like clicking or typing directly by observing interface screen-shots. This innovative approach bypasses the interaction with cumbersome structured text, empowering SeeClick to universally adapt to various GUI platforms. Building such visual agents presents a foundational challenge: GUI grounding -the capacity to accurately locate screen elements based on instructions, which is absent in current LVLMs.To tackle this challenge, SeeClick enhances LVLM with a GUI grounding pre-training strategy. We devise a method to automate the curation of web grounding data and adapt public mobile UI datasets to obtain mobile grounding data. SeeClick employs the above-curated dataset for continual pre-training of the LVLM, enabling it to accurately locate elements such as text, widgets, and icons in various GUI environments.</p><p>Given GUI grounding is a fundamental yet underexplored capacity for GUI agents, we establish ScreenSpot, the first realistic GUI grounding evaluation benchmark across various GUI platforms. ScreenSpot contains over 600 screenshots and 1200 instructions from iOS, Android, macOS, Windows, and webpages, and specifically includes both textbased elements and a variety of widgets and icons. Evaluation results confirm SeeClick's superiority over current LVLMs, validating the effectiveness of GUI grounding pre-training.</p><p>Finally, we adapt SeeClick to mobile and web agent tasks, including MiniWob <ref type="bibr" target="#b27">(Shi et al., 2017)</ref>, AITW <ref type="bibr" target="#b25">(Rawles et al., 2023)</ref>, and Mind2Web <ref type="bibr" target="#b6">(Deng et al., 2023)</ref>. As a purely vision-based agent, SeeClick achieves impressive performance. It surpasses the strong visual baseline Pix2Act while utilizing merely 0.3% training data. Moreover, experimental results on these three benchmarks consistently support our findings that improvement in GUI grounding directly correlates with enhanced agent task performance.</p><p>Our main contributions are as follows:</p><p>• We develop a unified visual GUI agent SeeClick, which solely relies on interface screenshots to perform clicking and typing actions across diverse GUI platforms.</p><p>• We prospectively explore GUI grounding for visual GUI agents, and enhanced SeeClick with proposed GUI grounding pre-training strategy.</p><p>• We create a realistic GUI grounding benchmark ScreenSpot, encompassing more than 1200 instructions from various GUI platforms.</p><p>• Experimental results on ScreenSpot and three agent tasks demonstrate that enhancing agents' grounding capacity is key to improving performance in downstream agent tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related work</head><p>Autonomous GUI Navigation Early research explored task automation in simplified web <ref type="bibr" target="#b27">(Shi et al., 2017;</ref><ref type="bibr" target="#b20">Liu et al., 2018;</ref><ref type="bibr" target="#b10">Gur et al., 2018)</ref> and mobile UI <ref type="bibr">(Li et al., 2020a;</ref><ref type="bibr">Burns et al., 2022;</ref><ref type="bibr" target="#b16">Li and Li, 2022)</ref>. With LLM advancements <ref type="bibr" target="#b23">(OpenAI, 2023;</ref><ref type="bibr">Touvron et al., 2023;</ref><ref type="bibr" target="#b33">Xu et al., 2023;</ref><ref type="bibr" target="#b28">Sun et al., 2023;</ref><ref type="bibr" target="#b32">Wu et al., 2024</ref>, inter alia), LLM-centric agents have become the dominant paradigm. A line of works focused on prompting ChatGPT and GPT-4 for web tasks, via in-context learning <ref type="bibr" target="#b42">(Zheng et al., 2023)</ref> and self-refine <ref type="bibr" target="#b13">(Kim et al., 2023)</ref>.</p><p>Other research explored training LLMs as specialized agents. <ref type="bibr" target="#b6">Deng et al. (2023)</ref> devised a two-stage method for identifying target elements within intricate HTML. <ref type="bibr" target="#b9">Gur et al. (2023)</ref> proposed to interact with websites via programming.</p><p>Given the constraints of LLM to only process text, recent efforts have attempted vision-based GUI navigation <ref type="bibr" target="#b26">(Shaw et al., 2023;</ref><ref type="bibr" target="#b39">Zhan and Zhang, 2023;</ref><ref type="bibr" target="#b11">Hong et al., 2023)</ref>. These methods primarily utilize GPT-4V <ref type="bibr" target="#b34">(Yan et al., 2023;</ref><ref type="bibr" target="#b8">Gao et al., 2023)</ref> and also require GUI metadata as input <ref type="bibr">(Yang et al., 2023a;</ref><ref type="bibr" target="#b41">Zheng et al., 2024)</ref>. In this paper, we construct a universal visual GUI agent SeeClick by customizing open-sourced LVLM, capable of operating across various GUI platforms without needing any GUI metadata. Large Vision-Language Models Recent research has invested tremendous effort in constructing LVLMs capable of jointly processing image and text <ref type="bibr">(Liu et al., 2023a;</ref><ref type="bibr" target="#b44">Zhu et al., 2023;</ref><ref type="bibr" target="#b37">Ye et al., 2023;</ref><ref type="bibr" target="#b14">Li et al., 2023)</ref>, integrating vision encoders with LLMs through connecting layers, inheriting LLMs' linguistic and reasoning skills to perform vision-language tasks. A series of studies focused on grounding with LVLMs <ref type="bibr" target="#b31">(Wang et al., 2023;</ref><ref type="bibr" target="#b0">Bai et al., 2023;</ref><ref type="bibr">Chen et al., 2023a)</ref>, such as providing bounding boxes for objects when generating responses <ref type="bibr">(Chen et al., 2023b;</ref><ref type="bibr" target="#b24">Peng et al., 2023)</ref>. Nonetheless, these efforts primarily addressed natural images and did not explore GUI contexts. This paper focuses on grounding in GUIs and explores the potential of LVLMs as visual agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Approach</head><p>Our preliminary study highlights a major challenge in developing visual GUI agents: GUI grounding,</p><p>Instruction: "View the new album of Jony J" Next action: click (0.49, 0.40) Mobile UI Related Web UI Related General VL Data VQA Visual Reasoning Widget Captioning UI Summarization Mobile UI Grounding Web OCR Web UI Grounding Instruction: open the low power mode Source: Mobile (iOS) Type: Icon/Widget Instruction: See more options for Dark Mode Source: Mobile (Android) Type: Text Instruction: Change font size to 20 Source: Desktop (macOS) Type: Text Instruction: Likes on this issue Source: Web (Development) Type: Icon/Widget Instruction: Create a new merge request Source: Web (Development) Type: Text Instruction: Switch to OneDrive path Source: Desktop (Windows) Type: Text GUI Grounding Benchmark: ScreenSpot (a) Overview of SeeClick's framework and GUI grounding pre-training. (b) Examples of the proposed GUI grounding benchmark ScreenSpot.</p><p>(c) SeeClick as a visual GUI agent in downstream task.</p><p>Instruction: Find a list of shorthaired dogs available for adoption with 100 miles of zip code 94587 that are good with kids and cats, and have been on Petfinder for over 30 days. the capacity to locate screen elements based on instructions. Although recent LVLMs have claimed grounding capability on natural images <ref type="bibr" target="#b0">(Bai et al., 2023;</ref><ref type="bibr" target="#b31">Wang et al., 2023)</ref>, GUI screenshots differ significantly with dense text and numerous icons and widgets. These differences impair existing LVLMs' grounding performance in GUI contexts and limit their potential as visual GUI agents.</p><p>This paper seeks to harness LVLMs with GUI grounding skills, paving the way for a visual GUI agent that executes instructions only relying on screenshots. As presented in Figure <ref type="figure" target="#fig_1">2</ref>, SeeClick is a foundational model for GUIs, and tailored for adaption to agent tasks. Next, we introduce the birth of SeeClick, including the formalization of GUI grounding task, the construction of continual pre-training data, and training details.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">GUI grounding for LVLMs</head><p>As GUI grounding is the core capability of SeeClick, we first elucidate how to train LVLM for language generation to perform grounding tasks. Given an interface screenshot s and a collection of elements {(x i , y i )| i } on it, where x i denotes the textual description of the i-th element and y i indicates the element's location (represented as a bounding box or point). As depicted in Figure <ref type="figure" target="#fig_1">2(a)</ref>, LVLM predicts the location of the element y based on the interface screenshot s and its textual description x, i.e. calculating p(y|s, x).</p><p>A potential challenge is how LVLMs predict numerical coordinates in a language generation format. Previous studies <ref type="bibr" target="#b4">(Chen et al., 2021;</ref><ref type="bibr" target="#b31">Wang et al., 2023;</ref><ref type="bibr" target="#b26">Shaw et al., 2023)</ref> divide the image into 1000 bins, and creating a new 1,000-token vocabulary {&lt; p0 &gt;, &lt; p1 &gt;, ..., &lt; p999 &gt;} to represent the x and y coordinates. In this work, we adopt a more intuitive manner used in LVLMs <ref type="bibr">(Chen et al., 2023b;</ref><ref type="bibr" target="#b0">Bai et al., 2023)</ref>, treating numerical values as natural languages without any additional tokenization or pre-/post-processing. For instance, in Figure <ref type="figure" target="#fig_1">2(a)</ref>, for a smartphone screenshot and the instruction "View the new album of Jony J", we craft a query prompt: "In the UI, where should I click if I want to &lt;instruction&gt;?". Subsequently, we normally compute the cross-entropy loss between the model output and the ground truth "click (0.49, 0.40)" to optimize the LVLM.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Data Construction</head><p>We train SeeClick using three collections of data: web UI data crawled from the internet, mobile UI data reorganized from public datasets and general vision-language instruction-following data. Web Data. Web UIs, featuring a variety of layouts and design styles across websites, are ideal for training LVLMs' general recognition and grounding capabilities across different GUI contexts. We collect approximately 300k web pages from the latest Common Crawl repository to serve as our training data for web UI. For each webpage s, we collect two types of elements from the HTML code as exemplified in Figure <ref type="figure" target="#fig_9">3:</ref> (1) elements that display visible text content; and (2) elements with a special "title" attribute that display descriptive text when hovering. This method ensures that we gather a series of interactable elements y and their corresponding instructions x, while encompassing a wide range of text and icon elements. In addition to the grounding task p(y|s, x), we also include web OCR task p(x|s, y), predicting text description based on coordinates. Mobile Data. For mobile UI, we include three types of data: widget captioning, mobile UI grounding, and mobile UI summarization. The widget captioning dataset provides language descriptions for mobile UI elements; for example, the description "play music" for the play button on a music player interface. We utilize the training split of the dataset provided by <ref type="bibr">(Li et al., 2020b)</ref>, containing &lt;div class="header"&gt; &lt;ul class="menu"&gt; &lt;li&gt;...&lt;/li&gt; &lt;/ul&gt; &lt;/div&gt; &lt;div class="container"&gt; &lt;div class="product-thumbnails"&gt;&lt;a href="#" title="Previous image"&gt;&lt;/a&gt;&lt;/div&gt; &lt;div class="product-detail"&gt; &lt;div&gt;...&lt;/div&gt; &lt;button&gt;ENQUIRE NOW&lt;/button&gt; &lt;div class="product-share"&gt;…&lt;/div&gt; &lt;/div&gt; &lt;/div&gt; nearly 20k screenshots, 40k widgets, and 100k descriptions. We derive mobile UI grounding data by reversing the process of widget captioning, treating language descriptions as instructions and corresponding widgets as target elements. To improve diversity, we also incorporate the automatically collected elements and instructions from RICO <ref type="bibr">(Li et al., 2020a)</ref>. The mobile data involves diverse elements and instructions, facilitating the generalization of SeeClick's grounding proficiency to diverse GUI contexts. We finally include mobile UI summarization data <ref type="bibr" target="#b30">(Wang et al., 2021)</ref> to enhance overall interface comprehension. General Data. To maintain LVLM's general capacities on natural images, we incorporate the general vision-language instruction-following data from LLaVA <ref type="bibr">(Liu et al., 2023a)</ref>, covering conversation, detailed description, and complex reasoning.</p><p>Finally, we mix the data above and craft 30 taskspecific prompts for each added GUI task, resulting in a 1M dataset to train SeeClick.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Training Details</head><p>We build SeeClick through continual pre-training on a recent advanced LVLM, Qwen-VL <ref type="bibr" target="#b0">(Bai et al., 2023)</ref>, which possesses grounding capabilities and a higher resolution of 448*448. We train Qwen-VL on the dataset we constructed (as described in Section 3.2) for about 10k steps (around 1 epoch) to obtain our GUI base model SeeClick. During training, we employ LoRA <ref type="bibr" target="#b12">(Hu et al., 2021)</ref> to fine-tune both the visual encoder and LLM. Further details and task examples are provided in Appendix A.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">ScreenSpot: A Grounding Benchmark</head><p>We recognize GUI grounding proficiency as essential for constructing visual GUI agents. However, the constrained capabilities of earlier visionlanguage models resulted in limited attention, with scant research <ref type="bibr" target="#b19">(Li et al., 2021;</ref><ref type="bibr" target="#b16">Li and Li, 2022;</ref><ref type="bibr" target="#b40">Zhang et al., 2023)</ref> largely confined to an Android dataset <ref type="bibr" target="#b5">(Deka et al., 2017)</ref> collected in 2017.</p><p>To address this research gap, we introduce ScreenSpot, an up-to-date, realistic grounding evaluation benchmark encompassing various GUI platforms. It is designed to assess vision-language models' ability to locate screen elements based on instructions (Figure <ref type="figure" target="#fig_1">2</ref> To measure models' effectiveness in real-world scenarios, ScreenSpot is carefully curated to ensure the samples are novel and not included in existing training resources. We recruited experienced annotators to collect GUI interfaces and label instructions along with the bounding boxes for actionable elements. For mobile and desktop, annotators were asked to select commonly used apps and operations; for web, we chose several types of websites (development, shopping, forum, and tools) from the web environment WebArena <ref type="bibr" target="#b43">(Zhou et al., 2023)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Experiments</head><p>In this section, we first evaluate the GUI grounding capabilities of representative LVLMs and our proposed SeeClick. Subsequently, we adapt SeeClick to mobile and web agent tasks, analyzing the correlation between the advanced grounding capacity and downstream task performance, while exploring the potential of purely vision-based GUI agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">GUI Grounding on ScreenSpot</head><p>As the foundation of visual GUI agents, GUI grounding has not received adequate attention in current LVLMs evaluations <ref type="bibr">(Liu et al., 2023b;</ref><ref type="bibr" target="#b38">Yu et al., 2023)</ref>. Therefore, we evaluate LVLMs on our GUI-specific benchmark ScreenSpot.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Compared LVLMs &amp; Evaluation.</head><p>We primarily evaluated two types of LVLMs: (1) Generalist LVLMs capable of tasks such as dialogue, recognition and grounding, including MiniGPT-v2 <ref type="bibr">(Chen et al., 2023a)</ref>, Qwen-VL <ref type="bibr" target="#b0">(Bai et al., 2023)</ref> and GPT-4V; (2) Recently released LVLMs specifically designed for GUI tasks, including Fuyu <ref type="bibr" target="#b1">(Bavishi et al., 2023)</ref> and CogAgent <ref type="bibr" target="#b11">(Hong et al., 2023)</ref>.</p><p>Considering that GUI agents require clicking on the correct position, we calculate the click accuracy as the metric, defined as the proportion of test samples where the model predicted location falls in the ground truth element bounding box <ref type="bibr" target="#b16">(Li et al., 2022;</ref><ref type="bibr" target="#b40">Zhang et al., 2023)</ref>. More details about evaluation on ScreenSpot is in Appendix B. Results. As shown in Table <ref type="table" target="#tab_0">1</ref>, while generalist LVLMs have excelled in natural image grounding, their GUI grounding performance on ScreenSpot is poor due to the significant differences between GUIs and natural images. Even GPT-4V struggles with accurately locating screen elements.</p><p>In comparison, GUI-specific LVLMs have significant improvements. SeeClick achieved the best average performances across GUI platforms and two types of elements, even with fewer parameters than CogAgent. This demonstrates the efficiency of our GUI grounding pre-training; with the rich UI elements and diverse instructions collected from the web and mobile, SeeClick quickly learns to understand human instructions for element localization, even in completely unseen scenarios like iOS and desktop. SeeClick exhibits slightly inferior performance in locating text within desktop and web compared to CogAgent, possibly due to lower resolution and much smaller training data. Notably, all models struggle with locating icons/widgets, highlighting the difficulty of identifying and grounding non-text elements on GUIs, which is the unique challenge posed by ScreenSpot.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Visual GUI Agent Tasks</head><p>This section explores SeeClick's application to mobile and computer agent tasks: MiniWob, AITW, and Mind2Web. We trained SeeClick on the respective training splits and tested it on the test sets. Across these tasks, with provided instructions and memory of previous actions, SeeClick determines the next action solely by observing interface screenshots. The detailed task settings, action formats and interaction examples are in Appendix C.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.1">MiniWob</head><p>MiniWob <ref type="bibr" target="#b27">(Shi et al., 2017)</ref> comprises about 100 types of web automation tasks, where the agent is asked to interact with a simplified web environment to accomplish human instructions. Existing opensource training data often lacks corresponding interface screenshots <ref type="bibr" target="#b7">(Furuta et al., 2023)</ref>. Therefore, we rollout 50 successful episodes using an LLM strategy for each task in <ref type="bibr" target="#b42">(Zheng et al., 2023)</ref>, resulting in a 2.8K episodes dataset to train SeeClick. Compared Methods &amp; Evaluation. We compared SeeClick with a range of offline training methods. Among these, the state-of-the-art method WebGUM <ref type="bibr" target="#b7">(Furuta et al., 2023)</ref>  auxiliary input but still selects HTML elements as actions. Pix2Act <ref type="bibr" target="#b26">(Shaw et al., 2023)</ref> is the only prior vision-based approach, trained with extensive demonstration data to perform actions. To verify the effectiveness of GUI grounding pre-training, we also report the results of the LVLM baseline Qwen-VL when trained with the same 2.8K dataset. Due to the variance in evaluation task sets among different methods <ref type="bibr" target="#b20">(Liu et al., 2018;</ref><ref type="bibr" target="#b7">Furuta et al., 2023;</ref><ref type="bibr" target="#b26">Shaw et al., 2023)</ref>, for fairness, we report performance in two groups based on the overlapping MiniWob tasks. We compute the success rate over 50 random seeds for each task and then compute the mean over all tasks as the final score. We provided task-wise scores in Appendix C.2. Results. As depicted in Table <ref type="table" target="#tab_1">2</ref>, purely visionbased SeeClick surpassed strong baselines with substantially less training data. Notably, with an equivalent amount of 2.8K training data, it outperformed the offline sota WebGUM, which uses both HTML and screenshots as input. Moreover, thanks to LVLM's powerful reasoning and planning abilities and our GUI grounding pre-training, SeeClick exceeded the sota visual method Pix2Act, using less than 0.3% training data.</p><p>Furthermore, SeeClick significantly surpassed the LVLM baseline Qwen-VL by nearly 20 percentage points, underscoring the importance of GUI grounding in boosting LVLM's performance. To analyze in detail, we provide task-level comparisons in Figure <ref type="figure" target="#fig_5">5</ref>. SeeClick notably excelled in tasks with dynamic interface layouts and ele-  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.3">Mind2Web</head><p>To assess SeeClick's capabilities in web navigation, we utilize the recently introduced Mini2Web dataset <ref type="bibr" target="#b6">(Deng et al., 2023)</ref>, which comprises over 2000 open-ended tasks collected from 137 real websites, each with high-level instruction and corresponding human action trajectory. Mind2Web was originally designed for text-based agents, which select actionable elements from simplified HTML in each step. This work explores visual web agents that predict click positions directly from screenshots. For this purpose, we parsed screenshots and target element bounding boxes from the raw dump of Mind2Web. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.4">Grounding and Agent Performance</head><p>To investigate the correlation between grounding and agent performance, we analyze the average score improvements of several SeeClick's checkpoints on ScreenSpot and three downstream tasks. As depicted in Figure <ref type="figure" target="#fig_6">6</ref>, enhanced GUI grounding capacity consistently boosts agent task performance, highlighting its crucial role in developing advanced visual GUI agents.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.5">SeeClick as Unified GUI Agent</head><p>To access the potential of vision-based solutions in unifying GUI agent tasks, we evaluated jointly training SeeClick on three downstream tasks. As shown in Table <ref type="table" target="#tab_4">5</ref>, the unified model exhibited a slight performance decline, possibly due to the significant distinct interface of different GUIs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>In this paper, we introduce a visual GUI agent -SeeClick, which only relies on screenshots for GUI task automation. We found a key challenge in developing such visual GUI agents: GUI grounding -the capacity to accurately locate screen elements based on human instructions. To address this challenge, we propose to enhance SeeClick via GUI grounding pre-training, and devise methods to automate the curation of GUI grounding data from web and mobile. For benchmarking the progress in GUI grounding, we created ScreenSpot, the first realistic evaluation dataset encompassing mobile, desktop, and web platforms. Results on ScreenSpot demonstrate a significant improvement of SeeClick over LVLM baselines. Moreover, comprehensive evaluations across three GUI automation tasks consistently support our finding that advancements in GUI grounding directly correlated with improved performance in downstream agent tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitations</head><p>SeeClick currently simplifies the GUI action space to mainly focus on clicking and typing, excluding complex actions like dragging and double-clicking. Additionally, limited by the performance of opensource LVLMs, training on agent-specific data is necessary for SeeClick to execute multi-step tasks on interfaces like mobile and computer.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Ethical considerations</head><p>GUI agents are developed to automate tasks and enhance efficiency on digital devices. These technologies are especially significant for individuals with visual impairments. Here are some ethical considerations: Privacy Issues. The operation of GUI agents involves accessing and interacting with user interfaces that may contain personal or sensitive information. Ensuring data protection and user consent are paramount to maintaining privacy integrity.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Safety in Read-World Interactions.</head><p>When GUI agents interact with the real world, there's a risk of unintended harmful actions. Ensuring these agents operate within safe parameters is crucial to prevent negative outcomes.</p><p>Bias. The development of GUI agents must address potential biases in their algorithms, which could result in unequal performance across different user groups or interface designs. Mitigating bias is essential for equitable access and effectiveness. Addressing these concerns requires ongoing research and development efforts, ensuring that the benefits of GUI agents are realized without compromising ethical standards.</p><p>Instruction: open settings Instruction: add a new slide Instruction: display calendar in week view Instruction: choose the red pen Instruction: enable notifications Instruction: close corresponding English text commands for the annotated screen elements. All annotated interfaces and operational elements were in English and postprocessed to remove personal information.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2 Sample Showcase</head><p>Figure <ref type="figure">10</ref> provides more examples of ScreenSpot, which contains a variety of common GUI scenarios for mobile, desktop, and web platforms.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3 Evaluation Detail</head><p>For comparing baselines, we tested the models' grounding capabilities using their officially recommended approach. For instance, with CogAgent, we randomly selected prompts from the official set provided, such as "What steps do I need to take to &lt;instruction&gt;? (with grounding)", then the output coordinates (or the centers of bounding boxes) were taken as predicted points. For GPT-4V, we follow <ref type="bibr">Yang et al. (2023b)</ref> to enable it to locate screen elements based on instructions. SeeClick's predictions with points were marginally better than bounding boxes, thus we selected point prediction for final evaluation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.4 SeeClick Case Study &amp; Error Analysis</head><p>Figure <ref type="figure" target="#fig_7">8</ref> presents some examples of SeeClick on ScreenSpot. SeeClick can comprehend human instructions and accurately locate screen elements. To conduct a detailed analysis of localization performance, we quantified the distances between predicted points and ground truth (the center of target elements) in Figure <ref type="figure" target="#fig_8">9</ref>. It's noteworthy that even incorrect predictions mostly occur near the target bounding box, suggesting the model recognizes the target but needs improvement in fine-grained localization.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Downstream Agent Tasks</head><p>In this section, we first detail the formulation of SeeClick as a visual GUI agent, then separately introduce the settings for three downstream tasks, and finally show SeeClick's interaction cases with the GUI across these tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1 Formulation of SeeClick as Visual GUI Agent</head><p>Action Space SeeClick involves common human-UI interaction operations. Following AITW, we assigned an action_type id to each action type for model prediction.</p><p>• click(x,y): 4. A click action at (x,y), where each value is a [0,1] number indicating the ratio of the corresponding position to the width or height of the image.</p><p>• type("typed_text"): 3. An action of typing a piece of text.</p><p>• select("value"): 2. An action for selecting an option from a dropdown menu on a webpage.</p><p>• swipe(direction): Swipe actions for the screen, swipe up/down/left/right are assigned the ids 1, 0, 8, and 9 respectively.</p><p>• PRESS BACK: 5. The action for returning to the previous step.</p><p>• PRESS HOME: 6. The action for returning to the homepage.</p><p>• PRESS ENTER: 7. The action of pressing the ENTER key to submit input content. random variants and corresponding instructions controlled by a random seed, creating up to billions of possible task instances. We use 50 successful trajectories for each task provided in <ref type="bibr" target="#b42">(Zheng et al., 2023)</ref> for training and test each task with 50 random seeds, following standard practices.</p><p>We report the average success rate across random seeds and tasks, automatically provided by the MiniWob environment. A task is considered successfully completed if executed correctly, while incorrect executions or exceeding the maximum number of actions (set as 30 here) are counted as failures. For the baselines in Table <ref type="table" target="#tab_1">2</ref>, we use the task-wise scores provided in their papers to calculate the average score for tasks overlapping with SeeClick. We also provided a task-wise comparison in Table <ref type="table">8</ref>. Despite AITW's large scale, as stated in Section 5.2.2, the current train-test split poses a significant risk of overfitting, leading to experimental results that do not accurately reflect an agent's generalization ability in the real world. We also conducted experiments on SeeClick using the origin split, as shown in Table <ref type="table" target="#tab_5">7</ref>, SeeClick is comparable to CogAgent's performance. We believe that due to the severe overfitting, designing new agent frameworks or enlarging model size is unlikely to yield much improvements on this split.</p><p>To address the aforementioned issue, we propose to divide the train/val/test in an instruction-wise manner. Specifically, we selected 545/688/306/700/700 instructions from the General/Install/GoogleApps/Single/WebShopping subsets, and retained only one annotated episode for each instruction. To avoid imbalance in joint training, we randomly chose 700 instructions from Sin-gle and WebShopping. Given the similarity among instructions within Single and WebShopping, these 700 instructions are representative of performance on these two subsets. Next, we allocate 80% for training and the remaining 20% for testing, and select additional 5*100 episodes to form the validation set from the origin data. The data used for training, validation, and testing will be opensourced to serve as an effective evaluation.</p><p>The other settings are consistent with previous work, calculating a screen-wise matching score that considers both the correctness of the action type and its value (e.g., the click point or typed text). The screen-wise matching score is correlates with the task completion score judged by humans <ref type="bibr" target="#b25">(Rawles et al., 2023)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.4 Mind2web</head><p>Mind2Web is a recently proposed dataset for developing generalist web agents for real-world websites, originally designed for text-based agents. Therefore, the origin observation in each step only includes the HTML code of the current webpage. To train and evaluate visual-based agents, we extracted web screenshots and the bounding boxes of target operational elements for each step from Mind2Web's raw dump. One issue with Mind2Web's original HTML observation is that it captures the entire page, including scrolling, with its screenshots being long captures (e.g., 1920*12000). Predicting operational positions from such high-resolution long screenshots is impractical for current LVLMs and does not align with human operations. To address this, for target elements not at the top, we randomly crop around their location, maintaining a consistent screenshot resolution of 1920*1080 for all observed interfaces.</p><p>Mind2Web first calculates Element Accuracy (Ele.Acc) which compares the predicted element with groundtruth, and Operation F1 (Op.F1) which calculates the token-level F1 score for the predicted operation. Operation F1 is equivalent to the accuracy of click operations but takes into account the correctness of input values for type and select operations. For our vision-based approach, Element Accuracy is computed as the accuracy of predicted click points falling in the groundtruth elements' bounding box. Then, a step is considered successful (Step SR) if both the predicted element and operation are correct.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.5 Case Study</head><p>MiniWob Figure <ref type="figure">11</ref>(a) illustrates the difference between static and dynamic layout tasks. Static layout tasks have fixed element positions during training and testing, while dynamic layout tasks display varying interfaces and element positions with instructions, further challenging the agent's ability to accurately locate the target. Figure <ref type="figure">11(b)</ref> provides examples of SeeClick's interaction with MiniWob. SeeClick relies solely on the interface screenshot for arithmetic, reasoning, etc. AITW Figure <ref type="figure" target="#fig_1">12</ref> provides SeeClick's operations on AITW. Predictions marked in red below indicate that they were computed as incorrect in AITW. Some errors occur because the current step's answer is not unique. For example in step 5, the model's predicted input "DuckDuckGo Privacy Browser" is also a potentially correct action. Mind2Web Figure <ref type="figure" target="#fig_10">13</ref> shows several examples of SeeClick on the real-world website benchmark Mind2Web. SeeClick can comprehend instructions and click on the correct elements within complex interfaces. </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><figDesc>Figure 1: Text-based agents select target elements from structured texts, occasionally augmented with screenshots. SeeClick employs a vision-based methodology to predict action locations solely relying on screenshots.</figDesc><graphic coords="1,307.27,294.41,107.64,64.86" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Overview of our universal visual GUI agent SeeClick. (a) depicts the framework of SeeClick and GUI grounding pre-training. (b) provides examples of ScreenSpot across various GUIs and types of instructions. (c) displays the real-world application of SeeClick when adapted to downstream web agent tasks.</figDesc><graphic coords="3,218.78,430.68,146.29,82.29" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Example of two types of elements automatically collected from the webpage.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Statistic of our proposed GUI grounding benchmark ScreenSpot. The left illustrates the diverse GUI environments included. The right displays the types of elements within each GUI category.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>(b) provides some examples). ScreenSpot has two distinctive features: (1) Various GUI platforms. It includes over 600 interface screenshots from mobile (iOS, Android), desktop (macOS, Windows), and web platforms, along with 1200+ instructions and corresponding actionable elements; (2) Icons/Widgets. ScreenSpot includes a substantial number of icons and widgets in each GUI, which is more challenging to locate than texts (statistics are in Figure 4). See Appendix B for annotation details and examples.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 5 :</head><label>5</label><figDesc>Figure5: Comparison of SeeClick and Qwen-VL on MiniWob. Tasks marked with yellow shadows feature dynamic webpage layouts, simulating real-world GUI agent applications (details in appendix Figure11). SeeClick outperformed Qwen-VL in most tasks, highlighting the effectiveness of GUI grounding pre-training.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 6 :</head><label>6</label><figDesc>Figure6: The correlation between agent tasks performance improvement and enhanced grounding ability.</figDesc><graphic coords="8,306.43,232.85,217.70,129.84" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 8 :</head><label>8</label><figDesc>Figure 8: SeeClick on ScreenSpot. Blue dashed boxes represent the ground truth bounding boxes, while green and red pointers indicate correct and incorrect predictions.</figDesc><graphic coords="13,324.57,324.35,181.42,107.08" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 9 :</head><label>9</label><figDesc>Figure 9: Distance distribution of prediction point to ground truth. Most incorrect predictions are also close to the answer, suggesting the model recognizes the target but needs improvement in fine-grained localization.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>C. 3</head><label>3</label><figDesc>AITWAITW is a recently collected dataset for Android smartphone automation, where each sample comprises an instruction and an action trajectory with screenshots. AITW is divided into five subsets: General, Install, GoogleApps, Single, and Web-Shopping, totally including over 30K instructions and 700K episodes.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 13 :</head><label>13</label><figDesc>Figure 13: Example episodes of SeeClick on Mind2Web. The model's prediction output is below the screenshot, with action_type 4 indicating a click and action_type 3 indicating typing. Steps with the red prediction and green reference bounding box indicate a failed step.</figDesc><graphic coords="20,219.75,546.17,127.77,71.87" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Results of different LVLMs on ScreenSpot.The best results in each column are highlighted in bold. Benefiting from efficient GUI grounding pre-training, SeeClick significantly enhanced LVLMs' ability to locate GUI elements following instructions, and surpassed the strong baseline CogAgent with a smaller model size.</figDesc><table><row><cell></cell><cell>LVLMs 10%</cell><cell cols="2">Model Size</cell><cell cols="9">GUI Specific Different types of elements Mobile Text Icon/Widget Text Icon/Widget Text Icon/Widget Desktop Web in ScreenSpot</cell><cell>Average</cell></row><row><cell cols="2">MiniGPT-v2 6%</cell><cell></cell><cell>7B 21%</cell><cell></cell><cell></cell><cell>✗</cell><cell></cell><cell>8.4% Text</cell><cell cols="2">6.6% Icon/Widget</cell><cell>6.2%</cell><cell>2.9%</cell><cell>6.5%</cell><cell>3.4%</cell><cell>5.7%</cell></row><row><cell cols="2">Qwen-VL 6%</cell><cell cols="2">9.6B</cell><cell></cell><cell></cell><cell>✗</cell><cell></cell><cell>9.5%</cell><cell></cell><cell>4.8%</cell><cell>5.7%</cell><cell>5.0%</cell><cell>3.5%</cell><cell>2.4%</cell><cell>5.2%</cell></row><row><cell>8%</cell><cell cols="2">GPT-4V Fuyu ScreenSpot</cell><cell>-8B</cell><cell></cell><cell cols="2">✗ ✓</cell><cell>232</cell><cell cols="2">22.6% 41.0%</cell><cell>24.5% 1.3%</cell><cell>20.2% 33.0%</cell><cell>11.8% 3.6%</cell><cell>9.2% 33.9%</cell><cell>8.8% 4.4%</cell><cell>16.2% 19.5%</cell></row><row><cell cols="2">CogAgent</cell><cell cols="2">18B</cell><cell>21%</cell><cell cols="2">✓</cell><cell></cell><cell cols="2">67.0% 140</cell><cell cols="3">24.0% 74.2% 20.0% 70.4% 28.6% 151</cell><cell>47.4%</cell></row><row><cell></cell><cell>SeeClick 15%</cell><cell cols="2">9.6B</cell><cell></cell><cell cols="2">✓</cell><cell></cell><cell cols="5">78.0% 52.0% 72.2% 30.0% 55.7% 32.5%</cell><cell>53.4%</cell></row><row><cell></cell><cell>13%</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>278</cell><cell>198</cell><cell></cell><cell>210</cell><cell></cell></row><row><cell>iOS</cell><cell>Android</cell><cell cols="2">Windows</cell><cell>macOS</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="2">Development Shopping</cell><cell cols="2">Forum</cell><cell>Tools</cell><cell></cell><cell cols="2">Mobile</cell><cell>Desktop</cell><cell></cell><cell>Web</cell><cell></cell></row><row><cell></cell><cell>11%</cell><cell></cell><cell>20%</cell><cell></cell><cell></cell><cell></cell><cell cols="4">Different types of elements in ScreenSpot</cell><cell></cell></row><row><cell></cell><cell>7%</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="3">Text Icon/Widget</cell><cell></cell></row><row><cell cols="2">9%</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell cols="3">ScreenSpot</cell><cell></cell><cell></cell><cell></cell><cell>229</cell><cell></cell><cell></cell><cell>206</cell><cell></cell></row><row><cell cols="2">7%</cell><cell></cell><cell></cell><cell>19%</cell><cell></cell><cell></cell><cell></cell><cell>140</cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell>14%</cell><cell>13%</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>273</cell><cell>194</cell><cell></cell><cell>230</cell><cell></cell></row><row><cell cols="2">iOS Development Shopping Android</cell><cell cols="2">Windows Forum</cell><cell cols="2">macOS Tools</cell><cell cols="2">Mobile</cell><cell>Desktop</cell><cell></cell><cell>Web</cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>uses screenshots asAverage scores of different methods on Mini-Wob. The best results in each setting are bold. Methods achieving the highest performance with limited data are underlined. SeeClick outperforms a range of offline training methods as a purely vision-based model.</figDesc><table><row><cell>Methods</cell><cell cols="3">Modality Dataset Score</cell></row><row><cell cols="4">Compared with text-based models over 45 tasks</cell></row><row><cell cols="3">CC-Net (SL) DOM+Image 2.4M</cell><cell>35.6%</cell></row><row><cell>WebN-T5</cell><cell>HTML</cell><cell>12K</cell><cell>55.2%</cell></row><row><cell cols="3">MM-WebN-T5 HTML+Image 347K</cell><cell>63.4%</cell></row><row><cell cols="3">WebGUM HTML+Image 2.8K</cell><cell>65.5%</cell></row><row><cell cols="4">WebGUM HTML+Image 347K 86.1%</cell></row><row><cell>SeeClick</cell><cell>Image</cell><cell>2.8K</cell><cell>73.6%</cell></row><row><cell cols="4">Compared with vision-based models over 35 tasks</cell></row><row><cell>CC-Net (SL)</cell><cell>Image</cell><cell>2.4M</cell><cell>23.4%</cell></row><row><cell>Pix2Act</cell><cell>Image</cell><cell>1.3M</cell><cell>64.6%</cell></row><row><cell>Qwen-VL</cell><cell>Image</cell><cell>2.8K</cell><cell>48.4%</cell></row><row><cell>SeeClick</cell><cell>Image</cell><cell>2.8K</cell><cell>67.0%</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Average scores of different methods on AITW. ClickAcc calculates the accuracy of click operation. The best results in each column are bold. SeeClick exhibits the best performance among competing baselines.</figDesc><table><row><cell>Methods</cell><cell cols="9">Modality General Install GoogleApps Single WebShopping Overall ClickAcc</cell></row><row><cell>ChatGPT-CoT</cell><cell>Text</cell><cell>5.9</cell><cell>4.4</cell><cell cols="2">10.5</cell><cell>9.4</cell><cell>8.4</cell><cell>7.7</cell><cell>-</cell></row><row><cell>PaLM2-CoT</cell><cell>Text</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell></cell><cell>-</cell><cell>-</cell><cell>39.6</cell><cell>-</cell></row><row><cell>GPT-4V</cell><cell>Image</cell><cell>41.7</cell><cell>42.6</cell><cell cols="2">49.8</cell><cell>72.8</cell><cell>45.7</cell><cell>50.5</cell><cell>-</cell></row><row><cell>Qwen-VL</cell><cell>Image</cell><cell>49.5</cell><cell>59.9</cell><cell cols="2">46.9</cell><cell>64.7</cell><cell>50.7</cell><cell>54.3</cell><cell>57.4</cell></row><row><cell>SeeClick</cell><cell>Image</cell><cell>54.0</cell><cell>66.4</cell><cell cols="2">54.9</cell><cell>63.5</cell><cell>57.6</cell><cell>59.3</cell><cell>66.4</cell></row><row><cell>5.2.2 AITW</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="4">Results. As illustrated in Table 3, SeeClick</cell></row><row><cell cols="5">We evaluate SeeClick in smartphone environments</cell><cell></cell><cell cols="4">achieved the best average performance among both</cell></row><row><cell cols="5">with Android automation dataset Android In The</cell><cell cols="5">API-based LLMs and trained LVLMs. Specifi-</cell></row><row><cell cols="5">Wild (AITW) (Rawles et al., 2023), which encom-</cell><cell></cell><cell cols="4">cally, SeeClick exhibited a 9% increase in click</cell></row><row><cell cols="5">passes 30k instructions and corresponding 715k</cell><cell></cell><cell cols="4">accuracy over Qwen-VL, supporting the idea that</cell></row><row><cell cols="5">operation trajectories. Previous approaches split</cell><cell></cell><cell cols="4">GUI grounding enhances agent task performance</cell></row><row><cell cols="5">train/val/test episode-wise, which poses a clear</cell><cell></cell><cell cols="2">through precise clicking.</cell><cell></cell></row><row><cell cols="5">risk of overfitting due to: (1) instructions in the</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="5">test set have appeared in training, and (2) an aver-</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="5">age of 20 similar trajectories per instruction. In</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="5">this work, we opt for an instruction-wise split,</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="5">with 545/688/306/700/700 instructions from Gen-</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="5">eral/Install/GoogleApps/Single/WebShopping re-</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="5">spectively, and retain one trajectory per instruction.</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="5">We selected 80% for training and the remaining</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="5">for testing in each subset. This split avoids over-</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="5">fitting and reflects the performance of agents on</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="5">unseen instructions. Further details and results on</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">the original split are in Appendix C.3.</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="5">Compared Methods &amp; Evaluation. We com-</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="5">pare SeeClick with two types of baselines: (1)</cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table><note><p>ment positions, confirming our hypothesis that general LVLMs struggle with accurately clicking, and SeeClick markedly improves this aspect. API-based LLMs such as ChatGPT-CoT (Zhan and Zhang, 2023), PaLM2-CoT (Rawles et al., 2023) and the latest GPT-4V (Yan et al., 2023); (2) Our trained LVLM baseline Qwen-VL.</p><p>We follow<ref type="bibr" target="#b25">Rawles et al. (2023)</ref> </p><p>to adopt the screen-wise action matching score as the main metric and additionally compute the click accuracy (ClickAcc), which calculates the accuracy when both reference and prediction are click operations.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 :</head><label>4</label><figDesc>Acc Op.F1 Step SR Ele.Acc Op.F1 Step SR Ele.Acc Op.F1 Step SR Comparsion of methods on Mind2Web. The best results in each column are bold. Improvements of SeeClick over LVLM baseline are underline, with GUI grounding pre-training nearly doubling the step success rate.Op.F1) and step success rate (Step SR).For vision-based methods, a prediction is considered correct if the predicted coordinate falls in the target element's bounding box. All other settings are following<ref type="bibr" target="#b6">(Deng et al., 2023)</ref>.Results. As displayed inTable 4, SeeClick nearly doubled the Ele.Acc and Step SR compared to Qwen-VL. This indicates that SeeClick's improvement in GUI grounding correlates with enhanced performance in web agent tasks. HTML-based methods yield lower Op.F1 as around 20% of groundturth elements are filtered out during candidate generation. Although SeeClick can operate without extra HTML information, its performance trails sota HTML-based methods, since predicting click coordinates is much more difficult than choosing from HTML candidates. This highlights the difficulty of grounding in intricate interfaces, suggesting substantial room for improvement in visual agents for real-world application.</figDesc><table><row><cell cols="3">Methods Ele.MindAct (gen) w/o HTML ✗ 20.2</cell><cell>Cross-Task 52.0</cell><cell>17.5</cell><cell cols="3">Cross-Website 13.9 44.7 11.0</cell><cell cols="3">Cross-Domain 14.2 44.7 11.9</cell></row><row><cell>MindAct</cell><cell>✗</cell><cell>55.1</cell><cell>75.7</cell><cell>52.0</cell><cell>42.0</cell><cell>65.2</cell><cell>38.9</cell><cell>42.1</cell><cell>66.5</cell><cell>39.6</cell></row><row><cell>GPT-3.5-Turbo</cell><cell>✗</cell><cell>20.3</cell><cell>56.6</cell><cell>17.4</cell><cell>19.3</cell><cell>48.8</cell><cell>16.2</cell><cell>21.6</cell><cell>52.8</cell><cell>18.6</cell></row><row><cell>GPT-4</cell><cell>✗</cell><cell>41.6</cell><cell>60.6</cell><cell>36.2</cell><cell>35.8</cell><cell>51.1</cell><cell>30.1</cell><cell>37.1</cell><cell>46.5</cell><cell>26.4</cell></row><row><cell>Qwen-VL</cell><cell>✓</cell><cell>15.9</cell><cell>86.7</cell><cell>13.3</cell><cell>13.2</cell><cell>83.5</cell><cell>9.2</cell><cell>14.1</cell><cell>84.3</cell><cell>12.0</cell></row><row><cell>SeeClick</cell><cell>✓</cell><cell>28.3</cell><cell>87.0</cell><cell>25.5</cell><cell>21.4</cell><cell>80.6</cell><cell>16.4</cell><cell>23.2</cell><cell>84.8</cell><cell>20.8</cell></row><row><cell cols="5">2023) and our visual baseline Qwen-VL. Mind2Act</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="5">employs a two-stage method, where a small LM</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="5">first generates candidate elements from raw HTML,</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="5">then a large LM selects the target via multi-choice</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="5">QA; Mind2Act (gen) directly generates the target</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="5">element instead. GPT-3.5 and GPT-4 adopt the</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="5">same multiple-choice QA formulation and include</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="4">three demonstrations for in-context learning.</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="5">We calculate element accuracy (Ele.Acc), Oper-</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>ation F1 (</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table><note><p>To the best of our knowledge, this is the first attempt of web agents relying solely on screenshots as inputs for navigating real websites.</p><p>Compared Methods &amp; Evaluation.</p><p>We compare with html-based web agents Mind2Act(Deng et al.,    </p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 5 :</head><label>5</label><figDesc>Separate v.s. unified training performance.</figDesc><table><row><cell></cell><cell cols="3">MiniWob AITW Mind2web</cell></row><row><cell cols="2">Qwen-VL separate 48.4</cell><cell>54.3</cell><cell>11.5</cell></row><row><cell>SeeClick separate</cell><cell>67.0</cell><cell>59.3</cell><cell>20.9</cell></row><row><cell>SeeClick unified</cell><cell>64.1</cell><cell>57.1</cell><cell>19.5</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 7 :</head><label>7</label><figDesc>During training and testing, we organize the data by step into the format described above.MiniWob is a classic simplified web agent environment, built on Chrome, allowing low-level operations such as clicking and typing. It comprises around 100 tasks, where each task can templatize Gen. Inst. GApps. Sing. WShop. Ovr. Auto-UI 68.2 76.9 71.4 84.6 70.3 74.3 CogAgent 65.4 78.9 75.0 93.5 71.1 76.9 SeeClick 67.6 79.6 75.9 84.6 73.1 76.2 Comparison on the origin split of AITW.</figDesc><table><row><cell>Instruction:</cell></row><row><cell>&lt;instruction&gt;</cell></row><row><cell>Previous actions:</cell></row><row><cell>Step1: &lt;step1&gt;</cell></row><row><cell>Step2: &lt;step2&gt;</cell></row><row><cell>Step3: &lt;step3&gt;</cell></row><row><cell>Step4: &lt;step4&gt;</cell></row><row><cell>SeeClick: &lt;next action&gt;</cell></row><row><cell>C.2 MiniWob</cell></row></table><note><p>The first two actions, clicking and typing, are universally applicable across various GUIs. The third action, select, is defined according to the specifications in Mind2Web. The latter four actions, along with two additional states, TASK COMPLETE and TASK IMPOSSIBLE, are defined following the AITW framework for Android environments.</p><p>Agent Formulation SeeClick is an autonomous agent capable of executing human instructions on GUIs. It takes as input the instruction, a screenshot of the current interface and a series of (k=4 in our setting) previous actions, to predict the next action to be taken. Specifically, SeeClick uses the following prompt to execute each step of the agent: &lt;img&gt;Image&lt;/img&gt; User: Please generate the next move according to the UI screenshot, instruction and previous actions.</p></note></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_0"><p>http://makesense.bimant.com</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>A Details of SeeClick Pre-training A.1 Pre-training Tasks SeeClick employs pre-training tasks as outlined in Table <ref type="table">6</ref>. For the grounding task, we incorporate two forms: predicting center point coordinates (text_2_point) and predicting bounding box (text_2_bbox). For the task of generating text for elements (similar to OCR), we also include two categories: predicting text based on center point (point_2_text, widget captioning) coordinates and based on bounding boxes (bbox_2_text). Our preliminary experiments indicated that predicting points was slightly better than bounding boxes, likely due to the variable sizes of UI elements. Consequently, we increased the proportion of data with point localization. Finally, about 1 million samples are used for the continual pre-training of SeeClick.</p><p>For tasks involving coordinates, positions are represented as either the point (x,y) or the bounding box of (left, top, right, down), where each value is a two-decimal place number in the range [0,1] indicating the ratio of the corresponding position to the width or height of the image. Figure <ref type="figure" target="#fig_11">7</ref> provides some examples of the pre-training data.</p><p>Domain Task Sample Num Web text_2_point 271K text_2_bbox 54K point_2_text 54K bbox_2_text 54K Mobile text_2_point 274K text_2_bbox 56K UI summarization 48K widget captioning 42K General LLaVA 145K Total 1M</p><p>Table 6: All training data used by SeeClick.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Training Configurations</head><p>We employed the aforementioned data for continual pre-training of Qwen-VL-Chat to develop SeeClick.</p><p>To enhance LVLM's understanding of GUI images, we unlocked the gradients of its visual encoder and applied LoRA for fine-tuning. We adopt AdamW as the optimizer and use a cosine annealing scheduler with an init learning rate of 3e-5 and a global batch size of 64. All training takes around 24 hours on 8 NVIDIA A100 GPUs.</p><p>User: In the provided screenshot, I'll describe webpage elements for you to locate (with point). User: Additional information Assistant: (0.66,0.86) User: USB Flash Drive Assistant: (0.37,0.17) User: Qty Assistant: (0.63,0.41) User: GAMING ACCESSORIES (AUSTRALIA) Assistant: (0.30,0.13) …… User: Add to Wishlist Assistant: (0.52,0.57) User: In this digital interface, to initiate "click to start a search", where is my point of interest (with point)? Assistant: (0.88,0.87) Task: Web text_2_point User: In this screenshot, I'll give coordinates and ask you to describe the text of the elements there (with bbox). User: (0.61,0.84,0.71,0.88) Assistant: Additional information User: (0.34,0.16,0.40,0.18) Assistant: USB Flash Drive User: (0.61,0.40,0.64,0.43) Assistant: Qty User: (0.26,0.16,0.33,0.18) Assistant: GAMING ACCESSORIES (AUSTRALIA) …… User: (0.48,0.56,0.55,0.58) Assistant: Add to Wishlist Task: Web bbox_2_text Task: Mobile text_2_point User: Can you provide a detailed description of the interface screenshot shown? Assistant: An app home that displays a daily learning goal punch list Task: Mobile UI summarization </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B ScreenSpot Annotation &amp; Evaluation</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1 Human Annotation</head><p>We convened four experienced annotators, all either Ph.D. or master students in computer science, proficient in using mobile phones and computers and familiar with GUI operations. Initially, we assigned different GUI types to the annotators, such as iOS, Windows, and Web. Then, annotators were required to capture screenshots during their routine use (e.g., various apps) and subsequently annotate the clickable regions of frequently interacted elements using bounding boxes with annotation tool 2 . Finally, these annotators were instructed to write</p><p>CC-Net (SL) WebN-T5 WebGUM Pix2Act Qwen-VL SeeClick Choose-date 0.12 0.00 0.13 0.06 0.0 0.02 Click-button 0.78 1.0 1.0 0.32 0.42 0.96 Click-button-sequence 0.47 1.0 1.0 1.0 0.08 0.86 Click-checkboxes 0.32 0.96 1.0 0.99 0.44 0.78 Click-checkboxes-large 0.0 0.22 0.99 1.0 0.0 0.02 Click-checkboxes-soft 0.04 0.54 0.98 0.91 0.06 0.22 Click-checkboxes-transfer 0.36 0.63 0.99 0.76 0.60 0.70 Click-collapsible-2 0.17 0.00 0.95 0.31 0.0 0.48 Click-collapsible 0.81 0.00 0.98 0.80 1.0 1.0 Click-color 0.82 0.27 0.34 0.88 0.96 1.0 Click-dialog 0.95 1.0 1.0 0.12 0.96 1.0 Click-dialog-2 0.88 0.24 0.43 0.73 0.84 1.0 Click-link 0.59 1.0 1.0 0.86 0.0 0.90 Click-option 0.21 0.37 1.0 0.0 0.70 1.0 Click-pie 0.15 0.51 0.99 0.81 0.16 0.80 Click-shades 0.04 0.0 0.0 0.76 0.0 0.02 Click-shape 0.11 0.53 0.72 0.19 0.04 0.52 Click-tab 0.95 0.74 1.0 0.54 1.0 1.0 Click-tab-2 0.27 0.18 0.95 0.52 0.0 0.60 Click-tab-2-hard 0.19 0.12 0.95 0.0 0.16 0.42 Click-test 1.0 1.0 1.0 1.0 1.0 1.0 Click-test-2 0.95 1.0 1.0 1.0 0.72 0.94 Click-widget 0.56 1.0 1.0 0.87 0.38 0.58 Count-shape 0.21 0.41 0.68 0.0 0.20 0.28 Copy-paste 0.04 ---0.96 0.80 Copy-paste-2 0.01 ---0.96 0.80 Email-inbox 0.09 0.38 0.99 -0.08 0.80 Email-inbox-forward-nl 0.0 0.6 1.0 -0.24 0.74 Email-inbox-forward-nl-turk 0.0 0.33 1.0 -0.16 0.56 Email-inbox-nl-turk 0.05 0.23 0.98 -0.40 0.68 Enter-date 0.02 0.0 1.0 0.59 1.0 1.0 Enter-password 0.02 0.97 1.0 -1.0 1.0 Enter-text 0.35 0.89 1.0 -1.0 1.0 Enter-text-dynamic 0.39 0.98 1.0 -0.96 1.0 Focus-text 0.99 1.0 1.0 -1.0 1.0 Focus-text-2 0.96 1.0 1.0 -0.84 0.96 Find-word 0.05 ---1.0 0.10 Grid-coordinate 0.66 0.49 1.0 0.97 0.96 0.52 Guess-number 0.21 0.0 0.11 -1.0 1.0 Login-user 0.0 0.82 1.0 -1.0 1.0 Login-user-popup 0.02 0.72 0.99 -0.86 0.98 Multi-layouts 0.00 0.83 1.0 -0.44 0.72 Multi-orderings 0.0 0.88 1.0 -0.42 0.86 Identify-shape 0.68 --0.94 1.0 0.68 Navigate-tree 0.32 0.91 1.0 0.07 0.60 0.82 Search-engine 0.15 0.34 0.96 -0.56 0.84 Simple-algebra 0.03 --0.99 0.48 0.38 Simple-arithmetic 0.38 --0.67 0.92 0.78 Text-transform 0.19 --0.91 0.36 0.46 Tic-tac-toe 0.32 0.48 0.56 0.76 0.30 0.58 Unicode-test 0.86 0.64 0.54 0.98 Use-autocomplete 0.07 0.22 0.98 0.95 0.72 0.82 Use-slider 0.18 --0.69 0.38 0.32 Use-spinner 0.47 0.07 0.11 -0.24 0.16 Read-table 0.01 ---0.90 0.72 Average 0.336 (55) 0.552 (45) 0.861 (45) 0.646 (35) 0.564 (55) 0.712 (55)  {"action_type": 4, "click_point": (0.58, 0.3)} {"action_type": 4, "click_point": (0.25, 0.4)} {"action_type": 4, "click_point": (0.25, 0.4)} {"action_type": 4, "click_point": (0.46, 0.55)} {"action_type": 4, "click_point": (0.47, 0.47)} {"action_type": 4, "click_point": (0.5, 0.62)} {"action_type": 4, "click_point": (0.71, 0.78)} {"action_type": 4, "click_point": (0.81, 0.38)} {"action_type": 3, "typed_text": "36"} {"action_type": 4, "click_point": (0.50, 0.64)} {"action_type": 4, "click_point": (0.69, 0.8)} {"action_type": 4, "click_point": (0.31, 0.8)} {"action_type": 4, "click_point": (0.31, 0.49)} {"action_type": 4, "click_point": (0.14, 0.3)} {"action_type": 4, "click_point": (0.13, 0.81)} {"action_type": 4, "click_point":  Instruction: open app "DuckDuckGo Privacy Browser" (install if not already installed) and enter user name: "cleaving@outlook.com" and password: "freighters" </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Figure 7 :</head><label>7</label><figDesc>Examples of SeeClick pre-training tasks.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>Figure 10 :</head><label>10</label><figDesc>More examples of GUI grounding benchmark ScreenSpot.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><figDesc>(0.19, 0.76)} (a) Comparison between static layout (left, click-color) and dynamic layout (right, unicode-test).Example episodes of SeeClick on MiniWob tasks.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_14"><head>Figure 11 :</head><label>11</label><figDesc>Example episodes of SeeClick on MiniWob. The model's prediction output is below the screenshot, with action_type 4 indicating a click and action_type 3 indicating typing.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_15"><head>Figure 12 :</head><label>12</label><figDesc>Example episodes of SeeClick on AITW. The model's prediction output is below the screenshot, with action_type 4 indicating a click, action_type 3 indicating typing and action_type 6 indicating PRESS HOME. Steps with the red prediction and green reference indicate a failed step.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_10"><head>Table 8 :</head><label>8</label><figDesc>Mean scores across 55 MiniWob tasks.</figDesc><table><row><cell>Instruction: My</cell><cell>Instruction:</cell><cell>Instruction:</cell><cell>Instruction:</cell></row><row><cell>account</cell><cell>Remove maps</cell><cell>Disallow</cell><cell>Scan QR code</cell></row><row><cell>Source: Mobile</cell><cell>from the</cell><cell>automatic app</cell><cell>Source:</cell></row><row><cell>(iOS)</cell><cell>Desktop</cell><cell>updates</cell><cell>Mobile</cell></row><row><cell>Type:</cell><cell>Source: Mobile</cell><cell>Source: Mobile</cell><cell>(Android)</cell></row><row><cell>Icon/Widget</cell><cell>(iOS)</cell><cell>(iOS)</cell><cell>Type:</cell></row><row><cell></cell><cell>Type:</cell><cell>Type:</cell><cell>Icon/Widget</cell></row><row><cell></cell><cell>Icon/Widget</cell><cell>Icon/Widget</cell><cell></cell></row><row><cell>Instruction:</cell><cell>Instruction:</cell><cell>Instruction:</cell><cell>Instruction:</cell></row><row><cell>Continue</cell><cell>Display 15-day</cell><cell>Search event</cell><cell>Fold input</cell></row><row><cell>Source: Mobile</cell><cell>weather</cell><cell>Source: Mobile</cell><cell>method</cell></row><row><cell>(Android)</cell><cell>forecast</cell><cell>(iOS)</cell><cell>Source: Mobile</cell></row><row><cell>Type: Text</cell><cell>Source: Mobile</cell><cell>Type: Text</cell><cell>(Android)</cell></row><row><cell></cell><cell>(Android)</cell><cell></cell><cell>Type:</cell></row><row><cell></cell><cell>Type: Text</cell><cell></cell><cell>Icon/Widget</cell></row><row><cell></cell><cell>Instruction:</cell><cell>Instruction:</cell><cell>Instruction: Open</cell></row><row><cell></cell><cell>Create a new</cell><cell>Enlarge font</cell><cell>Fax</cell></row><row><cell></cell><cell>document</cell><cell>size</cell><cell>Source: Desktop</cell></row><row><cell></cell><cell>Source:</cell><cell>Source:</cell><cell>(Windows)</cell></row><row><cell></cell><cell>Desktop</cell><cell>Desktop</cell><cell>Type: Text</cell></row><row><cell></cell><cell>(macOS)</cell><cell>(macOS)</cell><cell></cell></row><row><cell></cell><cell>Type: Text</cell><cell>Type:</cell><cell></cell></row><row><cell></cell><cell></cell><cell>Icon/Widget</cell><cell></cell></row><row><cell></cell><cell>Instruction:</cell><cell cols="2">Instruction: Pause the</cell></row><row><cell></cell><cell>Add subtitle</cell><cell>debugger</cell><cell></cell></row><row><cell></cell><cell>Source:</cell><cell cols="2">Source: Desktop</cell></row><row><cell></cell><cell>Desktop</cell><cell>(macOS)</cell><cell></cell></row><row><cell></cell><cell>(Windows)</cell><cell cols="2">Type: Icon/Widget</cell></row><row><cell></cell><cell>Type: Text</cell><cell></cell><cell></cell></row><row><cell></cell><cell>Instruction: Set Reminder Source: Web (Development) Type: Icon/Widget</cell><cell></cell><cell>Instruction: Go to Beauty &amp; Personal Care Source: Web (Shop) Type: Text</cell></row><row><cell></cell><cell>Instruction: Reply</cell><cell></cell><cell>Instruction:</cell></row><row><cell></cell><cell>to the first post</cell><cell></cell><cell>Zoom in on</cell></row><row><cell></cell><cell>Source: Web</cell><cell></cell><cell>the map</cell></row><row><cell></cell><cell>(Forum)</cell><cell></cell><cell>Source: Web</cell></row><row><cell></cell><cell>Type: Text</cell><cell></cell><cell>(Tools)</cell></row><row><cell></cell><cell></cell><cell></cell><cell>Type:</cell></row><row><cell></cell><cell></cell><cell></cell><cell>Icon/Widget</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jinze</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shusheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sinan</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingren</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.12966</idno>
+		<title level="m">Qwen-vl: A frontier large vision-language model with versatile abilities</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">A dataset for interactive vision-language navigation with unknown command feasibility</title>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Bavishi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erich</forename><surname>Elsen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Curtis</forename><surname>Hawthorne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Augustus</forename><surname>Odena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arushi</forename><surname>Somani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sagnak</forename><surname>Taşırlar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">; Ranjitha</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kate</forename><surname>Saenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan</forename><forename type="middle">A</forename><surname>Plummer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">European Conference on Computer Vision</title>
+		<imprint>
+			<date type="published" when="2022">2023. 2022</date>
+			<biblScope unit="page" from="312" to="328" />
+		</imprint>
+	</monogr>
+	<note>Introducing our multimodal models</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Yunyang Xiong, and Mohamed Elhoseiny. 2023a. Minigpt-v2: large language model as a unified interface for vision-language multi-task learning</title>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deyao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoqian</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zechun</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengchuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raghuraman</forename><surname>Krishnamoorthi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vikas</forename><surname>Chandra</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.09478</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Keqin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weili</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feng</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Zhao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.15195</idno>
+		<title level="m">Shikra: Unleashing multimodal llm&apos;s referential dialogue magic</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Pix2seq: A language modeling framework for object detection</title>
+		<author>
+			<persName><forename type="first">Ting</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurabh</forename><surname>Saxena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lala</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><forename type="middle">J</forename><surname>Fleet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Hinton</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Rico: A mobile app dataset for building data-driven design applications</title>
+		<author>
+			<persName><forename type="first">Biplab</forename><surname>Deka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zifeng</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chad</forename><surname>Franzen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><surname>Hibschman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Afergan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Nichols</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ranjitha</forename><surname>Kumar</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3126594.3126651</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 30th annual ACM symposium on user interface software and technology</title>
+		<meeting>the 30th annual ACM symposium on user interface software and technology</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="845" to="854" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyuan</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><surname>Stevens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boshi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Su</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.06070</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Towards a generalist agent for the web</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hiroki</forename><surname>Furuta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Nachum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuang-Huei</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutaka</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shixiang</forename><surname>Shane Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izzeddin</forename><surname>Gur</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.11854</idno>
+		<title level="m">Multimodal web navigation with instruction-finetuned foundation models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Difei</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zechen</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingyu</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiran</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongxing</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qinchen</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weichen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangwu</forename><surname>Guo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.13108</idno>
+		<title level="m">Assistgui: Task-oriented desktop graphical user interface automation</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Izzeddin</forename><surname>Gur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hiroki</forename><surname>Furuta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Austin</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mustafa</forename><surname>Safdari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutaka</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Douglas</forename><surname>Eck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Faust</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.12856</idno>
+		<title level="m">A real-world webagent with planning, long context understanding, and program synthesis</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Learning to navigate the web</title>
+		<author>
+			<persName><forename type="first">Izzeddin</forename><surname>Gur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ulrich</forename><surname>Rueckert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Faust</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dilek</forename><surname>Hakkani-Tur</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">Wenyi</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weihan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingsong</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiazheng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenmeng</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junhui</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiao</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Ding</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.08914</idno>
+		<title level="m">Cogagent: A visual language model for gui agents</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Lora: Low-rank adaptation of large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Edward</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phillip</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyuan</forename><surname>Wallis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Allen-Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shean</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Language models can solve computer tasks</title>
+		<author>
+			<persName><forename type="first">Geunwoo</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Baldi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Mcaleer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.17491</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanhan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liangyu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinghao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingkang</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziwei</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.03726</idno>
+		<title level="m">Otter: A multi-modal model with in-context instruction tuning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Spotlight: Mobile ui understanding using vision-language models with a focus</title>
+		<author>
+			<persName><forename type="first">Gang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Grounded language-image pre-training</title>
+		<author>
+			<persName><forename type="first">Liunian</forename><surname>Harold</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengchuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianwei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiwu</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lijuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jenq-Neng</forename><surname>Hwang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="10965" to="10975" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Mapping natural language instructions to mobile ui action sequences</title>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiacong</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Baldridge</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2005.03776</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luheng</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingjie</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiwei</forename><surname>Guan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2010.04295</idno>
+		<title level="m">Widget captioning: Generating natural language description for mobile user interface elements</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mostafa</forename><surname>Dehghani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexey</forename><surname>Gritsenko</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2112.05692</idno>
+		<title level="m">Vut: Versatile ui transformer for multi-modal multi-task user interface modeling</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Reinforcement learning on web interfaces using workflow-guided exploration</title>
+		<author>
+			<persName><forename type="first">Evan Zheran</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kelvin</forename><surname>Guu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Panupong</forename><surname>Pasupat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianlin</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Qingyang Wu, and Yong Jae Lee. 2023a. Visual instruction tuning</title>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunyuan</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Neural Information Processing Systems</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haodong</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanhan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Songyang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wangbo</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yike</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaqi</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.06281</idno>
+		<title level="m">Conghui He, Ziwei Liu, et al. 2023b. Mmbench: Is your multi-modal model an all-around player? arXiv preprint</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<title level="m">GPT-4 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Kosmos-2: Grounding multimodal large language models to the world</title>
+		<author>
+			<persName><forename type="first">Zhiliang</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaru</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaohan</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuming</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Furu</forename><surname>Wei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.14824</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Rawles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alice</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Rodriguez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oriana</forename><surname>Riva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.10088</idno>
+		<title level="m">Android in the wild: A large-scale dataset for android device control</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">From pixels to ui actions: Learning to follow instructions via graphical user interfaces</title>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Shaw</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mandar</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Cohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Berant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Panupong</forename><surname>Pasupat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hexiang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Urvashi</forename><surname>Khandelwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenton</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kristina</forename><surname>Toutanova</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">World of bits: An open-domain platform for web-based agents</title>
+		<author>
+			<persName><forename type="first">Tianlin</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrej</forename><surname>Karpathy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linxi</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Hernandez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="3135" to="3144" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qiushi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhangyue</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xipeng</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingpeng</forename><surname>Kong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.00280</idno>
+		<title level="m">Corex: Pushing the boundaries of complex reasoning through multi-model collaboration</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thibaut</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gautier</forename><surname>Izacard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Martinet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marie-Anne</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothée</forename><surname>Lacroix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baptiste</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Hambro</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.13971</idno>
+		<title level="m">Faisal Azhar, et al. 2023. Llama: Open and efficient foundation language models</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Screen2words: Automatic mobile ui summarization with multimodal learning</title>
+		<author>
+			<persName><forename type="first">Bryan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhourong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tovi</forename><surname>Grossman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3472749.3474765</idno>
+	</analytic>
+	<monogr>
+		<title level="m">The 34th Annual ACM Symposium on User Interface Software and Technology</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="498" to="510" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Visionllm: Large language model is also an open-ended decoder for vision-centric tasks</title>
+		<author>
+			<persName><forename type="first">Wenhai</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaokang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiannan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xizhou</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gang</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ping</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Qiao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.11175</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Os-copilot: Towards generalist computer agents with self-improvement</title>
+		<author>
+			<persName><forename type="first">Zhiyong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengcheng</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zichen</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenmin</forename><surname>Weng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhoumianze</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingpeng</forename><surname>Kong</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Symbol-llm: Towards foundational symbolcentric interface for large language models</title>
+		<author>
+			<persName><forename type="first">Fangzhi</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiushi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyu</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qika</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.09278</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanrong</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linjie</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianwei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiwu</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Mcauley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Gao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.07562</idno>
+		<title level="m">Gpt-4v in wonderland: Large multimodal models for zero-shot smartphone gui navigation</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yucheng</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zebiao</forename><surname>Huang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.13771</idno>
+		<title level="m">Bin Fu, and Gang Yu. 2023a. Appagent: Multimodal agents as smartphone users</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhengyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linjie</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chung-Ching</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zicheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lijuan</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.17421</idno>
+		<title level="m">The dawn of lmms: Preliminary explorations with gpt-4v (ision)</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="page">1</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qinghao</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haiyang</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guohai</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiabo</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiyang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anwen</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengcheng</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaya</forename><surname>Shi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.14178</idno>
+		<title level="m">mplug-owl: Modularization empowers large language models with multimodality</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">Weihao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linjie</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zicheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinchao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lijuan</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.02490</idno>
+		<title level="m">Mm-vet: Evaluating large multimodal models for integrated capabilities</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">You only look at screens: Multimodal chain-of-action agents</title>
+		<author>
+			<persName><forename type="first">Zhuosheng</forename><surname>Zhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aston</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.11436</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Reinforced ui instruction grounding: Towards a generic ui task automation api</title>
+		<author>
+			<persName><forename type="first">Zhizheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenxuan</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Lu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.04716</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">Boyuan</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyu</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jihyung</forename><surname>Kil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Su</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.01614</idno>
+		<title level="m">Gpt-4v (ision) is a generalist web agent, if grounded</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Synapse: Trajectory-as-exemplar prompting with memory for computer control</title>
+		<author>
+			<persName><forename type="first">Longtao</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rundong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinrun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>An</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS 2023 Foundation Models for Decision Making Workshop</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuhui</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abishek</forename><surname>Sridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianyi</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.13854</idno>
+		<title level="m">Webarena: A realistic web environment for building autonomous agents</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Minigpt-4: Enhancing vision-language understanding with advanced large language models</title>
+		<author>
+			<persName><forename type="first">Deyao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoqian</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohamed</forename><surname>Elhoseiny</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.10592</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Instruction: Check my AMC gift card balance with gift card number 87654321 and pin number 9753. Instruction: Find the list of all neighborhood maps for Brooklyn</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

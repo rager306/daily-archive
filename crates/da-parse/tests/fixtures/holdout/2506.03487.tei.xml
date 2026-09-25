@@ -1,0 +1,834 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">ProRank: Prompt Warmup via Reinforcement Learning for Small Language Models Reranking</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Xianming</forename><surname>Li</surname></persName>
+							<email>xianming.li@connect.polyu.hk</email>
+							<affiliation key="aff1">
+								<orgName type="institution">The Hong Kong Polytechnic University</orgName>
+								<address>
+									<settlement>Hong Kong SAR</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Aamir</forename><surname>Shakir</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Mixedbread AI</orgName>
+								<address>
+									<settlement>Berlin</settlement>
+									<country key="DE">Germany</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Rui</forename><surname>Huang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Mixedbread AI</orgName>
+								<address>
+									<settlement>Berlin</settlement>
+									<country key="DE">Germany</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Tsz-Fung</forename><forename type="middle">Andrew</forename><surname>Lee</surname></persName>
+							<email>tsz-fung-andrew.lee@polyu.edu.hk</email>
+							<affiliation key="aff1">
+								<orgName type="institution">The Hong Kong Polytechnic University</orgName>
+								<address>
+									<settlement>Hong Kong SAR</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Julius</forename><surname>Lipp</surname></persName>
+							<email>julius@mixedbread.ai</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Mixedbread AI</orgName>
+								<address>
+									<settlement>Berlin</settlement>
+									<country key="DE">Germany</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Benjamin</forename><surname>Clavié</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Mixedbread AI</orgName>
+								<address>
+									<settlement>Berlin</settlement>
+									<country key="DE">Germany</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jing</forename><surname>Li</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">The Hong Kong Polytechnic University</orgName>
+								<address>
+									<settlement>Hong Kong SAR</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">ProRank: Prompt Warmup via Reinforcement Learning for Small Language Models Reranking</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">2A7653681502319A9D6F466581FB8238</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:08+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Reranking is fundamental to information retrieval and retrieval-augmented generation, with recent Large Language Models (LLMs) significantly advancing reranking quality. Most current works rely on large-scale LLMs (&gt;7B parameters), presenting high computational costs. Small Language Models (SLMs) offer a promising alternative because of computational efficiency. However, our preliminary quantitative analysis reveals key limitations of SLMs: their representation space is narrow, leading to reduced expressiveness, and they struggle with understanding task prompts without fine-tuning. To address these issues, we introduce a novel two-stage training approach, ProRank, for SLM-based document reranking. We propose using reinforcement learning to improve the understanding of task prompts. Additionally, we introduce fine-grained score learning to enhance representation expressiveness and further improve document reranking quality. Extensive experiments suggest that Pro-Rank consistently outperforms both the most advanced open-source and proprietary reranking models. Notably, our 0.5B ProRank even surpasses powerful LLM reranking models on BEIR benchmark, establishing that properly trained SLMs can achieve superior document reranking performance while maintaining computational efficiency.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Document reranking is crucial in information retrieval and retrieval-augmented generation, which aims to reorder document lists initially retrieved by retrievers like BM25 based on query-document relevance <ref type="bibr" target="#b20">(Zhu et al., 2023)</ref>. Very recently, Large Language Models (LLMs) have demonstrated remarkable performance in document reranking tasks (Ma   * Work done during an internship at Mixedbread † Equal Contribution ‡ <ref type="url" target="https://github.com/mixedbread-ai/mxbai-rerank">https://github.com/mixedbread-ai/mxbai-rerank</ref> § <ref type="url" target="https://hf.co/mixedbread-ai/mxbai-rerank-large-v2">https://hf.co/mixedbread-ai/mxbai-rerank-large-v2</ref>  <ref type="bibr">et al., 2023;</ref><ref type="bibr" target="#b14">Sun et al., 2023;</ref><ref type="bibr" target="#b21">Zhuang et al., 2023</ref><ref type="bibr" target="#b23">Zhuang et al., , 2024;;</ref><ref type="bibr" target="#b13">Sun et al., 2025;</ref><ref type="bibr" target="#b22">Zhuang et al., 2025;</ref><ref type="bibr" target="#b17">Weller et al., 2025)</ref>, establishing a significant new direction in document reranking research. Recent approaches have primarily employed LLMs through zero-or few-shot prompt engineering <ref type="bibr" target="#b14">(Sun et al., 2023;</ref><ref type="bibr" target="#b21">Zhuang et al., 2023;</ref><ref type="bibr" target="#b13">Sun et al., 2025;</ref><ref type="bibr" target="#b22">Zhuang et al., 2025;</ref><ref type="bibr" target="#b17">Weller et al., 2025)</ref> to generate reordered document lists or coarse-grained binary relevance scores. However, they typically require larger LLMs (&gt;7B parameters) to achieve promising results, posing challenges for real-world applications due to computational constraints.</p><p>To address this challenge, we explore using small language models (SLMs) for document reranking. Our investigation begins with a quantitative analysis. It suggests two key limitations of SLMs for document reranking: 1) SLMs are constrained by narrow representation spaces, impairing their capabilities for document reranking effectively; 2) SLMs struggle to understand task prompts and generate proper coarse-grained binary relevance scores (0: irrelevant, 1: relevant) without proper fine-tuning.</p><p>To address these limitations of SLMs, we propose a novel two-stage approach, ProRank, for SLMs document reranking. In the first stage, we employ reinforcement learning, specifically, GRPO (Group Relative Policy Optimization) <ref type="bibr" target="#b12">(Shao et al., 2024)</ref>, to teach SLMs to understand the task prompt and produce properly formatted responses, i.e., coarse-grained binary relevance scores. The GRPO learning allows ProRank to incorporate various rewards into the output format and relevance accuracy, effectively teaching SLMs to generate binary relevance scores while maximizing relevance accuracy. However, these coarse-grained binary relevance scores are insufficient for high-quality document reranking, as they merely categorize documents as relevant ("1") or irrelevant ("0") without distinguishing relevance levels among documents in the same category. Thus, we introduce the second stage -fine-grained score learning. We employ an efficient method to generate fine-grained relevance scores by computing the relative scores between relevant ("1") and irrelevant ("0") token logit values from the model's last token logit outputs. It maintains computational efficiency by avoiding the introduction of additional layers while providing fine-grained scoring capabilities. In our further investigation, it also helps improve SLMs' representation expressiveness for the document reranking task. We adopt the Cross-Encoder paradigm <ref type="bibr" target="#b10">(Nogueira and Cho, 2019;</ref><ref type="bibr" target="#b11">Shakir et al., 2024)</ref> to efficiently train ProRank, allowing for more effective and high-quality document reranking.</p><p>For a comprehensive evaluation, we extensively experiment on three benchmarks in various languages and applications: the widely used English BEIR benchmark <ref type="bibr" target="#b15">(Thakur et al., 2021)</ref>, Chinese MTEB benchmark (CMTEB, 2025), and Code Retrieval datasets <ref type="bibr" target="#b19">(Li et al., 2024)</ref>. Extensive results demonstrate that ProRank delivers highquality document reranking performance. Notably, our 0.5B ProRank outperforms even the 32B finetuned LLM model on the English BEIR benchmark. Through detailed empirical analysis, we show that ProRank effectively addresses the two key limitations of SLMs observed in the quantitative analysis.</p><p>In summary, our contributions are as follows:</p><p>• Our quantitative analysis reveals two limitations of SLMs for the document reranking: 1) they exhibit a narrow representation space, limiting their expressive capabilities; 2) they struggle with understanding task prompts.</p><p>• We propose a novel two-stage approach, Pro-Rank, to effectively rerank documents with interpretable relevance scores, combining reinforcement learning for coarse-grained scoring with a fine-grained scoring.</p><p>• Extensive evaluations demonstrate that Pro-Rank achieves superior document reranking performance, with 0.5B ProRank outperforming strong baselines on various benchmarks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Preliminary Quantitative Analysis</head><p>Before introducing the proposed model -ProRank, we conduct a preliminary quantitative analysis to evaluate how small language models (SLMs) perform on document reranking through zero-shot prompting. We evaluate various popular SLMs using a consistent prompt (as follows) on the TREC-COVID test set (66336 samples) from the BEIR benchmark <ref type="bibr" target="#b15">(Thakur et al., 2021)</ref>.</p><p>Prompt: query: {query_placeholder} document: {document_placeholder} You are a search relevance expert who evaluates how well documents match search queries. For each query-document pair, carefully analyze the semantic relationship between them, then provide your binary relevance judgment (0 for not relevant, 1 for relevant). Relevance:</p><p>We visualize SLM's relative scores ∆ = TokenLogit(1)-TokenLogit(0) in Figure <ref type="figure" target="#fig_0">1</ref>, where TokenLogit(1) and TokenLogit(0) stand for the logit values corresponding to position of relevant ("1") and irrelevant ("0") tokens in the model's last token logits, respectively.</p><p>We observe two interesting phenomena: 1) SLMs under 1B parameters exhibit a narrow representation space. This narrow representation space could impair their effectiveness in document reranking tasks. 2) SLMs demonstrate poor discriminative ability between "relevant" and "irrelevant", evidenced by many relevant document points are below irrelevant points. For phenomenon 1, it is related to the scale of models; larger models usually have more powerful representation capabilities. For phenomenon 2, it is probably a common issue for SLMs to understand the task prompt without a prompt warmup stage. To verify this, we further investigate it. Specifically, we instruct these SLMs to generate binary relevance scores for given documents and queries. We measure both the format success rate (the ability to correctly generate binary relevance scores "0" or "1") and accuracy (the correctness of relevance judgments compared to ground truth), as shown in Figure <ref type="figure" target="#fig_1">2</ref>.</p><p>The results suggest that SLMs indeed struggle with understanding the ranking task prompt in zeroshot settings. Models like LLaMA completely fail at understanding the task, showing nearly 0% in both format success rate and accuracy. Even more powerful models like Qwen show inconsistent performance, with format success rates varying unpredictably with model size. Here, we also visualize the performance of the proposed model, ProRank, for a direct comparison. We will elaborate on it in the Section 4.5.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Methodology</head><p>This section presents the proposed model, ProRank, with its generic framework illustrated in Figure <ref type="figure" target="#fig_2">3</ref>. We organize as follows: Section 3.1 introduces the first stage -reinforcement learning prompt warmup, followed by Section 3.2, which details the second stage -fine-grained score learning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Reinforcement Learning Prompt Warmup</head><p>The quantitative analysis reveals that SLMs face challenges in understanding task prompts and producing correctly binary relevance tokens without fine-tuning. Specifically, we employ GRPO <ref type="bibr" target="#b12">(Shao et al., 2024)</ref> because it has been proven effective in optimizing multiple rewards, enabling SLMs to better learn task prompts and generate well-formatted output. The learning objective of GRPO is detailed in the appendix Section A. We fine-tune ProRank using the prompt described in Section 2. We optimize dual rewards to evaluate both format and relevance accuracy. For the format reward, we define the reward function as follows:</p><formula xml:id="formula_0">r 1 (o|prompt) = 1 if o is binary token 0 otherwise (<label>1</label></formula><formula xml:id="formula_1">)</formula><p>We reward the model if it generates a response that follows the required binary format; otherwise, no reward will be given. For relevance accuracy, we use the accuracy of the model's prediction as the reward function:</p><formula xml:id="formula_2">r 2 (o|prompt) = accuracy(o, y) (<label>2</label></formula><formula xml:id="formula_3">)</formula><p>where y is the ground truth relevance label. These dual rewards provide effective training signals throughout the reinforcement learning process, allowing SLMs to generate correctly formatted outputs while maximizing relevance accuracy for the document reranking.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Fine-grained Score Learning</head><p>While the reinforcement learning prompt warmup stage helps SLMs understand the task prompt well</p><p>Query Who wrote 'To Kill a Mockingbird'? 'To Kill a Mockingbird' is a novel by Harper Lee published in 1960. It was immediately successful, winning the Pulitzer Prize, and has become a classic of modern American literature. LLM Scoring Rerank 0.5 LLMs Prompt Warmup (Training Only) Finite Output Set Others Action Reward Reinforcement Learning (GRPO) Inference &amp; Fine-grained Scoring LLMs Token Logits score Prompt Engeering and produce correctly binary coarse-grained scores, i.e., "1" and "0". Its representation space is still narrow and lacks the necessary granularity for effective document reranking, making it difficult to rank documents with the same relevance score.</p><p>To address this limitation, we introduce a finegrained score learning stage to enhance document reranking performance without introducing new layers. Specifically, ProRank computes a finegrained relevance score by extracting and comparing logit values corresponding to binary tokens "0" and "1" from the last token's logits, as follows:</p><formula xml:id="formula_4">∆ = TokenLogit(1) -TokenLogit(0) TokenLogit(t) = O[token_id(t)] O = LLM last_pool (prompt) ∈ R V ,<label>(3)</label></formula><p>where token_id(t) maps an input token t to its index in the model's vocabulary, prompt represents the input prompt, last_pool denotes the last token pooling, O means the logit outputs at the last token position, and V stands for the vocabulary size. We extract logit outputs from the last token position since it encapsulates the input's complete semantics. This is because in the auto-regressive architecture of LLMs, the last token can attend to all previous tokens in the attention calculation. Additionally, the reinforcement learning prompt warmup stage ensures the model generates meaningful binary tokens with the last token logits. By doing so, ProRank leverages the model's learned token logits to generate fine-grained relevance scores, without requiring additional parameters or architectural changes, making it both efficient and effective.</p><p>We train ProRank by minimizing the binary cross-entropy loss between the predicted finegrained scores (ŷ i ) and the ground truth relevance labels (y i ), as follows:</p><formula xml:id="formula_5">L BCE = - 1 N N i=1 [y i log(ŷ i ) + (1 -y i ) log(1 -ŷi )] .<label>(4)</label></formula><p>4 Experiment</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Experiment Setup</head><p>Datasets We train ProRank using the bge-m3 dataset, following the popular reranking model BAAI/bge-reranker-v2-m3 <ref type="bibr" target="#b0">(Chen et al., 2024)</ref>. This dataset is specifically curated for multilingual embedding and reranking tasks. For a comprehensive evaluation, we conduct experiments across multiple benchmarks spanning diverse languages and domains: (1) The BEIR benchmark <ref type="bibr" target="#b15">(Thakur et al., 2021)</ref> for English reranking, where we utilize 14 datasets (details in Section B). We further enhance our evaluation with additional English datasets, including news, robust04, and signal; (2) Chinese retrieval datasets from the C-MTEB benchmark (CMTEB, 2025) to assess Chinese-specific rerank-  <ref type="bibr" target="#b22">(Zhuang et al., 2025)</ref>. Our results are the average of five runs. Our 1.5B ProRank achieves the best result with significant performance gains compared to baselines on average (p &lt; 1%).</p><p>ing capabilities, specifically Covid and DuReader; and</p><p>(3) the COSQA dataset from the COIR benchmark <ref type="bibr" target="#b19">(Li et al., 2024)</ref> to evaluate code reranking performance. This diverse evaluation strategy enables us to thoroughly assess our model's generalizability across languages and domains, providing insights into its robustness and versatility in realworld applications.</p><p>Baselines To establish a comprehensive evalua-</p><p>tion, we compare our model against popular stateof-the-art reranking models across different parameter scales. Our baselines include open-source models of varying sizes: mixedbread-ai/mxbai-reranklarge-v1 (Shakir et al., 2024) (mxbai), a BERTscale model with 435M (0.4B) parameters known for its strong generalization capabilities; BAAI/bgereranker-v2-m3 (Chen et al., 2024) (bge-m3), a cutting-edge reranker with 568M (0.6B) parameters that represents the current state-of-the-art at the BERT scale; and BAAI/bge-reranker-v2-gemma (Chen et al., 2024) (bge-gemma), a larger 2.5B parameter SLM-based reranker that demonstrates the capabilities of models with significantly more parameters. Additionally, we benchmark against two famous proprietary commercial reranking mdoels, including cohere-rerank-3.5 (Cohere, 2024) (cohere) and voyage-rerank-2 (Voyage, 2024) (voy-age), to position our approach within the broader landscape of available reranking solutions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Evaluation Metric</head><p>We report Normalized Discounted Cumulative Gain at rank 10 (NDCG@10), which measures the quality of ranking by considering both relevance and position, with higher scores indicating better ranking quality.</p><p>Implementation Details We use the popular Qwen <ref type="bibr">(Yang et al., 2024)</ref> as the backbone model and support two parameter scales: 0.5B and 1.5B. For efficient tuning, we employ LoRA <ref type="bibr">(Hu et al., 2022)</ref> with hyperparameters lora_r=32, lora_alpha=32, and lora_dropout=0.1 after a mild hyperparameter sweep. The training process uses AdamW optimizer <ref type="bibr" target="#b7">(Loshchilov and Hutter, 2019)</ref> with an initial learning rate of 1e-4 for both stages. Following the common evaluation practice, we use BM25 as the first-stage retriever to retrieve initial document candidates. Following common practice, we retrieve the top 100 documents for each query. All reranking models are then evaluated on the same retrieved documents for a fair comparison.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Main Results</head><p>Results on BEIR Benchmark We first present our main results on the BEIR benchmark in Table 1. When comparing LLM-based models with</p><p>Model Params news robust04 signal Covid DuReader COSQA Avg. EN EN EN CN CN Code First-stage Retriever BM25 -39.52 40.70 33.05 76.10 53.39 21.79 44.09 mxbai 0.4B 39.52 56.38 31.98 78.60 66.46 30.72 50.61 bge-m3 0.6B 43.21 50.24 30.66 85.94 77.72 24.86 52.11 bge-gemma 2.5B 47.22 51.94 32.84 78.55 78.44 31.51 53.42 Coarse-grained Reranker ProRank 0.5B 47.54 51.45 33.85 85.44 76.52 30.31 54.19 ProRank 1.5B 47.28 53.36 30.96 85.55 75.46 29.35 53.66 Fine-grained Reranker ProRank 0.5B 46.57 52.25 34.12 89.37 78.03 31.73 55.35 ProRank 1.5B 49.06 54.32 31.85 89.78 78.54 32.05 55.93</p><p>Table 2: Results on other English, Chinese, and code retrieval datasets, with NDCG@10 as the primary metric. The orange color indicates the best values across all models.</p><p>BERT-variant models, we observe that LLM-based models generally achieve higher average scores across the benchmark. This performance advantage can be attributed to LLMs' larger parameter sizes and enhanced generalization capabilities, highlighting their effectiveness for document reranking. Interestingly, we note that the BERT-variant model mixedbread-ai/mxbai-rerank-large-v1 still outperforms the state-of-the-art bge-gemma reranking model on five specific datasets. This finding suggests considerable room for improvement in existing LLM-based reranking approaches. Our 1.5B ProRank model with fine-and coarse-grained scoring demonstrates superior performance compared to baseline approaches, while even our smaller 0.5B variant remains competitive. These results strongly validate the effectiveness of our proposed two-stage training methodology. We also find that our ProRank with fine-grained score consistently outperforms the coarse-grained score, suggesting the importance of fine-grained scoring for effective document reranking.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Results on Additional Languages and Domains</head><p>Table <ref type="table">2</ref> presents the results on diverse datasets of English, Chinese, and code retrieval. Our proposed ProRank achieves superior performance compared to all baselines on nearly all datasets, with the only exception being the robust04 dataset, where mxbai shows slightly better results. The performance improvements are particularly notable for our finegrained score models, with the 0.5B and 1.5B ProRank delivering average gains of 1.93% and 2.51%, respectively, over the powerful baselinebge-gemma. These findings further underscore the generalizability and effectiveness of ProRank in handling diverse languages and domains.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Ablation Study</head><p>To better understand the contribution of each component in ProRank, we conduct a comprehensive ablation study. First, we examine the impact of the fine-grained score learning stage. As shown in Table 1, the fine-grained score learning significantly enhances reranking quality, confirming its critical role in our two-stage methodology.</p><p>To verify the importance of reinforcement learning prompt warmup, we train a 0.5B Qwen model without this initial stage. It achieves a 2.04% improvement when using reinforcement prompt warmup compared to without it, demonstrating that reinforcement learning prompt warmup is important for achieving better reranking performance.</p><p>We also compare different fine-tuning strategies, specifically evaluating supervised fine-tuning (SFT) and the popular reinforcement learning algorithm-GRPO. The detailed comparison is in Appendix Section C. The results indicate that using reinforcement learning for the first-stage prompt warmup achieves better performance than SFT, benefiting task prompt understanding.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Discussion on Representation Capabilities</head><p>In the quantitative analysis, we observed that SLMs exhibit a narrow representation space without finetuning, resulting in limited representation expressiveness. Here, we visualize ProRank's relative scores in Figure <ref type="figure" target="#fig_3">4</ref> to investigate this phenomenon.</p><p>For the 0.5B model, we observe a progressive widening of the representation space across training stages. It indicates that ProRank gradually learns to better distinguish between relevant and irrelevant documents, demonstrating improved representation expressiveness for the document reranking task.</p><p>For the 1.5B model, the pattern differs. The base Qwen 1.5B model already exhibits a relatively wide representation space, suggesting that the larger model possesses sufficient inherent expressiveness for the document reranking task. Consequently, the representation space does not undergo the same dramatic widening observed in the 0.5B ProRank across training stages. Nevertheless, the relative scores of relevant document points consistently shift upward and concentrate above irrelevant document points, suggesting the two-stage training process successfully teaches it to understand the task prompt, ultimately achieving highquality document reranking through proper score calibration rather than representational expansion.</p><p>This evidence suggests that the proposed Pro-Rank can effectively address the observed limitations in quantitative analysis.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5">Discussion on Task Understanding</head><p>In the quantitative analysis, we found that SLMs struggle with understanding task prompts. To evaluate this, we visualize the format success rate of ProRank in Figure <ref type="figure" target="#fig_1">2</ref>. It shows that through the stage one prompt warmup learning, ProRank effectively learns to understand task prompts. Furthermore, as shown in Figure <ref type="figure" target="#fig_3">4</ref>, both 0.5B and 1.5B ProRank demonstrate clear improvements in document ranking ability, with the relative scores of relevant document points increasing and clustering above those of irrelevant document points. This indicates that ProRank progressively develops a strong understanding of the document reranking task through the two-stage training process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.6">Discussion on Top-k Retrieval</head><p>Following <ref type="bibr" target="#b4">Jacob et al. (2024)</ref>, we test different topk values (10, 100, 1,000, 5,000) on SciFact and FiQA datasets from BEIR to study how the number of retrieved documents affects reranking, as shown in Figure <ref type="figure">5</ref>. First, all reranking models demonstrate substantial performance gains when increasing the top-k from 10 to 100 documents. It indicates that first-stage retrievers often miss highly relevant documents in the top 10; therefore, having a larger candidate pool of up to 100 is essential for effective reranking. Second, our proposed ProRank consistently outperforms all baselines across all tested top-k values on both datasets. While the initial in-crease in top-k is beneficial, we observe marginal effects beyond top-k=100 for both datasets. This evidence suggests that while increasing the number of candidates by expanding the top-k can improve ranking quality, it also introduces a higher volume of non-relevant documents (noise). This noise can challenge the reranking models, potentially diluting the impact of truly relevant documents, especially at very large top-k values like 5,000. Our ProRank, while generally robust, also shows sensitivity to noise at higher top-k values, highlighting an ongoing challenge in document reranking.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.7">More Discussions</head><p>To gain more insights, we present a detailed case study in Appendix Section D, analyze the performance differences between coarse-and finegrained scoring in Appendix Section E, compare ProRank with cutting-edge LLMs for document reranking task in Appendix Section F, and discuss the efficiency of ProRank in Appendix Section G.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Related Work</head><p>This work is in line with document reranking. Reranking has traditionally been implemented using BERT-based models. <ref type="bibr" target="#b10">Nogueira and Cho (2019)</ref> pioneered this approach with BERT for passage reranking, establishing a framework where querydocument pairs are encoded together to generate relevance scores. These models, often referred to as Cross-Encoders, have become the standard for traditional reranking systems. Recent advancements, such as mixedbread-ai/mxbai-rerank <ref type="bibr" target="#b11">(Shakir et al., 2024)</ref> and bge-reranker <ref type="bibr" target="#b0">(Chen et al., 2024)</ref>, optimize the Cross-Encoder architecture for improved generalization across diverse retrieval tasks.</p><p>The emergence of large language models (LLMs) has created new paradigms for reranking. Zero-shot approaches leverage LLMs' inherent capabilities without task-specific training <ref type="bibr" target="#b21">(Zhuang et al., 2023;</ref><ref type="bibr" target="#b9">Ma et al., 2023)</ref>. <ref type="bibr" target="#b14">Sun et al. (2023)</ref> demonstrated that LLMs like ChatGPT can effectively rerank documents through carefully designed prompting engineering. <ref type="bibr" target="#b23">Zhuang et al. (2024)</ref> further advanced this direction with setwise ranking approaches that consider multiple documents simultaneously. To further improve the performance of LLMs for reranking, recent work has focused on fine-tuning LLMs for reranking. Rank1 <ref type="bibr" target="#b17">(Weller et al., 2025)</ref> introduced techniques to optimize compute efficiency during inference time. Zhuang (a) Top-k Retrieval on SciFact (b) Top-k Retrieval on FiQA Figure 5: Performance comparison of our fine-grained reranker across different numbers of retrieved documents (top-k) on the SciFact and FiQA dataset. et al. (2025) proposed Rank-R1, which enhances LLM reasoning capabilities for document reranking through reinforcement learning. Commercial models like cohere-rerank-3.5 (Cohere, 2024) and voyage-rerank-2 (Voyage, 2024) offer powerful document reranking capabilities and strong generalization ability.</p><p>Despite these advancements, current reranking approaches still have limitations. Zero-shot methods require larger LLMs to function effectively, but these models are challenging to interpret and computationally expensive to utilize in practice <ref type="bibr" target="#b20">(Zhu et al., 2023)</ref>. Our proposed ProRank differs from existing work by enabling small language models (SLMs) to perform high-quality reranking while producing interpretable, fine-grained relevance scores, addressing significant limitations in current LLM-based reranking systems.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>In this paper, we present ProRank, a novel twostage approach for document reranking using Small Language Models (SLMs). Through a preliminary quantitative analysis, we identify two key limitations of SLMs in document reranking: inadequate task prompt understanding and constrained representation space. To address the first limitation, ProRank uses reinforcement learning for prompt warmup learning. Additionally, ProRank employs a fine-grained scoring mechanism to expand the rep-resentation space, enhancing representation expressiveness and delivering superior document reranking performance. Comprehensive experiments on various domains and languages have verified the effectiveness and generalizability of ProRank. By enabling SLMs to achieve competitive performance, ProRank makes high-quality reranking more accessible for resource-constrained environments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitations</head><p>A potential limitation observed in our experiments (Section 4.6) is the challenge of handling noise in scenarios with very large top-k (e.g., k = 5, 000) retrieval. To address this challenge, we recognize the need for enhanced semantic understanding capabilities that can better distinguish relevant results from noise. For this limitation, our future work will pursue several promising directions: (1) developing more noise-robust reranking architectures, (2) investigating adaptive top-k selection mechanisms that dynamically adjust based on query characteristics, and (3) extending ProRank's applicability to smaller, more efficient models and novel application domains.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure1: Visualization of relative scores between relevant ("1") and irrelevant ("0") tokens' logits on the TREC-COVID test set. For LLaMA, Gemma, and Qwen, we visualize the small language models (with size &lt; 7B).</figDesc><graphic coords="3,74.96,178.51,453.55,125.99" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: The accuracy (y-axis) and format success rate (x-axis) of SLMs in generating binary relevance scores on the TRECCOVID test set. The light orange colors indicate baselines' results. The dark orange colors denote the proposed ProRank's results.</figDesc><graphic coords="3,70.87,374.23,218.26,122.41" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure3: The generic framework of the proposed model ProRank. There are two stages: 1) Prompt Warmup (training only) steers LLM to produce coarse-grained binary relevance tokens ("1" and "0") through reinforcement learning; 2) Fine-grained scoring stage computes relative logit scores to produce fine-grained scores for ranking.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Visualization of relative scores between relevant ("1") and irrelevant ("0") tokens' logits on the TREC-COVID test set for Qwen and ProRank.</figDesc><graphic coords="8,70.87,70.87,453.55,251.97" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Model Params SF NFC TC AA FQA QRA DBP TCH SD FVR CFV HQA MM NQ Avg. 5B 77.15 37.10 79.06 57.82 41.09 88.61 44.66 34.58 17.02 88.55 33.02 79.14 41.25 58.89 55.57 ProRank 1.5B 80.87 37.06 80.01 67.97 44.41 89.26 45.63 32.06 17.83 89.86 37.12 79.66 41.75 61.43 57.49Results on BEIR benchmark, with NDCG@10 as the main metric. The orange color indicates the best values. † indicates results are retrieved from</figDesc><table><row><cell>First-stage Retriever</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A GRPO Learning</head><p>We use reinforcement learning in the first stage of ProRank to teach small language models (SLMs) to effectively understand document ranking task prompts and produce proper signal tokens for document reranking. Specifically, we adopt GRPO (Group Relative Policy Optimization) <ref type="bibr" target="#b12">(Shao et al., 2024)</ref>, which is a popular reinforcement learning algorithm that has been proven effective for optimizing multiple rewards simultaneously <ref type="bibr" target="#b12">(Shao et al., 2024)</ref>. The GRPO learning objective is as follows:</p><formula xml:id="formula_6">J GRPO (θ) = E q ∼ P (Q), {o i } G i=1 ∼ π θ old (O|q) 1 G G i=1 min π θ (o i |q) π θ old (o i |q) A i , clip π θ (o i |q) π θ old (o i |q) , 1 -ε, 1 + ε A i -β D KL (π θ ∥ π ref ) , D KL π θ ∥ π ref = π ref (o i |q) π θ (o i |q) -log π ref (o i |q) π θ (o i |q) -1,<label>(5)</label></formula><p>where ε and β are hyperparameters, and A i represents the advantage, calculated using rewards {r 1 , r 2 , . . . , r G } corresponding to outputs within each group:</p><formula xml:id="formula_7">A i = r i -mean({r 1 , r 2 , . . . , r G }) std({r 1 , r 2 , . . . , r G }) .<label>(6)</label></formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B BEIR Benchmark Detail</head><p>In this paper, we adopt 14 datasets from the BEIR benchmark <ref type="bibr" target="#b15">(Thakur et al., 2021)</ref>: SciFact (SF), NFCorpus (NFC), TRECCOVID (TC), ArguAna (AA), FiQA2018 (FQA), Quora (QRA), DBPedia (DBP), Touche2020 (TCH), SciDOCS (SD), Fever (FVR), Climate-Fever (CFV), HotpotQA (HQA), MSMARCO-dev (MM), and Natural Questions (NQ).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C SFT vs GRPO</head><p>Here, we compare 0.5B ProRank with different prompt warmup training: supervised fine-tuning (SFT) and popular GRPO. The results are listed in Table <ref type="table" target="#tab_2">3</ref>. We can find that ProRank with GRPO prompt warmup performs better than the SFT one. It might be attributed to the multiple rewards optimization strategy, making the model more relevant and accurate in the first stage of training, thereby improving the second stage's performance. This also demonstrates the superiority of reinforcement learning in the first stage of training.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Case Study</head><p>Here, we conduct a case study, as shown in Table <ref type="table">4</ref>, to intuitively compare the performance of different models on document reranking. For baselines, we find that bge-m3 performs poorly on the second document's ranking. Although the second document does not explicitly mention "Mockingbird", it should be ranked higher than the third and fourth documents since it directly identifies Harper Lee as the author. This might be attributed to limited commonsense understanding of bge-m3. The bge-gemma and proprietary model voyage-rerank-2 rank the fourth document (containing "Mockingbird") higher than other models. This could indicate a greater reliance on lexical overlap rather than fine-grained semantic matches For the proposed model, while the coarsegrained ProRank assigns a score of 1 (relevant) to both the first and second documents, it is impossible to differentiate their relative relevance. The</p><p>Model Params SF NFC TC AA FQA QRA DBP TCH SD FVR CFV HQA MM NQ Avg. ProRank (fine-grained) + SFT 0.5B 76.9 36.9 77.51 62.51 41.16 80.75 43.53 36.15 15.47 81.32 27.49 78.92 40.92 58.03 54.11 + GRPO 0.5B 77.15 37.10 79.06 57.82 41.09 88.61 44.66 34.58 17.02 88.55 33.02 79.14 41.25 58.89 55.57 Table 4: Case study of different model rankings for query "Who wrote 'To Kill a Mockingbird'?" HM: Human; MB: mxbai-rerank-large-v1; M3: bge-rerank-v2-m3; GEM: bge-rerank-v2-gemma; CH: cohere-rerank-3.5; VY: voyagererank-2; PR C 0.5B : coarse-grained ProRank-0.5B; PR C 1.5B : coarse-grained ProRank-1.5B; PR F 0.5B : fine-grained ProRank-0.5B; PR F 1.5B : fine-grained ProRank-1.5B. fine-grained version of ProRank addresses this limitation by providing more nuanced relevance scores. Notably, the proposed ProRank with fine-grained scores produces rankings that closely align with human judgment, validating its effectiveness.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E Discussion on Score Granularity</head><p>Here, we deep into score granularity's impact on reranking performance.</p><p>Table 1 demonstrates that ProRank with the fine-grained scoring version consistently outperforms the coarse-grained one. For 0.5B ProRank, the fine-grained scoring version achieves a 1.02% absolute improvement in average NDCG@10 (55.57% vs 54.55%). This improvement becomes more significant with 1.5B ProRank, where the fine-grained scoring version delivers a 1.76% improvement (57.49% vs 55.73%). Table 2 further confirms these findings across languages and domains. The average improvement from the fine-grained scoring version is 1.16% for 0.5B Pro-Rank and 2.27% for 1.5B ProRank. These results demonstrate that fine-grained scoring effectively improves document reranking quality. It may be because it captures subtle relevance differences and provides more informative training signals, aligning better with human judgment patterns. F Comparison with Cutting-edge LLMs We further evaluate ProRank by comparing it with two powerful LLMs: Gemini and GPT. The results, presented in Table 5, reveal a significant advantage for ProRank in pointwise document reranking. For instance, on SciFact, ProRank 0.5B surpasses Gemini and GPT by 9.18% and 5.77%, respectively; the larger ProRank 1.5B achieves even greater improvements of 12.18% and 8.77%. Notably, ProRank attains these results in mere minutes, compared to the hours required by the LLMs. This combination of superior effectiveness and drastically lower computational cost not only highlights ProRank's superiority for reranking but also confirms its strong practical applicability. Model SciFact Time (s) Gemini-2.5-flash 67.97 3:33:59 GPT5.1 71.38 5:55:18 ProRank-0.5B 77.15 00:03:01 ProRank-1.5B 80.15 00:06:17</p><p>Table 5: Results of Gemini, GPT, and ProRank on the SciFact dataset. NDCG@10 serves as the metric.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G Discussion on Efficiency</head><p>Following the scaling law <ref type="bibr" target="#b5">(Kaplan et al., 2020)</ref>, smaller models are generally more efficient. We</p><p>Model Params Load (s) Avg. (ms) bge-v2-gemma 2B 1.26 64.0 rankllama-7b 7B 4.88 49.7 rankllama-13b 13B 6.77 81.0 ProRank-0.5B 0.5B 1.29 27.2 ProRank-1.5B 1.5B 1.55 32.7</p><p>Table 6: Latency of different scales of LLM rerankers. rankllama is from <ref type="bibr" target="#b8">(Ma et al., 2024)</ref>. Avg. means average latency.</p><p>quantitatively compare the efficiency of differentscale LLM rerankers, as detailed in Table <ref type="table">6</ref>. The results confirm that our smaller-scale ProRank is significantly more efficient than baseline rerankers using larger-scale LLMs.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Results of ProRank with SFT and GRPO prompt warmup on BEIR benchmark, with NDCG@10 as the main metric. ).</figDesc><table><row><cell>Document</cell><cell cols="7">HM MB M3 GEM CH VY PR C 0.5B</cell><cell>PR C 1.5B</cell><cell>PR F 0.5B</cell><cell>PR F 1.5B</cell></row><row><cell>"To Kill a Mockingbird' is a novel by Harper Lee published in 1960.'</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>1</cell><cell>1</cell><cell>0</cell><cell>0</cell></row><row><cell>Harper Lee, an American novelist, was born in 1926 in Monroeville, Alabama.</cell><cell>1</cell><cell>1</cell><cell>2</cell><cell>1</cell><cell>1</cell><cell>1</cell><cell>0</cell><cell>0</cell><cell>1</cell><cell>1</cell></row><row><cell>The 'Harry Potter' series, consisting of</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>seven fantasy novels, was written by</cell><cell>2</cell><cell>3</cell><cell>1</cell><cell>3</cell><cell>2</cell><cell>3</cell><cell>2</cell><cell>2</cell><cell>2</cell><cell>2</cell></row><row><cell>British author J.K. Rowling.</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>What does a Mockingbird eat?</cell><cell>3</cell><cell>2</cell><cell>3</cell><cell>2</cell><cell>3</cell><cell>2</cell><cell>3</cell><cell>3</cell><cell>3</cell><cell>3</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Bge m3-embedding: Multi-lingual, multi-functionality, multi-granularity text embeddings through self-knowledge distillation</title>
+		<author>
+			<persName><forename type="first">Jianlv</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shitao</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peitian</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Defu</forename><surname>Lian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.03216</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Chinese massive text embedding benchmark</title>
+		<author>
+			<persName><surname>Cmteb</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Introducing rerank 3.5: Precise ai search</title>
+		<author>
+			<persName><surname>Cohere</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Weizhu Chen, and 1 others. 2022. Lora: Low-rank adaptation of large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Edward</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yelong</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phillip</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyuan</forename><surname>Wallis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Allen-Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shean</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ICLR</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page">3</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mathew</forename><surname>Jacob</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erik</forename><surname>Lindgren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matei</forename><surname>Zaharia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Carbin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Khattab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Drozdov</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2411.11767</idno>
+		<title level="m">Drowning in documents: consequences of scaling reranker inference</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Henighan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><forename type="middle">B</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Chess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rewon</forename><surname>Child</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2001.08361</idno>
+		<title level="m">Scaling laws for neural language models</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xiangyang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuicai</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Quan Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiming</forename><surname>Tang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.02883</idno>
+		<title level="m">Coir: A comprehensive benchmark for code information retrieval models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Loshchilov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><surname>Hutter</surname></persName>
+		</author>
+		<title level="m">Decoupled weight decay regularization. 7th International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2019">2019. 2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Fine-tuning llama for multi-stage text retrieval</title>
+		<author>
+			<persName><forename type="first">Xueguang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Furu</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Lin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 47th International ACM SIGIR Conference on Research and Development in Information Retrieval</title>
+		<meeting>the 47th International ACM SIGIR Conference on Research and Development in Information Retrieval</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="2421" to="2425" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xueguang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronak</forename><surname>Pradeep</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.02156</idno>
+		<title level="m">Zero-shot listwise document reranking with a large language model</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">Rodrigo</forename><surname>Nogueira</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyunghyun</forename><surname>Cho</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1901.04085</idno>
+		<title level="m">Passage re-ranking with bert</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Boost your search with the crispy mixedbread rerank models</title>
+		<author>
+			<persName><surname>Shakir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Koenig</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lipp</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lee</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.03300</idno>
+		<title level="m">Deepseekmath: Pushing the limits of mathematical reasoning in open language models</title>
+		<imprint>
+			<date type="published" when="2024">1 others. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">An investigation of prompt variations for zero-shot llm-based rankers</title>
+		<author>
+			<persName><forename type="first">Shuoqi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengyao</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guido</forename><surname>Zuccon</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/978-3-031-88711-6_12</idno>
+		<idno>ECIR 2025</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Information Retrieval -47th European Conference on Information Retrieval</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="volume">15573</biblScope>
+			<biblScope unit="page" from="185" to="201" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Is ChatGPT good at search? investigating large language models as re-ranking agents</title>
+		<author>
+			<persName><forename type="first">Weiwei</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingyong</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuaiqiang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengjie</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhumin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawei</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaochun</forename><surname>Ren</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.emnlp-main.923</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2023 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="14918" to="14937" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Beir: A heterogenous benchmark for zero-shot evaluation of information retrieval models</title>
+		<author>
+			<persName><forename type="first">Nandan</forename><surname>Thakur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nils</forename><surname>Reimers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Rücklé</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2104.08663</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>Abhishek Srivastava, and Iryna Gurevych</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">2024. rerank-2 and rerank-2-lite: the next generation of voyage multilingual rerankers</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">Orion</forename><surname>Weller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kathryn</forename><surname>Ricci</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eugene</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Yates</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Lawrie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Van Durme</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.18418</idno>
+		<title level="m">Rank1: Test-time compute for reranking in information retrieval</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baosong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengpeng</forename><surname>Li</surname></persName>
+		</author>
+		<imprint>
+			<publisher>Chengyuan</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dayiheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanting</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialong</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialin</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianhong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianwei</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianxin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ma</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.10671</idno>
+		<title level="m">Qwen2 technical report</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page">40</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yutao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huaying</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuting</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiongnan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenlong</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haonan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhicheng</forename><surname>Dou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji-Rong</forename><surname>Wen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.07107</idno>
+		<title level="m">Large language models for information retrieval: A survey</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Open-source large language models are strong zero-shot query likelihood models for document ranking</title>
+		<author>
+			<persName><forename type="first">Shengyao</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bevan</forename><surname>Koopman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guido</forename><surname>Zuccon</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/V1/2023.FINDINGS-EMNLP.590</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: EMNLP 2023</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="8807" to="8817" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Rankr1: Enhancing reasoning in llm-based document rerankers via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Shengyao</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueguang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bevan</forename><surname>Koopman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guido</forename><surname>Zuccon</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.06034</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">A setwise approach for effective and highly efficient zero-shot ranking with large language models</title>
+		<author>
+			<persName><forename type="first">Shengyao</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honglei</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bevan</forename><surname>Koopman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guido</forename><surname>Zuccon</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 47th International ACM SIGIR Conference on Research and Development in Information Retrieval</title>
+		<meeting>the 47th International ACM SIGIR Conference on Research and Development in Information Retrieval</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="38" to="47" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

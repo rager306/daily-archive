@@ -1,0 +1,1868 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">SFR-RAG: Towards Contextually Faithful LLMs</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-09-16">16 Sep 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Xuan-Phi</forename><surname>Nguyen</surname></persName>
+							<email>xnguyen@salesforce.com</email>
+							<affiliation key="aff0">
+								<orgName type="department">Salesforce AI Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Shrey</forename><surname>Pandit</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Salesforce AI Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Senthil</forename><surname>Purushwalkam</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Salesforce AI Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Austin</forename><surname>Xu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Salesforce AI Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hailin</forename><surname>Chen</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Salesforce AI Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yifei</forename><surname>Ming</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Salesforce AI Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zixuan</forename><surname>Ke</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Salesforce AI Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Silvio</forename><surname>Savarese</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Salesforce AI Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Caiming</forename><surname>Xong</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Salesforce AI Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Shafiq</forename><surname>Joty</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Salesforce AI Research</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">SFR-RAG: Towards Contextually Faithful LLMs</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-09-16">16 Sep 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">1CEA6FB617BE83D4F1B718E6E5C48292</idno>
+					<idno type="arXiv">arXiv:2409.09916v1[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:46+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Retrieval Augmented Generation (RAG), a paradigm that integrates external contextual information with large language models (LLMs) to enhance factual accuracy and relevance, has emerged as a pivotal area in generative AI. The LLMs used in RAG applications are required to faithfully and completely comprehend the provided context and users' questions, avoid hallucination, handle unanswerable, counterfactual or otherwise low-quality and irrelevant contexts, perform complex multi-hop reasoning and produce reliable citations. In this paper, we introduce SFR-RAG, a small LLM that is instruction-tuned with an emphasis on context-grounded generation and hallucination minimization. We also present ContextualBench, a new evaluation framework compiling multiple popular and diverse RAG benchmarks, such as HotpotQA and TriviaQA, with consistent RAG settings to ensure reproducibility and consistency in model assessments. Experimental results demonstrate that our SFR-RAG-9B model outperforms leading baselines such as Command-R+ (104B) and GPT-4o, achieving state-of-the-art results in 3 out of 7 benchmarks in ContextualBench with significantly fewer parameters. The model is also shown to be resilient to alteration in the contextual information and behave appropriately when relevant context is removed. Additionally, the SFR-RAG model maintains competitive performance in general instruction-following tasks and function-calling capabilities.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Retrieval Augmented Generation (RAG) has recently garnered significant attention as one of the most prominent areas of research in generative AI <ref type="bibr" target="#b52">[53,</ref><ref type="bibr" target="#b53">54]</ref>, driven by the latest advancements in foundational large language models (LLMs) <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b38">39,</ref><ref type="bibr" target="#b28">29,</ref><ref type="bibr" target="#b29">30,</ref><ref type="bibr" target="#b39">40,</ref><ref type="bibr" target="#b8">9,</ref><ref type="bibr" target="#b13">14,</ref><ref type="bibr" target="#b1">2]</ref>. RAG frameworks are wellsuited for solving knowledge-dependent problems or questions, where external contextual information is provided and the generated answer is expected to be factually grounded on the contextual cues. In practice, the RAG setup is designed such that a generator LLM works in tandem with a knowledge retriever. The retriever <ref type="bibr" target="#b25">[26,</ref><ref type="bibr" target="#b45">46,</ref><ref type="bibr" target="#b4">5,</ref><ref type="bibr" target="#b20">21]</ref> is tasked with retrieving passages relevant to a given query from a database of documents (potentially the entire internet). The LLM interacts with users, formulates queries for the retriever to gather knowledge, and finally answers users' questions. To retrieve the most accurate context information, the retriever typically relies on an embedding model <ref type="bibr" target="#b27">[28,</ref><ref type="bibr" target="#b25">26,</ref><ref type="bibr" target="#b4">5,</ref><ref type="bibr" target="#b20">21]</ref>, and optionally employs a re-ranker to get a refined list of context documents <ref type="bibr" target="#b23">[24]</ref>. Recent research has also led to the development of more sophisticated RAG frameworks <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b12">13,</ref><ref type="bibr" target="#b21">22,</ref><ref type="bibr" target="#b46">47,</ref><ref type="bibr" target="#b15">16,</ref><ref type="bibr" target="#b44">45]</ref> that involve multiple inference steps to improve the reliability of answers. In this work, we focus our efforts on the generator LLM component of the RAG framework. Traditional general-purpose LLMs trained for chat often struggle when directly applied to the RAG framework. This can be attributed to several potential factors, including:</p><p>• The knowledge in the context obtained from the retriever might conflict with the training data used for the LLM.</p><p>• The LLM is not trained to deal with conflicting or redundant facts from the retriever.</p><p>• In scenarios where the retrieved knowledge is insufficient, the LLMs revert to answering questions based on its training data.</p><p>• It may also fail to provide adequate citations or to call appropriate functions and parameters to retrieve appropriate contexts in an agentic environment <ref type="bibr" target="#b49">[50]</ref>, in which the model may use provided functions or tools to perform tasks.</p><p>Recent attempts have focused on training LLMs specifically tuned to succeed in the RAG framework, such as <ref type="url" target="https://cohere.com/blog/command-r">Command-R(+)</ref>  <ref type="bibr" target="#b35">[36]</ref> and <ref type="url" target="https://contextual.ai/introducing-rag2">RAG-2.0</ref>  <ref type="bibr" target="#b36">[37]</ref>. Such RAG-specific LLMs not only serve as the foundation for generating up-to-date and factual AI responses, but also enable quick adoption in different domains, avoid the need to increase model capacity, context length or fine-tune an LLM on potentially proprietary data.</p><p>In this work, we introduce SFR-RAG<ref type="foot" target="#foot_0">foot_0</ref> , a 9-billion-parameter language model trained with a significant emphasis on reliable, precise and faithful contextual generation abilities specific to RAG and relevant agentic tasks. Beyond contextual tasks, SFR-RAG is also trained to serve as a competitive AI assistant in regular tasks <ref type="bibr" target="#b11">[12,</ref><ref type="bibr" target="#b6">7]</ref>. We develop a comprehensive recipe, on both data synthesis and training procedures, to train the base LLM so that it is familiar and adaptable to diverse real-life RAG use cases. This includes precise factual knowledge extraction, distinguishing relevant against distracting contexts, citing appropriate sources along with answers, producing complex and multi-hop reasoning over multiple contexts, consistent format following, as well as refraining from hallucination over unanswerable queries. SFR-RAG is also equipped with function calling and agentic abilities, which enable it to proactively search for knowledge from external tools, as well as conduct complex inference and reasoning strategies similar to Self-RAG <ref type="bibr" target="#b0">[1]</ref>, ReAct <ref type="bibr" target="#b49">[50]</ref> and alike <ref type="bibr" target="#b21">[22,</ref><ref type="bibr" target="#b50">51,</ref><ref type="bibr" target="#b19">20,</ref><ref type="bibr" target="#b33">34]</ref>. There is limited well established evaluation standards for measuring progress in contextual comprehension qualities of LLMs. It is worth noting that Command-R(+) <ref type="bibr" target="#b35">[36]</ref> and RAG-2.0 <ref type="bibr" target="#b36">[37]</ref> evaluated their proposed models on non-overlapping metrics <ref type="bibr" target="#b48">[49,</ref><ref type="bibr" target="#b22">23]</ref> with inconsistent or undisclosed setups, which causes difficulties in aligning results and comparisons across different studies. To reliably evaluate our SFR-RAG model as well as other well-known baselines, in this work, we also introduce ContextualBench<ref type="foot" target="#foot_1">foot_1</ref> , which is a compilation of many popular RAG and contextual benchmarks, such as HotpotQA and TriviaQA <ref type="bibr" target="#b48">[49,</ref><ref type="bibr" target="#b14">15,</ref><ref type="bibr" target="#b24">25,</ref><ref type="bibr" target="#b22">23,</ref><ref type="bibr" target="#b12">13,</ref><ref type="bibr" target="#b41">42,</ref><ref type="bibr" target="#b17">18]</ref>, that standardizes the evaluation setup leading to consistent and reproducible evaluation results. In experiments, we show that our SFR-RAG-9B model is both a well-rounded and high performing model, achieving stateof-the-art performance in three of the seven benchmarks in ContextualBench; see Figure <ref type="figure" target="#fig_0">1</ref> for a preview of our results. SFR-RAG-9B outperforms or is competitive with GPT-4o <ref type="bibr" target="#b29">[30]</ref> on all tasks in ContextualBench. It also outperforms powerful contextual models, such as Command-R+ <ref type="bibr" target="#b35">[36]</ref>, on a variety of tasks despite having 10 times fewer parameters. Compared to comparable baselines, our model is also shown to be resilient to factual alterations and unanswerability tests in the context. Lastly, despite being trained with a focus on RAG and contextual applications, our model is still competitive as a regular instruction-tuned LLM, with strong and comparable performances in standard benchmarks like MMLU or GSM8K <ref type="bibr" target="#b11">[12,</ref><ref type="bibr" target="#b6">7,</ref><ref type="bibr" target="#b5">6]</ref>, as well as function-calling ability <ref type="bibr" target="#b47">[48]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">SFR-RAG</head><p>In this section, we provide more insights into SFR-RAG. First, we introduce a novel chat template comprising two new chat roles with specific functions ( §2.1). Then, we briefly discuss the training process of SFR-RAG ( §2.2).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">SFR-RAG Chat Template</head><p>Most instruction-tuned language models often feature a chat template that allows for three conversational roles: (i) System role, typically specified once at the beginning, is used to define the general characteristics of the AI assistant with general instructions on how to respond to user inputs, (ii) User role specifies where user messages reside, and (iii) Assistant turn is where the model responds to the user's query in accordance to the guidelines given by the System turn.</p><p>However, as more complex applications with (potentially multi-step) retrieval or function calling are being employed, such roles may have to handle increasingly complex and confusing data formats. For example, in retrieval tasks, external context information may be injected into the System or User turn, or may even form a part of the Assistant turn if the context is retrieved following a model's function call <ref type="bibr" target="#b35">[36,</ref><ref type="bibr" target="#b49">50]</ref>. This may cause confusion and distraction from the actual instruction or question queried by the user in the User turn. In other words, there have been no generally agreed-upon position to store the contextual information in such tasks. In another example of agentic function calling tasks, the Assistant turn has to produce responses that use specific tool syntax and expects to receive the function call's results following that <ref type="bibr" target="#b49">[50]</ref>. This makes the fine-tuning process tricky as the function's results, which are part of Assistant turn and typically contain answer clues, need to be masked out from the loss to prevent memorization <ref type="bibr" target="#b39">[40]</ref>. Furthermore, for certain applications, practitioners may prefer to hide the model's reasoning, or intermediate actions invoked by the model from the user and only show user-friendly responses. Having all data processing steps enclosed within the Assistant turn may hinder such use cases. Reliability is also an issue as the model may fail to produce specific key words consistently in inference strategies like ReAct <ref type="bibr" target="#b49">[50]</ref>. <ref type="foot" target="#foot_2">3</ref> Furthermore, the ambiguities in roles, functions and privileges may lead to the model failing to comply with the System prompt and surrendering to jailbreaks injected via the User turn or tool outputs <ref type="bibr" target="#b43">[44]</ref>.</p><p>To overcome such complexities, we introduce two more optional roles (turns) in the conversational template for SFR-RAG: Thought and Observation. As shown in Figure <ref type="figure" target="#fig_1">2</ref>, the Observation role is designated to house any contextual information acquired from external sources, which can be either retrieved documents for retrieval use case or function call's results in agentic tool use scenario.</p><p>Meanwhile, the Thought role is designed for the model to speak out any internal reasoning, or tool use syntax to invoke certain function calls. The benefits of this change are manifold. First, it allows easy masking during training. Specifically, System, User and Observation turns may not be trainable as they are input information for the model to generate responses. Like Assistant, on the other hand, Thought turns are to be included in the fine-tuning loss to train the model to produce such "thoughts". Second, the separation and clarification of roles facilitate instruction hierarchy enforcement <ref type="bibr" target="#b43">[44]</ref>, making LLMs safer by ensuring them to respect the System prompt and refuse to follow malicious instructions injected in User and Observation turns. Third, the additional roles streamline the process of building reliable and secure RAG and agentic applications, by allowing developers to display or hide internal data processing steps, and avoid having to parse customized key words from the Assistant output.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">SFR-RAG Fine-tuning Process</head><p>One of the most important goals of SFR-RAG is to make full use and complete comprehension of any provided contextual information in the real-world RAG scenarios. This trait includes many capabilities, among which are (i) extracting relevant information from arbitrary long contexts, (ii) recognizing the lack of relevant information and abstaining from hallucinated generation, (iii) recognizing potential conflicting information in contextual passages, and (iv) being resilient to distracting, counter-intuitive information or contents that are out-of-distribution from the pre-training process. We fine-tuned SFR-RAG via standard supervised fine-tuning and preference learning <ref type="bibr" target="#b39">[40,</ref><ref type="bibr" target="#b8">9,</ref><ref type="bibr" target="#b30">31]</ref>, using extensive instruction-following data that mimic real-world retrieval question answering applications.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Evaluation</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Contextual Evaluation Suite -ContextualBench</head><p>There are already several evaluation protocols available to measure performance of LLMs and RAG systems on contextual understanding across different domains and complexities <ref type="bibr" target="#b14">[15,</ref><ref type="bibr" target="#b22">23,</ref><ref type="bibr" target="#b24">25,</ref><ref type="bibr" target="#b48">49,</ref><ref type="bibr" target="#b12">13,</ref><ref type="bibr" target="#b41">42,</ref><ref type="bibr" target="#b5">6,</ref><ref type="bibr" target="#b17">18]</ref>. However, prior studies <ref type="bibr" target="#b35">[36,</ref><ref type="bibr" target="#b36">37,</ref><ref type="bibr" target="#b0">1,</ref><ref type="bibr" target="#b49">50]</ref> have reported results on non-overlapping measures, datasets and inconsistent setups, especially on which contextual content to present to the LLMs and model hyper-parameters. This causes challenges in directly comparing results from different studies.</p><p>To offer a better common ground, we propose ContextualBench, which is primarily an aggregation of 7 popular contextual question answering tasks, namely HotpotQA, TriviaQA, TruthfulQA, PopQA, 2WikiHopQA, Musique and Natural Questions (NQ) <ref type="bibr" target="#b14">[15,</ref><ref type="bibr" target="#b22">23,</ref><ref type="bibr" target="#b24">25,</ref><ref type="bibr" target="#b48">49,</ref><ref type="bibr" target="#b12">13,</ref><ref type="bibr" target="#b41">42,</ref><ref type="bibr" target="#b17">18]</ref>. There are a few key contributions that make ContextualBench stand out as a comprehensive benchmarking framework for contextual LLMs:</p><p>• The measures in ContextualBench are evaluated under the same instruction with contextual contents being consistently specified. The contextual contents include the original context documents of each benchmark if provided, or otherwise they are retrieved from a much larger Wikipedia database with an embedding model of choice.</p><p>• As it is not trivial to evaluate assistant-style LLMs with a wide range of verbosity in the generated output, ContextualBench offers multiple scoring methods to account for variations in answers compared to the ground truths. These scoring methods are (i) Exact Match (EM) of the generated answer with the ground truth, (ii) Easy match (EasyM) to check if the ground truth is in the generated answer, and (iii) the F1 score, with room for further addition. The Appendix provides the complete results for all of these metrics.</p><p>• ContextualBench offers multiple setups common in the RAG scenarios, among which is whether to retrieve top-k chunks using consistent embedding models or feed the entire available contextual documents directly to the LLM (no retrieval needed).</p><p>The variety of measures and tasks in ContextualBench enables both holistic and specific evaluation of contextual LLMs. By weighing each task and measure equally, ContextualBench allows for direct comparison of model performance in general. On the other hand, depending on practitioner use-case and domain specifications, certain measures or datasets may be prioritized, allowing for quick identification of the best task-specific models.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Dataset Specific Settings.</head><p>For 2WikiHopQA, HotpotQA and Musique, the context documents are already provided for each question, so we use them directly as contextual sources. For TriviaQA, TruthfulQA, and NQ, the questions come with their respective Wikipedia article or source URL. We scraped the web content from these sources and used Cohere embedding <ref type="bibr" target="#b34">[35]</ref> to retrieve top-10 chunks from the contextual sources where each chunk is 512 tokens long. Meanwhile, PopQA itself does not come with context documents, so we make use of the off-the-shelf context documents produced by the Self-RAG retriever <ref type="bibr" target="#b0">[1]</ref>. For each task, we use the test set if they are complete with gold labels, otherwise we use the entire validation set to measure models' performance. This is different from Command-R's report <ref type="bibr" target="#b35">[36]</ref>, where HotpotQA evaluation was conducted on a 100-sample subset of validation set, with no details about the context documents disclosed.</p><p>Note that ContextualBench contains popular existing benchmarks, such as TriviaQA and TruthfulQA, where evaluation utilizes certain contexts to which models are expected to be faithful. That is, models are expected to utilize only the information found in such contexts, in contrast to traditional closed-book QA settings, where the parametric knowledge of LLMs are evaluated sans provided contexts. In other words, the presence of these contexts may cause the scores to differ significantly.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Experimental Results on ContextualBench</head><p>Table <ref type="table" target="#tab_0">1</ref> compares the performance of our 9B SFR-RAG model on ContextualBench against stateof-the-art large models as well as comparable ones across the 7 question answering tasks. PopQA scores are measured in easy matching, while the remaining are measured in exact matching. As shown, GPT-4o <ref type="bibr" target="#b29">[30]</ref> unsurprisingly aces most of the benchmarks. However, given its small size, our SFR-RAG-9B model significantly outperforms strong open-source baselines such as Command-R and Command-R+ that have up to 10 times larger parameter counts. Remarkably, it achieves the state of the art in TruthfulQA, 2WikihopQA and HotpotQA in contextual settings. Overall, it also achieves the state of the art average performance, demonstrating our model's strong ability across many contextual tasks. In particular, our model excels at 2WikiHopQA, with nearly a 25% increase in performance compared to GPT-4o. Meanwhile, our 9B model consistently outperforms Llama-3.1 8B Instruct and gemma-2-9b-it across most benchmarks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Resilience to Unanswerable, Conflicting and Counterfactual Contexts</head><p>Because most QA benchmarks are realistically based on real-world facts, understanding LLMs performance in contextual QA tasks may be ambiguous because high scores may be attributed to either (i) the ability to seek accurate facts from the contextual documents and content, or (ii) the </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>EasyM Accuracy</head><p>Counterfactual Unknown Conflict intrinsic parametric knowledge of the model acquired during pre-training, of which large and state-ofthe-art models like GPT-4o often have significant advantages.</p><p>Ming et al. <ref type="bibr" target="#b26">[27]</ref> recently proposed FaithEval, an evaluation suite that measures how LLMs remain faithful to the context if the facts of the contexts are changed. The benchmark evaluate LLMs on three scenarios: (i) "Unknown" where the relevant facts are removed and the original question becomes unanswerable; (ii) "Conflict" where multiple context documents are provided that contains conflicting or contradicting information and the model is expected to recognize that; and (iii) "Counterfactual" where certain commonsense facts are altered by introducing a falsely fabricated context document. For instance, "The Moon is Made of Marshmallows." is considered a counterfactual context and the LLM under evaluation is expected to remain faithful to that "fact", if prompted to do so. Following Ming et al. <ref type="bibr" target="#b26">[27]</ref>, the "Unknown" and "Conflict" tasks are averaged over 10 benchmarks <ref type="bibr" target="#b42">[43,</ref><ref type="bibr" target="#b7">8,</ref><ref type="bibr" target="#b48">49,</ref><ref type="bibr" target="#b17">18,</ref><ref type="bibr" target="#b40">41,</ref><ref type="bibr" target="#b18">19,</ref><ref type="bibr" target="#b31">32,</ref><ref type="bibr" target="#b9">10,</ref><ref type="bibr" target="#b16">17,</ref><ref type="bibr" target="#b14">15]</ref>, while the "Counterfactual" task is evaluated using the ARC-C dataset <ref type="bibr" target="#b5">[6]</ref>.</p><p>Figure <ref type="figure" target="#fig_2">3</ref> shows the average non-strict matching accuracy scores of different LLMs over 3 tasks under FaithEval suite. As shown, other baselines such as GPT-4o exhibit high variations when the facts change in Counterfactual and Unknown settings. Particularly, GPT-4o scores low in Counterfactual setting perhaps because large models may have higher knowledge inertia and stronger resistance to factual changes. Meanwhile, our SFR-RAG-9B scores consistently highly, even when the context information is altered. This demonstrates that our model is usefully resilient and faithful to unseen contextual information. It also means that the model is more adaptable to the ever-changing world. Plus, our model is more capable of identifying contradiction in the contexts, as well as resisting  In other words, the model remains more faithful to the context even if the context contradicts its pre-trained knowledge.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">Standard Benchmarks</head><p>We also evaluate our SFR-RAG model in the traditional few-shot prompting benchmarks <ref type="bibr" target="#b11">[12,</ref><ref type="bibr" target="#b6">7]</ref> to measure its parametric knowledge as well as general instruction following and reasoning abilities. Using the similar setups in the Open LLM leaderboard <ref type="bibr" target="#b2">[3]</ref>, we employ the standard evaluation harness <ref type="bibr" target="#b10">[11]</ref> to evaluate our model in MMLU (5 shots), GSM8K (5 shots with strict matching), Winogrande (5 shots), TruthfulQA (0 shot MC2), Hellaswag (10 shots with normalized accuracy) and ARC-C (25 shots with normalized accuracy) <ref type="bibr" target="#b11">[12,</ref><ref type="bibr" target="#b6">7,</ref><ref type="bibr" target="#b32">33,</ref><ref type="bibr" target="#b22">23,</ref><ref type="bibr" target="#b51">52,</ref><ref type="bibr" target="#b5">6]</ref>.</p><p>As shown in Table <ref type="table" target="#tab_1">2</ref>, our SFR-RAG model performs competitively in terms of world knowledge, common sense and reasoning abilities, despite the fact that it is optimized for contextual and retrieval use cases. Particularly, our 9B model outperforms Command-R <ref type="bibr" target="#b35">[36]</ref> with 35B parameters in MMLU, GSM8K, TruthfulQA as well as ARC-C. Meanwhile it remains competitive to Llama-3.1-Instruct <ref type="bibr" target="#b8">[9]</ref> and gemma-2-9b-it <ref type="bibr" target="#b37">[38]</ref>.</p><p>Our model is also trained with function calling with a focus to support dynamic and multi-hop interactions with external tools to retrieve high-quality contextual information. As such, we compare our model with certain popular baselines in the Berkeley function calling task <ref type="bibr" target="#b47">[48]</ref>. As reported in Table <ref type="table" target="#tab_2">3</ref>, our SFR-RAG performs competitively against comparable baselines such as Llama-3-8B-Instruct <ref type="bibr" target="#b8">[9]</ref> 4 Conclusion</p><p>We present SFR-RAG, a LLM fine-tuned with an emphasis on faithful contextual comprehension and understanding for retrieval augmented generation applications. The SFR-RAG model is trained to minimize hallucination, effectively handle unanswerable, counterfactual or low-quality and irrelevant contexts. It is also capable of performing complex multi-hop reasoning and producing citations reliably and accurately. We also introduce ContextualBench, which is a compilation of various popular RAG benchmarks evaluated under consistent and appropriate settings. The experiments show that our 9B SFR-RAG model outperforms notable baselines, including Command-R+ and GPT-4o, and achieves the state of the art in 3 out of 7 benchmarks in ContextualBench. Our evaluation with FaithEval also shows that our model is resilient to changes in the context information and able to identify unanswerable questions. Lastly, the SFR-RAG model maintains competitive performance in general instruction-tuned tasks and function-calling capabilities, compared to baselines of similar sizes.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure1: Our SFR-RAG-9B model exhibits strong overall performance on an ContextualBench, our comprehensive evaluation suite of seven contextual tasks under a standardized setup. Notably, SFR-RAG achieves state-of-the-art performance on three of seven tasks, with extremely competitive performance on the rest, despite having far fewer parameters than competitive baselines.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Example of the chat format used by SFR-RAG, with additional Thought and Observation turns (roles). The former indicates the model's "inner" thought or reasoning, actions and tool use syntax that are not typically meant to be shown to users. The latter indicates all external information retrieved and returned by performing a search or function call. The Assistant turn, therefore, is relieved to only be responsible to generate user-friendly responses. During training, Thought and Assistant turns are trained while the others are masked out.</figDesc><graphic coords="3,177.30,72.00,257.40,141.54" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure3: FaithEval<ref type="bibr" target="#b26">[27]</ref>: average easy match accuracy scores of different models when contextual facts are fabricated (Counterfactual), removed (Unknown) or when the facts are contradicting (Conflict). Small variations between those settings and overall high absolute scores indicate that SFR-RAG-9B is resilient to changes in contextual information.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Performances of SFR-RAG-9B and various open-and closed-source baselines across 7 contextual question answering tasks in ContextualBench. Bold numbers mean best of all, while underlined numbers mean best among open-source models. PopQA is measured in easy-match accuracy (EasyEM), while the rest are measured in exact-match accuracy (EM). The Appendix presents the full results in metrics.</figDesc><table><row><cell>Model</cell><cell cols="8">TriviaQA TruthfulQA 2WikiHopQA MuSiQue NQ PopQA HotpotQA Average</cell></row><row><cell>GPT-4o</cell><cell></cell><cell>81.73</cell><cell>76.47</cell><cell>62.40</cell><cell>44.40</cell><cell cols="2">51.85 42.24</cell><cell>57.20</cell><cell>59.47</cell></row><row><cell>GPT 4 Turbo</cell><cell></cell><cell>78.34</cell><cell>76.13</cell><cell>59.90</cell><cell>37.10</cell><cell cols="2">48.23 53.82</cell><cell>54.20</cell><cell>58.25</cell></row><row><cell>GPT-4o-mini</cell><cell></cell><cell>72.55</cell><cell>61.02</cell><cell>46.60</cell><cell>32.10</cell><cell cols="2">30.75 54.75</cell><cell>49.80</cell><cell>49.65</cell></row><row><cell>GPT 3.5 Turbo</cell><cell></cell><cell>77.43</cell><cell>47.00</cell><cell>41.20</cell><cell>22.60</cell><cell cols="2">40.40 53.39</cell><cell>48.10</cell><cell>47.16</cell></row><row><cell cols="2">Command R (35B)</cell><cell>71.75</cell><cell>51.65</cell><cell>41.50</cell><cell>14.60</cell><cell cols="2">35.76 52.60</cell><cell>48.20</cell><cell>45.15</cell></row><row><cell cols="2">Command R+ (104B)</cell><cell>76.34</cell><cell>56.30</cell><cell>47.50</cell><cell>29.00</cell><cell cols="2">47.44 59.18</cell><cell>52.50</cell><cell>52.61</cell></row><row><cell>gemma-2-9b-it</cell><cell></cell><cell>77.66</cell><cell>59.43</cell><cell>49.70</cell><cell>30.50</cell><cell cols="2">37.37 53.75</cell><cell>52.60</cell><cell>51.57</cell></row><row><cell cols="2">Llama3 8B Instruct</cell><cell>72.28</cell><cell>51.52</cell><cell>27.90</cell><cell>9.90</cell><cell cols="2">31.01 52.82</cell><cell>45.90</cell><cell>41.62</cell></row><row><cell cols="2">Llama3.1 8B Instruct</cell><cell>71.33</cell><cell>59.43</cell><cell>17.70</cell><cell>9.40</cell><cell cols="2">44.41 59.68</cell><cell>46.70</cell><cell>44.09</cell></row><row><cell>SFR-RAG-9B</cell><cell></cell><cell>79.24</cell><cell>77.45</cell><cell>79.50</cell><cell>42.90</cell><cell cols="2">48.01 53.97</cell><cell>65.70</cell><cell>63.44</cell></row><row><cell>100</cell><cell></cell><cell></cell><cell></cell><cell>93.2</cell><cell></cell><cell></cell><cell></cell><cell>99.2</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>85.8</cell></row><row><cell>80</cell><cell>73.6</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>70.6</cell></row><row><cell>60</cell><cell></cell><cell>56.6</cell><cell>47.2</cell><cell>59.9</cell><cell>55.7</cell><cell>48.7</cell><cell>50.7</cell></row><row><cell>40</cell><cell>40</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell cols="2">Command-R+</cell><cell cols="2">GPT-4o</cell><cell cols="3">gemma-2-9b-it</cell><cell>SFR-RAG-9B</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Standard LM-eval-harness benchmarks<ref type="bibr" target="#b10">[11]</ref>: SFR-RAG-9B maintains relative competitiveness in standard world knowledge and reasoning abilities against comparable baselines.</figDesc><table><row><cell>Model</cell><cell cols="6">MMLU GSM8K Winogrande TruthfulQA Hellaswag ARC-C</cell></row><row><cell>Command-R (35B)</cell><cell>68.20</cell><cell>56.63</cell><cell>81.53</cell><cell>52.32</cell><cell>87.00</cell><cell>65.53</cell></row><row><cell>Llama-3-8b-instruct</cell><cell>67.07</cell><cell>68.69</cell><cell>74.51</cell><cell>51.65</cell><cell>78.55</cell><cell>60.75</cell></row><row><cell>Llama-3.1-8B-Instruct</cell><cell>68.22</cell><cell>71.04</cell><cell>78.06</cell><cell>54.58</cell><cell>80.47</cell><cell>60.92</cell></row><row><cell>gemma-2-9b-it</cell><cell>70.80</cell><cell>76.88</cell><cell>77.50</cell><cell>60.11</cell><cell>81.78</cell><cell>71.20</cell></row><row><cell>SFR-RAG-9B</cell><cell>70.15</cell><cell>82.56</cell><cell>78.46</cell><cell>56.49</cell><cell>81.58</cell><cell>69.12</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Scores on Berkeley function calling benchmark<ref type="bibr" target="#b47">[48]</ref>: SFR-RAG-9B exhibits competitive function calling abilities.</figDesc><table><row><cell>Model</cell><cell cols="3">Executable AST Relevance</cell></row><row><cell>GPT 4 Turbo</cell><cell>86.04</cell><cell>90.73</cell><cell>62.50</cell></row><row><cell>GPT 3.5 Turbo</cell><cell>81.38</cell><cell>75.23</cell><cell>87.80</cell></row><row><cell>Command R + (104B)</cell><cell>77.33</cell><cell>84.50</cell><cell>63.75</cell></row><row><cell>xLam 7B</cell><cell>87.12</cell><cell>89.46</cell><cell>85.00</cell></row><row><cell>Mistral Medium</cell><cell>73.47</cell><cell>84.48</cell><cell>88.33</cell></row><row><cell>gemma-2-9b-it</cell><cell>70.50</cell><cell>69.69</cell><cell>90.00</cell></row><row><cell>Meta-Llama-3-8B-Instruct</cell><cell>65.13</cell><cell>61.63</cell><cell>26.60</cell></row><row><cell>Meta-Llama-3.1-8B-Instruct</cell><cell>75.17</cell><cell>77.56</cell><cell>40.00</cell></row><row><cell>SFR-RAG-9B</cell><cell>70.88</cell><cell>71.69</cell><cell>72.50</cell></row></table><note><p>against its own parametric knowledge when contextual information presented is counter-intuitive.</p></note></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>The model will be made available via API and later fully open-sourced.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>https://huggingface.co/datasets/Salesforce/ContextualBench</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>ReAct uses arbitrarily literal phrases like "Thought:", "Result:" and "Final Answer:" within the Assistant turn to parse reasoning, tool outputs and answers respectively, which the LLM may not always comply with.</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Appendix</head><p>Tables <ref type="table" target="#tab_3">4</ref> and <ref type="table" target="#tab_4">5</ref> present the complete results of ContextualBench across 7 benchmarks as measured in different metrics. As these metrics measure different aspects of the question-answering responses, the numbers provide more insights into the performance comparison between for models. For instance, a model that is too verbose may score low in EM and high in F1, and vice-versa.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 :</head><label>4</label><figDesc>ContextualBench scores for HotpotQA, 2WikihopQA and Musique, as measured in easy matching, strict matching accuracy and the F1 score.</figDesc><table><row><cell>Model</cell><cell cols="2">HotpotQA</cell><cell></cell><cell>2WikiHopQA</cell><cell></cell><cell>MuSiQue</cell></row><row><cell></cell><cell cols="2">EasyM EM</cell><cell>F1</cell><cell>EasyM EM</cell><cell>F1</cell><cell>EasyM EM</cell><cell>F1</cell></row><row><cell>GPT 4 Turbo</cell><cell cols="6">70.90 54.20 69.00 73.00 59.90 69.60 53.10 37.10 52.70</cell></row><row><cell>GPT 4o</cell><cell>72.70</cell><cell cols="5">57.2 71.40 74.70 62.40 70.90 60.20 44.40 58.60</cell></row><row><cell>GPT-4o-mini</cell><cell cols="6">68.70 49.80 65.50 57.70 46.60 56.50 48.30 32.10 48.90</cell></row><row><cell>GPT 3.5 Turbo</cell><cell cols="6">63.10 48.10 61.80 50.50 41.20 49.70 34.90 22.60 35.90</cell></row><row><cell>Command R (35B)</cell><cell cols="6">63.10 48.20 63.00 55.70 41.50 52.30 36.70 14.60 34.10</cell></row><row><cell>Command R + (104B)</cell><cell cols="6">67.30 52.50 66.60 60.80 47.50 57.30 46.30 29.00 43.60</cell></row><row><cell>LLama3 8B Instruct (8B)</cell><cell cols="6">58.80 45.90 60.00 46.50 27.90 42.20 29.30</cell><cell>9.90 25.30</cell></row><row><cell cols="7">LLama3.1 8B Instruct (8B) 64.80 46.70 62.00 51.70 17.70 38.30 38.00</cell><cell>9.40 29.00</cell></row><row><cell>gemma-2-9b-it</cell><cell cols="6">67.20 52.60 66.10 59.60 49.70 58.10 47.00 30.50 43.50</cell></row><row><cell>SFR-RAG-9B</cell><cell cols="6">83.60 65.70 79.90 86.20 79.50 84.60 57.40 42.90 53.50</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 5 :</head><label>5</label><figDesc>ContextualBench scores for TriviaQA, TruthfulQA, PopQA and NQ, as measured in easy matching, strict matching accuracy and the F1 score.</figDesc><table><row><cell>Model</cell><cell cols="2">TriviaQA</cell><cell cols="2">TruthfulQA PopQA</cell><cell>NQ</cell></row><row><cell></cell><cell>EM</cell><cell>F1</cell><cell>EM</cell><cell>EasyM</cell><cell>EM</cell><cell>F1</cell></row><row><cell>GPT 4 Turbo</cell><cell cols="2">78.34 86.30</cell><cell>76.13</cell><cell cols="3">53.82 48.23 67.20</cell></row><row><cell>GPT 4o</cell><cell cols="2">81.73 88.20</cell><cell>76.47</cell><cell cols="3">42.24 51.85 69.75</cell></row><row><cell>GPT-4o-mini</cell><cell cols="2">72.55 81.77</cell><cell>61.02</cell><cell cols="3">54.75 30.75 54.90</cell></row><row><cell>GPT 3.5 Turbo</cell><cell cols="2">77.43 84.70</cell><cell>47.00</cell><cell cols="3">53.39 40.40 60.69</cell></row><row><cell>Command R (35B)</cell><cell cols="2">71.75 79.81</cell><cell>51.65</cell><cell cols="3">52.60 35.76 55.50</cell></row><row><cell>Command R + (104B)</cell><cell cols="2">76.34 83.05</cell><cell>56.30</cell><cell cols="3">59.18 47.44 63.21</cell></row><row><cell>LLama3 8B Instruct (8B)</cell><cell cols="2">72.28 79.07</cell><cell>51.52</cell><cell cols="3">52.82 31.01 48.22</cell></row><row><cell cols="3">LLama3.1 8B Instruct (8B) 71.33 78.33</cell><cell>59.43</cell><cell cols="3">59.68 44.41 61.60</cell></row><row><cell>gemma-2-9b-it</cell><cell cols="2">77.66 83.23</cell><cell>59.43</cell><cell cols="3">53.75 37.37 53.15</cell></row><row><cell>SFR-RAG-9B</cell><cell cols="2">79.24 84.35</cell><cell>77.45</cell><cell cols="3">53.97 48.01 59.66</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Self-rag: Learning to retrieve, generate, and critique through self-reflection</title>
+		<author>
+			<persName><forename type="first">Akari</forename><surname>Asai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeqiu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Avirup</forename><surname>Sil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.11511</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jinze</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfei</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenbin</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.16609</idno>
+		<title level="m">Qwen technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Beeching</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clémentine</forename><surname>Fourrier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Habib</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sheon</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Lambert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nazneen</forename><surname>Rajani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Sanseviero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lewis</forename><surname>Tunstall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Wolf</surname></persName>
+		</author>
+		<ptr target="https://huggingface.co/spaces/open-llm-leaderboard-old/open_llm_leaderboard" />
+	</analytic>
+	<monogr>
+		<title level="j">Open llm leaderboard</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Bge m3embedding: Multi-lingual, multi-functionality, multi-granularity text embeddings through self-knowledge distillation</title>
+		<author>
+			<persName><forename type="first">Jianlv</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shitao</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peitian</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Defu</forename><surname>Lian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Liu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Isaac</forename><surname>Cowhey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oren</forename><surname>Etzioni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carissa</forename><surname>Schoenick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oyvind</forename><surname>Tafjord</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1803.05457</idno>
+		<title level="m">Think you have solved question answering? try arc, the ai2 reasoning challenge</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.14168</idno>
+		<title level="m">Training verifiers to solve math word problems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dheeru</forename><surname>Dua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pradeep</forename><surname>Dasigi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Stanovsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sameer</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matt</forename><surname>Gardner</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Drop</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1903.00161</idno>
+		<title level="m">A reading comprehension benchmark requiring discrete reasoning over paragraphs</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Abhimanyu</forename><surname>Dubey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Jauhri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Pandey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Kadian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmad</forename><surname>Al-Dahle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aiesha</forename><surname>Letman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akhil</forename><surname>Mathur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Schelten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amy</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Angela</forename><surname>Fan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.21783</idno>
+		<title level="m">The llama 3 herd of models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Dunn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Levent</forename><surname>Sagun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Higgins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Ugur Guney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Volkan</forename><surname>Cirik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyunghyun</forename><surname>Cho</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1704.05179</idno>
+		<title level="m">Searchqa: A new q&amp;a dataset augmented with context from a search engine</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">A framework for few-shot language model evaluation</title>
+		<author>
+			<persName><forename type="first">Leo</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Tow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stella</forename><surname>Baber Abbasi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sid</forename><surname>Biderman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Black</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Dipofi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurence</forename><surname>Foster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Golding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alain</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haonan</forename><surname>Le Noac'h</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Mcdonell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Ociepa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laria</forename><surname>Phang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hailey</forename><surname>Reynolds</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aviya</forename><surname>Schoelkopf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lintang</forename><surname>Skowron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Sutawika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anish</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Thite</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zou</surname></persName>
+		</author>
+		<ptr target="https://zenodo.org/records/12608602" />
+		<imprint>
+			<biblScope unit="page" from="7" to="2024" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Measuring massive multitask language understanding</title>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mantas</forename><surname>Mazeika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Learning Representations (ICLR)</title>
+		<meeting>the International Conference on Learning Representations (ICLR)</meeting>
+		<imprint>
+			<biblScope unit="page">2021</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Constructing a multi-hop QA dataset for comprehensive evaluation of reasoning steps</title>
+		<author>
+			<persName><forename type="first">Xanh</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anh-Khoa</forename><surname>Duong Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saku</forename><surname>Sugawara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akiko</forename><surname>Aizawa</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2020.coling-main.580</idno>
+		<ptr target="https://aclanthology.org/2020.coling-main.580" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 28th International Conference on Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">Donia</forename><surname>Scott</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Nuria</forename><surname>Bel</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Chengqing</forename><surname>Zong</surname></persName>
+		</editor>
+		<meeting>the 28th International Conference on Computational Linguistics<address><addrLine>Barcelona, Spain (Online)</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2020-12">December 2020</date>
+			<biblScope unit="page" from="6609" to="6625" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Alexandre</forename><surname>Albert Q Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Sablayrolles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Mensch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Devendra</forename><surname>Bamford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diego</forename><surname>Singh Chaplot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florian</forename><surname>De Las Casas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gianna</forename><surname>Bressand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guillaume</forename><surname>Lengyel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucile</forename><surname>Lample</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Saulnier</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.06825</idno>
+		<title level="m">Mistral 7b</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Triviaqa: A large scale distantly supervised challenge dataset for reading comprehension</title>
+		<author>
+			<persName><forename type="first">Mandar</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eunsol</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">S</forename><surname>Weld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1705.03551</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zixuan</forename><surname>Ke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Kong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingyang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiaozhu</forename><surname>Mei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Bendersky</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.06954</idno>
+		<title level="m">Bridging the preference gap between retrievers and llms</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Are you smarter than a sixth grader? textbook question answering for multimodal machine comprehension</title>
+		<author>
+			<persName><forename type="first">Aniruddha</forename><surname>Kembhavi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minjoon</forename><surname>Seo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dustin</forename><surname>Schwenk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonghyun</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Farhadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE Conference on Computer Vision and Pattern recognition</title>
+		<meeting>the IEEE Conference on Computer Vision and Pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="4999" to="5007" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Natural questions: a benchmark for question answering research</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Kwiatkowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jennimaria</forename><surname>Palomaki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivia</forename><surname>Redfield</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Collins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ankur</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Alberti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danielle</forename><surname>Epstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Illia</forename><surname>Polosukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenton</forename><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="page" from="453" to="466" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">RACE: Large-scale ReAding comprehension dataset from examinations</title>
+		<author>
+			<persName><forename type="first">Guokun</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qizhe</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanxiao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eduard</forename><surname>Hovy</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/D17-1082</idno>
+		<ptr target="https://aclanthology.org/D17-1082" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2017 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2017 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Copenhagen, Denmark</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2017-09">September 2017</date>
+			<biblScope unit="page" from="785" to="794" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Planrag: A plan-then-retrieval augmented generation for generative large language models as decision makers</title>
+		<author>
+			<persName><forename type="first">Myeonghwa</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Seonho</forename><surname>An</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min-Soo</forename><surname>Kim</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.12430</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Making large language models a better foundation for dense retrieval</title>
+		<author>
+			<persName><forename type="first">Chaofan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shitao</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingxia</forename><surname>Shao</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Chain-of-knowledge: Grounding large language models via dynamic knowledge adapting over heterogeneous sources</title>
+		<author>
+			<persName><forename type="first">Xingxuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruochen</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ken</forename><surname>Yew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bosheng</forename><surname>Chia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shafiq</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soujanya</forename><surname>Joty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lidong</forename><surname>Poria</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bing</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.13269</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">Stephanie</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Owain</forename><surname>Evans</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Truthfulqa</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2109.07958</idno>
+		<title level="m">Measuring how models mimic human falsehoods</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Large language model is not a good few-shot information extractor, but a good reranker for hard samples</title>
+		<author>
+			<persName><forename type="first">Yubo</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixin</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongching</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aixin</forename><surname>Sun</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.08559</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">When not to trust language models: Investigating effectiveness of parametric and non-parametric memories</title>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Mallen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akari</forename><surname>Asai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rajarshi</forename><surname>Das</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Khashabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.10511</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Sfr-embedding-mistral:enhance text retrieval with transfer learning</title>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ye</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rayhan</forename><surname>Shafiq</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Joty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingbo</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Semih</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yavuz</surname></persName>
+		</author>
+		<ptr target="https://blog.salesforceairesearch.com/sfr-embedded-mistral/" />
+	</analytic>
+	<monogr>
+		<title level="m">Salesforce AI Research Blog</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Xuan-Phi Nguyen, Caiming Xiong, and Shafiq Rayhan Joty. Faitheval: Can your language model stay faithful to context, even if &quot;the moon is made of marshmallows</title>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Ming</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Senthil</forename><surname>Purushwalkam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shrey</forename><surname>Pandit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zixuan</forename><surname>Ke</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouamane</forename><surname>Tazi</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2210.07316</idno>
+		<idno type="arXiv">arXiv:2210.07316</idno>
+		<ptr target="https://arxiv.org/abs/2210.07316" />
+		<title level="m">Loïc Magne, and Nils Reimers. Mteb: Massive text embedding benchmark</title>
+		<imprint>
+			<biblScope unit="page">2022</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chatgpt</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023-06">june 2023 version, 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m">OpenAI. Gpt-4 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Rafael</forename><surname>Rafailov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Archit</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefano</forename><surname>Ermon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.18290</idno>
+		<title level="m">Direct preference optimization: Your language model is secretly a reward model</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Squad: 100,000+ questions for machine comprehension of text</title>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Rajpurkar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Konstantin</forename><surname>Lopyrev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1606.05250</idno>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Winogrande: An adversarial winograd schema challenge at scale</title>
+		<author>
+			<persName><forename type="first">Keisuke</forename><surname>Sakaguchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Ronan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chandra</forename><surname>Bras</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Bhagavatula</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Communications of the ACM</title>
+		<imprint>
+			<biblScope unit="volume">64</biblScope>
+			<biblScope unit="issue">9</biblScope>
+			<biblScope unit="page" from="99" to="106" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">Weijia</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sewon</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michihiro</forename><surname>Yasunaga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minjoon</forename><surname>Seo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rich</forename><surname>James</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2301.12652</idno>
+		<title level="m">Replug: Retrieval-augmented black-box language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Introducing embed v3</title>
+		<author>
+			<persName><forename type="first">Cohere</forename><surname>Team</surname></persName>
+		</author>
+		<ptr target="https://cohere.com/blog/introducing-embed-v3/" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Command r: Retrieval-augmented generation at production scale</title>
+		<author>
+			<persName><forename type="first">Cohere</forename><surname>Team</surname></persName>
+		</author>
+		<ptr target="https://cohere.com/blog/command-r/" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">I</forename><surname>Contextual</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Team</surname></persName>
+		</author>
+		<ptr target="https://contextual.ai/introducing-rag2/" />
+		<title level="m">Introducing rag 2.0, 2024</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<author>
+			<persName><forename type="first">Gemma</forename><surname>Team</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Mesnard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cassidy</forename><surname>Hardin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Dadashi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Surya</forename><surname>Bhupatiraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shreya</forename><surname>Pathak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurent</forename><surname>Sifre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Morgane</forename><surname>Rivière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mihir</forename><surname>Sanjay Kale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juliette</forename><surname>Love</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.08295</idno>
+		<title level="m">Open models based on gemini research and technology</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">Romal</forename><surname>Thoppilan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">De</forename><surname>Freitas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamie</forename><surname>Hall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Apoorv</forename><surname>Kulshreshtha</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Heng-Tze</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alicia</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Taylor</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leslie</forename><surname>Bos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Du</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.08239</idno>
+		<title level="m">Language models for dialog applications</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Llama 2: Open foundation and fine-tuned chat models</title>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Albert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amjad</forename><surname>Almahairi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasmine</forename><surname>Babaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolay</forename><surname>Bashlykov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soumya</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prajjwal</forename><surname>Bhargava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shruti</forename><surname>Bhosale</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.09288</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Trischler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingdi</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Justin</forename><surname>Harris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alessandro</forename><surname>Sordoni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philip</forename><surname>Bachman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaheer</forename><surname>Suleman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1611.09830</idno>
+		<title level="m">Newsqa: A machine comprehension dataset</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Multihop questions via single-hop question composition</title>
+		<author>
+			<persName><forename type="first">Harsh</forename><surname>Trivedi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niranjan</forename><surname>Balasubramanian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Musique</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="page" from="539" to="554" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Bioasq: A challenge on large-scale biomedical semantic indexing and question answering</title>
+		<author>
+			<persName><forename type="first">George</forename><surname>Tsatsaronis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Schroeder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Georgios</forename><surname>Paliouras</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yannis</forename><surname>Almirantis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Androutsopoulos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Gaussier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Gallinari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thierry</forename><surname>Artieres</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Michael R Alvers</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zschunke</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">AAAI Fall Symposium Series</title>
+		<imprint>
+			<date type="published" when="2012">2012. 2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Wallace</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reimar</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lilian</forename><surname>Weng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Heidecke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Beutel</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.13208</idno>
+		<title level="m">The instruction hierarchy: Training llms to prioritize privileged instructions</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Replug: Retrieval-augmented black-box language models</title>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Shi Weijia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasunaga</forename><surname>Sewon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Seo</forename><surname>Michihiro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Minjoon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lewis</forename><surname>Rich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yih</forename><surname>Mike</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wen-Tau</surname></persName>
+		</author>
+		<idno>ArXiv: 2301.12652</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">C-pack: Packaged resources to advance general chinese embedding</title>
+		<author>
+			<persName><forename type="first">Shitao</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peitian</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<title level="m" type="main">Recomp: Improving retrieval-augmented lms with compression and selective augmentation</title>
+		<author>
+			<persName><forename type="first">Fangyuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weijia</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eunsol</forename><surname>Choi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.04408</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<author>
+			<persName><forename type="first">Fanjia</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huanzhi</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charlie</forename><surname>Cheng-Jie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianjun</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Shishir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Patil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Stoica</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gonzalez</surname></persName>
+		</author>
+		<title level="m">Berkeley function calling leaderboard</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">HotpotQA: A dataset for diverse, explainable multi-hop question answering</title>
+		<author>
+			<persName><forename type="first">Zhilin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saizheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">W</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruslan</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Empirical Methods in Natural Language Processing (EMNLP)</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03629</idno>
+		<title level="m">React: Synergizing reasoning and acting in language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<title level="m" type="main">Rankrag: Unifying context ranking with retrieval-augmented generation in llms</title>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Ping</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boxin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxuan</forename><surname>You</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Shoeybi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan</forename><surname>Catanzaro</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.02485</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title level="m" type="main">Hellaswag: Can a machine really finish your sentence</title>
+		<author>
+			<persName><forename type="first">Rowan</forename><surname>Zellers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ari</forename><surname>Holtzman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Farhadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1905.07830</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<title level="m" type="main">Retrieval-augmented generation for ai-generated content: A survey</title>
+		<author>
+			<persName><forename type="first">Penghao</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hailin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qinhan</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengren</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunteng</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangcheng</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ling</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wentao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Cui</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.19473</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Retrieving multimodal information for augmented generation: A survey</title>
+		<author>
+			<persName><forename type="first">Ruochen</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hailin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weishi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangkai</forename><surname>Jiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuan</forename><forename type="middle">Long</forename><surname>Do</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengwei</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bosheng</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaobao</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minzhi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingxuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shafiq</forename><surname>Joty</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.findings-emnlp.314</idno>
+		<ptr target="https://aclanthology.org/2023.findings-emnlp.314" />
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: EMNLP 2023</title>
+		<editor>
+			<persName><forename type="first">Houda</forename><surname>Bouamor</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Juan</forename><surname>Pino</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Kalika</forename><surname>Bali</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023-12">December 2023</date>
+			<biblScope unit="page" from="4736" to="4756" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,1691 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Acting Less is Reasoning More ! Teaching Model to Act Efficiently</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-05-31">31 May 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Hongru</forename><surname>Wang</surname></persName>
+							<email>hrwang@se.cuhk.edu.hk</email>
+							<affiliation key="aff0">
+								<orgName type="institution">The Chinese University of Hong Kong</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Cheng</forename><surname>Qian</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Illinois Urbana</orgName>
+								<address>
+									<country>Champaign</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Wanjun</forename><surname>Zhong</surname></persName>
+							<affiliation key="aff3">
+								<orgName type="institution">Sun Yat-sen University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xiusi</forename><surname>Chen</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Illinois Urbana</orgName>
+								<address>
+									<country>Champaign</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jiahao</forename><surname>Qiu</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">Princeton University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Shijue</forename><surname>Huang</surname></persName>
+							<affiliation key="aff4">
+								<orgName type="institution">Hong Kong University of Science and Technology</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Bowen</forename><surname>Jin</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Illinois Urbana</orgName>
+								<address>
+									<country>Champaign</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Mengdi</forename><surname>Wang</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">Princeton University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Kam-Fai</forename><surname>Wong</surname></persName>
+							<email>kfwong@se.cuhk.edu.hk</email>
+							<affiliation key="aff0">
+								<orgName type="institution">The Chinese University of Hong Kong</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+							<email>hengji@illinois.edu</email>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Illinois Urbana</orgName>
+								<address>
+									<country>Champaign</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Acting Less is Reasoning More ! Teaching Model to Act Efficiently</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-05-31">31 May 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">73A8FD2054ACAB6CAB5A8C7BF027E0F6</idno>
+					<idno type="arXiv">arXiv:2504.14870v2[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:01+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Tool-integrated reasoning (TIR) augments large language models (LLMs) with the ability to invoke external tools during long-form reasoning, such as search engines and code interpreters, to solve tasks beyond the capabilities of internal reasoning. While reinforcement learning (RL) has shown promise in training such agents, most of existing approaches typically optimize only for final correctness without considering the efficiency or necessity of external tool use. This often leads to excessive tool calling, incurring high computational costs and hindering the development of internal reasoning capabilities -a phenomenon known as cognitive offloading. To this end, we propose Optimal Tool Call-controlled Policy Optimization (OTC-PO), a simple yet effective RL-based framework that encourages models to produce accurate answers with minimal tool calls. Our method introduces a tool-integrated reward that jointly considers answer correctness and corresponding tool use behavior of model to reach that answer. To validate the effectiveness, we introduce the metric of tool productivity, defined as the ratio between the number of correct answers and the total number of tool calls across all test cases. This metric reflects how efficiently tool usage contributes to successful task completion, with higher values indicating smarter and more autonomous reasoning. We instantiate this framework within both Proximal Policy Optimization (PPO) and Group Relative Preference Optimization (GRPO), resulting in OTC-PPO and OTC-GRPO. Experiments with Qwen-2.5 and Qwen-Math across multiple QA benchmarks show that our approach reduces tool calls by up to 68.3% and improves tool productivity by up to 215.4%, while maintaining comparable answer accuracy.</p><p>Preprint. Under review.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>"The autonomous machine intelligence is designed to minimize the number of actions a system needs to take in the real world to learn a task." -Yann LeCun <ref type="bibr" target="#b0">[1]</ref> Recent advances in large language models (LLMs) have demonstrated impressive reasoning capabilities when fine-tuned via reinforcement learning (RL) with simple rule-based rewards. This has led to the emergence of large reasoning models (LRMs) -such as OpenAI's o1 <ref type="bibr" target="#b1">[2]</ref>, DeepSeek-R1 <ref type="bibr" target="#b2">[3]</ref>, and QwQ <ref type="bibr" target="#b3">[4]</ref> -which exhibit creative and diverse behaviors in extended Chain-of-Thought (CoT) reasoning <ref type="bibr" target="#b4">[5]</ref>. These models develop meta-reasoning capabilities reminiscent of human cognition, such as reflection and decomposition, which have been shown to enhance performance on complex tasks <ref type="bibr" target="#b5">[6]</ref><ref type="bibr" target="#b6">[7]</ref><ref type="bibr" target="#b7">[8]</ref>. However, the internal reasoning capacity of LRMs alone is often insufficient or even infeasible for tasks that require interaction with external environments, such as accessing up-to-date domain knowledge or performing precise computations. To overcome these limitations, tool-integrated reasoning (TIR) has emerged as a promising paradigm <ref type="bibr" target="#b8">[9]</ref><ref type="bibr" target="#b9">[10]</ref><ref type="bibr" target="#b10">[11]</ref><ref type="bibr" target="#b11">[12]</ref><ref type="bibr" target="#b12">[13]</ref>, enabling LLMs to interface with Question: Are Giuseppe Verdi and Ambroise Thomas both Opera composers ? Answer: Yes OTC-PPO: &lt;think&gt; First, I need to determine if Giuseppe Verdi and Ambroise Thomas are both opera composers. &lt;/think&gt; &lt;search&gt; Giuseppe Verdi and Ambroise Thomas both Opera composers &lt;/search&gt; &lt;observation&gt; ... &lt;/observation&gt; &lt;think&gt; Based on the search results, Giuseppe Verdi and Ambroise Thomas are both known as opera composers. &lt;/think&gt; &lt;answer&gt; yes &lt;/answer&gt; (Tool Calls = 1) Search-R1-PPO: &lt;think&gt; I need to determine if Giuseppe Verdi and Ambroise Thomas are both opera composers. &lt;/think&gt; &lt;search&gt; Giuseppe Verdi &lt;/search&gt; &lt;observation&gt; ... &lt;/observation&gt; &lt;search&gt; Ambroise Thomas &lt;/search&gt; &lt;observation&gt; ... &lt;/observation&gt; &lt;search&gt; Are Giuseppe Verdi and Ambroise Thomas both Opera composers? &lt;/search&gt; &lt;observation&gt; ... &lt;/observation&gt; &lt;think&gt; Based on the observations, both Giuseppe Verdi and Ambroise Thomas are described as composers, specifically opera composers. &lt;/think&gt; &lt;answer&gt; yes &lt;/answer&gt; (Tool Calls = 3) Search-R1-GRPO: &lt;think&gt; To answer this question, I need to check if both Giuseppe Verdi and Ambroise Thomas are composers of opera. I don\'t have immediate access to this knowledge, but I can conduct a search to find out. &lt;/think&gt; &lt;search&gt; who are Giuseppe Verdi and Ambroise Thomas and their works &lt;/search&gt; &lt;observation&gt;…&lt;/observation&gt; &lt;think&gt;From the information gathered, … This confirms Thomas as an opera composer. Next, I will search on Giuseppe Verdi. &lt;/think&gt; &lt;search&gt; who is Giuseppe Verdi &lt;/search&gt; &lt;observation&gt;…&lt;/observation&gt; &lt;think&gt;Giuseppe Verdi is named as an Italian opera composer of prominent stature. This confirms Verdi as an opera composer. Answering the initial question: Question: Are Giuseppe Verdi and Ambroise Thomas both Opera composers? &lt;/think&gt; &lt;answer&gt; yes &lt;/answer&gt; (Tool Calls = 2) OTC-GRPO: To answer the question of whether Giuseppe Verdi and Ambroise Thomas are both Opera composers, let's first reason through the information: 1. Giuseppe Verdi is a well-known Italian opera composer. He is famous for his numerous operas, including "Rigoletto," "La Traviata," and "Aida." 2. Ambroise Thomas is a French opera composer. He is known for his operas such as "Mignon" and "Hamlet.  external tools like search engines, code interpreters and even physical robots. By bridging language understanding with external capabilities, TIR significantly expands the problem-solving scope of LLMs beyond internal knowledge-only reasoning.</p><p>While recent efforts have sought to extend RL to TIR by leveraging rule-based rewards tied to final answer correctness <ref type="bibr" target="#b13">[14]</ref><ref type="bibr" target="#b14">[15]</ref><ref type="bibr" target="#b15">[16]</ref>, these approaches fall short in modeling the optimal tool use behavior of model to arrive at such answer. Despite achieving strong performance and improved generalization, current methods often encourage indiscriminate tool usage, introducing critical challenges during both training and inference. On the one hand, frequent and unnecessary tool calls incur substantial computational and temporal overhead, as executing tools -especially at scale -demands significant infrastructure and increases operational costs, limiting deployment feasibility. On the other hand, extensively rely on external tools may hinder the development and utilization of its own internal reasoning capabilities -a phenomenon commonly known as cognitive offloading <ref type="bibr" target="#b16">[17]</ref>. Fig. <ref type="figure" target="#fig_1">1</ref> presents a representative example. The baseline method (i.e., Search-R1 <ref type="bibr" target="#b13">[14]</ref>), which optimizes only for final answer accuracy, excessively invokes external tools, even when the model is capable of solving the problem independently without any tools. By offloading reasoning to external tools, the model bypasses opportunities to strengthen its internal reasoning abilities, thereby ultimately undermining long-term generalization and autonomy <ref type="foot" target="#foot_0">1</ref> .</p><p>Therefore, we argue that a truly autonomous agentic LLM should learn to produce correct answers or complete tasks successfully with the minimal number of external tool calls -an objective that aligns closely with Yann LeCun's vision for autonomous machine intelligence <ref type="bibr" target="#b0">[1]</ref>. We aim to develop such model based on a foundational assumption: for each question and each model, there exists an optimal number of tool calls, defined as the minimal number required for the model to arrive at a correct answer. Crucially, this optimal number could be varied across models or questions. For the same question, models with different reasoning or representation capabilities may require different levels of tool assistance. Similarly, even for a single model, the number of necessary tool calls can vary significantly depending on the complexity of different question. For example, some questions may be solvable through internal reasoning alone -requiring zero tool calls 2 -while others may necessitate one or more tool interactions to yield a correct answer. This variability also highlights the unique advantages of RL in steering the behavior of an agent on a per-question, per-model basis, rather than a just one-fits-all method (i.e., SFT). Ideally, among all tool-integrated reasoning trajectories that lead to the correct answer for the same question, the reward function in RL should assign the highest reward to the trajectory that uses the optimal (i.e., minimal) number of tool calls. Other correct trajectories that involve excessive tool calls -by definition, suboptimal -should be rewarded less <ref type="foot" target="#foot_2">3</ref> . This formulation allows the model to learn policies that jointly optimize for both answer correctness and optimal tool use behavior on a per-question, per-model basis.</p><p>We then propose Optimal Tool Calls controlled Policy Optimization (OTC-PO), a simple yet effective RL-based method that enables models to learn optimal tool use behavior besides providing correct answer. OTC-PO trains models to minimize the number of tool calls required to reach a correct solution, thereby reducing both training and inference costs without sacrificing accuracy. To achieve this, we introduce a tool-integrated reward that modulates traditional reward signals, such as correctness, with a scaling coefficient reflecting tool efficiency. This encourages the model to prioritize correct answers that require fewer tool invocations. Our formulation shifts the optimization objective from correctness alone to tool productivity, defined as the ratio between task benefit (e.g., answer accuracy) and tool usage cost (e.g., number of tool calls). To the best of our knowledge, this is the pioneering RL-based framework that explicitly optimizes for both the efficiency and effectiveness of tool-integrated reasoning. OTC-PO is lightweight and plug-and-play, requiring only minimal changes to standard RL pipelines, making it easy to adopt in existing systems. We conduct comprehensive experiments on two widely used tools: search and code based on several LLMs, Qwen-2.5-3B/7B-Base and Qwen2.5-Math-1.5B/7B-Base <ref type="bibr" target="#b17">[18]</ref>, and derive models with a substantial tool calls reduction in trajectory while approximately maintaining accuracy with strong baselines. In summary, the key contributions are as follows.</p><p>• We are the pioneering study to i) consider tool use behavior beyond final answer correctness by proposing a new task formulation that has been largely overlooked in prior work; ii) identify the cognitive offloading phenomenon in TIR of LLMs; iii) introduce the concept of tool productivity to measure the effectiveness and efficiency of TIR.</p><p>• We propose a simple, faster, scalable, and generalizable OTC-PO algorithm to encourage the model to use optimal tool calls to solve the problem and maximize tool productivity, based on the fundamental observation that there exists a minimal number of tool calls required for each question and model pair. We note that it is compatible with various RL algorithms and can be easily implemented.</p><p>• We implement OTC-PPO and OTC-GRPO as two typical methods without losing the adaptability and generalization based on PPO <ref type="bibr" target="#b18">[19]</ref> and GRPO <ref type="bibr" target="#b19">[20]</ref> algorithms, and the experimental results on several benchmarks and baselines demonstrate significant reductions in tool call cost while preserving most of the accuracy in both in-domain and out-of-domain evaluation.</p><p>2 Related Work Tool Utilization for LLMs. Teaching LLMs to use tools enables them to interact with external environments while overcoming several inherent limitations such as restricted access to up-to-date or domain-specific knowledge and poor mathmatical operation capabilities. There are three major methods which can achieve this goal: 1) prompting engineering <ref type="bibr" target="#b20">[21]</ref><ref type="bibr" target="#b21">[22]</ref><ref type="bibr" target="#b22">[23]</ref><ref type="bibr" target="#b23">[24]</ref><ref type="bibr" target="#b24">[25]</ref><ref type="bibr" target="#b25">[26]</ref>, which guides the model's behavior through carefully designed input templates or few-shot examples without modifying model weights; 2) supervised finetuning on tool-integrated reasoning datasets <ref type="bibr" target="#b26">[27,</ref><ref type="bibr" target="#b8">9,</ref><ref type="bibr" target="#b27">28,</ref><ref type="bibr" target="#b28">29,</ref><ref type="bibr" target="#b11">12]</ref>, where the model learns from annotated trajectories that demonstrate when and how to use tools in context; and 3) reinforcement learning <ref type="bibr" target="#b13">[14,</ref><ref type="bibr" target="#b14">15,</ref><ref type="bibr" target="#b29">30,</ref><ref type="bibr" target="#b30">31]</ref>, which allows the model to directly learn tool-use strategies by interacting with an environment and optimizing long-term rewards, enabling more adaptive and goal-directed behaviors. While prompting and supervised fine-tuning have shown promising results, they rely heavily on expert-designed prompts and tool-integrated annotations, which limits their scalability and generalization. As a result, recent efforts have shifted toward reinforcement learning, which demonstrates improved performance and generalization through simple rule-based rewards.</p><p>Tool-integrated Reasoning Efficiency. Only few of studies from prompting engineering and supervised fine-tuning attention on tool-integrated reasoning efficiency issues in terms of the cost of tool usages during the reasoning <ref type="bibr" target="#b25">[26,</ref><ref type="bibr" target="#b31">32,</ref><ref type="bibr" target="#b11">12]</ref>. In detail, Wang et al. <ref type="bibr" target="#b25">[26]</ref> first propose a promptingbased framework: Self Divide-and-Conquer (SelfDC) to leverage the self-aware confidence score of LLMs to decide whether or not need to call tools during reasoning, achieving better trade-off between effectiveness and efficiency in the context of RAG. Furthermore, several works follow this direction and explore more boarder applications and larger tool spaces <ref type="bibr" target="#b11">[12,</ref><ref type="bibr" target="#b31">32,</ref><ref type="bibr" target="#b32">33]</ref>. For example, SMART <ref type="bibr" target="#b11">[12]</ref> collect the well-designed dataset to finetune the model to only call tools when the knowledge is outside the inherent parametric knowledge of LLMs. Despite these advancements, most existing approaches still rely on complex prompt engineering or annotated datasets, which hinders their adaptability and scalability to new scenarios. In contrast, the efficiency of tool-integrated reasoning within reinforcement learning frameworks remains largely underexplored.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Methodology</head><p>In this section, we first provide a definition of task considering the both effectiveness and efficiency of tool-integrated reasoning, followed by general RL framework and then our proposed Optimal Tool Call-controlled Policy Optimization (OTC-PO).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Task Definition</head><p>Given a question q, and an environment E that provides access to a set of tools T = {t 0 , t 1 , ...t n }, the language model M can optionally interact with the environment by calling specific tools in T , obtaining the corresponding tool results from E, and iteratively repeating this processing until the final answer is driven. Without losing generalization, the tool-integrated reasoning trajectory τ k at step k is defined as follows:</p><formula xml:id="formula_0">τ k = (r 1 , tc 1 , o 1 ), (r 2 , tc 2 , o 2 ), ...(r k , tc k , o k ),<label>(1)</label></formula><p>where r i , tc i , o i denotes the reasoning, tool call and returned observation respectively. Importantly, we also account for reasoning steps that do not involve tool usage. Suppose the step p does not need to call tools, then the tc p and o p become empty string, the reasoning content r p can either be merged with the subsequent reasoning step r p+1 to form the new r * p+1 , or, if p is the last step <ref type="foot" target="#foot_3">4</ref> , be used directly to derive the final answer. The objective of the task is to generate the correct answer â with the minimal cost of the full trajectory τ as follows:</p><formula xml:id="formula_1">arg min τ Cost(τ ) subject to M(q, τ ) = â,<label>(2)</label></formula><p>Here the cost is measured as the number of tool calls within the trajectory τ considering its simplicity and generalization. Thus the model is encouraged to not only generate correct answer but also minimize the cost. We emphasize that this revised objective is not merely a minor adjustment, but a paradigm shift, redirecting focus from answer correctness alone to the broader behavioral efficiency of tool use during reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Tool-integrated Reinforcement Learning</head><p>Inspired by recent success to use RL for better reasoning in LLMs, several efforts try to extend RL to tool-integrated reasoning with the objective functions can be defined as follows:</p><formula xml:id="formula_2">max π θ E q∼D, y∼π θ (•|q;E) [r ϕ (q, y)] -β D kl [π θ (y | q; E) ∥ π ref (y | q; E)] ,<label>(3)</label></formula><p>where π θ , π ref stand for the policy model and reference model respectively, r ϕ is the reward function and D kl is the KL-divergence measure. q is the question drawn from the dataset D and y is the generate outputs consists of the tool-integrated reasoning trajectory τ and the final answer a. To optimize this goal, there are two well-established policy-gradient RL methods: Proximal Policy Optimization (PPO) and Group Relative Policy Optimization (GRPO) in TIR. We provide detailed optimization objective in Appendix B to save space.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reward Design.</head><p>Reward signals serve as the optimization objective and directly guide the behavior of the policy model during training. Most prior predominantly focuses on rule-based correctness rewards <ref type="bibr" target="#b13">[14,</ref><ref type="bibr" target="#b14">15]</ref>, as illustrated below:  </p><formula xml:id="formula_3">ϕ (q, y) = r correct = 1 if a = â else 0, (<label>4</label></formula><formula xml:id="formula_4">)</formula><p>where a is the extracted predicted answer from the response y and â is the ground truth answer. Some of them further consider the format reward by assigning additional reward besides the correctness such as r f ormat if the model generate the response in the required format. We discuss this in Appendix.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">OTC-PO: Optimal Tool Call-controlled Policy Optimization</head><p>Instead of only considering the correctness (and optionally format) of the answer, we argue it is important to consider the effectiveness and efficiency of tool-integrated reasoning trajectory. Specifically, different questions may require different numbers of tool interactions depending on the internal capabilities of model, and for each question-model pair, there exists an optimal (i.e., minimal) number of tool calls needed to reach the correct answer. Given the real-world cost and latency associated with tool calls, it is crucial to move beyond coarse, answer-only rewards and instead provide finer-grained signals that capture the overall quality of TIR trajectory.</p><p>To this end, we propose Optimal Tool Call-controlled Policy Optimization (OTC-PO), can be easily integrated with any RL algorithms, and is broadly applicable across different models and settings, aiming to preserve overall accuracy while significantly reducing the cost of tool interactions. At the heart of OTC-PO is a reward mechanism that ranks the current number of tool calls m relative to the optimal number of tool calls n given the question and model. In most realistic settings, the true optimal number n is unknown in advance. To address this, OTC-PO approximates n by tracking the minimal number of tool calls observed across different trajectories to arrive the correct answer for the same question. This approach enables the model to learn efficient tool use without requiring prior knowledge of the optimal tool budget. Nonetheless, the framework can be naturally extended to scenarios where the optimal tool call number is known a priori (e.g., n = 0 for language-only reasoning). We instantiate OTC-PO in two variants: OTC-PPO and OTC-GRPO, tailored to different underlying RL algorithms.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>OTC-PPO.</head><p>Since there is no multiple trajectories for same question q in single optimization step, we design the tool reward according to the number of tool calls m in the current trajectory as follows:</p><formula xml:id="formula_5">r tool = cos( m * π 2m + c )<label>(5)</label></formula><p>The core idea is to map m to [0, π/2) and c is the smooth constant that controls the reward decay rate. The smaller the value, the faster the punishment and the more it encourages less use of tools; the larger the value, the more tolerant it is. In this way, among trajectories, those requiring more tool calls will receive lower rewards than those achieved with fewer tool calls. Although we can track the m here for approximation of n in later steps, we empirically find it requires much longer training steps due to poor sampling efficiency in PPO.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>OTC-GRPO.</head><p>We first identify the trajectories {τ 1 , τ 2 , ..., τ p } leading to correct answer from the group for the question q, and get the corresponding number of tool calls for each trajectory: C = {c 1 , c 2 , ..., c p }, and we can calculate the minimal tool calls k = min(C), serving as the local approximation of optimal tool calls for q. Furthermore, we can update k during multiple epochs to approximate the global optimal tool calls if the policy model finds the better solution with less than k calls in later iterations. We use n to indicate the approximation of optimal tool calls, and m the number of tool calls in the current trajectory for q. Therefore we design the reward as follows:</p><formula xml:id="formula_6">r tool =      1 if f (m, n) = n = 0 cos( m * π 2m+c ) if n = 0 sin( f (m,n) * π 2n ) otherwise f (m, n) =        0, if m = 0 and n = 0 m, if n = 0 2nm m + n , otherwise<label>(6)</label></formula><p>where f (m, n) is the mapping function to re-map the m to the range from 0 to 2n. Briefly, the key here is to assign the highest reward 1 (a.k.a, sin(π/2)) when the policy model achieves optimal tool calls n, and when actual number of tool calls m deviates from n, either exceeding or falling short, the model receives a comparatively lower reward <ref type="foot" target="#foot_4">5</ref> . Thus, we can assign different rewards dynamically according to the different n and m for the question q.</p><p>Tool-integrated Reward Design. Inspired by recent study <ref type="bibr" target="#b33">[34]</ref>, we regard the tool-integrated reward r tool as a coefficient of conventional reward function r ϕ (q, y), leading to the final toolintegrated reward function:</p><formula xml:id="formula_7">r tool ϕ (q, y) = α * r tool * r ϕ (q, y) (<label>7</label></formula><formula xml:id="formula_8">)</formula><p>where α is a hyperparameter that controls the scaling of the tool reward as r ϕ is usually same for correct or wrong answer. Notably, this multiplicative structure ensures that tool efficiency is mainly rewarded when the primary task objective (e.g., answer correctness) is satisfied. For example, when the final answer is incorrect, r ϕ is 0, effectively disabling the influence of r tool . This design helps mitigate reward hacking by preventing the policy model from being incentivized to use tools without ultimately producing a correct answer. If the answer is correct, r ϕ is 1 and then r tool begins to dominate the scale of the reward, thus encouraging less tool usage. We highlight this design is nontrivial since there are several advantages of this design: i) It maximally preserves overall accuracy, with a theoretical justification <ref type="bibr" target="#b33">[34]</ref>; ii) It mitigates the risk of reward hacking compared to additive forms (i.e., r tool + r ϕ ), which we found to be unstable and sub-optimal <ref type="foot" target="#foot_5">6</ref> ; iii) It generalizes well to different formulations of r ϕ , such as r ϕ = r correct or r ϕ = r correct + r f ormat . We provide the theoretical justification, more explanations and examples in the Appendix D.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Set up</head><p>Datasets and Baselines. We mainly follow the Search-R1 <ref type="bibr" target="#b13">[14]</ref> and ToRL <ref type="bibr" target="#b14">[15]</ref> setting and use same baselines and datasets for the fair and comprehensive evaluation. Specifically, we use NQ and HotpotQA as training dataset for search, and we use the dataset provided in ToRL for code. We also directly compare our methods with several baselines such as SFT, Base-RL, retrieval-augmented generation baselines (i.e., RAG, IRCoT) and more importantly the Search-R1 and ToRL themselves.</p><p>Evaluation Metrics. Besides the exact match (EM) and the average tool calls (TC), we additionally define a new metric, tool productivity (TP), which measures the effectiveness and efficiency of tool calls during inference. Specifically, TP is defined as the number of correctly answered questions per unit of tool call: TP = N i=1 I{yi=ŷi} N i=1 tci<ref type="foot" target="#foot_6">foot_6</ref> , where I is the indicator function that equals 1 if the predicted answer ŷi matches the ground truth y i , and tc i denotes the number of tool calls used in the i th instance. This metric reflects how efficiently the model converts tool usage into correct answers, capturing both utility and cost in a single measure. While EM provides a standard measure of accuracy, it does not reflect the underlying reasoning cost. Therefore, we consider TP as more informative indicators of agentic reasoning efficiency -highlighting not only whether the model can provide correct answer, but how economically it arrives at that correctness.</p><p>Table <ref type="table">1</ref>: The results of OTC-PO with different baselines in search. The results except Search-R1 are directly copied from original paper <ref type="bibr" target="#b13">[14]</ref>. We highlight the relative improvement of OTC-PO and OTC-GRPO compared with the corresponding baseline Search-R1-PPO and Search-R1-GRPO. It is found that our method can achieve comparable performance with much lower TC and higher TP. Implementation Details. We re-use the same parameter in Search-R1 <ref type="bibr" target="#b13">[14]</ref> and ToRL <ref type="bibr" target="#b14">[15]</ref> respectively. There are only minor modification we make to suit our method: i) We slightly change the template in Search-R1 to tell the model that it only need to call tolls when necessary (Appendix), and we do not change the template in ToRL; ii) We set the maximal number of tool calls C in ToRL to 3 to better study the effects of our methods when multiple tool calls are allowed and keep it as 4 as in original Search-R1. Moreover, we set c as corresponding max turns or maximal tool limits, α as 1.</p><p>We conduct our experiments on 8 A100-80G GPU and re-produce the results of Search-R1 and ToRL independently. We implement OTC-GRPO using the global approximation of optimal tool calls since it leads to more stable and better optimization.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Main Results</head><p>Search as Tool. Table <ref type="table">1</ref> shows the results for search-required tasks. There are several key insights can be drawn: i) OTC-PPO achieves significant improvement in terms of TC and TP compared with Search-R1-PPO, resulting in up to a 68.3% reduction in TC and a 215.4% increase in TP, and OTC-GRPO can further reduce the absolute tool calls due to more accurate approximation; ii) It is found that our method will not sacrifice the accuracy too much especially for larger LLMs, as evidenced by our OTC-PO achieves comparable EM score with Search-R1 on Qwen2.5-7B model; iii) Different models have different tool use behaviors on different datasets. If we look at the Search-R1, we can find that 3B model tends to use less tool calls compared with 7B model. This reveals a critical issue: as language models scale up, they may tend to over-rely on external tool calls unless explicitly penalized for such behavior. This not only exacerbates the problem with larger models but also leads to an underutilization of their inherent reasoning capabilities (See $ 5.3). The number of TC is also various across the datasets, which relates to many factors such as inherent capabilities of different models (i.e., self-awareness) and complexity of different datasets, leading to varying optimal number of tool calls for each question and model; iv) As the model size increases, the TC and TP get bigger  boost no matter in OTC-PPO or OTC-GRPO. We highlight the ii) and iv) are very important since they compose the great potential scalability for our methods as model scales.</p><p>Code as Tool. We mainly follow the same setting and only report the GRPO results to be consistent with original ToRL <ref type="bibr" target="#b14">[15]</ref> paper. Table <ref type="table" target="#tab_0">2</ref> shows the results. We observe several similar findings: i) our method does not sacrifice the accuracy too much and even brings some improvement when the model gets larger. We attribute this to the development of internal reasoning capability of models when it is enforced to minimizing external tool calls, as evidenced in our case study; ii) our method can significantly boost the tool productivity, reducing the unnecessary tool calls; iii) As model size increases, our method is more effective to improve the tool productivity.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Analysis</head><p>We mainly conduct our analysis using search as a tool in this section and leave more analysis in the Appendix E and F, respectively.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Tool Use Behavior Analysis</head><p>Training. Fig. <ref type="figure" target="#fig_4">3</ref> shows the training behaviors of different methods. It is clear that our method not only achieves comparable results with fewer tool calls and shorter responses, but also enables faster and more efficient training optimization. This is particularly important, as it significantly reduces the time and cost associated with real-time tool interactions during training, both in terms of financial expenses and computational overhead. We also find the GRPO is less stable than PPO, as reported by several recent studies <ref type="bibr" target="#b13">[14,</ref><ref type="bibr" target="#b34">35]</ref>, and our method can delay the early collapse substantially.</p><p>Inference. We identify several representative tool-use behavior types of our proposed method: i) the answer is same with less tool calls compared with baseline (more efficient); ii) the answer is same with more tool calls compared with baseline (less efficient); and iii) our method is able to produce the correct answer whereas the baseline fails to answer correctly (more effective); iv) the baseline can produce the correct answer whereas the our method fails to answer correctly (less effective); and v) our method is able to produce the correct answer using fewer tool calls whereas the baseline fails to answer correctly (effective and efficient). Table <ref type="table" target="#tab_1">3</ref> shows the results compared with the baseline Search-R1-PPO<ref type="foot" target="#foot_7">foot_7</ref> . On the efficiency side, it is clear to find that our method achieve same answers with baseline using fewer tool calls in most cases, and more than 80% when the model becomes larger. On the effectiveness side, we conclude that there is no significant loss when using same RL </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Out-of-domain Evaluation</head><p>We run out-of-domain evaluation on more QA benchmarks. Fig. <ref type="figure" target="#fig_6">5</ref> shows the results of TP and Table <ref type="table" target="#tab_2">4</ref> shows the results of EM and TC. Generally, we find that our method achieves highest TP across all the model and benchmark. More importantly, we observe that OTC-GRPO is better than OTC-PPO on TP and as the model size increases, our method showcases bigger improvement, serving as another evidence of great scalability of our method. Notably, we find that OTC-PPO outperforms the Search-R1-PPO in terms of EM on all benchmarks with Qwen2.5-7B-Base model with much less tool calls, demonstrating the better generalization capabilities of our methods.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Case Study</head><p>Fig. <ref type="figure" target="#fig_1">1</ref> presents a case study to better illustrate the advantages of our proposed OTC-PO. There are several important findings can be drawn from the case study: 1) it is evident that Search-R1 issues multiple redundant and unnecessary search calls. This behavior stems from a lack of incentive to minimize tool usage, as the method is not penalized for excessive tool calls. Consequently, it fails to optimize the efficiency and effectiveness of tool calls, resulting in multiple information-poor queries; 2) both OTC-PPO and OTC-GRPO can reduce the number of unnecessary tool calls significantly but they achieve this in different ways. OTC-PPO utilizes more accurate search by generating information-rich query and OTC-GRPO choose to leverage the internal reasoning capabilities as much as possible if it can be solved without any external tool calls. In summary, there are two valuable and important takeaways: i) LLMs tend to overuse external tools and underdevelop their reasoning capabilities when there is no penalty for tool usage -a phenomenon known as cognitive offloading, as exemplified by the behavior of Search-R1; ii) Minimizing external tool calls is maximining internal reasoning capabilities of LLMs, leading to more smarter agentic behaviors. These two findings are crucial and broadly applicable across a wide range of agentic reasoning tasks <ref type="foot" target="#foot_8">9</ref> .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion and Future Work</head><p>In this work, we redefine the objective of task for agentic RL not only provide the final correct answer, but also optimize the tool use behavior of model to achieve such goal. We then introduce OTC-PO, a simple yet effective RL framework that explicitly encourages LLMs to generate correct answers with optimal tool calls. Unlike prior work that primarily focuses on final answer correctness, our approach incorporates a tool-integrated reward that accounts for both effectiveness and efficiency of tool usage, thereby promoting tool productivity without sacrificing the accuracy in several benchmarks with different tools. We also find that extensively rely on external tools hinder the development and utilization of internal reasoning capabilities of the model, and minimizing external tool calls alternatively foster the development of internal reasoning capabilities. Finally, in future work, we aim to extend our framework to more complex agentic tasks involving a broader set of tools and longer-horizon reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Related Work</head><p>Reward Shaping in RL. Reward shaping plays a critical role in reinforcement learning, as it directly shapes the behavior the model learns to optimize <ref type="bibr" target="#b35">[36,</ref><ref type="bibr" target="#b36">37]</ref>. Recent advances have introduced several reward signals for LLMs to consider the correctness and the internal knowledge-only reasoning efficiency together such as the length of responses and difficulty of the questions <ref type="bibr" target="#b37">[38,</ref><ref type="bibr" target="#b33">34,</ref><ref type="bibr" target="#b38">39]</ref>. For instances, Length Controlled Policy Optimization (LCPO) <ref type="bibr" target="#b37">[38]</ref> is proposed to satisfy the length constraints while optimizing reasoning performance and some efforts try to dynamically allocate inference time compute based on task complexity <ref type="bibr" target="#b33">[34,</ref><ref type="bibr" target="#b39">40]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Tool-integrated Reinforcement Learning</head><p>PPO in TRL. Proximal Policy Optimization (PPO) is a widely used policy-gradient method in lots of tasks <ref type="bibr" target="#b40">[41]</ref>. Given our formulation, PPO updates the policy, using trajectories sampled from the previous policy, and maximizes the following objective:</p><formula xml:id="formula_9">JPPO(θ) = Eq∼D, y∼π old 1 |y| t=1 I(yt) |y| t=1 I(yt) • min ρtAt, clip(ρt, 1 -ϵ, 1 + ϵ)At ,<label>(8)</label></formula><p>where π θ and π old are current and previous policy models, and p t = π θ (yt|q,y&lt;t;E) π old (yt|q,y&lt;t;E) . Here, I(y t ) is an indicator function marking whether token y t is generated by the model (i.e., r i and tc i ) or returned from the environment E (i.e., o i ). The advantage estimate A t is computed via Generalized Advantage Estimation (GAE) and ϵ a PPO clipping threshold to constrain the policy update.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>GRPO in TRL.</head><p>To improve the stability of policy optimization in language models and avoid reliance on an additional value function approximation, Group Relative Policy Optimization (GRPO) is introduced which uses the relative ranking of multiple sampled outputs as a baseline for computing advantages, rather than fitting a value function. For each input question q, GRPO samples a group of G response {y 1 , y 2 , ..., y G } from the reference policy π ref . The trained policy π θ is then updated by maximizing the following objective:</p><formula xml:id="formula_10">J GRPO (θ) = E q∼D, {yi} G i=1 ∼τold(•|q;E) 1 G G i=1 1 |yi| t=1 I(y i,t ) |yi| t=1 I(y i,t ) • min p t Âi,t , clip (p t , 1 -ϵ, 1 + ϵ) Âi,t -β D KL [π θ ∥ π ref ],<label>(9)</label></formula><p>Here, p t = π θ (yi,t|x,yi,&lt;t;R) πold(yi,t|x,yi,&lt;t;R) , Âi,t denotes the advantage at token t in response y i , computed based on the relative ranking of rewards within the group, β controlling the KL-regularization strength. The clipping threshold ϵ ensures stable updates.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Search Template</head><p>Answer the given question. You must conduct reasoning inside &lt;think&gt; and &lt;/think&gt; first every time you get new information. After reasoning, if you find you lack some knowledge, you can call a search engine tool by &lt;search&gt; query &lt;/search&gt;, and it will return the top searched results between &lt;observation&gt; and &lt;/observation&gt;. You need to make every search call count and gain helpful results. If you find no further external knowledge needed, you can directly provide the answer inside &lt;answer&gt; and &lt;/answer&gt; without detailed illustrations. For example, &lt;answer&gt; xxx &lt;/answer&gt;. Question: question.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Reward Function</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.1 Figure Illustration</head><p>We draw the two types of r tool defined in the main content for better understanding. Fig. <ref type="figure" target="#fig_5">4</ref> shows the illustration of these reward functions for OTC-PPO and OTC-GRPO respectively. It is very clear that: 1) Left: as the number of tool calls increases, the r tool decreases accordingly. Thus when multiple trajectories leads to correct answer, the one that use less tools will get higher reward and the one that do not use tool will get the highest reward; 2) Right: It is obvious that the diagonal achieves the highest reward as the number of tool calls is the optimal one, and as the m increases, the color brightness becomes larger since multiple tool calls are involved. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.2 Theoretical Justification</head><p>We mainly follow the justification (Section 4.2) in the paper <ref type="bibr" target="#b33">[34]</ref> to showcase our proposed reward design leads to reducing the tool calls without compromising accuracy. We strongly encourage readers to refer to the previous paper for complete details. All assumptions made in that work still hold in our setting, with the only difference being that our response is defined as y = (τ, a), which includes both the tool-integrated reasoning trajectory and the final answer, rather than language-only reasoning.</p><p>Let θ * ef f denote the population-level parameters of the policy models obtained by maximizing Equation 7, i.e.,</p><formula xml:id="formula_11">θ ⋆ eff = arg max θ E x∼p E y∼p θ (x) [(α * r tool )]<label>(10)</label></formula><p>as r ϕ (q, y) is mainly the indicator function about the correctness and format. Therefore, the population-level maximizer p θ * ef f is as accurate as the population-level maximizer p * θ and Acc (p * θ ef f ) = 1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.3 Generalization of Reward</head><p>We use two major forms of r ϕ : i) r 1 ϕ = r correct ; and ii) r 2 ϕ = r correct + r f ormat to illustrate the generalization of our proposed tool-integrated reward design r tool ϕ = α * r tool * r ϕ .</p><p>If the answer is correct, the r 1 ϕ and r 2 ϕ are both positive and fixed for all questions, therefore the r tool ϕ is only determined by the number of α and r tool . Thus it can assign higher score for less tools and lower score for more tools by definition of r tool .</p><p>If the answer is wrong, the r 1 ϕ will be 0, and therefore disables the influence of r tool , reducing the reward hacking issue. The r 2 ϕ will be r f ormat and then r tool ϕ becomes α * r tool * r f ormat which is acceptable. Considering two cases of r f ormat , if r f ormat is 0, then the final reward is also 0; and if r f ormat is a positive, the r tool ϕ still holds as less tools will be assigned more rewards. This is reasonable since less tool calls means less cost especially when the answer is wrong. We note that the reward gap here between wrong answer (i.e., r f ormat ) and correct answer (i.e., r correct + r f ormat ) is significant for the policy model to learn the desirable behavior.  We additionally compare the performance of OTC-PO using Qwen-7B-Base and Qwen-7B-Instruct models. Table <ref type="table" target="#tab_3">5</ref> shows the final results. It is observed that i) Base models mostly lead to better performance, which is also consistent with results in the Search-R1 paper; ii) Instruct models tends to use more tools compared with base model while the TC still is much lower than the Search-R1. We attribute this to the Instruct model tends to memorize specific pattern during supervised fine-tuning and easily to be triggered to use tools even when it does not need it.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.2 The Effects of α</head><p>Table <ref type="table" target="#tab_4">6</ref> shows the performance of OTC-PO with different α. It can be found that increasing α can not leads to better results. We further check the reward changes during the training and find that it becomes harder for the model to learn the desired behavior when using a larger α, because a single tool call can cause large fluctuations in the reward, especially considering the relatively lower C. We suspect the α will be more important in much longer tool-integrated reasoning trajectories.   </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F Analysis of Code as Tool</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F.1 The Effects of C</head><p>Table <ref type="table" target="#tab_5">7</ref> shows the effects of C in ToRL. It is observed that i) the larger C always leads to more tool calls on ToRL-GRPO if we only consider the final correctness as the reward and do not penalize the tool use behaviors of LLMs; ii) OTC-GRPO achieves more stable tool calls which is more reasonable as the optimal number of tool calls should not be affected by C, and leads to bigger TP improvement as C increases. Further, Fig. <ref type="figure" target="#fig_7">6</ref> shows the rewards changes with different C. It can be found that GRPO tends to collapse earlier with bigger C and our OTC-PO can delay this, as also observed using search as tool.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F.2 Additional Results</head><p>We additionally run the evaluation on MATH dataset following ToRL <ref type="bibr" target="#b14">[15]</ref>, and Table <ref type="table" target="#tab_6">8</ref> shows the final results. The conclusion also holds as analyzed in the main experiments, revealing the great generalization capability of our method.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G More Examples</head><p>Fig. <ref type="figure">7</ref> and Fig. <ref type="figure">8</ref> show more examples between Search-R1 and OTC-PO methods. Fig. <ref type="figure">9</ref> and Fig. <ref type="figure" target="#fig_1">10</ref> show more examples between ToRL-GRPO and OTC-GRPO. It is clear that OTC-PO can leverage more reasoning capabilities while minimizing external tool calls.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Case Study: No Tool Call Required</head><p>Question: The Bellagio resort owned by MGM Resorts international is located in which US city? Answer: Las Vegas</p><p>Search-R1-PPO: &lt;think&gt; I need to find the US city where the Bellagio resort owned by MGM Resorts International is located. &lt;/think&gt; &lt;search&gt; Bellagio resort owned by MGM Resorts International &lt;/search&gt; &lt;observation&gt; . . . &lt;/observation&gt; &lt;search&gt; Bellagio resort city &lt;/search&gt; &lt;observation&gt; . . . &lt;/observation&gt; &lt;think&gt; Based on the observations, the Bellagio resort owned by MGM Resorts International is located in Las Vegas, Nevada. &lt;/think&gt; &lt;answer&gt; Las Vegas &lt;/answer&gt; (Tool Calls = 2) OTC-GRPO: To answer this question, let's first reason through the information provided: 1. We need to find the US city where the Bellagio resort, owned by MGM Resorts International, is located. 2. The Bellagio resort is a well-known hotel and casino located in Las Vegas, Nevada. 3. Therefore, the US city where the Bellagio resort is located is Las Vegas. &lt;answer&gt; Las Vegas &lt;/answer&gt; (Tool Calls = 0) Figure 7: An example that OTC-GRPO provide correct answer solely rely on its own internal reasoning without any external tool calls while Search-R1 extensively call unnecessary tools. Case Study: Less Tool Calls with Accurate Search Question: What science fantasy young adult series, told in first person, has a set of companion books narrating the stories of enslaved worlds and alien species? Answer: Animorphs Search-R1-PPO: &lt;think&gt; I need to find a science fantasy young adult series that is told in first person and has a set of companion books narrating the stories of enslaved worlds and alien species. &lt;/think&gt; &lt;search&gt; science fantasy young adult series told in first person &lt;/search&gt; &lt;observation&gt; ... &lt;observation&gt; &lt;search&gt; companion books animorphs enslaved worlds alien species &lt;/search&gt; &lt;observation&gt; ... &lt;/observation&gt; &lt;search&gt; science fantasy young adult series told in first person enslaved worlds alien species companion books &lt;/search&gt; &lt;observation&gt; ... &lt;/observation&gt; &lt;think&gt; Based on the observations, the science fantasy young adult series told in first person and has a set of companion books narrating the stories of enslaved worlds and alien species is "Animorphs". &lt;/think&gt; &lt;answer&gt; Animorphs &lt;/answer&gt; (Tool Calls = 3) OTC-GRPO: To answer this question, let's first reason through the information provided: 1. We need to find a science fantasy young adult series. 2. The series is told in first person. 3. It has a set of companion books narrating the stories of enslaved worlds and alien species. Let's search for this information: &lt;search&gt; What science fantasy young adult series, told in first person, has a set of companion books narrating the stories of enslaved worlds and alien species? &lt;/search&gt; &lt;observation&gt; ... &lt;/observation&gt; Based on the search results, the science fantasy young adult series that fits the description is "Animorphs". &lt;answer&gt; Animorphs &lt;/answer&gt; (Tool Calls = 1) Figure 8: An example that OTC-GRPO uses less tool calls but with more accurate search to arrive a correct answer.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><figDesc>" Based on this reasoning, both Giuseppe Verdi and Ambroise Thomas are indeed Opera composers. &lt;answer&gt; yes &lt;/answer&gt; (Tool Calls = 0) Undesirable tool use behavior Undesirable tool use behavior Cognitive Offloading fosters dependency on external tools, causes memory capabilities to diminish, and inhibits the development of internal reasoning..</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: A case study using search as a tool on Qwen-7B-Base model, where all four methods arrive at the correct answer but exhibit distinct behaviors in internal reasoning and external tool usage.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: An overview of OTC-GRPO Algorithm.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><figDesc>r</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Left: Changes of number of search calls during the training; Middle: Running time analysis; and Right: Changes of response length during the training.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Left: the illustration of tool-use reward functions in OTC-PPO; and Right: the illustration of tool-use reward functions in OTC-GRPO.</figDesc><graphic coords="14,126.56,205.48,85.04,85.04" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: The Out-of-domain performance of OTC-PO and Search-R1 in TP.</figDesc><graphic coords="15,108.00,162.91,396.01,66.00" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Left: Training reward changes of ToRL-GRPO; and Right: Training reward changes of OTC-GRPO.</figDesc><graphic coords="16,126.56,228.02,178.20,106.92" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 2 :</head><label>2</label><figDesc>The results of OTC-PO with different baselines in ToRL<ref type="bibr" target="#b14">[15]</ref>.</figDesc><table><row><cell>Models</cell><cell>EM (↑)</cell><cell cols="2">TC (↓)</cell><cell>NQ</cell><cell cols="2">TP (↑)</cell><cell cols="2">EM (↑)</cell><cell>HotpotQA TC (↓)</cell><cell>TP (↑)</cell></row><row><cell>Qwen2.5-3B(-Base)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>R1-Base</cell><cell>0.226</cell><cell>-</cell><cell></cell><cell></cell><cell>-</cell><cell></cell><cell>0.201</cell><cell>-</cell><cell>-</cell></row><row><cell>SFT</cell><cell>0.249</cell><cell>-</cell><cell></cell><cell></cell><cell>-</cell><cell></cell><cell>0.186</cell><cell>-</cell><cell>-</cell></row><row><cell>RAG</cell><cell>0.348</cell><cell>1.0</cell><cell></cell><cell></cell><cell>0.348</cell><cell></cell><cell>0.255</cell><cell>1.0</cell><cell>0.255</cell></row><row><cell>IRCoT</cell><cell>0.111</cell><cell cols="2">10.0</cell><cell></cell><cell>0.011</cell><cell></cell><cell>0.164</cell><cell>10.0</cell><cell>0.016</cell></row><row><cell>Search-R1-PPO</cell><cell>0.403</cell><cell cols="2">1.738</cell><cell></cell><cell>0.232</cell><cell></cell><cell>0.279</cell><cell>1.716</cell><cell>0.163</cell></row><row><cell>Search-R1-GRPO</cell><cell>0.404</cell><cell cols="2">1.426</cell><cell></cell><cell>0.283</cell><cell></cell><cell>0.312</cell><cell>1.802</cell><cell>0.173</cell></row><row><cell>OTC-PPO</cell><cell>0.355</cell><cell cols="5">1.010 (▼ 41.9%) 0.351 (▲ 51.3%)</cell><cell>0.260</cell><cell>1.026 (▼ 40.2%) 0.253 (▲ 55.2%)</cell></row><row><cell>OTC-GRPO</cell><cell>0.444</cell><cell cols="5">1.008 (▼ 29.3%) 0.440 (▲ 55.5%)</cell><cell>0.365</cell><cell>1.387 (▼ 23.0%) 0.263 (▲ 52.0%)</cell></row><row><cell>Qwen2.5-7B(-Base)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>R1-Base</cell><cell>0.270</cell><cell>-</cell><cell></cell><cell></cell><cell>-</cell><cell></cell><cell>0.242</cell><cell>-</cell><cell>-</cell></row><row><cell>SFT</cell><cell>0.318</cell><cell>-</cell><cell></cell><cell></cell><cell>-</cell><cell></cell><cell>0.217</cell><cell>-</cell><cell>-</cell></row><row><cell>RAG</cell><cell>0.349</cell><cell>1.0</cell><cell></cell><cell></cell><cell>0.349</cell><cell></cell><cell>0.299</cell><cell>1.0</cell><cell>0.299</cell></row><row><cell>IRCoT</cell><cell>0.224</cell><cell cols="2">9.999</cell><cell></cell><cell>0.022</cell><cell></cell><cell>0.133</cell><cell>9.982</cell><cell>0.013</cell></row><row><cell>Search-R1-PPO</cell><cell>0.449</cell><cell cols="2">3.282</cell><cell></cell><cell>0.136</cell><cell></cell><cell>0.380</cell><cell>3.741</cell><cell>0.102</cell></row><row><cell>Search-R1-GRPO</cell><cell>0.399</cell><cell cols="2">1.697</cell><cell></cell><cell>0.235</cell><cell></cell><cell>0.341</cell><cell>2.109</cell><cell>0.162</cell></row><row><cell>OTC-PPO</cell><cell>0.446</cell><cell cols="5">1.040 (▼ 68.3%) 0.429 (▲ 215.4%)</cell><cell>0.383</cell><cell>1.464 (▼ 60.9%) 0.262 (▲ 156.9%)</cell></row><row><cell>OTC-GRPO</cell><cell>0.444</cell><cell cols="5">0.990 (▼ 41.7%) 0.448 (▲ 90.6%)</cell><cell>0.366</cell><cell>1.005 (▼ 52.3%) 0.364 (▲ 124.7%)</cell></row><row><cell>Models</cell><cell></cell><cell>EM (↑)</cell><cell></cell><cell cols="2">AIME24 TC (↓)</cell><cell>TP (↑)</cell><cell cols="2">EM (↑)</cell><cell>AIME25 TC (↓)</cell><cell>TP (↑)</cell></row><row><cell cols="2">Qwen2.5-Math-1.5B(-Base)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="2">Qwen2.5-Math-1.5B-Ins</cell><cell>10.0</cell><cell></cell><cell>-</cell><cell></cell><cell>-</cell><cell></cell><cell>10.0</cell><cell>-</cell><cell>-</cell></row><row><cell cols="2">Qwen2.5-Math-1.5B-Ins-TIR</cell><cell>13.3</cell><cell></cell><cell>1.1</cell><cell></cell><cell>12.1</cell><cell></cell><cell>13.3</cell><cell>1.4</cell><cell>9.5</cell></row><row><cell>ToRL-GRPO</cell><cell></cell><cell>23.3</cell><cell></cell><cell>2.2</cell><cell></cell><cell>10.6</cell><cell></cell><cell>23.3</cell><cell>2.3</cell><cell>10.1</cell></row><row><cell>OTC-GRPO</cell><cell></cell><cell>20.0</cell><cell cols="5">1.1 (▼ 50.0%) 18.2 (▲ 71.7%)</cell><cell>20.0</cell><cell>1.1 (▼ 41.2%) 18.2 (▲ 80.2%)</cell></row><row><cell cols="2">Qwen2.5-Math-7B(-Base)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="2">Qwen2.5-Math-7B-Ins</cell><cell>10.0</cell><cell></cell><cell>-</cell><cell></cell><cell>-</cell><cell></cell><cell>16.7</cell><cell>-</cell><cell>-</cell></row><row><cell cols="2">Qwen2.5-Math-7B-Ins-TIR</cell><cell>26.7</cell><cell></cell><cell>1.6</cell><cell></cell><cell>16.4</cell><cell></cell><cell>16.7</cell><cell>1.4</cell><cell>12.2</cell></row><row><cell>Base-RL</cell><cell></cell><cell>33.3</cell><cell></cell><cell>-</cell><cell></cell><cell>-</cell><cell></cell><cell>6.7</cell><cell>-</cell><cell>-</cell></row><row><cell>ToRL-GRPO</cell><cell></cell><cell>36.7</cell><cell></cell><cell>2.1</cell><cell></cell><cell>17.5</cell><cell></cell><cell>26.7</cell><cell>2.1</cell><cell>12.7</cell></row><row><cell>OTC-GRPO</cell><cell></cell><cell>36.7</cell><cell cols="5">0.7 (▼ 66.7%) 52.4 (▲ 199.4%)</cell><cell>23.3</cell><cell>0.8 (▼ 61.9%) 29.1 (▲ 129.1%)</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 3 :</head><label>3</label><figDesc>Tool behavioral advantage analysis of OTC-PO against Search-R1. We found that OTC-GRPO and Search-R1-PPO achieves same results with same tool calls in 42.54% cases of HotpotQA on Qwen2.5-3B-Base model, leading to relatively lower ME.</figDesc><table><row><cell>Method</cell><cell></cell><cell></cell><cell>NQ</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>HotpotQA</cell><cell></cell><cell></cell></row><row><cell></cell><cell cols="10">ME (↑) LE (↓) MA (↑) LA (↓) AE (↑) ME (↑) LE (↓) MA (↑) LA (↓) AE (↑)</cell></row><row><cell cols="2">Qwen2.5-3B(-Base)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>OTC-PPO</cell><cell>63.55</cell><cell>0.02</cell><cell>4.60</cell><cell>7.67</cell><cell>3.74</cell><cell>61.78</cell><cell>0.53</cell><cell>4.30</cell><cell>6.34</cell><cell>3.35</cell></row><row><cell>OTC-GRPO</cell><cell>65.43</cell><cell>2.49</cell><cell>6.15</cell><cell>3.85</cell><cell>5.10</cell><cell>35.54</cell><cell>5.96</cell><cell>11.89</cell><cell>4.07</cell><cell>3.47</cell></row><row><cell cols="2">Qwen2.5-7B(-Base)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>OTC-PPO</cell><cell>86.2</cell><cell>0.03</cell><cell>6.45</cell><cell>6.92</cell><cell>6.45</cell><cell>81.49</cell><cell>0.08</cell><cell>8.60</cell><cell>8.68</cell><cell>8.53</cell></row><row><cell>OTC-GRPO</cell><cell>82.0</cell><cell>0.00</cell><cell>7.26</cell><cell>10.69</cell><cell>7.26</cell><cell>79.71</cell><cell>0.00</cell><cell>8.15</cell><cell>11.98</cell><cell>8.12</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 4 :</head><label>4</label><figDesc>The results of Out-of-Domain (OOD) evaluation of OTC against Search-R1 in EM and TC.</figDesc><table><row><cell>Models</cell><cell cols="10">TriviaQA EM (↑) TC (↓) EM (↑) TC (↓) EM (↑) TC (↓) EM (↑) TC (↓) EM (↑) TC (↓) PopQA 2Wiki Musique Bamboogle</cell></row><row><cell>Qwen2.5-3B(-Base)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Search-R1-PPO</cell><cell>0.566</cell><cell>1.580</cell><cell>0.425</cell><cell>1.631</cell><cell>0.258</cell><cell>1.675</cell><cell>0.051</cell><cell>1.922</cell><cell>0.063</cell><cell>1.766</cell></row><row><cell>Search-R1-GRPO</cell><cell>0.587</cell><cell>1.455</cell><cell>0.345</cell><cell>1.542</cell><cell>0.257</cell><cell>1.991</cell><cell>0.084</cell><cell>2.263</cell><cell>0.203</cell><cell>1.859</cell></row><row><cell>OTC-PPO</cell><cell>0.551</cell><cell>1.008</cell><cell>0.409</cell><cell>1.009</cell><cell>0.235</cell><cell>1.050</cell><cell>0.045</cell><cell>1.051</cell><cell>0.063</cell><cell>1.016</cell></row><row><cell>OTC-GRPO</cell><cell>0.608</cell><cell>1.046</cell><cell>0.441</cell><cell>1.030</cell><cell>0.341</cell><cell>1.561</cell><cell>0.124</cell><cell>1.734</cell><cell>0.266</cell><cell>1.547</cell></row><row><cell>Qwen2.5-7B(-Base)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Search-R1-PPO</cell><cell>0.596</cell><cell>3.353</cell><cell>0.420</cell><cell>3.315</cell><cell>0.326</cell><cell>4.116</cell><cell>0.135</cell><cell>4.294</cell><cell>0.375</cell><cell>3.641</cell></row><row><cell>Search-R1-GRPO</cell><cell>0.578</cell><cell>1.704</cell><cell>0.411</cell><cell>1.754</cell><cell>0.340</cell><cell>2.521</cell><cell>0.130</cell><cell>2.616</cell><cell>0.203</cell><cell>1.859</cell></row><row><cell>OTC-PPO</cell><cell>0.623</cell><cell>1.066</cell><cell>0.425</cell><cell>1.083</cell><cell>0.363</cell><cell>1.868</cell><cell>0.152</cell><cell>1.942</cell><cell>0.391</cell><cell>1.828</cell></row><row><cell>OTC-GRPO</cell><cell>0.597</cell><cell>0.430</cell><cell>0.431</cell><cell>0.739</cell><cell>0.311</cell><cell>0.938</cell><cell>0.130</cell><cell>1.224</cell><cell>0.250</cell><cell>0.781</cell></row><row><cell cols="11">algorithm, as evidenced by lower gap between MA and LA in OTC-PPO method. Moreover, among</cell></row><row><cell cols="11">all MA cases, it is observed that AE accounts for roughly 80% in 3B model (i.e., 3.74/4.60 =81%),</cell></row><row><cell cols="11">and exceeds 95% on 7B model. These results highlight the great strength of OTC-PO in promoting</cell></row><row><cell cols="4">efficiency while reserving effectiveness.</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 5 :</head><label>5</label><figDesc>The results of OTC-PO under Qwen2.5-7B-Base and Qwen2.5-7B-Instruct models.</figDesc><table><row><cell>Models</cell><cell>EM (↑)</cell><cell>NQ TC (↓)</cell><cell>TP (↑)</cell><cell>EM (↑)</cell><cell>HotpotQA TC (↓)</cell><cell>TP (↑)</cell></row><row><cell cols="2">Qwen2.5-7B(-Base)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>OTC-PPO</cell><cell>0.446</cell><cell>1.040</cell><cell>0.429</cell><cell>0.383</cell><cell>1.464</cell><cell>0.262</cell></row><row><cell>OTC-GRPO</cell><cell>0.444</cell><cell>0.990</cell><cell>0.448</cell><cell>0.366</cell><cell>1.005</cell><cell>0.364</cell></row><row><cell cols="2">Qwen2.5-7B(-Instruct)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>OTC-PPO</cell><cell>0.389</cell><cell>1.404</cell><cell>0.277</cell><cell>0.381</cell><cell>1.880</cell><cell>0.203</cell></row><row><cell>OTC-GRPO</cell><cell>0.429</cell><cell>1.322</cell><cell>0.325</cell><cell>0.386</cell><cell>1.956</cell><cell>0.197</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 6 :</head><label>6</label><figDesc>The results of OTC-PO with different α on Qwen2.5-7B-Base model</figDesc><table><row><cell>Models</cell><cell cols="6">NQ EM (↑) TC (↓) TP (↑) EM (↑) TC (↓) TP (↑) HotpotQA</cell></row><row><cell>α = 1</cell><cell>0.446</cell><cell>1.040</cell><cell>0.429</cell><cell>0.383</cell><cell>1.464</cell><cell>0.262</cell></row><row><cell>α = 2</cell><cell>0.354</cell><cell>1.571</cell><cell>0.225</cell><cell>0.320</cell><cell>2.062</cell><cell>0.155</cell></row><row><cell>α = 3</cell><cell>0.389</cell><cell>1.530</cell><cell>0.254</cell><cell>0.340</cell><cell>1.948</cell><cell>0.175</cell></row><row><cell cols="3">E Analysis of Search as Tool</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="2">E.1 Base v.s. Instruct Model</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 7 :</head><label>7</label><figDesc>The effects of C on Qwen2.5-Math-7B Base model.</figDesc><table><row><cell>Models</cell><cell cols="3">AIME24 EM (↑) TC (↓)</cell><cell>TP (↑)</cell><cell cols="3">AIME25 EM (↑) TC (↓)</cell><cell>TP (↑)</cell></row><row><cell>C = 1</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>ToRL-GRPO</cell><cell>30.0</cell><cell>0.9</cell><cell></cell><cell>33.3</cell><cell>26.7</cell><cell>0.9</cell><cell>29.7</cell></row><row><cell>OTC-GRPO</cell><cell>35.8</cell><cell>0.8</cell><cell cols="2">44.8 (▲ 34.5%)</cell><cell>26.7</cell><cell>0.8</cell><cell>33.4 (▲ 11.1%)</cell></row><row><cell>C = 2</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>ToRL-GRPO</cell><cell>33.3</cell><cell>1.4</cell><cell></cell><cell>23.8</cell><cell>25.8</cell><cell>1.4</cell><cell>18.4</cell></row><row><cell>OTC-GRPO</cell><cell>33.3</cell><cell>1.0</cell><cell cols="2">33.3 (▲ 39.9%)</cell><cell>23.3</cell><cell>0.7</cell><cell>33.3 (▲ 81.0%)</cell></row><row><cell>C = 3</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>ToRL-GRPO</cell><cell>36.7</cell><cell>2.1</cell><cell></cell><cell>17.5</cell><cell>26.7</cell><cell>2.1</cell><cell>12.7</cell></row><row><cell>OTC-GRPO</cell><cell>36.7</cell><cell>0.7</cell><cell cols="2">52.4 (▲ 199.4%)</cell><cell>23.3</cell><cell>0.8</cell><cell>29.1 (▲ 129.1%)</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 8 :</head><label>8</label><figDesc>The results of OTC-PO on MATH when C = 3.</figDesc><table><row><cell>Models</cell><cell>EM (↑)</cell><cell>MATH TC (↓)</cell><cell>TP (↑)</cell></row><row><cell cols="3">Qwen2.5-Math-1.5B(-Base)</cell><cell></cell></row><row><cell>ToRL-GRPO</cell><cell>52.2</cell><cell>1.8</cell><cell>29.0</cell></row><row><cell>OTC-GRPO</cell><cell>53.7</cell><cell cols="2">1.1 (▼ 38.9%) 48.8 (▲ 68.28%)</cell></row><row><cell cols="3">Qwen2.5-Math-7B(-Base)</cell><cell></cell></row><row><cell>ToRL-GRPO</cell><cell>59.7</cell><cell>1.49</cell><cell>40.07</cell></row><row><cell>OTC-GRPO</cell><cell>61.9</cell><cell cols="2">0.68 (▼ 54.4%) 91.03 (▲ 127.2%)</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>Our empirical study shows that this issue becomes more severe as the model size increases.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>In such cases, the task reduces to pure internal knowledge-only reasoning.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>All such trajectories incur unnecessary tool usage and are thus less efficient.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_3"><p>The last step is practically determined by the predefined maximal tool calls.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_4"><p>We provide the reward illustration in the Appendix for better understanding.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_5"><p>We empirically found that the model achieves higher reward by call less tools without correct answer if we use addition operation.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="7" xml:id="foot_6"><p>This can also be understood as the fraction between benefits and cost.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="8" xml:id="foot_7"><p>We use the same baseline to better distinguish OTC-PPO and OTC-GRPO.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="9" xml:id="foot_8"><p>More case studies can be found in Appendix.</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Question: Every morning Aya goes for a $9$-kilometer-long walk and stops at a coffee shop afterwards. When she walks at a constant speed of $s$ kilometers per hour, the walk takes her 4 hours, including $t$ minutes spent in the coffee shop. When she walks $s+2$ kilometers per hour, the walk takes her 2 hours and 24 minutes, including $t$ minutes spent in the coffee shop. Suppose Aya walks at $s+\\frac{1}{2}$ kilometers per hour. Find the number of minutes the walk takes her, including the $t$ minutes spent in the coffee shop. Answer: 204</p><p>ToRL-GRPO: To solve this problem, we need to determine … ```python from sympy import symbols, Eq, solve s = symbols('s') equation = Eq(4 -9/s, 2.4 -9/(s+2)) s_solution = solve(equation, s) print(s_solution) ````o utput [-4.50000000000000, 2.50000000000000] ``T he solutions for \\(s\\) are \\(-4.5\\) and \\(2.5\\) … Let's confirm the solution… ```python … time_spent_walking = 9 / new_speed total_time_minutes = (time_spent_walking * 60) + t_value print(total_time_minutes) ```` output 204.0 ``T he total time it takes for Aya to walk at a speed of \\(3\\) km/h, including the \\(24\\) minutes spent in the coffee shop, is  <ref type="figure">s1</ref>, <ref type="figure">s2</ref>)) ````o utput (2.4999999999999996, -4.499999999999999) ``S ince speed cannot be negative, we have \\(s = 2.5\\) km/h.\n\nNow we can substitute \\(s = 2.5\\) back into one of the original equations to find \\(t\\). Using the first equation:\n\\[\n\\frac{9}{2.5} + \\frac{t}{60} = 4\n\\]\n\\[\n3.6 + \\frac{t}{60} = 4\n\\]\n\\[\n\\frac{t}{60} = 0.4\n\\]\n\\[\nt = 0.4 \\times 60 = 24\n\\]\n\nSo, \\(t = 24\\) minutes. Now we need to find the total time when Aya walks at \\(s + \\frac{1}{2} = 2.5 + 0.5 = 3\\) km/h. The time spent walking is \\(\\frac{9}{3} = 3\\) hours, and the total time including the time spent in the coffee shop is \\(3 + \\frac{24}{60} = 3 + 0.4 = 3.4\\) hours, which is 3 hours and 24 minutes.\n\nThus, the number of minutes the walk takes her, including the \\(t\\) minutes spent in the coffee shop, is \\(3 \\times 60 + 24 = 204\\) minutes. The final answer is: \\boxed{204} (Tool Calls = 1) Figure <ref type="figure">9</ref>: An example of OTC-GRPO use less tool calls to get the correct answer.</p><p>Question: Find all values of $x$ that satisfy the equation $x = \\!\\sqrt{11-2x} + 4$.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Answer: 5</head><p>ToRL-GRPO: To solve the equation \\(x = \\sqrt{11 -2x} + 4\\), we can follow these steps ...... ```python import sympy as sp x = sp.symbols('x') equation = x -(sp.sqrt(1 1 -2*x) + 4) isolated_sqrt = sp.Eq(x -4, sp.sqrt(1 1 -2*x)) squared_equation = sp.Eq((x -4)**2, 1 1 -2*x) simplified_equation = sp.simplify(squared_equation) solutions = sp.solve(simplified_equation, x) valid_solutions = [sol for sol in solutions if equation.subs(x, sol) == 0] print(valid_solutions) ````o utput [5] ``T he solution to the equation \\(x = \\sqrt{11 -2x} + 4\\) is \\(x = 5\\). Therefore, the final answer is \\(\\boxed{5}\\).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>(Tool Calls = 1)</head><p>OTC-GRPO: To solve the equation \\(x = \\sqrt{11 -2x} + 4\\), we can follow these steps:</p><p>1. Isolate the square root term. 2. Square both sides to eliminate the square root. 3. Solve the resulting equation. 4. Verify the solutions by substituting back into the original equation to ensure they satisfy it.</p><p>Let's go through these steps systematically. 1. Isolate the square root term:\n\\[ x -4 = \\sqrt{11 -2x} \\] 2. Square both sides:\n\\[ (x -4)^2 = 11 -2x \\] 3. Expand and simplify the equation:\n\\[ x^2 -8x + 16 = 11 -2x \\] [ x^2 -6x + 5 = 0 \\] 4. Solve the quadratic equation:\n\\[ (x -5)(x -1) = 0 \\] So, the solutions are \\(x = 5\\) and \\(x = 1\\).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Verify the solutions by substituting back into the original equation.</head><p>For \\(x = 5\\):\n\\[ 5 = \\sqrt{11 -2 \\cdot 5} + 4 \\]\n\\[ 5 = \\sqrt{1} + 4 \\]\n\\[ 5 = 1 + 4 \\]\n\\[ 5 = 5 \\]\nThis is true, so \\(x = 5\\) is a valid solution.\n\nFor \\(x = 1\\):\n\\[ 1 = \\sqrt{11 -2 \\cdot 1} + 4 \\]\n\\[ 1 = \\sqrt{9} + 4 \\]\n\\[ 1 = 3 + 4 \\]\n\\[ 1 = 7 \\]\nThis is false, so \\(x = 1\\) is not a valid solution.\n\nTherefore, the only valid solution is \\(x = 5\\).\n\nThe final answer is: \\boxed{5} (Tool Calls = 0) Figure <ref type="figure">10</ref>: An example of OTC-GRPO does not need any external tool calls to get the correct answer.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><figDesc>(\\boxed{204}\\) (Tool Calls = 2) OTC-GRPO: To solve this problem, we need to determine … ``` python import math a = 1.6, b = 3.2, c = -18 discriminant = b**2 -4*a*c s1 = (-b + math.sqrt(discriminant)) / (2*a) s2 = (-b -math.sqrt(discriminant)) / (2*a) print((</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Lecun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">A path towards autonomous machine intelligence version 0.9</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="1" to="62" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Openai o1 system card</title>
+		<author>
+			<persName><forename type="first">Openai</forename><surname>Team</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Deepseek-Ai</forename><surname>Team</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Qwq-32b: Embracing the power of reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Qwen</forename><surname>Team</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025-03">March 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Self-reasoning language models: Unfold hidden reasoning chains with few reasoning catalyst</title>
+		<author>
+			<persName><forename type="first">Wang</forename><surname>Hongru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deng</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanjun</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijue</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><forename type="middle">Z</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeming</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kam-Fai</forename><surname>Wong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Workshop on Reasoning and Planning for Large Language Models</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Yiwei</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuefeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoyang</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixiu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijie</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixin</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhe</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hector</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">O1 replication journey: A strategic progress report -part</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Simplerl-zoo: Investigating and taming zero reinforcement learning for open base models in the wild</title>
+		<author>
+			<persName><forename type="first">Weihao</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuzhen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keqing</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zejun</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxian</forename><surname>He</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">ToRA: A tool-integrated reasoning agent for mathematical problem solving</title>
+		<author>
+			<persName><forename type="first">Zhibin</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yeyun</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujiu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minlie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chengpeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingfeng</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenru</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beichen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<title level="m">Self-taught reasoner with tools</title>
+		<meeting><address><addrLine>Start</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Large language models as source planner for personalized knowledge-grounded dialogues</title>
+		<author>
+			<persName><forename type="first">Hongru</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minda</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Mi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weichao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wai-Chung</forename><surname>Kwan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Irwin</forename><surname>King</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kam-Fai</forename><surname>Wong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: EMNLP 2023</title>
+		<editor>
+			<persName><forename type="first">Houda</forename><surname>Bouamor</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Juan</forename><surname>Pino</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Kalika</forename><surname>Bali</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023-12">December 2023</date>
+			<biblScope unit="page" from="9556" to="9569" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">Emre</forename><surname>Cheng Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongru</forename><surname>Can Acikgoz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiusi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Avirup</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dilek</forename><surname>Sil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gokhan</forename><surname>Hakkani-Tür</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Tur</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ji</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.11435</idno>
+		<title level="m">Smart: Self-aware agent for tool overuse mitigation</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Empowering large language models: Tool learning for real-world interaction</title>
+		<author>
+			<persName><forename type="first">Hongru</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><forename type="middle">Z</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kam-Fai</forename><surname>Wong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 47th International ACM SIGIR Conference on Research and Development in Information Retrieval, SIGIR &apos;24</title>
+		<meeting>the 47th International ACM SIGIR Conference on Research and Development in Information Retrieval, SIGIR &apos;24<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="2983" to="2986" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Search-r1: Training llms to reason and leverage search engines with reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Bowen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hansi</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenrui</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hamed</forename><surname>Zamani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Han</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Torl: Scaling tool-integrated rl</title>
+		<author>
+			<persName><forename type="first">Xuefeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoyang</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Research: Learning to reason with search for llms via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Mingyang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianpeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoze</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yijie</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenzheng</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haofen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><forename type="middle">Z</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huajun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zenan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weipeng</forename><surname>Chen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Cognitive offloading</title>
+		<author>
+			<persName><forename type="first">Evan</forename><forename type="middle">F</forename><surname>Risko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><forename type="middle">J</forename><surname>Gilbert</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Trends in cognitive sciences</title>
+		<imprint>
+			<biblScope unit="volume">20</biblScope>
+			<biblScope unit="issue">9</biblScope>
+			<biblScope unit="page" from="676" to="688" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">:</forename><surname>Qwen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baosong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beichen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianhong</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianwei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianxin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingren</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keming</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keqin</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingfeng</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qin</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Men</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runji</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tingyu</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingzhang</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuancheng</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqiong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenru</forename><surname>Zhang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note>and Zihan Qiu. Qwen2.5 technical report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Filip</forename><surname>Wolski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleg</forename><surname>Klimov</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1707.06347</idno>
+		<title level="m">Proximal policy optimization algorithms</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.03300</idno>
+		<title level="m">Pushing the limits of mathematical reasoning in open language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">CREATOR: Tool creation for disentangling abstract and concrete reasoning of large language models</title>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Cheng Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Fung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ji</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: EMNLP 2023</title>
+		<editor>
+			<persName><forename type="first">Houda</forename><surname>Bouamor</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Juan</forename><surname>Pino</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Kalika</forename><surname>Bali</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023-12">December 2023</date>
+			<biblScope unit="page" from="6922" to="6939" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">AppBench: Planning of multiple APIs from various APPs for complex user instruction</title>
+		<author>
+			<persName><forename type="first">Hongru</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyang</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heming</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingtao</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeming</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><forename type="middle">Z</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kam-Fai</forename><surname>Wong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing</title>
+		<editor>
+			<persName><forename type="first">Yaser</forename><surname>Al-Onaizan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Mohit</forename><surname>Bansal</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Yun-Nung</forename><surname>Chen</surname></persName>
+		</editor>
+		<meeting>the 2024 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Miami, Florida, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024-11">November 2024</date>
+			<biblScope unit="page" from="15322" to="15336" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Investigate-consolidate-exploit: A general strategy for inter-task agent self-evolution</title>
+		<author>
+			<persName><forename type="first">Shihao</forename><surname>Cheng Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yining</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yesai</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sun</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.13996</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Craft: Customizing llms by creating and retrieving from specialized toolsets</title>
+		<author>
+			<persName><forename type="first">Lifan</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangyi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><forename type="middle">R</forename><surname>Fung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Peixuan</forename><surname>Cheng Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qinyu</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bingxiang</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiusi</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuji</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongyi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiarui</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaocheng</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denghui</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.13549</idno>
+		<title level="m">Pushing language models to think outside the box</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Self-dc: When to reason and when to act? self divide-andconquer for compositional unknown questions</title>
+		<author>
+			<persName><forename type="first">Hongru</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyang</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baohang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhua</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cunxiang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huimin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanhua</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kam Fai</forename><surname>Wong</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shihao</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yining</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kunlun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lan</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaxi</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sihan</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lauren</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runchu</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruobing</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Gerstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dahai</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Toolllm</surname></persName>
+		</author>
+		<title level="m">Facilitating large language models to master 16000+ real-world apis</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Toolink: Linking toolkit creation and using through chain-of-solving on open-source model</title>
+		<author>
+			<persName><forename type="first">Chenyan</forename><surname>Cheng Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenghao</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</title>
+		<meeting>the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="831" to="854" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Advancing tool-augmented large language models: Integrating insights from errors in inference trees</title>
+		<author>
+			<persName><forename type="first">Sijia</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yibo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi-Feng</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qing-Guo</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhao</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weihua</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaifu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lijun</forename><surname>Zhang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Retool: Reinforcement learning for strategic tool use in llms</title>
+		<author>
+			<persName><forename type="first">Jiazhan</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijue</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingwei</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baoquan</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengquan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinxin</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanjun</forename><surname>Zhong</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Emre</forename><surname>Cheng Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Can Acikgoz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongru</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiusi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dilek</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gokhan</forename><surname>Hakkani-Tür</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Tur</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ji</surname></persName>
+		</author>
+		<title level="m">Toolrl: Reward is all tool learning needs</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">SMARTCAL: An approach to self-aware tool-use evaluation and calibration</title>
+		<author>
+			<persName><forename type="first">Yuanhao</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodan</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing: Industry Track</title>
+		<editor>
+			<persName><forename type="first">Franck</forename><surname>Dernoncourt</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Daniel</forename><surname>Preoţiuc-Pietro</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Anastasia</forename><surname>Shimorina</surname></persName>
+		</editor>
+		<meeting>the 2024 Conference on Empirical Methods in Natural Language Processing: Industry Track<address><addrLine>Miami, Florida, US</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024-11">November 2024</date>
+			<biblScope unit="page" from="774" to="789" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Adaptive tool use in large language models with meta-cognition trigger</title>
+		<author>
+			<persName><forename type="first">Wenjun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dexun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuicai</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiwen</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiming</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Liu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Training language models to reason efficiently</title>
+		<author>
+			<persName><forename type="first">Daman</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrea</forename><surname>Zanette</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Ragen: Understanding self-evolution in llm agents via multi-turn reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kangrui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qineng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pingyue</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linjie</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kefan</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minh</forename><forename type="middle">Nhat</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Licheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eli</forename><surname>Gottlieb</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Monica</forename><surname>Lam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiping</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyunghyun</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiajun</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lijuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manling</forename><surname>Li</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Theory and application of reward shaping in reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Daniel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laud</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2004">2004</date>
+		</imprint>
+		<respStmt>
+			<orgName>University of Illinois at Urbana-Champaign</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Integrating pretrained language model for dialogue policy evaluation</title>
+		<author>
+			<persName><forename type="first">Hongru</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huimin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zezhong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kam-Fai</forename><surname>Wong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICASSP 2022 -2022 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="6692" to="6696" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<author>
+			<persName><forename type="first">Pranjal</forename><surname>Aggarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Welleck</surname></persName>
+		</author>
+		<title level="m">L1: Controlling how long a reasoning model thinks with reinforcement learning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Harnessing the reasoning economy: A survey of efficient reasoning for large language models</title>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongru</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyang</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianhui</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shudong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahao</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Derek</forename><forename type="middle">Fai</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kam-Fai</forename><surname>Wong</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Thinkprune: Pruning long chain-of-thought of llms via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Bairu</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiabao</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaizhi</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Andreas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyu</forename><surname>Chang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carroll</forename><forename type="middle">L</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katarina</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fraser</forename><surname>Kelton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maddie</forename><surname>Simens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Welinder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Christiano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Lowe</surname></persName>
+		</author>
+		<title level="m">Training language models to follow instructions with human feedback</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

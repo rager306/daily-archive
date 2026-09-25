@@ -1,0 +1,1984 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">T 2 Agent: A Tool-augmented Multimodal Misinformation Detection Agent with Monte Carlo Tree Search</title>
+				<funder ref="#_khJv64e">
+					<orgName type="full">National Natural Science Foundation of China</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-11-17">17 Nov 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Xing</forename><surname>Cui</surname></persName>
+							<email>cuixing@bupt.edu.cn</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Beijing University of Posts and Telecommunications</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yueying</forename><surname>Zou</surname></persName>
+							<email>zouyueying2001@bupt.edu.cn</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Beijing University of Posts and Telecommunications</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zekun</forename><surname>Li</surname></persName>
+							<email>zekunli@cs.ucsb.edu</email>
+							<affiliation key="aff1">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Santa Barbara</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Peipei</forename><surname>Li</surname></persName>
+							<email>lipeipei@bupt.edu.cn</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Beijing University of Posts and Telecommunications</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xinyuan</forename><surname>Xu</surname></persName>
+							<email>xuxinyuan@bupt.edu.cn</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Beijing University of Posts and Telecommunications</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xuannan</forename><surname>Liu</surname></persName>
+							<email>liuxuannan@bupt.edu.cn</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Beijing University of Posts and Telecommunications</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Huaibo</forename><surname>Huang</surname></persName>
+							<email>huaibo.huang@cripac.ia.ac.cn</email>
+							<affiliation key="aff2">
+								<orgName type="department" key="dep1">MAIS &amp; NLPR</orgName>
+								<orgName type="department" key="dep2">Institute of Automation</orgName>
+								<orgName type="institution">Chinese Academy of Sciences</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">T 2 Agent: A Tool-augmented Multimodal Misinformation Detection Agent with Monte Carlo Tree Search</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-11-17">17 Nov 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">2427C337E849C905E1D7572BCF03B716</idno>
+					<idno type="arXiv">arXiv:2505.19768v2[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:06+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Real-world multimodal misinformation often arises from mixed forgery sources, requiring dynamic reasoning and adaptive verification. However, existing methods mainly rely on static pipelines and limited tool usage, limiting their ability to handle such complexity and diversity. To address this challenge, we propose T 2 Agent, a novel misinformation detection agent that incorporates an extensible toolkit with Monte Carlo Tree Search (MCTS). The toolkit consists of modular tools such as web search, forgery detection, and consistency analysis. Each tool is described using standardized templates, enabling seamless integration and future expansion. To avoid inefficiency from using all tools simultaneously, a greedy search-based selector is proposed to identify a taskrelevant subset. This subset then serves as the action space for MCTS to dynamically collect evidence and perform multisource verification. To better align MCTS with the multisource nature of misinformation detection, T 2 Agent extends traditional MCTS with multi-source verification, which decomposes the task into coordinated subtasks targeting different forgery sources. A dual reward mechanism containing a reasoning trajectory score and a confidence score is further proposed to encourage a balance between exploration across mixed forgery sources and exploitation for more reliable evidence. We conduct ablation studies to confirm the effectiveness of the tree search mechanism and tool usage. Extensive experiments further show that T 2 Agent consistently outperforms existing baselines on challenging mixed-source multimodal misinformation benchmarks, demonstrating its strong potential as a training-free detector.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Introduction</head><p>The remarkable progress in Artificial Intelligence Generated Content (AIGC) technologies <ref type="bibr" target="#b38">(Ouyang et al. 2022;</ref><ref type="bibr" target="#b49">Touvron et al. 2023;</ref><ref type="bibr" target="#b17">Dhariwal and Nichol 2021;</ref><ref type="bibr" target="#b41">Rombach et al. 2022;</ref><ref type="bibr">Cui et al. 2024a,b)</ref> has lowered the barrier to generating sophisticated multimodal misinformation, posing severe threats to information integrity, public governance, economic stability, and societal well-being <ref type="bibr" target="#b59">(Zannettou et al. 2019;</ref><ref type="bibr" target="#b4">Apuke and Omar 2021;</ref><ref type="bibr" target="#b0">Allcott and Gentzkow 2017)</ref>. Addressing this issue is not only a technical imperative but also a societal necessity. Therefore, developing approaches for multimodal misinformation detection is critical to safeguard the integrity of digital information ecosystems.</p><p>Automated multimodal misinformation detection is inherently complex, requiring capabilities in reasoning, information retrieval, and cross-modal verification. While recent automated approaches have made progress <ref type="bibr">(Liu et al. 2024c;</ref><ref type="bibr" target="#b7">Braun et al. 2025;</ref><ref type="bibr" target="#b5">Beigi et al. 2025)</ref>, they still fall short of emulating the dynamic strategies employed by human experts. This gap can be attributed to two key factors. First, the diversity of forgery sources <ref type="bibr">(Guo et al. 2025</ref>) necessitates tailored tools for different scenarios. For instance, the AMG benchmark <ref type="bibr">(Guo et al. 2025</ref>) considers temporal consistencies, whereas MMfakebench <ref type="bibr">(Liu et al. 2024c</ref>) incorporates counterfactual misinformation. However, most existing LLM-based methods rely on fixed and limited toolsets, which lack the flexibility and scalability required to handle such a wide range of forgery types. Second, real-world multimodal misinformation often arises from mixed forgery sources, such as textual inaccuracies, image manipulations, or cross-modal inconsistencies <ref type="bibr">(Liu et al. 2024c)</ref>. Reliable detection requires not only the ability to perform in-depth exploitation to retrieve evidence for each forgery source but also to adaptively explore multiple potential forgery sources. However, existing LLM-based methods <ref type="bibr">(Liu et al. 2024c;</ref><ref type="bibr" target="#b7">Braun et al. 2025;</ref><ref type="bibr" target="#b5">Beigi et al. 2025;</ref><ref type="bibr" target="#b28">Li, Zhang, and Malthouse 2024;</ref><ref type="bibr">Lakara et al. 2024b</ref>) typically rely on rigid designs that fail to strike this critical balance, limiting their effectiveness in complex scenarios.</p><p>To address these challenges, we introduce T 2 Agent, a novel misinformation detection agent that incorporates an extensible toolkit with Monte Carlo Tree Search (MCTS). As illustrated in Fig. <ref type="figure" target="#fig_1">1</ref>, the extensible toolkit includes a range of functional tools such as web searching, time detection, forgery detection, counterfactual detection, image understanding, and entity recognition. Each tool is described using standardized templates, enabling seamless integration and future expansion for new tasks. Given that using all available tools simultaneously may overwhelm the agent and reduce efficiency <ref type="bibr" target="#b34">(Lu et al. 2025)</ref>, we introduce a tool selection mechanism based on greedy search. This mechanism</p><p>(a) MMDAgent (b) Ours Tools Action Evaluation Plan Text … Visual Consistency Root 1 2 5 … 3 4 … Answer 1 Answer 2 … Decison Making Search Order 1 Backprogration Web Searching Image Understanding Event Detection Entity Detection Web Searching Web Searching Web Searching Image Understanding … [Image Refute] Textual Check Visual Check Cross-modal Consistency</p><p>[Original] [Mismatch] identifies the most relevant subset of tools for each task type, forming a task-specific subset. Then, the optimized subset serves as an action space for MCTS to dynamically collect evidence and perform multi-source verification. Different from the previous MCTS, which is primarily designed for tasks with a single target, T 2 Agent extends MCTS with multi-source verification. Specifically, T 2 Agent first decomposes the misinformation detection task into multiple subtasks, each corresponding to a potential forgery source. Subsequently, it dynamically performs verification. To guide this process effectively, we propose a dual evaluation function that combines two components: the reasoning trajectory score, which evaluates the quality of the reasoning path, and the result confidence score, which measures the certainty of the final decision. By balancing exploration across mixed forgery sources with the exploitation of high-confidence evidence, T 2 Agent enhances robustness and generalization in complex detection scenarios.</p><p>Our experiments demonstrate that T 2 Agent presents a promising performance in mixed-source multimodal misinformation detection. On the MMfakebench <ref type="bibr">(Liu et al. 2024c)</ref>, T 2 Agent improves accuracy of the baseline MMDagent <ref type="bibr">(Liu et al. 2024c</ref>) by 28.7% with GPT4-o (Ope-nAI 2022), achieving a new state-of-the-art (SOTA). On AMG (Guo et al. 2025), T 2 Agent is competitive with existing training-based approaches, offering a promising direction for enhancing misinformation detection without the need of additional training. Ablation studies further confirm that the performance gains stem from the use of MCTS and tool integration. The primary contributions of this paper can be summarized as follows:</p><p>• We propose T 2 Agent, a novel misinformation detection agent that integrates an extensible toolkit with Monte Carlo Tree Search (MCTS). By dynamically planning verification paths, leveraging tools for evidence collection, and performing structured multi-source validation, T 2 Agent enables adaptive reasoning across diverse forgery sources.</p><p>• We design an extensible toolkit based on modularized, standardized tool templates. This design facilitates rapid adaptation to various forgery patterns and allows seamless integration of new verification capabilities, improving system scalability and generalization.</p><p>• We extend traditional MCTS with a multi-source verification framework by decomposing the detection task into subtasks, where each subtask targets a specific forgery source. A dual evaluation function further guides crosssubtask reasoning, balancing exploration across sources with exploitation of reliable evidence.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Related work</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Misinformation Detection</head><p>Early misinformation detection datasets primarily focus on a single source, such as textual veracity distortion <ref type="bibr" target="#b51">(Wang 2017;</ref><ref type="bibr" target="#b48">Thorne et al. 2018;</ref><ref type="bibr" target="#b43">Shu et al. 2020;</ref><ref type="bibr" target="#b19">Hanselowski et al. 2019;</ref><ref type="bibr">Yao et al. 2023a;</ref><ref type="bibr" target="#b9">Chen and Shu 2024)</ref>, or crossmodal inconsistency <ref type="bibr" target="#b35">(Luo, Darrell, and Rohrbach 2021;</ref><ref type="bibr" target="#b1">Aneja, Bregler, and Nießner 2023;</ref><ref type="bibr" target="#b42">Shao, Wu, and Liu 2023;</ref><ref type="bibr" target="#b46">Suryavardan et al. 2023;</ref><ref type="bibr" target="#b36">Nielsen and McConville 2022)</ref>. Some methods focus on mining forgery features from given content with specifically designed networks <ref type="bibr" target="#b21">(Hu et al. 2023;</ref><ref type="bibr" target="#b39">Papadopoulos et al. 2025;</ref><ref type="bibr" target="#b42">Shao, Wu, and Liu 2023)</ref>. Some recent works <ref type="bibr" target="#b12">(Cheung and Lam 2023;</ref><ref type="bibr" target="#b60">Zeng et al. 2024;</ref><ref type="bibr">Liu et al. 2024b;</ref><ref type="bibr" target="#b40">Qi et al. 2024;</ref><ref type="bibr" target="#b54">Yang and Rocha 2024)</ref> finetune LLMs to enhance their detection capabilities for specific tasks. Benefiting from the powerful reasoning ability of LLMs, some works <ref type="bibr" target="#b22">(Kakizaki, Matsunaga, and Furukawa 2025;</ref><ref type="bibr" target="#b28">Li, Zhang, and Malthouse 2024;</ref><ref type="bibr" target="#b5">Beigi et al. 2025;</ref><ref type="bibr" target="#b29">Lin et al. 2025;</ref><ref type="bibr" target="#b33">Liu et al. 2025</ref>) directly leverage LLM to build reasoning-driven misinformation detection pipelines. Some methods <ref type="bibr" target="#b23">(Khaliq et al. 2024;</ref><ref type="bibr" target="#b47">Tahmasebi, Müller-Budack, and Ewerth 2024;</ref><ref type="bibr" target="#b7">Braun et al. 2025;</ref><ref type="bibr">Chen et al. 2024b</ref>) further retrieve evidence to better handle the evolving nature of news content. Despite being effective, these methods are unable to handle the situation where there are multiple sources of forged information in the real world. Several benchmarks <ref type="bibr">(Liu et al. 2024c;</ref><ref type="bibr">Guo et al. 2025;</ref><ref type="bibr">Wang et al. 2024a</ref>) are designed to focus on the scenarios where misinformation stems from combined sources. Although some works <ref type="bibr">(Lakara et al. 2024a;</ref><ref type="bibr" target="#b16">Dey et al. 2025</ref>) experiment on the multisource forgery detection benchmark MMfakebench <ref type="bibr">(Liu et al. 2024c)</ref>, they simply regarded the task as a binary classification of real or fake, ignoring the fine-grained identification for different sources of forged information. To solve the challenge of mixed-source multimodal misinformation detection, MMDAgent <ref type="bibr">(Liu et al. 2024c</ref>) integrates the reasoning ability of LLMs and relies on a predefined static detection workflow. MGCA <ref type="bibr">(Guo et al. 2025)</ref> extracts multi-view features and trains an end-to-end model to detect misinformation. A recent work LRQ-FACT <ref type="bibr" target="#b6">(Beigi et al. 2024</ref>)retrieves evidence by generating questions, and can detect multi-source fabricated information. However, these methods are limited by the fixed workflows and a limited set of tools. Our T 2 Agent , on the other hand, introduces a modified MCTS that adaptively searches across mixed forgery sources. This enables a principled trade-off between exploiting verified evidence and exploring diverse forgery sources, leading to improved performance in complex and heterogeneous misinformation settings.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Monte Carlo Tree Search</head><p>Monte Carlo Tree Search (MCTS) <ref type="bibr" target="#b13">(Coulom 2006</ref>) is a powerful heuristic search algorithm that has demonstrated exceptional performance in solving complex decision-making problems. Its core mechanism involves iteratively building a search tree and selecting the optimal action based on the outcomes of numerous simulations. The operation of MCTS typically consists of four key steps. Selection: Starting from the root node, a child node is recursively selected according to a policy such as the Upper Confidence bound applied to Trees (UCT) (Kocsis and Szepesvári 2006) until a leaf node or a partially expanded node is reached. Expansion: If the selected node does not represent a terminal state, one or more new child nodes are created. Simulation: From the newly expanded node, a fast policy is executed to simulate a trajectory until a terminal state is reached. This simulation provides an estimate of the potential value of the node. Backpropagation: The outcome of the simulation is propagated back up the selection path to the root node, updating statistics such as visit counts and cumulative rewards for each node along the way.</p><p>MCTS and its variants have demonstrated broad applicability across a wide range of domains, which have significantly improved decision-making performance in various areas <ref type="bibr" target="#b2">(Anthony, Tian, and Barber 2017;</ref><ref type="bibr" target="#b37">Ontanón 2013)</ref>. Monte Carlo tree search simulates the human decision-making process. Some MCTS-based systems like AlphaGo <ref type="bibr" target="#b44">(Silver et al. 2016)</ref> and AlphaZero <ref type="bibr">(Silver et al. 2017)</ref> have even achieved superhuman performance. MCTS has been widely applied to domains such as robotic path planning <ref type="bibr" target="#b18">(Eiffert et al. 2020)</ref> and combinatorial optimization <ref type="bibr" target="#b8">(Cazenave 2009)</ref>. In recent years, researchers integrate MCTS with large language models to enhance the exploration of solution spaces in complex tasks such as question answering <ref type="bibr">(Yao et al. 2023b;</ref><ref type="bibr" target="#b20">Hao et al. 2023;</ref><ref type="bibr" target="#b53">Xie et al. 2024;</ref><ref type="bibr" target="#b57">Yu, Chen, and Yu 2023;</ref><ref type="bibr" target="#b62">Zhou et al. 2024)</ref>, mathematics <ref type="bibr" target="#b61">(Zhang et al. 2024;</ref><ref type="bibr">Chen et al. 2024a)</ref>, websearch <ref type="bibr" target="#b58">(Yu et al. 2024;</ref><ref type="bibr" target="#b24">Koh et al. 2024)</ref>, prompt optimization <ref type="bibr">(Wang et al. 2024b)</ref>, code generation (Antoniades et al. 2024), video understanding <ref type="bibr">(Yang et al. 2024)</ref>, etc. These MCTS applications focus on tasks with a single target and are not well-suited for multi-source misinformation detection. In contrast, we adapt MCTS to the mixedsource characteristics of multimodal misinformation detection by introducing a multi-source verification mechanism augmented with extensible tools.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Method</head><p>In this section, we first define the problem of multimodal misinformation detection (Sec. ). Then, we introduce our proposed framework, T 2 Agent, which consists of two core components: a Multi-Source Verification Monte Carlo Tree Search (MCTS) and an extensible toolset for adaptive evidence reasoning. Specifically, we extend traditional MCTS with multi-source verification (Sec. ) to deal with potential mixed forgery sources in multimodal misinformation. Our approach introduces a dual evaluation function and a custom backpropagation strategy that together maintain a balance between exploration and exploitation during search. Additionally, we propose a collaborative decision-making strategy to aggregate evidence and reach a final authenticity judgment. Complementing the search process, our framework includes an extensible toolset (Section ) that supports plug-and-play integration of specialized tools. This enables dynamic and task-aware tool selection across diverse types of multimodal misinformation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Problem formulation</head><p>We address the task of mixed-source multimodal misinformation detection <ref type="bibr">(Liu et al. 2024c</ref>), which aims to assess the authenticity of online news content by analyzing multiple mixed sources of information and classifying it into various types of misinformation. Unlike traditional singlesource multimodal misinformation detection tasks that focus on generating a single correct answer, this task involves verifying content across different modalities and potential forgery sources. It may require handling several sub-tasks, such as Textual Veracity Distortion, Visual Veracity Distortion, and Cross-modal Consistency Distortion <ref type="bibr">(Liu et al. 2024c)</ref>. Only through a comprehensive analysis of these multiple, mixed sources of evidence can the authenticity of a piece of news be reliably determined.</p><p>The verification process is a transition process among different states, where each state s t contains the thought, action a t , and observation o t . In our T 2 Agent, the thought and action are determined by LLM. The observation is obtained by executing the action with the corresponding tool. A misinformation detection agent begins by receiving an input instance c that may contain text and visual content. Then, at each time step t, the agent generates an action a t ∈ A based on the previous state s t-1 . By executing a t , the agent obtains a new observation o t and transitions to a new state s t . This agent-environment interaction continues until either the</p><p>Text Thought: It shows a man instead of Queen Nefertiti... Action: Finish[MISMATCH] S T =0.7, S C =0.8 Finish the subtask Thought: Google for more information ... Action: Google[Neues museum] (Depth limit &amp; No answer) S T =0.3, S C =0 Backprograte Thought: It is in Neues Museum... Action: Finish[TEXT SUPPORT] S T =0.9, S C =0.9 Finish the subtask Thought: Adjust the keyword... Action: Wikipedia[Nefertiti Bust] Observation: ...displayed at Neues Museum ... S T =0.8, S C =0 ... ... Decision Making ... ... ... Root Consistency Thought: I need to verify whether ... Action: Wikipedia[Bust of Queen Nefertiti] Observation: No entry. You can try similar "Nefertiti Bust","Nefertiti"... S T =0.5, S C =0</p><p>Toolset optimization Extensible Tools Web Searching Image Understanding Event Detection Forgery Detection Counterfactual Detection Entity Detection "The bust of Queen Nefertiti of Egypt in Berlin Neues Museum." Action Environment with Tools Observation Action Trajectory Answer LLM Trajectory Score S T Confidence Score S C Evaluation State Memory Thought Action Plan LLM Multi-source Verification MCTS Thought: I need to search about the Neues museum Action: Wikipedia[Neues museum] Observation: ... in the historic centre of Berlin, Germany.... S T =0.6, S C =0 agent makes a final judgment on the authenticity of the input information, or the maximum number of steps T is reached.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Multi-source Verification MCTS</head><p>We propose Multi-source Verification MCTS, an extension of classical MCTS tailored for multi-source misinformation detection. During inference, similar to classic MCTS, it iteratively builds a search tree through the selection-expansionsimulation-backpropagation paradigm, predicting rewards at each step to guide the search. Unlike traditional MCTS, we introduce subtask nodes in the search tree, each representing a potential forgery source (e.g., textual inconsistency, visual manipulation, or cross-modal discrepancy). The LVLM serves as the reasoning controller. At each node, it first makes a plan to generate a thought and corresponding action based on the current state and previous trajectory. We also utilized the trajectories of failures as memory, enabling drawing on past experiences. Once an action is selected, it invokes the corresponding tool from its extensible toolkit to retrieve external evidence or perform specific analyses. To balance exploration across mixed forgery sources with the exploitation of reliable evidence, we introduce a dual reward mechanism, which evaluates both the quality of the reasoning trajectory and the confidence of the final decision. This reward signal is used to update the value of its parent nodes during backpropagation, enabling dynamic adaptation to complex multimodal misinformation scenarios.</p><p>Initialization The root of the tree represents the overall task of determining whether a given piece of news is true or false. The first layer of the tree consists of multiple child nodes, each representing a specific sub-task corresponding to mixed forgery sources, which can be adaptively pre-defined by the user based on the requirements of the task. To facilitate the exploration of the first step, we assign a weight to each child node. We use LVLM to analyze the input content and estimate the probability distribution over these sub-task categories. This means that the model assigns a likelihood score to each sub-task, reflecting how relevant or necessary it is for verifying the claim. These probabilities guide the expansion of the tree by prioritizing which subtasks should be explored further.</p><p>Evaluation To evaluate the nodes, we propose a dual scoring mechanism that combines a reasoning trajectory score with a result confidence score. Both scores are calculated by an LLM. We provide corresponding prompts in the appendix. The reasoning trajectory score quantifies the overall quality and coherence of the reasoning process along the path from the root node to the current node. It is utilized in two scenarios. One is to evaluate the quality of the reasoning path during the simulation process and serve as the value of each step node, and the other is to calculate the quality of the reasoning path of the answer node and serve as part of the reward of the node. The input to the reasoning trajectory score function includes all state-action pairs {s i , a i } up to the current state.</p><formula xml:id="formula_0">S T t = LLM ({si, ai}i=0...t).<label>(1)</label></formula><p>Upon reaching a leaf node, we evaluate both the quality of the collected evidence and its internal consistency using the proposed confidence score. This score reflects the quality of the collected evidence and the degree to which the evidence supports the conclusion. The confidence score serves as the reward signal for the terminal node in the MCTS framework. The input to the confidence scoring function includes all evidence, i.e., observations {o i } i=0...t gathered along the current reasoning path, as well as the news c to be verified.</p><p>By analyzing the alignment and coherence among different pieces of evidence, it estimates a confidence value that captures the overall consistency of the verification process:</p><formula xml:id="formula_1">S C t = LLM ({oi}i=0...t, c).<label>(2)</label></formula><p>Search Algorithm During the search process, our method automatically selects the sub-tasks that need verification. Specifically, we employ the Upper Confidence Bound for Trees (UCT) criterion <ref type="bibr">(Kocsis and Szepesvári 2006)</ref>. At each iteration, the node with the highest UCT value is selected for expansion. In this work, we revise the UCT formulation to better balance the trade-off between exploring under-visited sub-task nodes and exploiting those with high confidence scores. Our modification focuses on sub-task nodes that have not been explored, i.e., N (s i ) = 0. Traditional methods usually assign an arbitrarily large bonus to unvisited nodes, which could lead to inefficient exploration. Different from them, we introduce a bias term and redefine the UCT function as follows:</p><formula xml:id="formula_2">U CT (st) = V (st) N (st) + 1 + C ln(N (s) + 1) N (st) + 1<label>(3)</label></formula><p>where V (s t ) = αS T t + (1 -α)S C t is the value of the terminal node. C is a hyperparameter. N (s t ) and N (s) are the visit count for the child node and the parent node, respectively. By adding the bias term 1 to N (s t ), UCT can still be calculated when N (s t ) = 0. The term ln(N (s)+1) N (st)+1 allows the UCT values of unexplored nodes to be updated along with the overall situation. In the early stages of the search, in contrast to assigning an arbitrarily large bonus to unvisited nodes, calculating UCT with our function avoids overly prioritized newly expanded sub-task nodes, thereby avoiding unnecessary resource allocation. As the search progresses, the increasing visit count of the parent node gradually raises the UCT value of its unvisited children, thereby encouraging the exploration of unvisited sub-tasks.</p><p>Another key component of the search process is backpropagation. Considering the property that a piece of news can only be classified as true if all relevant modalities and sub-tasks independently confirm its authenticity, we introduce a novel pruning strategy. If a sub-task node returns a high-confidence verification result indicating that the forgery source is likely true, we consider this sub-task completed and prune further expansion of its child nodes. By pruning already-confirmed branches, the search process avoids redundant exploration and allocates computational resources toward verifying remaining modalities. This strategy mimics how human experts operate: once a source or modality has been confirmed to be reliable, they tend to focus on validating other uncertain components.</p><p>Decision Making After the MCTS search is completed, we perform a final decision-making step based on the verification results collected from all sub-task nodes. If MCTS completes with a sub-task node with a high-confidence score indicating that the content is fake, the system classifies the entire news item as false, without further aggregation. This early-stop mechanism ensures efficient and decisive misinformation detection when strong evidence against authenticity is found in any modality. In cases where no such highconfidence false signal is detected, we proceed to aggregate the results from all verified sub-task nodes using a heuristic probabilistic fusion strategy. For each sub-task (representing a potential forgery source), we calculate the probability that the model believes the input information belongs to each forgery source i, (i = visual, text...) by utilizing the confidence score S C,i . p(fake i ) = S C,i , if answer(i) = fake, 1 -S C,i , if answer(i) = real.</p><p>(4)</p><p>We assume that different modalities (sub-tasks) provide independent evidence. Therefore, we define the overall likelihood that the news is true as:</p><formula xml:id="formula_3">p(real) = n i=1 1 -p fake i (1/n) ,<label>(5)</label></formula><p>where n is the number of verified sub-tasks. We obtain the final result by comparing the probabilities:</p><formula xml:id="formula_4">answer = arg max p(real), p(f ake i ) n i=1 . (<label>6</label></formula><formula xml:id="formula_5">)</formula><p>The proposed multi-source verification MCTS enables the system to explore multiple sub-tasks in a structured manner, assess the quality of evidence collected along different paths, prune verified branches to focus on remaining uncertainties, and integrate each sub-task to obtain the final decision. It emulates the iterative and dynamic reasoning process of a human expert, which dynamically shifts between exploring new sources, validating evidence across modalities, and consolidating findings into a final decision.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Extensible Toolset</head><p>Beyond the enhanced MCTS framework, T 2 Agent incorporates a modular and extensible toolset designed to support diverse misinformation verification tasks across multiple forgery sources. This toolset serves as the action space within the tree search process, enabling the agent to invoke appropriate tools for evidence gathering. Each tool is encapsulated in a tool card, which abstracts its functionality, inputoutput format, and invocation method into a unified structure. This modular representation allows for seamless integration and easy extension of new tools. The toolset includes web searching tools, time detection tools, forgery detection tools, counterfactual detection tools, image understanding tools, and entity recognition tools. Details are presented in the appendix. While the full toolset provides comprehensive capabilities, not all tools are equally useful for every task <ref type="bibr" target="#b34">(Lu et al. 2025)</ref>. To ensure both efficiency and effectiveness, we utilize an adaptive tool selection mechanism tailored to each benchmark. We employ greedy search to efficiently search for the optimal subset of tools. First, we predefine a minimal default toolset, denoted as D base . Then, each candidate tool d i is evaluated by adding it to the base set. We compute the accuracy improvement as ∆ di = Acc(D base ∪ {d i }) -Acc(D base ). If ∆ di &gt; 0, the tool d i is considered beneficial for the target task. The updated D base is: D base = D base ∪ {d i }. This adaptive configuration ensures that the system maintains high performance while minimizing computational overhead. It also enables T 2 Agent to generalize across diverse domains. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Evaluation Metrics.</head><p>To ensure a comprehensive comparison, we adopt the accuracy and the macro-F1 score as evaluation metrics. The macro-F1 score equally weighs performance across all classes by computing the harmonic mean of per-class precision and recall.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Main Results</head><p>MMfakebench. On MMfakebench, we compare with Standard Prompt, MMD-Agent <ref type="bibr">(Liu et al. 2024c)</ref>, and LRQ-FACT <ref type="bibr" target="#b6">(Beigi et al. 2024)</ref>. For Standard Prompt, we utilize BLIP-2 <ref type="bibr" target="#b27">(Li et al. 2023)</ref>, LLaVA-1.6 <ref type="bibr">(Liu et al. 2024a</ref>), and GPT-4o (OpenAI 2022) as LLM backbones. Since the code of LRQ-FACT is not open-source, the results in the table are those from their paper. As shown in Table <ref type="table" target="#tab_0">1</ref>, our T 2 Agent consistently outperforms all comparison methods. The results of the standard prompt indicate that the LLM itself has a certain ability to detect false information. This might be due to the fact that the LLM contains knowledge. However, this detection capability is insufficient. Our T 2 Agent outperforms the MMD-Agent under all three LLM models (GPT-4.1 Nano, GPT-4o Mini, and GPT-4o), achieving an average 28.7% relative improvement in accuracy. Under a lightweight setting (GPT-4.1 Nano), T 2 Agent boosts F1 by over 42.7%, demonstrating strong generalization and robustness across model scales. Notably, with GPT-4o Mini, our method achieves an accuracy of 0.629 and F1 of 0.631, which even outperforms MMD-agent with GPT-4o (accuracy 0.616, F1 0.614). T 2 Agent also outperforms LRQ-FACT, demonstrating the necessity of dynamic verification.</p><p>A mismatch forgery case sampled from MM-FakeBench (Fig. <ref type="figure" target="#fig_2">2</ref>) showcases the effectiveness of T 2 Agent in performing multi-source verification through iterative exploration and adaptive pruning. In the first iteration, the agent selects the text subtask node for investigation based on the initialization score. It fails to obtain conclusive evidence. We evaluate the node and update the value of itself and its parent nodes via backpropagation to reflect this uncertainty. During the second iteration, the text node is reselected based on the evaluation score, and after tool invocation and simulation, the system confirms that the text is authentic, assigning it a high confidence score. Based on this reliable outcome, the corresponding branch is pruned to avoid redundant verification, demonstrating the method's efficiency in identifying trustworthy sources. In the third iteration, the agent shifts focus to a consistency forgery source node. Through structured reasoning and evidence aggregation, T 2 Agent reaches a final judgment with high confidence and terminates the verification process successfully. This example highlights several key advantages of the framework: (1) the ability to iteratively refine node values based on partial evidence, preventing premature decisions; (2) the dynamic expansion of the search tree toward informative forgery sources; and (3) the integration of pruning strategies to improve computational efficiency without sacrificing accuracy. We also conduct an evaluation of our method against the MMD-agent on the AMG dataset. As shown in Table <ref type="table" target="#tab_1">2</ref>, our approach consistently outperforms the MMD-agent across all model sizes. In terms of F1 score, our method achieves improvements of 38.6%, 38.6%, and 39.7% over the MMD-agent when using GPT-4.1-nano, GPT-4o-mini, and GPT-4o, respectively. The superior performance of our method can be attributed to its ability to handle the complexity of the AMG dataset, which contains five forgery sources. The MMD-Agent adopts a sequential decision-making strategy, which tends to suffer from error propagation. This means that incorrect judgments made at earlier stages affect subsequent decisions, leading to a degradation in overall performance. In contrast, our approach explores a more balanced and holistic strategy by incorporating MCTS into the decision process. This allows our model to better assess the likelihood of each forgery type and avoid premature or biased decisions.</p><p>The results on MMfakebench and AMG collectively highlight the feasibility of constructing general-purpose, training-free misinformation detection agents using large language models and structured reasoning frameworks, paving the way for more adaptable verification systems.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Ablation Study</head><p>We conduct an ablation study on MM-FakeBench using the GPT-4.1-nano backbone over 1,000 samples to evaluate the effectiveness of the multi-source verification MCTS and toolset in our framework. Results are summarized in Table <ref type="table" target="#tab_2">3</ref>.</p><p>MCTS search enables flexible evidence verification. MMD-Agent follows a rigid, rule-based verification path with fixed state transitions, limiting its adaptability when handling incomplete or low-confidence evidence across diverse forgery sources. In contrast, introducing MCTSbased tree search allows our agent to dynamically explore and prioritize subtasks based on real-time confidence estimates. This flexibility leads to notable improvements across all metrics: the F1 score increases from 0.398 to 0.535 (+34.4%) and accuracy from 0.424 to 0.534 (+25.9%). Extensible tools enhance performance through adaptive reasoning. We conduct an ablation study to evaluate the effectiveness of our extensible toolset. The base configuration includes fundamental tools such as image understanding and Wikipedia lookup. Building upon this, we employ our tool selection mechanism to automatically identify and integrate the most beneficial additional tools-specifically, Google Search for up-to-date external knowledge and entity detection via the Baidu API 1 for object categories in complex images. As shown in Table <ref type="table" target="#tab_2">3</ref>, using the selected tools alone yields gains over the baseline (F1: 0.413 vs. 0.398), confirming their utility. More importantly, when integrated into the MCTS framework, they lead to significant performance improvements: our full method achieves an F1 score of 0.568 and accuracy of 0.569, corresponding to relative gains of +6.2% and +6.5% over the MCTS-only variant. This indicates that our tool selection mechanism picks useful tools that integrate well with MCTS. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Cost Analysis</head><p>Table 4 compares the inference costs (in USD) between the MMD-Agent and our method on the MMFakeBench dataset, using three GPT-4 variants: GPT-4o, GPT-4o-mini and GPT-4.1-nano. While our method has higher computational costs with the same LLMs, it provides two key advantages: (1) Strong adaptivity: Our T 2 Agent features task-adaptive reasoning without the need of additional training. This capability is especially important in real-world mixed-source forgery detection. Besides, it allows the system to adapt to novel forgeries without requiring retraining when a new source of forgery emerges. (2) Better costeffectiveness: As shown in Table <ref type="table" target="#tab_0">1</ref>, when using GPT-4omini, our T 2 Agent achieves an F1 score of 0.631, surpassing MMDAgent (F1 = 0.614) that relies on the larger GPT-4o model. Meanwhile, our method incurs significantly lower resource costs-only 129.4$ compared to MMDAgent's 344.4$. These results clearly indicate that our method offers both higher performance and greater cost-efficiency, showcasing a strong advantage in terms of cost-effectiveness. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Conclusion</head><p>In this paper, we introduce T 2 Agent, a novel misinformation detection agent designed to tackle the complexities and diversities of mixed-source multimodal misinformation. To achieve this goal, we design an extensible toolkit incorporating various modular tools such as web search, forgery detection, and consistency analysis, and propose the integration of Monte Carlo Tree Search (MCTS) with multisource verification capabilities. The incorporation of these elements achieves a balance between exploration across mixed forgery sources and exploitation for more reliable evidence, enhancing the adaptability and efficiency of the detection process. Extensive results show the efficiency of our approach, suggesting a strong potential for our method as a training-free approach for enhancing detection accuracy in real-world applications.</p><p>Limitations and future directions. One notable limitation of our current implementation is the increased computational overhead introduced by the tree search mechanism. Further works may address this limitation by introducing efficient pruning strategies or designing hybrid approaches by combining the proposed method with lightweight expert models to guide the search more effectively. Besides, opensource toolchains introduce new security risks. In practice, these risks may be mitigated by implementing principles such as least privilege and whitelisting tool calls.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>T 2 Agent Pseudocode</head><p>Our method T<ref type="foot" target="#foot_0">foot_0</ref> Agent consists of a Multi-source Verification MCTS and a Tool Selection mechanism. Alg. 1 presents the pseudocode of Multi-source Verification MCTS. Our method begins by initializing a root node representing the task of verifying news authenticity, with child nodes corresponding to various forgery sources weighted by an LVLM analysis. During each iteration, promising nodes are selected using a modified UCT criterion to balance exploration and exploitation effectively. Upon selecting a specific node, the agent initiates a simulation process. During this simulation, the agent iteratively performs reasoning steps (thoughts), executes actions, and collects observations. This iterative reasoning continues until either a conclusive answer is found or the predefined maximum search depth d is reached. At the termination of the simulation, an evaluation phase assesses the entire simulation process using a dual scoring mechanism that integrates both reasoning trajectory scores and confidence scores. The results from this evaluation are then backpropagated to update the values of the relevant nodes. Finally, the decision-making component aggregates the verification results from the updated nodes to produce a final determination on the authenticity of the news.</p><p>Although the full set of tools offers broad functionality, not all tools are equally valuable for every task <ref type="bibr" target="#b34">(Lu et al. 2025)</ref>. To balance efficiency and performance, we leverage greedy search to systematically identify the most effective subset of tools. Alg. 1 presents the pseudocode of the tool selection mechanism. In practice, we select a subset (100 samples) of all data samples for evaluation function f to save time. It is worth to notice that our method is differnet from OctoTools <ref type="bibr" target="#b34">(Lu et al. 2025)</ref>. OctoTools evaluates each tool independently by adding it to a fixed base toolset and measuring its individual contribution. In contrast, our method incrementally adds tools one by one in a greedy fashion, evaluating the combined effect at each step. We conduct experiments to compare our method with OctoTools <ref type="bibr" target="#b34">(Lu et al. 2025)</ref>. Our approach employs Web Searching, Counterfactual Detection, and Entity Recognition, while Octo-Tools additionally incorporates Image Understanding. Experimental results show that our method achieves an F1 score of 0.568, outperforming Octo-Tools (F1 = 0.550). This suggests that although Image Understanding can be beneficial when used in isolation, its integration into a multi-tool framework may lead to performance degradation. One possible explanation is that Image Understanding can partially substitute for other tools-such as Entity Recognition-but with lower accuracy. This redundancy and reduced precision may interfere with the verification process, ultimately harming performance. The results shows that our strategy enables a more accurate assessment of tool selection.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Experiment Details</head><p>In our implementation, we set the number of sampled nodes to n = 2 and the exploration weight to C = 2. Additionally, the hyperparameter α = 0.5 is used to balance the reasoning trajectory score and the result confidence score in the evaluation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Algorithm 1: Multi-source Verification MCTS</head><p>Require: Initial state s, LVLM model pLV LM , number of generated actions n, depth limit d, number of simulations K, exploration weight C, hyperparameter α Initialize the tree with sub-task nodes.</p><formula xml:id="formula_6">▷ Initialization for k ← 1, . . . , K do ▷ Simulation Loop s ← root node Select nodes ← arg max s ′ ∈children(s) V (s ′ ) + C ln(N (s)+1) N (s ′ )+1</formula><p>▷ Selection while s not terminal and depth &lt; d do ▷ Expansion and simulation if s has unvisited children then Expand s by generating n new child nodes using pLV LM end if Select next node s ′ ∈ children(s) using modified UCT: end while Combine scores:</p><formula xml:id="formula_7">V (s) = αS T t + (1 -α)S C t ▷ Evaluation for t ← T -1, . . . , 0 do ▷ Backpropagation V (st) ← V (s t )(N (s t ))+V (s) N (s t )+1</formula><p>end for end for if Early stop with an answer then ▷ Decision making return answer else p(real</p><formula xml:id="formula_8">) = n i=1 1 -p fake i (1/n) answer = arg max p(real), p(f ake i ) n i=1 end if Algorithm 2: Tool selection Input: Toolbox D = {di} n i=1 , base toolset Dbase Output: Optimized toolset D * Accbaseline ← Acc(Dbase) ▷ Stage 1: Baseline setup for each di in D such that di / ∈ Dbase do ▷ Stage 2: Individual tool evaluation Di ← Dbase ∪ {di} Acci ← Acc(Di) ∆ d i ← Acci -Accbaseline if ∆ d i &gt; 0 then Dbase ← Di end if end for D * ← Dbase ▷ Stage 3: Select optimized toolset Return D *</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>More Results</head><p>We present the results on the AMG benchmark in Table <ref type="table" target="#tab_4">5</ref>. It is important to note that the AMG dataset is initially designed for supervised learning. All compared methods, including CAFE <ref type="bibr" target="#b63">(Chen et al. 2022)</ref>, MCAN <ref type="bibr" target="#b65">(Wu et al. 2021), and</ref><ref type="bibr">MGCA (Guo et al. 2025)</ref>, are trained or finetuned on the provided training set. In contrast, our proposed T 2 Agent is based on tool-augmented tree search with large language models, requiring no training or fine-tuning. Specifically, T 2 Agent with GPT-4o obtains an F1 score of 0.510, surpassing CAFE <ref type="bibr" target="#b63">(Chen et al. 2022)</ref> and MCAN <ref type="bibr" target="#b65">(Wu et al. 2021)</ref>. Notably, the test set of AMG has a highly imbalanced class distribution. Under such conditions, the F1 score is a particularly meaningful metric, and our method's competitive performance on the F1 score suggests its power without any task-specific training. Despite underperforming compared to <ref type="bibr">MGCA (Guo et al. 2025)</ref>, which achieves the highest F1 score of 0.567, our method demonstrates superiority in the following aspects: (1) Rapid adaptation and low-cost deployment: Although training-based methods can achieve strong performance, they <ref type="bibr" target="#b63">(Chen et al. 2022;</ref><ref type="bibr" target="#b65">Wu et al. 2021;</ref><ref type="bibr">Guo et al. 2025</ref>) typically require designing different model architectures for different scenarios and often suffer from poor out-of-domain generalization. In contrast, our T 2 Agent is training-free and can handle emerging misinformation without any additional training, making it particularly valuable in the early stages of information outbreaks.</p><p>(2) Data privacy and regulatory compliance: In domains with strict privacy and compliance requirements-such as healthcare or finance-fine-tuning on task-specific training data may be infeasible or even prohibited. Our method circumvents this issue by avoiding task-specific training altogether.</p><p>(3) Benefit from powerful LLMs: As shown in the results, as the model size increases (from GPT-4.1-nano to GPT-4o), the performance of T 2 Agent consistently improves, rising from 0.503 to 0.579. This indicates that the performance may be further improved with a more powerful model.</p><p>We also evaluate the MMD-agent with different verifi- cation order settings to make a fair comparison. Experiments are conducted on the MMFakeBench dataset with GPT-4o as the Large Vision-Language Model (LVLM). We set three different verification order settings of the MMD-Agent: Match-Text-Image, Image-Match-Text, and Text-Image-Match (the default setting). As shown in Table <ref type="table" target="#tab_5">6</ref>, the performance of the MMD-Agent varies considerably across these settings, revealing a strong dependence on the order in which forgery sources are processed. In contrast, our method dynamically explores multiple, interleaved forgery sources without being constrained or biased by any predefined processing order. As a result, our approach achieves consistently superior performance across all metrics, demonstrating its robustness and effectiveness. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>More Analysis</head><p>Initialization analysis During the initialization phase, we use a LVLM to assess and score different nodes. These scores determine the priority order for exploring sub-nodes, i.e., nodes with higher scores will be selected and explored first. To investigate the impact of different initialization strategies, we compare our LVLM-based initialization method against a random initialization approach. As shown in Table <ref type="table" target="#tab_6">7</ref>, the overall performance metrics-including F1 score and accuracy are very similar between the two methods. For example, both achieve nearly identical F1 scores (0.560 vs. 0.568), and the differences in accuracy (0.560 vs. 0.569) are minimal. These results suggest that the choice of initialization strategy has little effect on final performance, indicating that our method is robust and capable of fully exploring all possible forgery sources regardless of which node is explored first. However, a key advantage of our LVLM-based initialization is its ability to begin exploration from more promising forgery sources. Consequently, our approach requires fewer average iterations (2.28) to reach a conclusion compared to random initialization (2.40). This reduction in the number of exploration steps demonstrates that starting from a promising node enhances efficiency.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Case Study</head><p>Good case The good case demonstrates that our method avoids early termination and generates a correct answer only after gathering reliable evidence. At the 0-th iteration, the system correctly predicts "mismatch" but, due to low confidence, continues to verify. In the 1st iteration, it explores alternative forgery sources, and in the 2nd iteration, it further confirms the "mismatch" hypothesis. Once sufficient evidence is collected, the system returns the final result.</p><p>Bad case Despite employing MCTS and an extensible toolset to achieve more effective exploration and exploitation, our method can still be limited by the capabilities of individual tools. In this bad case, the model incorrectly deemed mismatch cross-modal information as consistent, resulting in a wrong final judgment. Similar issues may arise from weaknesses in forgery detection, counterfactual reasoning, web searching, etc. Future work may alleviate this problem by using more powerful tools.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Prompts</head><p>We present the prompts used in our method, including: the reasoning trajectory score prompt and the result confidence score prompt used during evaluation; the initialization prompt, which is employed to score nodes during the initialization of the search process; and the task prompt, guiding the reasoning process throughout tree expansion. We take MMfakebench as an example. The scene appears to be a public gathering possibly a rally or speech but without identifying features linking it to the event described in the text. 6 Action 2: Finish[MISMATCH] 7 reward = 0.2 8 =======================Iter 1: select node &lt;text&gt;====================== 9 Thought 1: The news mentions Romney announcing Ryan as his running mate on August 11, 2012 in Norfolk, Virginia, in front of the USS. To verify this, I should check credible information regarding Romney's 2012 vice-presidential pick and the specific event location and date. 10 Action 1: Google[Romney Ryan 2012 Norfolk USS Wisconsin] 11 Observation 1: Retrieved Information 1: Romney Announces Ryan as VP Running Mate Aug 11 2012 ... ... WI as his vice-presidential running mate during a campaign event at the retired battleship USS Wisconsin in Norfolk Virginia August 11 2012. 12 Retrieved Information 2: Mitt Romney campaigns with Paul Ryan Aug 13 2012 ... 13 Retrieved Information 3: ... 14 Thought 3: The event in Norfolk, Virginia, where Romney announced Ryan as his running mate, is a specific campaign event, and the fact that it took place on August 11, 2012, is supported by multiple news sources. The 2012 Republican National Convention in Tampa, Florida, occurred later in August. These details align with the known timeline of events leading up to the convention. Therefore, the news caption appears to be accurate regarding the date, location. 15 Action 3: Finish[TEXT SUPPORT] 16 reward = 0.8 17 =======================Iter 2: select node &lt;match&gt;===================== 18 Thought 1: I need to determine what the image depicts to see if it aligns with the news caption about Romney announcing Ryan as his running mate in front of the USS Wisconsin. 19 Action 1: VQA[What is shown in the image?] 20 Observation 1: The image shows a person standing on a stage or platform, addressing</p><p>or speaking to a large crowd of people gathered in front of them. The stage is outdoors, with a blue sky and some clouds visible in the background. The crowd appears to be listening attentively, and there are some microphones and audio equipment set up on the stage. 21 Thought 2: I need to verify whether the background or setting includes the USS Wisconsin or a similar naval vessel to confirm if the location matches the description in the caption. 22 Action 2: VQA[Are there any naval ships, specifically the USS Wisconsin, visible in the background or nearby in the image?] 23 Observation 2: No, there are no naval ships, including the USS Wisconsin, visible in the background or nearby in the image. The background shows a clear sky and some distant objects that do not appear to be ships. 24 Thought 3: The image does not show the USS Wisconsin or any naval vessel, and there is no evidence to suggest the setting matches the location described in the caption. Therefore, the image content does not support the news text.  4 Observation 1: The image shows a person holding a large trophy, dressed in sports attire, with a crowd and other athletes in the background, suggesting a tennis victory celebration. Given the context, it is likely a tennis-related event. The person in the image appears to be male with curly hair and is smiling, indicating a positive outcome related to a sporting achievement. 5 Thought 2: The actions of the characters need to be further confirmed. 6 Action 2: VQA[Is the person in the image a tennis player celebrating a victory?] 7 Observation 2: The person is celebrating a victory, likely after a tennis match. 8 Thought 3: Based on the context of celebrating with a trophy and sports attire, this image aligns with a tennis victory, supporting the news claim.</p><p>9 Action 3: Finish[MATCH] 10 11 reward=0.6 12 =======================Iter 1: select node &lt;text&gt;===================== 13 Thought 1: I need to verify the recent performance and match results of Andy Murray and YenHsun Lu to determine the accuracy of this statement. Andy Murray is a well-known professional tennis player, and the match details are specific, so I will verify if Murray played and won against YenHsun Lu in a recent match. 14 Action 1: Google[Andy Murray vs YenHsun Lu match result] 15 Observation 1: Retrieved Information 1: Andy Murray wins men's singles Olympics tennis gold, Aug 5, 2012 ... Having suffered a shock first-round defeat by 77thranked Yen-Hsun Lu ... After saving two break points in the opening game of the match, he... 16 Retrieved Information 2:... 17 Thought 2: The search results indicate that Andy Murray has played against YenHsun Lu and won a match in straight sets. Multiple sources mention Murray's victory over Lu, including references to a match where Murray "crushes" Lu and descriptions of him winning easily. There is no evidence contradicting that Murray won the match comfortably in straight sets. 18 Action 2: Finish[TEXT SUPPORT] 19 20 reward=0.8 21 =======================Iter 2: select node &lt;image&gt;===================== 22 Thought 1: Detect["image.jpg"] 23 Action 1: Detect["image.jpg"] 24 Observation 1: The news image conforms to the objective facts because the image shows a person holding a trophy, presumably celebrating a victory or achievement . The person is smiling and appears to be in a celebratory mood. There are other individuals in the background, some of whom are also smiling and appear to be part of the celebration. 25 Thought 2: According to the observation, the news image conforms to the objective facts. 26 Action 2: Finish[IMAGE SUPPORT] 27 28 reward=0.8 29 =======================Final decision=============================== 30 Finish[ORIGINAL]</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reasoning Trajectory Score Prompt</head><p>Task: Analyze Misinformation Detection Trajectories. The trajectories are labeled by environmental observations about the situation, thoughts that can reason about the current situation, and actions. Given a news item and a trajectory, evaluate its correctness and provide your reasoning and analysis in detail. Focus on the latest thought, action, and observation.</p><p>(1) Incomplete trajectories can be correct if the thoughts and actions so far are correct, even if the answer is not found yet. (2) Do not generate additional thoughts or actions beyond those provided.</p><p>(3) At the last line of your analysis, conclude with "Thus the correctness score is s", where s is an integer from 1 to 10.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Result Confidence Score Prompt</head><p>Task: Given a news, thoughts, observations, and a generated answer. If the answer can be drawn by thoughts or observation, then the result is relatively reliable; otherwise, it is unreliable. Give a brief analysis of the reliability of the answer. Then, at the last line conclude "Thus the reliability score is s", where s is an integer from 1 to 10.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Initialization Prompt</head><p>Task: Given a news text and a news image, your task is to infer the probability that the news belongs to the following three different types of forgery based on your experience:</p><p>(1) Textual Veracity Distortion: If the news text contains rich information, the news is more likely to be text veracity distortion. (2) Visual Veracity Distortion: If the content in the news image contains counterfactual scenarios (e.g. violates the physical laws), the news is more likely to be visual veracity distortion. (3) Cross-modal Consistency Distortion: If the content in the news image is irrelevant to the image or does not support the text, the news is more likely to be cross-modal consistency distortion.</p><p>Please avoid redundant analysis and directly return the judgment result in the following form: "Thus, the possibility of Textual Veracity Distortion, Visual Veracity Distortion, Cross-modal Consistency Distortion are [p 1 , p 2 , p 3 ]", where p 1 , p 2 , p 3 are floats from 0 to 1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Task Prompt</head><p>Task 1: Textual Veracity Detection Solve a textual veracity detecting task with interleaving Thought, Action, and Observation steps. You need to verify the knowledge-based information therein, such as public figures, political events, and scientific common sense.</p><p>• Thought: Can reason about the current situation.</p><p>• Actions:</p><p>(</p><p>Wikipedia[entity]: Searches the exact entity on Wikipedia and returns the first paragraph if it exists. If not, it will return some similar entities to search. (2) Google[entity]: Searches information on Google and returns the snippet if it exists. Please give priority to Wikipedia; Google should be considered when Wikipedia fails. (3) Finish[answer]: Return the answer and finishes the task.</p><p>If there is any credible objective evidence refuting the news caption, please answer in the form: Finish[TEXT REFUTE]. If no such evidence is found, please answer in the form: Finish[TEXT SUPPORT]. Task 2: Image Veracity Detection Solve an image veracity detecting task (determine whether the content in the news image contains counterfactual scenarios, e.g., violates physical laws) with interleaving Thought, Action, and Observation steps.</p><p>• Thought: Can reason about the current situation.</p><p>• Actions:</p><p>(1) Detect[image]: Return the forgery situation detected by a forgery detection model.</p><p>(2) Finish <ref type="bibr">[answer]</ref>: Return the answer and finishes the task.</p><p>If there is any credible objective fact refuting the news image, please answer in the form: Finish[IMAGE REFUTE]. If no such fact is found, please answer in the form: Finish[IMAGE SUPPORT]. Task 3: Cross-modal Matching Detection Solve a cross-modal matching detection task (determine whether the content in the news image supports the text or not) with interleaving Thought, Action, and Observation steps. Please make a direct judgment based on the image content and the text content.</p><p>• Thought: Can reason about the current situation.</p><p>• Actions:</p><p>(1) VQA[question]: Return the description of the image information concerned in the question.</p><p>(2) Entity[image]: Return the entity of the image, including the identity of public figures.</p><p>(3) Finish <ref type="bibr">[answer]</ref>: Return the answer and finishes the task.</p><p>If the news caption matches the content of the news image, please answer in the form: Finish[MATCH]. If no match is found, please answer in the form: Finish[MISMATCH].</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>[</head><figDesc>Text Refute]</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: (1) MMDAgent adopts a fixed verification process. (2) Our T 2 Agent builds a multi-source verification framework inspired by MCTS, enabling dynamic verification through adaptive tool selection and evidence integration.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Overview of T 2 Agent. The toolkit acts as the action space, with a greedy search selecting relevant tools. T 2 Agent extends MCTS via multi-source verification, breaking tasks into subtasks targeting different forgery sources. At each node of the tree search process, the agent plans verification paths, selects tools based on task requirements, and evaluates outcomes using a dual reward function that balances exploration across forgery sources with evidence exploitation.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><figDesc>1 https://ai.baidu.com/tech/imagerecognition/general</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>Good case: Output a correct answer after obtaining reliable evidence News Text: Romney announces Ryan as his running mate in front of the USS Wisconsin on Aug 11, 2012, in Norfolk, Va. Binary label: Fake Multiple label: Mismatch 1 =======================Iter 0: select node &lt;match&gt;===================== 2 Thought 1: I need to determine what the image depicts, focusing on whether it shows the USS Wisconsin a political event with Romney and Ryan. 3 Action 1: VQA[What is shown in the image?] 4 Observation 1: The image shows a person standing on a stage or platform facing a large crowd of people. The crowd appears to be attending a gathering or event outdoors with some individuals taking photos or recording. The sky above is partly cloudy with patches of blue. The stage is elevated with steps leading up to it and there are two microphones or speakers positioned on either side of the person on stage. 5 Thought 2: Given the description the image depicts a person on stage at an outdoor event with a crowd, but there is no clear indication of the USS Wisconsin or specific political figures like Romney or Ryan.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><figDesc>25 Action 3: Finish[MISMATCH] 26 reward = 0.8 27 =======================Final decision=============================== 28 Finish[MISMATCH]    </figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><figDesc>Bad case: Over-reasoning leads to incorrect text-image association News Text: Andy Murray returns the ball to YenHsun Lu he won comfortably also in straight sets. Binary label: Fake Multiple label: Mismatch 1 =======================Iter 0: select node &lt;match&gt;===================== 2 Thought 1: I need to determine what the image depicts to see if it aligns with the caption. 3 Action 1: VQA[What is shown in the image?]</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Comparison results on MMfakebench.</figDesc><table><row><cell></cell><cell>Experiments</cell><cell></cell><cell></cell></row><row><cell>Approach</cell><cell>Backbone</cell><cell cols="2">F1 ↑ Accuracy ↑</cell></row><row><cell cols="2">Standard Prompt BLIP-2</cell><cell>0.167</cell><cell>0.328</cell></row><row><cell></cell><cell>LLaVA-1.6</cell><cell>0.257</cell><cell>0.404</cell></row><row><cell></cell><cell>GPT-4o</cell><cell>0.492</cell><cell>0.609</cell></row><row><cell>MMD-agent</cell><cell cols="2">GPT-4.1-nano 0.398</cell><cell>0.424</cell></row><row><cell></cell><cell>GPT-4o-mini</cell><cell>0.478</cell><cell>0.485</cell></row><row><cell></cell><cell>GPT-4o</cell><cell>0.614</cell><cell>0.616</cell></row><row><cell>LRQ-FACT</cell><cell>GPT-4o</cell><cell>0.716</cell><cell>0.708</cell></row><row><cell>Ours</cell><cell cols="2">GPT-4.1-nano 0.568</cell><cell>0.569</cell></row><row><cell></cell><cell>GPT-4o-mini</cell><cell>0.631</cell><cell>0.629</cell></row><row><cell></cell><cell>GPT-4o</cell><cell>0.759</cell><cell>0.753</cell></row><row><cell cols="2">Experiment Setting</cell><cell></cell><cell></cell></row><row><cell cols="4">We sample 1,000 validation instances, balanced as 300</cell></row><row><cell cols="4">Real, 300 TVD, 100 VVD, and 300 CMM. AMG (Guo</cell></row><row><cell cols="4">et al. 2025) classifies news into five forgery categories: "Im-</cell></row><row><cell cols="4">age Fabrication", "Non-evidential Image", "Entity Inconsis-</cell></row><row><cell cols="4">tency", "Event Inconsistency", and "Time Inconsistency".</cell></row><row><cell cols="4">The dataset contains 4,922 samples in total, divided into</cell></row><row><cell cols="4">3,532 for training, 517 for validation, and 973 for testing.</cell></row><row><cell cols="4">The test set includes 575 Real samples, 74 Image Fabrica-</cell></row><row><cell cols="4">tion, 69 Non-evidential Image, 29 Entity Inconsistency, 136</cell></row><row><cell cols="3">Event Inconsistency, and 90 Time Inconsistency.</cell><cell></cell></row></table><note><p>Datasets. We evaluate T 2 Agent on two challenging misinformation detection benchmark: MMFakeBench(Liu et al.  2024c) and AMG (Guo et al. 2025)</p><p>. Both of them contain mixed-source misinformation and categorize news into multiple forgery classes. MMFakeBench(Liu et al. 2024c</p><p>) contains 11,000 image-text pairs, covering "Real", "Textual Veracity Distortion (TVD)", "Visual Veracity Distortion (VVD)", and "Cross-modal Consistency Distortion (CCD)", with both human-and machine-generated images.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Comparison with MMD-agent on AMG (grouped by backbone for easy comparison).</figDesc><table><row><cell>Backbone</cell><cell>Approach</cell><cell cols="2">F1 ↑ Accuracy ↑</cell></row><row><cell cols="3">GPT-4.1-nano MMD-agent 0.290</cell><cell>0.192</cell></row><row><cell></cell><cell>Ours</cell><cell>0.402</cell><cell>0.503</cell></row><row><cell>GPT-4o-mini</cell><cell cols="2">MMD-agent 0.360</cell><cell>0.227</cell></row><row><cell></cell><cell>Ours</cell><cell>0.499</cell><cell>0.538</cell></row><row><cell>GPT-4o</cell><cell cols="2">MMD-agent 0.365</cell><cell>0.306</cell></row><row><cell></cell><cell>Ours</cell><cell>0.510</cell><cell>0.579</cell></row><row><cell>AMG.</cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Ablation Study on MMfakebench.</figDesc><table><row><cell>Method</cell><cell cols="2">F1 ↑ Accuracy ↑</cell></row><row><cell>MMD-agent (baseline)</cell><cell>0.398</cell><cell>0.424</cell></row><row><cell>TOOLs</cell><cell>0.413</cell><cell>0.459</cell></row><row><cell>MV MCTS</cell><cell>0.535</cell><cell>0.534</cell></row><row><cell cols="2">MV MCTS+TOOLs (Ours) 0.568</cell><cell>0.569</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 :</head><label>4</label><figDesc>Cost comparison (USD) between MMD-agent and our T 2 Agent on MMfakebench.</figDesc><table><row><cell>Model</cell><cell cols="2">MMD-agent Ours</cell></row><row><cell>GPT-4o</cell><cell>344.4</cell><cell>1637.1</cell></row><row><cell>GPT-4o-mini</cell><cell>14.3</cell><cell>129.4</cell></row><row><cell>GPT-4.1-nano</cell><cell>9.5</cell><cell>76.2</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 5 :</head><label>5</label><figDesc>Comparision results on AMG.</figDesc><table><row><cell></cell><cell></cell><cell cols="2">Training based</cell><cell></cell><cell>Training free</cell><cell></cell></row><row><cell></cell><cell cols="3">CAFE MCAN MGCA</cell><cell cols="3">Ours GPT-4.1-nano GPT-4o-mini GPT-4o</cell></row><row><cell>F1 ↑</cell><cell>0.467</cell><cell>0.461</cell><cell>0.567</cell><cell>0.402</cell><cell>0.499</cell><cell>0.510</cell></row><row><cell cols="2">Accuracy ↑ 0.638</cell><cell>0.612</cell><cell>0.739</cell><cell>0.503</cell><cell>0.538</cell><cell>0.579</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 6 :</head><label>6</label><figDesc>Comparison with different settings of MMD-agent on MMfakebench.</figDesc><table><row><cell></cell><cell cols="3">MMD-agent Match-Text-Image Image-Match-Text Text-Image-Match (default)</cell><cell>Ours</cell></row><row><cell>F1 ↑</cell><cell>0.448</cell><cell>0.480</cell><cell>0.614</cell><cell>0.759</cell></row><row><cell>Accuracy ↑</cell><cell>0.497</cell><cell>0.503</cell><cell>0.616</cell><cell>0.753</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 7 :</head><label>7</label><figDesc>Comparison of different initialization methods (Experiment with GPT-4.1-nano).</figDesc><table><row><cell cols="4">Method F1 ↑ Accuracy ↑ Iterations ↓</cell></row><row><cell cols="2">Random 0.560</cell><cell>0.560</cell><cell>2.40</cell></row><row><cell>Ours</cell><cell>0.568</cell><cell>0.569</cell><cell>2.28</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_0"><p>https://developers.google.com/custom-search/v1/overview</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_1"><p>https://www.wikipedia.org/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_2"><p>https://tineye.com/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_3"><p>https://ai.baidu.com/tech/imagerecognition/general</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><p>Acknowledgement This research is sponsored by <rs type="funder">National Natural Science Foundation of China</rs> (Grant No. <rs type="grantNumber">62306041</rs>).</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_khJv64e">
+					<idno type="grant-number">62306041</idno>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Appendix</head><p>This appendix contains additional details for the submission entitled "T 2 Agent: A Tool-augmented Multimodal Misinformation Detection Agent with Monte Carlo Tree Search". The appendix is organized as follows:</p><p>• § Toolset Details.</p><p>• § T 2 Agent Pseudocode.</p><p>• § Experiment Details.</p><p>• § More Results.</p><p>• § More Analysis.</p><p>• § Case Study.</p><p>• § Prompts.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Toolset Details</head><p>To effectively address complex verification tasks that require multi-modal misinformation detection, we design an extensible toolset for T 2 Agent. We provide a detailed description of each tool in the toolset in this section.</p><p>Web Searching This toolset is used to gather reliable knowledge from the web for information verification. We integrate the Google Search API 2 and Wikipedia API 3 , which are particularly effective in retrieving general web content and encyclopedic knowledge, respectively.</p><p>Time Detection This module is responsible for identifying the earliest appearance time of an image. To achieve this, we utilize TinEye 4 , a reverse image search engine, to trace the earliest online publication date of a given visual content.</p><p>Forgery Detection This toolset includes pre-trained forgery detection models designed to detect digital manipulations. The system supports the integration of new forgery detection models to meet the user's needs. For the AMG (Guo et al. 2025) benchmark, we employ PSCC-NET <ref type="bibr" target="#b64">(Liu et al. 2022)</ref>, a powerful manipulation detection network, to identify subtle image tampering.</p><p>Counterfactual Detection Unlike forgery detection, which focuses on identifying whether media has been digitally altered or synthesized (e.g., deepfakes), this module detects inconsistencies between the depicted scene and real-world facts, i.e., counterfactual content. We use LLava-34B <ref type="bibr">(Liu et al. 2024a</ref>), a powerful vision-language model, to analyze images for logically or physically implausible elements.</p><p>Image Understanding This component provides a detailed, question-driven interpretation of visual content. In our implementation, the image understanding model is aligned with the backbone model of the overall framework.</p><p>Entity Recognition This tool enables precise identification of key entities within visual content, such as people, landmarks, and organizations. We use the Baidu Entity Recognition API 5 , which specializes in extracting entities from images.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Social media and fake news in the 2016 election</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Allcott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Gentzkow</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">JEP</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Cosmos: Catching out-of-context misinformation with selfsupervised learning</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Aneja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Bregler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Nießner</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Thinking fast and slow with deep learning and tree search</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Anthony</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Barber</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Antoniades</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Örwall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.20285</idno>
+		<title level="m">SWE-Search: Enhancing Software Agents with Monte Carlo Tree Search and Iterative Refinement</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Fake news and COVID-19: modelling the predictors of fake news sharing among social media users</title>
+		<author>
+			<persName><forename type="first">O</forename><forename type="middle">D</forename><surname>Apuke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Omar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">TELEMAT INFORM</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Lrq-fact: Llm-generated relevant questions for multimodal fact-checking</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Beigi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kumarage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Shaeri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">COLING</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Beigi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Shaeri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kumarage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bhattacharjee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.04616</idno>
+		<title level="m">Can LLMs Improve Multimodal Fact-Checking by Asking Relevant Questions? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">DEFAME: Dynamic Evidence-based FAct-checking with Multimodal Experts</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Braun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rothermel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rohrbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Rohrbach</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Nested Monte-Carlo search</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Cazenave</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IJCAI</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Can llm-generated misinformation be detected</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Shu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note>In ICLR</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">AlphaMath Almost Zero: Process Supervision without Process</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Liao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Fan</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note>In NeurIPS</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Complex Claim Verification with Evidence Retrieved in the Wild</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sriram</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Durrett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Factllama: Optimizing instruction-following language models with external knowledge for automated fact-checking</title>
+		<author>
+			<persName><forename type="first">T.-H</forename><surname>Cheung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K.-M</forename><surname>Lam</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>In APSIPA ASC</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Efficient selectivity and backup operators in Monte-Carlo tree search</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Coulom</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+	<note>In ICCG</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">2024a. Localize, understand, collaborate: Semantic-aware dragging via intention reasoner</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>He</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note>In NeurIPS</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Instastyle: Inversion noise of a stylized image is secretly a style adviser</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>He</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECCV</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">U</forename><surname>Dey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">J</forename><surname>Awan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Channing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">S</forename><surname>De Witt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Collomosse</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.10166</idno>
+		<title level="m">Fact-checking with contextual narratives: Leveraging retrieval-augmented llms for social media analysis</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Diffusion models beat gans on image synthesis</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Nichol</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note>In NeurIPS</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Each Fake News is Fake in its Own Way: An Attribution Multi-Granularity Benchmark for Multimodal Fake News Detection</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Eiffert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Kong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Pirmarzdashti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sukkarieh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Icra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI</title>
+		<imprint>
+			<date type="published" when="2020">2020. 2025</date>
+		</imprint>
+	</monogr>
+	<note>Path planning in dynamic environments using generative rnns and monte carlo tree search</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">A richly annotated corpus for different tasks in automated fact-checking</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hanselowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Stab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Schulz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Gurevych</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CoNLL</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Reasoning with Language Model is Planning with World Model</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Hu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Learn over Past, Evolve for Future: Forecasting Temporal Trends for Fake News Detection</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">MAFT: Multimodal Automated Fact-Checking via Textualization</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Kakizaki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Matsunaga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Furukawa</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">RAGAR, Your Falsehood Radar: RAG-Augmented Reasoning for Political Fact-Checking using Multimodal Large Language Models</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A</forename><surname>Khaliq</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">Y</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">-C</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Pflugfelder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Miletić</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Szepesvári</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECML</title>
+		<imprint>
+			<date type="published" when="2006">2024. 2006</date>
+		</imprint>
+	</monogr>
+	<note>Bandit based montecarlo planning</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">Y</forename><surname>Koh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mcaleer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.01476</idno>
+		<title level="m">Tree search for language model agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lakara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Channing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sock</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Rupprecht</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Torr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Collomosse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">S</forename><surname>Witt</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.20140</idno>
+		<title level="m">LLM-Consensus: Multi-Agent Debate for Visual Misinformation Detection</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">MAD-Sherlock: Multi-Agent Debates for Out-of-Context Misinformation Detection</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lakara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sock</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Rupprecht</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Torr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Collomosse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">S</forename><surname>Witt</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.20140</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Blip-2: Bootstrapping language-image pre-training with frozen image encoders and large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hoi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><forename type="first">X</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">C</forename><surname>Malthouse</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.01593</idno>
+		<title level="m">Large language model agent for fake news detection</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">H</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S.-K</forename><surname>Ng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T.-S</forename><surname>Chua</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.17924</idno>
+		<title level="m">FACT-AUDIT: An Adaptive Multi-Agent Framework for Dynamic Fact-Checking Evaluation of Large Language Models</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">J</forename><surname>Lee</surname></persName>
+		</author>
+		<ptr target="https://llava-vl.github.io/blog/2024-01-30-llava-next" />
+		<title level="m">Llava-next: Improved reasoning, ocr, and world knowledge</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">2024b. Fka-owl: Advancing multimodal fake news detection through knowledge-augmented lvlms</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>He</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACM MM</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Mmfakebench: A mixedsource multimodal misinformation detection benchmark for lvlms</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>He</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Bidev: Bilateral defusing verification for complex claim fact-checking</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Yan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">OctoTools: An Agentic Framework with Extensible Tools for Complex Reasoning</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Thapa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Boen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zou</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note>In ICLRW</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Newsclippings: Automatic generation of out-of-context multimodal media</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Darrell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Rohrbach</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Mumin: A largescale multilingual multimodal fact-checked misinformation social network dataset</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">S</forename><surname>Nielsen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Mcconville</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SIGIR</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">The combinatorial multi-armed bandit problem and its application to real-time strategy games</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ontanón</surname></persName>
+		</author>
+		<ptr target="https://openai.com/blog/chatgpt" />
+	</analytic>
+	<monogr>
+		<title level="m">AAAI. OpenAI. 2022. Chatgpt</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Training language models to follow instructions with human feedback</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ray</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note>In NeurIPS</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Red-dot: Multimodal fact-checking via relevant evidence detection</title>
+		<author>
+			<persName><forename type="first">S.-I</forename><surname>Papadopoulos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Koutlis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Papadopoulos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">C</forename><surname>Petrantonakis</surname></persName>
+		</author>
+		<idno>IEEE TCSS</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Sniffer: Multimodal large language model for explainable out-of-context misinformation detection</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">L</forename><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">High-resolution image synthesis with latent diffusion models</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rombach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Blattmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lorenz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Esser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ommer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Detecting and grounding multi-modal media manipulation</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">Fakenewsnet: A data repository with news content, social context, and spatiotemporal information for studying fake news on social media</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Mahudeswaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note>Big Data</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Mastering the game of Go with deep neural networks and tree search</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">J</forename><surname>Maddison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Guez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Sifre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Van Den Driessche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Panneershelvam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lanctot</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note>Nature</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">D</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Simonyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Guez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Hubert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bolton</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note>et al. 2017. Mastering the game of go without human knowledge. nature</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<title level="m" type="main">Factify 2: A multimodal fake news and satire news dataset</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Suryavardan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Patwa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chakraborty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Rani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">N</forename><surname>Reganti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chadha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Das</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">P</forename><surname>Sheth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chinnakotla</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>In AAAIW</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Multimodal misinformation detection using large visionlanguage models</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Tahmasebi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Müller-Budack</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ewerth</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CIKM</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">FEVER: a large-scale dataset for fact extraction and VERification</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Thorne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Vlachos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Christodoulopoulos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mittal</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NAACL</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<author>
+			<persName><forename type="first">H</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Izacard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Martinet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-A</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lacroix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Azhar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.13971</idno>
+		<title level="m">Llama: Open and efficient foundation language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ma</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.11288</idno>
+		<title level="m">Mfc-bench: Benchmarking multimodal factchecking with large vision-language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<analytic>
+		<title level="a" type="main">Liar, Liar Pants on Fire&quot;: A New Benchmark Dataset for Fake News Detection</title>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">Y</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">PromptAgent: Strategic Planning with Language Models Enables Expert-level Prompt Optimization</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Jojic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Xing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Hu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<title level="m" type="main">Monte Carlo Tree Search Boosts Reasoning via Iterative Preference Learning</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-Y</forename><surname>Kan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">P</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Kawaguchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Shieh</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note>In NeurIPSW</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Take it easy: Label-adaptive self-rationalization for fact verification and explanation generation</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Rocha</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">WIFS</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<analytic>
+		<title level="a" type="main">DoraemonGPT: Toward Understanding Dynamic Scenes with Large Language Models (Exemplified as A Video Agent)</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<analytic>
+		<title level="a" type="main">2023a. End-to-end multimodal fact-checking and explanation generation: A challenging dataset and models</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">M</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Shah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-H</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SI-GIR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>Tree of thoughts: Deliberate problem solving with large language models In NeurIPS</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<analytic>
+		<title level="a" type="main">Prompt-Based Monte-Carlo Tree Search for Goal-oriented Dialogue Policy Planning</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<monogr>
+		<title level="m" type="main">Improving Autonomous AI Agents with Reflective Tree Search and Self-Learning</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Vajipey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Galley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note>In ICLR</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zannettou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sirivianos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Blackburn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Kourtellis</surname></persName>
+		</author>
+		<title level="m">The web of false information: Rumors, fake news, hoaxes, clickbait, and various other shenanigans</title>
+		<imprint>
+			<publisher>JDIQ</publisher>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<analytic>
+		<title level="a" type="main">Multimodal Misinformation Detection by Learning from Synthetic Data with Multimodal LLMs</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Pang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<monogr>
+		<title level="m" type="main">Accessing gpt-4 level mathematical olympiad solutions via monte carlo tree self-refine with llama-3 8b</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Ouyang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.07394</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<analytic>
+		<title level="a" type="main">Language agent tree search unifies reasoning, acting, and planning in language models</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Shlapentokh-Rothman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y.-X</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<monogr>
+		<title level="m" type="main">Cross-modal ambiguity learning for mul-timodal fake news detection</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Tun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Shang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<publisher>WWW</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<analytic>
+		<title level="a" type="main">PSCC-Net: Progressive spatio-channel correlation network for image manipulation detection and localization</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE TCSVT</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<analytic>
+		<title level="a" type="main">Multimodal fusion with co-attention networks for fake news detection</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Zhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Xu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL-IJCNLP</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

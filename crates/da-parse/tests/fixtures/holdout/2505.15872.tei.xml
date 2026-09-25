@@ -1,0 +1,2183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">InfoDeepSeek: Benchmarking Agentic Information Seeking for Retrieval-Augmented Generation</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-05-23">23 May 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Yunjia</forename><surname>Xi</surname></persName>
+							<email>xiyunjia@sjtu.edu.cn</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jianghao</forename><surname>Lin</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Menghui</forename><surname>Zhu</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Huawei Noah&apos;s Ark Lab</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yongzhao</forename><surname>Xiao</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhuoying</forename><surname>Ou</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jiaqi</forename><surname>Liu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Tong</forename><surname>Wan</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Bo</forename><surname>Chen</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Huawei Noah&apos;s Ark Lab</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Weiwen</forename><surname>Liu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yasheng</forename><surname>Wang</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Huawei Noah&apos;s Ark Lab</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ruiming</forename><surname>Tang</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Huawei Noah&apos;s Ark Lab</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Weinan</forename><surname>Zhang</surname></persName>
+							<email>wnzhang@sjtu.edu.cn</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yong</forename><surname>Yu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">InfoDeepSeek: Benchmarking Agentic Information Seeking for Retrieval-Augmented Generation</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-05-23">23 May 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">E6B9DB631DB24F3202FC1EC228076B1A</idno>
+					<idno type="arXiv">arXiv:2505.15872v2[cs.IR]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:05+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Retrieval-Augmented Generation (RAG) enhances large language models (LLMs) by grounding responses with retrieved information. As an emerging paradigm, Agentic RAG further enhances this process by introducing autonomous LLM agents into the information seeking process. However, existing benchmarks fall short in evaluating such systems, as they are confined to a static retrieval environment with a fixed, limited corpus and simple queries that fail to elicit agentic behavior. Moreover, their evaluation protocols assess information seeking effectiveness by pre-defined gold sets of documents, making them unsuitable for the open-ended and dynamic nature of real-world web environments. To bridge this gap, we present InfoDeepSeek, a new benchmark with challenging questions designed for assessing agentic information seeking in real-world, dynamic web environments. We propose a systematic methodology for constructing challenging queries satisfying the criteria of determinacy, difficulty, and diversity. Based on this, we develop the first evaluation framework tailored to dynamic agentic information seeking, including fine-grained metrics about the accuracy, utility, and compactness of information seeking outcomes. Through extensive experiments across LLMs, search engines, and question types, InfoDeepSeek reveals nuanced agent behaviors and offers actionable insights for future research.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="26" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="27" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="28" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="29" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="30" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="31" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="32" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="33" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="34" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Despite remarkable capabilities across various domains <ref type="bibr" target="#b22">[25,</ref><ref type="bibr" target="#b8">11,</ref><ref type="bibr" target="#b20">23,</ref><ref type="bibr" target="#b16">19,</ref><ref type="bibr" target="#b21">24,</ref><ref type="bibr" target="#b42">46,</ref><ref type="bibr" target="#b46">50,</ref><ref type="bibr" target="#b49">53,</ref><ref type="bibr" target="#b55">59,</ref><ref type="bibr" target="#b52">56,</ref><ref type="bibr" target="#b51">55]</ref>, large language models (LLMs) still suffer from factual hallucinations <ref type="bibr" target="#b13">[16,</ref><ref type="bibr" target="#b25">28]</ref>, outdated knowledge <ref type="bibr" target="#b9">[12]</ref>, and limited access to real-time information <ref type="bibr" target="#b36">[40]</ref>. To address these challenges, Retrieval-Augmented Generation (RAG) <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b4">5,</ref><ref type="bibr" target="#b58">62]</ref> has emerged as a promising solution, enabling LLMs to enhance their responses with retrieved external information. RAG typically consists of three stages: retrieval, augmentation, and generation <ref type="bibr" target="#b38">[42,</ref><ref type="bibr" target="#b4">5]</ref>. The first two stages -retrieving relevant documents and selecting useful evidence -constitute the information seeking process. While traditional RAG systems rely on static workflows, recent advancements in Agentic RAG <ref type="bibr" target="#b38">[42,</ref><ref type="bibr" target="#b35">39,</ref><ref type="bibr" target="#b33">37,</ref><ref type="bibr" target="#b11">14]</ref> integrate autonomous LLM agents into the RAG pipeline, allowing for dynamic planning, search, and reflection to support more flexible and robust evidence acquisition. This paradigm has already been integrated into real-world systems, including Deep Research features in OpenAI <ref type="bibr" target="#b29">[33]</ref>, Gemini <ref type="bibr" target="#b6">[9]</ref>, and Perplexity <ref type="bibr" target="#b40">[44]</ref>, where agents iteratively search and synthesize information from the live web.</p><p>The introduction of the agent primarily transforms the information seeking process of RAG, while the generation step remains largely unchanged, i.e., responds based on the external information.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Challening</head><p>Query Answer Simple Query Answer ... Consequently, a core goal in evaluating Agentic RAG should be to assess the effectiveness of agentic information seeking. Rigorous benchmarking and evaluation are essential to quantify these improvements, identify potential weaknesses, and guide the development of more capable agentic systems. However, existing RAG benchmarks are inadequate for this purpose, as shown in Figure <ref type="figure" target="#fig_0">1</ref>.</p><p>Firstly, most benchmarks are constrained to static environment <ref type="bibr" target="#b54">[58,</ref><ref type="bibr" target="#b1">2,</ref><ref type="bibr" target="#b24">27,</ref><ref type="bibr" target="#b39">43]</ref> with a fixed, limited corpus. Such setups fail to reflect the scale and dynamic of real-world web environments, characterized by massive document volume, content drift, URL decay, and frequent fluctuations in search engine results. As a result, these benchmarks misalign with the operational complexity that Agentic RAG systems must manage in deployment. Moreover, static benchmarks rely on pre-defining ground-truth documents and traditional metrics such as NDCG <ref type="bibr" target="#b54">[58]</ref>. In contrast, the open-ended nature of the web makes it difficult to determine a gold evidence set in advance, rendering such metrics inapplicable. This presents a significant challenge for evaluating the quality of information seeking in dynamic environments. Secondly, existing benchmarks often fall short in terms of question complexity. Many of their queries are relatively simple and can be answered directly by LLMs with parametric knowledge or a single-turn search <ref type="bibr" target="#b44">[48,</ref><ref type="bibr" target="#b17">20,</ref><ref type="bibr" target="#b39">43]</ref>. Such questions fail to elicit core agentic behaviors, e.g., planning, multi-turn tool use, and reasoning over multiple pieces of evidence, so they cannot meaningfully evaluate the effectiveness of agentic information seeking.</p><p>To address the above limitations, we propose InfoDeepSeek, a benchmark with challenging questions and novel evaluation metrics tailored for agentic information seeking under real-world web environments. First, we introduce a set of criteria and a systematic methodology for constructing challenging queries aimed at evaluating agentic information seeking. We manually curate and validate 245 high-quality questions, each carefully designed to exhibit the following properties:</p><p>• Determinacy: Each question has a clear, unique, and temporally stable answer.</p><p>• Difficulty: The questions are intentionally challenging for LLMs, even with single-turn web search. This highlights the need for multi-turn agentic information seeking capabilities • Diversity: Questions cover various domains, predominant languages, and attributes, i.e., multi-hop, long-tail, freshness, time-sensitive, distracting information, and false premises.</p><p>Building on this, we develop an agentic information seeking system that integrates multiple search and browsing tools in live web environments. Facing such a noisy and dynamic environment, we propose a set of fine-grained evaluation metrics and protocols to dynamically assess the effectiveness of information seeking. Our evaluation metrics include answer accuracy, information accuracy, information compactness, and effective evidence utilization, offering a comprehensive view of the agent's information seeking ability. We further conduct empirical evaluations across multiple dimensions, including different LLMs, search engines, and question types, revealing agents' behaviors under complex and dynamic environments. Our key contributions are as follows:</p><p>• We introduce a set of criteria and a systematic methodology for constructing challenging queries and present a new benchmark, InfoDeepSeek, for evaluating agentic information seeking in real-world settings. We believe these principles and methodologies are transferable and can benefit the research community of benchmarking AI agents for RAG.</p><p>• We propose an Agentic RAG framework coupled with the first fine-grained evaluation metrics and protocols that assess information seeking effectiveness in dynamic environments.</p><p>• We provide a comprehensive comparison of agents under different LLMs, search engines, and question types, identifying their limitations and outlining directions for future research.</p><p>2 Related Work Agentic RAG. RAG has emerged as a key technique for enhancing the factual accuracy and timeliness of LLMs <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b4">5,</ref><ref type="bibr" target="#b58">62,</ref><ref type="bibr" target="#b19">22,</ref><ref type="bibr" target="#b34">38,</ref><ref type="bibr" target="#b48">52,</ref><ref type="bibr" target="#b45">49,</ref><ref type="bibr" target="#b59">63]</ref>. To overcome the limitations of traditional RAG systems -which rely on static workflows and often struggle with complex tasks <ref type="bibr" target="#b38">[42]</ref> -the Agentic RAG paradigm has introduced agents into the RAG pipeline <ref type="bibr" target="#b38">[42,</ref><ref type="bibr" target="#b35">39,</ref><ref type="bibr" target="#b33">37,</ref><ref type="bibr" target="#b11">14,</ref><ref type="bibr" target="#b18">21,</ref><ref type="bibr" target="#b57">61]</ref>. These agents enable multi-turn, in-depth, and dynamic information seeking, enhancing the system's performance and adaptability in complex scenarios. Notably, this paradigm has begun to see increasing adoption in practical applications <ref type="bibr" target="#b29">[33,</ref><ref type="bibr" target="#b6">9,</ref><ref type="bibr" target="#b40">44]</ref>, e.g., Deep Research from OpenAI <ref type="bibr" target="#b29">[33]</ref>, Gemini <ref type="bibr" target="#b6">[9]</ref>, and Perplexity <ref type="bibr" target="#b40">[44]</ref>, all employing agents to support users in completing multi-step information seeking tasks. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>RAG Benchmarks.</head><p>Early RAG researches rely on QA benchmarks,e.g., NQ <ref type="bibr" target="#b17">[20]</ref>, TriviaQA <ref type="bibr" target="#b15">[18]</ref>, and MS MARCO <ref type="bibr" target="#b27">[30]</ref>, for evaluation. With the rapid advancement of LLMs' knowledge, recent RAG benchmarks for factual QA have begun to shift focus toward more challenging scenarios and tasks, e.g., multi-source information <ref type="bibr" target="#b1">[2,</ref><ref type="bibr" target="#b54">58]</ref>, noise <ref type="bibr" target="#b1">[2]</ref>, multi-hop reasoning <ref type="bibr" target="#b39">[43,</ref><ref type="bibr" target="#b12">15,</ref><ref type="bibr" target="#b43">47]</ref>, long-tail knowledge <ref type="bibr" target="#b54">[58,</ref><ref type="bibr" target="#b10">13]</ref>, long document <ref type="bibr" target="#b32">[36]</ref>, and temporally evolving answers <ref type="bibr" target="#b44">[48,</ref><ref type="bibr" target="#b1">2]</ref>. Nevertheless, as illustrated in Table <ref type="table" target="#tab_0">1</ref>, most benchmarks still rely on static environments with limited corpora or limited question complexity and diversity <ref type="bibr" target="#b54">[58,</ref><ref type="bibr" target="#b1">2,</ref><ref type="bibr" target="#b39">43,</ref><ref type="bibr" target="#b17">20]</ref>. In contrast, our work focuses on evaluating agents' information seeking abilities in dynamic, real-world settings, with challenging questions.</p><p>The evaluation of RAG involves information seeking and generation stages <ref type="bibr" target="#b34">[38]</ref>. Most benchmarks include assessing generation quality, i.e., answer accuracy <ref type="bibr" target="#b47">[51,</ref><ref type="bibr" target="#b54">58,</ref><ref type="bibr" target="#b1">2,</ref><ref type="bibr" target="#b50">54,</ref><ref type="bibr" target="#b44">48,</ref><ref type="bibr" target="#b39">43,</ref><ref type="bibr" target="#b60">64]</ref>. Some works evaluate information seeking quality, but they all employ retrieval metrics in static settings with predefined ground-truth documents <ref type="bibr" target="#b39">[43,</ref><ref type="bibr" target="#b24">27,</ref><ref type="bibr" target="#b34">38]</ref>, which is not applicable in dynamic environments without fixed ground-truth documents. Thus, we propose a new evaluation framework for information seeking quality in dynamic settings, incorporating dimensions like relevance, utility, and compactness.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Problem Formulation and Agentic RAG Framework</head><p>Given a user query q ∈ Q, the goal of Agentic RAG is to acquire a set of evidence C = {c 1 , c 2 , • • • , c nq } of length n q by iteratively searching and browsing within an open environment, and to generate an response ŷq that closely approximates the groundtrue answer y q . Following the three-stage framework of RAG <ref type="bibr" target="#b38">[42]</ref>, i.e., retrieval, augmentation, and generation, we implement an Agentic RAG system tailored for real-world web environments. Note that we mainly focus on benchmarking the information seeking process (i.e., the retrieval and augmentation stage), as it is the primary component transformed by the introduction of LLM agents into the RAG pipeline.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Retrieval Stage.</head><p>Upon receiving the input query q, the agent initiates a planning process π 0 = Plan(q) about how to seek information from the web. The agent then launches an information seeking trajectory of up to T steps. At each step t, the agent reflects on the current observation o t and its memory (i.e., previous trajectory) h t , and updates its plan π t+1 = Reflect(o t , h t , π t ). Based on the Table <ref type="table">2</ref>: Different question attributes and their ratios in our benchmark.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Attribute Definition Ratio (%)</head><p>Multi-hop Questions requiring chaining multiple pieces of information to compose answers (e.g., Who directed Anne Hathaway's second film?).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>76.73</head><p>Long-tail Questions focusing on obscure facts or entities that are hard to find on the web, e.g., a person or event about which little information is available.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>77.14</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Time-Sensitive</head><p>Questions involving temporal constraints with implicit/explicit time anchors (e.g., Who was the British Prime Minister in 2013?).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>66.12</head><p>Freshness Questions about recent (post-2025) events requiring real-time retrieval (e.g., What is 2025 Grammy Award for Best Album?) 19.59</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Distracting Information</head><p>Search results contain significant noise, such as name ambiguity or misleading/false content (e.g., fake news).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>31.02</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>False Premise</head><p>Questions with incorrect assumptions, e.g., How is the champion of plain high diving at 9th Olympics? (No such event at 9th Olympics) 10.61 plan, it selects tools (e.g., search engines, browser, time-related utilities, or termination) and performs an action that yields the next observation: a t+1 = Act(π t+1 ) → o t+1 , e.g., the information from web.</p><p>Here we support some mainstream search engines such as Google, Bing, Yahoo, DuckDuckGo, and Selenium-based web browsing. This information seeking loop continues until the agent has sufficient information to terminate or hits the step limit T . This stage generates a sequence of observations O = {o 1 , o 2 , • • • , o T }, representing retrieved contents from the web.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Augmentation Stage.</head><p>Given the potential volume and noise of retrieved content in the previous stage, the agent performs content filtering and distillation. It selects and summarizes the most relevant documents, yielding a focused set of evidence C = SelectRelevant(q, O). The agent will determine the size n q of the set C and sort the evidence in C by importance. Usually, we only stipulate that n q does not exceed a maximum number n, usually n = 5 following previous works <ref type="bibr" target="#b30">[34]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Generation Stage.</head><p>Finally, the agent generates a response ŷq based on the curated content C and query q, i.e., ŷq = Generate(q, C). More details about our framework are provided in Appendix A</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Dataset Construction</head><p>This section outlines the criteria and methodology we use to construct a challenging dataset for evaluating an agent's information-seeking abilities. See Appendix B for more details.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Criteria for Query</head><p>Determinacy and Verifiability. Unlike static RAG settings with a fixed corpus and information, real-world environments have constantly changing information. Thus, questions in this context must preserve stability and verifiability to allow consistent and reliable evaluation. Thus, we collect factual questions with a clear, unambiguous, and time-invariant answer that can be verified through publicly available web sources. This ensures robust evaluation even in dynamic environments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Difficulty.</head><p>If a question can be solved with LLMs' internal knowledge or LLMs with one-turn search, it fails to activate the real abilities of agents. Hence, we focus on questions that LLMs cannot answer with a single-turn search. To enforce this constraint, we apply difficulty filtering and exclude questions that mainstream LLMs (e.g., GPT-4o <ref type="bibr" target="#b14">[17]</ref> and DeepSeek-R1 <ref type="bibr" target="#b7">[10]</ref>) can already answer correctly with a single-turn search. Furthermore, we incorporate various difficulty attributes and present their definition and ratios in our benchmark in Table <ref type="table">2</ref>. Note that a question can contain multiple attributes, so the sum of their ratios is not 1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Diversity in Attributes, Domains, and Predominant Languages.</head><p>Each query is constructed to capture a combination of at least two of the attributes in Table <ref type="table">2</ref>, ensuring coverage of real-world information seeking challenges. We also ensure domain diversity, including but not limited to sports, politics, science, history, geography, music, literature, art, film, gaming, and news. Besides, we consider the predominant language, cases where accurate information is more readily available in a particular language. While all questions in our dataset are provided in both English and Chinese, we include queries whose answers are primarily documented in other languages such as Japanese, French, Korean, Italian, or Icelandic. This encourages more realistic, language-aware search behavior from the agent and creates additional challenges due to the multilingual nature of the web. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Multilingual</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Methodology for Dataset Construction</head><p>To operationalize the aforementioned criteria, we develop a set of practical heuristics and workflows for query generation as shown in Figure <ref type="figure" target="#fig_1">2</ref>. We begin by extracting knowledge from web sources, based on which we produce draft questions. These draft questions are then subjected to two key filtering stages: determinacy check and difficulty check. Questions that pass both filters are retained as candidates, and subsequently go through a multi-stage validation process. Through iterative annotation and refinement, we have developed a set of practical methodologies and guidelines that produce questions aligned with our criteria. See Appendix B for more details.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Fact-Grounded Query Drafting.</head><p>To guarantee that each question has a verifiable answer, annotators are encouraged to adopt a reverse construction strategy -starting from known knowledge in authoritative and diverse web sources, and formulating a question with a unique answer. Annotators are required to reference credible web content, such as official websites, academic publications, or multilingual Wikipedia entries, to validate both factual correctness and answer uniqueness.</p><p>Expand from Anchor Knowledge. During the data collection, we observed that many seemingly complex questions, involving multi-hop reasoning, emerging facts, temporal sensitivity, or false premises, could still be solved by LLMs based on their knowledge or single-round search. To address this, we identify anchor knowledge, usually long-tail knowledge and distracting information, which are hard for LLMs to answer correctly without deeper search. Many such anchors can be derived from low-resource or non-mainstream language sources. Once we find one or more difficult anchors, we further compound their complexity by composing them with more ordinary knowledge or by linking them to additional difficulty attributes. In this way, these questions not only require deeper retrieval but also demand planning, disambiguation, and reasoning across noisy or obscure content.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Diversification.</head><p>To enhance the coverage of our dataset, we adopt a proactive strategy in diversifying queries. Annotators are guided to contribute questions targeting less frequently covered attributes, domains, or predominant languages. Besides, starting from anchor knowledge, we can introduce multi-hop reasoning that links to new attributes, domains, or languages. For example, given a long-tail fact about the founders of Saratov State Agrarian University, we might explore the founder's other identities (e.g., agronomist, political leader) to connect it to different domains. This compositional approach allowed us to systematically increase both the complexity and the diversity of our dataset.</p><p>Determinacy and Difficulty Filtering. In the determinacy check, each draft question undergoes cross-referencing against multiple independent sources to verify the correctness of the answer. Annotators ensure that (1) the answer is uniquely correct given the query, and (2) the answer is not time-sensitive or prone to change over time. For difficulty check, we evaluate each draft question with GPT-4o and DeepSeek-R1 in a web-enabled, single-turn search setting. If both models answer the question correctly, we discard the question. This ensures that only those challenging queries requiring deeper information seeking behavior are retained for the benchmark.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Multi-Stage Validation for Reliability.</head><p>To ensure data quality and compliance with our criteria, each question undergoes a two-stage review process. Each query is independently verified by two annotators, who assess its correctness, determinacy, difficulty, and normativity. A third adjudicator then makes the final decision regarding whether the question is eligible for inclusion.</p><p>For each verified question q, we record its ground-truth answer y q , the supporting source webpages S q , and annotated metadata, e.g., difficulty attribute, domain, and predominant language. With the efforts of seven annotators, we collected 245 validated data entries, covering 14 domains and 19 predominant languages. More details about data statistics are provided in Appendix B.4.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Metrics and Evaluation</head><p>This section introduces our evaluation framework, with more detail presented in Appendix C.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Metrics</head><p>Here, we define four core metrics, assessing not only final answer accuracy but also agents' information seeking capabilities to search, extract, and prioritize relevant information from noisy sources.</p><p>We denote the answer generation stage as ϕ(•, •), usually implemented by an LLM.</p><p>Answer Accuracy (ACC) refers to whether the answer generated based on all the observations O matches the groundtrue answer y q , that is ACC = q∈Q I(ϕ(q, O) = y q )/|Q|, where I(•) is indicator function to determine whether ϕ(q, O) and y q are the same, implemented by a judge LLM in Section 5.2. This is a coarse-grained correctness metric without considering augmentation stage.</p><p>Information Accuracy (IA@k) measures quality of evidence obtained by information seeking process. In open web environments, predefining ground-truth documents is infeasible due to content volatility and source multiplicity, and multi-hop questions may involve different information sources. Instead, we evaluate the evidence quality by dynamically assessing whether the top-k evidence of C from the augmentation stage is sufficient to answer the question. Specifically, we generate an answer from the top-k evidence C 1:k , i.e., ϕ(q, C 1:k ), and compute IA@k = q∈Q I(ϕ(q, C 1:k ) = y q )/|Q|. A higher RA@k implies better evidence relevance.</p><p>Effective Evidence Utilization (EEU) measures the agent's ability to extract relevant information from the noisy observations O and form the evidence set C. It is defined as the ratio between the best achievable accuracy across all top-k subsets (k = 1, • • • , n) and the answer accuracy with all observations, i.e., EEU = max 1≤k≤n IA@k ACC . EEU significantly below 1 suggests that the agent's evidence selection is suboptimal, and that key information is either buried or omitted.</p><p>Information Compactness (IC) quantifies the information density of evidence set C. An ideal agent should gather concise, high-quality evidence with minimal noise or redundancy. We first define the information compactness for each query, IC q , as:</p><formula xml:id="formula_0">IC q = n q /|S q |, if ∃ k ≤ n q such that ϕ(q, C 1:k ) = y q (n + b)/|S q |, otherwise, i.</formula><p>e., answer failures where n q = |C| denotes the length of evidence set (up to a maximum n), S q is the human-annotated standard set of source webpages required to answer the query, and b is a penalty constant (typically b = 1) for answer failures. With IC q , IC can be defined as IC = q∈Q IC q /|Q|. IC &lt; 1 suggests that the agent either found compact sources (covering multiple hops) or successfully leveraged prior knowledge to reduce evidence dependency. IC &gt; 1 implies over-retrieval or poor evidence filtering with the presence of redundant or irrelevant content, even though they answer the question correctly.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Evaluation</head><p>Our proposed metrics highly rely on determining whether the LLM-generated answer, ϕ(q, C 1:k ) and ϕ(q, O), semantically and factually aligns with the groundtrue answer y q . Prior work has demonstrated that LLM-based evaluators can closely approximate human judgment in factual QA <ref type="bibr" target="#b54">[58,</ref><ref type="bibr" target="#b53">57]</ref>. Following these findings, we adopt both human evaluation (human-eval) and LLMbased automatic evaluation (auto-eval) to assess the agreement between answers. Specifically, we mainly employ two LLM evaluators, DeepSeek-V3 (deepseek-chat) <ref type="bibr" target="#b2">[3]</ref> and Gemini-2.0-Flash (gemini-2.0-flash-preview-04-07) [6], to reduce self-preference bias <ref type="bibr" target="#b31">[35]</ref>, following <ref type="bibr" target="#b54">[58]</ref>. If the two evaluators produce conflicting judgments, we resort to a third arbiter, GPT-4o-mini (gpt-4o-mini-2024-07-18) <ref type="bibr" target="#b28">[31]</ref>) or a human annotator, and report the majority vote decision.</p><p>While LLM-based evaluation is generally reliable, we observe a common failure mode on false premise questions, where LLM evaluators often fail to identify incorrect assumptions in the query. To mitigate this issue, we explicitly annotate such groundtrue answers y q with statements like "This question contains a false premise: ...", making the premise violation explicit. Additionally, we design separate evaluation prompts for false-premise and other questions to encourage evaluators to condition their judgment appropriately. In our experiments, this strategy improves LLMs' evaluation accuracy from 95.57% to 99.29% compared with human-eval. See Appendix C.2 for more details.  <ref type="bibr" target="#b26">[29]</ref>, and Qwen3-32B <ref type="bibr" target="#b41">[45]</ref>. For Qwen3-32B, we test both its thinking mode (Qwen3-32B w/ think) and non-thinking mode (Qwen3-32B w/o think). Unless otherwise specified, the maximum step T of retrieval stage is 5, and the maximum length of evidence set C in augmentation stage is 5 (n = 5), as the length of supporting source webpages S q typically ranges from 1 to 3. The default search engine is DuckDuckGo, due to its open accessibility. See Appendix D.1 for more details.</p><p>During our experiments, when evaluating a specific LLM, we use this LLM across all stages, including retrieval, augmentation, and answer generation for computing ACC and IA@k, i.e., ϕ(•, •). We also explore the impact of different answer LLMs for ϕ(•, •), where information seeking and generation use different LLMs. These results are provided in Appendix D.6. The best-performing model, Gemini-2.5-Pro, achieves only 22.45% on ACC and 21.63% on IA@5. This result underscores the complexity of the tasks, as even the strongest model struggles to provide accurate answers across our challenging queries. Secondly, LLMs optimized for reasoning and information retrieval outperform others. DeepSeek-R1 outperforms DeepSeek-V3, and O3-mini outperforms GPT-4o, indicating that reasoning models tend to perform better in agentic information seeking. Additionally, Gemini-2.5-Flash and Gemini-2.5-Pro, which are specifically optimized for search and deep research scenarios, show better performance compared to other models.</p><p>In terms of information quality (IA@k), most models perform poorly on IA@1, as many queries require multiple sources to provide a correct answer. A single document is often insufficient to fully address the question. As k increases, we observe a trend of initial improvement followed by a decline. This is likely due to the influence of irrelevant or distracting information from later retrieved sources, highlighting the importance of effective augmentation in selecting relevant evidence.</p><p>Effective Evidence Utilization (EEU) is mostly below 1, indicating that most LLMs struggle to extract useful evidence from the vast amount of information retrieved during the retrieval stage. Regarding information compactness (IC), most models exhibit significant redundancy in their responses. This is largely due to the low success rate of retrieval and the increased reliance on irrelevant information. Models with higher success rates typically exhibit lower redundancy, suggesting that reducing irrelevant evidence through better information extraction is critical for improving performance. .5-Flash in information seeking tasks, its performance improves substantially when paired with Google, achieving an ACC of 28.57%, which narrows the gap with Gemini. This suggests that access to higher-quality retrieval results is especially beneficial for models with weaker reasoning capabilities. Interestingly, EEU tends to be higher when using DuckDuckGo. However, this may be an artifact of poor retrieval quality: when most retrieved content is irrelevant, identifying even a small number of useful pieces can lead to a higher utilization rate. This further underscores the importance of selecting strong evidence sources to support robust answer generation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Multi-Hop</head><p>Long-Tail Time-Sen. Firstly, LLMs and search engines consistently perform better on simpler attributes, e.g., false premise, time sensitivity, and freshness, and worse on multi-hop, long-tail, and distracting information questions. This aligns with our observations during data collection, long-tail and distracting questions often contain obscure entities, which are inherently difficult to agentic information seeking. Multi-hop questions in our benchmark are frequently compositional, often combining long-tail and distracting information, compounding their difficulty. Secondly, reasoning-enhanced LLMs show clear advantages over base models, but these gains are primarily observed on the simpler question attributes. On harder attributes like multi-hop or long-tail, LLMs' (e.g., DeepSeek-R1 and Gemini-Pro) performance improvements are marginal. This suggests that current LLMs, even those optimized for reasoning, are still heavily bottlenecked by retrieval quality and web information noise, particularly when facing sparse or misleading information. Lastly, Google leads to more balanced and robust performance across attributes, indicating that Google has higher information coverage and relevance. Together, these findings highlight that while LLMs and agent capabilities are essential, retrieval source quality remains a dominant factor in addressing complex information seeking tasks. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.3">In-depth Analysis</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Test-time Scaling for Agentic Information Seeking.</head><p>One of the key characteristics of an agent is that its performance scales with respect to the amount of compute available during test time. To investigate this, we allocate different levels of computational resources to the agent by varying the maximum step T in the retrieval stage from 1 to 20, and present the results in Figure <ref type="figure" target="#fig_4">4</ref>. As shown in the figure, both models demonstrate significant improvements in ACC, IA@k, and IC as T increases, indicating clear scaling effects. This suggests that the agent's performance can be enhanced by scaling up the test-time computing for information seeking, with the ability to refine its search and gather more evidence as additional computation is allocated. See Appendix D.3 for more details.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Retrieval Interference.</head><p>In our experiments, we observe a notable phenomenon where certain questions can be answered correctly by an LLM with its parametric knowledge, but the same model fails to answer them after performing web-based retrieval. We refer to this behavior as retrieval interference, where external information introduces confusion or distracts the model from its original correct reasoning. To quantify this effect, we define a metric called the interference rate, which is the fraction of questions that an LLM answers correctly without retrieval but answers incorrectly after retrieval, normalized by the total questions it initially answered correctly without retrieval. Figure <ref type="figure" target="#fig_5">5</ref>(a) shows the interference rates of DeepSeek-V3 and Gemini-2.5-Flash across different search engines. We find that retrieval interference is widespread, suggesting that low-quality or tangentially relevant web content can often override or dilute the model's internal confidence, leading to degraded performance. To mitigate this issue, future systems should explore methods to preserve model confidence in accurate internal knowledge and develop more precise retrieval strategies that avoid introducing misleading information. See Appendix D.4 for more results and potential solutions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Impact of Language.</head><p>We also investigate the impact of languages on agentic information seeking process. For Chinese and English, we employ Chinese and English versions of prompts and queries. Our experiments reveal that the search keywords used by LLMs to query search tools are strongly aligned with the language of the input. For predominant languages, we face challenges in directly converting prompts and queries to their respective language versions. Thus, we adopt a languageaware prompt that explicitly instructs the agent to use the predominant language during the retrieval stage (Appendix D.5). The results in Figure <ref type="figure" target="#fig_5">5</ref>(b) demonstrate several important trends. First, English consistently outperforms Chinese across most metrics. This is likely due to the broader coverage of English-language content and search tools. Second, predominant language prompts yield the best results. This suggests that leveraging a language-aware retrieval strategy improves the agent's ability to access and utilize high-quality, domain-relevant content.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Conclusion &amp; Limitations</head><p>This work introduces InfoDeepSeek, a novel benchmark for evaluating agentic information seeking in dynamic web environments, addressing the limitations of existing benchmarks confined to a static environment and simple queries. We propose a methodology for constructing challenging queries that satisfy the criteria of determinacy, difficulty, and diversity. Furthermore, we design fine-grained evaluation metrics tailored for the comprehensive assessment of agentic information seeking under dynamic environments. However, our current dataset relies on manual construction, which is costly and time-consuming. In future work, we plan to explore an automated data collection approach with manual verification to lower costs and expand the dataset. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Table of Contents</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Agentic Information Seeking Framework</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E Broader Impacts A Agentic Information Seeking Framework</head><p>To enable complex, multi-step information seeking in open-domain environments, we design a generalizable Agentic RAG framework composed of modular components for planning, memory, tool use, and generation. The agent is instantiated around a large language model (LLM), augmented with external tools and reflection capabilities to support iterative decision-making and information seeking.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 Components</head><p>We begin by explaining the roles of LLMs, the memory bank, and the tool library. Subsequently, these components will be integrated into the primary agent loop.</p><p>LLMs. The LLM serves as the agent's central reasoning engine. It is responsible for interpreting the user query, generating search plans, selecting tools, reflecting on past actions, filtering retrieved content, and synthesizing the final answer. Our framework supports a variety of LLMs, including both API-accessible remote models and locally hosted open-source models. To accommodate the varying requirements of different LLMs, we introduce a straightforward API calling that accepts a prompt as input and returns a response. All agents follow a unified interface that incorporates structured planning and reflection mechanisms: at each step, the agent is prompted to explicitly plan its next action and reflect on prior steps to refine its strategy. This iterative planning-reflection loop enhances the agent's adaptability to noisy or ambiguous web content.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Memory.</head><p>The memory stores the evolving trajectory of the agent's interaction with the web environment. Concretely, it includes (1) all past plans generated by the agent, (2) actions such as tool invocations and search queries, and (3) the corresponding observations retrieved from the web (e.g., snippets, page titles, contents). This memory is continuously updated and used as input to future planning and reflection steps, enabling the agent to reason over previously collected evidence, avoid redundancy, and refine its search strategy over time.</p><p>Tool Library. Tools serve as the agent's interface to the external world. For our information seeking agent, we support multiple real-time search engines, Google, Bing, Yahoo, and DuckDuckGo, as well as a Selenium-based browser tool that allows the agent to navigate, scroll, and extract content from live webpages. In addition, we support time tool for time calculation that may be involved in queries and webpages. This diverse toolset ensures robustness across query types and web content structures.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Retrieval Stage</head><p>The Retrieval Stage is responsible for actively exploring the web environment. The agent interacts with external tools (e.g., search engines, browsers) through multi-step planning and decision-making to acquire potentially relevant information. This stage emphasizes dynamic behavior: the agent iteratively queries, observes, reflects, and adapts its strategy based on the evolving context.</p><p>Upon receiving the input query q from the user, the agent initiates an initial planning process π 0 = Plan(q), which specifies its strategy for acquiring relevant information from the web. The agent then launches an information seeking trajectory consisting of up to T iterative steps. At each step t, it receives an observation o t from the environment (e.g., search results or web content), and updates its internal plan by reflecting on the current observation o t and memory (i.e., previous trajectory) h t :</p><formula xml:id="formula_1">π t+1 = Reflect(o t , h t , π t )</formula><p>Based on the updated plan π t+1 , the agent selects the next action using a tool from its available set -such as a search engine (Google, Bing, Yahoo, DuckDuckGo), a Selenium-based browser for webpage exploration, or auxiliary tools like a time utility or stop action:</p><formula xml:id="formula_2">a t+1 = Act(π t+1 ) → o t+1</formula><p>Each action yields an observation q t+1 , typically the results of the tool, e.g., a snippet, webpage content, or search result. This planning-action-reflection loop allows the agent to dynamically adapt its strategy in response to retrieved evidence. The loop terminates either when the agent deems the collected information sufficient or when the step limit T is reached. The output of this stage is a sequence of retrieved observations O = {o 1 , o 2 , • • • , o T }, representing the raw web content gathered during the search process. The detailed prompt of the retrieval stage is listed as follows:</p><p>You are a {agent_name}, {agent_bio}, {agent_instructions} Currently, you are in the task planning phase, where you will be given a specific query to address. Please utilize LLM's advantages and pursue efficient strategies for task planning. 1. You have a short-term memory of approximately 4,000 characters. 2. You do not require assistance or response from users. 3. You can use the reference tools mentioned when planning. 4. Complex problems can be split into sub-problems and then information can be collected, aggregated and authenticated. Be sure to verify the truthfulness of the information. 5. Stay humble and call the tool for questions you are not sure about, but do not call the same tool with the same parameters repeatedly. 6. You can think and plan up to {max_iter_num} steps, so strive to plan tasks as efficiently as possible. 7. You have the capability for reflection and self-criticism; reflect on past decisions and improve your strategies. 8. If you have sufficient information to answer the given query, invoke the termination tool to terminate planning. Otherwise, continue planning new tasks while ensuring no duplication with prior tasks. {tool_specification} {current_date_and_time} {memory} Given Query: {query} Based on the given question and existing tasks, plan a new Task (no repetitions), and you can only generate the Task in the following **JSON list** format: [{ "task_name": "task description", "command":{ "name":"command name", "args":{ "arg name":"value" } } }]</p><p>Even if there is only one task or no task, it needs to be returned in the form of a list. Ensure that the Task can be parsed by Python's json.loads function. If the completed Tasks are sufficient to answer the query, terminate planning. Otherwise, create another Task that does not duplicate previous ones. A new Task:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3 Augmentation Stage</head><p>The Augmentation Stage focuses on filtering and organizing the retrieved content. Since web data is often noisy, redundant, or only partially relevant, this stage distills the raw observations into a compact, high-quality evidence set. It ensures that only the most pertinent information is retained for answer generation, improving factual grounding and mitigating hallucinations.</p><p>Given the potentially large and noisy set of retrieved content O, the agent proceeds to filter and distill this information into a more concise, relevant set. Specifically, it applies a selection function to identify passages or documents that are most pertinent to answering the query:</p><formula xml:id="formula_3">C = SelectRelevant(q, O).</formula><p>This process includes both document-level and span-level selection, ranking evidence based on relevance, coverage, and redundancy. The resulting set C = {c 1 , c 2 , •, c nq } is sorted by importance, where n q is determined dynamically by the agent, subject to an upper bound n. This stage is critical for reducing noise and focusing generation on high-quality information. The prompt for the augmentation stage is as follows:</p><p>You are a {agent_name}, {agent_bio}, {agent_instructions} The current stage is webpage ranking stage. In the previous interactions, you have already found several webpages in response to the user's query. Now, you need to consolidate this information and select the {max_webpage_num} most relevant webpages, then rank them. 1. A webpage consists of a URL and webpage summary or information extracted from the webpage that is relevant to the query. 2. If multiple pieces of information come from the same webpage (determined by identical URLs), merge them rather than listing duplicates. 3. The output webpage list must include relevant webpages necessary to answer the question. If the question has multiple sub-questions, the relevant webpages of each sub-question must be included. 4. The number of webpages in the output webpage list can be less than {max_webpage_num}. If it is more than {max_webpage_num}, select {max_webpage_num} of the most important ones. 5. The output webpage list is sorted according to its importance to answering the question, that is, the webpage ranked first has the greatest contribution to answering the question. {current_date_and_time} {memory} Given Query: {query} You must generate the list of webpages strictly in the following **JSON list** format: [{ "url": "The webpage's URL", "content": "Information extracted from the webpage that is relevant to the given query",</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>↩→</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>}]</head><p>Always return a list, even if there is no relevant web page, you need to return an empty list to ensure that the task can be parsed by Python's json.loads Relevant webpages (ranked by importance):</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.4 Generation Stage</head><p>The Generation Stage uses the refined evidence to produce a final response. Grounded in the selected content, the language model synthesizes an answer that directly addresses the original query, ideally with high factual accuracy and traceability. In the final stage, the agent generates an answer ŷq based on the curated evidence set C and the original query q. The generation function is typically a forward pass through the LLM, grounded in the selected content: ŷq = Generate(C, q).</p><p>This answer reflects the agent's ability to synthesize multiple sources of retrieved knowledge and produce a coherent, factually accurate response.</p><p>You are {agent_name}, {agent_bio}, {agent_instructions} Currently, you are in the question-answering stage. Based on your own knowledge and relevant webpages, answer the given query from the user. 1. If the user's query contains multiple answers, list all of them.</p><p>2. If the user's query is based on a wrong premise, point out the error. {current_date_and_time} Given query: {query} Relevant webpages: {webpages} Generate a brief English answer to solve the user's query:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Dataset Construction</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1 Query Generation</head><p>Our query construction pipeline consists of three key stages: draft generation, validation, and annotation. This section outlines the practical methodology we adopt to ensure that the final queries are factually grounded, sufficiently challenging for LLMs, and diverse across difficulty attributes, domains, and languages.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1.1 Draft Question Generation.</head><p>We adopt a reverse construction strategy, where factual knowledge is first extracted from credible sources and then transformed into a question that requires that knowledge (and possibly more) to answer. The goal is to create queries that are multi-hop, complex, and grounded in long-tail or noisy information. The main process proceeds as follows:</p><p>1. Anchor knowledge identification. Annotators begin by selecting an underrepresented domain or language. They search authoritative sources such as Wikipedia, reputable news sites, fact-checking platforms, expert forums, and academic databases to extract candidate facts-particularly long-tail or distracting information, which we refer to as anchor knowledge. Wikipedia's link structure, category graphs, and multilingual variants are especially helpful for uncovering obscure entities or facts. Some webpages present different content across language versions; for example, Wikipedia entries in certain "advantage languages" often contain more detailed information. Knowledge unique to low-resource or non-English versions is more likely to be long-tail and underrepresented elsewhere.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Question composition.</head><p>Based on the anchor knowledge, annotators either directly construct a question or further increase question difficulty by incorporating multiple challenge attributes or introducing additional domain-specific facts -either common or difficultthrough multi-hop composition. Compositionality is encouraged to ensure that the question cannot be solved with shallow retrieval.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Temporal stability check.</head><p>Annotators have to verify whether the answer varies with time.</p><p>For potentially unstable questions (e.g., "Who is the current president of the USA?"), we explicitly add time constraints (e.g., "In 2025") to ensure the answer remains fixed and verifiable.</p><p>4. Diversity control. We aim for each question to include at least two difficulty attributes, and for the dataset to span a wide range of domains, languages, and countries. Annotators actively switch focus when certain attributes or domains become overrepresented.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1.2 Filtering and Refinement.</head><p>Each draft question undergoes a two-stage validation process to ensure that it meets both difficulty and determinacy standards.</p><p>• Difficulty check. To ensure that a question cannot be answered by an LLM with internal knowledge or single-turn search, we test it with GPT-4o and DeepSeek-R1 with web access enabled. If both models correctly answer the question in a single turn, the question is discarded.</p><p>• Determinacy check. We verify the correctness and uniqueness of the answer using multisource cross-validation: (a) Searching and confirming the answer through multiple independent web sources. (b) Leveraging links and citations provided by web-enabled LLMs during difficulty filtering to trace and confirm factual accuracy. (c) Comparing content across different language versions of the same source (e.g., multilingual Wikipedia pages) to check for consistency and factual reliability.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1.3 Question Annotation.</head><p>For each validated question, we record:</p><p>• The Chinese and English versions of question q.</p><p>• The Chinese and English versions of ground-truth answer y q .</p><p>• The set of source webpages S q that provide the factual basis for the answer.</p><p>• Annotated metadata including difficulty attributes, domains, and predominant languages.</p><p>For multi-hop questions, we annotate the answer and evidence source for each reasoning step. For false premise questions, we explicitly mark the flawed assumption in the answer using the phrase: "This question contains a false premise: ...", a format critical for subsequent automatic evaluation. In addition, special attention should be paid to the translation of proper nouns, which should be accurately translated based on online sources or annotated with their original names in the predominant language.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2 Multi-stage Validation</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2.1 Validation from Two Verifiers</head><p>To ensure the reliability and robustness of each constructed question, we implement a multi-stage human verification process involving two independent annotators (verifiers). Each verifier is required to evaluate the question from multiple perspectives. The validation process includes:</p><p>1. Content Verification: Check the correctness of the question and answer, and ensure that the listed sources support the answer. Special attention is paid to the accuracy of proper noun translations, which must be verified against online references or annotated using their original names in the predominant language. 4. Validation Outcome: Verifiers must fill out three fields: their name, a binary result (pass/fail), and explanatory notes. A question is marked as passed only if it fully satisfies all requirements (content, criteria, metadata). A fail may indicate outright rejection or suggest that further review or correction is needed.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2.2 Final Decision</head><p>An additional decider makes the final decision based on the verification results from the two verifiers. If both verifiers mark the question as valid, it is accepted directly. If either verifier marks it as invalid, a third annotator conducts a further review, discarding questions that do not meet essential criteria and correcting others where appropriate. This includes the following cases:</p><p>• Incorrect metadata: Fix and accept.</p><p>• Time-dependent Answer: Add a time constraint and re-validate with LLMs.</p><p>• Inaccurate answer: Replace with a correct one (confirmed by LLMs and sources) and accept.</p><p>• Ill-formed or ambiguous question: Reject.</p><p>• Inconsistent difficulty judgments: Since LLM behavior can vary, we accept questions if at least three out of six LLMs (by the collector, two verifiers, each using two LLMs for difficulty check) result in incorrect answers.</p><p>To ensure question quality, we invested substantial manual effort throughout the collection and validation process. In total, seven annotators were involved in drafting questions, each of which was further reviewed by two independent verifiers and a final decider. Due to the complexity, cross-validation, and manual nature of our pipeline, we ultimately curated 245 high-quality questions.</p><p>Moving forward, we plan to expand the dataset and integrate more automation into the dataset construction and validation pipeline to reduce cost and scale the collection of challenging, agentoriented queries.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3 Data Examples</head><p>Here, we provide two examples of our dataset. The first question exemplifies a challenging combination of distracting information, long-tail knowledge, and multi-hop reasoning. To answer it, one must first identify the president in question and then determine which university awarded him a master's degree, making it a classic multi-hop task. The query's mention of "a president who is a comedian" naturally points to Ukrainian President Volodymyr Zelensky, and many search results indeed return Zelensky-related pages, demonstrating the presence of strong distractors. However, the actual target is Jimmy Morales, former president of Guatemala. His English Wikipedia entry (<ref type="url" target="https://en.wikipedia.org/wiki/Jimmy_Morales">https://en.wikipedia.org/wiki/Jimmy_Morales</ref>) only notes that he holds a master's degree in strategic studies with a specialization in security and defense from Mariano Gálvez University. Only by consulting less-common Spanish-language sources (for example, an archived page at <ref type="url" target="https://web.archive.org/web/20151028180235/http://www.jimmymorales.gt/main01/?page_id=2">https://web.archive.org/web/20151028180235/http:  //www.jimmymorales.gt/main01/?page_id=2</ref>) can one discover that he also earned "a master's degree in media management from Universidad Panamericana de Guatemala." This obscure detail represents the long-tail information necessary to fully answer the question. { "id": 307, "determinacy": true, "difficulty_GPT": true, "difficulty_DS": true, "multi_hop": true, "long_tail": true, "time_sensitive": false, "freshness": false, "distracting_info": true, "false_premise": false, "domain": [ "politics", "education" ], "advantage_language": The second question illustrates a false-premise challenge. It asks: "Which composer was awarded to the 2022 Grammy Awards Songwriter of the Year?" The underlying premise -that the Grammy Award for Composer of the Year existed in 2022 -is false. In reality, this category was only established in 2023. During the search, one will find references to the 2023 recipient, creating additional noise and demonstrating how real-world information seeking can be misled by a question's incorrect assumptions. { "id": 209, "determinacy": true, "difficulty_GPT": false, "difficulty_DS": true, "multi_hop": false, "long_tail": true, "time_sensitive": true, "freshness": false, "distracting_info": true, "false_premise": true, "domain": [ "entertainment" ], "advantage_language": [ "English" ], "query_zh": "2022年格莱美奖年度作曲人颁给了哪位作曲家", "answer_zh": "格莱美奖的年度作曲人(非古典)奖(Songwriter of the Year, Non-Classical)首创于2023年，隔年被正式加入通类。所以该问题存在虚假前 提，即22年没有这个奖", After rigorous drafting, refinement, and multi-stage verification by seven annotators, our dataset comprises 245 high-quality queries, each exhibiting at least two of the following six difficulty attributes: Multi-Hop, Long-Tail, Time-Sensitivity, Freshness, Distracting Information, False Premise. The exact number of queries involving each attribute is reported in Table <ref type="table" target="#tab_3">5</ref>. Because most questions combine two or more attributes, the total exceeds 245 when summed across attributes. We also ensured domain diversity by encouraging annotators to cover a wide range of topics. In total, queries span 14 broad domains, including history, geography, film &amp; TV, science &amp; technology, literature &amp; art, politics, education, music, news, sports, humanities, entertainment, games, and social sciences. For visualization, closely related subfields (e.g., astronomy, biology, medicine, and computer science) are grouped under "science &amp; technology," while economics, sociology, and law fall under "social sciences." The question ratio of each domain is presented in Figure <ref type="figure" target="#fig_10">6</ref>; since multi-hop questions may touch multiple domains, the percentages sum to more than 100%. Finally, we annotated each query with its predominant language, the language in which relevant evidence is most readily available. While English and Chinese are dominate, reflecting the abundance of resources in these languages, our dataset also includes 17 less common predominant languages: Japanese (11), Russian (9), Korean (8), Italian (6), Arabic (6), French (5), Spanish (4), German (3), Portuguese (3), Icelandic (3), Slovene (3), Malay (2), Bengali (2), Croatian (1), Czech (1), Dutch (1), and Hindi (1). This linguistic variety ensures that our benchmark challenges agents to perform cross-lingual retrieval and to leverage non-English sources when appropriate, further broadening the realism and difficulty of the tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Evaluation</head><p>To ensure reliable assessment of agent-generated answers, we adopt both human evaluation (humaneval) and automatic evaluation (auto-eval) using LLMs, each with carefully designed guidelines to handle diverse question types, including those with false premises.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1 Human Evaluation</head><p>Human annotators are asked to determine whether the agent's answer ŷq correctly answers the given question, with respect to the ground-truth answer y q . The evaluation guidelines emphasize the following key aspects:</p><p>• Entity consistency: Ensure that events, people, and locations mentioned in the answer match the ground truth.</p><p>• False premise detection: If the question contains a false assumption, the answer must explicitly point it out.</p><p>• Answer completeness: If the question requires multiple pieces of information, all must be answered correctly.</p><p>Each instance is independently annotated by two human raters, and they reach a high agreement level of 97%, indicating strong reliability. In cases of disagreement, a third expert annotator adjudicates the final decision.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.2 Automatic Evaluation</head><p>We primarily employ two strong LLM evaluators, DeepSeek-V3 (deepseek-chat) <ref type="bibr" target="#b2">[3]</ref> and Gemini-2.0-Flash (gemini-2.0-flash-preview-04-07)[6], to mitigate model-specific bias and selfpreference, following the approach proposed in <ref type="bibr" target="#b54">[58]</ref>. If the two models produce conflicting judgments, we resort to a third evaluator, either GPT-4o-mini (gpt-4o-mini-2024-07-18) <ref type="bibr" target="#b28">[31]</ref>) or a human judge, and take the majority vote as the final answer correctness label.</p><p>Initially, we employed a single unified prompt to evaluate all questions, regardless of type. The general-purpose prompt template was as follows:</p><p>Given a question and its groundtrue answer, determine whether the candidate answer is consistent with the correct answer. Note the following points: 1. The candidate answer must contain content consistent with groundtrue answer to be considered correct (pay attention to the consistency of time, place, and person), but more details can be provided. 2. If there are multiple items in the groundtrue answer, the candidate answer must also contain all the items to be correct.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>3.</head><p>If the groundtrue answer mentions that the premise of the question is wrong, such as some assumptions of the question are wrong, the candidate answer must point out the wrong premise to be considered correct.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>4.</head><p>When the groundtrue answer does not mention the wrong premise, the question itself is not problematic. If the candidate answer says that the question has a wrong premise" such as person/event may not exist, it is a wrong answer. 5. The given question has a clear answer and the given groundtrue answer is absolutely right. If the candidate answer says it doesn't know or lacks information, it is a wrong answer Just answer Yes or No. Given Question: {query} As shown in Table <ref type="table" target="#tab_4">6</ref>, this single unified prompting strategy achieves an overall accuracy of 96% when compared to human evaluation. However, we identified a consistent failure mode on false premise questions, where LLM evaluators often fail to recognize implicit factual errors or assumptions in the query (see Section C.3 for examples).</p><p>To mitigate this issue, we explicitly annotate such groundtruth answers y q with phrases like: "This question contains a false premise: ...", making the logical error explicit. Furthermore, we develop a separate-prompt strategy, with one prompt tailored for false-premise questions and another specifically for other questions. The specialized prompt for false-premise questions is as follows:</p><p>Given a question and its ground-truth answer, determine whether the candidate answer correctly answers the given question. Pay attention to the following points:</p><p>1. This question has a false premise, which has been pointed out in the groundtruth answer. If the candidate answer does not point out or correct this false premise, it is incorrect.</p><p>2. If the false premise pointed out by the candidate answer is different from the groundtruth answer (time, place, event, person, meaning inconsistent), it is incorrect.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>3.</head><p>If the groundtruth answer still answers the question in addition to pointing out the false premise, the candidate answer should also answer the question. In this case, if the candidate answer does not answer the question or the meaning of the answer content is inconsistent with the groundtruth answer (pay attention to the consistency of time, place, person, and quantity), it is incorrect. Just answer Yes or No. Given question: {query} Groundtruth answer: {reference_answer} Candidate answer: {candidate_answer} Does the candidate answer correctly answer the given question?</p><p>The prompt for other questions is as follows:</p><p>Given a question and its groundtrue answer, determine whether the candidate answer correctly answers the given question. Pay attention to the following points: 1. The candidate answer must contain content that is consistent with the groundtrue answer to be considered correct (pay attention to the consistency of time, place, person, and quantity), but more details can be provided.</p><p>2. If there are multiple contents/events/persons in the groundtrue answer, the candidate answer must also contain all the contents/events/persons to be considered correct.</p><p>3. The given question does not have a wrong premise, and the relevant person/event must exist and be unique. If the BabyAGI <ref type="bibr" target="#b56">[60]</ref>, AutoGPT <ref type="bibr" target="#b37">[41]</ref>, and KwaiAgent <ref type="bibr" target="#b30">[34]</ref>. Unless otherwise specified, our default search engine is DuckDuckGo. For the implementation of the search engine, we first use the API to retrieve results. If the API fails to return the correct results, we then use a web scraper to fetch the results. Our evaluated LLMs are all implemented via API calls. For models with official deployments, we use the official APIs; for those without (e.g., Llama-4-Maverick-17B-128E-Instruct), we rely on third-party hosted APIs. Under our typical experimental settings (maximum step of retrieval stage T = 5, maximum evidence-set length n = 5), each query roughly requires 36 API calls:</p><p>1. Retrieval stage: 5 calls for planning and action of the agent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Augmentation stage: 1 call to extract relevant evidence.</head><p>3. Answer-generation stage: 5 calls for answering based on five evidence from the evidence set and one call for answering based on all the observations. 4. Evaluation stage: 12 calls (two LLMs) to evaluate six candidate answers.</p><p>Each query also consumes about 24k input tokens and produces roughly 4k output tokens. Most of the input tokens come from the retrieval and augmentation stages, since those involve lengthy interaction histories and, at times, reading very long external documents. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.2 More Results for Question Attributes</head><p>This section presents the performance of the information seeking agent across different LLMs, search engines, and retrieval steps on various question attributes. The results for different LLMs are summarized in Table <ref type="table" target="#tab_5">7</ref>, for different search engines in Table <ref type="table" target="#tab_6">8</ref>, and for different retrieval step configurations in Table <ref type="table" target="#tab_7">9</ref>. From these results, we can draw several key conclusions:</p><p>LLM reasoning capabilities play a significant role in improving the agent's performance across multiple question attributes. Stronger reasoning models, such as DeepSeek-R1 and Gemini-2.5-Pro, show a marked improvement in answering both simple and complex question attributes compared to base models, suggesting that enhanced reasoning abilities allow the agent to better utilize retrieved evidence for more accurate answer generation.</p><p>Search engine quality also impacts the agent's performance, with Google and Yahoo outperforming other engines like DuckDuckGo and Bing in most cases (as shown in Table <ref type="table" target="#tab_6">8</ref>). This is consistent with the previous analysis, where search engines with better information coverage and relevance lead to higher accuracy. Models paired with high-quality search engines, especially for multi-hop or long-tail questions, consistently show better results.</p><p>Increasing the number of retrieval steps (T ) improves the agent's accuracy, with a noticeable enhancement in both ACC and IA@k as the maximum number of retrieval steps increases. This scaling effect highlights the agent's ability to refine its search and gather more evidence with additional computation time. However, the performance improvements for long-tail and distracting information questions are more limited, despite increasing the maximum number of retrieval steps. These types of questions are inherently more difficult to answer due to the sparse and noisy nature of the relevant information available on the web. As a result, even with more retrieval steps, the agent still struggles to effectively parse through irrelevant or misleading content. In summary, both LLM reasoning capabilities and search engine quality have a profound impact on the agent's ability to accurately answer different types of questions. Increasing the retrieval steps provides noticeable improvements, particularly for simpler questions. However, long-tail and distracting information questions remain more challenging, indicating that better evidence filtering and improved retrieval strategies are crucial for handling these complex scenarios. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.3 More Results for Test-time Scaling in Agentic Information Seeking</head><p>We conducted experiments to assess the performance of two models, DeepSeek-V3 and Gemini-2.5-Flash, as the maximum step T in information seeking was increased from 1 to 20. The evaluation metrics include ACC, IA@k, EEU, and IC, and we present the results in Table <ref type="table" target="#tab_8">10</ref>. From these results, we can draw several key conclusions. Both models benefit from an increased number of steps, demonstrating that more retrieval actions lead to better accuracy and information relevance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Gemini-2.5-Flash performs better than</head><p>DeepSeek-V3 at all retrieval rounds. For example, at 1 round, Gemini-2.5-Flash has an ACC of 7.35%, while DeepSeek-V3 has 4.49%. As the number of retrieval rounds increases, Gemini-2.5-Flash also sees significant improvement, with ACC reaching 22.86% at 20 rounds, outperforming DeepSeek-V3. EEU for both models increases with more retrieval rounds, reflecting a higher utility of the information retrieved. However, Gemini-2.5-Flash consistently shows a higher EEU compared to DeepSeek-V3, particularly at 3, 5, and 10 rounds. IC (Information Compactness) remains relatively stable for both models across different retrieval rounds, with Gemini-2.5-Flash maintaining a slightly better performance compared to DeepSeek-V3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.4 More Results and Potential Solutions for Retrieval Interference</head><p>This section presents additional experimental results on the phenomenon of retrieval interference, where the retrieval of external information negatively impacts the model's ability to answer questions correctly. Table <ref type="table" target="#tab_0">11</ref> displays the results for open-source LLMs, Table <ref type="table" target="#tab_9">12</ref> for closed-source LLMs, Table <ref type="table" target="#tab_10">13</ref> for different search engines, and Table <ref type="table" target="#tab_11">14</ref> for varying maximum retrieval steps. Our experiments reveal that certain models are able to correctly answer some questions based solely on their internal knowledge. However, when these same questions are queried with online retrieval, the answers become incorrect, which we define as retrieval interference, where the additional information gathered from the web undermines the agent's initial response. To quantify the extent of this interference, we introduce the interference rate, which measures the proportion of questions that an LLM can answer correctly without retrieval but fails to answer correctly when web-based information retrieval is applied. Specifically, the interference rate is calculated as the fraction of questions that an LLM answers correctly without retrieval but answers incorrectly after retrieval, normalized by the total questions it initially answered correctly without retrieval.</p><p>Our findings across various open-source and closed-source LLMs, search engines, and retrieval max turns show that retrieval interference is a widespread issue, with interference rates ranging from 40% to 80%. This high interference rate significantly reduces the model's probability of answering questions correctly, as irrelevant or conflicting web content can override the model's confident internal knowledge. To mitigate this issue, several strategies can be considered:</p><p>• Improving Model Confidence in Internal Knowledge: One possible approach is to develop mechanisms that increase the model's confidence in its own accurate knowledge, reducing its tendency to override correct internal answers when external information contradicts it. This could involve enhancing the model's self-reflection capabilities or providing additional confidence scores for internally generated answers before querying external sources.</p><p>• Better Evidence Filtering: A more effective evidence selection mechanism can help minimize irrelevant or conflicting information. For example, the model could prioritize high-confidence sources or introduce a ranking mechanism that filters out low-quality, noisy, or contradictory web pages. Contextual relevance checks could also be incorporated to ensure that only information that aligns well with the query's context is used.</p><p>• Knowledge Consistency Checks: Implementing consistency checks between the retrieved evidence and the model's internal knowledge could further improve accuracy. If a retrieved document contradicts previously confirmed internal knowledge, the agent could either ignore the external information or flag it for additional verification before using it in the final answer generation.</p><p>• Hybrid Retrieval and Reasoning Approaches: A hybrid approach that combines retrievalaugmented reasoning with internal knowledge checks may help. For instance, the agent could first check its internal knowledge and retrieve only supplementary information when necessary, minimizing reliance on external sources. This would reduce the risk of introducing irrelevant information while still benefiting from dynamic search results when needed.</p><p>• Search Engine Optimization: Since certain search engines, such as Google and Yahoo, tend to return more relevant results, using a more efficient search engine for information retrieval may help reduce the chance of encountering conflicting or misleading data. Moreover, optimizing search queries to be more specific or context-aware could lead to more relevant results, thereby reducing retrieval interference. The phenomenon of retrieval interference highlights a significant challenge in agentic information seeking tasks, where additional information retrieved from the web can degrade the model's performance. Our results suggest that improving the model's ability to confidently rely on internal knowledge, optimizing retrieval strategies, and employing better filtering mechanisms are crucial steps in mitigating this interference. Further research into these strategies could enhance the reliability and robustness of agentic RAG systems in real-world applications.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.5 Details and More Results of Language Impact</head><p>We also investigate how different languages (e.g., Chinese, English, and each query's predominant language) affect an agent's information-seeking performance, with DuckDuckGo as the fixed search engine. For the Chinese and English settings, we crafted both prompts and answers in the respective languages, and observed that the language of the search queries generated by the LLM closely matches the language of the prompt and question. As shown in Table <ref type="table" target="#tab_3">15</ref>, English queries substantially outperform Chinese ones. This is likely due to the broader coverage of English-language content and search tools. LLMs see far more English text during pre-training, so they're stronger at</p><p>Table 15: Performance with different languages. ACC and IA@k are measured by %. Pred. Lang. denotes Predominant Language. [{ "task_name": "task description", "command":{ "name":"command name", "args":{ "arg name":"value" } } }]</p><p>Even if there is only one task or no task, it needs to be returned in the form of a list. Ensure that the Task can be parsed by Python's json.loads function.</p><p>If the completed Tasks are sufficient to answer the query, terminate planning. Otherwise, create another Task that do not duplicate previous ones. A new Task:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.6 Impact of Answer LLMs</head><p>In previous experiments, when evaluating a specific LLM, we use it across all stages of the pipeline, including retrieval, augmentation, generation, and ϕ(•, •) for computing ACC and IA@k. In this section, we explore different answer LLMs ϕ(•, •), where the information seeking and generation stages use different LLMs. The results are presented in Table <ref type="table" target="#tab_13">18</ref>. Here, the term "Original" denotes the scenario where the same LLM generates the answer for computing IA@k, while "Fixed" refers to using a fixed LLM, DeepSeek-V3, for answer generation when computing IA@k, regardless of the model used in the retrieval and augmentation stages. From the results in Table <ref type="table" target="#tab_13">18</ref>, we observe that the performance difference between the Original and Fixed configurations is relatively small. However, fixed LLM configurations generally perform slightly worse. This may be because the information seeking LLM is aware of the knowledge gaps it has and selects corresponding documents to serve as evidence. Doing so can compensate for any missing knowledge from the original LLM, resulting in higher answer accuracy and lower information redundancy. However, when switching to a different answer LLM in the fixed setup, this advantage is lost. The answer LLM might not possess the same domain-specific knowledge as the information seeking LLM, leading to inaccuracies in the final answer generation. This demonstrates that the alignment between the LLMs used for information seeking and answer generation plays a crucial role in achieving higher performance in agentic information seeking tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E Broader Impacts</head><p>The work presented in this paper, specifically the development of the InfoDeepSeek benchmark for agentic information seeking tasks, has several potential positive societal impacts. By improving the ability of language models (LLMs) to accurately retrieve and synthesize information, this research can enhance various applications such as virtual assistants, educational tools, and decision-support systems, making them more reliable and efficient. These improvements could contribute to advancing fields such as healthcare, law, and research by providing accurate, up-to-date, and contextually relevant information.</p><p>Our experiments reveal that current LLMs still exhibit significant shortcomings in agentic information seeking, exposing two primary areas of weakness: (1) the intrinsic reasoning and domain-knowledge capabilities of the LLM itself, and (2) the quality and relevance of the search engine results it relies on. These findings carry both positive and cautionary implications:</p><p>• Enhanced Reasoning Abilities of LLMs: Stronger reasoning models (e.g., DeepSeek-R1, Gemini-2.5-Pro) consistently outperform baseline LLMs, pointing toward investment in specialized reasoning architectures.</p><p>• Search Optimization: Tailoring search queries and engines (as seen with Google/Yahoo gains) can substantially improve retrieval relevance. Future work might develop modeldriven query rewriting or search-engine-specific adapters.</p><p>• Long-Tail &amp; Noise Handling: Equipping agents with dedicated modules for identifying and filtering long-tail entities and distracting or conflicting information can reduce retrieval failures and improve focus.</p><p>• Compute Scaling: Allowing agents more compute at test time (i.e., increased retrieval steps) leads to clear scaling gains, suggesting that adaptive budgets or dynamic step policies could yield large benefits.</p><p>• Mitigating Retrieval Interference: Techniques such as internal-knowledge confidence checks or selective evidence fusion can prevent external noise from overriding correct model priors.</p><p>• Language-Aware Retrieval: Explicitly prompting agents to search in predominant languages unlocks richer, domain-specific resources, particularly for under-represented knowledge.</p><p>However, there are also negative societal impacts that must be considered. The advancements in LLMs and agentic RAG systems could potentially lead to misinformation amplification if the models are not properly evaluated or if they retrieve and generate content based on biased or misleading sources. Inaccurate or incomplete answers generated by models could exacerbate existing societal challenges, such as the spread of fake news or the reinforcement of harmful stereotypes. Additionally, as the technology becomes more powerful, there is the risk of misuse in areas like privacy violations or disinformation campaigns, where the system might be intentionally manipulated to produce harmful content.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Comparison between traditional RAG benchmark (up) and our InfoDeepSeek (bottom).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: The construction workflow of InfoDeepSeek dataset.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>6</head><figDesc>Benchmarking Agentic Information Seeking6.1 Experiment Setup We evaluate a range of closed-source and open-source LLMs under our Agentic RAG framework, including GPT-4o (gpt-4o-2024-08-06) [17], o3-mini (o3-mini-2025-01-31) [32], Claude-3.7-Sonnet (claude-3-7-sonnet-20250219) [1], DeepSeek-V3 (deepseek-chat) [26], DeepSeek-R1 (deepseek-reasoner) [10], Gemini-2.5-Flash (gemini-2.5-flash-preview-04-17) [7], Gemini-2.5-Pro (gemini-2.5-pro-exp-03-25) [8], Llama-4-Maverick-17B-128E-Instruct</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>FreshnessFigure 3 :</head><label>3</label><figDesc>Figure 3: Performance of LLMs and search engines across different question attributes. Different Question Attributes. To further understand where agents succeed or struggle, we analyze performance across different question attributes. Figures 3(a) and (b) show the performance of different LLMs under DuckDuckGo, while Figure 3(c) presents results of DeepSeek-V3 with different search engines. More results are available in Appendix D.2. Firstly, LLMs and search engines consistently perform better on simpler attributes, e.g., false premise, time sensitivity, and freshness, and worse on multi-hop, long-tail, and distracting information questions. This aligns with our observations during data collection, long-tail and distracting questions often contain obscure entities,</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Performance with different maximum step T of information seeking.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Retrieval interference (a) and the impact of languages (b).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>A. 1</head><label>1</label><figDesc>Components . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . A.2 Retrieval Stage . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . A.3 Augmentation Stage . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . A.4 Generation Stage . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . B Dataset Construction B.1 Query Generation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . B.1.1 Draft Question Generation. . . . . . . . . . . . . . . . . . . . . . . . . . . B.1.2 Filtering and Refinement. . . . . . . . . . . . . . . . . . . . . . . . . . . B.1.3 Question Annotation. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . B.2 Multi-stage Validation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . B.2.1 Validation from Two Verifiers . . . . . . . . . . . . . . . . . . . . . . . . B.2.2 Final Decision . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . B.3 Data Examples . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . B.4 Data Statistics . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . C Evaluation C.1 Human Evaluation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . C.2 Automatic Evaluation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . C.3 Fail Cases for Unified Prompting Strategy . . . . . . . . . . . . . . . . . . . . . . D More Experiment Results D.1 Setup . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . D.2 More Results for Question Attributes . . . . . . . . . . . . . . . . . . . . . . . . . D.3 More Results for Test-time Scaling in Agentic Information Seeking . . . . . . . . D.4 More Results and Potential Solutions for Retrieval Interference . . . . . . . . . . . D.5 Details and More Results of Language Impact . . . . . . . . . . . . . . . . . . . . D.6 Impact of Answer LLMs . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>2 . 3 .</head><label>23</label><figDesc>Criteria Check: Evaluate whether the question meets the required conditions: Determinacy (Is the answer stable over time?) and Difficulty (Can GPT-4o and DeepSeek-R1 in a webenabled, single-turn search model correctly answer the question?) Regardless of whether the question passes, the LLM responses are recorded in the validation notes for reference during final review.Metadata Verification: Ensure the correctness of annotated attributes, domain, and advantage language.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><figDesc>: "这位总统是危地马拉第50任总统吉米•莫拉莱斯(Jimmy Morales )，他从马里亚诺•加尔韦斯大学(Mariano Gálvez University)获得高级战 略研究硕士学位，从危地马拉泛美大学(Universidad Panamericana de Guatemala)获得媒体管理硕士学位", ↩→ ↩→ ↩→ "query_en": "The 50th president of a certain country is also a comedian.Where did he get his master's degree?", ↩→ "answer_en": "The president is Jimmy Morales, the 50th president of Guatemala. He holds a master's degree in strategic studies with a specialization in security and defense from Mariano Gálvez University and a master's degree in media management from Universidad Panamericana de Guatemala.", //en.wikipedia.org/wiki/Jimmy_Morales", "https://web.archive.org/web/20151028180235/http://www.jimmymorales.gt/main01/?page_id= ↩→ ], "verified": true }</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><figDesc>: "Which composer was awarded to the 2022 Grammy Awards Songwriter of the Year?", ↩→ "answer_en": "Grammy Award fo Songwriter of the Year (Non-Classical) was first presented in 2023 and was not previously part of any specific field. Therefore, this question has a false premise, that is, there is no such award in 2022.", ↩→ ↩→ ↩→ "sources": [ "https://zh.wikipedia.org/wiki/%E8%91%9B%E8%90%8A%E7%BE%8E%E7%8D%8E"</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>h i s t o r y g e o g r a p h y f i l m _ a n d _ t v s c i e n c e _ a n d _ t e c h n o l o g y l i t e r a t u r e _ a n d _ a r t p o l i t i c s e d u c a t i oFigure 6 :</head><label>6</label><figDesc>Figure6: The ratio of questions for different domains.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Comparison of RAG benchmarks in factual QA. Diff.Filt. means difficulty filtering (removing questions solvable by humans or LLMs through a single-round search). Dyna.Eval. means evaluating information seeking in dynamic environments. Symbol ✗ signifies the lack of this attribute, while symbol ✗ means it is not explicitly considered.</figDesc><table><row><cell>Benchmark</cell><cell cols="2">Environment</cell><cell></cell><cell></cell><cell></cell><cell cols="2">Question</cell><cell></cell><cell></cell></row><row><cell></cell><cell>Real World</cell><cell>Dyna. Eval.</cell><cell>Diff. Filt.</cell><cell>Multi-Hop</cell><cell>Long-Tail</cell><cell>Freshness</cell><cell>Time-Sensitive</cell><cell>Distracting Info.</cell><cell>False Premise</cell></row><row><cell>NQ [20]</cell><cell>✗</cell><cell>✗</cell><cell>✗</cell><cell>✗</cell><cell>✗</cell><cell>✗</cell><cell>✗</cell><cell>✗</cell><cell>✗</cell></row><row><cell>MultiHop-RAG [43]</cell><cell>✗</cell><cell>✗</cell><cell>✗</cell><cell>✓</cell><cell>✗</cell><cell>✗</cell><cell>✓</cell><cell>✗</cell><cell>✗</cell></row><row><cell>FreshLLM [48]</cell><cell>✓</cell><cell>✗</cell><cell>✗</cell><cell>✓</cell><cell>✗</cell><cell>✓</cell><cell>✓</cell><cell>✗</cell><cell>✓</cell></row><row><cell>RGB [2]</cell><cell>✗</cell><cell>✗</cell><cell>✗</cell><cell>✓</cell><cell>✗</cell><cell>✗</cell><cell>✓</cell><cell>✓</cell><cell>✗</cell></row><row><cell>CRAG [2]</cell><cell>✗</cell><cell>✗</cell><cell>✗</cell><cell>✓</cell><cell>✓</cell><cell>✗</cell><cell>✓</cell><cell>✗</cell><cell>✓</cell></row><row><cell>BrowseComp [51]</cell><cell>✓</cell><cell>✗</cell><cell>Human</cell><cell>✓</cell><cell>✗</cell><cell>✗</cell><cell>✗</cell><cell>✗</cell><cell>✗</cell></row><row><cell>BrowseComp-ZH [64]</cell><cell>✓</cell><cell>✗</cell><cell>Human</cell><cell>✓</cell><cell>✗</cell><cell>✗</cell><cell>✗</cell><cell>✗</cell><cell>✗</cell></row><row><cell>InfoDeepSeek (Ours)</cell><cell>✓</cell><cell>✓</cell><cell>LLMs</cell><cell>✓</cell><cell>✓</cell><cell>✓</cell><cell>✓</cell><cell>✓</cell><cell>✓</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 3 :</head><label>3</label><figDesc>Performance of different LLMs. ACC and IA@k are measured by %.</figDesc><table><row><cell>Model</cell><cell cols="7">ACC IA@1 IA@2 IA@3 IA@4 IA@5 EEU</cell><cell>IC</cell></row><row><cell cols="2">Llama-4-Maverick-17B-128E-Instruct 10.61</cell><cell>5.31</cell><cell>8.57</cell><cell>7.76</cell><cell>7.76</cell><cell>8.16</cell><cell cols="2">0.808 3.922</cell></row><row><cell>Qwen3-32B w/o think</cell><cell>8.98</cell><cell>4.90</cell><cell>6.53</cell><cell>6.94</cell><cell>6.94</cell><cell>7.76</cell><cell cols="2">0.864 4.012</cell></row><row><cell>Qwen3-32B w/ think</cell><cell>10.61</cell><cell>6.12</cell><cell>6.12</cell><cell>6.94</cell><cell>7.35</cell><cell>8.16</cell><cell cols="2">0.769 3.954</cell></row><row><cell>DeepSeek-V3</cell><cell>8.98</cell><cell>5.71</cell><cell>7.35</cell><cell>9.39</cell><cell>9.39</cell><cell cols="3">10.20 1.136 3.926</cell></row><row><cell>DeepSeek-R1</cell><cell cols="8">15.10 13.47 15.92 17.96 16.73 16.73 1.189 3.736</cell></row><row><cell>GPT-4o</cell><cell>10.20</cell><cell>9.39</cell><cell>8.16</cell><cell>9.39</cell><cell>8.57</cell><cell>8.98</cell><cell cols="2">0.920 3.878</cell></row><row><cell>o3-mini</cell><cell>11.43</cell><cell>8.98</cell><cell>10.20</cell><cell>9.39</cell><cell>9.80</cell><cell cols="3">10.20 0.893 3.829</cell></row><row><cell>Claude-3-7-Sonnet</cell><cell>12.65</cell><cell>9.80</cell><cell cols="6">12.24 12.65 11.43 12.24 1.000 3.909</cell></row><row><cell>Gemini-2.5-Flash</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table><note><p>14.<ref type="bibr" target="#b26">29</ref> </p><p>12.65 15.10 16.73 16.73 15.92 1.171 3.750 Gemini-2.5-Pro 22.45 18.78 20.82 20.82 21.63 21.63 0.964 3.762 6.2 Benchmarking on Different LLMs, Search Engines, and Question Attributes Different LLMs. Table 3 presents the performance of agents based on various LLMs on our benchmark, InfoDeepSeek, highlighting the challenge it presents for agentic information seeking tasks. Firstly, SOTA LLMs perform suboptimally on the agentic information seeking tasks.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 4 :</head><label>4</label><figDesc>Performance of DeepSeek-V3 and Gemini-2.5-Flash under different search engines.</figDesc><table><row><cell>Model</cell><cell cols="7">Search Engine ACC IA@1 IA@2 IA@3 IA@4 IA@5 EEU</cell><cell>IC</cell></row><row><cell></cell><cell cols="7">DuckDuckGo 14.29 12.65 15.10 16.73 16.73 15.92 1.171 3.750</cell></row><row><cell>Gemini-2.5-Flash</cell><cell>Bing Google</cell><cell cols="6">33.88 27.35 30.61 32.65 32.65 32.65 0.964 3.494 34.29 29.39 34.69 37.55 37.96 36.33 1.107 3.499</cell></row><row><cell></cell><cell>Yahoo</cell><cell cols="6">33.47 28.98 32.24 35.51 35.10 36.73 1.098 3.341</cell></row><row><cell></cell><cell>DuckDuckGo</cell><cell>8.98</cell><cell>5.71</cell><cell>7.35</cell><cell>9.39</cell><cell>9.39</cell><cell>10.20 1.136 3.926</cell></row><row><cell>DeepSeek-V3</cell><cell>Bing Google</cell><cell cols="6">19.18 12.24 15.92 17.96 18.37 17.96 0.957 3.771 28.57 19.18 23.27 24.49 24.08 24.08 0.857 3.610</cell></row><row><cell></cell><cell>Yahoo</cell><cell cols="6">25.71 17.96 24.08 26.53 26.94 26.94 1.048 3.631</cell></row></table><note><p>Different Search Engines.</p><p>To better understand the effect of different search engines on information seeking performance, we conduct controlled experiments by fixing the agent and varying the search engine. Specifically, Table4</p><p>presents results for two representative LLMs, DeepSeek-V3 and Gemini-2.5-Flash, under four search engines: DuckDuckGo, Google, Bing, and Yahoo. Firstly, search engine significantly affects the performance of agentic information seeking. Google and Yahoo consistently outperform Bing and DuckDuckGo, with DuckDuckGo yielding the lowest scores. This highlights the importance of search engine quality in supporting effective agentic infromation seeking. General-purpose search engines, e.g., Google and Yahoo, provide broader coverage and higher-quality results, making them better suited as information entry for Agentic RAG systems. Secondly, a good search engine can partially compensate for model limitations. While DeepSeek-V3 generally underperforms Gemini-2</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 5 :</head><label>5</label><figDesc>The number of questions for each attribute. Time-Sen. denotes Time-Sensitive. Distr.Info. means Distracting Information. False Prem. stands for False Premise.Attributes Multi-Hop Long-Tail Time-Sen. Freshness Distr. Info. False Prem.</figDesc><table><row><cell>Numbers</cell><cell>188</cell><cell>187</cell><cell>162</cell><cell>48</cell><cell>76</cell><cell>27</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 6 :</head><label>6</label><figDesc>The Accuracy of unified prompt and separate prompt strategies in automatic evaluation compared to human evaluation.</figDesc><table><row><cell></cell><cell cols="2">DeepSeek-V3</cell><cell cols="2">Gemini-2.5-Flash</cell></row><row><cell></cell><cell cols="4">unified prompt separate prompt unified prompt separate prompt</cell></row><row><cell>Accuracy</cell><cell>95.57%</cell><cell>99.29%</cell><cell>96.43%</cell><cell>98.71%</cell></row><row><cell cols="3">Groundtrue Answer: {reference_answer}</cell><cell></cell><cell></cell></row><row><cell cols="3">Candidate Answer: {candidate_answer}</cell><cell></cell><cell></cell></row><row><cell cols="3">Is the candidate answer correct?</cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 7 :</head><label>7</label><figDesc>Performance of different LLMs on question attributes, measured by %. Time-Sen. denotes Time-Sensitive. Distr.Info. means Distracting Information. False Prem. stands for False Premise.</figDesc><table><row><cell>Model</cell><cell cols="6">Multi-Hop Long-Tail Time-Sen. Freshness Distr. Info. False Prem.</cell></row><row><cell>Llama-4-Maverick-17B-128E-Instruct</cell><cell>9.04</cell><cell>9.04</cell><cell>12.35</cell><cell>10.53</cell><cell>9.59</cell><cell>20.00</cell></row><row><cell>Qwen3-32B w/o think</cell><cell>7.98</cell><cell>8.56</cell><cell>7.41</cell><cell>16.67</cell><cell>10.96</cell><cell>7.69</cell></row><row><cell>Qwen3-32B w/ think</cell><cell>10.64</cell><cell>8.56</cell><cell>10.49</cell><cell>10.66</cell><cell>8.22</cell><cell>19.23</cell></row><row><cell>DeepSeek-V3</cell><cell>6.38</cell><cell>8.02</cell><cell>9.26</cell><cell>12.50</cell><cell>12.33</cell><cell>19.23</cell></row><row><cell>DeepSeek-R1</cell><cell>14.89</cell><cell>12.30</cell><cell>16.05</cell><cell>16.67</cell><cell>13.70</cell><cell>30.77</cell></row><row><cell>GPT-4o</cell><cell>6.91</cell><cell>8.02</cell><cell>9.88</cell><cell>14.58</cell><cell>9.59</cell><cell>23.08</cell></row><row><cell>o3-mini</cell><cell>9.57</cell><cell>10.16</cell><cell>12.35</cell><cell>8.33</cell><cell>6.85</cell><cell>19.23</cell></row><row><cell>Claude-3-7-Sonnet</cell><cell>11.70</cell><cell>10.16</cell><cell>12.96</cell><cell>22.92</cell><cell>12.33</cell><cell>26.92</cell></row><row><cell>Gemini-2.5-Flash</cell><cell>12.77</cell><cell>13.37</cell><cell>13.58</cell><cell>20.83</cell><cell>9.59</cell><cell>26.92</cell></row><row><cell>Gemini-2.5-Pro</cell><cell>20.74</cell><cell>19.79</cell><cell>22.22</cell><cell>39.58</cell><cell>21.92</cell><cell>38.46</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 8 :</head><label>8</label><figDesc>Performance of different search engines on question attributes, measured by %. Time-Sen. denotes Time-Sensitive. Distr.Info. means Distracting Information. False Prem. stands for False Premise.</figDesc><table><row><cell>Model</cell><cell cols="7">Search Engine Multi-Hop Long-Tail Time-Sen. Freshness Distr. Info. False Prem.</cell></row><row><cell></cell><cell>DuckDuckGo</cell><cell>12.77</cell><cell>13.37</cell><cell>13.58</cell><cell>20.83</cell><cell>9.59</cell><cell>26.92</cell></row><row><cell>Gemini-2.5-Flash</cell><cell>Bing Google</cell><cell>31.91 32.98</cell><cell>31.55 33.16</cell><cell>34.57 38.27</cell><cell>37.50 39.58</cell><cell>24.66 24.66</cell><cell>34.62 42.31</cell></row><row><cell></cell><cell>Yahoo</cell><cell>29.79</cell><cell>33.16</cell><cell>33.95</cell><cell>31.25</cell><cell>26.03</cell><cell>50.00</cell></row><row><cell></cell><cell>DuckDuckGo</cell><cell>6.38</cell><cell>8.02</cell><cell>9.26</cell><cell>12.50</cell><cell>12.33</cell><cell>19.23</cell></row><row><cell>DeepSeek-V3</cell><cell>Bing Google</cell><cell>15.43 25.53</cell><cell>18.18 29.41</cell><cell>18.52 24.69</cell><cell>16.67 27.08</cell><cell>16.67 31.51</cell><cell>38.46 26.92</cell></row><row><cell></cell><cell>Yahoo</cell><cell>22.87</cell><cell>26.20</cell><cell>23.46</cell><cell>16.67</cell><cell>16.44</cell><cell>34.62</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_7"><head>Table 9 :</head><label>9</label><figDesc>Performance on question attributes under different maximum step T limits, measured by %. Time-Sen. denotes Time-Sensitive. Distr.Info. means Distracting Information. False Prem. stands for False Premise.</figDesc><table><row><cell>Model</cell><cell cols="7">Max Step Multi-Hop Long-Tail Time-Sen. Freshness Distr. Info. False Prem.</cell></row><row><cell></cell><cell>1</cell><cell>3.19</cell><cell>4.28</cell><cell>3.09</cell><cell>4.17</cell><cell>5.48</cell><cell>11.54</cell></row><row><cell></cell><cell>3</cell><cell>7.45</cell><cell>6.95</cell><cell>9.88</cell><cell>16.67</cell><cell>8.22</cell><cell>15.38</cell></row><row><cell>DeepSeek-V3</cell><cell>5</cell><cell>6.38</cell><cell>8.02</cell><cell>9.26</cell><cell>12.50</cell><cell>12.33</cell><cell>19.23</cell></row><row><cell></cell><cell>10</cell><cell>11.17</cell><cell>8.56</cell><cell>13.58</cell><cell>22.92</cell><cell>14.67</cell><cell>26.92</cell></row><row><cell></cell><cell>20</cell><cell>12.23</cell><cell>16.58</cell><cell>15.43</cell><cell>14.58</cell><cell>10.96</cell><cell>26.92</cell></row><row><cell></cell><cell>1</cell><cell>4.79</cell><cell>8.02</cell><cell>7.41</cell><cell>6.25</cell><cell>5.48</cell><cell>30.77</cell></row><row><cell></cell><cell>3</cell><cell>9.04</cell><cell>9.09</cell><cell>11.73</cell><cell>18.75</cell><cell>9.59</cell><cell>30.77</cell></row><row><cell>Gemini-2.5-Flash</cell><cell>5</cell><cell>12.77</cell><cell>13.37</cell><cell>13.58</cell><cell>20.83</cell><cell>9.59</cell><cell>26.92</cell></row><row><cell></cell><cell>10</cell><cell>15.96</cell><cell>18.18</cell><cell>19.75</cell><cell>33.33</cell><cell>19.18</cell><cell>38.46</cell></row><row><cell></cell><cell>20</cell><cell>20.74</cell><cell>20.32</cell><cell>23.46</cell><cell>37.50</cell><cell>20.55</cell><cell>38.46</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_8"><head>Table 10 :</head><label>10</label><figDesc>Performance with varying maximum action rounds in the retrieval stage. ACC and IA@k are measured by %.</figDesc><table><row><cell>Model</cell><cell cols="8">Max Turn ACC IA@1 IA@2 IA@3 IA@4 IA@5 EEU</cell><cell>IC</cell></row><row><cell></cell><cell>1</cell><cell>4.49</cell><cell>4.08</cell><cell>2.86</cell><cell>4.08</cell><cell>4.08</cell><cell>4.08</cell><cell>0.909 4.052</cell></row><row><cell></cell><cell>3</cell><cell>8.57</cell><cell>5.31</cell><cell>8.57</cell><cell>8.16</cell><cell>8.16</cell><cell>8.16</cell><cell>1.000 3.965</cell></row><row><cell>DeepSeek-V3</cell><cell>5</cell><cell>8.98</cell><cell>5.71</cell><cell>7.35</cell><cell>9.39</cell><cell>9.39</cell><cell cols="2">10.20 1.136 3.926</cell></row><row><cell></cell><cell>10</cell><cell>12.65</cell><cell>6.94</cell><cell cols="5">10.61 10.61 11.43 11.84 0.935 3.826</cell></row><row><cell></cell><cell>20</cell><cell cols="7">15.92 11.43 12.65 13.88 15.51 15.10 0.974 3.759</cell></row><row><cell></cell><cell>1</cell><cell>7.35</cell><cell>8.16</cell><cell>7.76</cell><cell>7.76</cell><cell>8.57</cell><cell>8.16</cell><cell>1.167 3.908</cell></row><row><cell></cell><cell>3</cell><cell cols="7">11.84 13.88 13.47 14.69 14.29 13.88 1.241 3.771</cell></row><row><cell>Gemini-2.5-Flash</cell><cell>5</cell><cell cols="7">14.29 12.65 15.10 16.73 16.73 15.92 1.171 3.750</cell></row><row><cell></cell><cell>10</cell><cell cols="7">19.59 15.92 17.96 20.41 20.00 20.41 1.042 3.602</cell></row><row><cell></cell><cell>20</cell><cell cols="7">22.86 20.82 22.04 22.45 23.67 22.86 1.036 3.573</cell></row><row><cell cols="4">Table 11: Interference rates of open-source LLMs,</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="4">measured by %. Llama-4-Maverick denotes</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">Llama-4-Maverick-17B-128E-Instruct.</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Model</cell><cell></cell><cell cols="2">Interference Rate</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="2">Llama-4-Maverick</cell><cell>87.50</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="2">Qwen3-32B w/o think</cell><cell>100.00</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="2">Qwen3-32B w/ think</cell><cell>88.89</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>DeepSeek-V3</cell><cell></cell><cell>84.21</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>DeepSeek-R1</cell><cell></cell><cell>53.13</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_9"><head>Table 12 :</head><label>12</label><figDesc>Interference rates of closed-source LLMs, measured by %.</figDesc><table><row><cell>Model</cell><cell>Interference Rate</cell></row><row><cell>GPT-4o</cell><cell>61.54</cell></row><row><cell>o3-mini</cell><cell>61.11</cell></row><row><cell>Claude-3-7-Sonnet</cell><cell>58.33</cell></row><row><cell>Gemini-2.5-Flash</cell><cell>68.97</cell></row><row><cell>Gemini-2.5-Pro</cell><cell>60.34</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_10"><head>Table 13 :</head><label>13</label><figDesc>interference rates under different search engines, measured by %.</figDesc><table><row><cell>Model</cell><cell cols="2">Search Engine Interference Rate</cell></row><row><cell></cell><cell>DuckDuckGo</cell><cell>68.97</cell></row><row><cell>Gemini-2.5-Flash</cell><cell>Bing Google</cell><cell>50.00 46.87</cell></row><row><cell></cell><cell>Yahoo</cell><cell>42.31</cell></row><row><cell></cell><cell>DuckDuckGo</cell><cell>84.21</cell></row><row><cell>DeepSeek-V3</cell><cell>Bing Google</cell><cell>84.21 53.33</cell></row><row><cell></cell><cell>Yahoo</cell><cell>42.11</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_11"><head>Table 14 :</head><label>14</label><figDesc>Interference rates under varying maximum step T , measured by %.</figDesc><table><row><cell>Model</cell><cell cols="2">Max Step Interference Rate</cell></row><row><cell></cell><cell>1</cell><cell>85.71</cell></row><row><cell></cell><cell>3</cell><cell>80.00</cell></row><row><cell>DeepSeek-V3</cell><cell>5</cell><cell>84.21</cell></row><row><cell></cell><cell>10</cell><cell>53.33</cell></row><row><cell></cell><cell>20</cell><cell>52.94</cell></row><row><cell></cell><cell>1</cell><cell>73.33</cell></row><row><cell></cell><cell>3</cell><cell>62.07</cell></row><row><cell>Gemini-2.5-Flash</cell><cell>5</cell><cell>68.97</cell></row><row><cell></cell><cell>10</cell><cell>58.33</cell></row><row><cell></cell><cell>20</cell><cell>65.52</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_12"><head>Table 17 :</head><label>17</label><figDesc>Retrieval interference under different languages, measured by %. Pred. Lang. denotes Predominant Language.Complex problems can be split into sub-problems and then information can be collected, aggregated and authenticated. Be sure to verify the truthfulness of the information. 5. Stay humble and call the tool for questions you are not sure about, but do not call the same tool with the same parameters repeatedly. 6. You can flexibly switch the language of the search term to get more information. You can choose to search in Chinese, English, or the language related to the entity involved in the question (for example, if the question involves a French person, you can search in French) 7. You can think and plan up to {max_iter_num} steps, so strive to plan tasks as efficiently as possible. 8. You have the capability for reflection and self-criticism; reflect on past decisions and improve your strategies. 9. If you have sufficient information to answer the given query, invoke the termination tool to terminate planning. Otherwise, continue planning new tasks while ensuring no duplication with prior tasks. {tool_specification} {current_date_and_time} {memory} Given Query: {query} Based on the given question and existing tasks, plan a new Task (no repetitions), and you can only generate the Task in the following **JSON list** format:</figDesc><table><row><cell>Model</cell><cell>Language</cell><cell>Interference Rate</cell></row><row><cell></cell><cell>Chinese</cell><cell>84.21</cell></row><row><cell>DeepSeek-V3</cell><cell>English</cell><cell>64.71</cell></row><row><cell></cell><cell>Pred. Lang.</cell><cell>56.25</cell></row><row><cell></cell><cell>Chinese</cell><cell>61.54</cell></row><row><cell>GPT-4o</cell><cell>English</cell><cell>65.00</cell></row><row><cell></cell><cell>Pred. Lang.</cell><cell>52.94</cell></row><row><cell></cell><cell>Chinese</cell><cell>68.97</cell></row><row><cell>Gemini-2.5-Flash</cell><cell>English</cell><cell>53.85</cell></row><row><cell></cell><cell>Pred. Lang.</cell><cell>48.39</cell></row><row><cell>4.</cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_13"><head>Table 18 :</head><label>18</label><figDesc>Performance of different answer LLMs for ϕ(•, •). "Original" denotes that the answer is generated by the same LLM used in the retrieval and augmentation stage, while "Fixed" means employing a fixed LLM, DeepSeek-V3, to generate an answer. ACC and IA@k are measured by %..<ref type="bibr" target="#b44">48</ref> 12.38 12.38 14.290.833 4.116 DeepSeek-R1 20.00 24.76 25.71 24.76 24.76 1.286 3.895 GPT-4o 14.29 13.33 14.29 12.38 12.38 0.882 4.071 o3-mini 18.10 17.14 17.14 18.10 18.10 1.056 3.875 Claude-3-7-Sonnet 18.10 18.10 20.95 20.00 20.00 0.957 4.044 Gemini-2.5-Flash 20.00 21.90 22.86 24.76 21.90 1.040 3.842 Gemini-2.5-Pro 29.52 28.57 29.52 28.57 29.52 0.886 3.977 Qwen3-32B w/ think Fixed 13.33 14.29 13.33 13.33 14.29 0.833 4.103 DeepSeek-R1 20.00 21.90 23.81 23.81 23.81 1.190 3.938 GPT-4o 11.43 14.29 15.24 14.29 14.29 0.941 4.068 o3-mini 18.10 17.14 17.14 17.14 18.10 1.056 3.910 Claude-3-7-Sonnet 17.14 18.10 20.95 21.90 21.90 1.000 4.063 Gemini-2.5-Flash 20.95 20.00 24.76 24.76 24.76 1.040 3.773 Gemini-2.5-Pro 25.71 28.57 28.57 26.67 27.62 0.857 3.997</figDesc><table><row><cell>Model</cell><cell>answer LLM IA@1 IA@2 IA@3 IA@4 IA@5 EEU</cell><cell>IC</cell></row><row><cell>Qwen3-32B w/ think</cell><cell>11.43 10</cell><cell></cell></row><row><cell></cell><cell>Original</cell><cell></cell></row></table></figure>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>candidate answer proposes a wrong premise or cannot determine whether the person/event exists, it is a wrong answer. 4. The given question has a clear answer and the given groundtrue answer must be correct. If the candidate answer does not answer the question correctly but proposes the need to further query relevant information, it is a wrong answer. Just answer Yes or No. Given question: {query} Groundtruth answer: {reference_answer} Candidate answer: {candidate_answer} Does the candidate answer correctly answer the given question?</p><p>As shown in Table <ref type="table">6</ref>, this separate-prompt strategy significantly improves evaluation robustness, increasing LLM evaluation accuracy from 95.57% to 99.29% compared to human annotations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.3 Fail Cases for Unified Prompting Strategy</head><p>Here, we present two failure cases related to false premises. The first involves a question that contains a false premise, but the agent's answer fails to explicitly identify it.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Given question: Is Yamoussoukro the capital of the East African country of Côte d'Ivoire?</head><p>Groundtruth answer: Yes, but the Republic of Côte d'Ivoire is a West African country. Candidate answer: Yamoussoukro is the capital of Côte d'Ivoire, as confirmed by multiple sources, including Wikipedia and Britannica. However, Abidjan remains the de facto economic center and largest city. Judgment from unified prompting: True Judgment from human: False The second involves a question that does not contain a false premise, but the agent incorrectly assumes one due to missing or unavailable evidence. Both types of cases sometimes pose challenges for LLM-based evaluators to accurately assess.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Given question: What novels did the Prime Minister of Iceland in 1904 write during his lifetime?</head><p>Groundtruth answer: The Prime Minister of Iceland in 1904, Hannes Þórður Hafstein, wrote the novel Brennivínshatturinn. Candidate answer: According to the search results, the name of the Prime Minister of Iceland in 1904 is not explicitly mentioned in the information provided (the link to Wikipedia does not return a specific name). In addition, all search results do not show that the Prime Minister of Iceland in 1904 had any literary experience. Therefore, the user's question may have a wrong premise -the name of the Prime Minister of Iceland in 1904 cannot be confirmed at present, and there is no evidence that he wrote a novel. Judgment from unified prompting: True Judgment from human: False</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D More Experiment Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.1 Setup</head><p>All models are configured with a context window of 4096 tokens. For queries that exceed this limit, we truncate earlier turns in the conversation history. During web browsing, if a document exceeds the limit, we segment it into chunks of up to 4096 tokens, summarize each chunk independently, and then aggregate the summaries. Our Agentic RAG framework evolves from open-source projects like</p><p>Model Language ACC IA@1 IA@2 IA@3 IA@4 IA@5 EEU IC DeepSeek-V3 Chinese 8.98 5.71 7.35 9.39 9.39 10.20 1.136 3.926 English 13.47 12.24 11.84 11.84 11.84 12.65 0.939 4.032 Pred. Lang. 17.14 11.02 15.92 17.96 17.55 17.96 1.048 3.919 GPT-4o Chinese 10.20 9.39 8.16 9.39 8.57 8.98 0.920 3.878 English 11.02 8.16 9.80 10.61 11.02 11.84 1.074 3.889 Pred. Lang. 14.69 12.65 12.24 11.43 12.24 12.24 0.861 3.870 Gemini-2.5-Flash Chinese 14.29 12.65 15.10 16.73 16.73 15.92 1.171 3.750 English 17.55 14.29 15.92 17.55 18.78 18.78 1.070 3.761 Pred. Lang. 18.78 15.92 15.92 17.14 17.55 17.96 0.957 3.802 understanding and generating English search queries. Search engines index and rank English pages more comprehensively, yielding higher-quality results. For the predominant language setting, although we recorded each instance's predominant language in our dataset, it proved difficult to translate prompts and questions into every target language. Instead, we designed a language-aware prompt instructing the agent to search in its dominant language (prompt details provided below). Results in Table <ref type="table">15</ref> show that this language-aware prompting yields the best overall performance, indicating that specifying the dominant language indeed helps the agent retrieve more relevant information online.</p><p>Furthermore, prompting for the dominant language yields larger improvements on models with weaker innate multilingual capabilities-such as DeepSeek-V3 and GPT-4o-which cannot autonomously switch their search language and thus require explicit prompt cues. By contrast, stronger multilingual models like Gemini-2.0-Flash generally auto-adapt their search language and depend less on prompt instructions, resulting in smaller gains from our language-aware prompting strategy.</p><p>We also present the retrieval interference and answer accuracy of various question attributes under different language settings in Tables 17 and Table <ref type="table" target="#tab_15">16</ref>.</p><p>The language-aware prompt is as follows:</p><p>You are a {agent_name}, {agent_bio}, {agent_instructions} Currently, you are in the task planning phase, where you will be given a specific query to address. Please utilize LLM's advantages and pursue efficient strategies for task planning.</p><p>1. You have a short-term memory of approximately 4,000 characters.</p><p>2. You do not require assistance or response from users.</p><p>3. You can use the reference tools mentioned when planning.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_15"><head>Table 16 :</head><label>16</label><figDesc>Accuracy on question attributes with different languages, measured by %. Pred. Lang. denotes Predominant Language.</figDesc><table><row><cell>Model</cell><cell>Language</cell><cell cols="6">Multi-Hop Long-Tail Time-Sen. Freshness Distr. Info. False Prem.</cell></row><row><cell></cell><cell>Chinese</cell><cell>6.38</cell><cell>8.02</cell><cell>9.26</cell><cell>12.50</cell><cell>12.33</cell><cell>19.23</cell></row><row><cell>DeepSeek-V3</cell><cell>English</cell><cell>10.11</cell><cell>12.83</cell><cell>12.96</cell><cell>16.67</cell><cell>10.96</cell><cell>30.77</cell></row><row><cell></cell><cell>Pred. Lang.</cell><cell>14.89</cell><cell>14.97</cell><cell>14.81</cell><cell>20.83</cell><cell>15.79</cell><cell>36.00</cell></row><row><cell></cell><cell>Chinese</cell><cell>6.91</cell><cell>8.02</cell><cell>9.88</cell><cell>14.58</cell><cell>9.59</cell><cell>23.08</cell></row><row><cell>GPT-4o</cell><cell>English</cell><cell>8.51</cell><cell>9.09</cell><cell>8.64</cell><cell>22.92</cell><cell>9.59</cell><cell>30.77</cell></row><row><cell></cell><cell>Pred. Lang.</cell><cell>13.30</cell><cell>14.44</cell><cell>12.35</cell><cell>18.75</cell><cell>11.84</cell><cell>32.00</cell></row><row><cell></cell><cell>Chinese</cell><cell>12.77</cell><cell>13.37</cell><cell>13.58</cell><cell>20.83</cell><cell>9.59</cell><cell>26.92</cell></row><row><cell>Gemini-2.5-Flash</cell><cell>English</cell><cell>16.49</cell><cell>15.51</cell><cell>14.20</cell><cell>25.00</cell><cell>19.74</cell><cell>32.00</cell></row><row><cell></cell><cell>Pred. Lang.</cell><cell>18.62</cell><cell>17.11</cell><cell>17.28</cell><cell>20.83</cell><cell>15.79</cell><cell>28.00</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Claude 3.7 sonnet</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<idno>Ac- cessed on 2025-05-05</idno>
+		<ptr target="https://www.anthropic.com/claude/sonnet" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Benchmarking large language models in retrieval-augmented generation</title>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongyu</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianpei</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Sun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page" from="17754" to="17762" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Deepseek</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Deepseek</surname></persName>
+		</author>
+		<ptr target="https://api-docs.deepseek.com/news/news250325" />
+		<imprint>
+			<date type="published" when="2025-05-05">-v3-0324, 2025. 2025-05-05</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">A survey on rag meeting llms: Towards retrieval-augmented large language models</title>
+		<author>
+			<persName><forename type="first">Wenqi</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujuan</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liangbo</forename><surname>Ning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hengyun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawei</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tat-Seng</forename><surname>Chua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qing</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 30th ACM SIGKDD Conference on Knowledge Discovery and Data Mining</title>
+		<meeting>the 30th ACM SIGKDD Conference on Knowledge Discovery and Data Mining</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="6491" to="6501" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Retrieval-augmented generation for large language models: A survey</title>
+		<author>
+			<persName><forename type="first">Yunfan</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yun</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kangxiang</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinliu</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxi</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixin</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haofen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haofen</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.10997</idno>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Gemini</surname></persName>
+		</author>
+		<ptr target="https://ai.google.dev/gemini-api/docs/models?hl=zh-cn#gemini-2.5-pro-preview-05-06" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2025" to="2025" />
+		</imprint>
+	</monogr>
+	<note type="report_type">gemini-2.5-pro-preview</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Gemini deep research</title>
+		<author>
+			<persName><surname>Gemini</surname></persName>
+		</author>
+		<ptr target="https://gemini.google/overview/deep-research/" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2025" to="2025" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Daya Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoyu</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shirong</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.12948</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">A survey on large language models: Applications, challenges, limitations, and practical usage</title>
+		<author>
+			<persName><forename type="first">Rizwan</forename><surname>Muhammad Usman Hadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abbas</forename><surname>Qureshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muhammad</forename><surname>Shah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anas</forename><surname>Irfan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zafar ; Naveed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Akhtar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Seyedali</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mirjalili</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Authorea Preprints</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>Muhammad Bilal Shaikh</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hangfeng</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Roth</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2301.00303</idno>
+		<title level="m">Rethinking with retrieval: Faithful large language model inference</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanqiu</forename><surname>Long</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaoyan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><forename type="middle">Z</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mintqa</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.17032</idno>
+		<title level="m">A multi-hop question answering benchmark for evaluating llms on new and tail knowledge</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Pasa: An llm agent for comprehensive academic paper search</title>
+		<author>
+			<persName><forename type="first">Yichen</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanhua</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyuan</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.10120</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xanh</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anh-Khoa</forename><surname>Duong Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saku</forename><surname>Sugawara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akiko</forename><surname>Aizawa</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2011.01060</idno>
+		<title level="m">Constructing a multi-hop qa dataset for comprehensive evaluation of reasoning steps</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">A survey on hallucination in large language models: Principles, taxonomy, challenges, and open questions</title>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weijiang</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weitao</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weihong</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhangyin</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qianglong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weihua</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaocheng</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Qin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Information Systems</title>
+		<imprint>
+			<biblScope unit="volume">43</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="1" to="55" />
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Hurst</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Lerer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><forename type="middle">P</forename><surname>Goucher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Perelman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aidan</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akila</forename><surname>Ostrow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Welihinda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Hayes</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Radford</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.21276</idno>
+		<title level="m">Gpt-4o system card</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Triviaqa: A large scale distantly supervised challenge dataset for reading comprehension</title>
+		<author>
+			<persName><forename type="first">Mandar</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eunsol</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">S</forename><surname>Weld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1705.03551</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Chatgpt for good? on opportunities and challenges of large language models for education</title>
+		<author>
+			<persName><forename type="first">Enkelejda</forename><surname>Kasneci</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kathrin</forename><surname>Seßler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Küchemann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Bannert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daryna</forename><surname>Dementieva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><surname>Fischer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Urs</forename><surname>Gasser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Georg</forename><surname>Groh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephan</forename><surname>Günnemann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eyke</forename><surname>Hüllermeier</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Learning and individual differences</title>
+		<imprint>
+			<biblScope unit="volume">103</biblScope>
+			<biblScope unit="page">102274</biblScope>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Natural questions: a benchmark for question answering research</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Kwiatkowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jennimaria</forename><surname>Palomaki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivia</forename><surname>Redfield</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Collins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ankur</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Alberti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danielle</forename><surname>Epstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Illia</forename><surname>Polosukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenton</forename><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="page" from="453" to="466" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Agent-g: An agentic framework for graph retrieval augmented generation</title>
+		<author>
+			<persName><forename type="first">Meng-Chieh</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Costas</forename><surname>Mavromatis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soji</forename><surname>Adeshina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Vassilis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huzefa</forename><surname>Ioannidis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christos</forename><surname>Rangwala</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Faloutsos</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Retrieval-augmented generation for knowledge-intensive nlp tasks</title>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Piktus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladimir</forename><surname>Karpukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heinrich</forename><surname>Küttler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Rocktäschel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="9459" to="9474" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Clickprompt: Ctr models are strong prompt generators for adapting language models to ctr prediction</title>
+		<author>
+			<persName><forename type="first">Jianghao</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hangyu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunjia</forename><surname>Xi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanru</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kangning</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiming</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weinan</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ACM Web Conference 2024</title>
+		<meeting>the ACM Web Conference 2024</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="3319" to="3330" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Rella: Retrieval-enhanced large language models for lifelong sequential behavior comprehension in recommendation</title>
+		<author>
+			<persName><forename type="first">Jianghao</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rong</forename><surname>Shan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenxu</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kounianhua</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shigang</forename><surname>Quan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiming</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weinan</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ACM Web Conference 2024</title>
+		<meeting>the ACM Web Conference 2024</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="3497" to="3508" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">How can recommender systems benefit from large language models: A survey</title>
+		<author>
+			<persName><forename type="first">Jianghao</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunjia</forename><surname>Xi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiwen</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuhan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenxu</forename><surname>Zhu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Information Systems</title>
+		<imprint>
+			<biblScope unit="volume">43</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="1" to="47" />
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aixin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bingxuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bochao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengda</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenggang</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengqi</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Ruan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.19437</idno>
+		<title level="m">Deepseek-v3 technical report</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Crud-rag: A comprehensive chinese benchmark for retrieval-augmented generation of large language models</title>
+		<author>
+			<persName><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Niu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.17043</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Knowledge injection to counter large language model (llm) hallucination</title>
+		<author>
+			<persName><forename type="first">Ariana</forename><surname>Martino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Iannelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Coleen</forename><surname>Truong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">European Semantic Web Conference</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="182" to="185" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Llama 4 maverick</title>
+		<ptr target="https://www.llama.com/docs/model-cards-and-prompt-formats/llama4/" />
+	</analytic>
+	<monogr>
+		<title level="j">Meta</title>
+		<imprint>
+			<biblScope unit="page" from="2025" to="2025" />
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Ms marco: A human-generated machine reading comprehension dataset</title>
+		<author>
+			<persName><forename type="first">Tri</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mir</forename><surname>Rosenberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xia</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurabh</forename><surname>Tiwary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rangan</forename><surname>Majumder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Deng</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gpt</surname></persName>
+		</author>
+		<ptr target="https://platform.openai.com/docs/models/gpt-4o-mini" />
+		<imprint>
+			<date type="published" when="2025">-4o mini, 2025</date>
+			<biblScope unit="page" from="2025" to="2025" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Introducing deep research</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://openai.com/index/introducing-deep-research/" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2025" to="2025" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Haojie</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zepeng</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaojia</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiji</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongyuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kwaiagents</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.04889</idno>
+		<title level="m">Generalized information-seeking agent system with large language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Llm evaluators recognize and favor their own generations</title>
+		<author>
+			<persName><forename type="first">Arjun</forename><surname>Panickssery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shi</forename><surname>Samuel R Bowman</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Feng</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2404.13076" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Ragnarök: A reusable rag framework and baselines for trec 2024 retrieval-augmented generation track</title>
+		<author>
+			<persName><forename type="first">Ronak</forename><surname>Pradeep</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nandan</forename><surname>Thakur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sahel</forename><surname>Sharifymoghaddam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Campos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Craswell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Lin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">European Conference on Information Retrieval</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="132" to="148" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Agentic retrievalaugmented generation for time series analysis</title>
+		<author>
+			<persName><forename type="first">Chidaksh</forename><surname>Ravuru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Srinivas</forename><surname>Sagar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Venkataramana</forename><surname>Sakhinana</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Runkana</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.14484</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Evaluating retrieval quality in retrieval-augmented generation</title>
+		<author>
+			<persName><forename type="first">Alireza</forename><surname>Salemi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hamed</forename><surname>Zamani</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 47th International ACM SIGIR Conference on Research and Development in Information Retrieval</title>
+		<meeting>the 47th International ACM SIGIR Conference on Research and Development in Information Retrieval</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="2395" to="2400" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Collex-a multimodal agentic rag system enabling interactive exploration of scientific collections</title>
+		<author>
+			<persName><forename type="first">Florian</forename><surname>Schneider</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Narges</forename><surname>Baba Ahmadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niloufar</forename><surname>Baba Ahmadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iris</forename><surname>Vogel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Semmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Biemann</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.07643</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xinyue</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Backes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.08979</idno>
+		<title level="m">chatgpt we trust? measuring and characterizing the reliability of chatgpt</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<author>
+			<persName><surname>Significant-Gravitas</surname></persName>
+		</author>
+		<ptr target="https://github.com/Significant-Gravitas/AutoGPT" />
+		<title level="m">Autogpt: Build, deploy, and run ai agents</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2025" to="2025" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aditi</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abul</forename><surname>Ehtesham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saket</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tala</forename><surname>Talaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Khoei</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.09136</idno>
+		<title level="m">Agentic retrieval-augmented generation: A survey on agentic rag</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.15391</idno>
+		<title level="m">Multihop-rag: Benchmarking retrieval-augmented generation for multi-hop queries</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Introducing perplexity deep research</title>
+		<author>
+			<persName><forename type="first">Perplexity</forename><surname>Team</surname></persName>
+		</author>
+		<ptr target="https://www.perplexity.ai/hub/blog/introducing-perplexity-deep-research" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2025" to="2025" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qwen</forename><surname>Team</surname></persName>
+		</author>
+		<ptr target="https://github.com/QwenLM/Qwen3/blob/main/Qwen3_Technical_Report.pdf" />
+		<title level="m">Qwen3 technical report</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2025" to="2025" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Large language models in medicine</title>
+		<author>
+			<persName><forename type="first">Arun</forename><surname>James Thirunavukarasu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Darren</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeng</forename><surname>Ting</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kabilan</forename><surname>Elangovan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laura</forename><surname>Gutierrez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ting</forename><surname>Fang Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Ting</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature medicine</title>
+		<imprint>
+			<biblScope unit="volume">29</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page" from="1930" to="1940" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Multihop questions via single-hop question composition</title>
+		<author>
+			<persName><forename type="first">Harsh</forename><surname>Trivedi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niranjan</forename><surname>Balasubramanian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Musique</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="page" from="539" to="554" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tu</forename><surname>Vu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Iyyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Constant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Tar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yun-Hsuan</forename><surname>Sung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.03214</idno>
+		<title level="m">Refreshing large language models with search engine augmentation</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">A survey on large language model based autonomous agents</title>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueyang</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingsen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiakai</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Lin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Frontiers of Computer Science</title>
+		<imprint>
+			<biblScope unit="volume">18</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page">186345</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishi</forename><surname>Bommasani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Raffel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barret</forename><surname>Zoph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Borgeaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dani</forename><surname>Yogatama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donald</forename><surname>Metzler</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2206.07682</idno>
+		<title level="m">Emergent abilities of large language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Hyung Won Chung, Alex Tachard Passos</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqing</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Spencer</forename><surname>Papay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Mckinney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Isa</forename><surname>Fulford</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.12516</idno>
+	</analytic>
+	<monogr>
+		<title level="m">William Fedus, and Amelia Glaese. Browsecomp: A simple yet challenging benchmark for browsing agents</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<title level="m" type="main">Retrieval-augmented generation for natural language processing: A survey</title>
+		<author>
+			<persName><forename type="first">Shangyu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufei</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haolun</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Can</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ye</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lianming</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xue</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tei-Wei</forename><surname>Kuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Guan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.13193</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Towards open-world recommendation with knowledge augmentation from large language models</title>
+		<author>
+			<persName><forename type="first">Yunjia</forename><surname>Xi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiwen</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianghao</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoling</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hong</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jieming</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiming</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weinan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Yu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 18th ACM Conference on Recommender Systems</title>
+		<meeting>the 18th ACM Conference on Recommender Systems</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="12" to="22" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Memocrs: Memory-enhanced sequential conversational recommender systems with large language models</title>
+		<author>
+			<persName><forename type="first">Yunjia</forename><surname>Xi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiwen</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianghao</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiming</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weinan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Yu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 33rd ACM International Conference on Information and Knowledge Management</title>
+		<meeting>the 33rd ACM International Conference on Information and Knowledge Management</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="2585" to="2595" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title level="m" type="main">A decoding acceleration framework for industrial deployable llm-based recommender systems</title>
+		<author>
+			<persName><forename type="first">Yunjia</forename><surname>Xi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hangyu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianghao</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Menghui</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiwen</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiming</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weinan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.05676</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<title level="m" type="main">Bursting filter bubble: Enhancing serendipity recommendations with aligned large language models</title>
+		<author>
+			<persName><forename type="first">Yunjia</forename><surname>Xi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muyan</forename><surname>Weng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Yi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaoyang</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuning</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingwen</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.13539</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<title level="m" type="main">A critical evaluation of evaluations for long-form question answering</title>
+		<author>
+			<persName><forename type="first">Fangyuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixiao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Iyyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eunsol</forename><surname>Choi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.18201</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Crag-comprehensive rag benchmark</title>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yushi</forename><surname>Hao Xin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikita</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangsen</forename><surname>Bhalla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sajal</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rongze</forename><surname>Choudhary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziran</forename><surname>Gui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Jiang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="10470" to="10490" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yingxuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huacan</forename><surname>Chai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanyi</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muning</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junwei</forename><surname>Liao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoyi</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianghao</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaowei</forename><surname>Chang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.16736</idno>
+		<title level="m">A survey of ai agent protocols</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Yoheinakajima</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Babyagi</surname></persName>
+		</author>
+		<ptr target="https://github.com/yoheinakajima/babyagi" />
+		<imprint>
+			<date type="published" when="2025-05-06">2025. 2025-05-06</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<monogr>
+		<author>
+			<persName><forename type="first">Weinan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junwei</forename><surname>Liao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kounianhua</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianghao</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.09713</idno>
+		<title level="m">Agentic information retrieval</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<monogr>
+		<title level="m" type="main">Retrieval-augmented generation for ai-generated content: A survey</title>
+		<author>
+			<persName><forename type="first">Penghao</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hailin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qinhan</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengren</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunteng</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangcheng</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ling</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wentao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Cui</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.19473</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<monogr>
+		<title level="m" type="main">A survey of large language models</title>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Wayne Xin Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaolei</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yupeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingqian</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beichen</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zican</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Dong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.18223</idno>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<monogr>
+		<author>
+			<persName><forename type="first">Peilin</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bruce</forename><surname>Leon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Ying</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Can</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qichen</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dading</forename><surname>Chong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiling</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenxuan</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meng</forename><surname>Cao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.19314</idno>
+		<title level="m">Browsecomp-zh: Benchmarking web browsing ability of large language models in chinese</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

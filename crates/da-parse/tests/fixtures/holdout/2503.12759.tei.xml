@@ -1,0 +1,1454 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">RAG-RL: Advancing Retrieval-Augmented Generation via RL and Curriculum Learning</title>
+				<funder ref="#_XnBgugu">
+					<orgName type="full">unknown</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-05-23">23 May 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Jerry</forename><surname>Huang</surname></persName>
+							<email>jerry8@illinois.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Illinois at Urbana-Champaign</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Siddarth</forename><surname>Madala</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Illinois at Urbana-Champaign</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Risham</forename><surname>Sidhu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Illinois at Urbana-Champaign</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Cheng</forename><surname>Niu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Illinois at Urbana-Champaign</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hao</forename><surname>Peng</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Illinois at Urbana-Champaign</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Julia</forename><surname>Hockenmaier</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Illinois at Urbana-Champaign</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Tong</forename><surname>Zhang</surname></persName>
+							<email>tozhang@illinois.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Illinois at Urbana-Champaign</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">RAG-RL: Advancing Retrieval-Augmented Generation via RL and Curriculum Learning</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-05-23">23 May 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">EF52D4B52719ABD680EC9ED7301CD95C</idno>
+					<idno type="arXiv">arXiv:2503.12759v2[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:58+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Retrieval-augmented generation (RAG) systems rely on retrieval models for identifying relevant contexts and answer generation models for utilizing those contexts. However, retrievers exhibit imperfect recall and precision, limiting downstream performance. We introduce RAG-RL, an answer generation model trained not only to produce answers but also to identify and cite relevant information from larger sets of retrieved contexts, shifting some of the burden of identifying relevant documents from the retriever to the answer generator. Our approach uses curriculum learning, where the model is first trained on easier examples that include only relevant contexts. Our experiments show that these training samples enable models to acquire citation and reasoning skills with greater sample efficiency and generalizability, demonstrating strong model performance even as the number of irrelevant passages increases. We benchmark our methods on three open-domain multi-hop question answering datasets and report significant gains in answer and citation accuracy. Our experiments provide empirical insights into how easier training samples can give models stronger signals for learning specific skills (e.g., citation generation) and how different components of post-training (e.g., training set construction, rule-based rewards, training sample ordering, etc.) impact final model performance.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Retrieval-augmented generation (RAG; <ref type="bibr" target="#b4">Guu et al., 2020;</ref><ref type="bibr" target="#b9">Lewis et al., 2020;</ref><ref type="bibr">Wang et al., 2024a</ref>) relies on retrieval and generation models working together to retrieve and integrate external contexts effectively for answering questions or generating content. While previous works have made significant progress in improving these systems by opti-Question: Who is the maternal grandfather of Floris De Voogd? mizing retrieval and reranking models <ref type="bibr">(Zhang et al., 2024a;</ref><ref type="bibr" target="#b3">Gutiérrez et al., 2025;</ref><ref type="bibr" target="#b24">Weller et al., 2025)</ref>, challenges persist when it comes to retrieving relevant real-world contexts that require reasoning, especially those whose relevance goes beyond semantic similarity <ref type="bibr" target="#b19">(Su et al., 2024)</ref>. Moreover, prior work has demonstrated that generative models often struggle to effectively integrate information across multiple documents, a limitation attributed to their constrained reasoning capabilities, particularly in domains such as code generation <ref type="bibr">(Wang et al., 2024b)</ref> and in settings involving long-context retrieval <ref type="bibr" target="#b35">(Zhou et al., 2025;</ref><ref type="bibr" target="#b28">Yen et al., 2025)</ref>.</p><p>In this work, we tackle the aforementioned challenges by training reasoning language models (RLMs) capable of performing reasoning over a greater number of retrieved documents. Prior approaches for improving RAG have focused on optimizing the retrieval and reranking components by maximizing metrics such as recall@5. In contrast, we propose shifting some of the retrieval burden from the retriever to the generation model itself.</p><p>An answer generation model that can effectively differentiate between relevant and irrelevant contexts, when given a longer list of retrieved passages, would reduce dependence on high-precision retrieval and increase recall by instead maximizing metrics such as recall@10 or recall@25 <ref type="bibr">(Jin et al., 2025)</ref>.</p><p>Building on the recent success of reinforcement learning (RL) in enhancing the reasoning capabilities of LLMs in the domains of mathematics and coding <ref type="bibr" target="#b26">(Wei et al., 2025;</ref><ref type="bibr" target="#b25">Xie et al., 2025)</ref>, we apply Group Relative Policy Optimization (GRPO; Shao et al., 2024) with simple, rule-based rewards to improve the answer generation component of RAG systems. We show that RAG-RL achieves substantial performance gains in both answer and citation generation on three open-domain multi-hop question-answer datasets. Furthermore, our comprehensive evaluation demonstrates that RAG-RL achieves improved performance both in distractorrich and gold-only settings.<ref type="foot" target="#foot_0">foot_0</ref> These settings respectively mirror the use of a weaker retrieval model or a more advanced retrieval and/or reranking systems, and demonstrate that RAG-RL can be used in conjunction with past works on improving retrieval models for further improved performance.</p><p>We also conduct a comprehensive study on how different curriculum learning settings affect model performance in post-training. Specifically, we study the effectiveness of introducing questionanswer training samples of varying difficulty levels and the impact that the ordering of the training set has on the final performance of the model. We observe that (1) adding easier samples during training teaches the model to more quickly learn how to generate citations as the model no longer has to identify which contexts are relevant, (2) curricula that scale problem difficulty linearly from easiest to hardest perform worse when compared to min-max curricula that begin with the easiest samples and jump straight to the hardest samples, and (3) the benefits of deliberately ordering training samples from easiest to hardest, as proposed by previous curriculum learning studies <ref type="bibr" target="#b0">(Bengio et al., 2009)</ref> are not conclusively supported in RLbased post-training. These empirical observations suggest that constructing training sets of different difficulty levels can increase sample efficiency and generalization by targeting specific skills.</p><p>In summary, the main contributions of this work are as follows:</p><p>• We introduce RAG-RL, an RLM specifically trained for answer generation in RAG, using RL and curriculum learning.</p><p>• We benchmark a comprehensive set of different curriculum construction and curriculum learning settings.</p><p>• We provide several empirical insights on the effectiveness of different curriculum learning and curriculum construction settings, and how different aspects of the post-training process contribute to final model performance.</p><p>2 Related Works</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">RAG Systems</head><p>Rather than relying solely on parametric knowledge, RAG has been widely used in tasks that require external information <ref type="bibr" target="#b4">(Guu et al., 2020;</ref><ref type="bibr" target="#b9">Lewis et al., 2020;</ref><ref type="bibr">Wang et al., 2024a)</ref>. Previous works have made tremendous progress in designing and training sophisticated retrieval and reranking models <ref type="bibr" target="#b3">(Gutiérrez et al., 2025;</ref><ref type="bibr" target="#b24">Weller et al., 2025)</ref> for open-domain question answering <ref type="bibr" target="#b1">(Chen et al., 2017)</ref>. One important line of work has focused on improving the encoder models that are used in the embedding generation process <ref type="bibr">(Lee et al., 2025a;</ref><ref type="bibr" target="#b11">Muennighoff et al., 2025)</ref>, while another has focused on designing retrieval systems that focus on drawing connections between multiple different documents <ref type="bibr">(Guo et al., 2024;</ref><ref type="bibr" target="#b3">Gutiérrez et al., 2025)</ref>. Rank1 <ref type="bibr" target="#b24">(Weller et al., 2025)</ref> has also recently demonstrated that allocating test-time compute for document reranking can lead to performance improvements when retrieving contexts that require in-depth reasoning. Past work has also sought to take advantage of the long context lengths of modern-day LLMs by providing these models with larger sets of retrieved documents, but have shown that these models struggle to effectively identify relevant contexts as the number of retrieved passages increases <ref type="bibr">(Jin et al., 2025;</ref><ref type="bibr" target="#b35">Zhou et al., 2025;</ref><ref type="bibr" target="#b28">Yen et al., 2025)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Multi-Hop Question Answering</head><p>A multi-hop question requires combining information across multiple passages and performing reasoning to arrive at a correct answer <ref type="bibr" target="#b10">(Mavi et al., 2024;</ref><ref type="bibr" target="#b13">Nishida et al., 2019)</ref>. The number of pieces of information required to successfully answer the question is referred to as the number of hops. The terms passages and documents are used interchangeably to denote disjoint contexts that are retrieved by a retrieval model. Figure <ref type="figure" target="#fig_0">1</ref> demonstrates how RAG-RL operates in the multi-hop questionanswering setting.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">Reasoning Language Models</head><p>With the introduction of RLMs in OpenAI's o1 models <ref type="bibr">(OpenAI et al., 2024)</ref>, the research community has made progress in replicating similar models that have shown impressive performance in tasks that require reasoning, driven in part due to R1's release <ref type="bibr">(DeepSeek-AI et al., 2025)</ref>. Prior works have demonstrated the potential for training smaller-scale RLMs in the domains of mathematics, logic, and coding <ref type="bibr" target="#b25">(Xie et al., 2025;</ref><ref type="bibr" target="#b26">Wei et al., 2025)</ref> and have also achieved impressive performance. However, to the best of our knowledge, no one has trained RLMs specifically for the answer generation component of RAG.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.4">Curriculum Learning</head><p>Curriculum learning <ref type="bibr" target="#b0">(Bengio et al., 2009)</ref> has been extensively studied as a training paradigm that orders training samples by increasing difficulty, leading to improved generalization. In question answering (QA), it has been used to reduce distributional shifts between pre-training and downstream fine-tuning datasets <ref type="bibr">(Zhang et al., 2024b)</ref>. Recent advances in LLMs have incorporated curriculum-inspired self-improvement mechanisms <ref type="bibr">(Lee et al., 2025b)</ref>, where models iteratively augment their training data with instances they can already solve, to facilitate generalization to slightly more complex reasoning tasks. In RL, curriculum learning has also been applied to gradually expose agents to more challenging environments <ref type="bibr" target="#b12">(Narvekar et al., 2020)</ref>; however, its effectiveness remains task-dependent, with some studies reporting only marginal gains <ref type="bibr" target="#b25">(Xie et al., 2025)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">RAG-RL</head><p>In this section, we include a detailed overview of the training process for RAG-RL. We outline the rule-based rewards used in the policy update algorithm and then introduce the curriculum construction settings used in our experiments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Reward Modeling</head><p>In our work, we use RL as our post-training method as it eliminates the need for training sets consisting of high-quality supervised trajectories produced either by humans or stronger models.</p><p>Our rule-based rewards consist of three components: answer rewards, citation rewards, and formatting rewards.</p><p>Answer Rewards To incentivize correct final answers, we define the answer reward as:</p><formula xml:id="formula_0">R answer = γ answer • 1(o answer = G answer ), (1)</formula><p>where o answer is the generated final answer, G answer is the ground truth answer, and γ answer is a scaling factor, which we set to 5 for our experiments.</p><p>Citation Rewards To reward correct citations, we define the citation reward as:</p><formula xml:id="formula_1">R citations = γ correct • Recall(o citations , G citations ) -γ incorrect • c incorrect (<label>2</label></formula><formula xml:id="formula_2">)</formula><p>where recall denotes the fraction of relevant citations cited in the final answer o citations , G citations is the list of ground truth citations, c incorrect is the number of incorrect citations, and both γ correct and γ incorrect are the scaling factors which we set to 5 and 2 respectively.</p><p>Formatting Rewards To enforce the desired output format, we assign a reward of γ format for correct formatting (i.e., the presence of proper XML tags and required headings) while imposing a penalty p for outputs with excessive text or non-English Unicode characters.<ref type="foot" target="#foot_1">foot_1</ref> Formally, we define the reward as: R formatting = γ format , if formatting is correct -p, otherwise.</p><p>(3)</p><p>Total Reward and Objective Function The overall reward for a training sample is the sum of the individual components: R total = R answer + R citation + R formatting . This reward is then used in the GRPO algorithm for policy optimization <ref type="bibr" target="#b17">(Shao et al., 2024)</ref>. The scaling constants we choose in our experiments weigh correctness more than formatting, and in preliminary experiments, we observed no significant changes in performance when adjusting these parameters by small amounts.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Curriculum Construction</head><p>Curriculum construction builds training sets by selecting or generating samples across a range of difficulty levels. In this work, we investigate two main difficulty axes: (1) synthetic difficulty, where training samples are algorithmically constructed to span predefined difficulty levels, and (2) accuracybased difficulty, where the base model's performance determines which samples it can or cannot solve before any post-training is applied.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Synthetic Difficulty</head><p>Given a question Q, and a set of documents D, we partition D into a set of gold documents D + and a set of distractor documents D -. The number of hops required to correctly answer Q is given by j = |D + |, while k = |D -| represents the number of retrieved distractor documents. Naturally, the difficulty of a multi-hop question can be measured along two dimensions: the number of hops required j and the number of distractor documents provided to the generation model from D -. For training RAG-RL, we define the difficulty of a training sample solely based on the subset size of D -that we provide to the generation model. The easiest training samples contain at most one distractor document along with all gold documents, while the hardest samples include the full set of all retrieved documents. Formally, a training sample S i of difficulty level l is defined as</p><formula xml:id="formula_3">S l i = [Q, {D + 1 , D + 2 , . . . , D + j , D - 1 , D - 2 , . . . , D - d }], where d = min (max(l + 2 -j, 0), k) ,</formula><p>where the order of the documents in each S i is shuffled to ensure a realistic retrieval setting.</p><p>Since the minimum number of hops required among all of our datasets is 2, a difficulty level of 1 corresponds to 1 distractor document for a 2hop question. It follows that the highest difficulty level we can effectively introduce is thus k, which we denote as K going forward. This definition of synthetic difficulty ensures that all gold contexts are retrieved regardless of difficulty level.</p><p>While the datasets we use contain 2-hop, 3-hop, and 4-hop questions, we focus on the number of distractor documents as the primary axis of difficulty. This choice is motivated by the limited granularity offered by hop count alone, as the vast majority of questions in all three datasets we use are 2-hop questions. For completeness, we include an ablation in Section 5.4 that jointly considers both the number of hops and distractor documents by sorting each question by the number of hops and then augmenting each question to span a pre-defined curriculum. Moreover, in Appendix C.3 we present results that show a negative correlation between model performance and the number of hops in each question.</p><p>Accuracy-Based Difficulty An alternative way to define the difficulty of a training sample is to benchmark the base model's performance on each sample. Specifically, we compute the pass@k of each training sample and partition the dataset into two subsets: samples with pass@k = 1 and samples with pass@k = 0. We refer to the former as baseanswerable and the latter as base-unanswerable. A prediction is considered correct if the generated final answer achieves an F1 score of 1 when compared to the ground truth answer.</p><p>Eval. Setting Curriculum HotpotQA MuSiQue 2Wiki Answer F1 Citation F1 Joint F1 Answer F1 Citation F1 Joint F1 Answer F1 Citation F1 Joint F1 Distractor Baseline 60.65 36.47 45.55 25.88 25.35 25.61 48.71 40.18 44.03 Max 66.04 73.93 69.76 40.91 53.07 46.20 67.99 77.08 72.25 Linear 68.71 78.54 73.30 44.68 59.79 51.14 68.92 83.23 75.40 Min-Max 68.87 81.64 74.72 47.18 64.48 54.49 70.77 76.37 73.46 Base-Answerable 66.19 72.81 69.34 41.40 54.28 46.97 68.56 76.36 72.25 Base-Unanswerable 65.25 71.13 68.06 38.84 52.15 44.52 66.59 72.04 69.21 Ideal Retrieval Baseline 67.90 63.26 65.50 41.16 58.16 48.21 70.29 54.49 61.39 Max 74.25 86.26 79.81 54.64 68.84 60.92 71.82 78.53 75.02 Linear 75.67 89.34 81.94 61.10 73.90 66.89 74.31 88.82 80.92 Min-Max 76.18 93.13 83.81 65.06 81.51 72.37 75.06 80.37 77.63 Base-Answerable 74.76 83.69 78.98 57.53 67.75 62.22 72.61 79.98 76.11 Base-Unanswerable 75.23 82.99 78.92 54.53 68.37 60.67 71.04 74.30 72.63</p><p>Table <ref type="table">1</ref>: Model performance under the distractor and ideal retrieval evaluation settings across different curriculum construction settings. We use up to 5,000 training samples for all runs as outlined in Section 4.2. The best-performing curriculum for each metric is bolded. Additional training runs with larger training sets are provided in Appendix C.1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Datasets</head><p>We evaluate RAG-RL on three open-domain multi-hop question answering benchmarks: Hot-potQA <ref type="bibr" target="#b27">(Yang et al., 2018)</ref>, MuSiQue (answerable) <ref type="bibr" target="#b20">(Trivedi et al., 2022)</ref>, and 2Wiki <ref type="bibr" target="#b5">(Ho et al., 2020)</ref>. While HotpotQA has been shown to be a weaker test for multi-hop reasoning due to the presence of spurious signals <ref type="bibr" target="#b21">(Trivedi et al., 2023)</ref>, we include it due to its widespread use but mainly focus on the other two datasets in our discussions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Training Setup</head><p>We use Qwen2.5-7B-Instruct <ref type="bibr">(Qwen et al., 2025)</ref> as our base model and employ GRPO for the posttraining process. Approximately five thousand QA pairs are sourced from each dataset's respective training sets. All experiments train for a single epoch with a constant learning rate of 1.0e-6, a global batch size of 294, KL coefficient of 0.01, and 7 rollouts for each of the 42 problems in each batch. Each model was trained on Nvidia 8xH100 GPUs. While we observe that reward signals continue to improve beyond 120 steps, we limit training to 5,000 samples due to computational constraints.</p><p>To assess the generalizability of our experiments to larger training sets, we include additional runs in Appendix C.1, which confirm that the trends and insights we report hold consistently at scale. Additional dataset construction and training details can be found in Appendices A and B.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Baselines</head><p>Our primary baseline is our base model, Qwen2.5-7B-Instruct. For a fine-tuned baseline, we employ the max curriculum, which uses samples at the highest difficulty level K, which represents the difficulty of problems expected at test-time. In our tables, we report our base model's performance as "baseline" and our fine-tuned baseline as "max."</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Curriculum Learning Settings</head><p>To investigate the effectiveness of curriculum construction in the post-training process, we benchmark several different curricula. As defined in Section 3.2, synthetic difficulty levels range from 1 to K, while accuracy-based difficulty partitions training samples into base-answerable and baseunanswerable subsets. Figure <ref type="figure" target="#fig_1">2</ref> provides an illustration of the main synthetic curricula used in our experiments. We define a function C setting : {1, . . . , n} → {1, . . . , K} that maps an index i in the training set to its corresponding difficulty level under each setting. We set K to be 10, 20, and 10 for HotpotQA, MuSiQue, and 2Wiki respectively.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4.1">Synthetic Curricula Variants</head><p>• Max: Each sample in the training set is presented at the maximum difficulty level (i.e., the difficulty level expected at test time). Thus, the difficulty function is defined as:</p><formula xml:id="formula_4">C max (i) = K, ∀i ∈ {1, . . . , n}</formula><p>• Linear: The training set is partitioned into K equally sized subsets, with difficulty levels increasing linearly from 1 to K. The mapping function is thus:</p><formula xml:id="formula_5">C linear (i) = K • i n • Min-Max:</formula><p>The training set is split into two equal parts, where the first half consists of the easiest difficulty level (1) and the second half consists of the hardest difficulty level (K). The function is defined as:</p><formula xml:id="formula_6">C min-max (i) = 1, if i ≤ n/2 K, if i &gt; n/2</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4.2">Accuracy-Based Curricula</head><p>• Base-Answerable: The training set includes only samples from the maximum synthetic difficulty level that are base-answerable.</p><p>• Base-Unanswerable: The training set includes only samples from the maximum synthetic difficulty level that are baseunanswerable.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5">Evaluation</head><p>To benchmark the performance of our RLMs, we evaluate the F1 scores of the generated answer and passage-level citations on the validation sets provided by our selected benchmark datasets. We sample each response 3 times and take the average F1 score among all generations. Joint F1, which captures both answer and citation correctness, serves as our primary metric. Dataset statistics can be found in Appendix A.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Comparison to Previous Works</head><p>To compare our RLMs to previous works, we measure the performance of our models in two settings: the distractor setting and the ideal retrieval setting. The distractor setting consists of providing the generation model all gold passages and up to 18 distractor passages, which is comparable to having the reasoning model handle both reranking and answer generation. On the other hand, in the ideal retrieval setting, the reasoning model is given only the gold truth passages, which is comparable to using a strong retrieval and reranking system. Previous works on improving multi-hop question-answer performance, such as Beam Retrieval <ref type="bibr">(Zhang et al., 2024a)</ref> and Smoothing R3 <ref type="bibr">(Yin et al., 2023)</ref>, have primarily focused on optimizing the retrieval component of RAG and utilize span prediction models for answer generation, thus making a direct comparison of generator performance difficult. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Results</head><p>Our results section is organized into subsections, beginning with the main findings, followed by an investigation of several research questions. The primary goals of our experiments are twofold: first, to evaluate whether curriculum learning can enhance RL-based post-training; and second, to identify which components of the post-training pipeline contribute most significantly to final model performance and why.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Main Results</head><p>Table <ref type="table">1</ref> presents the performance of our baseline model and the RLMs we trained under our outlined curriculum construction settings in the distrator and ideal retrieval evaluation settings. The results strongly support the notion that curriculum learning can help improve RL-based post-training. Across all three datasets and both evaluation settings, the min-max and linear curricula achieve the highest joint F1, improving over the max curriculum by a margin of 3 to 8 points.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Does adding easier samples improve performance?</head><p>The primary difference between our synthetic curricula and the max variant is the introduction of easier training samples. The results in Table <ref type="table">1</ref> show</p><p>Eval. Setting Sample Ordering Answer F1 Citation F1 Joint F1 Distractor Sorted by Difficulty 44.68 59.79 51.14 Randomly Shuffled 44.27 60.35 51.07 Sorted by Hops and Difficulty 43.78 61.20 51.04 Ideal Sorted by Difficulty 61.10 73.90 66.89 Randomly Shuffled 60.80 73.47 66.53 Sorted by Hops and Difficulty 60.94 75.16 67.31 Table 3: Ablation study on training sample ordering using the linear curriculum on the MuSiQue dataset. Results are reported under both distractor and ideal retrieval settings.</p><p>that all the curricula that contain easier samples outperform the max curriculum. Figure <ref type="figure">3</ref> shows that the validation citation reward climbs much faster for the min-max curriculum, suggesting that training samples with few distractor passages allow the model to learn how to generate correct citations with greater sample efficiency. Given a large number of distractor passages, the model must first identify potential candidates and then reason over them. These findings indicate that easier samples in the synthetic curricula serve to teach citation skills early in training, which can then be refined by harder examples that require multi-step reasoning over longer contexts.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Do we need granular problem difficulty?</head><p>Previous work in the area of self-improvement has shown that LLMs exhibit limited generalizability and that gradually increasing the difficulty levels of training samples from weak-to-strong is effective for helping models generalize beyond their initial training distributions <ref type="bibr">(Lee et al., 2025b)</ref>. However, our results suggest that this is not always necessary as the min-max curriculum outperforms the linear curriculum in most cases. We believe this to be a byproduct of our base model having relatively strong performance on the task before any posttraining is applied. We show our base model's pass@32 in Table <ref type="table" target="#tab_0">2</ref> and find that these scores are comparable to our fine-tuned baseline.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.4">Does dataset ordering matter?</head><p>Curriculum learning strategies where training sets are ordered from easy to hard have been successfully employed in many areas of machine learning <ref type="bibr" target="#b18">(Soviany et al., 2022)</ref>. To assess the impact of sample ordering on model performance, we experiment with three variants of a linear curriculum: (i) samples sorted by difficulty, measured as the number of distractors; (ii) samples presented in a randomly shuffled order; and (iii) samples first or-dered by the number of hops and then augmented to span the linear curriculum. As shown in Table 3, the resulting F1 scores across these curricula are broadly comparable. These findings suggest that, in this setting, the specific ordering of training examples does not yield consistent or significant performance differences.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.5">Training on base-answerable versus base-unanswerable samples</head><p>We observe that models trained on base-answerable samples consistently outperform those trained on base-unanswerable samples. As shown in Table <ref type="table" target="#tab_1">4</ref>, this trend holds across both the distractor and ideal retrieval settings. We hypothesize that the superior performance from training on base-answerable samples stems from their alignment with the base model's pretrained capabilities. This is reminiscent of findings from <ref type="bibr" target="#b31">Zhang et al. (2025)</ref>, which demonstrate that supervised fine-tuning is most effective when responses are aligned with the base model's pretrained distribution.</p><p>Another possibility for the worse performance from base-unanswerable samples stems from these samples producing a greater number of groups where the rewards among all samples are equal, resulting in a computed advantage of zero and thus no gradient signal nor policy update. The Dynamic sAmpling Policy Optimization (DAPO; <ref type="bibr">Yu et al., 2025)</ref> algorithm also notes this limitation, and they address this challenge by over-sampling across the entire dataset and discarding prompts that yield uniform rewards across generated responses. Based on our results, we believe tackling this issue from a curriculum construction angle can also yield improved training efficiency.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.6">What rule-based rewards matter?</head><p>Recent works have observed that performance gains from using algorithms such as GRPO might stem from improved output formatting rather than improvements in reasoning ability <ref type="bibr" target="#b15">(Petrov et al., 2025)</ref>. To isolate this phenomenon and see how answer and citation rewards contribute to final model performance, we conduct an ablation where we train our models with only formatting rewards <ref type="bibr">(Eq. 3)</ref>, omitting the answer (Eq. 1) and citation rewards (Eq. 2).</p><p>Table <ref type="table">5</ref> presents results on the MuSiQue dataset that demonstrate that employing formatting rewards alone using the min-max curriculum achieves higher answer F1 compared to that of the Table 5: MuSiQue formatting ablation. The first number in each cell denotes the use of both accuracy and formatting rewards, while the second number in each cell denotes the use of only formatting rewards.</p><p>max curriculum with all rewards. While adding additional answer and citation rewards increases the sample efficiency of the post-training process, this ablation demonstrates that choosing the appropriate training curriculum also plays a major role. We propose that post-training using formatting rewards alone can serve as a stronger baseline before incorporating accuracy-based metrics.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.7">Performance on previously unsolved samples</head><p>To evaluate the extent to which RL-based posttraining and curriculum learning enhance model performance on previously unsolved questions, we additionally partition the evaluation set into base-answerable and base-unanswerable subsets.</p><p>As shown in Table <ref type="table" target="#tab_1">4</ref>, both the min-max and linear curricula yield the greatest gains on the baseunanswerable subset. Nevertheless, a notable performance gap remains between the two subsets. These results suggest that, while curriculum learning can improve a model's ability to address previously challenging examples, generalization to outof-distribution samples remains a key limitation of RL-based post-training <ref type="bibr" target="#b26">(Xiong et al., 2025)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Discussion</head><p>In this work, we introduce RAG-RL, a reasoning language model specifically trained for the answer generation component of RAG. Our experiments</p><p>demonstrate that stronger answer generation models can reduce the burden on retrieval models by reasoning over larger sets of retrieved contexts and that curriculum learning is a powerful tool for improving sample efficiency and generalization during post-training.</p><p>Our experiments and ablations support the following key observations: (1) curriculum construction is a powerful method for improving posttraining performance, (2) easier training samples (i.e., those with fewer distractor documents) provide models with a stronger signal for learning how to generate citations, and (3) LLMs do not necessarily benefit the most from curricula with gradually increasing difficulty levels (i.e., min-max performs better than a linear curriculum in most of our experiments). While RL-based post-training methods have unlocked a new dimension of scaling for LLMs, our experiments take an in-depth look into understanding which components of these posttraining methods contribute to improving model performance and why. Future Work Our findings suggest that LLMs exhibit limited generalization with performance gains extending only marginally beyond the training distribution. To address this, we propose a systematic categorization of training samples into base-answerable and base-unanswerable instances. Empirically, we find that incorporating synthetic difficulty levels in curriculum construction enables models to acquire citation and reasoning skills with greater sample efficiency and generalizability. Exploring algorithmic curriculum generation methods that target specific areas of improvement, especially for tasks lacking natural difficulty levels, is an exciting research direction.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Limitations</head><p>While RAG-RL achieves strong performance across multiple multi-hop QA benchmarks, a key limitation of our experimental setup is the assump-tion that all relevant gold documents are present in the retrieved set. In real-world scenarios, this assumption may not hold. We suggest explicitly training the model to return an "unanswerable" response when the retrieved context lacks sufficient information. Additionally, our curriculum construction process employs a static progression through difficulty levels, advancing to harder samples regardless of whether the model has fully converged on earlier stages. In contrast, prior work on curriculum learning often adopts adaptive schedulers that revisit easier examples and only proceeds to more difficult ones once the model's performance plateaus. Incorporating such adaptive strategies may further enhance training efficiency and generalization, and we leave this as an avenue for future exploration.</p><p>number of hops increases per question, model performance consistently decreases. However, the models trained with the min-max curriculum still achieve the highest F1 scores.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Example Prompts and Outputs</head><p>The system prompt and user instructions we use to instruct our models are included in Figures <ref type="figure" target="#fig_2">4</ref> and <ref type="figure" target="#fig_3">5</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>System Prompt</head><p>Respond in the following format: &lt;reasoning&gt; ... &lt;/reasoning&gt; &lt;answer&gt; Final answer: final answer Supporting passages: title1, title2,... &lt;/answer&gt; </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>User Instructions</head><p>Answer the question using only the provided passages. Verify your answer directly against the text, and cite only the passages you used in your final answer. </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Hop 1 :</head><label>1</label><figDesc>Figure 1: An example of a multi-hop reasoning chain taken from the MuSiQue dataset. RAG-RL generated the reasoning trace and final answer/citations observed in the green block.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure2: Overview of two curriculum construction settings used during training. Linear denotes a curriculum that scales the difficulty level (the number of distractor passages) from 1 to K, while min-max denotes a curriculum that is split evenly between the easiest and the hardest problems.</figDesc><graphic coords="4,70.87,70.87,457.00,94.50" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: System prompt used for all experiments.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: User instructions used for all experiments.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 2 :</head><label>2</label><figDesc>Base model pass@k on the MuSiQue dataset.</figDesc><table><row><cell>Validation Exact Match</cell><cell>0.8 1.0 1.2 1.4 1.6</cell><cell cols="2">0 25 50 75 100 125 Steps Validation Answer Reward Min-Max</cell><cell>1.0 0.5 0.0 0.5 1.0 Linear Validation Citation Reward</cell><cell>Steps 0 25 50 75 100 125 Validation Citation Reward Max</cell></row><row><cell cols="6">Figure 3: Plots of validation answer and citation rewards</cell></row><row><cell cols="6">during training for three curricula on the MuSiQue</cell></row><row><cell cols="3">dataset.</cell><cell></cell><cell></cell></row><row><cell></cell><cell></cell><cell>Metric</cell><cell cols="3">Answer F1 Citation F1 Joint F1</cell></row><row><cell></cell><cell></cell><cell>Pass@1</cell><cell>25.42</cell><cell cols="2">25.11</cell><cell>25.26</cell></row><row><cell></cell><cell></cell><cell>Pass@32</cell><cell>43.38</cell><cell cols="2">45.46</cell><cell>44.40</cell></row></table><note><p>To better isolate and evaluate generation quality, we adopt the ideal retrieval setting as a more controlled and comparable benchmark. When comparing the performance of RAG-RL to the few past studies that have focused on improving answer generation models(Jin et al., 2025;   Zhang et al., 2024c)</p><p>, RAG-RL achieves SOTA performance. However, we note that these works may not explicitly focus on multi-hop QA performance nor use the latest base models.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 4 :</head><label>4</label><figDesc>.07 76.01 / 68.70 79.18 / 28.61 63.87 / 13.51 55.54 / 47.51 59.41 / 21.04 84.42 / 17.37 76.53 / 75.50 80.28 / 28.25 Linear 86.26 / 20.48 80.84 / 73.02 83.46 / 31.99 70.18 / 18.82 62.70 / 53.70 66.23 / 27.87 85.00 / 23.14 83.77 / 80.32 84.38 / 35.93 Min-Max 86.27 / 20.40 83.21 / 76.46 84.71 / 32.20 71.73 / 22.89 67.42 / 58.47 69.51 / 32.90 87.83 / 20.41 77.66 / 74.19 82.43 / 32.02 Base-Answerable 82.63 / 17.09 75.08 / 66.20 78.67 / 27.16 65.62 / 16.17 57.97 / 47.65 61.56 / 24.15 86.26 / 17.42 77.29 / 75.14 81.53 / 28.28 Base-Unanswerable 82.94 / 16.71 72.74 / 65.35 77.51 / 26.62 63.59 / 14.49 55.44 / 45.81 59.23 / 22.01 83.92 / 16.16 71.42 / 73.19 77.17 / 26.48Model performance under the distractor evaluation setting evaluated on base-answerable and baseunanswerable evaluation sets. We use up to 5,000 training samples for all runs as outlined in Section 4.2. Results under the ideal retrieval setting can be found in the Appendix in Table9.</figDesc><table><row><cell cols="2">Eval. Setting Curriculum</cell><cell></cell><cell>HotpotQA</cell><cell></cell><cell></cell><cell>MuSiQue</cell><cell></cell><cell></cell><cell>2Wiki</cell></row><row><cell></cell><cell></cell><cell>Answer F1</cell><cell>Citation F1</cell><cell>Joint F1</cell><cell>Answer F1</cell><cell>Citation F1</cell><cell>Joint F1</cell><cell>Answer F1</cell><cell>Citation F1</cell><cell>Joint F1</cell></row><row><cell></cell><cell>Baseline</cell><cell cols="6">61.31 / 9.21 44.89 / 35.65 51.83 / 14.64 40.96 / 4.63 27.91 / 19.25 33.20 / 7.46</cell><cell cols="2">61.64 / 6.75 42.71 / 33.80 50.45 / 11.25</cell></row><row><cell cols="3">Distractor 82.63 / 18Eval. Setting Curriculum Max Answer F1</cell><cell>Citation F1</cell><cell>Joint F1</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell>Baseline</cell><cell>25.88</cell><cell>25.35</cell><cell>25.61</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Distractor</cell><cell>Max</cell><cell cols="3">40.91 / 37.97 53.07 / 36.44 46.20 / 37.19</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell>Min-Max</cell><cell cols="3">47.18 / 41.30 64.48 / 42.21 54.49 / 41.75</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell>Baseline</cell><cell>41.16</cell><cell>58.16</cell><cell>48.21</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Ideal</cell><cell>Max</cell><cell cols="3">54.64 / 50.59 68.84 / 55.58 60.92 / 52.97</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell>Min-Max</cell><cell cols="3">65.06 / 57.95 81.51 / 57.18 72.37 / 57.56</cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>Gold documents are documents from which the answer to a given question can be deduced, while distractor documents are those that do not contain relevant information.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>This penalty has proven particularly beneficial for improving training stability by encouraging the model to generate responses in English.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>https://github.com/axolotl-ai-cloud/axolotl</p></note>
+		</body>
+		<back>
+
+			<div type="funding">
+<div><p>* This work was done while Jerry was a <rs type="programName">Research Intern at NewsBreak</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_XnBgugu">
+					<orgName type="program" subtype="full">Research Intern at NewsBreak</orgName>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Dataset Construction</head><p>To construct our synthetic difficulty-based curricula, we randomly sample 5,000 training samples from each of the respective training sets provided by HotpotQA, MuSiQue, and 2Wiki. These datasets each provide distractor passages on similar topics that serve to increase the difficulty of the QA task compared to sampling random passages from their corpora.</p><p>To construct the base-answerable and baseunanswerable accuracy-based curricula, we start by randomly selecting up to 40,000 training samples from each of the respective training sets, and we use our base model to partition the questions into those with pass@k = 1 for base-answerable and pass@k = 0 for base-unanswerable. We take the maximum answer F1 score across 8 generations for each question to assess pass@k. We then clip the number of training samples so that both the base-answer and base-unanswerable training sets have the same number of training samples (approximately 5,000).</p><p>We provide the dataset statistics for all of our datasets in Tables <ref type="table" target="#tab_2">6</ref> and <ref type="table">7</ref> and note that the respective number of samples in each dataset are dependent on the base model's performance, as well as the respective sizes of each dataset's original training and evaluation set sizes. Table 7: Number of evaluation samples for each dataset and evaluation setting.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Training</head><p>We use the Axolotl package 3 to conduct our posttraining. For GRPO specifically, we use a beta of 0.01 and a clippling parameter of 0.2. A full list of all the hyperparameters used during training can be found in our code in the supplementary materials. We plan to release all of our code, data, and models as an open-source GitHub repository at the conclusion of the review process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Additional Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1 Training on Larger Train Sets</head><p>The training runs presented in Section 5 are based on subsets of up to 5,000 samples, constrained by computational limitations and the large number of post-training runs required across our curricula. To assess the scalability of our findings to larger training set sizes, we include additional results in Table <ref type="table">8</ref>, using 40,000 training samples for HotpotQA and 19,900 for MuSiQue. These results confirm that the trends and conclusions in the main paper continue to hold at larger scales. We do not include experiments with base-answerable and base-unanswerable subsets in this setting due to the reduced number of samples remaining after filtering for base-unanswerable instances.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.2 Performance on Base-Answerable and Base-Unanswerable Questions</head><p>Table <ref type="table">8</ref> reports the complete results for both the distractor and ideal retrieval settings, evaluated separately on base-answerable and base-unanswerable questions. Notably, in the ideal retrieval setting, answer F1 scores are lower than those observed in the distractor setting. Upon closer analysis, we attribute this trend to limitations of the F1 metric, which can assign partial credit to answers that are incorrect. When we replaced F1 with the exact match (EM) metric, we observed smaller performance gains on the base-unanswerable subsets and more comparable results across the two retrieval settings.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.3 Model Performance Grouped by Number of Hops</head><p>Table 10 includes the results from Appendix C.1 when grouping by the number of hops required by each question. The results show that as the Setting Curriculum HotpotQA MuSiQue Answer F1 Citation F1 Joint F1 Answer F1 Citation F1 Joint F1 Distractor Baseline 60.65 36.47 45.55 25.88 25.35 25.61 Max 68.52 71.55 70.00 46.06 64.66 53.80 Linear 72.65 80.53 76.39 47.93 68.45 56.38 Min-Max 74.97 81.25 77.98 55.13 69.27 61.40 Ideal Ret. Baseline 67.90 63.26 65.50 41.16 58.16 48.21 Max 74.79 77.38 76.06 59.04 77.99 67.21 Linear 77.94 86.45 81.97 64.84 85.23 73.65 Min-Max 79.74 87.38 83.38 69.79 86.81 77.37</p><p>Table <ref type="table">8</ref>: Model performance under the distractor and ideal retrieval settings for different curriculum construction settings given larger training set sizes. We use between 20,000-40,000 training samples for all runs as outlined in Appendix C.1.</p><p>Eval. Setting Curriculum HotpotQA MuSiQue 2Wiki</p><formula xml:id="formula_7">Answer F1 Citation F1 Joint F1 Answer F1 Citation F1 Joint F1 Answer F1 Citation F1 Joint F1 Distractor</formula></div><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 6 :</head><label>6</label><figDesc>Number of training samples for each curriculum and dataset.</figDesc><table><row><cell></cell><cell cols="4">Number of Training Samples</cell></row><row><cell>Curriculum</cell><cell cols="4">HotpotQA MuSiQue 2Wiki</cell></row><row><cell>Max</cell><cell>5000</cell><cell></cell><cell>5000</cell><cell>5000</cell></row><row><cell>Linear</cell><cell>5000</cell><cell></cell><cell>5000</cell><cell>5000</cell></row><row><cell>Min-Max</cell><cell>5000</cell><cell></cell><cell>5000</cell><cell>5000</cell></row><row><cell>Base-Answerable</cell><cell>3991</cell><cell></cell><cell>4057</cell><cell>4468</cell></row><row><cell>Base-Unanswerable</cell><cell>3991</cell><cell></cell><cell>4057</cell><cell>4468</cell></row><row><cell></cell><cell cols="4">Number of Evaluation Samples</cell></row><row><cell>Setting</cell><cell cols="4">HotpotQA MuSiQue 2Wiki</cell></row><row><cell>Distractor</cell><cell></cell><cell>1000</cell><cell>1000</cell><cell>1000</cell></row><row><cell>Ideal Retrieval</cell><cell></cell><cell>1000</cell><cell>1000</cell><cell>1000</cell></row><row><cell cols="2">Distractor (Base-Answerable/Unanswerable)</cell><cell>810</cell><cell>681</cell><cell>1000</cell></row><row><cell cols="2">Ideal Retrieval (Base-Answerable/Unanswerable)</cell><cell>512</cell><cell>379</cell><cell>1000</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Curriculum learning</title>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jérôme</forename><surname>Louradour</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronan</forename><surname>Collobert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Reading Wikipedia to answer opendomain questions</title>
+		<author>
+			<persName><forename type="first">Danqi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Fisch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Bordes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">;</forename><surname>Deepseek-Ai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daya</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Song</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/P17-1171</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Ruoyu Zhang, and 1 others. 2025. Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning</title>
+		<meeting><address><addrLine>Vancouver, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="1870" to="1879" />
+		</imprint>
+	</monogr>
+	<note>Long Papers) Proceedings of the 55th Annual Meeting of the Association for Computational Linguistics</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Lightrag: Simple and fast retrievalaugmented generation</title>
+		<author>
+			<persName><forename type="first">Zirui</forename><surname>Preprint</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lianghao</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanhua</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tu</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Ao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Huang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.12948</idno>
+		<idno>arXiv:2410.05779</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">From rag to memory: Non-parametric continual learning for large language models</title>
+		<author>
+			<persName><forename type="first">Jiménez</forename><surname>Bernal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiheng</forename><surname>Gutiérrez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weijian</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sizhe</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Su</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.14802</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Realm: retrievalaugmented language model pre-training</title>
+		<author>
+			<persName><forename type="first">Kelvin</forename><surname>Guu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenton</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zora</forename><surname>Tung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Panupong</forename><surname>Pasupat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming-Wei</forename><surname>Chang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 37th International Conference on Machine Learning</title>
+		<meeting>the 37th International Conference on Machine Learning</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note>ICML&apos;20. JMLR.org</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Constructing a multihop QA dataset for comprehensive evaluation of reasoning steps</title>
+		<author>
+			<persName><forename type="first">Xanh</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anh-Khoa</forename><surname>Duong Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saku</forename><surname>Sugawara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akiko</forename><surname>Aizawa</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2020.coling-main.580</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 28th International Conference on Computational Linguistics</title>
+		<meeting>the 28th International Conference on Computational Linguistics<address><addrLine>Barcelona, Spain (Online</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="6609" to="6625" />
+		</imprint>
+	</monogr>
+	<note>International Committee on Computational Linguistics</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Long-context LLMs meet RAG: Overcoming challenges for long inputs in RAG</title>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Bowen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinsung</forename><surname>Yoon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sercan</forename><forename type="middle">O</forename><surname>Arik</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">2025a. Nv-embed: Improved techniques for training llms as generalist embedding models</title>
+		<author>
+			<persName><forename type="first">Chankyu</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rajarshi</forename><surname>Roy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengyao</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Raiman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Shoeybi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan</forename><surname>Catanzaro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Ping</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.17428</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Kangwook Lee, and Dimitris Papailiopoulos. 2025b. Self-improving transformers overcome easy-to-hard and length generalization challenges</title>
+		<author>
+			<persName><forename type="first">Nayoung</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyang</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Avi</forename><surname>Schwarzschild</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.01612</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Retrieval-augmented generation for knowledgeintensive nlp tasks</title>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Piktus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladimir</forename><surname>Karpukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heinrich</forename><surname>Küttler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen</forename><surname>Tau Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Rocktäschel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Riedel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Douwe</forename><surname>Kiela</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="9459" to="9474" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Multi-hop question answering</title>
+		<author>
+			<persName><forename type="first">Vaibhav</forename><surname>Mavi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anubhav</forename><surname>Jangra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Jatowt</surname></persName>
+		</author>
+		<idno type="DOI">10.1561/1500000102</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Found. Trends Inf. Retr</title>
+		<imprint>
+			<biblScope unit="volume">17</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="457" to="586" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongjin</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Furu</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanpreet</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Douwe</forename><surname>Kiela</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.09906</idno>
+		<title level="m">Generative representational instruction tuning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Curriculum learning for reinforcement learning domains: A framework and survey</title>
+		<author>
+			<persName><forename type="first">Sanmit</forename><surname>Narvekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matteo</forename><surname>Leonetti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jivko</forename><surname>Sinapov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><forename type="middle">E</forename><surname>Taylor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Stone</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2003.04960</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Answering while summarizing: Multi-task learning for multi-hop QA with evidence extraction</title>
+		<author>
+			<persName><forename type="first">Kosuke</forename><surname>Nishida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyosuke</forename><surname>Nishida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Masaaki</forename><surname>Nagata</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Atsushi</forename><surname>Otsuka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Itsumi</forename><surname>Saito</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hisako</forename><surname>Asano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junji</forename><surname>Tomita</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/P19-1225</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 57th Annual Meeting of the Association for Computational Linguistics<address><addrLine>Florence, Italy</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="2335" to="2345" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Ahmed El-Kishky, and 1 others. 2024. Openai o1 system card</title>
+		<author>
+			<persName><forename type="first">:</forename><surname>Openai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Jaech</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Kalai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Lerer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Richardson</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.16720</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ivo</forename><surname>Petrov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jasper</forename><surname>Dekoninck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lyuben</forename><surname>Baltadzhiev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Drencheva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kristian</forename><surname>Minchev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mislav</forename><surname>Balunović</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikola</forename><surname>Jovanović</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Vechev</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.21934</idno>
+		<title level="m">Proof or bluff? evaluating llms on 2025 usa math olympiad</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">:</forename><surname>Qwen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baosong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beichen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Zheng</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note>and 1 others. 2025. Qwen2.5 technical report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Deepseekmath: Pushing the limits of mathematical reasoning in open language models</title>
+		<author>
+			<persName><forename type="first">;</forename><surname>Preprint</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daya</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Guo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.15115</idno>
+		<idno>arXiv:2402.03300</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Curriculum learning: A survey</title>
+		<author>
+			<persName><forename type="first">Petru</forename><surname>Soviany</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tudor</forename><surname>Radu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paolo</forename><surname>Ionescu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicu</forename><surname>Rota</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sebe</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2101.10382</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Bright: A realistic and challenging benchmark for reasoning-intensive retrieval</title>
+		<author>
+			<persName><forename type="first">Hongjin</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Howard</forename><surname>Yen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengzhou</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weijia</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haisu</forename><surname>Han Yu Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zachary</forename><forename type="middle">S</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Siegel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoxi</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinsung</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sercan</forename><forename type="middle">O</forename><surname>Yoon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danqi</forename><surname>Arik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.12883</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Musique: Multihop questions via singlehop question composition</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Trivedi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Balasubramanian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sabhar</surname></persName>
+		</author>
+		<idno type="DOI">10.1162/TACL_A_00475</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="page" from="539" to="554" />
+			<date type="published" when="2022">wal. 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Interleaving retrieval with chain-ofthought reasoning for knowledge-intensive multi-step questions</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Trivedi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Balasubramanian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.acl-long.557</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 61st Annual Meeting of the Association for Computational Linguistics<address><addrLine>Toronto, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="10014" to="10037" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">REAR: A relevance-aware retrieval-augmented framework for open-domain question answering</title>
+		<author>
+			<persName><forename type="first">Yuhao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiyang</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji-Rong</forename><surname>Wen</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.emnlp-main.321</idno>
+		<idno type="arXiv">arXiv:2406.14497</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Graham Neubig, and Daniel Fried. 2024b. Coderag-bench: Can retrieval augment code generation? Preprint</title>
+		<editor>
+			<persName><forename type="first">Zora</forename><surname>Zhiruo</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Wang</forename></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Akari</forename><surname>Asai</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Xinyan Velocity</forename><surname>Yu</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Yiqing</forename><surname>Xie</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Miami, Florida, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="5613" to="5626" />
+		</imprint>
+	</monogr>
+	<note>Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Swe-rl: Advancing llm reasoning via reinforcement learning on open software evolution</title>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Duchenne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jade</forename><surname>Copet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quentin</forename><surname>Carbonneaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Synnaeve</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sida</forename><forename type="middle">I</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.18449</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Orion</forename><surname>Weller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kathryn</forename><surname>Ricci</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eugene</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Yates</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Lawrie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Van Durme</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.18418</idno>
+		<title level="m">Rank1: Test-time compute for reranking in information retrieval</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Logic-rl: Unleashing llm reasoning with rule-based reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Tian</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zitian</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingnan</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoming</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqian</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joey</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhirong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Luo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.14768</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Building math agents with multi-turn iterative preference learning</title>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengshuai</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaming</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aviv</forename><surname>Rosenberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniele</forename><surname>Calandriello</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Misha</forename><surname>Khalman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bilal</forename><surname>Piot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Saleh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianqi</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Hotpotqa: A dataset for diverse, explainable multi-hop question answering</title>
+		<author>
+			<persName><forename type="first">Zhilin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saizheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">W</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruslan</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1809.09600</idno>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">HELMET: How to evaluate long-context models effectively and thoroughly</title>
+		<author>
+			<persName><forename type="first">Howard</forename><surname>Yen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minmin</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ke</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fleischer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Izsak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moshe</forename><surname>Wasserblat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danqi</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Xuanjing Huang, and Xipeng Qiu. 2023. Rethinking label smoothing on multi-hop question answering</title>
+		<author>
+			<persName><forename type="first">Zhangyue</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiannian</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiguang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhao</forename><surname>Cao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.09512</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qiying</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruofei</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufeng</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaochen</forename><surname>Zuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tiantian</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaohong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingjun</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haibin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bole</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guangming</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Tong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mofan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.14476</idno>
+		<title level="m">Hang Zhu, and 16 others. 2025. Dapo: An open-source llm reinforcement learning system at scale. Preprint</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dylan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qirun</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Peng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.04194</idno>
+		<title level="m">The best instruction-tuning data are those that fit</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">2024a. End-to-end beam retrieval for multi-hop question answering</title>
+		<author>
+			<persName><forename type="first">Jiahao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haiyang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongmei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shen</forename><surname>Huang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.08973</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Curriculum learning driven domain adaptation for low-resource machine reading comprehension</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benfeng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhendong</forename><surname>Mao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Signal Processing Letters</title>
+		<imprint>
+			<biblScope unit="volume">31</biblScope>
+			<biblScope unit="page" from="2650" to="2654" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tianjun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Shishir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Patil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sheng</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matei</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Zaharia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Stoica</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gonzalez</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.10131</idno>
+		<title level="m">Adapting language model to domain specific rag</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Gsm-infinite: How do your llms behave over infinitely increasing context length and reasoning complexity</title>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongyi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuoming</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuandong</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beidi</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.05252.Baseline61.31/9.2144.89/35.6551.83/14.6440.96/4.6327.91/19.2533.20/7.4661.64/6.7542.71/33.8050.45/11.25</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<idno>82.63 / 18.07 76.01 / 68.70 79.18 / 28.61 63.87 / 13.51 55.54 / 47.51 59.41 / 21.04 84.42 / 17.37 76.53 / 75.50 80.28 / 28.25</idno>
+		<title level="m">Max</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Min-Max</forename></persName>
+		</author>
+		<idno>86.27 / 20.40 83.21 / 76.46 84.71 / 32.20 71.73 / 22.89 67.42 / 58.47 69.51 / 32.90 87.83 / 20.41 77.66 / 74.19 82.43 / 32.02</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<idno>89.74 / 8.61 88.51 / 86.67 89.12 / 15.67 77.67 / 12.14 69.11 / 70.15 73.14 / 20.69 88.64 / 13.56 79.84 / 84.54 84.01 / 23.36</idno>
+		<title level="m">Max</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Min-Max</forename></persName>
+		</author>
+		<idno>92.06 / 10.30 95.12 / 93.68 93.56 / 18.56 86.46 / 29.55 81.60 / 81.64 83.96 / 43.39 91.01 / 17.17 80.95 / 83.03 85.69 / 28.46</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Model performance under the distractor and ideal retrieval evaluation settings evaluated on base-answerable and base-unanswerable evaluation sets. We use up to 5,000 training samples for all runs as outlined in Section 4.2 MuSiQue 2-hop MuSiQue 3-hop MuSiQue 4-hop</title>
+		<idno>Base-Unanswerable 88.89 / 7.77 84.98 / 83.93 86.89 / 14.22 77.66 / 12.12 68.00 / 70.96 72.51 / 20.71 88.95 / 11.88 75.07 / 81.82 81.42 / 20.75 Table 9</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Curriculum Answer F1 Citation F1 Joint F1 Answer F1 Citation F1 Joint F1 Answer F1 Citation F1 Joint F</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Model performance on MuSiQue in the distractor setting grouped by the number of hops in each question</title>
+	</analytic>
+	<monogr>
+		<title level="j">We use between</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="page" from="0" to="40" />
+		</imprint>
+	</monogr>
+	<note>000 training samples for all the runs in this table</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,2234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Plan-on-Graph: Self-Correcting Adaptive Planning of Large Language Model on Knowledge Graphs</title>
+				<funder ref="#_vw2MJyC #_7DCNbnA">
+					<orgName type="full">National Natural Science Foundation of China</orgName>
+				</funder>
+				<funder ref="#_J54u4tK">
+					<orgName type="full">unknown</orgName>
+				</funder>
+				<funder ref="#_JJbKyve #_T4nHYxB">
+					<orgName type="full">Guangdong Basic and Applied Basic Research Foundation</orgName>
+				</funder>
+				<funder ref="#_fCRgX2y">
+					<orgName type="full">National Key Research and Development Program of China</orgName>
+				</funder>
+				<funder ref="#_BdFdKGM">
+					<orgName type="full">Guangzhou-HKUST (GZ)</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-10-31">31 Oct 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Liyi</forename><surname>Chen</surname></persName>
+							<email>liyichencly@gmail.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Science and Technology of China</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution">Alibaba Cloud Computing</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Panrong</forename><surname>Tong</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Alibaba Cloud Computing</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhongming</forename><surname>Jin</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Alibaba Cloud Computing</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ying</forename><surname>Sun</surname></persName>
+							<email>yings@hkust-gz.edu.cn</email>
+							<affiliation key="aff2">
+								<orgName type="department">Thrust of Artificial Intelligence</orgName>
+								<orgName type="institution">The Hong Kong University of Science and Technology (Guangzhou)</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jieping</forename><surname>Ye</surname></persName>
+							<email>yejieping.ye@alibaba-inc.com</email>
+							<affiliation key="aff1">
+								<orgName type="institution">Alibaba Cloud Computing</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hui</forename><surname>Xiong</surname></persName>
+							<email>xionghui@ust.hk</email>
+							<affiliation key="aff2">
+								<orgName type="department">Thrust of Artificial Intelligence</orgName>
+								<orgName type="institution">The Hong Kong University of Science and Technology (Guangzhou)</orgName>
+							</affiliation>
+							<affiliation key="aff3">
+								<orgName type="department">Department of Computer Science and Engineering</orgName>
+								<orgName type="institution">The Hong Kong University of Science and Technology</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Taylor</forename><surname>Swift</surname></persName>
+						</author>
+						<title level="a" type="main">Plan-on-Graph: Self-Correcting Adaptive Planning of Large Language Model on Knowledge Graphs</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-10-31">31 Oct 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">92BEBE49F33990C4818DD9AF0C762D3A</idno>
+					<idno type="arXiv">arXiv:2410.23875v1[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:49+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large Language Models (LLMs) have shown remarkable reasoning capabilities on complex tasks, but they still suffer from out-of-date knowledge, hallucinations, and opaque decision-making. In contrast, Knowledge Graphs (KGs) can provide explicit and editable knowledge for LLMs to alleviate these issues. Existing paradigm of KG-augmented LLM manually predefines the breadth of exploration space and requires flawless navigation in KGs. However, this paradigm cannot adaptively explore reasoning paths in KGs based on the question semantics and self-correct erroneous reasoning paths, resulting in a bottleneck in efficiency and effect. To address these limitations, we propose a novel self-correcting adaptive planning paradigm for KG-augmented LLM named Plan-on-Graph (PoG), which first decomposes the question into several sub-objectives and then repeats the process of adaptively exploring reasoning paths, updating memory, and reflecting on the need to self-correct erroneous reasoning paths until arriving at the answer. Specifically, three important mechanisms of Guidance, Memory, and Reflection are designed to work together, to guarantee the adaptive breadth of self-correcting planning for graph reasoning. Finally, extensive experiments on three real-world datasets demonstrate the effectiveness and efficiency of PoG.</p><p>†This work was accomplished when Liyi Chen was an intern at Alibaba Cloud Computing.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Large Language Models (LLMs) have manifested outstanding performance in various natural language processing and data science tasks, such as question answering <ref type="bibr" target="#b41">[42,</ref><ref type="bibr" target="#b24">25,</ref><ref type="bibr" target="#b61">62</ref>], text generation <ref type="bibr" target="#b17">[18,</ref><ref type="bibr" target="#b12">13,</ref><ref type="bibr" target="#b7">8,</ref><ref type="bibr" target="#b14">15]</ref>, recommender systems <ref type="bibr" target="#b59">[60,</ref><ref type="bibr" target="#b58">59,</ref><ref type="bibr" target="#b50">51,</ref><ref type="bibr" target="#b43">44]</ref>, and domain-specific applications <ref type="bibr" target="#b45">[46,</ref><ref type="bibr" target="#b44">45,</ref><ref type="bibr" target="#b13">14,</ref><ref type="bibr" target="#b49">50,</ref><ref type="bibr" target="#b35">36]</ref>. They leverage advanced deep learning techniques and immense amounts of pre-existing text data to understand and generate human language with impressive fluency and coherence. Despite their success in numerous applications, LLMs still suffer from out-of-date knowledge, hallucinations, and opaque decision-making, highlighting the ongoing need for further investigation in this rapidly evolving field.</p><p>Intuitively, as large-scale structural knowledge bases, Knowledge Graphs (KGs) <ref type="bibr" target="#b4">[5,</ref><ref type="bibr" target="#b0">1,</ref><ref type="bibr" target="#b11">12,</ref><ref type="bibr" target="#b42">43]</ref> provide explicit and editable depictions of massive real-world knowledge, which have the potential to be a promising complement to the drawbacks of LLMs. Previous studies manage to integrate KGs into LLM pre-training <ref type="bibr" target="#b60">[61,</ref><ref type="bibr" target="#b46">47]</ref> or fine-tuning <ref type="bibr" target="#b52">[53,</ref><ref type="bibr" target="#b26">27]</ref> stage. However, these methods mainly compress structured knowledge in KGs into LLMs' parameters in a black-box fashion and still cannot fully enhance the flexibility, reliability, and transparency of LLMs. Therefore, several attempts <ref type="bibr" target="#b2">[3,</ref><ref type="bibr" target="#b1">2,</ref><ref type="bibr" target="#b39">40]</ref> first retrieve information from KGs and then deliver explicit knowledge into LLMs. Under these circumstances, LLMs do not directly participate in the graph reasoning process, making these methods excessively dependent on the KG completeness. Recently, a KG-augmented LLM paradigm has been proposed to conduct graph reasoning, which treats the LLM as an agent to interactively explore related entities and relations on KGs and perform reasoning based on the retrieved knowledge. For instance, StructGPT <ref type="bibr" target="#b18">[19]</ref> and ToG <ref type="bibr" target="#b34">[35]</ref> predefine the breadth of reasoning paths explored on the KG, and leverage the LLM to iterate the process of unidirectionally extending along the reasoning paths relevant to the question and reasoning the answer using these reasoning paths. This KG-augmented LLM paradigm offers an opportunity for more comprehensively amalgamating the knowledge from both the KG and LLM by facilitating the step-by-step derivation of further insights.</p><p>However, existing paradigm may fail to plan the exploration of correct reasoning paths for many complex questions. Figure <ref type="figure" target="#fig_0">1</ref> illustrates an example of existing paradigm's limitations when answering the question "Which of Taylor Swift's songs has won American Music Awards? (AMA)". These limitations lie in: (1) Predefined path breadth: Existing paradigm requires manually setting the breadth of reasoning paths in KGs, and a fixed breadth may result in all the selected relations or entities being incorrect. When determining the relevance between paths and questions in step 2 ⃝, due to the limited maximum breadth of three and the uncertainty surrounding the respective awards of songs, the LLM selected maximum numbers of songs, ignoring the correct entity "Blank Space". (2) Irreversible exploration direction: The path exploration in existing paradigm is unidirectional without the ability to self-correct. Even if the paths are incorrect, the LLM still continues to extend current incorrect paths and lead to the failure of reasoning on the KG. In step 3 ⃝ and 4 ⃝, since "The Joker And The Queen", "Shake It Off", and "Cruel Summer" were already chosen, the reasoning process continued on incorrect paths and the right answer was not found. (3) Forgetting partial conditions: During reasoning, the LLM may forget partial conditions in the question and cannot provide the answer that satisfies multiple conditions simultaneously. In step 4</p><p>⃝, the LLM only remembered the condition that the song was by Taylor Swift but forgot the condition about the song winning an AMA award, leading to an incorrect answer, "Love Story". Therefore, the reasoning of complex questions may heavily rely on adaptive exploration and self-correction of erroneous reasoning paths.</p><p>To address these limitations, we propose a novel self-correcting adaptive planning paradigm for KGaugmented LLM named Plan-on-Graph (PoG). To the best of our knowledge, we are the first to design a reflection mechanism for self-correction and adaptive KG exploration into KG-augmented LLMs, effectively improving the ability and efficiency of LLM reasoning. Specifically, PoG first decomposes the question into several sub-objectives as guidance for planning exploration, and then repeats the process of adaptively exploring reasoning paths to access relevant KG data, updating memory to provide dynamic evidence for reflection, and reflecting on the need to self-correct reasoning paths until arriving at the answer. In PoG, three mechanisms are designed for adaptive self-correcting planning: (1) Guidance: To better guide adaptive exploration by harnessing conditions in the question, we employ the LLM to decompose the question into sub-objectives containing conditions, thereby benefiting the identification of relevant paths to each condition with flexible exploration breadth. (2) Memory: The information stored in memory offers historical retrieval and reasoning information for reflection. We record and update the subgraph to provide the LLM with all retrieved entities for initializing new exploration and self-correcting paths, reasoning paths to preserve the relationships between entities for LLM reasoning and allow for path correction, and sub-objective status to make the LLM recognize the known information of each condition and mitigate its forgetting in reflection stage. (3) Reflection: To determine whether to continue or self-correct current reasoning paths, we design a reflection mechanism to employ the LLM to reason whether to consider other entities into new exploration and decide which entities to backtrack to for self-correction based on information in memory. Finally, extensive experiments on three real-world KGQA datasets validate the effectiveness and efficiency of PoG<ref type="foot" target="#foot_0">foot_0</ref> . The main contributions of this paper are listed as follows:</p><p>• We propose a novel self-correcting adaptive planning paradigm for KG-augmented LLM named PoG, which exploits the LLM to plan the adaptive breadth of reasoning paths and reflect to self-correct erroneous paths. To the best of our knowledge, we are the first to incorporate a reflection mechanism for self-correction and adaptive KG exploration into KG-augmented LLMs, effectively augmenting the LLM's reasoning ability.</p><p>• We specially design Guidance, Memory, and Reflection mechanisms for PoG. Guidance harnesses question conditions to better plan adaptive exploration by decomposing task into sub-objectives including conditions. Memory records the subgraph, reasoning paths, and sub-objective status to provide historical retrieval and reasoning information for Reflection. Based on Memory, Reflection reasons whether to self-correct reasoning paths and which entity to backtrack to for initiating new exploration.</p><p>• We conduct extensive experiments on three real-world KGQA datasets, namely CWQ, We-bQSP, and GrailQA. The results demonstrate not only the effectiveness but also the efficiency of our proposed novel PoG paradigm for KG-augmented LLM.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Preliminary</head><p>Knowledge Graph (KG) stores massive factual knowledge in the form of a set of triplets: G = {(e, r, e ′ ) | e, e ′ ∈ E, r ∈ R}, where E and R denote the set of entities and relations, respectively.</p><p>Relation Paths are a sequence of relations: z = {r 1 , r 2 , ..., r l }, where r i ∈ R denotes the i-th relation in the path and l denotes the length of the path. Knowledge Graph Question Answering (KGQA) is the task of answering natural language questions based on a set of facts over the KG. Given a question q, a knowledge graph G, and topic entities T q mentioned in q, the target of KGQA is to generate answers A q to the question q. Following previous studies <ref type="bibr" target="#b34">[35]</ref>, we assume any entity e q ∈ T q mentioned in q and answers a q ∈ A q are labeled and linked to the corresponding entities in G, i.e., T q , A q ⊆ E.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reasoning</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Methodology</head><p>In this section, we introduce the technical details of the novel self-correcting adaptive planning paradigm for KG-augmented LLM named Plan-on-Graph (PoG). As illustrated in Figure <ref type="figure" target="#fig_2">2</ref>, PoG consists of four key components: Task Decomposition, Path Exploration, Memory Updating, and Evaluation. PoG first decomposes the question into several sub-objectives as guidance of planning exploration and then repeats the process of adaptively exploring reasoning paths to access relevant KG data, updating memory to provide historical retrieval and reasoning information for reflection, and reflecting on the need to self-correct reasoning paths until arriving at the answer.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Evaluation</head><p>No awards information of "The Joker And The Queen", "Shake It Off", and "Cruel Summer", so I need to continue.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Memory Updating</head><p>Task: Answer the question "Which of Taylor Swift' s songs has won American Music Awards (AMA)?" Sub-Objectives: 1. Find the songs of Taylor Swift. 2. Find the awards these songs have won. 3. Identify the song with American Music Awards (AMA).</p><p>Task Decomposition Path Exploration Continue Sufficient Knowledge Insufficient Knowledge Correct Output 1. "The Joker And The Queen", "Shake It Off", and "Cruel Summer" are the songs of Taylor. 2. No relevant information. 3. No relevant information. Blank Space AMA ••• Awa rd Relevant Irrelevant … Subgraph Reasoning Paths Sub-Objectives A l b u m Song So ng S o n g America So ng … Blank Space Speak Now Nationality Reading Born in The Joker And The Queen Shake It Off S o n g … Taylor Swift Cruel Summer The Joker And The Queen Shake It Off Cruel Summer Ed Sheeran Awar d Co mp os er 2022-02-11 Release Date MTV VMA Lover in Album BRIT Award Aw ar d … … … Path Exploration Path Exploration</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Memory</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reflect</head><p>Evaluation "The Joker And The Queen", "Shake It Off", and "Cruel Summer" have not won AMA, so I need to find other songs. I add the songs "Blank Space", "Love Story", … into the following exploration. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Memory Updating</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Task Decomposition</head><p>To harness conditions in the question to better guide the adaptive exploration process, PoG decomposes the task of answering the question into multiple sub-objectives containing conditions through semantic analysis of the LLM. Sub-objectives serve as guidance for path exploration, benefiting the identification of relevant paths to each condition outlined in the question with flexible exploration breadth. Specifically, we prompt the LLM to decompose the original question q into a list of sub-objectives for KG retrieval and reasoning. The prompt is shown in Appendix A.1. The list of sub-objectives can be denoted as O = {o 1 , o 2 , o 3 , ...}. It is important to note that sub-objectives in O may refer to the results obtained from other sub-objectives in O, allowing for interdependencies in the reasoning process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Path Exploration</head><p>We access relevant information from the KG by exploring reasoning paths in the KG. On the initiation of path exploration, we localize the initial entities of reasoning paths, which correspond to the topic entities mentioned in the given question. Similar to prior research <ref type="bibr" target="#b18">[19,</ref><ref type="bibr" target="#b34">35]</ref>, topic entities have been pre-identified and are part of the annotated datasets. Specifically, when presented with a question q, we use topic entities to serve as the initial elements of the reasoning paths, E 0 = T q = {e 0 1 , e 0 2 , ..., e 0 N0 }, where N 0 is the number of topic entities.</p><p>In the subsequent iterations, we continue exploring reasoning paths most relevant to the question and suspend other reasoning paths. Taking the D-th iteration as an example, before the iteration starts, each reasoning path p n ∈ P consists of D pn (D pn ≤ D -1) triplets, i.e.,</p><formula xml:id="formula_0">p n = {(e d s,n , r d j,n , e d o,n )} Dp n d=1</formula><p>, where e d s,n and e d o,n denote subject and object entities, r d j,n is a specific relation between them, (e d s,n , r d j,n , e d o,n ) and (e d+1 s,n , r d+1 j,n , e d+1 o,n ) are linked to each other. It is noted that the length of each reasoning path may vary, because in the D-th iteration, we only continue exploring the reasoning paths most semantically relevant to the question, which are identified in the D -1-th iteration. The sets of tail entities and relations to be explored are denoted as</p><formula xml:id="formula_1">E D-1 = {e D-1 1 , e D-1 2 , . . . , e D-1 N D-1 } and R D-1 = {r D-1 1 , r D-1 2 , . . . , r D-1 N D-1 }</formula><p>, respectively, where N D-1 is the length of E D-1 and R D-1 . We leverage the LLM to identify the most relevant entities E D from the neighboring entities of the current entity set E D-1 based on the question q and extend the reasoning paths P with E D . In order to manage the complexity of dealing with a large number of neighboring entities using the LLM, we propose an adaptive exploration strategy that is not limited by the fixed number of relations and entities. This strategy involves a two-step process of finding relevant relations and utilizing these selected relations to explore entities.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Relation Exploration.</head><p>Relation exploration is a process to retrieve the relations of all tail entities in E D-1 and identify the most relevant relations to the question q and the sub-objectives O. To be specific, we first conduct the search to obtain all relations linked to the tail entities in E D-1 as the candidate relation set R D cand = {r D cand,1 , r D cand,2 , ..., r D cand,N D-1 }. We utilize R D cand to extend the reasoning paths into candidate reasoning paths P cand . Then, we employ the LLM to select a flexible number of relevant reasoning paths P ending with the tail relations in R D from P cand , based on the semantic information of the question q, tail entities E</p><p>-1 , candidate relations R D cand , and sub-objectives O. The prompt is shown in Appendix A.2.1, and the pre-defined query for relation search is shown in Appendix B.1. Entity Exploration. Analogously, entity exploration is a process to retrieve neighboring entities based on R D and E D-1 and detect the most relevant entities to the question q. From the previous relation exploration, we obtain extended reasoning paths P and new tail relations R D . For each reasoning path p n ∈ P , we can execute the queries of (e D-1 n , r D n , ?) or (?, r D n , e D-1 n ) to retrieve a candidate entity set E D cand,n , where e D-1 n and r D n are the tail entity and relation in p n . When confronted with a large number of candidate entities, we use a small pre-trained DistilBERT [31]<ref type="foot" target="#foot_1">foot_1</ref> , to calculate the similarity between candidate entities and the question for recall. Then, we summarize all candidate entity sets into E D cand and use E D cand as the tail entities to expand P into P cand . With the candidate reasoning paths P cand , we exploit the LLM to choose a flexible number of relevant reasoning paths P ending with the tail entities E D from P cand , based on the semantic information of the question q and knowledge triplets composed of tail entities E D-1 , tail relations R D and candidate entities E D cand . The prompt is shown in Appendix A.2.2, and the pre-defined query for entity search is shown in Appendix B.2.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Memory Updating</head><p>The information stored in memory provides historical retrieval and reasoning information for reflection. After a two-step exploration, we dynamically update the searched subgraph G Sub , reasoning paths P , and sub-objective status S in memory based on the ongoing reasoning process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Subgraph.</head><p>The subgraph includes all retrieved relations and entities from the KG. We update the subgraph in memory, which can be utilized during later reflection to determine which entity to backtrack to for self-correction. In the D-th iteration, the searched subgraph G Sub is updated by adding the retrieved candidate relation set R D cand and candidate entity set E D cand . Reasoning Paths. In order to ensure that the LLM can understand relationships between entities for better reasoning and allow for path correction in reflection stage, we update reasoning paths P to preserve the semantic structure within the KG.</p><p>Sub-Objective Status. The LLM may forget partial conditions in the reasoning process. Subobjectives obtained by decomposing the question can help the LLM remember multiple conditions in the question. The status of sub-objectives contains the current known information related to the sub-objectives, which can aid the LLM in remembering the known information of each condition and determining whether to correct the exploration direction in reflection stage. Hence, we leverage the LLM to update the currently known information relevant to sub-objectives into sub-objective status S = {s 1 , s 2 , s 3 , ...}, |S| = |O|, based on the semantic information of the question q, sub-objectives O, historical sub-objective status, and reasoning paths P , along with the LLM's own knowledge. The prompt is shown in Appendix A.3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">Evaluation</head><p>After the path exploration and memory updating, PoG prompts the LLM to reason whether the current acquired information, including sub-objective states and reasoning paths recorded in memory, is sufficient to infer an answer. The prompt is shown in Appendix A.4.1. If the LLM determines that the information is sufficient, it will integrate reasoning paths, sub-objective states, and its own knowledge to provide an answer. When information is considered insufficient, there may be two situations. One is that PoG will acquire sufficient information after further extension of current paths, and the other is that current paths are incorrect. Since the reasoning capability of the LLM does not always guarantee the correctness of path exploration, there is a need to self-correct erroneous reasoning paths. Therefore, we design a reflection mechanism to determine whether and how to self-correct reasoning paths. When the LLM believes that the information is insufficient, PoG enters the stage of reflection. Specifically, PoG utilizes the LLM to reflect on whether to correct the current exploration direction based on the question q, sub-objective status S, reasoning paths P , and entities planned for the next iteration of retrieval E D from memory. Besides, the LLM will provide the reason for the reflection result. If the LLM judges that it is necessary to incorporate additional entities beyond those in E D for exploration, then a self-correction of reasoning paths is needed. Otherwise, PoG will continue exploring along the current reasoning paths with tail entities in E D . For self-correction, PoG employs the LLM to decide which entities in</p><formula xml:id="formula_2">E cand = E 1 cand ∪ E 2 cand ∪ ... ∪ E D</formula><p>cand to backtrack to based on sub-objective states in S and the reason for additional retrieval obtained from the reflection, and adds new exploration of backtracked entities E D</p><p>add into E D for the self-correction, denoted as</p><formula xml:id="formula_3">E D = E D ∪ E D</formula><p>add . The prompts for reflection are shown in Appendix A.4.2.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Experimental Setups</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.1">Datasets &amp; Evaluation Metrics</head><p>To demonstrate the effectiveness of PoG on complex reasoning over knowledge graphs, we adopt three representative multi-hop KGQA datasets: CWQ <ref type="bibr" target="#b36">[37]</ref>, WebQSP <ref type="bibr" target="#b55">[56]</ref>, and GrailQA <ref type="bibr" target="#b16">[17]</ref>. All three datasets rely on the external knowledge graph from Freebase <ref type="bibr" target="#b4">[5]</ref>. For the large dataset GrailQA, we utilize the same testing samples as those in ToG <ref type="bibr" target="#b34">[35]</ref> to improve computational efficiency. Following prior research <ref type="bibr" target="#b22">[23,</ref><ref type="bibr" target="#b18">19,</ref><ref type="bibr" target="#b34">35]</ref>, we use exact match accuracy (Hits@1) as the evaluation metric.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.2">Comparison Methods</head><p>Due to variations in the performance of the method across different datasets, we select prior state-ofthe-art (SOTA) approaches as baselines for each dataset. They can be categorized into two groups:</p><p>(1) LLM-only methods, including standard prompting (IO prompt) <ref type="bibr" target="#b5">[6]</ref>, Chain-of-Thought prompting (CoT) <ref type="bibr" target="#b48">[49]</ref>, and Self-Consistency (SC) <ref type="bibr" target="#b47">[48]</ref>.</p><p>(2) KG-augmented LLM methods, including fine-tuned and prompting methods. For CWQ and WebQSP, we utilize UniKGQA <ref type="bibr" target="#b19">[20]</ref>, TIARA <ref type="bibr" target="#b33">[34]</ref>, RE-KBQA <ref type="bibr" target="#b6">[7]</ref>, DeCAF <ref type="bibr" target="#b56">[57]</ref>, and RoG <ref type="bibr" target="#b26">[27]</ref> as fine-tuned baselines and KD-CoT <ref type="bibr" target="#b40">[41]</ref>, KB-BINDER <ref type="bibr" target="#b22">[23]</ref>, StructGPT <ref type="bibr" target="#b18">[19]</ref>, Interactive KBQA <ref type="bibr" target="#b51">[52]</ref>, and ToG <ref type="bibr" target="#b34">[35]</ref> as prompting baselines. For GrailQA, we utilize RnG-KBQA <ref type="bibr" target="#b54">[55]</ref>, TIARA <ref type="bibr" target="#b33">[34]</ref>, FC-KBQA <ref type="bibr" target="#b57">[58]</ref>, Pangu <ref type="bibr" target="#b15">[16]</ref>, FlexKBQA <ref type="bibr" target="#b25">[26]</ref>, and GAIN <ref type="bibr" target="#b32">[33]</ref> as fine-tuned baselines and KB-BINDER <ref type="bibr" target="#b22">[23]</ref> and ToG <ref type="bibr" target="#b34">[35]</ref> as prompting baselines. The descriptions of baselines are presented in Appendix D.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Performance Comparison</head><p>We compare PoG with the SOTA baselines to demonstrate its effectiveness for KG-augmented LLM. Table <ref type="table" target="#tab_0">1</ref> and Table <ref type="table" target="#tab_1">2</ref> present the experimental results on CWQ, WebQSP, and GrailQA datasets. Overall, PoG achieves the best performance across all three datasets. Specifically, we can make the following observations. First, compared to all prompting KG-augmented LLM baselines, PoG shows superior performance advantages. Regardless of whether GPT-3.5 or GPT-4 is used as the underlying LLM, PoG substantially outperforms the SOTA baseline, ToG. ToG explores reasoning paths with a fixed exploration breadth and cannot detect or correct the errors, showing limitations in effect and efficiency. Meantime, we specially design self-correction and adaptive planning mechanisms, which can effectively improve both performance and efficiency. Second, although PoG is a training-free prompting method, its performance is highly competitive with fine-tuned KG-augmented LLM baselines. When using GPT-4, the performance of PoG exceeds all fine-tuned KG-augmented LLM baselines across the board. Even with GPT-3.5, the result of PoG on GrailQA surpasses all fine-tuned KG-augmented LLM methods. This suggests that our designed guidance, memory, and reflection mechanisms allow PoG's effect to surpass most of the fine-tuned methods. Third, the improvement of PoG is obvious when compared to LLM-only baselines, which do not leverage external KGs. Besides, all KG-augmented LLM methods consistently outperform LLM-only methods, indicating the value of incorporating KGs to enhance LLM performance. Moreover, PoG further improves the effectiveness of KG-augmented LLMs through its self-correctable adaptive planning. Additionally, it is worth noting that PoG with GPT-3.5 outperforms other methods on the zero-shot subset of the GrailQA dataset by a large margin, apparently outperforming all fine-tuned KG-augmented LLMs on this category. The self-correction mechanism in PoG allows it to dynamically correct errors during the reasoning process, which is crucial for zero-shot problems. In order to assess the effectiveness of each mechanism and adaptive exploration in PoG, we conduct the ablation study to remove them on three datasets, respectively. Specifically, w/o Guidance refers to the variant where entire task decomposition as guidance is removed. w/o Memory indicates the variant without the memory mechanism. w/o Reflection refers to the variant where, in the case of insufficient information, it only continues exploring along the original reasoning paths. w/o Adaptive Breadth means that the variant uses a fixed exploration space breadth instead of adapting it based on the situation. Table <ref type="table" target="#tab_2">3</ref> shows the performance of all variants and the results suggest that each mechanism and adaptive breadth appears to contribute positively to the overall performance, with their removal leading to weaker results on complex question answering tasks across the evaluated datasets. These variations achieve a minimum reduction of 3.0%, 2.1%, and 3.5% on CWQ, WebQSP, and GrailQA, respectively. The performance of w/o Memory drops the most, followed by w/o Reflection, because without the memory there is no information to support PoG in navigating the exploration and achieving self-correction, and PoG cannot self-correct the wrong reasoning paths without the reflection mechanism. Moreover, after setting a fixed maximum breadth for exploration, the performance deteriorates. This indicates that a fixed breadth makes the method lack flexibility and less adaptable to different questions. However, because the mechanisms of memory and reflection ensure that PoG is able to self-correct, the performance of w/o Adaptive Breadth does not decrease a lot.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Ablation Study</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Efficiency Study</head><p>We study the efficiency of PoG and the SOTA prompting KG-augmented LLM baseline, ToG. Table <ref type="table" target="#tab_3">4</ref> presents the average LLM call, token consumption, and time required by both methods to answer a question across three datasets. In all datasets, PoG demonstrates clear advantages over ToG in terms of all metrics. For average number of LLM calls, PoG consistently requires fewer calls to the LLM, and reduces it by at least 40.8%. This highlights PoG's ability to reason more efficiently with fewer LLM interactions. Regarding token consumption, PoG exhibits a notable advantage in both input and output token usage. On CWQ, compared to ToG's input tokens, PoG shows a reduction of approximately 4.6% in input token consumption. As for output tokens, PoG produces just 353.159 output tokens, representing a substantial decrease of roughly 76.2%. This indicates the effectiveness of PoG in reducing the overall token consumption during the reasoning process. Most importantly, PoG achieves superior time efficiency compared to ToG. On CWQ and GrailQA, PoG presents a speedup of over 4 times. ToG predefines the breadth of exploration, leading to the exploration of many irrelevant paths. Additionally, ToG lacks a self-correction mechanism, and when there is insufficient information to answer a question, it can only extend the current reasoning paths, sacrificing a lot of efficiency on irrelevant explorations. By contrast, the efficiency advantages of PoG can be attributed to its adaptive exploration and self-correction of reasoning paths based on the semantics of the question. The adaptive breadth reduces unnecessary exploration, and effective correction avoids the extending of wrong current paths. Paths: The Naked and the Dead → film.film.country → United States of America film.film.featured_film_locations → Panama President of Panama → government.government_office_or_title.jurisdiction government.government_office_or_title.office_holders → m.010gg02t Juan Carlos Varela ← government.government_position_held.office_holder Paths: The Naked and the Dead → film.film.country → United States of America film.film.featured_film_locations → Panama President of Panama → government.government_office_or_title.jurisdiction government.governmental_jurisdiction.government_positions government.government_position_held.office_position_or_title Question: Who is in control of the place where the movie "The Naked and the Dead" takes place?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5">Case Study</head><p>CoT Answer: [Refused to answer.] I'm sorry, but I need to clarify the question a bit further in order to provide an accurate answer. Could you please specify whether you are referring to the character or the entity in control of the place where the movie "The Naked and the Dead" takes place? Thank you for your understanding.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ToG</head><p>Answer: [KG exploration failed, and the LLM answered the question according to its own knowledge.] First, the movie "The Naked and the Dead" takes place during World War II. Second, the United States Army is in control of the place where the movie takes place. Figure <ref type="figure" target="#fig_3">3:</ref> A typical case to compare different methods to answer the complex question. For the convenience of display, we only provide the sub-objective status and partial reasoning paths stored in memory. Topic entities, wrong answers, and correct answers are highlighted in blue, red, and green. The revised path is highlighted with a yellow background. leverages sub-objective status to self-correct the exploration path in the reflection stage and finally provides the correct answer.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>PoG</head><p>5 Related Work LLM Reasoning. To encourage LLMs to engage in reasoning rather than simply providing answers directly, many researchers instruct LLMs to generate the process of thinking in their outputs <ref type="bibr" target="#b48">[49,</ref><ref type="bibr" target="#b21">22,</ref><ref type="bibr" target="#b62">63]</ref>. In the early stages, Chain of Thought (CoT) <ref type="bibr" target="#b48">[49]</ref> was designed to provide a few examples of intermediate natural language reasoning steps as the prompt. After that, several variants of CoT reasoning with different forms like Tree-of-Thought <ref type="bibr" target="#b53">[54]</ref>, Graph-of-Thought <ref type="bibr" target="#b3">[4]</ref>, Memory of Thought <ref type="bibr" target="#b23">[24]</ref>, and Skeleton-of-Thought <ref type="bibr" target="#b29">[30]</ref> were proposed to enhance the thinking process. However, LLMs may make mistakes during the reasoning process. Hence, many works <ref type="bibr" target="#b31">[32,</ref><ref type="bibr" target="#b20">21,</ref><ref type="bibr" target="#b27">28,</ref><ref type="bibr" target="#b28">29]</ref> designed self-correction mechanisms based on feedback to rectify flawed reasoning and ensure accuracy. Additionally, large efforts were dedicated to guiding LLMs in understanding complex graph structures <ref type="bibr" target="#b38">[39,</ref><ref type="bibr" target="#b37">38]</ref> and improving their graph reasoning across different graph tasks <ref type="bibr" target="#b10">[11,</ref><ref type="bibr" target="#b9">10,</ref><ref type="bibr" target="#b8">9]</ref>. However, it is still an open issue to address the outdated knowledge, hallucinations, and opaque decision-making for LLM reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>KG-Augmented LLM.</head><p>Despite the pre-training of LLMs on massive corpora, they still suffer from limitations such as outdated knowledge, hallucinations, and opaque decision-making. An effective approach to address these limitations is to leverage KGs for explicit and editable knowledge provision to LLMs. Previous studies integrated KGs into LLM pre-training <ref type="bibr" target="#b60">[61,</ref><ref type="bibr" target="#b46">47]</ref> or fine-tuning <ref type="bibr" target="#b52">[53,</ref><ref type="bibr" target="#b26">27]</ref> stage, but they merely inject structured knowledge into LLMs' parameters and still leave these limitations unexplored. Therefore, several works <ref type="bibr" target="#b2">[3,</ref><ref type="bibr" target="#b1">2,</ref><ref type="bibr" target="#b39">40]</ref> first retrieved information from KGs and then directly fed explicit knowledge into LLMs. In this way, LLMs do not involve the graph reasoning process and cannot provide potential insights. Then, a novel KG-augmented LLM paradigm <ref type="bibr" target="#b18">[19,</ref><ref type="bibr" target="#b34">35]</ref> was proposed to treat the LLM as an agent to interactively explore related entities and relations on KGs and perform reasoning based on the retrieved knowledge. Although this KG-augmented LLM paradigm has achieved impressive performance, it still faces the challenges of adaptively exploring the KG based on question semantics and self-correcting erroneous reasoning paths. To the best of our knowledge, our work stands out as a pioneering effort in successfully integrating a reflection mechanism for self-correction and adaptive KG exploration into KG-augmented LLMs, effectively enhancing the LLM's reasoning ability.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>In this paper, we proposed a novel self-correcting adaptive planning paradigm for KG-augmented LLM named Plan-on-Graph (PoG). To the best of our knowledge, we were the first to incorporate a reflection mechanism for self-correction and adaptive KG exploration into KG-augmented LLMs, effectively augmenting LLM's reasoning ability and efficiency. PoG first decomposed the question into several sub-objectives, and then repeated the process of exploring reasoning paths, updating memory, and reflecting on the need to self-correct reasoning paths until arriving at the answer. To be specific, three important mechanisms were designed to work together to guarantee the adaptive breadth of self-correcting planning for graph reasoning, i.e., Guidance, Memory, and Reflection. Finally, extensive experiments on three real-world KGQA datasets validated not only the effectiveness but also the efficiency of the proposed PoG. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LLM-Only Methods</head><p>• Standard prompting (IO prompt) <ref type="bibr" target="#b5">[6]</ref> verifies the ability of LLMs to achieve better performance in task-agnostic, few-shot problems than traditional LMs.</p><p>• Chain-of-Thought prompting (CoT) <ref type="bibr" target="#b48">[49]</ref> generates a series of intermediate reasoning steps in prompts to help LLMs perform better in several NLP tasks.</p><p>• Self-Consistency (SC) <ref type="bibr" target="#b47">[48]</ref> samples multiple, diverse reasoning paths through few-shot CoT, and uses the generations to select the most consistent answer.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Finetuned KG-Augmented LLM Methods</head><p>• UniKGQA <ref type="bibr" target="#b19">[20]</ref> unifies the graph retrieval and reasoning process into a single model with LLMs.</p><p>• TIARA <ref type="bibr" target="#b33">[34]</ref> first uses BERT to retrieve a set of schema items, which are further used as the input, together with the question, to T5 for plan generation. They also apply constrained decoding but only for grammaticality.</p><p>• RE-KBQA <ref type="bibr" target="#b6">[7]</ref> capitalizes relations in KGs to enhance entity representations and introduce additional supervision to improve the selection of reasoning paths.</p><p>• DeCAF <ref type="bibr" target="#b56">[57]</ref> combines semantic parsing and LLMs reasoning to jointly generate answers, which also reach salient performance on KGQA tasks.</p><p>• RoG <ref type="bibr" target="#b26">[27]</ref> collaborates LLMs with KGs to achieve trustworthy reasoning to leverage structural information.</p><p>• RnG-KBQA <ref type="bibr" target="#b54">[55]</ref> first uses BERT to rank a set of enumerated candidate programs (up to a limited complexity), and then uses T5 to edit the top programs into more complex programs.</p><p>• FC-KBQA <ref type="bibr" target="#b57">[58]</ref> proposes a fine-to-coarse composition framework to avoid knowledge entanglement and guarantee both generalization ability and logical interpretability.</p><p>• Pangu <ref type="bibr" target="#b15">[16]</ref> considers leveraging the discriminative ability of LLMs. It consists of a symbolic agent with a cooperative neural LLM.</p><p>• FlexKBQA <ref type="bibr" target="#b25">[26]</ref> is a flexible KGQA framework with LLMs. It can utilize a limited set of annotated data to build KGQA for different KGs and query languages.</p><p>• GAIN <ref type="bibr" target="#b32">[33]</ref> pays attention to the robustness of KGQA models. It proposes a data augmentation method to alleviate this problem and further evaluates the distribution shifts including from different aspects.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Prompting KG-Augmented LLM Methods</head><p>• KB-BINDER <ref type="bibr" target="#b22">[23]</ref> is developed to challenge the heterogeneity of items from different KGs. It enables few-shot in-context learning over KGQA tasks.</p><p>• KD-CoT <ref type="bibr" target="#b40">[41]</ref> retrieves relevant knowledge from KGs to generate faithful reasoning plans for LLMs.</p><p>• StructGPT <ref type="bibr" target="#b18">[19]</ref> defines the interface of KG data to implement knowledge access and filtering with finite quantity, and leverage the LLM to infer the answer or subsequent planning repeatedly.</p><p>• Interactive KBQA <ref type="bibr" target="#b51">[52]</ref> interacts with KGs directly and then generates logical forms. The interactions are under three designed universal APIs for KGs.</p><p>• ToG <ref type="bibr" target="#b34">[35]</ref> iteratively retrieves relevant triplets from KGs and employs the LLM to assess whether the reasoning paths in beam search are sufficient for answering the question and if further retrieval of the next hop is necessary.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E Implementation Details</head><p>In our experiments, we use GPT-3.5 and GPT-4 to serve as the underlying LLMs. We call them by the OpenAI official API<ref type="foot" target="#foot_2">foot_2</ref> . We set the temperature parameter to 0.3, frequency penalty to 0, and presence penalty to 0. The maximum token length for generation is 1024. In all experiments, the depth of exploration is set to 4 to avoid endless exploration. The experiments are conducted on a server with two Intel(R) Xeon(R) CPU E5-2682 v4 @ 2.50GHz and 256 GB RAM memory. Since LLMs are not entirely certain about when to stop, we need to manually set the depth of KG exploration to avoid endless exploration. To investigate the impact of exploration depth on PoG performance, we conduct experiments with depth settings ranging from 1 to 5 on CWQ dataset. As shown in Figure <ref type="figure" target="#fig_5">4</ref>, increasing the depth will improve the performance of PoG. Beyond a depth of 4, the improvement becomes less noticeable. The increase in depth leads to exponential growth in resource and time consumption. Considering the balance between efficiency and effectiveness, we set the depth to 4. In PoG, we design a reflection mechanism to provide the opportunity for self-correction for exploring reasoning paths. In Figure <ref type="figure" target="#fig_6">5</ref>, we calculate the proportion of cases with reverse occurrences among all questions in CWQ, and the results show that 24% of cases involve reversing during the exploration process to achieve self-correction. This demonstrates that LLMs are indeed not always capable of making correct judgments in KG exploration and that self-correction is necessary for KG-augmented LLMs. Figure <ref type="figure" target="#fig_7">6</ref> presents the proportion of correct answers obtained by PoG after self-correction on three datasets. Overall, the self-correction in PoG appears to have positively impacted the accuracy of KGQA, particularly for the WebQSP and CWQ datasets, where the proportion of correct answers reached 64% and 48% after the self-correction process. This analysis suggests that the reflection mechanism in PoG has the potential to enhance the reasoning capabilities of KG-augmented LLM and improve the performance across various datasets by allowing for self-correction and exploration of alternative reasoning paths. Besides, Figure <ref type="figure">7</ref> shows another typical case from the testing results on CWQ dataset. We compare the results of PoG, ToG, and CoT in answering the question "What genre of music favored by Claude Debussy appears in the movie Suzanne Farrell: Elusive Muse?". PoG first adaptively identifies the reasoning and planning processes represents an innovative attempt that could further propel research and innovation in broader AI technologies within the artificial intelligence field. (4) Improving User Experience and Expanding Application Domains: With PoG's reasoning capabilities, user experience is greatly improved due to more accurate and quicker responses. Meanwhile, the domains where it can be applied will also expand, particularly in environments that require handling complex queries and responses involving large volumes of data.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F Depth Sensitivity</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G Case Analysis</head><note type="other">24% 76% Reverse Not Reserse</note><p>There are still limitations in using PoG for addressing more complex problems. Some of the key limitations include: (1) Low Self-Confidence: LLMs are still not entirely certain about what information is needed, how many steps are required to extract the information, when to perform dynamic updates, or if the current information is sufficient. In future work, we will focus on the evaluation of LLM's self-confidence. For example, this can be alleviated by training a small model specifically for this evaluation task to improve accuracy. (2) Efficiency: Answering complex questions requires multiple steps. In future work, we aim to design strategies to reduce steps and improve task execution efficiency in situations of high self-confidence. (3) Non-Standardized Query: For less standardized queries, semantic understanding might be insufficient due to limitations in the capabilities of the LLM itself, leading to decreased effectiveness. In future work, we will address this issue by employing SOTA query rewriting methods or interacting with the user to refine the query.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: A toy example of existing KG-augmented LLM paradigm.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><figDesc>Paths are the instances of a relation path z in the KG: p z = e 0 → r 1 e 1 → r 2 e 2 → ... → r l e l , where e i ∈ E denotes the i-th entity and r i denotes the i-th relation in the relation path z.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>"Figure 2 :</head><label>2</label><figDesc>Figure 2: The framework overview of PoG, which includes four key components: Task Decomposition, Path Exploration, Memory Updating, and Evaluation.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 3</head><label>3</label><figDesc>Figure3shows a typical case from the testing results on CWQ dataset. We compare the results of PoG, ToG, and CoT in answering the question "Who is in control of the place where the movie 'The Naked and the Dead' takes place?". The underlying LLMs they used are all based on GPT-3.5. PoG initially identifies a flexible number of relations related to the topic entities. Specifically, for "The Naked and the Dead", PoG successfully discovers that the movie takes place in Panama, while for "President of Panama", the LLM thinks that only the relation "government.government_office_or_title.jurisdiction" is relevant. Upon retrieval, no information is found regarding the person in control of Panama. This triggers reflection as PoG realizes that it lacks sufficient information. With the memory, PoG refers to the sub-objective status and recognizes that it already knows the movie location (Panama) for sub-objective #1 but is unaware of the person in control of Panama for sub-objective #2. Based on the current reasoning paths, PoG makes a decision to execute self-correction and returns to exploring the relation not previously explored for "President of Panama". Due to the task decomposition, during the self-correction process, it becomes easier to identify the correct relation "government.government_office_or_title.office_holders" according to the sub-objectives. Through the guidance, memory, and reflection mechanisms, PoG successfully finds the correct answer, "Juan Carlos Varela". In contrast, ToG fails to identify the most relevant relation concerning "President of Panama" and continues exploring incorrect paths. This consumes a significant amount of time and ultimately leads to an erroneous answer due to the hallucination. CoT refuses to answer directly since the LLM realizes its lack of knowledge regarding the answer and requires additional information to be provided. From this analysis, it is evident that PoG outperforms ToG and CoT. PoG successfully</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>Answer: [Through reflection to self-correct paths, the answer was found on the revised paths.] The movie "The Naked and the Dead" takes place in Panama. The President of Panama, Juan Carlos Varela, is in control of Panama based on the knowledge triplets. : 1. Identify the place where the movie "The Naked and the Dead" takes place; 2. Determine the authority or governing body in control of that place.Sub-Objective Status:1. The movie "The Naked and the Dead" takes place in Panama; 2. The President of Panama, Juan Carlos Varela is in control of Panama.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: The impact of exploration depth on the performance of PoG.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: The proportion of cases with reverse occurrences among all data.</figDesc><graphic coords="19,218.30,553.46,175.92,70.04" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: The proportion of correct answers obtained by PoG after self-correction.</figDesc><graphic coords="19,79.46,553.46,176.04,70.04" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Performance comparison of different methods on CWQ and WebQSP.</figDesc><table><row><cell>Method</cell><cell>CWQ</cell><cell>WebQSP</cell></row><row><cell></cell><cell>LLM-Only</cell><cell></cell></row><row><cell>IO Prompt [6]</cell><cell>37.6</cell><cell>63.3</cell></row><row><cell>CoT [49]</cell><cell>38.8</cell><cell>62.2</cell></row><row><cell>SC [48]</cell><cell>45.4</cell><cell>61.1</cell></row><row><cell cols="3">Fine-Tuned KG-Augmented LLM</cell></row><row><cell>UniKGQA [20]</cell><cell>51.2</cell><cell>79.1</cell></row><row><cell>TIARA [34]</cell><cell>-</cell><cell>75.2</cell></row><row><cell>RE-KBQA [7]</cell><cell>50.3</cell><cell>74.6</cell></row><row><cell>DeCAF [57]</cell><cell>70.4</cell><cell>82.1</cell></row><row><cell>RoG [27]</cell><cell>62.6</cell><cell>85.7</cell></row><row><cell cols="3">Prompting KG-Augmented LLM w/GPT-3.5 or others</cell></row><row><cell>KD-CoT [41]</cell><cell>50.5</cell><cell>73.7</cell></row><row><cell>KB-BINDER [23]</cell><cell>-</cell><cell>74.4</cell></row><row><cell>StructGPT [19]</cell><cell>54.3</cell><cell>72.6</cell></row><row><cell>ToG [35]</cell><cell>57.1</cell><cell>76.2</cell></row><row><cell>PoG</cell><cell>63.2</cell><cell>82.0</cell></row><row><cell cols="3">Prompting KG-Augmented LLM w/GPT-4</cell></row><row><cell cols="2">InteractiveKBQA [52] 59.2</cell><cell>72.5</cell></row><row><cell>ToG [35]</cell><cell>67.6</cell><cell>82.6</cell></row><row><cell>PoG</cell><cell>75.0</cell><cell>87.3</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Performance comparison of different methods on GrailQA.</figDesc><table><row><cell>Method</cell><cell></cell><cell></cell><cell>GrailQA</cell><cell></cell></row><row><cell></cell><cell cols="4">Overall I.I.D. Compositional Zero-shot</cell></row><row><cell></cell><cell></cell><cell>LLM-Only</cell><cell></cell><cell></cell></row><row><cell>IO Prompt [6]</cell><cell>29.4</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>CoT [49]</cell><cell>28.1</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>SC [48]</cell><cell>29.6</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell></cell><cell cols="3">Fine-Tuned KG-Augmented LLM</cell><cell></cell></row><row><cell>RnG-KBQA [55]</cell><cell>68.8</cell><cell>86.2</cell><cell>63.8</cell><cell>63.0</cell></row><row><cell>TIARA [34]</cell><cell>73.0</cell><cell>87.8</cell><cell>69.2</cell><cell>68.0</cell></row><row><cell>FC-KBQA [58]</cell><cell>73.2</cell><cell>88.5</cell><cell>70.0</cell><cell>67.6</cell></row><row><cell>Pangu [16]</cell><cell>75.4</cell><cell>84.4</cell><cell>74.6</cell><cell>71.6</cell></row><row><cell>FlexKBQA [26]</cell><cell>62.8</cell><cell>71.3</cell><cell>59.1</cell><cell>60.6</cell></row><row><cell>GAIN [33]</cell><cell>76.3</cell><cell>88.5</cell><cell>73.7</cell><cell>71.8</cell></row><row><cell cols="4">Prompting KG-Augmented LLM w/GPT-3.5 or others</cell><cell></cell></row><row><cell>KB-BINDER [23]</cell><cell>50.6</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>ToG [35]</cell><cell>68.7</cell><cell>70.1</cell><cell>56.1</cell><cell>72.7</cell></row><row><cell>PoG</cell><cell>76.5</cell><cell>76.3</cell><cell>62.1</cell><cell>81.7</cell></row><row><cell cols="4">Prompting KG-Augmented LLM w/GPT-4</cell><cell></cell></row><row><cell>ToG [35]</cell><cell>81.4</cell><cell>79.4</cell><cell>67.3</cell><cell>86.5</cell></row><row><cell>PoG</cell><cell>84.7</cell><cell>87.9</cell><cell>69.7</cell><cell>88.6</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Performance of removing each mechanism and adaptive exploration, respectively.</figDesc><table><row><cell>Method</cell><cell cols="3">CWQ WebQSP GrailQA</cell></row><row><cell>PoG</cell><cell>63.2</cell><cell>82.0</cell><cell>76.5</cell></row><row><cell>w/o Guidance</cell><cell>60.1</cell><cell>80.3</cell><cell>72.4</cell></row><row><cell>w/o Memory</cell><cell>58.9</cell><cell>77.5</cell><cell>69.3</cell></row><row><cell>w/o Reflection</cell><cell>59.4</cell><cell>78.1</cell><cell>70.5</cell></row><row><cell cols="2">w/o Adaptive Breadth 61.3</cell><cell>80.2</cell><cell>73.8</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 :</head><label>4</label><figDesc>Efficiency comparison between our proposed PoG and the baseline ToG.</figDesc><table><row><cell>Dataset</cell><cell cols="6">Method LLM Call Input Token Output Token Total Token Time (s)</cell></row><row><cell>CWQ</cell><cell>ToG PoG</cell><cell>22.6 13.3</cell><cell>8,182.9 7,803.0</cell><cell>1,486.4 353.2</cell><cell>9,669.4 8,156.2</cell><cell>96.5 23.3</cell></row><row><cell>WebQSP</cell><cell>ToG PoG</cell><cell>15.9 9.0</cell><cell>6,031.2 5,234.8</cell><cell>987.7 282.9</cell><cell>7,018.9 5,517.7</cell><cell>63.1 16.8</cell></row><row><cell>GrailQA</cell><cell>ToG PoG</cell><cell>11.1 6.5</cell><cell>4,066.0 3,372.8</cell><cell>774.6 202.8</cell><cell>4,840.6 3,575.6</cell><cell>50.2 11.5</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 5 :</head><label>5</label><figDesc>Statistics of KGQA datasets.</figDesc><table><row><cell>Dataset</cell><cell cols="2">Answer Format Train</cell><cell>Test</cell><cell>Licence</cell></row><row><cell>ComplexWebQuestions</cell><cell>Entity</cell><cell cols="2">27,734 3,531</cell><cell>-</cell></row><row><cell>WebQSP</cell><cell>Entity/Number</cell><cell cols="3">3,098 1,639 CC Licence</cell></row><row><cell>GrailQA</cell><cell>Entity/Number</cell><cell cols="2">44,337 1,000</cell><cell>-</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>https://github.com/liyichen-cly/PoG</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>https://huggingface.co/sentence-transformers/msmarco-distilbert-base-tas-b</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>https://platform.openai.com/docs/api-reference.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgments and Disclosure of Funding</head><p>This work was supported in part by the <rs type="funder">National Key Research and Development Program of China</rs> (Grant No. <rs type="grantNumber">2023YFF0725001</rs>), the <rs type="funder">National Natural Science Foundation of China</rs> (Grant No. <rs type="grantNumber">92370204</rs>, <rs type="grantNumber">62306255</rs>), the <rs type="funder">Guangdong Basic and Applied Basic Research Foundation</rs> (Grant No. <rs type="grantNumber">2023B1515120057</rs>, <rs type="grantNumber">2024A1515011839</rs>), the <rs type="funder">Guangzhou-HKUST (GZ)</rs> <rs type="programName">Joint Funding Program</rs> (Grant No. <rs type="grantNumber">2023A03J0008</rs>), and the <rs type="programName">Alibaba Research Intern Program</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_fCRgX2y">
+					<idno type="grant-number">2023YFF0725001</idno>
+				</org>
+				<org type="funding" xml:id="_vw2MJyC">
+					<idno type="grant-number">92370204</idno>
+				</org>
+				<org type="funding" xml:id="_7DCNbnA">
+					<idno type="grant-number">62306255</idno>
+				</org>
+				<org type="funding" xml:id="_JJbKyve">
+					<idno type="grant-number">2023B1515120057</idno>
+				</org>
+				<org type="funding" xml:id="_T4nHYxB">
+					<idno type="grant-number">2024A1515011839</idno>
+				</org>
+				<org type="funding" xml:id="_BdFdKGM">
+					<idno type="grant-number">2023A03J0008</idno>
+					<orgName type="program" subtype="full">Joint Funding Program</orgName>
+				</org>
+				<org type="funding" xml:id="_J54u4tK">
+					<orgName type="program" subtype="full">Alibaba Research Intern Program</orgName>
+				</org>
+			</listOrg>
+
+			<div type="contribution">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>No information related to the "American Music Awards". Therefore, there are no relevant triplets. Enough Information: No. Next Action: End retrieval and directly answer "Love Story" without using information from knowledge graphs.</p><p>Question: Which of Taylor Swift's songs has won American Music Awards (AMA)? Answer: Blank Space. A l b u m Song So ng S o n g America So ng … LLM Reasoning KG Retrieving KG Retrieving ① LLM Reasoning ② ③ ④ Blank Space Speak Now Nationality Reading</p></div>
+			</div>
+
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Appendix</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Prompts</head><p>Here, we provide all the prompts used in PoG. To facilitate the LLM output parsing, we require the LLM to provide answers using specific data structures, such as lists and JSON. Besides, we require the LLM not to output any other irrelevant information to the results. The specific in-context few-shot is shown in code files.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 Task Decomposition</head><p>Please break down the process of answering the question into as few sub-objectives as possible based on semantic analysis.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>In-Context Few-Shot</head><p>Now you need to directly output sub-objectives of the following question in list format without other information or notes. Q: {}</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Path Exploration</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2.1 Relation Exploration</head><p>Please provide as few highly relevant relations as possible to the question and its sub-objectives from the following relations (separated by semicolons).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>In-Context Few-Shot</head><p>Now you need to directly output relations highly related to the following question and its sub-objectives in list format without other information or notes. Q: {} Sub-Objectives: {} Topic Entity: {} Relations: {}</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2.2 Entity Exploration</head><p>Which entities in the following list ([] in Triples) can be used to answer the question? Please provide the minimum possible number of entities, and strictly adhering to the constraints mentioned in the question.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>In-Context Few-Shot</head><p>Now you need to directly output the entities from [] in Triplets for the following question in list format without other information or notes. Q: {} Triplets: {}</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3 Memory Updating</head><p>Based on the provided information (which may have missing parts and require further retrieval) and your own knowledge, output the currently known information required to achieve the sub-objectives.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>In-Context Few-Shot</head><p>Now you need to directly output the results of the following question in JSON format without other information or notes. Q: {} Sub-Objectives: {} Memory: {} Knowledge Triplets: {}</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.4 Evaluation A.4.1 Answer Question</head><p>Please answer the question based on the memory, related knowledge triplets and your knowledge.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>In-Context Few-Shot</head><p>Now you need to directly output the results of the following question in JSON format (must include "A" and "R") without other information or notes. If the triplets explicitly contain the answer to the question, prioritize the fact of the triplet over memory. Q: {} Memory: {} Knowledge Triplets: {}</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.4.2 Reflection</head><p>Based on the current set of entities to be retrieved and the known information including memory and triplets, is it necessary to add additional entities for answering the question?</p><p>In-Context Few-Shot Now you need to directly output the results of the following question in the JSON format (must include "Add" and "Reason") without other information or notes. Q: {} Entities set to be retrieved: {} Memory: {} Knowledge Triplets: {} Please select the fewest necessary entities to be retrieved for answering the Q from Candidate Entities, based on the current known information (Memory), the reason for additional retrieval, and your own knowledge.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>In-Context Few-Shot</head><p>Now you need to directly output the results for the following Q in the list format without other information or notes. Q: {} Reason: {} Candidate Entities: {} Memory: {}</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Search SPARQL</head><p>To automatically process the KG data in PoG, we pre-define the SPARQL for Freebase queries, which can be executed by filling in the entity's mid and relation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1 Relation Search</head><p>PREFIX ns: &lt;\protect\vrule width0pt\protect\href{http<ref type="url" target="://rdf.freebase.com/ns/">://rdf.freebase.com/ns/</ref>}{http<ref type="url" target="://rdf.freebase.com/ns/">://rdf.freebase.com/ns/</ref>}&gt; SELECT DISTINCT ?relation WHERE { ns:mid ?relation ?x . } PREFIX ns: &lt;\protect\vrule width0pt\protect\href{http<ref type="url" target="://rdf.freebase.com/ns/">://rdf.freebase.com/ns/</ref>}{http<ref type="url" target="://rdf.freebase.com/ns/">://rdf.freebase.com/ns/</ref>}&gt; SELECT DISTINCT ?relation WHERE { ?x ?relation ns:mid . } B.2 Entity Search PREFIX ns: &lt;\protect\vrule width0pt\protect\href{http<ref type="url" target="://rdf.freebase.com/ns/">://rdf.freebase.com/ns/</ref>}{http<ref type="url" target="://rdf.freebase.com/ns/">://rdf.freebase.com/ns/</ref>}&gt; SELECT ?tailEntity WHERE { ns:mid ns:relation ?tailEntity . } PREFIX ns: &lt;\protect\vrule width0pt\protect\href{http<ref type="url" target="://rdf.freebase.com/ns/">://rdf.freebase.com/ns/</ref>}{http<ref type="url" target="://rdf.freebase.com/ns/">://rdf.freebase.com/ns/</ref>}&gt; SELECT ?tailEntity WHERE { ?tailEntity ns:relation ns:mid . } B.3 Entity Name Search PREFIX ns: &lt;\protect\vrule width0pt\protect\href{http<ref type="url" target="://rdf.freebase.com/ns/">://rdf.freebase.com/ns/</ref>}{http<ref type="url" target="://rdf.freebase.com/ns/">://rdf.freebase.com/ns/</ref>}&gt; SELECT DISTINCT ?tailEntity WHERE { { ?entity ns:type.object.name ?tailEntity . FILTER(?entity = ns:mid) } UNION { ?entity &lt;\protect\vrule width0pt\protect\href{http<ref type="url" target="://www.w3.org/2002/07/owl">://www.w3.org/2002/07/owl</ref> #sameAs}{http<ref type="url" target="://www.w3.org/2002/07/owl#sameAs}&gt;">://www.w3.org/2002/07/owl#sameAs}&gt;</ref> ?tailEntity . FILTER(?entity = ns:mid) } }</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Datasets</head><p>In this paper, we use three complex multi-hop KGQA datasets: ComplexWebQuestions <ref type="bibr" target="#b36">[37]</ref>, We-bQSP <ref type="bibr" target="#b55">[56]</ref>, and GrailQA <ref type="bibr" target="#b16">[17]</ref>. The statistics of datasets are shown in Table <ref type="table">5</ref>. WebQSP contains questions from WebQuestions that are answerable by Freebase. It tests I.I.D. generalization on questions. ComplexWebQuestions (CWQ) extends WebQSP and encompasses four types of complex questions: conjunction, composition, comparative, and superlative. GrailQA is a diverse KGQA dataset built on Freebase, and is designed to test three levels of generalization of models: I.I.D., compositional, and zero-shot.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Baseline Descriptions</head><p>The baselines we compare can be categorized into two groups: (1) LLM-only methods; (2) KGaugmented LLM methods, including fine-tuned and prompting methods. Figure <ref type="figure">7</ref>: A typical case to compare different methods to answer the complex question. For the convenience of display, we only provide the sub-objective status and partial reasoning paths stored in memory. Topic entities, wrong answers, and correct answers are highlighted in blue, red, and green. most relevant relation "music.artist.genre" to the topic entity "Claude Debussy". Without constraining the breadth of reasoning paths, PoG considers multiple candidate entities as potentially relevant to the question. In the subsequent exploration of the topic entity "Suzanne Farrell: Elusive Muse", PoG adaptively chooses only "Ballet" as the relevant entity, as it records the known information of sub-objective #1 in memory. Through adaptive breadth and memorization of sub-objective status, PoG successfully and efficiently provides the correct answer. In contrast, ToG randomly explores paths when faced with multiple candidate entities, only finding one condition from sub-objective #1. Finally, ToG only remembers the genre of music favored by "Claude Debussy" but forgets the condition from sub-objective #2, answering "Incidental music". CoT directly hallucinates an irrelevant answer, "Impressionism". This case indicates the effectiveness of adaptive breadth and memorization of sub-objective status.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>H Broader Impact &amp; Limitation</head><p>In the current research landscape, PoG carries a significant broader impact, primarily reflected in its enhancement of complex reasoning capabilities for KG-augmented LLM. By innovatively integrating guidance, memory, and reflection mechanisms, PoG not only strengthens the model's flexibility and accuracy when facing complex queries but also enhances its ability to self-correct erroneous reasoning paths. This self-correcting adaptive planning paradigm enables the model to backtrack and adjust reasoning directions when faced with invalid initial assumptions or impasses, resulting in an optimal solution search. Additionally, the broader impact of PoG is manifested in several other aspects: (1) Improving Efficiency and Effectiveness in Problem-Solving: By dynamically adjusting exploration breadth and employing self-correction mechanisms, PoG can more efficiently handle complex questions and provide more accurate answers, significantly enhancing the overall performance of KGQA systems. (2) Enhancing the Robustness and Adaptability of LLMs: Through its memory mechanism, which records and tracks the completion status and reasoning paths of each sub-objective, PoG enables the LLM to more robustly deal with the uncertainty and complexity of questions, making it more precise and reliable across a wide range of applications. (3) Fostering Innovation in the Field of Artificial Intelligence: PoG's integration of meta-cognitive capabilities into</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Question:</head><figDesc>What genre of music favored by Claude Debussy appears in the movie Suzanne Farrell: Elusive Muse? CoT Answer: [The LLM hallucinates.] First, Claude Debussy favored the genre of music known as Impressionism. Second, the movie Suzanne Farrell: Elusive Muse features music from the Impressionist genre. ToG Paths: Claude Debussy → music.artist.genre → Incidental music → French opera → Art song → film.film.music → Under the Brooklyn Bridge → Suzanne Farrell: Elusive Muse → film.film.genre → Documentary film → film.director.film → Deborah Dickson → ••• PoG Paths: Claude Debussy → music.artist.genre Incidental music French opera Ballet Suzanne Farrell: Elusive Muse → film.film.genre The LLM hallucinates, inferring the answer with information of one condition.] Based on the given knowledge triplets, the genre of music favored by Claude Debussy that appears in the movie Suzanne Farrell: Elusive Muse is Incidental music. Answer: [Through adaptive breadth and sub-objectives, the answer was found.] The genre of music favored by Claude Debussy is Ballet, and the movie Suzanne Farrell: Elusive Muse falls under the genre Ballet. Sub-Objectives: 1. Identify the music favored by Claude Debussy; 2. Determine the genre of music featured in the movie Suzanne Farrell: Elusive Muse; 3. Select the music genres that meet the two criteria. Sub-Objective Status: 1. The genre of music favored by Claude Debussy is Ballet; 2. The movie Suzanne Farrell: Elusive Muse falls under the genre Ballet; 3. Ballet is the final answer.</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Dbpedia: A nucleus for a web of open data</title>
+		<author>
+			<persName><forename type="first">Sören</forename><surname>Auer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Bizer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Georgi</forename><surname>Kobilarov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jens</forename><surname>Lehmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Cyganiak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zachary</forename><surname>Ives</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">international semantic web conference</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2007">2007</date>
+			<biblScope unit="page" from="722" to="735" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Using large language models for zero-shot natural language generation from knowledge graphs</title>
+		<author>
+			<persName><forename type="first">Agnes</forename><surname>Axelsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Skantze</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Workshop on Multimodal, Multilingual Natural Language Generation and Multilingual WebNLG Challenge (MM-NLG 2023)</title>
+		<meeting>the Workshop on Multimodal, Multilingual Natural Language Generation and Multilingual WebNLG Challenge (MM-NLG 2023)</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="39" to="54" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Knowledge-augmented language model prompting for zero-shot knowledge graph question answering</title>
+		<author>
+			<persName><forename type="first">Jinheon</forename><surname>Baek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alham</forename><surname>Aji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amir</forename><surname>Saffari</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The 61st Annual Meeting Of The Association For Computational Linguistics</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Graph of thoughts: Solving elaborate problems with large language models</title>
+		<author>
+			<persName><forename type="first">Maciej</forename><surname>Besta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nils</forename><surname>Blach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ales</forename><surname>Kubicek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Gerstenberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michal</forename><surname>Podstawski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukas</forename><surname>Gianinazzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joanna</forename><surname>Gajda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomasz</forename><surname>Lehmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hubert</forename><surname>Niewiadomski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Nyczyk</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page" from="17682" to="17690" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Freebase: a collaboratively created graph database for structuring human knowledge</title>
+		<author>
+			<persName><forename type="first">Kurt</forename><surname>Bollacker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Evans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Praveen</forename><surname>Paritosh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Sturge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamie</forename><surname>Taylor</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2008 ACM SIGMOD international conference on Management of data</title>
+		<meeting>the 2008 ACM SIGMOD international conference on Management of data</meeting>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+			<biblScope unit="page" from="1247" to="1250" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Pay more attention to relation exploration for knowledge base question answering</title>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianzhi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huiwen</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Hershcovich</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: ACL 2023</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="2119" to="2136" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Entity summarization via exploiting description complementarity and salience</title>
+		<author>
+			<persName><forename type="first">Liyi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weidong</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gong</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Jing Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Enhong</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Neural Networks and Learning Systems</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="issue">11</biblScope>
+			<biblScope unit="page" from="8297" to="8309" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Mmea: Entity alignment for multi-modal knowledge graph</title>
+		<author>
+			<persName><forename type="first">Liyi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yijun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhefeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Enhong</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Knowledge Science, Engineering and Management</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="134" to="147" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Multi-modal siamese network for entity alignment</title>
+		<author>
+			<persName><forename type="first">Liyi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhefeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Jing Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Enhong</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 28th ACM SIGKDD conference on knowledge discovery and data mining</title>
+		<meeting>the 28th ACM SIGKDD conference on knowledge discovery and data mining</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="118" to="126" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Collaboration-aware hybrid learning for knowledge development prediction</title>
+		<author>
+			<persName><forename type="first">Liyi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuan</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hengshu</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Xiong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ACM on Web Conference 2024</title>
+		<meeting>the ACM on Web Conference 2024</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="3976" to="3985" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Tackling uncertain correspondences for multi-modal entity alignment</title>
+		<author>
+			<persName><forename type="first">Liyi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengzhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuyang</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Xiong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 38th Conference on Neural Information Processing Systems</title>
+		<meeting>the 38th Conference on Neural Information Processing Systems</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">A table-to-text framework with heterogeneous multidominance attention and self-evaluated multi-pass deliberation</title>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinjiang</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Xin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjun</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoyang</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feihu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingbo</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Xiong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: EMNLP 2023</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="607" to="620" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Pre-dygae: Pre-training enhanced dynamic graph autoencoder for occupational skill demand forecasting</title>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuan</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhigaoyuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihang</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hengshu</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Xiong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 33th International Joint Conference on Artificial Intelligence</title>
+		<meeting>the 33th International Joint Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Graph reasoning enhanced language models for text-to-sql</title>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 47th International ACM SIGIR Conference on Research and Development in Information Retrieval</title>
+		<meeting>the 47th International ACM SIGIR Conference on Research and Development in Information Retrieval</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="2447" to="2451" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Don&apos;t generate, discriminate: A proposal for grounding language models to real-world environments</title>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Su</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 61st Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="4928" to="4949" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Beyond iid: three levels of generalization for question answering on knowledge bases</title>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sue</forename><surname>Kase</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michelle</forename><surname>Vanni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Sadler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xifeng</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Su</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Web Conference 2021</title>
+		<meeting>the Web Conference 2021</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="3477" to="3488" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought improves text generation with citations in large language models</title>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huijun</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingzhe</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">See-Kiong</forename><surname>Ng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page" from="18345" to="18353" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Structgpt: A general framework for large language model to reason over structured data</title>
+		<author>
+			<persName><forename type="first">Jinhao</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zican</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keming</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wayne</forename><forename type="middle">Xin</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji-Rong</forename><surname>Wen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2023 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="9237" to="9251" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Unikgqa: Unified retrieval and reasoning for solving multi-hop question answering over knowledge graph</title>
+		<author>
+			<persName><forename type="first">Jinhao</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji-Rong</forename><surname>Wen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Prospector: Improving llm agents with self-asking and trajectory ranking</title>
+		<author>
+			<persName><forename type="first">Byoungjip</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Youngsoo</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lajanugen</forename><surname>Logeswaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geon-Hyeong</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honglak</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moontae</forename><surname>Lee</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Large language models are zero-shot reasoners</title>
+		<author>
+			<persName><forename type="first">Takeshi</forename><surname>Kojima</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shane</forename><surname>Shixiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Machel</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutaka</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusuke</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Iwasawa</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="22199" to="22213" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Few-shot in-context learning on knowledge base question answering</title>
+		<author>
+			<persName><forename type="first">Tianle</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueguang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhu</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 61st Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="6966" to="6980" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Mot: Memory-of-thought enables chatgpt to self-improve</title>
+		<author>
+			<persName><forename type="first">Xiaonan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xipeng</forename><surname>Qiu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2023 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="6354" to="6374" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Unigen: A unified generative framework for retrieval and question answering with large language models</title>
+		<author>
+			<persName><forename type="first">Xiaoxi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhicheng</forename><surname>Dou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page" from="8688" to="8696" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Flexkbqa: A flexible llm-powered framework for few-shot knowledge base question answering</title>
+		<author>
+			<persName><forename type="first">Zhenyu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sunqi</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiuxing</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhichao</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianyong</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page" from="18608" to="18616" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Reasoning on graphs: Faithful and interpretable large language model reasoning</title>
+		<author>
+			<persName><forename type="first">Linhao</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan-Fang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reza</forename><surname>Haf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shirui</forename><surname>Pan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Self-refine: Iterative refinement with self-feedback</title>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niket</forename><surname>Tandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prakhar</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Skyler</forename><surname>Hallinan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Wiegreffe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouha</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shrimai</forename><surname>Prabhumoye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Selfcheck: Using llms to zero-shot check their own step-by-step reasoning</title>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Miao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yee</forename><forename type="middle">Whye</forename><surname>Teh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Rainforth</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Skeletonof-thought: Large language models can do parallel decoding</title>
+		<author>
+			<persName><forename type="first">Xuefei</forename><surname>Ning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zinan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zixuan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zifu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huazhong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><surname>Sanh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Distilbert</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1910.01108</idno>
+		<title level="m">Smaller, faster, cheaper and lighter</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Reflexion: Language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Distribution shifts are bottlenecks: Extensive evaluation for grounding language models to knowledge bases</title>
+		<author>
+			<persName><forename type="first">Yiheng</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiwei</forename><surname>Yu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 18th Conference of the European Chapter</title>
+		<meeting>the 18th Conference of the European Chapter</meeting>
+		<imprint>
+			<publisher>Student Research Workshop</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="71" to="88" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Multi-grained retrieval for robust question answering over large knowledge base</title>
+		<author>
+			<persName><forename type="first">Yiheng</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiwei</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Börje</forename><surname>Karlsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tingting</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuzhong</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chin-Yew</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tiara</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2022 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="8108" to="8121" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Think-on-graph: Deep and responsible reasoning of large language model on knowledge graph</title>
+		<author>
+			<persName><forename type="first">Jiashuo</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengjin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lumingyuan</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saizhuo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yeyun</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lionel</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heung-Yeung</forename><surname>Shum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Guo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Large-scale online job search behaviors reveal labor market shifts amid covid-19</title>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hengshu</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Xiong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature Cities</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="150" to="163" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">The web as a knowledge-base for answering complex questions</title>
+		<author>
+			<persName><forename type="first">Alon</forename><surname>Talmor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Berant</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2018 Conference of the North American Chapter</title>
+		<title level="s">Long Papers</title>
+		<meeting>the 2018 Conference of the North American Chapter</meeting>
+		<imprint>
+			<publisher>the Association for Computational Linguistics</publisher>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="641" to="651" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Musegraph: Graph-oriented instruction tuning of large language models for generic graph mining</title>
+		<author>
+			<persName><forename type="first">Yanchao</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiping</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carl</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.04780</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Graphgpt: Graph instruction tuning for large language models</title>
+		<author>
+			<persName><forename type="first">Jiabin</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lixin</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suqi</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawei</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Huang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.13023</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Boosting language models reasoning with chain-of-knowledge prompting</title>
+		<author>
+			<persName><forename type="first">Jianing</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiushi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nuo</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Gao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.06427</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Knowledge-driven cot: Exploring faithful reasoning in llms for knowledge-intensive question answering</title>
+		<author>
+			<persName><forename type="first">Keheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feiyu</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sirui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiguang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunsen</forename><surname>Xian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuantao</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenge</forename><surname>Rong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhang</forename><surname>Xiong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.13259</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">T-sciq: Teaching multimodal chain-of-thought reasoning via large language model signals for science question answering</title>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiabang</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xing</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng Tao</forename><surname>Shen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page" from="19162" to="19170" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Unleashing the power of knowledge graph for recommendation via invariant learning</title>
+		<author>
+			<persName><forename type="first">Shuyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongduo</forename><surname>Sui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Xiong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ACM on Web Conference 2024</title>
+		<meeting>the ACM on Web Conference 2024</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="3745" to="3755" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Dynamic sparse learning: A novel paradigm for efficient recommendation</title>
+		<author>
+			<persName><forename type="first">Shuyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongduo</forename><surname>Sui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiancan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Xiong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 17th ACM International Conference on Web Search and Data Mining</title>
+		<meeting>the 17th ACM International Conference on Web Search and Data Mining</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="740" to="749" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Flagvne: A flexible and generalizable rl framework for network resource allocation</title>
+		<author>
+			<persName><forename type="first">Tianfu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qilin</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leilei</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Jing Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Xiong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 33rd International Joint Conference on Artificial Intelligence</title>
+		<meeting>the 33rd International Joint Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Joint admission control and resource allocation of virtual network embedding via hierarchical deep reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Tianfu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qilin</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tongliang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Xiong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Services Computing</title>
+		<imprint>
+			<biblScope unit="volume">17</biblScope>
+			<biblScope unit="issue">03</biblScope>
+			<biblScope unit="page" from="1001" to="1015" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Kepler: A unified model for knowledge embedding and pre-trained language representation</title>
+		<author>
+			<persName><forename type="first">Xiaozhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaocheng</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengyan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juanzi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Tang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="page" from="176" to="194" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Self-consistency improves chain of thought reasoning in language models</title>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><forename type="middle">H</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24824" to="24837" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Linking the characters: Video-oriented social graph generation via hierarchical-cumulative gcn</title>
+		<author>
+			<persName><forename type="first">Shiwei</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joya</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingfei</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Enhong</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 29th ACM International Conference on Multimedia</title>
+		<meeting>the 29th ACM International Conference on Multimedia</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="4716" to="4724" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Afdgcf: Adaptive feature de-correlation graph collaborative filtering for recommendations</title>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dazhong</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuan</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Xiong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 47th International ACM SIGIR Conference on Research and Development in Information Retrieval</title>
+		<meeting>the 47th International ACM SIGIR Conference on Research and Development in Information Retrieval</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="1242" to="1252" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<analytic>
+		<title level="a" type="main">Interactive-kbqa: Multi-turn interactions for knowledge base question answering with large language models</title>
+		<author>
+			<persName><forename type="first">Guanming</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junwei</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen</forename><surname>Zhao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="10561" to="10582" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<title level="m" type="main">Kg-bert: Bert for knowledge graph completion</title>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengsheng</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Luo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1909.03193</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Tree of thoughts: Deliberate problem solving with large language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">36</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Rng-kbqa: Generation augmented iterative ranking for knowledge base question answering</title>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Semih</forename><surname>Yavuz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kazuma</forename><surname>Hashimoto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingbo</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 60th Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="6032" to="6043" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<analytic>
+		<title level="a" type="main">The value of semantic parse labeling for knowledge base question answering</title>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Richardson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Meek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jina</forename><surname>Suh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 54th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 54th Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="201" to="206" />
+		</imprint>
+	</monogr>
+	<note>Short Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<analytic>
+		<title level="a" type="main">Decaf: Joint decoding of answers and logical forms for question answering over knowledge bases</title>
+		<author>
+			<persName><forename type="first">Donghan</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Ng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henghui</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><forename type="middle">Hanbo</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiqun</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">Yang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiguo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Xiang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<analytic>
+		<title level="a" type="main">Fc-kbqa: A fine-to-coarse composition framework for knowledge base question answering</title>
+		<author>
+			<persName><forename type="first">Lingxi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanling</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shulin</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinmei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cuiping</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juanzi</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The 61st Annual Meeting Of The Association For Computational Linguistics</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<analytic>
+		<title level="a" type="main">Temporal graph contrastive learning for sequential recommendation</title>
+		<author>
+			<persName><forename type="first">Shengzhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuangli</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Xiong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page" from="9359" to="9367" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<analytic>
+		<title level="a" type="main">Triple dual learning for opinion-based explainable recommendation</title>
+		<author>
+			<persName><forename type="first">Yuting</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fuzhen</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongchun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhulin</forename><surname>An</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongjun</forename><surname>Xu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Information Systems</title>
+		<imprint>
+			<biblScope unit="volume">42</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="1" to="27" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<analytic>
+		<title level="a" type="main">Ernie: Enhanced language representation with informative entities</title>
+		<author>
+			<persName><forename type="first">Zhengyan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qun</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 57th Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="1441" to="1451" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<analytic>
+		<title level="a" type="main">Comi: Correct and mitigate shortcut learning behavior in deep neural networks</title>
+		<author>
+			<persName><forename type="first">Lili</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linan</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruijun</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Song</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 47th International ACM SIGIR Conference on Research and Development in Information Retrieval</title>
+		<meeting>the 47th International ACM SIGIR Conference on Research and Development in Information Retrieval</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="218" to="228" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<analytic>
+		<title level="a" type="main">Least-to-most prompting enables complex reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claire</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Bousquet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

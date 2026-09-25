@@ -1,0 +1,1725 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Re-ReST: Reflection-Reinforced Self-Training for Language Agents</title>
+				<funder ref="#_YWQZenz">
+					<orgName type="full">DARPA</orgName>
+				</funder>
+				<funder ref="#_6Z9rwAF">
+					<orgName type="full">Amazon AGI</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-05-07">7 May 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Zi-Yi</forename><surname>Dou</surname></persName>
+							<email>zdou@cs.ucla.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Los Angeles</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Cheng-Fu</forename><surname>Yang</surname></persName>
+							<email>cfyang@cs.ucla.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Los Angeles</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xueqing</forename><surname>Wu</surname></persName>
+							<email>xueqing.wu@cs.ucla.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Los Angeles</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Kai-Wei</forename><surname>Chang</surname></persName>
+							<email>kwchang@cs.ucla.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Los Angeles</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Nanyun</forename><surname>Peng</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Los Angeles</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Re-ReST: Reflection-Reinforced Self-Training for Language Agents</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-05-07">7 May 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">432228B53DB530E8FA7DC6C58965ABFA</idno>
+					<idno type="arXiv">arXiv:2406.01495v3[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:42+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Finetuning language agents with reasoningaction trajectories is effective, but obtaining these trajectories from human annotations or stronger models is costly and sometimes impractical. In this paper, we investigate the use of self-training in language agents, which can generate supervision from the agent itself, offering a promising alternative without relying on human or stronger model demonstrations. Self-training, however, requires high-quality model-generated samples, which are hard to obtain for challenging language agent tasks. To address this, we present Reflection-Reinforced Self-Training (Re-ReST), which uses a reflector to refine low-quality generated samples during self-training. The reflector takes the agent's output and feedback from an external environment (e.g., unit test results in code generation) to produce improved samples. This technique enhances the quality of inferior samples and efficiently enriches the self-training dataset with higher-quality samples. We conduct extensive experiments on open-source language agents across tasks, including multi-hop question answering, sequential decision-making, code generation, visual question answering, and text-toimage generation. The results demonstrate the effectiveness of self-training and Re-ReST in language agent tasks, with self-training improving baselines by 7.6% on HotpotQA and 28.4% on AlfWorld, and Re-ReST further boosting performance by 2.0% and 14.1%, respectively. Our studies also confirm the efficiency of using a reflector to generate high-quality samples for self-training. Moreover, we demonstrate a method to employ reflection during inference without ground-truth feedback, addressing the limitation of previous reflection work.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Large language models (LLMs) <ref type="bibr" target="#b16">(Kenton and Toutanova, 2019;</ref><ref type="bibr" target="#b33">Touvron et al., 2023;</ref><ref type="bibr" target="#b0">Achiam</ref> Figure <ref type="figure">1</ref>: Previous agent training methods <ref type="bibr" target="#b40">(Chen et al., 2023;</ref><ref type="bibr" target="#b44">Yin et al., 2024)</ref> distill knowledge from stronger models (e.g., GPT-4) to weaker ones (e.g., Llama-2). In contrast, we adopt self-training and improve it with reflection to improve agents more autonomously, which reduces reliance on external propriety models and maintains a fully open-source framework. <ref type="bibr">et al., 2023)</ref> have demonstrated potential in interacting with external environments and addressing practical interactive tasks, resulting in a new class -language agents <ref type="bibr" target="#b23">(Nakano et al., 2021;</ref><ref type="bibr" target="#b43">Yao et al., 2022)</ref>. Finetuning LLMs for agentic tasks has proven effective, yet existing works rely on data generated by stronger models (e.g., GPT-4) <ref type="bibr" target="#b40">(Chen et al., 2023;</ref><ref type="bibr" target="#b44">Yin et al., 2024)</ref>, which are not always available (e.g., to improve the strongest model).</p><p>Among the potential techniques to improve agents <ref type="bibr" target="#b25">(Ouyang et al., 2022;</ref><ref type="bibr">Wang et al., 2023b;</ref><ref type="bibr" target="#b19">Li et al., 2024;</ref><ref type="bibr" target="#b3">Chen et al., 2024)</ref>, self-training holds promise for enhancing agent performance for challenging agentic tasks. The self-training process typically involves refining the model by generating samples, assessing their quality through rewards, and updating the model by training on high-quality samples. Compared with existing agent training methods <ref type="bibr" target="#b40">(Chen et al., 2023;</ref><ref type="bibr" target="#b44">Yin et al., 2024)</ref>, selftraining can autonomously improve agents and reduce the discrepancy between the agent's training data and its original predictions. Additionally, as in Figure <ref type="figure">1</ref>, self-training can potentially allow for the development of performant agents within a fully open-source framework, without relying on closedsource, proprietary models. Given these benefits, we propose to investigate the use of self-training in language agents in this paper.</p><p>However, one significant challenge for applying self-training in language agent tasks lies in the acquisition of high-quality samples to achieve good performance. Specifically, self-training requires a substantial amount of high-quality samples, while relying solely on model-generated samples can be inefficient, particularly for language agent tasks that demand multi-step reasoning and long-horizon planning. As a result, it is challenging to obtain good samples solely through sampling. Moreover, the common practice of discarding low-quality samples neglects their potential for improvement and effective utilization, thus limiting the overall efficacy of self-training methods.</p><p>To address these issues, we propose Reflection-Reinforced Self-Training (Re-ReST), which enhances the self-training algorithm using a reflection model. Re-ReST incorporates a reflector during self-training, which improves sample quality by utilizing environmental feedback such as execution successes and unit test outcomes. Specifically, the reflector transforms lower-quality samples into higher-quality ones, leveraging the capability of LLMs to self-improve when provided with accurate ground-truth feedback <ref type="bibr" target="#b12">(Huang et al., 2024)</ref>. Consequently, it enriches the training dataset, enabling more effective bootstrapping. After training, only the agent model is used for inference, ensuring no additional computational burden during testing. Unlike existing self-reflection methods <ref type="bibr" target="#b22">(Madaan et al., 2023;</ref><ref type="bibr" target="#b30">Shinn et al., 2023;</ref><ref type="bibr" target="#b21">Pan et al., 2023)</ref>, Re-ReST only requires access to feedback during training, not during inference, making our setting more realistic and practical.</p><p>We conduct extensive experiments with opensource LLMs across a wide range of tasks, including multi-hop question answering, sequential decision-making, code generation, visual question answering, and text-to-image generation. Our results first demonstrate the potential of self-training in language agent tasks, showing improvements over few-shot baselines in long-horizon planning tasks, with gains of 7.6% on HotpotQA and 28.4% on AlfWorld. By incorporating Re-ReST, we further enhance performance significantly by 2.0% and 14.1% on HotpotQA and AlfWorld, respectively, achieving results better or comparable to models relying on commercial APIs. Ablation studies confirm the efficiency of the reflection model in generating high-quality self-training samples. Furthermore, we explore using our reflection model during inference with self-consistency decoding, which improves the model performance while alleviating the need for ground-truth feedback required by previous work <ref type="bibr" target="#b12">(Huang et al., 2024)</ref>. Additionally, we demonstrate the application of our method in preference optimization objectives.</p><p>2 Method: Re-ReST Self-Training. Formally, given a dataset U = {x i } N i=1 , self-training begins by using a base model M to generate a pseudo-label ŷi = M(x i ) for each instance</p><formula xml:id="formula_0">x i ∈ U . Subsequently, a subset of {(x i , ŷi )} N</formula><p>i=1 is selected based on a scoring function, and M is finetuned on this selected subset. For language agents, we define the label y as a trajectory comprising interleaved thoughts and actions, as described in ReAct <ref type="bibr" target="#b43">(Yao et al., 2022)</ref>. We propose adopting the self-training paradigm by training language agents with their self-generated thought-action trajectories.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Overview of Re-ReST.</head><p>Obtaining high-quality samples through self-sampling can be challenging, particularly for complex language agent tasks. To address this issue, we introduce Re-ReST, which aims to enhance the pseudo-label generation process in self-training for language agents. As illustrated in Figure <ref type="figure" target="#fig_0">2</ref>, we propose improving lowquality samples using a reflection model with external feedback. We then enrich the self-training data by incorporating these corrected generations. This process generates high-quality samples efficiently by correcting low-quality ones with ground-truth feedback during training.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Components</head><p>Our method involves two models, including a language agent M that generates text and actions, and a reflection model R that improves a low-quality sample. The reflection model R has access to an external environment E that can provide external feedback to a generated sample (e.g. numerical scores and/or verbal error information). We illustrate each of these modules in the following part.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Language Agent.</head><p>The language agent M is built upon a large language model (LLM) that is trained or prompted to generate thoughts and actions given a task. Formally, given an instance x i , the agent M generates its output ŷ ∼ M(y|x) containing its actions. The agent can first generate its reasoning traces before outputting its actions, which has been Our approach incorporates self-training in language agent tasks by sampling multiple outputs from an agent and using positive samples for training. To enhance the effectiveness of self-training in language agents, we introduce a reflector mechanism. If a sample is incorrect, the reflector adjusts the agent's output based on environmental feedback. The corrected sample is then incorporated into the training data, thereby improving the overall self-training process.</p><p>demonstrated to improve the model performance and interpretability <ref type="bibr" target="#b43">(Yao et al., 2022)</ref>.</p><p>Reflector. The reflection model R is also instantiated as an LLM, the goal of which is to improve the language agent's generations given external feedback. We assume that during training, an external environment E can evaluate a generated sample and provide feedback E(x, ŷ) to the agent. The feedback can be a binary success status and/or error information. For example, in code generation tasks, the environment can execute the model-generated code on unit tests, providing information on whether the code has syntax errors and whether it can pass the unit tests. Having access to such an environment is important in our setting, as it has been shown that an LLM cannot perform self-correction without highquality external feedback <ref type="bibr" target="#b12">(Huang et al., 2024)</ref>. The reflection model generates a corrected sample ỹ ∼ R(y|x, ŷ, E(x, ŷ)) given the task information x, the agent generation ŷ, and the environmental feedback E(x, ŷ). It can optionally first state its reasoning process (e.g., which specific actions could be corrected) before generating the corrected answer.) The use of the reflection model can improve self-training by finding good solutions efficiently because of the additional information provided (i.e., the agent's previous trial and the environmental feedback.) We do not share the model parameters between the agent and reflector in this paper.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Data Generation</head><p>We then describe how we generate self-training data for the language agent M. The data generation process involves two steps, including the initial generation step with the language agent itself and the reflection step with the reflector, and we obtain the agent-generated dataset D M and reflector-generated dataset D R from the two steps.</p><p>Initial Generation. As in the standard setup, given an instance x, we sample k generations {ŷ j } k j=1 from the current language agent model ŷj ∼ M(y|x). Then, the environment E scores the generation and provides feedback E(x, ŷj )). If the score exceeds a threshold, we add the instance to (x, ŷj ) to the training data D M . In practice, we observe that setting k = 3 achieves a good balance between efficiency and effectiveness.</p><p>Reflection with Environmental Feedback. The initial generation step only relies on the agent model M itself to generate data. For a sampled generation ŷj , if the score does not pass the threshold, we will feed it to the reflection model for refinement. The reflector takes as inputs the task information x, the agent's prior generation ŷj , and the environmental feedback E(x, ŷj )), and then generates the corrected sample ỹj ∼ R(x, ŷj , E(x, ŷj )). The corrected sample ỹj will also be evaluated by the environment and we will add it to the reflectorgenerated training dataset D R if its score exceeds the threshold. While the reflection procedure can be iteratively applied multiple times as per <ref type="bibr" target="#b30">Shinn et al. (2023)</ref>, in this study, we limit this process to a single iteration for the sake of efficiency. This means that each generated sample ŷj is allowed a maximum of one refined counterpart ỹj .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">Model Training and Inference</head><p>We first train the reflector R parameterized by θ R and then use the trained reflector to generate the reflection data D R . Afterward, we combine D R and the agent's self-generated data D M to train the agent model M parameterized by θ M .</p><p>Reflector Training. While base LLMs can perform self-reflection or self-correction without any finetuning given ground-truth feedback <ref type="bibr" target="#b30">(Shinn et al., 2023)</ref>, we propose to further improve its reflection ability with the self-generated data. First, from the initial generation step, we obtain multiple generations {y j } k j=1 from the agent model M. For each correct generation y w and incorrect generation y l with its environmental feedback E(x, ŷl ) in {y j } k j=1 , we will add the instance ⟨x, y l , E(x, ŷl ), y w ⟩ to the agent-generated dataset D R M for reflector training. In addition, the reflector generates its self-training dataset in a zero-shot manner D R R similar to the agent initial generation step. Combining the two generated datasets, we train the reflector on D R M ∪ D R R with the standard maximum log-likelihood objective first before generating the training data D R for the language agent:</p><formula xml:id="formula_1">LMLE(θR) = -E (x,y l ,y w )∼D R M ∪D R R log p θ R (y w |x, y l ).<label>(1)</label></formula><p>Language Agent Training. After we have the base language agent to generate the self-training data D M and the improved reflector to generate the reflector-generated data D R , we train the language agent jointly on D M ∪ D R :</p><formula xml:id="formula_2">L M LE (θ M ) = -E (x,y)∼D M ∪D R log p θ M (y|x).</formula><p>(2) Besides the maximum log-likelihood objective, because the reflection training and data generation process involves the use of preference pairs, it is natural to use preference optimization objectives such as DPO <ref type="bibr" target="#b27">(Rafailov et al., 2023)</ref> for training, which we will discuss in the experiment section.</p><p>Inference. During inference, accessing highquality environmental feedback is often challenging, which can cause inference-time self-reflection algorithms to fail <ref type="bibr" target="#b12">(Huang et al., 2024)</ref>. Therefore, we only have the agent M directly output generations without the reflector during inference. This approach eliminates the need for feedback and avoids any additional computational overhead. A potential method to integrate the reflector into the inference process involves first training a scorer to evaluate the agent's output. If the score falls below a certain threshold, self-correction can then be performed, which we leave as a future direction. Additionally, we propose performing reflection regardless of environmental feedback and employing self-consistency to derive the final results from both the agent's outputs and the reflector's outputs, as shown in the experiment section.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Experiments</head><p>We experiment with multi-hop reasoning, sequential decision-making, code generation, visual question answering, and text-to-image generation. We present the experimental settings and results for each task. In all our experiments, we advocate for the use of open-source models and aim to avoid black-box, closed-source commercial models whenever possible.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Multi-Hop Reasoning</head><p>Dataset. We use the HotpotQA dataset <ref type="bibr" target="#b41">(Yang et al., 2018)</ref>, a well-established question-answering dataset featuring multi-hop reasoning and knowledge retrieval. It is constructed based on Wikipedia and an agent needs to retrieve and reason over multiple supporting documents to answer a question. We sample 5,000 training instances randomly for self-training and 500 instances from the development set for evaluation as in <ref type="bibr" target="#b40">Chen et al. (2023)</ref>.</p><p>Model Setup. We build both the agent model and the reflector upon the Llama-2-13B and Llama-3-8B models <ref type="bibr" target="#b33">(Touvron et al., 2023)</ref>. Note that different from previous work <ref type="bibr" target="#b30">(Shinn et al., 2023;</ref><ref type="bibr" target="#b40">Chen et al., 2023;</ref><ref type="bibr" target="#b44">Yin et al., 2024)</ref>, we do not employ a stronger language model such as GPT-3.5/4 for data generation or self-reflection, ensuring that the models do not benefit from knowledge distillation. Following <ref type="bibr" target="#b30">Shinn et al. (2023)</ref>, we use the ReAct <ref type="bibr" target="#b43">(Yao et al., 2022</ref>) method where at each step, the agent model first generates its thoughts and then performs an action. The action is chosen from (1) Search[entity], which searches the exact entity on Wikipedia, (2) Lookup[keyword], which localizes a keyword in the retrieved passages, and ( <ref type="formula">3</ref>) Finish[answer], which returns the answer and finishes the task. We use a free Wikipedia API<ref type="foot" target="#foot_0">foot_0</ref> for passage retrieval and keyword lookup.</p><p>Training and Evaluation Setup. We use 2-shot prompting for few-shot agent and reflector data generation as in <ref type="bibr" target="#b30">Shinn et al. (2023)</ref>. For each training instance, the agent model samples 3 generations. The generation is evaluated with the exact match metric (i.e., if the generated answer is exactly the same as the ground-truth answer). The retrieval and evaluation results are given to the reflector as the environmental feedback for self-correction. We use Low-Rank Adaptation (LoRA) <ref type="bibr" target="#b10">(Hu et al., 2022)</ref> for training the language models for efficiency. The agent and reflector models are trained for 3 epochs with a learning rate of 3e-4.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Main Results.</head><p>We list the main results in Table <ref type="table" target="#tab_0">1</ref>. As shown in the table, self-training can significantly improve the model performance from an EM score of 20.0% to 27.6% for Llama-2 and from 30.0% to 34.4% for Llama-3. However, only 37.1% and 48.3% of the training instances are correctly solved by the agent model and are used for self-training respectively. By integrating our reflector model into the process, the agent can solve more training instances and thus have more data for training the agent model, increasing the EM scores significantly. In addition to our implemented models, following previous work (FireAct <ref type="bibr" target="#b40">(Chen et al., 2023)</ref> and LUMOS ( <ref type="formula">Yin et al., 2024)</ref>) that use GPT-3.5/4 for data generation and model finetuning, we employ GPT-4 to generate 0.5k instances and first train the agents with the GPT-4 generated data before selftraining. Results demonstrate that 1) self-training is a stronger baseline than FireAct under a fair setting where the same QA tool is used; 2) we can achieve comparable or better performance of our model than these methods, even though both of them use strong knowledge retrieval models (i.e., SerpAPI 2 for FireAct and GPT-4 for LUMOS), which are costly and non-scalable. By contrast, we use the free Wikipedia API.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Sequential Decision-Making</head><p>Dataset. We also assess the proposed approach on sequential decision-making using ALF-World <ref type="bibr" target="#b31">(Shridhar et al., 2021)</ref>. ALFWorld comprises a collection of text-based settings designed to test an agent's ability to complete multi-step tasks across diverse interactive environments. Following <ref type="bibr">Yao et</ref>  <ref type="formula">al. (2022); Shinn et al. (2023)</ref>, we operate under the assumption that the agents are devoid of any access to successful trajectories, relying solely on a binary indicator of task success or failure. Our evaluation encompasses testing the agent across 134 previously unseen environments, spanning six diverse tasks. These tasks range from locating concealed items and transporting objects to interacting with objects using other items.</p><p>Model Setup. We build the agent and the reflector upon the Llama2-7b <ref type="bibr" target="#b33">(Touvron et al., 2023)</ref>. At each step, the agent can either contemplate its next 2 <ref type="url" target="https://serpapi.com/">https://serpapi.com/</ref> move or generate admissible actions for execution as in <ref type="bibr" target="#b43">Yao et al. (2022)</ref>. Following the heuristics outlined by <ref type="bibr" target="#b30">Shinn et al. (2023)</ref>, we trigger the reflector model for self-reflection if the agent repeats an action with the same response over three cycles, or if it performs over 30 actions in an environment.</p><p>Training and Evaluation Setup. We use oneshot prompting instead of the two-shot prompting in <ref type="bibr" target="#b30">Shinn et al. (2023)</ref> for the models so that we can better fit a trajectory into the context window of Llama-2. We train the agent and reflector models on the collected trajectories for 2 epochs with a learning rate of 2e-5 using LoRA.</p><p>Results. As shown in Table <ref type="table">2</ref>, it is evident that the base Llama model faces challenges in adapting to the experimental environment, but self-training can significantly improve the model performance. A significant point to highlight is that the model operates without access to complete trajectories during the experiment. Despite this limitation, it demonstrates a notable improvement in performance within unseen environments-increasing the success rate from 8.9% to 37.3% through the utilization of self-augmented trajectories. Furthermore, the implementation of the reflector contributes a 14.1% uplift in success rates, which affirms the efficacy of our proposed method.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Programming: Code Generation and Visual Question Answering</head><p>Dataset. For code generation, we experiment with the Python code writing task on MBPP <ref type="bibr" target="#b2">(Austin et al., 2021)</ref> and visual programming on GQA <ref type="bibr" target="#b14">(Hudson and Manning, 2019)</ref>. The MBPP benchmark consists of around 1,000 Python programming problems, with each problem paired with unit test cases. We follow its official split for the training and test data. The availability of the training set and its provided unit test cases make it suitable for our reflector to reflect and correct the model-generated code. For GQA, we randomly sample a subset of 5,000 data points for training and 1,000 data for testing.</p><p>Model Setup. We build both the agent model and the reflector upon the CodeLlama-13B model ( <ref type="formula">Roziere</ref> Table 2: Results on the ALFWorld dataset. Re-ReST substantially increases the sampling accuracy and outperforms self-training in terms of success rate even upon employing a reflector.</p><p>feedback, and then generates a corrected version. For GQA, following <ref type="bibr" target="#b32">Surís et al. (2023)</ref>, we build the agent by providing a pre-defined set of visual APIs (e.g. object detection) and prompt the model to generate code using the APIs.</p><p>Training and Evaluation Setup. For MBPP, we use zero-shot and three-shot prompting for zeroshot agent and reflector data generation. For GQA, we follow the prompt in <ref type="bibr" target="#b32">Surís et al. (2023)</ref> for the model for sample generation. For both datasets, the agent model samples 3 generations per training instance as before. We do not use the provided ground truths for MBPP training for consistency with the other experimental settings. The agent and reflector models are trained for 3 epochs with a learning rate of 3e-4 using LoRA. Results. As in Table <ref type="table" target="#tab_1">3</ref>, for MBPP, because CodeLlama is trained on a large amount of code generation corpus, the base CodeLlama model can achieve a decent performance without any finetuning. The high pass rate results in many of the training instances being used for self-training. After self-training on the MBPP training data, the model performance can be improved from 48.6% to 54.5%. The reflector model can generate more self-training data and the pass rate can be improved with the reflector-generated data. For GQA, similar improvements can be seen, indicating that our method is also applicable in visual programming.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">Text-to-Image Generation</head><p>Dataset. We also conduct experiments in text-toimage generation. Specifically, we use the dataset  constructed by <ref type="bibr" target="#b5">Cho et al. (2023)</ref>.</p><p>Their dataset evaluates the model's generated images in multiple dimensions and has training data for the spatial, scale, and count dimensions. For each dimension, the evaluation set consists of 1,000 instances. The training dataset consists of 36,920/18,200/1,560 instances for the spatial/scale/count dimensions. Model Setup. We use VPGen in Cho et al. (2023) as our base model, which is based on Vicuna-13B (Chiang et al., 2023) and is finetuned for textto-layout generation on multiple constructed imagetext datasets. The generated layouts are fed into an external model (i.e., GLIGEN (Li et al., 2023b)) Model Sample Acc. EM Self-Training 37.1 27.6 Re-ReST w/o Ref. Train. 43.7 28.8 Re-ReST 50.8 29.6 Table 5: While directly using a pretrained LLM as our reflector improves self-training, training the reflector specifically for self-correction further improves the agent performance. Model EM Base 27.6 S.C. (6 agents) 30.8 S.C. (3 agents + 3 reflectors) 32.0 Oracle (3 agents + 3 reflectors) 36.8 Table 6: Previous work relies on ground-truth feedback for test-time reflection (Oracle). In contrast, we propose to use self-consistency (Wang et al., 2023a) to enable our reflector to be applied during inference without ground-truth feedback and achieve improvements, demonstrating the potential of applying our method during the test time.</p><p>for image generation. We build both the agent and reflector upon the VPGen model.</p><p>Training and Evaluation Setup. We use VP-Gen to perform inference on their training data, and evaluate the generations using VPEval <ref type="bibr" target="#b5">(Cho et al., 2023)</ref>. Specifically, during evaluation, a visual question answering model (BLIP-2 <ref type="bibr">(Li et al., 2023a)</ref>) is used to determine if the generated images correctly capture the input text information.</p><p>The BLIP-2 generated results are treated as the environmental feedback for the reflector. We do not use zero-shot reflection results to train the reflector because LLMs cannot perform this task without finetuning. The agent and reflector are trained for 2 epochs with a learning rate of 1e-5 using LoRA.</p><p>Model HotpotQA EM MBPP Pass@1 VPEval Score Count Spatial Scale Self-Training 27.6 54.5 74.7 54.5 29.3 Re-ReST 29.6 56.4 75.0 58.2 30.1 Self-Training w/ DPO 28.0 54.9 74.6 56.7 30.0 Re-ReST w/ DPO 31.0 56.4 75.4 58.5 31.0</p><p>Table 7: Our method is compatible with direct preference optimization (DPO) <ref type="bibr" target="#b27">(Rafailov et al., 2023)</ref>, and integrating DPO into our method can generally improve the model performance.</p><p>Results. As shown in Table <ref type="table" target="#tab_2">4</ref>, our method continues showing improvements over baselines in the text-to-image generation task. The baseline VP-Gen model's performance is enhanced when selftraining is applied, further improved significantly with our Re-ReST method across all the dimensions. The results demonstrate promising applications of our model in the multimodal generation domain with a language agent as a backend.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.5">Analysis</head><p>Re-ReST v.s. Self-Training with More Samples.</p><p>We investigate if we can simply sample more generations from the language agent for self-training and achieve comparable performance with our reflectoraugmented method. Specifically, we try to sample k generations for each instance, where k is set to 1, 2, 3, 4, 5, 6, and use the generated samples for self-training. As shown in Figure <ref type="figure" target="#fig_1">3</ref>, if we keep sampling more generations from the language agent, the agent can indeed solve more instances and we can obtain an increasing amount of data for self-training. However, 1) the number of solved instances is still lower than the number of reflectorsolved instances, demonstrating that the reflector can find the correct solutions more efficiently than sampling; 2) the model performance is not always improved with more training data and it cannot outperform our method even when trained with more generated samples, indicating that the quality of the self-training data is also important and our reflector can generate training data effectively for the agent.</p><p>Effect of Training the Reflector. As illustrated, we propose to first train the reflector before using it to generate the self-training data. In this part, we investigate if we can use the reflector to perform self-correction in a zero-shot manner and then train the language agent. As in Table <ref type="table">5</ref>, we find that while the reflector can perform self-correction without any finetuning and improve the performance of the language agent, further improvements can be made if we specifically train the model for selfcorrection, demonstrating the effectiveness of our proposed reflector training strategy.</p><p>Test-Time Reflection without Ground-Truth Feedback. Previously, our reflector functions only during training and is not used during inference because it is often impossible to obtain ground-truth feedback, which is required for reflection methods to work <ref type="bibr" target="#b12">(Huang et al., 2024)</ref>. In this section, we propose employing selfconsistency <ref type="bibr">(Wang et al., 2023a)</ref> to enable testtime reflection and address this limitation. Selfconsistency is a decoding technique that combines multiple model predictions by sampling various reasoning paths and then selecting the most consistent answer through a majority vote. This approach allows us to apply the reflector during inference. Specifically, we sample multiple answers from our model and perform reflection on each output, regardless of correctness. We then aggregate all the answers using self-consistency. As in Table 6, integrating our reflector with self-consistency (3 agent samples and 3 reflection samples) achieves improvements over baseline (self-consistency with 6 model samples). This demonstrates the potential application of our method during inference, overcoming the current limitation of requiring groundtruth feedback for reflection methods.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Re-ReST with Direct Preference Optimization.</head><p>Our reflector turns incorrect samples into correct ones, naturally making negative-positive pairs suitable for preference optimization objectives such as DPO. In this part, we investigate the application of DPO in our method. As in Table <ref type="table">7</ref>, integrating DPO into our method can generally improve or achieve comparable performance with training models only with supervised training on positive samples, indicating our compatibility with DPO.</p><p>In this section, we first overview the research progress in language agents, then briefly describe self-training and self-correction methods for improving language agents. We also summarize the major differences between our work and previous language agent methods in Table <ref type="table">8</ref>.</p><p>Language Agents. Language agents refer to language models that interact with the world in general. It has been demonstrated that LLMs can perform actions by generating specific commands <ref type="bibr" target="#b23">(Nakano et al., 2021;</ref><ref type="bibr" target="#b13">Huang et al., 2022;</ref><ref type="bibr" target="#b1">Ahn et al., 2022)</ref> and calling external tool APIs <ref type="bibr" target="#b21">(Lu et al., 2023;</ref><ref type="bibr" target="#b29">Schick et al., 2023;</ref><ref type="bibr" target="#b7">Gou et al., 2024)</ref>. By integrating the model reasoning and acting abilities, ReAct <ref type="bibr" target="#b43">(Yao et al., 2022)</ref> asks an LLM to first generate reasoning traces and then act accordingly, which is then improved by follow-up works through inference-time techniques such as reflection <ref type="bibr" target="#b30">(Shinn et al., 2023)</ref> and planning <ref type="bibr" target="#b42">(Yao et al., 2023;</ref><ref type="bibr" target="#b40">Yang et al., 2023)</ref>. Recently, finetuning agents <ref type="bibr" target="#b40">(Chen et al., 2023;</ref><ref type="bibr" target="#b44">Yin et al., 2024)</ref> have attracted attention from the research community. However, most of the existing works attempt to distill knowledge from a relatively strong LLM (e.g., GPT-4) to a weaker LLM (e.g., LLaMa-2). By contrast, our work bootstraps a language agent's performance by utilizing its own reflective ability without using external models.</p><p>Self-Training for Language Models. Various self-training algorithms have been proposed to improve language models <ref type="bibr" target="#b9">(He et al., 2019;</ref><ref type="bibr" target="#b11">Huang et al., 2023;</ref><ref type="bibr" target="#b6">Dong et al., 2023;</ref><ref type="bibr" target="#b8">Gulcehre et al., 2023;</ref><ref type="bibr" target="#b45">Yuan et al., 2024)</ref>, with the general idea being to improve models with self-generated samples in an unsupervised or semi-supervised manner. <ref type="bibr" target="#b9">He et al. (2019)</ref> is one early work in applying self-training to generative language models and points out the importance of introducing noises during pseudo-label generation to increase the sample diversity. In the large language model era, <ref type="bibr" target="#b8">Gulcehre et al. (2023)</ref> propose Reinforced Self-Training (ReST), where they use a scoring function to select self-generated samples and augment the training data. Similarly, <ref type="bibr" target="#b45">Yuan et al. (2024)</ref> proposes self-rewarding that scores samples with the LLM itself and trains the model with direct preference optimization (DPO) <ref type="bibr" target="#b27">(Rafailov et al., 2023)</ref> on the scored samples. Self-training has also been employed to improve the chain-of-thought reason-ing <ref type="bibr" target="#b24">(Nye et al., 2022;</ref><ref type="bibr" target="#b38">Wei et al., 2022)</ref> ability of LLMs <ref type="bibr" target="#b34">(Uesato et al., 2022)</ref>. For example, <ref type="bibr" target="#b46">Zelikman et al. (2022)</ref> propose to ask an LLM to generate rationales given questions and improve the LLM with its own generated reasoning. Re-ReST falls under the self-training paradigm, and different from previous work, our aim is to generate useful samples efficiently for self-training.</p><p>Self-Reflection/Self-Correction for Language Models. Several works have used LLMs to reflect on their generations with internal or external feedback and correct their errors <ref type="bibr" target="#b39">(Welleck et al., 2023;</ref><ref type="bibr">Wang et al., 2023c;</ref><ref type="bibr" target="#b30">Shinn et al., 2023;</ref><ref type="bibr" target="#b22">Madaan et al., 2023;</ref><ref type="bibr" target="#b17">Kim et al., 2024;</ref><ref type="bibr" target="#b15">Ji et al., 2024)</ref>. A majority of this line of research is focused on improving LLMs during inference. For example, Self-Refine <ref type="bibr" target="#b22">(Madaan et al., 2023)</ref> proposes to have LLMs iteratively evaluate their generations, based on which they improve their generations. Similarly, <ref type="bibr" target="#b30">Shinn et al. (2023)</ref> use LLM agents to reflect on its generations and their environment feedback, then guide the next generation with the generated verbal feedback. As pointed out by <ref type="bibr" target="#b12">Huang et al. (2024)</ref>, high-quality external feedback is essential for these self-correction models, without which existing techniques actually decrease model performance. However, such high-quality feedback is often unavailable during the test time, thus we propose to use Re-ReST only during training and perform corrections with oracle feedback from environments, ensuring its effectiveness in correcting the model generations. In addition, during the test time, the corrected generations are distilled into the language model, thus directly generating the answer without introducing overhead during inference.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>Our study studies the applications of self-training in language agents and improves it with Reflection-Reinforced Self-Training (Re-ReST), an approach that efficiently obtains high-quality samples for self-training with a reflector. Our experiments demonstrate that Re-ReST outperforms selftraining methods across various tasks, confirming the efficiency and effectiveness of incorporating a reflection mechanism. Within the proposed framework, in the future, we can improve the reflection mechanism and develop better training paradigms for the agent and reflector.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitations</head><p>Our approach is predicated on the availability of ground-truth feedback during the training process. While this assumption holds true for many language agent tasks, it presents challenges when applied to broader contexts. Specifically, acquiring accurate ground-truth feedback can be difficult in diverse, real-world scenarios. This limitation underscores a key aspect of our study: it is primarily concentrated on language agent tasks, thereby neglecting the potential applications and implications within the broader scope of general language modeling. This suggests the need for future research to explore and address the complexities of applying our methods to general language modeling tasks, where ground-truth feedback may not be as readily accessible or reliable. Another potential risk of the method is that through self-training, the biases encoded in LLMs can be amplified, and careful calibrations should be conducted before the deployment of our method.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Work Agent Training</head><p>Agent Reflection Finetuning GPT-Free w/ G.T. Feedback w/o G.T. Feedback FireAct <ref type="bibr" target="#b40">(Chen et al., 2023)</ref> ✓ ✗ ✗ ✗ LUMOS <ref type="bibr" target="#b44">(Yin et al., 2024)</ref> ✓ ✗ ✗ ✗ Reflexion <ref type="bibr" target="#b30">(Shinn et al., 2023)</ref> ✗ ✗ ✓ ✗ Self-Refine <ref type="bibr" target="#b22">(Madaan et al., 2023)</ref> ✗ ✗ ✓ ✗ Re-ReST ✓ ✓ ✓ ✓</p><p>Table <ref type="table">8</ref>: Comparisons with previous language agent methods. We propose to finetune LLMs for language agent tasks with self-generated data, while previous work such as FireAct and LUMOS rely on stronger LLMs such as GPT-4 to perform knowledge distillation. In addition, we propose to use the agent's reflection ability to improve the self-training efficiency, where the reflection can function both with and without ground-truth feedback, addressing the limitation of previous agent reflection methods <ref type="bibr" target="#b30">(Shinn et al., 2023;</ref><ref type="bibr" target="#b22">Madaan et al., 2023;</ref><ref type="bibr" target="#b12">Huang et al., 2024)</ref>.   Table 14: Prompt template for the GQA reflector. {Detailed API definition} {In-context examples} {Input question and previous trial} Prompt Interact with a household to solve a task. Here is an example.</p><p>{In-context examples} You are in the middle of a room. Looking quickly around you, you see a cabinet 4, a cabinet 3, a cabinet 2, a cabinet 1, a countertop 1, a garbagecan 1, a handtowelholder 2, a handtowelholder 1, a sinkbasin 2, a sinkbasin 1, a toilet 1, a toiletpaperhanger 1, and a towelholder 1. Your task is to: put some spraybottle on toilet. &gt; think: To solve the task, I need to find and take a sparybottle, then put it on toilet. OK. &gt; think: First I need to find a spraybottle. A spraybottle is more likely to appear in cabinet (1-4), countertop (1), toilet (1), sinkbasin (1-2), garbagecan (1). I can check one by one, starting with cabinet 1. OK. &gt; go to cabinet 1 On the cabinet 1, you see a cloth 1, a soapbar 1, a soapbottle 1. &gt; go to cabinet 2 The cabinet 2 is closed. &gt; open cabinet 2 You open the cabinet 2. The cabinet 2 is open. In it, you see a candle 1, and a spraybottle 2. &gt; think: Now I find a spraybottle (2). Next, I need to take it. OK &gt; take spraybottle 2 from cabinet 2 You pick up the spraybottle 2 from the cabinet 2. &gt; think: Now I take a spraybottle (2). Next, I need to put it in/on toilet 1. OK. &gt; go to toilet 1 On the toilet 1, you see a soapbottle 2. &gt; put spraybottle 2 in/on toilet 1 You put the spraybottle 2 in/on the toilet 1.</p><p>User {Input question} Here is the task: You are in the middle of a room. Looking quickly around you, you see a bed 1, a desk 2, a desk 1, a drawer 6, a drawer 5, a drawer 4, a drawer 3, a drawer 2, a drawer 1, a garbagecan 1, a laundryhamper 1, a safe 1, a shelf 6, a shelf 5, a shelf 4, a shelf 3, a shelf 2, and a shelf 1. Your task is to: examine the bowl with the desklamp. {Reflection Results} think: I was stuck in a loop in which I continually picked up the alarmclock 1 instead of turning on the desklamp.</p><p>Table 15: Example Prompt Template on the ALFWorld dataset. A prompt includes (a) {In-context example} which is a complete trajectory from a successful trial. (b) {Input question} describes the initial environment and the instruction of the task, and (c) {Reflection Results} encapsulates the self-reflection results from the reflector model.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :</head><label>2</label><figDesc>Figure2: An overview of our Re-ReST method. Our approach incorporates self-training in language agent tasks by sampling multiple outputs from an agent and using positive samples for training. To enhance the effectiveness of self-training in language agents, we introduce a reflector mechanism. If a sample is incorrect, the reflector adjusts the agent's output based on environmental feedback. The corrected sample is then incorporated into the training data, thereby improving the overall self-training process.</figDesc><graphic coords="3,70.87,70.87,453.54,87.53" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: In self-training, increasing the number of generations per instance initially improves model performance, but this effect plateaus. Additionally, both model performance and the number of solved training instances are lower than with Re-ReST, indicating our reflector can efficiently and effectively generate highquality self-training data.</figDesc><graphic coords="7,77.95,339.67,204.09,132.94" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>On HotpotQA, our method enables a better usage of the training data compared with self-training and improves self-training for LLama-2/3-based agents. Also, adding only 0.5k GPT-generated data enables our agents with the free Wikipedia API to achieve comparable or better performance than methods with commercial APIs.</figDesc><table><row><cell cols="2">Model</cell><cell>QA Tool</cell><cell>#Train Data (Self/GPT-4 Generated)</cell><cell>EM</cell></row><row><cell cols="3">Llama-2-13B ReAct-Based Agents</cell><cell></cell></row><row><cell>Few-Shot</cell><cell></cell><cell>WikipediaAPI</cell><cell>-</cell><cell>20.0</cell></row><row><cell>Self-Training</cell><cell></cell><cell>WikipediaAPI</cell><cell>2k/0</cell><cell>27.6</cell></row><row><cell>Re-ReST</cell><cell></cell><cell>WikipediaAPI</cell><cell>2.5k/0</cell><cell>29.6</cell></row><row><cell cols="3">Llama-2-13B ReAct-Based Agents w/ GPT-4-Generated Data</cell><cell></cell></row><row><cell cols="2">FireAct (Chen et al., 2023)</cell><cell>SerpAPI</cell><cell>0/0.5k</cell><cell>34.4</cell></row><row><cell cols="2">LUMOS (Yin et al., 2024)</cell><cell>GPT-3.5</cell><cell>0/20k</cell><cell>31.4</cell></row><row><cell cols="2">LUMOS (Yin et al., 2024)</cell><cell>GPT-4</cell><cell>0/20k</cell><cell>36.3</cell></row><row><cell>FireAct</cell><cell></cell><cell>WikipediaAPI</cell><cell>0/0.5k</cell><cell>32.2</cell></row><row><cell>Self-Training</cell><cell></cell><cell>WikipediaAPI</cell><cell>2.5k/0.5k</cell><cell>34.2</cell></row><row><cell>Re-ReST</cell><cell></cell><cell>WikipediaAPI</cell><cell>3k/0.5k</cell><cell>35.8</cell></row><row><cell cols="2">Llama-3-8B ReAct-Based Agents</cell><cell></cell><cell></cell></row><row><cell>Few-Shot</cell><cell></cell><cell>WikipediaAPI</cell><cell>-</cell><cell>30.0</cell></row><row><cell>Self-Training</cell><cell></cell><cell>WikipediaAPI</cell><cell>2.4k/0</cell><cell>34.4</cell></row><row><cell>Re-ReST</cell><cell></cell><cell>WikipediaAPI</cell><cell>3k/0</cell><cell>36.8</cell></row><row><cell>Model</cell><cell>Sample Acc.</cell><cell>Success Rate</cell><cell></cell></row><row><cell>Few-Shot</cell><cell>-</cell><cell>8.9</cell><cell></cell></row><row><cell>Self-Training</cell><cell>11.2</cell><cell>37.3</cell><cell></cell></row><row><cell>Re-ReST</cell><cell>48.0</cell><cell>51.4</cell><cell></cell></row></table><note><p>et al., 2023)</p><p>. For MBPP, following<ref type="bibr" target="#b28">Roziere et al. (2023)</ref></p><p>, the agent model is given the unit test cases during code generation. Similarly, the reflection model is given the agent generation and its unit test results as the environmental</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 3 :</head><label>3</label><figDesc>Re-ReST improves self-training on code generation and visual programming tasks.</figDesc><table><row><cell>Model</cell><cell cols="5">MBPP Sample Acc.P@1Sample Acc.Score GQA</cell></row><row><cell>Zero-Shot</cell><cell></cell><cell>-</cell><cell>48.6</cell><cell>-</cell><cell>40.9</cell></row><row><cell cols="2">Self-Training</cell><cell>66.9</cell><cell>54.5</cell><cell>44.7</cell><cell>41.9</cell></row><row><cell>Re-ReST</cell><cell></cell><cell>77.3</cell><cell>56.4</cell><cell>55.7</cell><cell>42.6</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 4 :</head><label>4</label><figDesc>Re-ReST can outperform self-training in text-to-image generation when applied to VPGen and evaluated with VPEval<ref type="bibr" target="#b5">(Cho et al., 2023)</ref> on multiple dimensions.</figDesc><table><row><cell>Model</cell><cell>Sample Acc.</cell><cell>Count</cell><cell>VPEval Skill Score Spatial</cell><cell>Scale</cell></row><row><cell>VPGen</cell><cell>-</cell><cell>72.2</cell><cell>56.1</cell><cell>26.3</cell></row><row><cell>VPGen w/ Self-Training</cell><cell>57.6</cell><cell>74.7</cell><cell>54.5</cell><cell>29.3</cell></row><row><cell>VPGen w/ Re-ReST</cell><cell>67.6</cell><cell>75.0</cell><cell>58.2</cell><cell>30.1</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 9 :</head><label>9</label><figDesc>PromptSolve a question answering task with interleaving Thought, Action, Observation steps. Thought can reason about the current situation, and Action can be three types:(1) Search[entity], which searches the exact entity on Wikipedia and returns the first paragraph if it exists. If not, it will return some similar entities to search.Prompt template for the HotpotQA agent. {In-context examples} {Input question} Prompt Solve a question answering task with a reflection on a previous trial and interleaving Thought, Action, Observation steps. Reflection can reason on a previous trial that failed and develop a new strategy to avoid repeating the same mistake. Thought can reason about the current situation, and Action can be three types: (1) Search[entity], which searches the exact entity on Wikipedia and returns the first paragraph if it exists. If not, it will return some similar entities to search. The Deliberate Stranger is a book about American serial killer Ted Bundy written by Seattle Times reporter Richard W. Larsen that was published in 1980. The book spawned a television miniseries of the same title, starring Mark Harmon as Bundy, that aired on NBC on May 4, 1986. Thought 2: The subject of the book, Ted Bundy, was executed in 1989. Action 2: Finish[1989] Reflection: I should have searched for Ted Bundy first before I finished answering the question. Thought 1: I need to first search The Deliberate Stranger and find its subject, and then find out which year the subject was executed. Action 1: Search[The Deliberate Stranger] Observation 1: The Deliberate Stranger is a book about American serial killer Ted Bundy written by Seattle Times reporter Richard W. Larsen that was published in 1980. The book spawned a television miniseries of the same title, starring Mark Harmon as Bundy, that aired on NBC on May 4, 1986. Thought 2: The subject of The Deliberate Stranger is Ted Bundy. I need to search for Ted Bundy and find out which year he was executed.</figDesc><table><row><cell>(2) Lookup[keyword], which returns the next sentence containing keyword in the last passage successfully</cell></row><row><cell>found by Search.</cell></row><row><cell>(3) Finish[answer], which returns the answer and finishes the task.</cell></row><row><cell>You may take as many steps as necessary.</cell></row><row><cell>{In-context examples}</cell></row><row><cell>Question: What is the elevation range for the area that the eastern sector of the Colorado orogeny extends</cell></row><row><cell>into?</cell></row><row><cell>Thought 1: I need to search Colorado orogeny, find the area that the eastern sector of the Colorado orogeny</cell></row><row><cell>extends into, then find the elevation range of the area.</cell></row><row><cell>Action 1: Search[Colorado orogeny]</cell></row><row><cell>Observation 1: The Colorado orogeny was an episode of mountain building (an orogeny) in Colorado and</cell></row><row><cell>surrounding areas.</cell></row><row><cell>Thought 2: It does not mention the eastern sector. So I need to look up eastern sector.</cell></row><row><cell>Action 2: Lookup[eastern sector]</cell></row><row><cell>Observation 2: (Result 1 / 1) The eastern sector extends into the High Plains and is called the Central Plains</cell></row><row><cell>orogeny.</cell></row><row><cell>Thought 3: The eastern sector of Colorado orogeny extends into the High Plains. So I need to search High</cell></row><row><cell>Plains and find its elevation range.</cell></row><row><cell>Action 3: Search[High Plains]</cell></row><row><cell>Observation 3: High Plains refers to one of two distinct land regions:</cell></row><row><cell>Thought 4: I need to instead search High Plains (United States).</cell></row><row><cell>Action 4: Search[High Plains (United States)]</cell></row><row><cell>Observation 4: The High Plains are a subregion of the Great Plains. From east to west, the High Plains rise</cell></row><row><cell>in elevation from around 1,800 to 7,000 ft (550 to 2,130 m).[3]</cell></row><row><cell>Thought 5: High Plains rise in elevation from around 1,800 to 7,000 ft, so the answer is 1,800 to 7,000 ft.</cell></row><row><cell>Action 5: Finish[1,800 to 7,000 ft]</cell></row><row><cell>...</cell></row><row><cell>User</cell></row><row><cell>Question: {Input question}</cell></row></table><note><p>Action 2: Search[Ted Bundy] Observation 2: Could not find [Ted Bundy]. Similar: ['Ted Bundy', 'Ted Bundy (film)', 'Ted Bundy: American Boogeyman', 'Conversations with a Killer: The Ted Bundy Tapes', 'Murder of Rita Curran', 'Ted Bundy: Falling for a Killer', 'Extremely Wicked, Shockingly Evil and Vile', 'Disappearance of Ann</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 10 :</head><label>10</label><figDesc>Prompt template for the HotpotQA reflector. {In-context examples} {Input question and previous trial}</figDesc><table><row><cell>Prompt</cell></row><row><cell>You are an expert Python programmer, and here is your task: {input task}</cell></row><row><cell>Your code should pass these tests:</cell></row><row><cell>{unit tests}</cell></row></table><note><p>Your code should start with a [PYTHON] tag and end with a [/PYTHON] tag.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 11 :</head><label>11</label><figDesc>Prompt template for the MBPP agent. {unit tests} {input task} Returns a list of new ImagePatch objects containing crops of the image centered around any objects found in the image matching the object_name.simple_query(question: str=None)-&gt;str Returns the answer to a basic question asked about the image. If no question is provided, returns the answer to "What is this?".exists(object_name: str)-&gt;bool Returns True if the object specified by object_name is found in the image, and False otherwise. verify_property(property: str)-&gt;bool Returns True if the property is met, and False otherwise.</figDesc><table><row><cell>Prompt</cell><cell></cell></row><row><cell>class ImagePatch:</cell><cell></cell></row><row><cell cols="2">"""A Python class containing a crop of an image centered around a particular object, as well as relevant</cell></row><row><cell>information.</cell><cell></cell></row><row><cell>Methods</cell><cell></cell></row><row><cell>---</cell><cell></cell></row><row><cell>find(object_name: str)-&gt;List[ImagePatch]</cell><cell></cell></row><row><cell>best_text_match(string1: str, string2: str)-&gt;str</cell><cell></cell></row><row><cell>Returns the string that best matches the image.</cell><cell>crop(left: int, lower: int, right: int, upper:</cell></row><row><cell>int)-&gt;ImagePatch</cell><cell></cell></row><row><cell cols="2">Returns a new ImagePatch object containing a crop of the image at the given coordinates.</cell></row><row><cell>"""</cell><cell></cell></row><row><cell>{Detailed API definition}</cell><cell></cell></row><row><cell>{In-context examples}</cell><cell></cell></row><row><cell>{Input question}</cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 13 :</head><label>13</label><figDesc>Prompt template for the GQA agent. Full prompt is released in https://github.com/ cvlab-columbia/viper/blob/main/prompts/benchmarks/gqa.prompt. {Detailed API definition} {Incontext examples} {Input question} Prompt I am writing code to handle visual question answering tasks by calling computer vision APIs. My code is wrong, and I hope you can help correct it. {Input question and previous trial} Your response should start with your reasoning and analysis. Then, you should write the correct code wrapped in ```python and ```. The correct code should be a function with signature `def exe-cute_command(image) -&gt; str:` -Below are the available APIs and some example usages: ```python class ImagePatch: """A Python class containing a crop of an image centered around a particular object, as well as relevant information. Methods --find(object_name: str)-&gt;List[ImagePatch] Returns a list of new ImagePatch objects containing crops of the image centered around any objects found in the image matching the object_name. simple_query(question: str=None)-&gt;str Returns the answer to a basic question asked about the image. If no question is provided, returns the answer to "What is this?". exists(object_name: str)-&gt;bool Returns True if the object specified by object_name is found in the image, and False otherwise. verify_property(property: str)-&gt;bool Returns True if the property is met, and False otherwise. best_text_match(string1: str, string2: str)-&gt;str Returns the string that best matches the image. crop(left: int, lower: int, right: int, upper: int)-&gt;ImagePatch Returns a new ImagePatch object containing a crop of the image at the given coordinates.</figDesc><table><row><cell>"""</cell></row><row><cell>{Detailed API definition}</cell></row><row><cell>{In-context examples}</cell></row><row><cell>```</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>https://python.langchain.com/docs/ integrations/tools/wikipedia</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgement</head><p>We thank anonymous reviewers and UCLA NLP group members for their insightful feedback. This research is based upon work supported by <rs type="funder">DARPA</rs> <rs type="programName">ECOLE Program</rs> No. #<rs type="grantNumber">HR00112390060</rs>, <rs type="programName">OFFICE OF NAVAL RESEARCH Award #</rs><rs type="grantNumber">N00014-23-1-2780</rs>, an <rs type="funder">Amazon AGI</rs> foundation research award, a <rs type="grantName">google research scholar grant</rs>, and CISCO sponsored research award.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_YWQZenz">
+					<idno type="grant-number">HR00112390060</idno>
+					<orgName type="program" subtype="full">ECOLE Program</orgName>
+				</org>
+				<org type="funding" xml:id="_6Z9rwAF">
+					<idno type="grant-number">N00014-23-1-2780</idno>
+					<orgName type="grant-name">google research scholar grant</orgName>
+					<orgName type="program" subtype="full">OFFICE OF NAVAL RESEARCH Award #</orgName>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Prompt</head><p>You are an AI Python assistant. You will be given the user input, your past incorrect function implementation, and a series of unit tests. Write your reflection on the function implementation and correct your implementation (copy the function signature and its docstring).</p><p>{In-context examples} [previous impl]: "'python def add(a: int, b: int): """ Given integers a and b, return the total value of a and b. """ return a -b "' [unit test results from previous impl]: Tested passed: Tests failed: assert add(1, 2) == 3 # output: -1 assert add(1, 2) == 4 # output: -1 [reflection on previous impl]: The implementation failed the test cases where the input integers are 1 and 2. The issue arises because the code does not add the two integers together, but instead subtracts the second integer from the first. To fix this issue, we should change the operator from '-' to '+' in the return statement. This will ensure that the function returns the correct output for the given input. [improved impl]: "'python def add(a: int, b: int): """ Given integers a and b, return the total value of a and b. """ return a + b "'"' ...</p><p>User {Input task and previous trial}</p><p>Table 12: Prompt template for the MBPP reflector. {In-context examples} {Input task and previous trial}</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Adler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lama</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilge</forename><surname>Akkaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florencia</forename><surname>Leoni Aleman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Janko</forename><surname>Altenschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Altman</surname></persName>
+		</author>
+		<title level="m">Shyamal Anadkat, et al. 2023. GPT-4 technical report</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Michael Ahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Byron</forename><surname>Cortes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuyuan</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keerthana</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hausman</surname></persName>
+		</author>
+		<title level="m">Do as i can, not as i say: Grounding language in robotic affordances</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Augustus</forename><surname>Odena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carrie</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<title level="m">Program synthesis with large language models</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Self-play fine-tuning converts weak language models to strong language models</title>
+		<author>
+			<persName><forename type="first">Baian</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ehsan</forename><surname>Shareghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nigel</forename><surname>Collier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao ; Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihe</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huizhuo</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaixuan</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quanquan</forename><surname>Gu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">FireAct: Toward language agent fine-tuning</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Vicuna: An opensource chatbot impressing gpt-4</title>
+		<author>
+			<persName><forename type="first">Wei-Lin</forename><surname>Chiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuohan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhanghao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lianmin</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonghao</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Stoica</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><forename type="middle">P</forename><surname>Xing</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>with 90%* chatgpt quality</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Visual programming for text-to-image generation and evaluation</title>
+		<author>
+			<persName><forename type="first">Jaemin</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhay</forename><surname>Zala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Bansal</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<publisher>NeurIPS</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">RAFT: Reward ranked finetuning for generative foundation model alignment</title>
+		<author>
+			<persName><forename type="first">Hanze</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deepanshu</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Winnie</forename><surname>Chow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shizhe</forename><surname>Diao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jipeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Shum Kashun</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<publisher>TMLR</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">ToRA: A tool-integrated reasoning agent for mathematical problem solving</title>
+		<author>
+			<persName><forename type="first">Zhibin</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yeyun</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujiu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minlie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<publisher>ICLR</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Caglar</forename><surname>Gulcehre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><forename type="middle">Le</forename><surname>Paine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Srivatsan</forename><surname>Srinivasan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ksenia</forename><surname>Konyushkova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lotte</forename><surname>Weerts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Siddhant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ahern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miaosen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenjie</forename><surname>Gu</surname></persName>
+		</author>
+		<title level="m">Reinforced Self-Training (ReST) for language modeling</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Revisiting self-training for neural sequence generation</title>
+		<author>
+			<persName><forename type="first">Junxian</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiatao</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiajun</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc'aurelio</forename><surname>Ranzato</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">LoRA: Low-rank adaptation of large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Edward</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phillip</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyuan</forename><surname>Wallis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Allen-Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shean</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Large language models can self-improve</title>
+		<author>
+			<persName><forename type="first">Jiaxin</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shixiang</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuexin</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongkun</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Han</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Large language models cannot self-correct reasoning yet</title>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swaroop</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Huaixiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adams</forename><forename type="middle">Wei</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinying</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<publisher>ICLR</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Language models as zero-shot planners: Extracting actionable knowledge for embodied agents</title>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deepak</forename><surname>Pathak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">GQA: A new dataset for real-world visual reasoning and compositional question answering</title>
+		<author>
+			<persName><forename type="first">Drew</forename><forename type="middle">A</forename><surname>Hudson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Aligner: Achieving efficient alignment through weak-to-strong correction</title>
+		<author>
+			<persName><forename type="first">Jiaming</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hantao</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donghai</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Borong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuehai</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juntao</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaodong</forename><surname>Yang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">BERT: Pre-training of deep bidirectional transformers for language understanding</title>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenton</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lee</forename><surname>Kristina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Toutanova</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NAACL</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Language models can solve computer tasks</title>
+		<author>
+			<persName><forename type="first">Geunwoo</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Baldi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Mcaleer</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<publisher>NeurIPS</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">2023a. BLIP-2: Bootstrapping language-image pretraining with frozen image encoders and large language models</title>
+		<author>
+			<persName><forename type="first">Junnan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongxu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvio</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Hoi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Self-alignment with instruction backtranslation</title>
+		<author>
+			<persName><forename type="first">Xian</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ping</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunting</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omer</forename><surname>Levy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><forename type="middle">E</forename><surname>Weston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">GLIGEN: Open-set grounded text-to-image generation</title>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangzhou</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianwei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong Jae</forename><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Chameleon: Plug-and-play compositional reasoning with large language models</title>
+		<author>
+			<persName><forename type="first">Pan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baolin</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michel</forename><surname>Galley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><forename type="middle">Nian</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Song-Chun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Gao</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<publisher>NeurIPS</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Self-refine: Iterative refinement with self-feedback</title>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niket</forename><surname>Tandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prakhar</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Skyler</forename><surname>Hallinan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Wiegreffe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouha</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shrimai</forename><surname>Prabhumoye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<publisher>NeurIPS</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suchir</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christina</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shantanu</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Saunders</surname></persName>
+		</author>
+		<title level="m">WebGPT: Browser-assisted questionanswering with human feedback</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Show your work: Scratchpads for intermediate computation with language models</title>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anders</forename><surname>Johan Andreassen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guy</forename><surname>Gur-Ari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Bieber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aitor</forename><surname>Lewkowycz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Luan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Deep Learning for Code Workshop</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Training language models to follow instructions with human feedback</title>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carroll</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katarina</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<publisher>NeurIPS</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Automatically correcting large language models: Surveying the landscape of diverse self-correction strategies</title>
+		<author>
+			<persName><forename type="first">Liangming</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Saxon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenda</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deepak</forename><surname>Nathani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Direct preference optimization: Your language model is secretly a reward model</title>
+		<author>
+			<persName><forename type="first">Rafael</forename><surname>Rafailov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Archit</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefano</forename><surname>Ermon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<publisher>NeurIPS</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Baptiste Roziere</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabian</forename><surname>Gehring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sten</forename><surname>Gloeckle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Itai</forename><surname>Sootla</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Xiaoqing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yossi</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyu</forename><surname>Adi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tal</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jérémy</forename><surname>Remez</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rapin</surname></persName>
+		</author>
+		<title level="m">Code Llama: Open foundation models for code</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">ToolFormer: Language models can teach themselves to use tools</title>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberta</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicola</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Scialom</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<publisher>NeurIPS</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Reflexion: Language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<publisher>NeurIPS</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">AlfWorld: Aligning text and embodied environments for interactive learning</title>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Shridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingdi</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc-Alexandre</forename><surname>Côté</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Trischler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Hausknecht</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<publisher>ICLR</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">ViperGPT: Visual inference via python execution for reasoning</title>
+		<author>
+			<persName><forename type="first">Dídac</forename><surname>Surís</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sachit</forename><surname>Menon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carl</forename><surname>Vondrick</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICCV</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Llama 2: Open foundation and fine-tuned chat models</title>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Albert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amjad</forename><surname>Almahairi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasmine</forename><surname>Babaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolay</forename><surname>Bashlykov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soumya</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prajjwal</forename><surname>Bhargava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shruti</forename><surname>Bhosale</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Solving math word problems with process-and outcomebased feedback</title>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Uesato</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nate</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ramana</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francis</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Siegel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lisa</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonia</forename><surname>Creswell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Irving</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Irina</forename><surname>Higgins</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Self-consistency improves chain of thought reasoning in language models</title>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><forename type="middle">H</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">2023b. Self-instruct: Aligning language models with self-generated instructions</title>
+		<author>
+			<persName><forename type="first">Yizhong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yeganeh</forename><surname>Kordi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swaroop</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alisa</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Khashabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">2023c. Enable language models to implicitly learn self-improvement from data</title>
+		<author>
+			<persName><forename type="first">Ziqi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianjian</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuexin</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunxuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongkun</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<publisher>NeurIPS</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Generating sequences by learning to self-correct</title>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Welleck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ximing</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>West</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Faeze</forename><surname>Brahman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianxiao</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Khashabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">LACMA: Language-aligning contrastive learning with meta-actions for embodied instruction following</title>
+		<author>
+			<persName><forename type="first">Cheng-Fu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yen-Chun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianwei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiyang</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu-Chiang</forename><surname>Frank</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Chang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">HotpotQA: A dataset for diverse, explainable multi-hop question answering</title>
+		<author>
+			<persName><forename type="first">Zhilin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saizheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruslan</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Tree of thoughts: Deliberate problem solving with large language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<publisher>NeurIPS</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">ReAct: Synergizing reasoning and acting in language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Karthik R Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">LUMOS: Learning agents with unified data, modular design, and open-source llms</title>
+		<author>
+			<persName><forename type="first">Faeze</forename><surname>Da Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhilasha</forename><surname>Brahman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Khyathi</forename><surname>Ravichander</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Chandu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Yuchen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<publisher>ACL</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<author>
+			<persName><forename type="first">Weizhe</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">Yuanzhe</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyunghyun</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sainbayar</forename><surname>Sukhbaatar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<title level="m">Self-rewarding language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Zelikman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhuai</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Goodman</surname></persName>
+		</author>
+		<title level="m">STaR: Bootstrapping reasoning with reasoning</title>
+		<imprint>
+			<publisher>NeurIPS</publisher>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

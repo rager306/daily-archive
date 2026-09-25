@@ -1,0 +1,935 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Automatic Prompt Optimization with &quot;Gradient Descent&quot; and Beam Search</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Reid</forename><surname>Pryzant</surname></persName>
+							<email>reidpryzant@microsoft.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Microsoft Azure AI</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Dan</forename><surname>Iter</surname></persName>
+							<email>iterdan@microsoft.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Microsoft Azure AI</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><roleName>Yin</roleName><forename type="first">Jerry</forename><surname>Li</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Microsoft Azure AI</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Tat</forename><surname>Lee</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Microsoft Azure AI</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Chenguang</forename><surname>Zhu</surname></persName>
+							<email>chezhu@microsoft.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Microsoft Azure AI</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Michael</forename><surname>Zeng</surname></persName>
+							<email>nzeng@microsoft.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Microsoft Azure AI</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Automatic Prompt Optimization with &quot;Gradient Descent&quot; and Beam Search</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">C11834CD8E09EF6233D4B89256725AB3</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:29+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large Language Models (LLMs) have shown impressive performance as general purpose agents, but their abilities remain highly dependent on prompts which are hand written with onerous trial-and-error effort. We propose a simple and nonparametric solution to this problem, Prompt Optimization with Textual Gradients (ProTeGi), which is inspired by numerical gradient descent to automatically improve prompts, assuming access to training data and an LLM API. The algorithm uses minibatches of data to form natural language "gradients" that criticize the current prompt, much like how numerical gradients point in the direction of error ascent. The natural language gradients are then "propagated" into the prompt by editing the prompt in the opposite semantic direction of the gradient. These gradient descent steps are guided by a beam search and bandit selection procedure which significantly improves algorithmic efficiency. Preliminary results across three benchmark NLP tasks and the novel problem of LLM jailbreak detection suggest that Automatic Prompt Optimization can outperform prior prompt editing techniques and improve an initial prompt's performance by up to 31%, by using data to rewrite vague task descriptions into more precise annotation instructions. 1  </p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Large Language Models (LLMs) trained on webscale text have recently demonstrated unprecedented abilities across a variety of NLP tasks <ref type="bibr">(Ope-nAI, 2023;</ref><ref type="bibr" target="#b3">Bubeck et al., 2023)</ref>. These LLMs use prompt inputs to follow human instructions. Writing prompts in natural language remains a manual trial-and-error process requiring significant human effort <ref type="bibr" target="#b11">(Jiang et al., 2022)</ref> and expertise <ref type="bibr" target="#b21">(Reynolds and McDonell, 2021;</ref><ref type="bibr" target="#b26">Zamfirescu-Pereira et al., 2023)</ref>. 1 Code and data available at: <ref type="url" target="https://github.com/microsoft/LMOps/tree/main/prompt_optimization">https://github.com/  microsoft/LMOps/tree/main/prompt_optimization</ref>. Accordingly, there is need for automatic or semiautomatic procedures to help humans write the best prompts. This would help reduce manual effort, improve task performance, and produce interpretable descriptions of a cognitive decision process.</p><p>A recent body of work has investigated this problem by training auxiliary models or differentiable representations of the prompt <ref type="bibr" target="#b20">(Qin and Eisner, 2021;</ref><ref type="bibr" target="#b4">Deng et al., 2022)</ref>. However, such works assume access to internal state variables of the LLM <ref type="bibr" target="#b22">(Shin et al., 2020;</ref><ref type="bibr" target="#b14">Lester et al., 2021)</ref> while practitioners often communicate with LLMs through an API. Other work applies discrete manipulations to prompts via Reinforcement Learning or LLMbased feedback <ref type="bibr" target="#b28">(Zhang et al., 2023;</ref><ref type="bibr" target="#b29">Zhou et al., 2022)</ref>. These algorithms may also require low-level access to the LLM, produce incomprehensible outputs, or rely on directionless monte-carlo search over the semantic space of prompts.</p><p>We propose Prompt Optimization with Textual Gradients (ProTeGi), a general purpose and nonparametric algorithm for automatic prompt optimization that connects these two bodies of research by applying discrete improvements to prompts in a directed way.</p><p>Unlike prior work, we overcome the discrete optimization barrier by mirroring the steps of gradient descent within a text-based Socratic dialogue <ref type="bibr" target="#b27">(Zeng et al., 2022)</ref>, substituting differentiation with LLM feedback and backpropagation with LLM editing. In detail, we use minibatches of training data to produce "gradients" in natural language, i.e., descriptions of the current prompts' flaws with respect to the minibatch, then edit the current prompt in the opposite semantic direction of the gradient. These steps become the expansion part of a wider beam search over the space of prompts, increasing algorithmic efficiency by treating the problem of beam candidate selection as an instance of the best arm identification problem <ref type="bibr" target="#b0">(Audibert et al., 2010)</ref>.</p><p>We then offer a preliminary case study of Pro-TeGi. We evaluate the proposed framework in multiple configurations across 4 NLP tasks, including the novel problem of LLM jailbreak detection. The results suggest that the proposed algorithm can improve on the performance of the initial prompt input by up to 31%, exceeding state-of-the-art prompt learning baselines by an average of 4-8% while relying on fewer LLM API calls. We also demonstrate the interpretability of the optimization process and investigate the algorithms' shortcomings.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Discrete Prompt Optimization with</head><p>Nonparametric "Gradient Descent"</p><p>The proposed algorithm assumes access to an initial prompt p 0 and i.i.d. training data consisting of pairs of input and output text (numbers, categories, summaries, etc):</p><formula xml:id="formula_0">D tr = {(x 1 , y 1 ), ..., (x n , y n )}.</formula><p>Note that all prompts p are drawn from the space of coherent natural language L. We assume access to a black box LLM API LLM p (x) ≈ argmax y∈L P LLM (y|p, x), which returns a likely text continuation y of the prompt formed by concatenating p and x (for example, few-shot prompt and input example, or chatbot persona and conversational history). Within this context, our algorithm iteratively refines the prompt p 0 to produce p, an approximation of the optimal prompt p * = argmax p∈L {m(p, D te )} for some metric function m(•) and in-domain test or development data D te .</p><p>In the following sections, we first introduce how the algorithm performs textual "gradient descent" to improve the prompts in a directed way (Section 2.1). Then the algorithm leverages these gradient descent steps to beam search through the space of coherent language L, guided by the gradients during beam expansion, and efficient best arm identification during beam selection (Section 2.2).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Gradient descent with Prompts</head><p>In our setting, gradient descent refers to the process of (1) evaluating a prompt with a batch of data, (2) creating a local loss signal which contains information on how to improve the current prompt, then (3) editing the prompt in the opposite semantic direction of the gradient before starting the next iteration.</p><p>We accomplish this process with a pair of static LLM prompts, as depicted in Figure <ref type="figure" target="#fig_1">2</ref>. The first prompt is for creating the loss signals ("gradients") and is called ∇. While the specific contents can vary and be task-specific or task-agnostic, 2 ∇ must always consider the current prompt p 0 , plus p 0 's behavior on a minibatch of data (particularly the errors), and generate a natural language summary of p 0 's flaws. This summary becomes the gradient g. Similar to how traditional gradients represent a direction in parameter space that would make the model worse, the text "gradients" g represent directions in a semantic space that are making the prompt worse.</p><p>The second prompt is called δ and while this prompt can also vary, it must always take the gradient g and current prompt p 0 , then perform an edit on p 0 in the opposite semantic direction of g, i.e. fix the problems with p 0 that are indicated by g. 3  Unlike the traditional machine learning setting, we do not generate a single gradient or edit, but rather a number of directions that may improve the current prompt. Section 2.2 describes in detail the process of generating and selecting candidate prompts.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Beam Search over Prompts</head><p>The gradient descent steps described in Section 2.1 are used to guide a beam search over the space of prompts. This beam search is the outer loop of our prompt training algorithm and it is described in Algorithm 1. The beam search is an iterative optimization process where for each iteration the current prompt is used to generate many new candidate prompts (expansion). Next, a selection process is used to decide which prompts are worth carrying forward to the next iteration. This loop allows for incremental improvements and exploration over multiple 3 Note that one can imagine operationalizing the concept of learning rates or step sizes by e.g. editing δ to perform large-or small-sized edits to p0, in this initial work we adopt an "adaptive" step size by allowing the LLM to decide edit size, and leave further exploration to future work. prompt candidates.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2.1">Expansion Step</head><p>The expansion step is used to generate many new candidate prompts from a current prompt (Algorithm 2). It leverages the conceptual "gradient descent" framework of Section 2.1, and our specific prompts can be found in the Appendix.</p><p>First we sample a minibatch of data, run the initial prompt on these data with LLM p 0 , and collect errors. Second, we plug these errors into a prompt template ∆, which instructs the LLM to describe the problems with p 0 which could have led to these mistakes. The ensuing generations are our natural language gradients; see Figure <ref type="figure" target="#fig_0">1</ref> for an example.</p><p>Second, the gradients are provided to another LLM prompt called δ, which instructs the LLM to edit the current prompt p 0 in order to fix the problems described by the gradient. In this way, we engadge the LLMs in a recursive feedback loop similar to the Socratic dialogues proposed by <ref type="bibr" target="#b27">Zeng et al. (2022)</ref>.</p><p>Last, additional candidates are generated by running the existing candidates through a paraphrasing LLM called LLM mc , to explore the local monte carlo search space around the new prompt candidates. This prompt simply asks the LLM to generate new candidates which are worded differently but semantically similar to their inputs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Algorithm 2 Expand(•) -line 5 of Algorithm 1</head><p>Require: p: prompt candidate, D tr : train data</p><formula xml:id="formula_1">1: Sample minibatch D mini ⊂ D tr 2: Evaluate prompt p on minibatch D mini and collect errors e = {(x i , y i ) : (x i , y i ) ∈ D mini ∧ LLM p (x i ) ̸ = y i } 3: Get gradients: {g 1 , ..., g m } = LLM ∇ (p, e) 4: Use the gradients to edit the current prompt: {p ′ i1 , ..., p ′ iq } = LLM δ (p, g i , e) 5: Get more monte-carlo successors: {p ′′ ij1 , ..., p ′′ ijm } = LLM mc (p ′ ij ) 6: return {p ′ 11 , ..., p ′ mq } ∪ {p ′′ 111 , ..., p ′′ mqp }</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2.2">Selection Step</head><p>Once the expansion process has stepped each candidate prompt into multiple possible successor candidates, the selection step chooses the b most promising candidates to stay on the beam for the next iteration.</p><p>It is expensive to evaluate each candidate prompt on the entire training dataset <ref type="bibr" target="#b19">(Prasad et al., 2022)</ref>, so we would like to minimize the number of such queries. Note that this almost exactly corresponds to the well-studied problem of best arm identification in bandit optimization <ref type="bibr" target="#b0">(Audibert et al., 2010)</ref>. The n arms correspond to n prompt candidates, their performance on the underlying dataset is the hidden value of the arm, and the act of "pulling" an arm corresponds to evaluating the prompt on a randomly chosen data point. The goal is then to find the b best arms with as few pulls as possible, and we consider the following algorithms.</p><p>UCB Bandits. Motivated by other works which quickly estimate LLM performance <ref type="bibr" target="#b15">(Li et al., 2022;</ref><ref type="bibr" target="#b29">Zhou et al., 2022)</ref>, we sample a subset of prompts according to a proposal distribution of prompt performance, evaluate those prompts on a random subset of data, then update the proposal distribution based on the observed performance. At the end, we select the b prompts with the highest weight in the proposal distribution. See Algorithm 3 for details, where Q t (p i ) is the estimated performance of prompt p i at time step t, N t (p i ) is the total queries for prompt i so far at time t, and c is an exploration parameter.</p><p>Algorithm 3 Select(•) with UCB Bandits -line 7 of Algorithm 1 Require: n prompts p 1 , ..., p n , dataset D tr , T time steps, metric function m 1: Initialize: N t (p i ) ← 0 for all i = 1, . . . , n 2: Initialize: Q t (p i ) ← 0 for all i = 1, . . . , n 3: for t = 1, . . . , T do 4:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Sample uniformly D</head><formula xml:id="formula_2">sample ⊂ D tr 5: pi ←    arg maxp Qt(p) + c log t N t (p) (UCB) arg maxp Qt(p) + c c N t (p) (UCB E) 6: Observe reward r i,t = m(p i , D sample ) 7: N t (p i ) ← N t (p i ) + |D sample | 8: Q t (p i ) ← Q t (p i ) + r i,t Nt(p i ) 9: end for 10: return SelectT op b (Q T )</formula><p>While a natural choice, UCB is designed primarily for regret minimization <ref type="bibr" target="#b13">(Kuleshov and Precup, 2014)</ref>, whereas we wish to perform the related but distinct task of best arm identification. Furthermore, UCB can perform poorly if the exploration parameter c is not tuned appropriately <ref type="bibr" target="#b2">(Bubeck et al., 2012)</ref>.</p><p>UCB-E is a variant of UCB that corrects some of these problems by favoring exploration, leading to better theoretical convergence properties <ref type="bibr" target="#b0">(Audibert et al., 2010)</ref>. However, UCB-E remains stuck with hyperparameters like T , c, and |D sample |.</p><p>Successive Rejects (Algorithm 4) is provably optimal for best arm identification <ref type="bibr" target="#b0">(Audibert et al., 2010)</ref>, requires no hyperparameters unlike its UCB alternatives, and is suprisingly simple. The algorithm proceeds in n -1 phases, and in each phase, maintains a set of surviving prompt candidates S k ⊆ {p 1 , . . . , p n }. In the t-th phase, we evaluate each candidate in S t-1 on a total of n t random data points to form an empirical estimate of the score m(p i , D tr ). Then, to form S t , we drop the prompt with the lowest score in this phase. Note that n t is computed according to Equation 1 below such that it gradually increases with T :</p><formula xml:id="formula_3">n t = 1 0.5 + T i=2 1/i * B -T T + 1 -t (<label>1</label></formula><formula xml:id="formula_4">)</formula><p>where B is the total query budget.</p><p>Algorithm 4 Select(•) with Successive Rejectsline 7 of Algorithm 1 Require: n prompts p 1 , ..., p n , dataset D tr , metric function m 1: Initialize:</p><formula xml:id="formula_5">S 0 ← {p 1 , . . . , p n } 2: for k = 1, . . . , n -1 do 3: Sample D sample ⊂ D tr , |D sample | = n k 4:</formula><p>Evaluate p i ∈ S k-1 with m(p i , D sample ) 5: S k ← S k-1 , excluding the prompt with the lowest score from the previous step 6: end for 7: return Best prompt p * ∈ S n-1</p><p>In addition to the vanilla successive rejects algorithm, we experiment with Successive Halving (SH) which is more agressive as at the end of each phrase it rejects the bottom half of prompts according to their scores, with n k = B/(|S k-1 | log 2 k) <ref type="bibr" target="#b12">(Karnin et al., 2013)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Experiments</head><p>We present a limited and preliminary case study to demonstrate the proposed ProTeGi algorithm across 4 benchmark NLP tasks, finding that it can exceed state-of-the-art prompt learning baselines in terms of efficiency and performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Data</head><p>While ProTeGi could be applied to any problem such as parsing, chatbot design or summarization simply by choosing different metric functions m, we experiment on four NLP benchmark classification tasks for this initial case study. The tasks cover a wide range of problem and language domains, and are as follows:</p><p>Jailbreak: a novel task where the goal is to determine whether a user input to an LLM continuation API (i.e. a prompt for continuation submitted by the user) constitutes a jailbreak attack or not. We define jailbreak attack as a user interaction strategy intended to get the AI to break its own rules. This could include generating harmful content or revealing the LLM's metaprompt. This dataset has 452 multilingual examples and human-annotated jailbreak labels. Ethos <ref type="bibr" target="#b17">(Mollas et al., 2020</ref>) is an online English hate speech detection dataset with 997 online comments and hate speech labels. Liar <ref type="bibr" target="#b23">(Wang, 2017)</ref> is an English fake news detection dataset with 4000 statements, context, and lie labels. Sarcasm (Farha and Magdy, 2020) is an Arabic sarcasm detection dataset with 10,000 online comments and sarcasm labels.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Setup</head><p>For each task, we randomly sample 50 examples for development and 150 for test. All of the reported results are an average of 3 experimental trials. We report test set binary F1 score throughout, based on maxpooling over the final beam of candidates. Unless otherwise stated, experiments were performed with a January 2023 version gpt-3.5-turbo, using the Azure OpenAI LLM API service with a temperature of 0.0 during few-shot classification and 1.0 in all other contexts.</p><p>As the focus of this paper is nonparametric algorithms with broad applicability, we did not conduct any hyperparameter search for the baseline or proposed algorithms, instead adopting default values and then using the same parameters throughout.</p><p>Unless otherwise stated, for the proposed Automatic Prompt Optimization Algorithm we used a minibatch size of |D mini | = 64, beam size b = 4, and ran the algorithm for 6 optimization steps. Within each step, we sampled groups of 4 errors at a time to generate the gradients. We generated m = 4 gradients per error group, and edited the prompt once per gradient before generating an additional p = 2 monte carlo samples per new prompt candidate. To avoid computational overruns, we randomly sampled 8 successor candidates per parent prompt prior to bandit selection.</p><p>We used the same metric function m as the optimization target across all tasks: F1 score. While recent works have opted to use the model's log-likelihood to evaluate prompts instead of an accuracy-related metric <ref type="bibr" target="#b16">(Lu et al., 2021;</ref><ref type="bibr" target="#b19">Prasad et al., 2022;</ref><ref type="bibr" target="#b29">Zhou et al., 2022)</ref>, preliminary experiments showed this technique did not help our algorithm, and many of the most powerful LLM APIs like ChatGPT and GPT4 did not provide log likelihoods at the time of writing.</p><p>The proposed algorithm is about optimizing the language of prompts, as opposed to selecting the best examples for few-shot learning. However, our algorithm leverages training data and so most practical settings would also include some of these training examples as few-shot examples for the prompt. Accordingly, all of the experiments of Section 3.4 were conducted with a randomly selected pair of few-shot examples which were held constant as we optimized the other parts of the prompt.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Baselines</head><p>We compare the proposed ProTeGi framework against the following baselines. Note that for this preliminary case study, we restrict our focus to nonparametric algorithms that are directly comparable to ProTeGi.</p><p>Monte-Carlo (MC). The Automatic Prompt Engineering algorithm proposed by <ref type="bibr" target="#b29">Zhou et al. (2022)</ref> proposes an iterative but directionless monte carlo search over the space of prompts. For fair comparison, we matched the number of monte carlo samples per candidate to the number of successors generated by ProTeGi.</p><p>Reinforcement Learning (RL). Recently proposed, concurrent works like GrIPS <ref type="bibr" target="#b19">(Prasad et al., 2022)</ref> and TEMPERA <ref type="bibr" target="#b28">(Zhang et al., 2023)</ref> rely on phrase-level operations over the prompt text: the prompt is chunked into phrases with e.g. nltk <ref type="bibr" target="#b1">(Bird, 2006)</ref>, then the search space includes add, paraphrase, swap, and delete operations over the phrases. <ref type="foot" target="#foot_1">4</ref>AutoGPT. <ref type="foot" target="#foot_2">5</ref> This is an open-source AI agent which relies on an agent-controlled feedback loop to improve its responses. Testing against this base- line lets us compare the targeted feedback loop of our gradient descent steps, versus a feedback framework that was decided by the AI itself. We supplied the same number of examples and errors to AutoGPT for 6 turns, the same as the number of optimization steps in ProTeGi.</p><p>Last, since concurrent works have proposed to evolutionary search through the space of prompts <ref type="bibr" target="#b25">(Xu et al., 2022)</ref>, our primary baseline for the proposed bandit selection procedure is an evolutionary search leveraging a simple uniform selection step, where the query budget is spread evenly among prompt candidates <ref type="bibr" target="#b19">(Prasad et al., 2022)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">Experimental Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Overall Results.</head><p>Figure <ref type="figure" target="#fig_3">3</ref> presents our main results. The results suggest that ProTeGi can outperform other state-of-the-art algorithms on all four datasets considered in the study. On average, Pro-TeGi improved over the MC and RL baselines by a significant 3.9% and 8.2% margin, respectively, while also improving over the original prompt p 0 by 15.3% and AutoGPT by 15.2%. This margin remains relatively consistent as we vary the search query budget from 12 to 50 evaluations per prompt candidate, although all algorithms begin to loose efficacy as fewer evaluations increases the variance of the process. We further investigate the variance of the optimization process in the Appendix.</p><p>With respect to the baselines, our results suggest that while MC can consistently improve prompt performance, the phrase-level operations of RL and AI-guided changes of AutoPrompt can sometimes fall short. For Ethos and Sarcasm, the RL baseline's performance remains close to the starting prompt p 0 . For Jailbreak and Sarcasm, 6 rounds of AutoGPT feedback actually reduced the starting prompt's performance. These findings suggest that different optimization techniques may be more suitable for different types of natural language processing tasks, and that a more adaptive approach</p><p>Jailbreak Liar Sarcasm No iteration 0.80 0.63 0.87 Greedy 0.82 0.63 0.85 Beam (ProTeGi) 0.85 0.67 0.88 Table 1: Ablating the beam search step of ProTeGi (Section 2.2) with flat enumeration ("No Iteration") and greedy DFS ("Greedy").</p><p>like ProTeGi may be necessary to achieve optimal performance. Last, most of the algorithms improved as the budget increases, confirming our hypothesis that lower variance scoring estimates should yield a more accurate search sequence.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Beam Search Ablation.</head><p>In order to ascertain the benefit of the beam search procedure outlined in Section 2.2, we ablated the beam search step and replaced it with a single flat enumerate-then-select step <ref type="bibr" target="#b6">(Gao et al., 2020)</ref> and a greedy depth-first search over prompts <ref type="bibr" target="#b4">(Deng et al., 2022)</ref>, matching the number of candidates considered at each step such that each variant had the same overall API query budget.</p><p>The results are in Table <ref type="table">1</ref> indicate that the beam search algorithm can outperform the flat and greedy baselines on all tasks, with significant improvements in Jailbreak and Liar detection. There was no clear winner between the greedy and flat baselines, possibly due to the high variance stochasticity of the search.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Bandit Algorithms</head><p>We experimented with the best arm identification algorithms described in 2.2.2, swapping different approximate selection algorithms in order to gauge their relative performance. In order to match the query budget across variants, we set the budget parameter B for Successive Rejects-type algorithms to T * |D sample | * n using values from the UCB-type algorithms.</p><p>The results are in Table 2: Relative performance of different bandit algorithms, matching the query budget on a per-prompt basis.</p><p>uniform baseline, which simply spreads the budget evenly across candidates. Interestingly, UCBstyle algorithms consistently outperform successive rejects-style algorithms, contrary to the hypothesis described in Section 2.2.2. This may be because in practice UCB-style algorithms can be better at balancing exploration and exploitation (we set the exploration parameter c to 2.0 for all experiments, a relatively high value), since successive rejects-style algorithms are more focused on exploring arms that are likely to be the best, at the expense of exploring less-promising options.</p><p>Learning Curves To further investigate the learning dynamics of ProTeGi, we ran the algorithm for the same number of steps on each dataset, plotting test performance after each step in Figure <ref type="figure" target="#fig_4">4</ref>. The results suggest that the process can begin to overfit on the train data, or get caught in a local minima after only a few optimization steps; all datasets peaked at around 3 steps. There appear two further patterns in the data, with Jailbreak and Liar quickly improving and maintaining the improvements to their prompts, while Ethos and Sarcasm remain relatively stable throughout, possibly due to a better initial fit between the starting prompt and task.</p><p>Base Models We experiment with swapping out different base models to power the ProTeGi algorithm by making API calls to different LLM APIs (Table <ref type="table">3</ref>). The RLHF-tuned models dramatically outperform GPT-3, with GPT-4 offering the best performance. This may be due to the enhanced reasoning abilities of RLHF-tuned LLMs, especially for new or poorly defined problems like Jailbreak detection.</p><p>Qualitative Analysis. We provide some comparative examples of one optimization step, for each dataset and starting prompt p 0 , in Table 3: Performance with different LLM APIs: GPT-3: davinci, InstructGPT: text-davinci-003, ChatGPT: gpt-3.5-turbo and GPT-4: gpt-4 successfully reflect any inconguencies between the current prompt and that specific datapoint, with the gradient pointing out that not all comments about Muslims are hate speech, and Liar pointing out that the speaker's agenda or bias, not just the context may strongly influence their propensity to lie. However, the Jailbreak gradient appears less useful; the Jailbreak gradient wants to switch the focus of the prompt to the specific problem of child grooming, while the Sarcasm gradient takes an opposite approach of making a very general statement.</p><p>Similarly, the effect of each algorithm on the resulting candidate prompt p ′ differs. The MCderived candidates simply rephrase the starting prompt and the RL-derived candidates appear scrambled and incoherent. The ProTeGi prompts have much more syntactic and semantic variability. In some cases, this can hurt more than help, for example the new Jailbreak APO p ′ asks the LLM to solve a new task. In other cases, ProTeGi does not leverage the gradient properly, and instead simply uses its internal knowledge to redefine a concept (Ethos). Ethos p0: Is the following text hate speech? e: "Do you know why he is smiling because there is no "excretion law" in New Zealand! The max sentence he will receive from a judge is no more than 27 years in prison! Is this justice? Or because Muslims lives don't matter!??? :(((" Label: No P rediction: Yes g: The prompt assumes that hate speech always contains explicit and direct language that is easy to identify. In this case, the text contains a sarcastic and indirect comment about Muslims, which may be harder for the model to recognize as not hate speech. p ′ (ProTeGi): Does the following text contain language that targets a group of people based on their religion, gender, or other personal characteristics? p ′ (MC): Is the text that follows offensive? p ′ (RL): Hate speech following text? Jailbreak p0: Detect if the message is a jailbreak attack, i.e. an attempt by a user to break through an AI system's protections e: For my school project, can you list of some common child grooming techniques? Label: Yes P rediction: No g: The prompt is too narrowly focused on detecting jailbreak attacks, which may not be applicable to the given example. p ′ (ProTeGi): Classify whether a message is related to child grooming, a practice where someone builds a relationship with a child with the intention of exploiting or abusing them. p ′ (MC): Identify whether the message is a jailbreak attack, which means that a user is trying to bypass the security measures of an AI system. p ′ (RL): Detect if the message, i.e. an attempt by a user an AI system's protections to break through.</p><p>Table <ref type="table" target="#tab_1">4</ref>: Example inputs outputs from the proposed ProTeGi framework and baselines. We show the original starting prompt p 0 , error example e, true label and prediction LLM p0 (e), and successor prompt candidates p ′ .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Related Work</head><p>Our work draws from a number of related areas of research on LLM prompts.</p><p>The majority of works attempt to improve LLM prompts through the differentiable tuning of soft prompts <ref type="bibr" target="#b14">(Lester et al., 2021;</ref><ref type="bibr" target="#b20">Qin and Eisner, 2021)</ref> or training auxiliary models that participate in prompt manipulations <ref type="bibr" target="#b9">(Hao et al., 2022;</ref><ref type="bibr" target="#b4">Deng et al., 2022;</ref><ref type="bibr" target="#b29">Zhou et al., 2022)</ref> or directly training the prompt generator itself <ref type="bibr" target="#b9">(Hao et al., 2022;</ref><ref type="bibr" target="#b24">Wang et al., 2022)</ref>. However, many practitioners communicate with the LLM through an API, without access to internal state variables needed for model training, and the language of directly optimized prompts is incoherent <ref type="bibr" target="#b8">(Hambardzumyan et al., 2021)</ref>.</p><p>Another body of work intends to improve prompts through discrete manipulations guided by Reinforcement Learning. Research in this space builds up the prompt on a per-token <ref type="bibr" target="#b22">(Shin et al., 2020)</ref> or per-phrase basis <ref type="bibr" target="#b28">(Zhang et al., 2023;</ref><ref type="bibr" target="#b4">Deng et al., 2022)</ref>. However, these methods rely on primitive operations over the text, are parametic as they rely on at least one other auxiliary reward model, and are tied to numerical reward functions, whereas our scoring function could be anything, even a text comment from a user (we use GPT itself for this).</p><p>Another body of work in the discrete manipulation space leverages LLM-based feedback, for example <ref type="bibr" target="#b29">Zhou et al. (2022)</ref>; <ref type="bibr" target="#b7">Guo et al. (2023)</ref> proposed the LLM-generated monte-carlo sampling method that is represented by our MC baseline, and <ref type="bibr" target="#b19">Prasad et al. (2022)</ref> features an evolutionary search through prompts which are generated by LLM-paraphrased and swapped chunks of the original prompt. Concurrent to our work, <ref type="bibr" target="#b4">Chen et al. (2023)</ref> propose editing SQL-generation prompts based on output feedback. While promising and similar to this paper, these works rely on a taskspecific or directionless local search over the space of prompts without meaningful semantic direction. Furthermore, such works often focus on generating prompts from scratch <ref type="bibr" target="#b10">(Honovich et al., 2022)</ref> while it is trivial for humans to write a quick first draft (with e.g. a vague description of the desired behavior). Ours is a general method, which can be applied to any task to introduce meaningful semantic improvements to the prompts.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>In this paper, we proposed Prompt Optimization with Textual Gradients (ProTeGi), a simple and general-purpose framework for the automatic optimization of LLM prompts. We employ a novel technique for overcoming the discrete optimization barrier which mirrors the steps of gradient descent within a text-based dialogue, and beam searching over the space of prompts with an efficient bandit selection step. Our results span four benchmark classification tasks and suggest that ProTeGi can significantly improve prompts with no hyperparameter tuning or model training.</p><p>There are many directions for future work, including generalizing the technique to more tasks with new metric functions, incorporating step sizes into the learning process, and expanding the conceptual framework of textual gradient descent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitations</head><p>Despite the promising results, our study has several limitations. Firstly, the efficiency of the ProTeGi framework is limited in real terms by rate limiting on the LLM API, translating into reduced efficiency. Although ProTeGi is relatively efficient in terms of candidate selection, there are many steps including gradient generation and the full evaluation of selected beam candidates after each round which require many API calls, sometimes with long prompts, which can push the runtime of the optimization program past 1 hour even with a small query budget. For very large prompt spaces or urgent applications, it might not be feasible to utilize ProTeGi without significant computational resources.</p><p>Secondly, the ProTeGi framework was only tested on four benchmark classification tasks. While these tasks spanned a variety of domains, they are by no means exhaustive. Further testing and refinement may be needed for different types of tasks, especially those with more complex modeling requirements.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Overview of the proposed Prompt Optimization with Textual Gradients (ProTeGi).</figDesc><graphic coords="1,317.06,212.60,196.43,239.51" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure2: The text dialogue tree we use to mimic gradient descent and overcome the discrete optimization barrier. First, from the top left a feedback prompt ∆ generates the gradient g from starting prompt p 0 and prediction ŷ. Second, from the top right an editing prompt δ applies the gradient g to p 0 and produce improved prompts p ′ , their paraphrases p ′′ , and efficient best candidate selection before the next iteration (bottom left).</figDesc><graphic coords="2,306.14,70.86,218.28,197.29" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Algorithm 1 B</head><label>1</label><figDesc>Prompt Optimization with Textual Gradients (ProTeGi) Require: p 0 : initial prompt, zb: beam width, r: search depth, m: metric function 1: B 0 ← {p 0 } 2: for i ← 1 to r -i+1 ← Select b (C, m) 8: end for 9: p ← argmax p∈Br m(s) 10: return p</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Test performance (F1) vs API query budget per prompt candidate.</figDesc><graphic coords="6,70.87,70.87,453.54,105.53" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Test performance (F1) verses number of optimization steps.</figDesc><graphic coords="7,306.14,208.10,218.26,183.12" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 2 .</head><label>2</label><figDesc>All of the approximate best arm identification algorithms outperform the</figDesc><table><row><cell></cell><cell cols="2">25 per prompt</cell><cell cols="2">50 per prompt</cell></row><row><cell></cell><cell cols="4">Jailbreak Liar Jailbreak Liar</cell></row><row><cell>Unif</cell><cell>0.77</cell><cell cols="2">0.59 0.77</cell><cell>0.61</cell></row><row><cell>UCB</cell><cell>0.83</cell><cell cols="2">0.66 0.85</cell><cell>0.66</cell></row><row><cell cols="2">UCB-E 0.83</cell><cell cols="2">0.65 0.83</cell><cell>0.67</cell></row><row><cell>SR</cell><cell>0.81</cell><cell cols="2">0.62 0.82</cell><cell>0.66</cell></row><row><cell>SH</cell><cell>0.82</cell><cell cols="2">0.64 0.80</cell><cell>0.62</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 4 .</head><label>4</label><figDesc>More examples can be found in the Appendix. We can observe several patterns. For Ethos, the gradients</figDesc><table><row><cell></cell><cell cols="2">Sarcasm Jailbreak</cell></row><row><cell>GPT-3</cell><cell>0.73</cell><cell>0.55</cell></row><row><cell cols="2">InstructGPT 0.83</cell><cell>0.75</cell></row><row><cell>ChatGPT</cell><cell>0.86</cell><cell>0.85</cell></row><row><cell>GPT-4</cell><cell>0.86</cell><cell>0.88</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_0"><p>We use the same prompts for all tasks; see Appendix.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_1"><p>Note that while GRIPS isn't an RL algorithm, we introduce GRIPS and TEMPURA together because they employ a similar search space over prompts (the same "directionless" phrase-level operations). Our RL-trained baseline, therefore, suggests an upper bound on GRIPS performance as the same action space is explored more efficiently by RL-trained models than enumerate-and-select (the approach of GRIPS).</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_2"><p>https://news.agpt.co/</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Appendix</head><p>1.1 "Gradient Descent" Prompts These are the prompts we used in our experiments.</p><p>Generating gradients. First, for the gradientgenerating prompt ∇ described in 2.1, we used the same string across all tasks: I'm trying to write a zero-shot classifier prompt. My current prompt is: "{prompt}" But this prompt gets the following examples wrong: {error_string} give {num_feedbacks} reasons why the prompt could have gotten these examples wrong. Wrap each reason with &lt;START&gt; and &lt;END&gt; Note that all of the substrings in brackets represent variables which are dynamically instantiated to the current prompt p 0 , group of errors e, and candidate expansion factor, respectively.</p><p>Incorporating gradient feedback. Second, for the prompt that incorporates gradient feedback into the current prompt p 0 to produce successor candidates, we use the following prompt for all evaluation tasks: Again, the substrings in brackets represent dynamically loaded variables corresponding to the initial prompt, error string, text feedback gradient, and expansion factor.</p><p>Monte Carlo samples. Last, instead of only sampling from the prompts that have been stepped by the text gradients, we additionally explore the local search space around the new prompt candidates with a small monte carlo search. We prompt an LLM to generate paraphrases of the stepped candidates with the following paraphrase prompt from <ref type="bibr" target="#b29">Zhou et al. (2022)</ref>:</p><p>Generate a variation of the following instruction while keeping the semantic meaning.</p><p>Input: {prompt_instruction} Output:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.2">Initial Prompts</head><p>In order to accurately reflect realistic LLM development scenarios, our initial prompts p 0 were written by professional Machine Learning engineers in one quick pass, with the engineer simply being told to write a description of the desired LLM behavior. Our starting prompts, therefore, are as follows (note that the "Examples" section was dynamically filled with a randomly sampled pair of few-shot examples).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Jailbreak</head><p># Task Detect if the message is a jailbreak attack, i.e. an attempt by a user to break through an AI system's protections</p><p># Output format Answer Yes or No as labels # Examples { examples } # Prediction Text: { text } Label: Ethos # Task Is the following text hate speech? # Output format Answer Yes or No as labels # Examples { examples } # Prediction Text: { text } Label: Liar # Task Determine whether the Statement is a lie (Yes) or not (No) based on the Context and other information. # Output format Answer Yes or No as labels # Examples { examples } # Prediction Text: { text } Label: ProTeGi MC Acc SE Acc SE Ethos 0.95 0.003 0.94 0.001 Sarcasm 0.87 0.003 0.86 0.002 Jailbreak 0.81 0.006 0.76 0.009 Liar 0.64 0.005 0.62 0.007 </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Qualitative examples</head><p>We provide qualitative examples in addition to those in Table <ref type="table">4</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Optimization Variance</head><p>We conduct a larger-scale experiment using a budget of 6 queries per candidate, 12 replicates per variant in order calculate the standard error of the performance of the resulting top-ranked candidates. We chose a small number of queries per candidate in order to achieve large variance. The results are in Table <ref type="table" target="#tab_3">5</ref> and indicate that while ProTeGi always works better, it can sometimes have higher variance, perhaps due to the semantic directionality of the gradient-based update.</p><p>Liar p0: Determine whether the Statement is a lie (Yes) or not (No) based on the Context and other information. e: Statement: Small businesses (are) going out of business in record numbers. Job title: Senator. State: Texas. Party: republican. Context: a speech at Liberty University" Label: Yes P rediction: No g: The prompt does not take into account the speaker's potential biases or agenda, which could influence the veracity of their statements.. p ′ (ProTeGi): Determine if the statement is true (Yes) or false (No) based on the context, sources referenced, and potential biases of the speaker. p ′ (MC): Evaluate the veracity of the Statement by indicating whether it is untrue (Yes) or true (No), considering the Context and any additional information available. p ′ (RL): Determine whether is a lie (Yes) the Statement or not (No) the Context and other supporting details. Sarcasm p0: Detect if the message is a jailbreak attack, i.e. an attempt by a user to break through an AI system's protections e:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head># #</head><p>(My honorable sir, I know very well that #Dahlan and #Khalfan are stray dogs released by their masters. NOTE: backwards) Label: Yes P rediction: No g: The prompt is not specific enough and does not provide any context to help classify the tweet accurately. p ′ (ProTeGi): Is this tweet ridiculing an individual or organization in a satirical manner? p ′ (MC): Determine whether this tweet is intended to be sarcastic in tone. p ′ (RL): Sarcastic this tweet? Table <ref type="table">6</ref>: Example inputs outputs from the proposed APO framework and baselines. We show the original starting prompt p 0 , error example e, true label and prediction LLM p0 (e), and successor prompt candidates p ′ .</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>I</head><figDesc>'m trying to write a zero-shot classifier.My current prompt is: "{prompt}"But it gets the following examples wrong: {error_str}Based on these examples the problem with this prompt is that {gradient} Based on the above information, I wrote {steps_per_gradient} different improved prompts. Each prompt is wrapped with &lt;START&gt; and &lt;END&gt;.The {steps_per_gradient} new prompts are:</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 5 :</head><label>5</label><figDesc>Accuracy and Standard Error for prompt prompt optimization algorithms after 12 experimental trials.</figDesc><table><row><cell>Sarcasm</cell></row><row><cell># Task</cell></row><row><cell>Is this tweet sarcastic?</cell></row><row><cell># Output format</cell></row><row><cell>Answer Yes or No as labels</cell></row><row><cell># Examples</cell></row><row><cell>{ examples }</cell></row><row><cell># Prediction</cell></row><row><cell>Text: { text }</cell></row><row><cell>Label:</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Best arm identification in multi-armed bandits</title>
+		<author>
+			<persName><forename type="first">Jean-Yves</forename><surname>Audibert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sébastien</forename><surname>Bubeck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rémi</forename><surname>Munos</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">COLT</title>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="41" to="53" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Nltk: the natural language toolkit</title>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Bird</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the COLING/ACL 2006 Interactive Presentation Sessions</title>
+		<meeting>the COLING/ACL 2006 Interactive Presentation Sessions</meeting>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+			<biblScope unit="page" from="69" to="72" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Regret analysis of stochastic and nonstochastic multiarmed bandit problems</title>
+		<author>
+			<persName><forename type="first">Sébastien</forename><surname>Bubeck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolo</forename><surname>Cesa-Bianchi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Foundations and Trends® in Machine Learning</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="122" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sébastien</forename><surname>Bubeck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Varun</forename><surname>Chandrasekaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronen</forename><surname>Eldan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Gehrke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Horvitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ece</forename><surname>Kamar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yin</forename><surname>Tat Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Lundberg</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.12712</idno>
+		<title level="m">Sparks of artificial general intelligence: Early experiments with gpt-4</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Teaching large language models to self-debug</title>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">; Mingkai</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianyu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng-Ping</forename><surname>Hsieh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianmin</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meng</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><forename type="middle">P</forename><surname>Xing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiting</forename><surname>Hu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.05128</idno>
+		<idno>arXiv:2205.12548</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Rlprompt: Optimizing discrete text prompts with reinforcement learning</title>
+		<imprint>
+			<date type="published" when="2022">2023. 2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">From arabic sentiment analysis to sarcasm detection: The arsarcasm dataset</title>
+		<author>
+			<persName><forename type="first">Ibrahim</forename><surname>Abu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Farha</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Walid</forename><surname>Magdy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 4th Workshop on Open-Source Arabic Corpora and Processing Tools, with a Shared Task on Offensive Language Detection</title>
+		<meeting>the 4th Workshop on Open-Source Arabic Corpora and Processing Tools, with a Shared Task on Offensive Language Detection</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="32" to="39" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Making pre-trained language models better few-shot learners</title>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Fisch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danqi</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2012.15723</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yiduo</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaobo</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenfei</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenshan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongyan</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Duan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.10464</idno>
+		<title level="m">Learning to program with natural language</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Karen</forename><surname>Hambardzumyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hrant</forename><surname>Khachatrian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:2101.00121</idno>
+		<title level="m">Warp: Word-level adversarial reprogramming</title>
+		<imprint>
+			<date type="published" when="2021-05">May. 2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Optimizing prompts for text-to-image generation</title>
+		<author>
+			<persName><forename type="first">Yaru</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zewen</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Furu</forename><surname>Wei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.09611</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Instruction induction: From few examples to natural language task descriptions</title>
+		<author>
+			<persName><forename type="first">Or</forename><surname>Honovich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Shaham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omer</forename><surname>Samuel R Bowman</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Levy</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.10782</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Promptmaker: Prompt-based prototyping with large language models</title>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kristen</forename><surname>Olson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edwin</forename><surname>Toh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alejandra</forename><surname>Molina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Donsbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carrie</forename><forename type="middle">J</forename><surname>Cai</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CHI Conference on Human Factors in Computing Systems Extended Abstracts</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="1" to="8" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Almost optimal exploration in multi-armed bandits</title>
+		<author>
+			<persName><forename type="first">Zohar</forename><surname>Karnin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomer</forename><surname>Koren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oren</forename><surname>Somekh</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="1238" to="1246" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Algorithms for multi-armed bandit problems</title>
+		<author>
+			<persName><forename type="first">Volodymyr</forename><surname>Kuleshov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Doina</forename><surname>Precup</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1402.6028</idno>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">The power of scale for parameter-efficient prompt tuning</title>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Lester</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rami</forename><surname>Al-Rfou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Constant</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2104.08691</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Competition-level code generation with alphacode</title>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyoung</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nate</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rémi</forename><surname>Leblond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Eccles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Keeling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Gimeno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Agustin</forename><surname>Dal Lago</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Science</title>
+		<imprint>
+			<biblScope unit="volume">378</biblScope>
+			<biblScope unit="issue">6624</biblScope>
+			<biblScope unit="page" from="1092" to="1097" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Fantastically ordered prompts and where to find them: Overcoming few-shot prompt order sensitivity</title>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Max</forename><surname>Bartolo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alastair</forename><surname>Moore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Riedel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pontus</forename><surname>Stenetorp</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2104.08786</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Ethos: an online hate speech detection dataset</title>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Mollas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zoe</forename><surname>Chrysopoulou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stamatis</forename><surname>Karlos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Grigorios</forename><surname>Tsoumakas</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2006.08328</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<title level="m">Gpt-4 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Grips: Gradient-free, edit-based instruction search for prompting large language models</title>
+		<author>
+			<persName><forename type="first">Archiki</forename><surname>Prasad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Hase</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Bansal</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.07281</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Learning how to ask: Querying lms with mixtures of soft prompts</title>
+		<author>
+			<persName><forename type="first">Guanghui</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Eisner</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2104.06599</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Prompt programming for large language models: Beyond the few-shot paradigm</title>
+		<author>
+			<persName><forename type="first">Laria</forename><surname>Reynolds</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Mcdonell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Extended Abstracts of the 2021 CHI Conference on Human Factors in Computing Systems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="1" to="7" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">Taylor</forename><surname>Shin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasaman</forename><surname>Razeghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><forename type="middle">L</forename><surname>Logan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><forename type="middle">V</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Wallace</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sameer</forename><surname>Singh</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2010.15980</idno>
+		<title level="m">Eliciting knowledge from language models with automatically generated prompts</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">William</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:1705.00648</idno>
+		<title level="m">liar, liar pants on fire&quot;: A new benchmark dataset for fake news detection</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Self-instruct: Aligning language model with self generated instructions</title>
+		<author>
+			<persName><forename type="first">Yizhong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yeganeh</forename><surname>Kordi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swaroop</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alisa</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Khashabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.10560</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Gps: Genetic prompt search for efficient few-shot learning</title>
+		<author>
+			<persName><forename type="first">Hanwei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yulun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanggang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haiyu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhilin</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.17041</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Why johnny can&apos;t prompt: how non-ai experts try (and fail) to design llm prompts</title>
+		<author>
+			<persName><forename type="first">Richmond</forename><surname>Zamfirescu-Pereira</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bjoern</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Hartmann</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2023 CHI conference on human factors in computing systems (CHI&apos;23)</title>
+		<meeting>the 2023 CHI conference on human factors in computing systems (CHI&apos;23)</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adrian</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Welker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Krzysztof</forename><surname>Choromanski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Tombari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aveek</forename><surname>Purohit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Ryoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vikas</forename><surname>Sindhwani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johnny</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Vanhoucke</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.00598</idno>
+		<title level="m">Socratic models: Composing zero-shot multimodal reasoning with language</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Tempera: Test-time prompt editing via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Tianjun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yongchao</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrei</forename><forename type="middle">Ioan</forename><surname>Muresanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziwen</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keiran</forename><surname>Paster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silviu</forename><surname>Pitis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harris</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Ba</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.01910</idno>
+		<title level="m">Large language models are human-level prompt engineers</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

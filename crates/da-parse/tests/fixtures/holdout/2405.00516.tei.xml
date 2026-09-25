@@ -1,0 +1,1230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Navigating WebAI: Training Agents to Complete Web Tasks with Large Language Models and Reinforcement Learning *</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-05-01">1 May 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Lucas-Andreï</forename><surname>Thil</surname></persName>
+							<email>l.thil@student.maastrichtuniversity.nl</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Maastricht University</orgName>
+								<address>
+									<country key="NL">the Netherlands</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Mirela</forename><surname>Popa</surname></persName>
+							<email>mirela.popa@maastrichtuniversity.nl</email>
+							<affiliation key="aff1">
+								<orgName type="institution">Maastricht University</orgName>
+								<address>
+									<country key="NL">the Netherlands</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Gerasimos</forename><surname>Spanakis</surname></persName>
+							<email>jerry.spanakis@maastrichtuniversity.nl</email>
+							<affiliation key="aff2">
+								<orgName type="institution">Maastricht University</orgName>
+								<address>
+									<country key="NL">the Netherlands</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Navigating WebAI: Training Agents to Complete Web Tasks with Large Language Models and Reinforcement Learning *</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-05-01">1 May 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">493154B0897B99F7656AC49123576FAD</idno>
+					<idno type="DOI">10.1145/3605098.3635903</idno>
+					<idno type="arXiv">arXiv:2405.00516v1[cs.LG]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:41+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>CCS CONCEPTS</term>
+					<term>Computing methodologies → Machine translation</term>
+					<term>Planning with abstraction and generalization</term>
+					<term>Deep belief networks</term>
+					<term>• Human-centered computing → Natural language interfaces</term>
+					<term>Graphical user interfaces Large Language Models, Machine Learning, Web, User Interfaces</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Recent advancements in language models have demonstrated remarkable improvements in various natural language processing (NLP) tasks such as web navigation. Supervised learning (SL) approaches have achieved impressive performance while utilizing significantly less training data compared to previous methods. However, these SL-based models fall short when compared to reinforcement learning (RL) approaches, which have shown superior results. In this paper, we propose a novel approach that combines SL and RL techniques over the MiniWoB benchmark to leverage the strengths of both methods. We also address a critical limitation in previous models' understanding of HTML content, revealing a tendency to memorize target elements rather than comprehend the underlying structure. To rectify this, we propose methods to enhance true understanding and present a new baseline of results. Our experiments demonstrate that our approach outperforms previous SL methods on certain tasks using less data and narrows the performance gap with RL models, achieving 43.58% average accuracy in SL and 36.69% when combined with a multimodal RL approach. This study sets a new direction for future web navigation and offers insights into the limitations and potential of language modeling for computer tasks.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>Neural networks have been used to complete web navigation tasks using multimodal inputs such as Humphrey et al <ref type="bibr" target="#b14">[15]</ref> which combined visual and text inputs from a web page. Others focused on pure text and expanded over instruction mapping methods <ref type="bibr" target="#b12">[13,</ref><ref type="bibr" target="#b19">20,</ref><ref type="bibr" target="#b23">24]</ref> but were very constrained in their language understanding tasks. The application of language models showed greater capabilities in completing computer tasks, but were all largely constrained to their environment and had poor transfer abilities. Lately, the Cambrian explosion of large language models opened the way for more capable models requiring less data and offering better transfer capabilities as shown by <ref type="bibr">Gur et al. and Kim et al</ref>. <ref type="bibr" target="#b11">[12,</ref><ref type="bibr" target="#b15">16]</ref>. Even though they achieved outstanding results over different web navigation benchmarks such as Miniwob++, we highlight in this work that they are in fact more limited than previously claimed. We propose several approaches to rectify some of their issues with memorizing information and highlight the challenges of combining LLMs with a joint multimodal representation of their environment.</p><p>Our research primarily focuses on optimizing small-scale models such as grounding them more thoroughly to their environments, in order to benchmark their capabilities before contemplating further scaling. This prioritization aligns with the imperative for fast inference times and adaptability to limited or novel data scenarios.</p><p>In this paper, we evaluate the limitations of the Miniwob++ benchmark and the recorded episodes used in previous works in order to present different processing paths to correct their shortcomings. We reproduce the previous results obtained in the literature focusing in the applications of LLMs for web navigation and show that they overfit their benchmark and are unable to recover in slight changes in their environments, hampering the claims that they could understand HTML content. We test our techniques on newly trained models that we enhance by devising hierarchical planning abilities that showcase superior results. Then, we combine them with a multimodal representation using visual inputs that we trained in a supervised manner, and in a reinforcement learning one over multiple phases. We present the abilities of these models to learn such representations, but they suffer from transfer abilities due to the nature of the architectures used.</p><p>This paper makes several key contributions. First, we provide insights into the capabilities of agents trained in user interactions to adeptly navigate diverse web interfaces. Second, we introduce a more robust evaluation that exposes the shortcomings of these models due to their tendencies to memorize a lot from their environment and how to overcome them. We also set more accurate and grounded results over the Miniwob++ benchmark by taking into account the tendencies of previous work to overfit by applying attacks to the environment. As we showed that previous works tend to learn the distribution of target elements, we provide directions on how to correct it. Lastly, combined with the improvements over our models we deliver a comprehensive analysis of current methods' limitations in order to explore more performant architectures, further contributing to the field toward more capable approaches.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">RELATED WORK</head><p>Recent advancements in AI-driven web navigation have led to various approaches to enhance intelligent agents' performance and capabilities. This section highlights key methods and techniques that have shaped this project.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">OpenAI Universe</head><p>OpenAI's Universe, released in 2016, aimed to develop a generalpurpose agent for tasks like video games and web navigation, focusing on Miniwob, a framework with over 80 embedded tasks <ref type="bibr">[22][29]</ref>. Miniwob serves as a reinforcement learning environment, allowing controlled experimentation with web navigation complexities.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Neural Network Oriented Approaches</head><p>Several neural-network-oriented models have been devised for web navigation. Notably, Humphrey et al.'s CC-Net combines RL with supervised learning, achieving state-of-the-art results on the Miniwob Benchmark but requiring 2.4 million examples <ref type="bibr" target="#b14">[15]</ref>. Liu et al. 's Workflow Guided Exploration, which constrains actions during RL training, has also shown promise <ref type="bibr" target="#b19">[20]</ref>.</p><p>Older works, such as Pasupat et al. <ref type="bibr" target="#b23">[24]</ref>, focused on traditional neural network approaches, while He et al. <ref type="bibr" target="#b12">[13]</ref> outlined limitations in multimodal environments. These works have identified challenges and achieved successes but still face generalization issues.</p><p>The tradeoff between exploration and exploitation in RL is a common challenge, often requiring extensive data to converge to optimal solutions. While some models, like CC-Net, approach human capabilities, the need for large amounts of data highlights the importance of investigating more efficient models.</p><p>Figure <ref type="figure" target="#fig_0">1</ref> illustrates the average accuracy of different models over the Miniwob benchmark, comparing training techniques such as SL, RL, combined approaches, and few-shots prompting examples.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">Large Language Models</head><p>Early works in web navigation with large language models (LLMs) include Nakano's 'WebGPT' <ref type="bibr" target="#b20">[21]</ref>, which used GPT-3 <ref type="bibr" target="#b7">[8]</ref> as a browsing assistant but was limited by not using raw web content. Yao et al.'s 'WebShop' <ref type="bibr" target="#b31">[32]</ref> created an e-commerce environment for language models but faced restrictions in context window and adaptability.</p><p>Attempts to pre-train LLMs on HTML content struggled with benchmarking on classical NLP tasks, limiting their use in web navigation <ref type="bibr" target="#b1">[2]</ref>. However, breakthroughs like Gur et al. 's work on "Understanding HTML with Large Language Models" <ref type="bibr" target="#b11">[12]</ref> demonstrated the potential of LLMs in web content comprehension, surpassing previous supervised learning (SL) approaches with significantly less data.</p><p>Kim et al. further showcased the potential of larger LLMs like GPT4 <ref type="bibr" target="#b15">[16,</ref><ref type="bibr" target="#b22">23]</ref> in web navigation tasks through iterative prompting, achieving state-of-the-art baselines in a few-shot manner.</p><p>Despite these advancements, challenges remain in developing efficient and adapTable models for web navigation. Existing methods often require extensive training data and may struggle with fast inference times, highlighting the need for smaller, more capable models.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">METHODS</head><p>Our methodology addresses the limitations in previous large language models (LLMs) for web navigation using the Miniwob benchmark. We begin by describing the environment and dataset, then move to model design in two stages.</p><p>In the first stage, we analyze various T5-based models, finetuning them with hierarchical planning techniques to overcome identified limitations. In the second stage, we integrate the bestfine-tuned model with a multimodal neural network, using both supervised learning (SL) and reinforcement learning (RL) to enhance performance and adaptability.</p><p>We also conduct an ablation study to understand the models' inner workings and identify areas for improvement. Our approach emphasizes assessing performance at a small scale before integrating additional techniques.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Miniwob++ Benchmark and Datasets</head><p>The Miniwob++ benchmark <ref type="bibr" target="#b19">[20]</ref> offers over a hundred web-based environments, simulating web exploration scenarios 2. We utilize thirteen thousand human-made demonstrations provided by the Farama Foundation, enabling supervised training. The benchmark's alignment with existing research and compatibility with reinforcement learning (RL) through the gymnasium (previously GYM) environment <ref type="bibr" target="#b6">[7]</ref> and techniques makes it suitable for our study. These episodes cover a wide range of tasks, and in our case, we select a subset of 40 episodes that are suited to work with language models in the fashion of Gur et al. <ref type="bibr" target="#b11">[12]</ref>.</p><p>Our datasets include HTML and Document Object Models (DOM) elements parsed as dictionaries, with unique reference numbers ('ref') for identification. We also process mouse interaction data into two actions: 'click' or 'type_text'. Unlike previous works <ref type="bibr" target="#b14">[15]</ref>, we concatenate adjacent typing actions into single actions, see Figures <ref type="figure" target="#fig_2">3</ref> and <ref type="figure" target="#fig_3">4</ref>. This approach aligns with Gur et al. <ref type="bibr" target="#b11">[12]</ref>, using only two separate actions for efficiency and ease of implementation.  Figure 4: Structure of T5 Input in its traditional form as Proposed by Gur et al. [12].</p><p>Our methodology processes and fine-tunes data from the Miniwob benchmark for web navigation tasks. We create a hierarchical T5 model by identifying sub-tasks within episodes and translating high-level instructions into actionable plans <ref type="bibr" target="#b5">[6]</ref>. The model is then fine-tuned for planning and action tasks <ref type="bibr" target="#b30">[31]</ref>, as shown in Figure <ref type="figure" target="#fig_4">5</ref>.</p><p>(1) Infer Model Plan: Devise a plan for the following instruction:</p><p>'Click the menu button, and then find and click on the item labeled next' Subtasks = ['Click menu button', 'find an item labeled next', 'click on the next icon'] (2) Loop through the subtasks utterances and infer model: {Action History, subtask utterance, DOM} → {Action output, reference, keydown string, boolean final state} (3) Perform action of the Miniwob environment: Perform action, check if the episode is terminated, and reward </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.1">Episode Processing for Action History Extraction.</head><p>We process episodes to extract action history, following key steps as seen in Figure <ref type="figure" target="#fig_4">5</ref>. The main steps consist of removing duplicate actions, and retaining only the last occurrence. Unnecessary actions, such as clicks on the &lt; 𝑏𝑜𝑑𝑦 &gt; element, are discarded. Only the last keydown action for each targeted element is retained, with specific cases considered for various interactions. Manual adjustments are made if needed. To address task distribution imbalance, we downsample 150 episodes in over-represented task suites, as seen in Figure <ref type="figure" target="#fig_15">15</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.2">Task Planning Dataset.</head><p>We identify and transform various types of sub-actions, such as clicking or selection-based actions. A general function targets each Miniwob episode to produce a list of sub-tasks based on observed interactions. Specific challenges in tasks like flight booking or email forwarding are addressed, with some episodes dropped to ensure clarity. The complexity of some tasks suggests that larger pre-trained language models may perform better.</p><p>Here are two examples of the translation between Miniwob utterances and an action sequence for the hierarchical planning task:</p><p>• Example 1:</p><p>-Utterance: "Departure City":"Philadelphia","Destination City":"Charlotte", "Ticket Type":"Return flight", "Departure Day":4, "Returning Day":26, "Passengers":2 -Action sequence: Select Departure City Philadelphia; Select Destination City Charlotte; Select the Departure Day to 4; • Example 2:</p><p>-Utterance: Expand the section below and click submit.</p><p>-Action sequence: Expand the section below; click submit;</p><p>The final dataset is composed of over eight thousand action episodes, and in Figure <ref type="figure" target="#fig_15">15</ref> we describe the number of examples per task. The second dataset regarding task planning instruction contains 10,960 episodes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Models</head><p>In this section, we delve into an array of models designed to tackle web navigation tasks, featuring the WebN-T5 model as our cornerstone, which is based on the T5 architecture and has demonstrated superior performance due to its bi-directional attention encoder <ref type="bibr" target="#b11">[12,</ref><ref type="bibr" target="#b24">25]</ref>. Alongside WebN-T5, we explore variations such as T5-Hierarchy (T5H) fine-tuned for hierarchical tasks, and our hybrid model, CC-NeT5, which combines elements from both T5 and CC-Net by Humphrey et al. <ref type="bibr" target="#b14">[15]</ref>. These models have been trained using different strategies like supervised learning (SL) and reinforcement learning (RL), offering a rich comparative landscape for evaluating their effectiveness and limitations in web navigation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.1">WebN-T5.</head><p>We attempt to reproduce the models from 'Understanding Large Language Models' <ref type="bibr" target="#b11">[12]</ref> but face challenges with reference numbers and element distribution. As seen in Figure <ref type="figure">6</ref>, the non-uniform distribution of elements may lead to bias or memorization <ref type="bibr" target="#b8">[9]</ref> based on their location, or even worse entirely over the distribution of the salient elements of the page <ref type="bibr" target="#b2">[3]</ref>. We conduct an experiment with ordered and randomized references to investigate this issue. To mitigate this, we randomize the reference numbers in all episodes, forcing the models to base predictions on element features.</p><p>Figure <ref type="figure">6</ref>: Distribution of Ordered Reference Numbers in the Recorded Actions. We can observe that the distribution of the target elements is concentrated among several locations, which can be linked to the salient elements in the DOM and displayed on the page. One of our claims is that previous works focused on learning these distributions by overfitting.</p><p>The T5 model was fine-tuned using ROUGE loss metrics <ref type="bibr" target="#b18">[19]</ref>, which measure the overlap between predicted and reference sequences. However, there are limitations:</p><p>• ROUGE metrics are primarily designed for text summarization or translation, not action sequence prediction.</p><p>• They do not account for the temporal order and structural dependencies in action sequences <ref type="bibr" target="#b25">[26]</ref>.</p><p>Thus, while ROUGE offers insights into the quality of generated action sequences, it may not fully capture their correctness and effectiveness.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.2">WebN-T5 Hierarchical Planning.</head><p>We aim to train the agent on lower-level tasks during an episode, addressing observed nonoptimal actions in the original WebN-T5 <ref type="bibr" target="#b11">[12]</ref>. The model is finetuned to divide tasks hierarchically, proposing a multi-step navigation plan by being trained on both datasets containing the task planning and action episodes using a supervised learning approach.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.3">Multimodal Language Model with Reinforcement Learning.</head><p>The best multimodal model used over the Miniwob++ benchmark is CC-Net by Humphrey et al. <ref type="bibr" target="#b14">[15]</ref> which achieved human-level performance by using reinforcement learning. Their model used a PPO-based algorithm <ref type="bibr" target="#b27">[28]</ref>, V-MPO <ref type="bibr" target="#b29">[30]</ref>, for reinforcement learning (RL) which aims to improve performance without requiring extensive exploration. We used a similar learning approach, except that our model architecture combines a CC-Net-inspired model with a fine-tuned T5 model for the hierarchical planning task detailed earlier. The motivation behind using reinforcement learning, is that many of the recorded examples are not sufficient in covering the variety of the cases proposed. Some environments require further training, and as the exploration space is very large, a method such as V-MPO is better suited to that perspective. The architecture is derived from CC-Net, using a multimodal approach that includes predictions from the fine-tuned T5 model, a screenshot of the current environment, and language information. The architecture details can be seen in Figure <ref type="figure" target="#fig_5">7</ref> and are as follows:</p><p>• Screenshot inputs are processed through four RESNET blocks.</p><p>• Language inputs are embedded and passed through a transformer layer.</p><p>• Outputs are fed into a multimodal block, concatenated with previous actions, and processed through an LSTM block.</p><p>• The final layer includes binary variables for action types and tensors for reference numbers and vocabulary indexes.</p><p>We adapt the architecture to deal with the vanishing/exploding gradient problem and use one-hot encoding for the experiment. The design of the CC-NeT5 architecture's loss function was an iterative process, influenced by the nature of its output layer. The final output layer consists of:</p><p>• Action: A binary value represented as a tensor of size 1.</p><p>• Reference number: A tensor of length 500.</p><p>• Keydown text: A tensor of size 8x1591 (8 times our vocabulary size).</p><p>Initially, a mean-squared-entropy (MSE) loss function was used, but due to sparse encoding and convergence issues, it was updated to a cross-entropy (CE) loss. This change involved predicting reference numbers and keydown text through a softmax function over each section of the output layer. The final loss function efficiently processes this output, with the action type tensor matched with its corresponding boolean value, and the reference number and keydown text token indexes retrieved from the tokenizer.</p><p>When using V-MPO, we sample actions from a normalized categorical distribution based on the activation weights of the final layer, where each index represents the token position in our vocabulary. This method allows us to derive a probability distribution for sampling actions during policy inference for exploration. The architecture involves a two-stage process, training the CC-Netbased architecture with V-MPO, while the T5 model remains static. Although the CC-Net part serves as an RL boost to the original T5 model, this approach may have limitations if the original T5 inference is severely flawed. The model's accuracy is measured in an online environment over the Miniwob benchmark. During training, we alternate between offline (SL) and online (RL) phases <ref type="bibr" target="#b0">[1]</ref>, using recorded Miniwob episodes for the first offline phase and successful episodes from online RL phases for subsequent offline ones <ref type="bibr" target="#b26">[27]</ref>.</p><p>We propose a new preset in Gymnasium's RL environment, reducing the action space to two types and adjusting the observation space. The time limit for episodes is increased to thirty seconds, and a discounted reward is computed to train the models in an RL manner.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">RESULTS</head><p>This section analyzes the outcomes of various trained models, including ablation studies, and compares them with existing models. The models are benchmarked on the Miniwob benchmark, focusing on click and typing actions, and the accuracy is measured over a hundred episodes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Model Performances</head><p>Our experiments reveal that the T5-large model, fine-tuned on hierarchical tasks, achieves superior performance with an average accuracy of 43.58%. This outperforms the T5-base model, which reaches an average accuracy of 39.78%. Interestingly, a hybrid approach combining T5-large with a CC-Net-inspired architecture yields an accuracy of 36.39% in its BC phase. However, this drops to 33.86% after the RL phase, a phenomenon we discuss in subsection 4.4.2 due to a covariate shift towards the T5 model. A comparison of the different models' performance metrics are presented in Figure <ref type="figure" target="#fig_12">13</ref>, including the ablation study over their inputs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.1">T5-Model Performance.</head><p>Fine-tuned T5 models show variable performance. T5-large scores 43.49% accuracy on hierarchical tasks, while its ablated version slightly edges it with 43.58%. In contrast, T5-base lags with 39.77% accuracy as seen in Figures <ref type="figure" target="#fig_12">13a</ref> and <ref type="figure" target="#fig_12">13b</ref>. The performance advantage in tasks like 'click-checkboxes-soft' indicates that larger models capitalize better on their pre-trained linguistic skills.</p><p>Our replication of WebN-T5 by Gur et al. <ref type="bibr" target="#b11">[12]</ref> found that model performance hinges on reference ordering. Training with randomized references improved its performance, validating our randomization process, as depicted in Figure <ref type="figure" target="#fig_9">11</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.2">Evaluation of Original Papers.</head><p>Our findings upon reproducing Gur et al.'s work <ref type="bibr" target="#b11">[12]</ref> reveal memorization tendencies rather than genuine task understanding. Randomizing references resulted in performance drops, questioning the original claims but reaffirming the importance of data randomization in model training.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">History versus No History</head><p>An ablation study on action history reveals interesting insights. The T5-base model's performance drops by nearly two percentage points when action history is removed. In contrast, models fine-tuned on hierarchical tasks, such as T5-large, show almost no performance change, as detailed in Table <ref type="table" target="#tab_0">1</ref> and Figures <ref type="figure" target="#fig_12">13a</ref> and <ref type="figure" target="#fig_12">13b</ref>. This suggests that the hierarchical nature of the task allows the model to plan its actions more effectively, making it less reliant on action history. Furthermore, the randomization of references seems to make the model less dependent on previous sequences, providing another layer of resilience to the removal of action history.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Hierarchical Planning Improvements</head><p>Fine-tuning a model over the hierarchical task achieved higher results than the compared WebN-based models. The following T5 sizes have been fine-tuned which are T5-base and T5-large, achieving respectively 42.1% and 43.49% accuracy shown in Table <ref type="table" target="#tab_0">1</ref>. The original WebN achieved 46.4% accuracy over WebT5-large, and the reproduced T5-base size achieved 38.1% which shows that hierarchical planning is an important component of these models.</p><p>The ablation study over the action history outlined a 14% decrease in performance over the T5-base model for hierarchical planning and 0.2% over the T5-large. This is much less than the reported 6.4% reported by the original WebN-T5-large and WebN-T5-3B models showing that hierarchical planning is less sensitive to the action history as it tries to solve the episode by following an original plan step by step.</p><p>Nonetheless, we do observe significant rates of failures in complicated episodes, or when the environment changes as the agent follows the original plan as seen in detail in Figures 13a and 13b     </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Performance of Combining T5 and CC-Net</head><p>The combination of T5 and CC-Net was explored in two phases: supervised learning (SL) and reinforcement learning (RL), with ablation studies conducted in both.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4.1">Results of Supervised Learning Phase.</head><p>The initial SL phase achieved 36.69% accuracy, lower than the best T5-large model observed in Table <ref type="table" target="#tab_0">1</ref>. Ablation studies revealed that the model was heavily dependent on the T5-large model, with complete failure when T5's output was removed. Interestingly, the removal of visual inputs sometimes improved performance as seen in Figure <ref type="figure" target="#fig_14">14a</ref>, indicating a complex interaction between modalities. Overall, the results showed that the model learned a multimodal representation but was mainly reliant on the T5-large model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4.2">Results of Reinforcement Learning Phase.</head><p>The RL phase resulted in a further drop in accuracy to 33.86% observed in Table <ref type="table" target="#tab_0">1</ref>. Ablation studies confirmed the model's continued dependence on the T5-large model as seen in Figures <ref type="figure" target="#fig_10">12</ref> for average accuracy and 14b for specific tasks. Several factors may have contributed to this decline, including the model's inherent complexity, sensitivity to hyperparameter tuning presented in Table <ref type="table" target="#tab_1">2</ref>, the nature of the RL environment, and possible covariate shift between SL and RL phases. These challenges highlight the intricacies of RL training and the need for careful analysis and tuning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5">Benchmarking Results</head><p>The model was benchmarked on a subset of Miniwob tasks, focusing on 40 out of 80 available tasks. The results showed competitive performance with previous supervised learning methods while using less training data. A key finding was the tendency of previous models to memorize rather than understand the distribution of target elements. This work's benchmarking results, though sometimes lower, offer a more robust and reliable assessment of performance.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">DISCUSSION AND LIMITATIONS</head><p>Models trained solely on Miniwob are proficient but lack transferability to diverse web tasks. Pretrained models like T5 have limitations in input context and are prone to overfitting. Our approach in Miniwob++ establishes a more realistic baseline, albeit sometimes lower than prior works <ref type="bibr" target="#b9">[10,</ref><ref type="bibr" target="#b32">33]</ref>, but we showed it is more grounded to its environment.</p><p>Performance evaluation needs to be multifaceted, incorporating metrics beyond task accuracy, such as generalization abilities. Models remain data-intensive and susceptible to memorization; alternative approaches like RLHF should be explored <ref type="bibr" target="#b9">[10,</ref><ref type="bibr" target="#b32">33]</ref>. Despite their limitations, large pre-trained models still perform best, but intermediate-sized models remain under-explored. Small models excel in task-constrained settings but struggle with complexity, while large models offer better generalization but are often overqualified for tasks they solve <ref type="bibr" target="#b13">[14,</ref><ref type="bibr" target="#b17">18]</ref>. The integration of multimodal approaches, like ours with T5, reveals tokenization discrepancies that need optimization <ref type="bibr" target="#b13">[14,</ref><ref type="bibr" target="#b17">18]</ref>, and training improvements may include randomizing DOM elements and using ablated inputs to focus on content rather than pattern memorization.</p><p>Web navigation automation involves critical ethical and legal aspects that demand attention. Ensuring user privacy is paramount, requiring secure data handling and compliance with regulations like GDPR <ref type="bibr" target="#b10">[11]</ref>. The growing capability of large language models to mimic humans raises ethical concerns about impersonation <ref type="bibr" target="#b4">[5]</ref>, outpacing traditional identifiers like the Turing test <ref type="bibr" target="#b3">[4]</ref>. Finally, clear accountability must be established to navigate complex liability issues, including potential violations of copyright laws and data protection policies. These challenges highlight the need for robust regulations and well-defined licensing agreements.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">CONCLUSION</head><p>Automating web navigation tasks offers many benefits but also presents significant challenges.</p><p>Our behavioral cloning and hierarchical planning models achieved a top accuracy of 43.58% on the Miniwob++ benchmark, setting a more grounded performance baseline by mitigating overfitting tendencies commonly seen in large language models (LLMs). While the fine-tuned multimodal model excelled in behavioral cloning, its reinforcement learning phase was hindered by covariate shift due to architectural limitations. We highlight the need for further exploration in multimodal architecture design and the potential of fine-tuned LLMs.</p><p>This work emphasizes the importance of understanding the limitations of LLMs over web navigation tasks, exploring optimal architectures, and considering ethical implications. While large models excel in few-shot scenarios, smaller models are efficient for known environments. The exploration of intermediate sizes and multimodal models offers promising opportunities. Pre-processing techniques can alleviate some issues, but further efforts are needed for more capable models. Ethical considerations, including misuse, impersonation, and accountability, must be addressed to ensure the  safety and integrity of the web. This work contributes by highlighting these challenges and proposing techniques to overcome them, paving the way for future advancements in the field.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">APPENDIX</head></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Comparison of Existing Models Regarding the Web Navigation Task over the Miniwob Benchmark. Average comparison over the tasks proposed on the Miniwob benchmark between different training techniques and architectures [12, 15, 16, 20].</figDesc><graphic coords="2,337.20,83.69,201.75,167.00" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Example of Miniwob Episodes. Each opened episode is timed and alongside it, a discounted reward is computed.These episodes cover a wide range of tasks, and in our case, we select a subset of 40 episodes that are suited to work with language models in the fashion of Gur et al.<ref type="bibr" target="#b11">[12]</ref>.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Structure of Action History as Proposed by Gur et al. [12].</figDesc><graphic coords="3,73.04,549.39,201.75,53.55" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>.Figure 4 :</head><label>4</label><figDesc>Figure 3: Structure of Action History as Proposed by Gur et al. [12].</figDesc><graphic coords="3,73.04,419.23,201.75,60.59" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: T5 Hierarchical Inference Process. We first infer the model to devise a navigation plan from the initial utterance, then iterate through the subtask instructions individually to infer the current action at each time step while evaluating the state of the episode by means of the computed reward and terminal state.</figDesc><graphic coords="3,60.43,135.53,226.96,104.54" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: The Combined Architecture of T5-large fine-tuned over the Hierarchical Task, and CC-Net Multimodal Abilities over an RL Approach.</figDesc><graphic coords="5,142.07,83.68,327.85,124.52" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 8 :</head><label>8</label><figDesc>Figure 8: Episode example of choosing one out of four colors displayed from the original utterance.</figDesc><graphic coords="6,163.76,83.69,72.63,96.32" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 9 :</head><label>9</label><figDesc>Figure 9: Episode example of checking boxes of words related to the one given in the original utterance.</figDesc><graphic coords="6,269.68,85.13,72.64,94.88" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 10 :</head><label>10</label><figDesc>Figure 10: Increment the spinner to a number of the desired value and click submit episode example.</figDesc><graphic coords="6,375.61,83.78,72.63,96.23" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 11 :</head><label>11</label><figDesc>Figure 11: Comparison and effects of fine-tuning with ordered references on a randomized reference test set, and when directly fine-tuned with randomized references.</figDesc><graphic coords="6,116.85,258.72,378.30,107.39" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 12 :</head><label>12</label><figDesc>Figure 12: Ablation study of CC-Net5 after its initial SL phase and final RL one.</figDesc><graphic coords="6,85.65,414.93,176.54,131.09" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><figDesc>(a) Comparative results of T5-base fine-tuned over the navigation task over the Miniwob++ benchmark with the ablation of its action history.(b) Comparative results of T5-large fine-tuned over the navigation task over the Miniwob++ benchmark with the ablation of its action history.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>Figure 13 :</head><label>13</label><figDesc>Figure 13: Comparative results of the different T5-only models over the navigation task with an ablation study of their inputs over the Miniwob++ benchmark.</figDesc><graphic coords="7,116.85,217.98,378.30,107.39" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><figDesc>(a) Comparative results of CC-NeT5 after the initial BC phase over the Miniwob++ benchmark with the ablation of its visual and previous action inputs.(b) Comparative results of CC-NeT5 after the final RL phase over the Miniwob++ benchmark with the ablation of its visual and previous action inputs.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_14"><head>Figure 14 :</head><label>14</label><figDesc>Figure14: Comparative results of the CC-NeT5 architecture over the navigation task with an ablation study of their inputs over the Miniwob++ benchmark for both supervised and reinforcement learning.</figDesc><graphic coords="8,116.85,218.60,378.30,108.02" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_15"><head>Figure 15 :</head><label>15</label><figDesc>Figure15: Distribution of task names from the original Miniwob dataset. We can observe that some tasks are over-represented, therefore we sample a maximum of 150 episodes for the examples exceeding that number. This leads to an average amount of 56.29 of episodes per task in the dataset.</figDesc><graphic coords="9,167.29,83.69,277.42,170.63" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Average Accuracy of the Different Models, Fine-Tuned T5 and Combined with CC-Net.</figDesc><table><row><cell>Model Name</cell><cell>Average Accuracy</cell></row><row><cell>T5-Base Hierarchical</cell><cell>39.77%</cell></row><row><cell>T5-Base Hierarchical No-History</cell><cell>38.02%</cell></row><row><cell>T5-Large Hierarchical</cell><cell>43.49%</cell></row><row><cell>T5-Large Hierarchical No-History</cell><cell>43.58%</cell></row><row><cell>WebNT5-Base</cell><cell>37.94%</cell></row><row><cell>WebNT5-Base No-History</cell><cell>35.99%</cell></row><row><cell>WebNT5-Base Ordered Refs</cell><cell>35.25%</cell></row><row><cell>WebNT5-Base Randomized Refs Test</cell><cell>24.19%</cell></row><row><cell>CC-NeT5 Hierarchical (SL)</cell><cell>36.69%</cell></row><row><cell>CC-NeT5 Hierarchical (SL+RL)</cell><cell>33.86%</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Hyper-parameters used in V-MPO during the RL 'online' phase of our training, inspired by CC-Net training parameters.</figDesc><table><row><cell>Parameter</cell><cell>Value</cell></row><row><cell>Optimizer</cell><cell>Adam [17]</cell></row><row><cell>Learning rate</cell><cell>1e-4</cell></row><row><cell>Adam b1 parameter</cell><cell>0.9</cell></row><row><cell>Adam b2 parameter</cell><cell>0.999</cell></row><row><cell>Weight decay (biases excluded)</cell><cell>1e-1</cell></row><row><cell>VMPO 𝛼</cell><cell>0.1</cell></row><row><cell>VMPO 𝜂</cell><cell>0.2</cell></row><row><cell>Agent discount 𝛾</cell><cell>0.9</cell></row><row><cell>Batch size SL</cell><cell>120</cell></row><row><cell>Trajectory unroll length</cell><cell>64</cell></row><row><cell>Target-network update period 𝑇</cell><cell>5</cell></row><row><cell cols="2">Maximum number of steps per episode 10</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">An Optimistic Perspective on Offline Reinforcement Learning</title>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Norouzi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1907.04543[cs.LG]</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Armen</forename><surname>Aghajanyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmytro</forename><surname>Okhonko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mandar</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hu</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gargi</forename><surname>Ghosh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.06955[cs.CL]</idno>
+		<title level="m">HTLM: Hyper-Text Pre-Training and Prompting of Language Models</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">Devansh</forename><surname>Arpit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stanisław</forename><surname>Jastrzębski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Ballas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emmanuel</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Maxinder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tegan</forename><surname>Kanwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Asja</forename><surname>Maharaj</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Fischer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Courville</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lacoste-Julien</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1706.05394</idno>
+		<title level="m">A Closer Look at Memorization in Deep Networks</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note>stat.ML</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aladdin</forename><surname>Ayesh</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1906.11068[cs.AI]</idno>
+		<title level="m">Turing Test Revisited: A Framework for an Alternative</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jean</forename><surname>Baudrillard</surname></persName>
+		</author>
+		<title level="m">Simulacres et Simulations. Galilée</title>
+		<imprint>
+			<date type="published" when="1981">1981</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Reinforcement Learning for Mapping Instructions to Actions</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">R K</forename><surname>Branavan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harr</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Regina</forename><surname>Barzilay</surname></persName>
+		</author>
+		<ptr target="https://aclanthology.org/P09-1010" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Joint Conference of the 47th Annual Meeting of the ACL and the 4th International Joint Conference on Natural Language Processing of the AFNLP. Association for Computational Linguistics</title>
+		<meeting>the Joint Conference of the 47th Annual Meeting of the ACL and the 4th International Joint Conference on Natural Language Processing of the AFNLP. Association for Computational Linguistics<address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Suntec</publisher>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="82" to="90" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vicki</forename><surname>Cheung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ludwig</forename><surname>Pettersson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Schneider</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wojciech</forename><surname>Zaremba</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1606.01540[cs.LG]</idno>
+		<title level="m">OpenAI Gym</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">B</forename><surname>Tom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ariel</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Herbert-Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rewon</forename><surname>Henighan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Child</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">M</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Ziegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clemens</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Winter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mateusz</forename><surname>Sigler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Litwin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Chess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Berner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Amodei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2005.14165[cs.CL]</idno>
+		<title level="m">Language Models are Few-Shot Learners</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Carlini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daphne</forename><surname>Ippolito</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Jagielski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katherine</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florian</forename><surname>Tramer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chiyuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2202.07646[cs.LG]</idno>
+		<title level="m">Quantifying Memorization Across Neural Language Models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Deep Reinforcement Learning from Human Preferences</title>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Paul F Christiano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miljan</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shane</forename><surname>Martic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Legg</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Amodei</surname></persName>
+		</author>
+		<ptr target="https://proceedings.neurips.cc/paper_files/paper/2017/file/" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">I</forename><surname>Guyon</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">U</forename><surname>Von Luxburg</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Bengio</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Wallach</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">R</forename><surname>Fergus</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Vishwanathan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">R</forename><surname>Garnett</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="volume">30</biblScope>
+		</imprint>
+	</monogr>
+	<note>d5e2c0adad503c91f91df240d0cd4e49-Paper.pdf</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<ptr target="https://data.europa.eu/eli/reg/2016/679/oj" />
+		<title level="m">Regulation (EU) 2016/679 of the European Parliament and of the Council</title>
+		<imprint>
+			<publisher>European Parliament and Council of the European Union</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">Izzeddin</forename><surname>Gur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Nachum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingjie</forename><surname>Miao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mustafa</forename><surname>Safdari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Austin</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03945[cs.LG]</idno>
+		<title level="m">Sharan Narang, Noah Fiedel, and Aleksandra Faust. 2023. Understanding HTML with Large Language Models</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zecheng</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Srinivas</forename><surname>Sunkara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoxue</forename><surname>Zang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lijuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nevan</forename><surname>Wichers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Schubiner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruby</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jindong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Blaise</forename><surname>Agüera Y Arcas</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2012.12350[cs.CL]</idno>
+		<title level="m">ActionBert: Leveraging User Actions for Semantic Understanding of User Interfaces</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jordan</forename><surname>Hoffmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Borgeaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Mensch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elena</forename><surname>Buchatskaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Trevor</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eliza</forename><surname>Rutherford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diego</forename><surname>De Las</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lisa</forename><forename type="middle">Anne</forename><surname>Casas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Hendricks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aidan</forename><surname>Welbl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Hennigan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katie</forename><surname>Noland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Millican</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bogdan</forename><surname>Van Den Driessche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aurelia</forename><surname>Damoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Guy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karen</forename><surname>Osindero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erich</forename><surname>Simonyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><forename type="middle">W</forename><surname>Elsen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oriol</forename><surname>Rae</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurent</forename><surname>Vinyals</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sifre</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.15556[cs.CL]</idno>
+		<title level="m">Training Compute-Optimal Large Language Models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">A data-driven approach for learning to control computers</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Peter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Humphreys</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Toby</forename><surname>Raposo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gregory</forename><surname>Pohlen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rachita</forename><surname>Thornton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alistair</forename><surname>Chhaparia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Muldal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Petko</forename><surname>Abramson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Georgiev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Goldin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><surname>Santoro</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lillicrap</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2202.08137[cs.LG]</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Language Models can Solve Computer Tasks</title>
+		<author>
+			<persName><forename type="first">Geunwoo</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Baldi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Mcaleer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.17491[cs.CL]</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<author>
+			<persName><forename type="first">P</forename><surname>Diederik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Kingma</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ba</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1412.6980[cs.LG]</idno>
+		<title level="m">Adam: A Method for Stochastic Optimization</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Do large language models need sensory grounding for meaning</title>
+		<author>
+			<persName><forename type="first">Ian</forename><surname>Lecun</surname></persName>
+		</author>
+		<ptr target="https://drive.google.com/file/d/1BU5" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>bV3X5w65DwSMapKcsr0ZvrMRU_Nbi/view</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">ROUGE: A Package for Automatic Evaluation of Summaries</title>
+		<author>
+			<persName><forename type="first">Chin-Yew</forename><surname>Lin</surname></persName>
+		</author>
+		<ptr target="https://www.aclweb.org/anthology/W04-1013" />
+	</analytic>
+	<monogr>
+		<title level="m">Text Summarization Branches Out</title>
+		<meeting><address><addrLine>Barcelona, Spain</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2004">2004</date>
+			<biblScope unit="page" from="74" to="81" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Reinforcement Learning on Web Interfaces using Workflow-Guided Exploration</title>
+		<author>
+			<persName><forename type="first">Evan Zheran</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kelvin</forename><surname>Guu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Panupong</forename><surname>Pasupat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianlin</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1802.08802" />
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations (ICLR)</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suchir</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christina</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shantanu</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Saunders</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tyna</forename><surname>Eloundou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Button</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Knight</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Chess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2112.09332[cs.CL]</idno>
+		<title level="m">WebGPT: Browser-assisted question-answering with human feedback</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://github.com/openai/universe" />
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.08774[cs.CL]</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">GPT-4 Technical Report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Mapping natural language commands to web elements</title>
+		<author>
+			<persName><forename type="first">Panupong</forename><surname>Pasupat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tian-Shun</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kelvin</forename><surname>Guu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/D18-1540</idno>
+		<ptr target="https://doi.org/10.18653/v1/D18-1540" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2018 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Brussels, Belgium</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="4970" to="4976" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Raffel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katherine</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Matena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanqi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><forename type="middle">J</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1910.10683[cs.LG]</idno>
+		<title level="m">Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">The limits of automatic summarisation according to ROUGE</title>
+		<author>
+			<persName><forename type="first">Natalie</forename><surname>Schluter</surname></persName>
+		</author>
+		<ptr target="https://aclanthology.org/E17-2007" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 15th Conference of the European Chapter</title>
+		<meeting>the 15th Conference of the European Chapter<address><addrLine>Valencia, Spain</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="41" to="45" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Online and Offline Reinforcement Learning by Planning with a Learned Model</title>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Hubert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amol</forename><surname>Mandhane</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammadamin</forename><surname>Barekatain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2104.06294[cs.LG]</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Filip</forename><surname>Wolski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleg</forename><surname>Klimov</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1707.06347[cs.LG]</idno>
+		<title level="m">Proximal Policy Optimization Algorithms</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">World of Bits: An Open-Domain Platform for Web-Based Agents</title>
+		<author>
+			<persName><forename type="first">Tianlin</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrej</forename><surname>Karpathy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linxi</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Hernandez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+		<ptr target="https://proceedings.mlr.press/v70/shi17a.html" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 34th International Conference on Machine Learning (Proceedings of Machine Learning Research</title>
+		<editor>
+			<persName><forename type="first">Doina</forename><surname>Precup</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Yee</forename><forename type="middle">Whye</forename><surname>Teh</surname></persName>
+		</editor>
+		<meeting>the 34th International Conference on Machine Learning ( Machine Learning Research</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="volume">70</biblScope>
+			<biblScope unit="page" from="3135" to="3144" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">Francis</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abbas</forename><surname>Abdolmaleki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jost</forename><surname>Tobias Springenberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aidan</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hubert</forename><surname>Soyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><forename type="middle">W</forename><surname>Rae</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Seb</forename><surname>Noury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arun</forename><surname>Ahuja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siqi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dhruva</forename><surname>Tirumala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Heess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Belov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Riedmiller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><forename type="middle">M</forename><surname>Botvinick</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1909.12238[cs.AI]</idno>
+		<title level="m">On-Policy Maximum a Posteriori Policy Optimization for Discrete and Continuous Control</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Learning to Follow Navigational Directions</title>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Vogel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Jurafsky</surname></persName>
+		</author>
+		<ptr target="https://aclanthology.org/P10-1083" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 48th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 48th Annual Meeting of the Association for Computational Linguistics<address><addrLine>Uppsala, Sweden</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="806" to="814" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Howard</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2207.01206[cs.CL]</idno>
+		<title level="m">WebShop: Towards Scalable Real-World Web Interaction with Grounded Language Agents</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Daniel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nisan</forename><surname>Ziegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Stiennon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><forename type="middle">B</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Christiano</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Irving</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1909.08593[cs.CL]</idno>
+		<title level="m">Fine-Tuning Language Models from Human Preferences</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

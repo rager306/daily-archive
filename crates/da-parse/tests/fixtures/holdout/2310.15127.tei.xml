@@ -1,0 +1,2722 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Open-Ended Instructable Embodied Agents with Memory-Augmented Large Language Models</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2023-11-20">20 Nov 2023</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Gabriel</forename><surname>Sarch</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Carnegie Mellon University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yue</forename><surname>Wu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Carnegie Mellon University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Michael</forename><forename type="middle">J</forename><surname>Tarr</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Carnegie Mellon University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Katerina</forename><surname>Fragkiadaki</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Carnegie Mellon University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Open-Ended Instructable Embodied Agents with Memory-Augmented Large Language Models</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2023-11-20">20 Nov 2023</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">681893BEB4965DD362962E0F44A94E22</idno>
+					<idno type="arXiv">arXiv:2310.15127v2[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:35+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Pre-trained and frozen large language models (LLMs) can effectively map simple scene rearrangement instructions to programs over a robot's visuomotor functions through appropriate few-shot example prompting. To parse open-domain natural language and adapt to a user's idiosyncratic procedures, not known during prompt engineering time, fixed prompts fall short. In this paper, we introduce HELPER, an embodied agent equipped with an external memory of language-program pairs that parses free-form human-robot dialogue into action programs through retrieval-augmented LLM prompting: relevant memories are retrieved based on the current dialogue, instruction, correction, or VLM description, and used as in-context prompt examples for LLM querying. The memory is expanded during deployment to include pairs of user's language and action plans, to assist future inferences and personalize them to the user's language and routines. HELPER sets a new state-of-the-art in the TEACh benchmark in both Execution from Dialog History (EDH) and Trajectory from Dialogue (TfD), with a 1.7x improvement over the previous state-of-the-art for TfD. Our models, code, and video results can be found in our project's website: <ref type="url" target="https://helper-agent-llm.github.io/">helper-agent-llm.github.io</ref>.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="26" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="27" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="28" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="29" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="30" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="31" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="32" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="33" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Parsing free-form human instructions and humanrobot dialogue into task plans that a robot can execute is challenging due to the open-endedness of environments and procedures to accomplish, and to the diversity and complexity of language humans use to communicate their desires. Human language often contains long-term references, questions, errors, omissions, or descriptions of routines specific to a particular user <ref type="bibr" target="#b62">(Tellex et al., 2011;</ref><ref type="bibr" target="#b32">Liang, 2016;</ref><ref type="bibr" target="#b26">Klein and Manning, 2003)</ref>. Instructions need to be interpreted in the environmental context in which they are issued, and plans need to adapt in a closed-loop to execution failures. Large Language Models (LLMs) trained on Internet-scale text can parse language instructions to task plans with appropriate plan-like or code-like prompts, without any finetuning of the language model, as shown in recent works <ref type="bibr" target="#b2">(Ahn et al., 2022;</ref><ref type="bibr" target="#b31">Liang et al., 2022;</ref><ref type="bibr" target="#b76">Zeng et al., 2022;</ref><ref type="bibr">Huang et al., 2022b;</ref><ref type="bibr">Singh et al., 2022a)</ref>. The state of the environment is provided as a list of objects and their spatial coordinates, or as a free-form text description from a vision-language model <ref type="bibr" target="#b31">(Liang et al., 2022;</ref><ref type="bibr">Liu et al., 2023b;</ref><ref type="bibr">Wu et al., 2023a;</ref><ref type="bibr" target="#b2">Ahn et al., 2022)</ref>. Using LLMs for task planning requires engineering a prompt that includes a description of the task for the LLM to perform, a robot API with function documentation and expressive function names, environment and task instruction inputs, and a set of in-context examples for inputs and outputs for the task <ref type="bibr" target="#b31">(Liang et al., 2022)</ref>. These methods are not trained in the domain of interest; rather they are prompt-engineered having in mind the domain at hand.</p><p>How can we extend LLM-prompting for semantic parsing and task planning to open-domain, freeform instructions, corrections, human-robot dialogue, and users' idiosyncratic routines, not known at prompt engineering time? The prompts used for the domain of tabletop rearrangement are already approaching the maximum context window of widely used LLMs <ref type="bibr">(Singh et al., 2022a;</ref><ref type="bibr" target="#b31">Liang et al., 2022)</ref>. Even as context window size grows, more prompt examples result in larger attention operations and cause an increase in both inference time and resource usage.</p><p>To this end, we introduce HELPER (Humaninstructable Embodied Language Parsing via Evolving Routines), a model that uses retrievalaugmented situated prompting of LLMs to parse free-form dialogue, instructions, and corrections from humans and vision-language models to programs over a set of parameterized visuomotor routines. HELPER is equipped with an external</p><p>Figure <ref type="figure">1</ref>: Open-ended instructable agents with retrieval-augmented LLMs. We equip LLMs with an external memory of language and program pairs to retrieve in-context examples for prompts during LLM querying for task plans. Our model takes as input instructions, dialogue segments, corrections and VLM environment descriptions, retrieves relevant memories to use as in-context examples, and prompts LLMs to predict task plans and plan adjustments. Our agent executes the predicted plans from visual input using occupancy and semantic map building, 3D object detection and state tracking, and active exploration using guidance from LLMs' common sense to locate objects not present in the maps. Successful programs are added to the memory paired with their language context, allowing for personalized subsequent interactions.</p><p>non-parametric key-value memory of languageprogram pairs. HELPER uses its memory to retrieve relevant in-context language and action program examples, and generates prompts tailored to the current language input. HELPER expands its memory with successful executions of user specific procedures; it then recalls them and adapts them in future interactions with the user. HELPER uses pre-trained vision-language models (VLMs) to diagnose plan failures in language format, and uses these to retrieve similar failure cases with solutions from its memory to seed the prompt. To execute a program predicted by the LLM, HELPER combines successful practices of previous home embodied agents, such as semantic and occupancy map building <ref type="bibr">(Chaplot et al., 2020a;</ref><ref type="bibr" target="#b6">Blukis et al., 2022;</ref><ref type="bibr">Min et al., 2021)</ref>, LLM-based common sense object search <ref type="bibr" target="#b23">(Inoue and Ohashi, 2022)</ref>, object detection and tracking with off-the-shelf detectors <ref type="bibr">(Chaplot et al., 2020b)</ref>, object attribute detection with VLMs <ref type="bibr" target="#b77">(Zhang et al., 2022)</ref>, and verification of action preconditions during execution.</p><p>We test HELPER on the TEACh benchmark <ref type="bibr" target="#b45">(Padmakumar et al., 2021)</ref>, which evaluates agents in their ability to complete a variety of long-horizon household tasks from RGB input given natural language dialogue between a commander (the instruction-giving user) and a follower (the instruction-seeking user). We achieve a new stateof-the-art in the TEACh Execution from Dialog History and Trajectory-from-Dialogue settings, improving task success by 1.7x and goal-condition success by 2.1x compared to prior work in TfD. By further soliciting and incorporating user feedback, HELPER attains an additional 1.3x boost in task success. Our work is inspired by works in the language domain <ref type="bibr" target="#b47">(Perez et al., 2021;</ref><ref type="bibr" target="#b51">Schick and Schütze, 2020;</ref><ref type="bibr" target="#b18">Gao et al., 2020;</ref><ref type="bibr" target="#b35">Liu et al., 2021)</ref> that retrieve in-context prompt examples based on the input language query for NLP tasks. HELPER extends this capability to the domain of instructable embodied agents, and demonstrates the potential of memory-augmented LLMs for semantic parsing of open-ended free-form instructive language into an expandable library of programs.</p><p>2 Related Work Instructable Embodied Agents Significant strides have been made by training large neural networks to jointly map instructions and their sen-sory contexts to agent actions or macro-actions using imitation learning <ref type="bibr">(Anderson et al., 2018b;</ref><ref type="bibr" target="#b29">Ku et al., 2020;</ref><ref type="bibr">Anderson et al., 2018a;</ref><ref type="bibr" target="#b50">Savva et al., 2019;</ref><ref type="bibr" target="#b19">Gervet et al., 2022;</ref><ref type="bibr" target="#b55">Shridhar et al., 2020;</ref><ref type="bibr" target="#b10">Cao et al.;</ref><ref type="bibr" target="#b60">Suglia et al., 2021;</ref><ref type="bibr" target="#b15">Fan et al., 2018;</ref><ref type="bibr" target="#b74">Yu et al., 2020;</ref><ref type="bibr" target="#b7">Brohan et al., 2022;</ref><ref type="bibr" target="#b58">Stone et al., 2023;</ref><ref type="bibr" target="#b75">Yu et al., 2023)</ref>. Existing approaches differ-among others-in the way the state of the environment is communicated to the model. Many methods map RGB image tokens and language inputs directly to actions or macro-actions <ref type="bibr" target="#b46">(Pashevich et al., 2021;</ref><ref type="bibr" target="#b67">Wijmans et al., 2020;</ref><ref type="bibr" target="#b60">Suglia et al., 2021;</ref><ref type="bibr" target="#b28">Krantz et al., 2020)</ref>. Other methods map language instructions and linguistic descriptions of the environment's state in terms of object lists or objects spatial coordinates to macro-actions, foregoing visual feature description of the scene, in an attempt to generalize better <ref type="bibr" target="#b31">(Liang et al., 2022;</ref><ref type="bibr">Singh et al., 2022a;</ref><ref type="bibr">Chaplot et al., 2020a;</ref><ref type="bibr">Min et al., 2021;</ref><ref type="bibr">Liu et al., 2022a;</ref><ref type="bibr" target="#b41">Murray and Cakmak, 2022;</ref><ref type="bibr">Liu et al., 2022b;</ref><ref type="bibr" target="#b23">Inoue and Ohashi, 2022;</ref><ref type="bibr" target="#b57">Song et al., 2022;</ref><ref type="bibr" target="#b78">Zheng et al., 2022;</ref><ref type="bibr" target="#b77">Zhang et al., 2022;</ref><ref type="bibr">Huang et al., 2022b</ref><ref type="bibr" target="#b21">Huang et al., , 2023;;</ref><ref type="bibr" target="#b2">Ahn et al., 2022;</ref><ref type="bibr" target="#b76">Zeng et al., 2022;</ref><ref type="bibr">Huang et al., 2022a)</ref>. Some of these methods finetune language models to map language input to macro-actions, while others prompt frozen LLMs to predict action programs, relying on the emergent in-context learning property of LLMs to emulate novel tasks at test time. Some methods use natural language as the output format of the LLM <ref type="bibr">(Wu et al., 2023a;</ref><ref type="bibr" target="#b57">Song et al., 2022;</ref><ref type="bibr" target="#b6">Blukis et al., 2022;</ref><ref type="bibr">Huang et al., 2022b)</ref>, and others use code format <ref type="bibr">(Singh et al., 2022a;</ref><ref type="bibr" target="#b31">Liang et al., 2022;</ref><ref type="bibr" target="#b21">Huang et al., 2023)</ref>. HELPER prompts frozen LLMs to predict Python programs over visuo-motor functions for parsing dialogue, instructions and corrective human feedback.</p><p>The work closest to HELPER is LLM Planner <ref type="bibr" target="#b57">(Song et al., 2022)</ref> which uses memoryaugmented prompting of pretrained LLMs for instruction following. However, it differs from HELPER in several areas such as plan memory expansion, VLM-guided correction, and usage of LLMs for object search. Furthermore, while <ref type="bibr">Singh et al. (2022b)</ref> frequently seeks human feedback, HELPER requests feedback only post full task execution and employs Visual-Language Models (VLMs) for error feedback, reducing user interruptions.</p><p>Numerous simulation environments exist for evaluating home assistant frameworks, including Habitat <ref type="bibr" target="#b50">(Savva et al., 2019)</ref>, GibsonWorld <ref type="bibr" target="#b35">(Shen et al., 2021)</ref>, ThreeDWorld <ref type="bibr" target="#b16">(Gan et al., 2022)</ref>, and AI2THOR <ref type="bibr" target="#b27">(Kolve et al., 2017)</ref>. ALFRED <ref type="bibr" target="#b55">(Shridhar et al., 2020)</ref> and TEACh <ref type="bibr" target="#b45">(Padmakumar et al., 2021)</ref> are benchmarks in the AI2THOR environment <ref type="bibr" target="#b27">(Kolve et al., 2017)</ref>, measuring agents' competence in household tasks through natural language. Our research focuses on the 'Trajectory from Dialogue' (TfD) evaluation in TEACh, mirroring ALFRED but with greater task and input complexity.</p><p>Prompting LLMs for action prediction and visual reasoning Since the introduction of fewshot prompting by <ref type="bibr" target="#b8">(Brown et al., 2020)</ref>, several approaches have improved the prompting ability of LLMs by automatically learning prompts <ref type="bibr" target="#b30">(Lester et al., 2021)</ref>, chain of thought prompting <ref type="bibr" target="#b44">(Nye et al.;</ref><ref type="bibr" target="#b17">Gao et al., 2022;</ref><ref type="bibr" target="#b66">Wei et al., 2022;</ref><ref type="bibr" target="#b64">Wang et al., 2022;</ref><ref type="bibr" target="#b13">Chen et al., 2022;</ref><ref type="bibr" target="#b72">Yao et al., 2023)</ref> and retrieval-augmented LLM prompting <ref type="bibr" target="#b42">(Nakano et al., 2021;</ref><ref type="bibr" target="#b53">Shi et al., 2023;</ref><ref type="bibr" target="#b25">Jiang et al., 2023)</ref> for language modeling, question answering, and long-form, multi-hop text generation. HELPER uses memory-augmented prompting by retrieving and integrating similar task plans into the prompt to facilitate language parsing to programs.</p><p>LLMs have been used as policies in Minecraft to predict actions <ref type="bibr">(Wang et al., 2023b,a)</ref>, error correction <ref type="bibr">(Liu et al., 2023b)</ref>, and for understanding instruction manuals for game play in some Atari games <ref type="bibr">(Wu et al., 2023b)</ref>. They have also significantly improved text-based agents in textbased simulated worlds <ref type="bibr" target="#b73">(Yao et al., 2022;</ref><ref type="bibr" target="#b54">Shinn et al., 2023;</ref><ref type="bibr">Wu et al., 2023c;</ref><ref type="bibr" target="#b48">Richards, 2023)</ref>. ViperGPT <ref type="bibr" target="#b61">(Surís et al., 2023)</ref>, and CodeVQA <ref type="bibr" target="#b59">(Subramanian et al., 2023)</ref> use LLM prompting to decompose referential expressions and questions to programs over simpler visual routines. Our work uses LLMs for planning from free-form dialogue and user corrective feedback for home task completion, a domain not addressed in previous works.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Method</head><p>HELPER is an embodied agent designed to map human-robot dialogue, corrections and VLM descriptions to actions programs over a fixed API of parameterized navigation and manipulation primitives. Its architecture is outlined in Figure <ref type="figure" target="#fig_0">2</ref>. At its heart, it generates plans and plan adjustments by querying LLMs using retrieval of relevant language-program pairs to include as in-context examples in the LLM prompt. The generated programs are then sent to the Executor module, which translates each program step into specific navigation and manipulation action. Before executing each step in the program, the Executor verifies if the necessary preconditions for an action, such as the robot already holding an object, are met. If not, the plan is adjusted according to the current environmental and agent state. Should a step involve an undetected object, the Executor calls on the Locator module to efficiently search for the required object by utilizing previous user instructions and LLMs' common sense knowledge. If any action fails during execution, a VLM predicts the reason for this failure from pixel input and feeds this into the Planner for generating plan adjustments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Planner: Retrieval-Augmented LLM Planning</head><p>Given an input I consisting of a dialogue segment, instruction, or correction, HELPER uses memoryaugmented prompting of frozen LLMs to map the input into an executable Python program over a parametrized set of manipulation and navigation primitives G ∈ {G manipulation ∪ G navigation } that the Executor can perform (e.g., goto(X), pickup(X), slice(X), ...). Our action API can be found in Section D of the Appendix.</p><p>HELPER maintains a key-value memory of language -program pairs, as shown in Figure <ref type="figure" target="#fig_1">3A</ref>. Each language key is mapped to a 1D vector using an LLM's frozen language encoder. Given current context I, the model retrieves the top-K keys, i.e., the keys with the smallest L 2 distance with the embedding of the input context I, and adds the corresponding language -program pairs to the LLM prompt as in-context examples for parsing the current input I.</p><p>Figure <ref type="figure" target="#fig_1">3B</ref> illustrates the prompt format for the Planner. It includes the API specifying the primitives G parameterized as Python functions, the retrieved examples, and the language input I. The LLM is tasked to generate a Python program over parameterized primitives G. Examples of our prompts and LLM responses can be found in Section F of the Appendix.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.1">Memory Expansion</head><p>The key-value memory of HELPER can be continually expanded with successful executions of instructions to adapt to a user's specific routines, as shown in Figure <ref type="figure">1</ref>. An additional key-value pair is added with the language instruction paired with the execution plan if the user indicates the task was successful. Then, HELPER can recall this plan and adapt it in subsequent interactions with the user. For example, if a user instructs HELPER one day to "Perform the Mary cleaning. This involves cleaning two plates and two cups in the sink", the user need only say "Do the Mary cleaning" in future interactions, and HELPER will retrieve the previous plan, include it in the examples section of the prompt, and query the LLM to adapt it accordingly. The personalization capabilities of HELPER are evaluated in Section 4.4.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.2">Incorporating user feedback</head><p>A user's feedback can improve a robot's performance, but requesting feedback frequently can deteriorate the overall user experience. Thus, we enable HELPER to elicit user feedback only when it has completed execution of the program. Specifically, it asks "Is the task completed to your satisfaction? Did I miss anything?" once it believes it has completed the task. The user responds either that the task has been completed (at which point HELPER stops acting) or points out problems and corrections in free-form natural language, such as, "You failed to cook a slice of potato. The potato slice needs to be cooked.". HELPER uses the language feedback to re-plan using the Planner. We evaluate HELPER in its ability to seek and utilize user feedback in Section 4.3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.3">Visually-Grounded Plan Correction using Vision-Language Models</head><p>Generated programs may fail for various reasons, such as when a step in the plan is missed or an object-of-interest is occluded. When the program fails, HELPER uses a vision-language model (VLM) pre-trained on web-scale data, specifically the ALIGN model <ref type="bibr" target="#b24">(Jia et al., 2021)</ref>, to match the current visual observation with a pre-defined list of textual failure cases, such as an object is blocking you from interacting with the selected object, as illustrated in Figure <ref type="figure" target="#fig_2">4</ref>. The best match is taken to be the failure feedback F . The Planner module then retrieves the top-K most relevant error correction examples, each containing input dialogue, failure feedback, and the corresponding corrective program, from memory based on encodings of input I and failure feedback F from the VLM. The LLM is prompted with the the failed program step, the predicted failure description F from the VLM, the in-context examples, and the original dialogue segment I. The LLM outputs a self-reflection <ref type="bibr" target="#b54">(Shinn et al., 2023)</ref> as to why the failure occurred, and generates a program over manipulation and navigation primitives G, and an additional set of corrective primitives G corrective (e.g., step-back(), move-toan-alternate-viewpoint(), ...). This program is sent to the Executor for execution. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Executor: Scene Perception, Pre-Condition Checks, Object Search and Action Execution</head><p>The Executor module executes the predicted Python programs in the environment, converting the code into low-level manipulation and navigation actions, as shown in Figure <ref type="figure" target="#fig_0">2</ref>. At each time step, the Executor receives an RGB image and obtains an estimated depth map via monocular depth estimation <ref type="bibr" target="#b5">(Bhat et al., 2023)</ref> and object masks via an off-the-shelf object detector <ref type="bibr" target="#b14">(Dong et al., 2021)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.1">Scene and object state perception</head><p>Using the depth maps, object masks, and approximate egomotion of the agent at each time step, the Executor maintains a 3D occupancy map and object memory of the home environment to navigate around obstacles and keep track of previously seen objects, similar to previous works <ref type="bibr" target="#b49">(Sarch et al., 2022)</ref>. Objects are detected in every frame and are merged into object instances based on closeness of the predicted 3D centroids. Each object instance is initialized with a set of object state at-tributes (cooked, sliced, dirty, ...) by matching the object crop against each attribute with the pretrained ALIGN model <ref type="bibr" target="#b24">(Jia et al., 2021)</ref>. Object attribute states are updated when an object is acted upon via a manipulation action.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.2">Manipulation and navigation pre-condition checks</head><p>The Executor module verifies the pre-conditions of an action before the action is taken to ensure the action is likely to succeed. In our case, these constraints are predefined for each action (for example, the agent must first be holding a knife to slice an object). If any pre-conditions are not satisfied, the Executor adjusts the plan accordingly. In more open-ended action interfaces, an LLM's common sense knowledge can be used to infer the preconditions for an action, rather than pre-defining them.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.3">Locator: LLM-based common sense object search</head><p>When HELPER needs to find an object that has not been detected before, it calls on the Locator module. The Locator prompts an LLM to suggest potential object search location for the Executor to search nearby, e.g. "search near the sink" or "search in the cupboard". The Locator prompt takes in the language I (which may reference the object location, e.g., "take the mug from the cupboard" ) and queries the LLM to generate proposed locations by essentially parsing the instruction as well as using its common sense. Based on these predictions, HELPER will go to the suggested locations if they exist in the semantic map (e.g., to the cupboard) and search for the object-of-interest. The Locator's prompt can be found in Section D of the Appendix. Implementation details. We use OpenAI's gpt-4-0613 (gpt, 2023) API, except when mentioned otherwise. We resort to the text-embedding-ada-002 (ada, 2022) API to obtain text embeddings. Furthermore, we use the SOLQ object detector <ref type="bibr" target="#b14">(Dong et al., 2021)</ref>, which is pretrained on MSCOCO <ref type="bibr" target="#b33">(Lin et al., 2014)</ref> and finetuned on the training rooms of TEACh. For monocular depth estimation, we use the ZoeDepth network <ref type="bibr" target="#b5">(Bhat et al., 2023)</ref>, pretrained on the NYU indoor dataset <ref type="bibr" target="#b43">(Nathan Silberman and Fergus, 2012)</ref> and subsequently fine-tuned on the training rooms of TEACh. In the TEACh evaluations, we use K=3 for retrieval.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head><p>We test HELPER in the TEACh benchmark <ref type="bibr" target="#b45">(Padmakumar et al., 2021)</ref>. Our experiments aim to answer the following questions:</p><p>1. How does HELPER compare to the SOTA on task planning and execution from free-form dialogue? 2. How much do different components of HELPER contribute to performance?</p><p>3. How much does eliciting human feedback help task completion?</p><p>4. How effectively does HELPER adapt to a user's specific procedures?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Evaluation on the TEACh dataset</head><p>Dataset The dataset comprises over 3,000 human-human, interactive dialogues, geared towards completing household tasks within the AI2-THOR simulation environment <ref type="bibr" target="#b27">(Kolve et al., 2017)</ref>. We evaluate on the Trajectory from Dialogue (TfD) evaluation variant, where the agent is given a dialogue segment at the start of the episode. The model is then tasked to infer the sequence of actions to execute based on the user's intents in the dialogue segment, ranging from MAKE COFFEE to PREPARE BREAKFAST. We show examples of such dialogues in Figure <ref type="figure" target="#fig_1">3</ref>. We also test on the Execution from Dialogue History (EDH) task in TEACh, where the TfD episodes are partitioned into "sessions". The agent is spawned at the start of one of the sessions and must predict the actions to reach the next session given the dialogue and action history of the previous sessions. The dataset is split into training and validation sets. The validation set is divided into 'seen' and 'unseen' rooms based on their presence in the training set. Validation 'seen' has the same room instances but different object locations and initial states than any episodes in the training set. At each time step, the agent obtains an egocentric RGB image and must choose an action from a specified set to transition to the next step, such as pickup(X), turn left(), etc. Please see Appendix Section G for more details on the simulation environment.</p><p>Evaluation metrics Following evaluation practises for the TEACh benchmark, we use the following two metrics: 1. Task success rate (SR), which refers to the fraction of task sessions in which the</p><p>No Memory-User Accepts VLM-LLM-Pre-In-Domain Augmented Personal-User Guided Guided Condition LLM LLM ization Feedback correction Search Check E.T. (Pashevich et al., 2021)  x x x x x x x JARVIS (Zheng et al., 2022)  x x x x x x x FILM (Min et al., 2021, 2022)  x x x x x x x DANLI (Zhang et al., 2022)  x x x x x x LLM-Planner (Song et al., 2022)  x x x x x Code as Policies (Liang et al., 2022)  x x x x x x HELPER (ours)</p><p>Table 1: Comparison of HELPER to previous work.</p><p>agent successfully fulfills all goal conditions. 2. Goal condition success rate (GC), which quantifies the proportion of achieved goal conditions across all sessions. Both of these metrics have corresponding path length weighted (PLW) variants. In these versions, the agent incurs penalties for executing a sequence of actions that surpasses the length of the reference path annotated by human experts.</p><p>Baselines We consider the following baselines: 1. Episodic Transformer (E.T.) <ref type="bibr" target="#b46">(Pashevich et al., 2021)</ref> is an end-to-end multimodal transformer that encodes language inputs and a history of visual observations to predict actions, trained with imitation learning from human demonstrations. 2. Jarvis <ref type="bibr" target="#b78">(Zheng et al., 2022)</ref> trains an LLM on the TEACh dialogue to generate high-level subgoals that mimic those performed by the human demonstrator. Jarvis uses a semantic map and the Episodic Transformer for object search. 3. FILM <ref type="bibr">(Min et al., 2021</ref><ref type="bibr" target="#b40">(Min et al., , 2022) )</ref> fine-tunes an LLM to produce parametrized plan templates. Similar to Jarvis, FILM uses a semantic map for carrying out subgoals and a semantic policy for object search. 4. DANLI <ref type="bibr" target="#b77">(Zhang et al., 2022)</ref> fine-tunes an LLM to predict high-level subgoals, and uses symbolic planning over an object state and spatial map to create an execution plan. DANLI uses an object search module and manually-defined error correction.</p><p>HELPER differs from the baselines in its use of memory-augmented context-dependent prompting of pretrained LLMs and pretrained visual-language models for planning, failure diagnosis and recovery, and object search. We provide a more in-depth comparison of HELPER to previous work in</p><p>Table 1. Evaluation We show quantitative results for HELPER and the baselines on the TEACh Trajectory from Dialogue (TfD) and Execution from Di-alogue History (EDH) validation split in Table 2. On the TfD validation unseen, HELPER achieves a 13.73% task success rate and 14.17% goalcondition success rate, a relative improvement of 1.7x and 2.1x, respectively, over DANLI, the prior SOTA in this setting. HELPER additionally sets a new SOTA in the EDH task, achieving a 17.40% task success rate and 25.86% goalcondition success rate on validation unseen. 4.2 Ablations We ablate components of HELPER in order to quantify what matters for performance in Table 2 Ablations. We perform all ablations on the TEACh TfD validation unseen split. We draw the following conclusions: 1. Retrieval-augmented prompting helps for planning, re-planning and failure recovery. Replacing the memory-augmented prompts with a fixed prompt (w/o Mem Aug; Table 2) led to a relative 18% reduction in success rate. 2. VLM error correction helps the agent recover from failures. Removal of the visually-grounded plan correction (w/o Correction; Table 2) led to a relative 6% reduction in success rate. 3. The pre-condition check and the LLM search help. Removal of the action pre-condition checks (w/o Pre Check; Table 2) led to a relative 16% reduction in success rate. Replacing the Locator LLM-based search with a random search (w/o Locator; Table 2) led to a relative 12% reduction in success rate. 4. Larger LLMs perform better. Using GPT-3.5 (w GPT-3.5; Table 2) exhibits a relative 31% reduction in success rate compared to using GPT-4. Our findings on GPT-4's superior planning abilities align with similar findings from recent studies of Wu et al. (2023d); Bubeck et al. (2023); Liu et al. (2023a); Wang et al. (2023a). 5. Perception is a bottleneck. Using GT depth (w/ GT depth; Table <ref type="table" target="#tab_0">2</ref>) led to an improvement of 1.15x compared to using estimated depth from RGB. Notable is the 1.77x improvement in pathlength weighted success when using GT depth. This change is due to lower accuracy for far depths in our depth estimation network lower, thereby causing the agent to spend more time mapping the environment and navigating noisy obstacle maps. Using lidar or better map estimation techniques could mitigate this issue. Using ground truth segmentation masks and depth (w/ GT depth, seg; Table <ref type="table" target="#tab_0">2</ref>) improves task success and goal-conditioned task success by 1.64x and 2.11x, respectively. This shows the limitations of frame-based object detection and late fusion of detection responses over time. 3D scene representations that fuse features earlier across views may significantly improve 3D object detection. Using GT perception (w/ GT percept; Table <ref type="table" target="#tab_0">2</ref>), which includes depth, segmentation, action success, oracle failure feedback, and increased API failure limit (50), led to 2.20x and 3.56x improvement.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Eliciting Users' Feedback</head><p>We enable HELPER to elicit sparse user feedback by asking "Is the task completed to your satisfaction? Did I miss anything?" once it believes it has completed the task, as explained in Section 3.1.2. The user will then respond with steps missed by HELPER, and HELPER will re-plan based on this feedback. As shown in in Table <ref type="table" target="#tab_0">2</ref> User Feedback, asking for a user's feedback twice improves performance by 1.27x. Previous works do not explore this opportunity of eliciting human feedback partly due to the difficulty of interpreting it-being free-form language-which our work addresses.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Personalization</head><p>We evaluate HELPER's ability to retrieve userspecific routines, as well as on their ability to modify the retrieved routines, with one, two, or three modifications, as discussed in 3.1.1. For example, for three modifications we might instruct HELPER: "Make me a Dax sandwich with 1 slice of tomato, 2 lettuce leaves, and add a slice of bread".</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Dataset</head><p>The evaluation tests 10 user-specific plans for each modification category in five distinct tasks: MAKE A SANDWICH; PREPARE BREAK-FAST; MAKE A SALAD; PLACE X ON Y; and CLEAN X. The evaluation contains 40 user requests. The complete list of user-specific plans and modification requests can be found in the Appendix, Section C.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Evaluation</head><p>We report the success rate in Table <ref type="table" target="#tab_1">3</ref>. HELPER generates the correct personalized plan for all but three instances, out of 40 evaluation requests. This showcases the ability of HELPER to acquire, retrieve and adapt plans based on context and previous user interactions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Limitations</head><p>Our model in its current form has the following limitations:</p><p>1. Simplified failure detection. The AI2-THOR simulator much simplifies action failure detection which our work and previous works exploit <ref type="bibr">(Min et al., 2021;</ref><ref type="bibr" target="#b23">Inoue and Ohashi, 2022)</ref>. In a more general setting, continuous progress monitoring Last, to follow human instructions outside of simulation environments our model would need to interface with robot closed-loop policies instead of abstract manipulation primitives, following previous work <ref type="bibr" target="#b31">(Liang et al., 2022)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>We presented HELPER, an instructable embodied agent that uses memory-augmented prompting of pre-trained LLMs to parse dialogue segments, instructions and corrections to programs over action primitives, that it executes in household environments from visual input. HELPER updates its memory with user-instructed action programs after successful execution, allowing personalized interactions by recalling and adapting them. It sets a new state-of-the-art in the TEACh benchmark. Future research directions include extending the model to include a visual modality by encoding visual context during memory retrieval or as direct input to the LLM. We believe our work contributes towards exciting new capabilities for instructable and conversable systems, for assisting users and personalizing human-robot communication.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Acknowledgements</head><p>This material is based upon work supported by National Science Foundation grants GRF DGE1745016 &amp; DGE2140739 (GS), a DARPA Young Investigator Award, a NSF CAREER award, an AFOSR Young Investigator Award, and DARPA Machine Common Sense, and an ONR award N000142312415. Any opinions, findings and conclusions or recommendations expressed in this material are those of the authors and do not necessarily reflect the views of the United States Army, the National Science Foundation, or the United States Air Force.</p><p>This research project has benefitted from the Microsoft Accelerate Foundation Models Research (AFMR) grant program through which leading foundation models hosted by Microsoft Azure along with access to Azure credits were provided to conduct the research.</p><p>The authors thank William W. Cohen, Ayush Jain, Théophile Gervet, Nikolaos Gkanatsios, and Adam Harley for discussions and useful feedback over the course of this project.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Ethics Statement</head><p>The objective of this research is to construct autonomous agents. Despite the absence of human experimentation, practitioners could potentially implement this technology in human-inclusive environments. Therefore, applications of our research should appropriately address privacy considerations.</p><p>All the models developed in this study were trained using Ai2Thor <ref type="bibr" target="#b27">(Kolve et al., 2017)</ref>. Consequently, there might be an inherent bias towards North American homes. Additionally, we only consider English language inputs in this study.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Analysis of User Personalization Failures</head><p>The three instances where the Planner made errors in the user personalization experiment (Section 4.4) involved logical mistakes or inappropriate alterations to parts of the original plan that were not requested for modification. For instance, in one case -involving a step to modify the plan from making one coffee to two coffees -the Planner includes placing two mugs in the coffee maker simultaneously, which is not a valid plan. In the other two instances, the Planner omits an object from the original plan that was not mentioned in the modification.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B User Feedback Details</head><p>In the user feedback evaluation, once the agent has indicated completion of the task from the original input dialogue, the agent will query feedback from the user. If the simulator indicates success of the task, the agent will end the episode. If the simulator indicates the task is not successful, feedback will be given to the agent for additional planning. This feedback is programatically generated from the TEACh simulator metadata, which gives us information about if the task is successful, and what object state changes are missing in order to complete the task (e.g., bread slice is not toasted, etc.). For each object state that is incorrect, we form a sentence of the following form: "You failed to complete the subtask: subtask. For the object object: description of desired object state." We combine all subtask sentences to create the feedback. HELPER follows the same pipeline (including examples, retrieval, planning, etc.) to process the feedback as with the input dialogue in the normal TfD evaluation. We show experiments with one and two user feedback requests in Section 4.3 of the main paper (a second request is queried if the first user feedback fails to produce task success).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C User Personalization Inputs</head><p>We provide a full list of the user personalization requests in Listing 1 for the user personalization experiments in Section 4.4.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Prompts</head><p>We provide our full API (Listing 2), corrective API (Listing 3), Planner prompt (Listing 4), replanning prompt (Listing 5), and Locator prompt (Listing 6).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E Pre-conditions</head><p>An example of a pre-condition check for a macroaction is provided in Listing 7.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F Example LLM inputs &amp; Outputs</head><p>We provide examples of dialogue input, retrieved examples, and LLM output for a TEACh sample in Listing 8, Listing 9, and Listing 10.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G Simulation environment</head><p>The TEACh dataset builds on the Ai2thor simulation environment <ref type="bibr" target="#b27">(Kolve et al., 2017)</ref>. At each time step the agent may choose from the following actions: Forward(), Backward(), Turn Left(), Turn Right(), Look Up(), Look Down(), Strafe Left(), Strafe Right(), Pickup(X), Place(X), Open(X), Close(X), ToggleOn(X), ToggleOff(X), Slice(X), and Pour(X), where X refers an object specified via a relative coordinate (x, y) on the egocentric RGB frame. Navigation actions move the agent in discrete steps. We rotate in the yaw direction by 90 degrees, and rotate in the pitch direction by 30 degrees. The RGB and depth sensors are at a resolution of 480x480, a field of view of 90 degrees, and lie at a height of 0.9015 meters. The agent's coordinates are parameterized by a single (x, y, z) coordinate triplet with x and z corresponding to movement in the horizontal plane and y reserved for the vertical direction. The TEACh benchmark allows a maximum of 1000 steps and 30 API failures per episode.</p><p>H Executor details H.1 Semantic mapping and planning</p><p>Obstacle map HELPER maintains a 2D overhead occupancy map of its environment ∈ R H×W that it updates at each time step from the input RGB-D stream. The map is used for exploration and navigation in the environment. At every time step t, we unproject the input depth maps using intrinsic and extrinsic information of the camera to obtain a 3D occupancy map registered to the coordinate frame of the agent, similar to earlier navigation agents <ref type="bibr">(Chaplot et al., 2020a)</ref>. The 2D overhead maps of obstacles and free space are computed by projecting the 3D occupancy along the height direction at multiple height levels and summing. For each input RGB image, we run a SOLQ object segmentor <ref type="bibr" target="#b14">(Dong et al., 2021)</ref> (pretrained on COCO <ref type="bibr" target="#b33">(Lin et al., 2014)</ref> then finetuned on TEACh rooms) to localize each of 116 semantic object categories. For failure detection, we use a simple matching approach from <ref type="bibr">Min et al. (2021)</ref> to compare RGB pixel values before and after taking an action.</p><p>Object location and state tracking We maintain an object memory as a list of object detection 3D centroids and their predicted semantic labels {[(X, Y, Z) i , ℓ i ∈ {1...N }], i = 1..K}, where K is the number of objects detected thus far. The object centroids are expressed with respect to the coordinate system of the agent, and, similar to the semantic maps, updated over time using egomotion. We track previously detected objects by their 3D centroid C ∈ R 3 . We estimate the centroid by taking the 3D point corresponding to the median depth within the segmentation mask and bring it to a common coordinate frame. We do a simple form of non-maximum suppression on the object memory, by comparing the euclidean distance of centroids in the memory to new detected centroids of the same category, and keep the one with the highest score if they fall within a distance threshold.</p><p>For each object in the object memory, we maintain an object state dictionary with a pre-defined list of attributes. These attributes include: category label, centroid location, holding, detection score, can use, sliced, toasted, clean, cooked. For the binary attributes, these are initialized by sending the object crop, defined by the detector mask, to the VLM model, and checking its match to each of [f"The {object_category} is {attribute}", f"The {object_category} is not {attribute}"]. We found that initializing these attributes with the VLM gave only a marginal difference to initializing them to default values in the TEACh benchmark, so we do not use it for the TEACh evaluations. However, we anticipate a general method beyond dataset biases of TEACh would much benefit from such visionbased attribute classification.</p><p>Exploration and path planning HELPER explores the scene using a classical mapping method. We take the initial position of the agent to be the center coordinate in the map. We rotate the agent in-place and use the observations to instantiate an initial map. Second, the agent incrementally completes the maps by randomly sampling an unexplored, traversible location based on the 2D occu-pancy map built so far, and then navigates to the sampled location, accumulating the new information into the maps at each time step. The number of observations collected at each point in the 2D occupancy map is thresholded to determine whether a given map location is explored or not. Unexplored positions are sampled until the environment has been fully explored, meaning that the number of unexplored points is fewer than a predefined threshold.</p><p>To navigate to a goal location, we compute the geodesic distance to the goal from all map locations using graph search <ref type="bibr" target="#b23">(Inoue and Ohashi, 2022)</ref> given the top-down occupancy map and the goal location in the map. We then simulate action sequences and greedily take the action sequence which results in the largest reduction in geodesic distance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>H.2 2D-to-3D unprojection</head><p>For the i-th view, a 2D pixel coordinate (u, v) with depth z is unprojected and transformed to its coordinate (X, Y, Z) T in the reference frame:</p><formula xml:id="formula_0">(X, Y, Z, 1) = G -1 i z u -c x f x , z v -c y f y , z, 1 T<label>(1)</label></formula><p>where (f x , f y ) and (c x , c y ) are the focal lengths and center of the pinhole camera model and G i ∈ SE(3) is the camera pose for view i relative to the reference view. This module unprojects each depth image I i ∈ R H×W ×3 into a pointcloud in the reference frame P i ∈ R M i ×3 with M i being the number of pixels with an associated depth value.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I Additional Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I.1 Alternate EDH Evaluation Split</head><p>Currently, the leaderboard for the TEACh EDH benchmark is not active. Thus, we are not able to evaluate on the true test set for TEACh. We used the original validation seen and unseen splits, which have been used in most previous works <ref type="bibr" target="#b46">(Pashevich et al., 2021;</ref><ref type="bibr" target="#b78">Zheng et al., 2022;</ref><ref type="bibr" target="#b40">Min et al., 2022;</ref><ref type="bibr" target="#b77">Zhang et al., 2022)</ref>. In Table <ref type="table">4</ref> we report the alternative validation and test split as mentioned in the TEACh github README, and also reported by DANLI <ref type="bibr" target="#b77">(Zhang et al., 2022)</ref>.</p><p>Table 4: Alternative TEACh Execution from Dialog History (EDH) evaluation split. Trajectory length weighted metrics are included in ( parentheses ). SR = success rate. GC = goal condition success rate. Note that Test Seen and Unseen are not the true TEACh test sets, but an alternative split of the validation set used until the true test evaluation is released, as mentioned in the TEACh github README, and also reported by DANLI <ref type="bibr" target="#b77">(Zhang et al., 2022)</ref>.</p><p>Validation Test Unseen Seen Unseen Seen SR GC SR GC SR GC SR GC E.T. 8.35 (0.86) 6.34 (3.69) 8.28 (1.13) 8.72 (3.82) 7.38 (0.97) 6.06 (3.17) 8.82 (0.29) 9.46 (3.03) DANLI 17.25 (7.16) 23.88 (19.38) 16.89 (9.12) 25.10 (22.56) 16.71 (7.33) 23.00 (20.55) 18.63 (9.41) 24.77 (21.90) HELPER 17.25 (3.22) 25.24 (8.12) 19.21 (4.72) 33.54 (10.95) 17.55 (2.59) 26.49 (7.67) 17.97 (3.44) 30.81 (8.93) Listing 1: Full list of user personalization requests for the user personalization evaluation. original input to LLM: [['Driver', 'What is my task?'], ['Commander', "Make me a sandwich. The name of this sandwich is called the Larry sandwich. The sandwich has two slices of toast, 3 slices of tomato, and 3 slice of lettuce on a clean plate."]] [['Driver', 'What is my task?'], ['Commander', 'Make me a salad. The name of this salad is called the David salad. The salad has two slices of tomato and three slices of lettuce on a clean plate.']] [['Driver', 'What is my task?'], ['Commander', "Make me a salad. The name of this salad is called the Dax salad. The salad has two slices of cooked potato. You'll need to cook the potato on the stove. The salad also has a slice of lettuce and a slice of tomato. Put all components on a clean plate."]] [['Driver', 'What is my task?'], ['Commander', 'Make me breakfast. The name of this breakfast is called the Mary breakfast. The breakfast has a mug of coffee, and two slices of toast on a clean plate.']] [['Driver', 'What is my task?'], ['Commander', 'Make me breakfast. The name of this breakfast is called the Lion breakfast. The breakfast has a mug of coffee, and four slices of tomato on a clean plate.']] [['Driver', 'What is my task?'], ['Commander', 'Rearrange some objects. The name of this rearrangement is called the Lax rearrangement. Place three pillows on the sofa.']] [['Driver', 'What is my task?'], ['Commander', 'Rearrange some objects. The name of this rearrangement is called the Pax rearrangement. Place two pencils and two pens on the desk.']] [['Driver', 'What is my task?'], ['Commander', 'Clean some objects. The name of this cleaning is called the Gax cleaning. Clean two plates and two cups.']] [['Driver', 'What is my task?'], ['Commander', "Make me a sandwich. The name of this sandwich is called the Gabe sandwich. The sandwich has two slices of toast, 2 slices of tomato, and 1 slice of lettuce on a clean plate."]] [['Driver', 'What is my task?'], ['Commander', 'Clean some objects. The name of this cleaning is called the Kax cleaning. Clean a mug and a pan.']]</p><p>No change: "Make me the Larry sandwich" "Make me the David salad" "Make me the Dax salad" "Make me the Mary breakfast" "Make me the Lion breakfast" "Complete the Lax rearrangement" "Complete the Pax rearrangement" "Perform the Gax cleaning" "Make me the Gabe sandwich" "Perform the Kax cleaning" One change: "Make me the Larry sandwich with four slices of lettuce" "Make me the David salad with a slice of potato" "Make me the Dax salad without lettuce" "Make me the Mary breakfast with no coffee" "Make me the Lion breakfast with three slice of tomato" "Complete the Lax rearrangement with two pillows" "Complete the Pax rearrangement but use one pencil instead of the the two pencils" "Perform the Gax cleaning with three plates instead of two" "Make me the Gabe sandwich with only 1 slice of tomato" "Perform the Kax cleaning with only a mug" Two changes: "Make me the Larry sandwich with four slices of lettuce and two slices of tomato" "Make me the David salad but add a slice of potato and add one slice of egg" "Make me the Dax salad without lettuce and without potato" "Make me the Mary breakfast with no coffee and add an egg" "Make me the Lion breakfast with three slice of tomato and two mugs of coffee" "Complete the Lax rearrangement with two pillows and add a remote" "Complete the Pax rearrangement but use one pencil instead of the two pencils and add a book" "Perform the Gax cleaning with three plates instead of the two plates and include a fork" "Make me the Gabe sandwich with only 1 slice of tomato and two slices of lettuce" "Perform the Kax cleaning without the pan and include a spoon" Three changes: "Make me the Larry sandwich with four slices of lettuce, two slices of tomato, and place all components directly on the countertop" "Make me the David salad and add a slice of potato, add one slice of egg, and bring a fork with it" "Make me the Dax salad without lettuce, without potato, and add an extra slice of tomato" "Make me the Mary breakfast with no coffee, add an egg, and add a cup filled with water" "Make me the Lion breakfast with three slice of tomato, two mugs of coffee, and add a fork" "Complete the Lax rearrangement with two pillows, a remote, and place it on the arm chair instead" "Complete the Pax rearrangement but use one pencil instead of the two pencils and include a book and a baseball bat" "Perform the Gax cleaning with three plates instead of the two plates, include a fork, and do not clean any cups" "Make me the Gabe sandwich with only 1 slice of tomato, two slices of lettuce, and add a slice of egg" "Perform the Kax cleaning without the pan, include a spoon, and include a pot" Listing 4: Full Prompt for the Planner. {} indicates areas that are replaced in the prompt.</p><p>You are an adept at translating human dialogues into sequences of actions for household robots.</p><p>Given a dialogue between a &lt;Driver&gt; and a &lt;Commander&gt;, you convert the conversation into a Python program to be executed by a robot.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>{API}</head><p>Write a script using Python and the InteractionObject class and functions defined above that could be executed by a household robot.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>{RETRIEVED_EXAMPLES}</head><p>Adhere to these stringent guidelines: 1. Use only the classes and functions defined previously. Do not create functions that are not provided above. 2. Make sure that you output a consistent plan. For example, opening of the same object should not occur in successive steps. 3. Make sure the output is consistent with the proper affordances of objects. For example, a couch cannot be opened, so your output should never include the open() function for this object, but a fridge can be opened. 4. The input is dialogue between &lt;Driver&gt; and &lt;Commander&gt;. Interpret the dialogue into robot actions. Do not output any dialogue. 5. Object categories should only be chosen from the following classes: ShowerDoor, Cabinet, CounterTop, Sink, Towel, HandTowel, TowelHolder, SoapBar, ToiletPaper, ToiletPaperHanger, HandTowelHolder, SoapBottle, GarbageCan, Candle, ScrubBrush, Plunger, SinkBasin, Cloth, SprayBottle, Toilet, Faucet, ShowerHead, Box, Bed, Book, DeskLamp, BasketBall, Pen, Pillow, Pencil, CellPhone, KeyChain, Painting, CreditCard, AlarmClock, CD, Laptop, Drawer, SideTable, Chair, Blinds, Desk, Curtains, Dresser, Watch, Television, WateringCan, Newspaper, FloorLamp, RemoteControl, HousePlant, Statue, Ottoman, ArmChair, Sofa, DogBed, BaseballBat, TennisRacket, VacuumCleaner, Mug, ShelvingUnit, Shelf, StoveBurner, Apple, Lettuce, Bottle, Egg, Microwave, CoffeeMachine, Fork, Fridge, WineBottle, Spatula, Bread, Tomato, Pan, Cup, Pot, SaltShaker, Potato, PepperShaker, ButterKnife, StoveKnob, Toaster, DishSponge, Spoon, Plate, Knife, DiningTable, Bowl, LaundryHamper, Vase, Stool, CoffeeTable, Poster, Bathtub, TissueBox, Footstool, BathtubBasin, ShowerCurtain, TVStand, Boots, RoomDecor, PaperTowelRoll, Ladle, Kettle, Safe, GarbageBag, TeddyBear, TableTopDecor, Dumbbell, Desktop, AluminumFoil, Window, LightSwitch, AppleSliced, BreadSliced, LettuceSliced, PotatoSliced, TomatoSliced 6. You can only pick up one object at a time. If the agent is holding an object, the agent should place or put down the object before attempting to pick up a second object. 7. Each object instance should instantiate a different InteractionObject class even if two object instances are the same object category. Follow the output format provided earlier. Think step by step to carry out the instruction. Write a Python script that could be executed by a household robot for the following: dialogue: {command} Python script: Listing 5: Full Prompt for the Rectifier. {} indicates areas that are replaced in the prompt.</p><p>You are an excellent interpreter of human instructions for household tasks. Given a failed action subgoal by a household robot, dialogue instructions between robot &lt;Driver&gt; and user &lt;Commander&gt;, and information about the environment and failure, you provide a sequence of robotic subgoal actions to overcome the failure.</p><p>{API} {API_CORRECTIVE} Information about the failure and environment are given as follows:</p><p>Failed subgoal: The robotic subgoal for which the failure occured. Execution error: feedback as to why the failed subgoal occurred. Input dialogue: full dialogue instructions between robot &lt;Driver&gt; and user &lt;Commander&gt; for the complete task. This may or may not be useful.</p><p>I will give you examples of the input and output you will generate. {retrieved_plans} Fix the subgoal exectuion error using only the InteractionObject class and functions defined above that could be executed by a household robot. Follow these rules very strictly: 1. Important! Use only the classes and functions defined previously. Do not create functions or additional code that are not provided in the above API. Do not include if-else statements. 2. Important! Make sure that you output a consistent plan. For example, opening of the same object should not occur in successive steps. 3. Important! Make sure the output is consistent with the proper affordances of objects. For example, a couch cannot be opened, so your output should never include the open() function for this object, but a fridge can be opened. 4. Important! The dialogue is between &lt;Driver&gt; and &lt;Commander&gt;. The dialogue may or may not be helpful. Do not output any dialogue. 5. Important! Object classes should only be chosen from the following classes: ShowerDoor, Cabinet, CounterTop, Sink, Towel, HandTowel, TowelHolder, SoapBar, ToiletPaper, ToiletPaperHanger, HandTowelHolder, SoapBottle, GarbageCan, Candle, ScrubBrush, Plunger, SinkBasin, Cloth, SprayBottle, Toilet, Faucet, ShowerHead, Box, Bed, Book, DeskLamp, BasketBall, Pen, Pillow, Pencil, CellPhone, KeyChain, Painting, CreditCard, AlarmClock, CD, Laptop, Drawer, SideTable, Chair, Blinds, Desk, Curtains, Dresser, Watch, Television, WateringCan, Newspaper, FloorLamp, RemoteControl, HousePlant, Statue, Ottoman, ArmChair, Sofa, DogBed, BaseballBat, TennisRacket, VacuumCleaner, Mug, ShelvingUnit, Shelf, StoveBurner, Apple, Lettuce, Bottle, Egg, Microwave, CoffeeMachine, Fork, Fridge, WineBottle, Spatula, Bread, Tomato, Pan, Cup, Pot, SaltShaker, Potato, PepperShaker, ButterKnife, StoveKnob, Toaster, DishSponge, Spoon, Plate, Knife, DiningTable, Bowl, LaundryHamper, Vase, Stool, CoffeeTable, Poster, Bathtub, TissueBox, Footstool, BathtubBasin, ShowerCurtain, TVStand, Boots, RoomDecor, PaperTowelRoll, Ladle, Kettle, Safe, GarbageBag, TeddyBear, TableTopDecor, Dumbbell, Desktop, AluminumFoil, Window, LightSwitch, AppleSliced, BreadSliced, LettuceSliced, PotatoSliced, TomatoSliced 6. Important! You can only pick up one object at a time. If the agent is holding an object, the agent should place or put down the object before attempting to pick up a second object. 7. Important! Each object instance should instantiate a different InteractionObject class even if two object instances are the same object category. 8. Important! Your plan should ONLY fix the failed subgoal. Do not include plans for other parts of the dialogue or future plan that are irrelevant to the execution error and failed subgoal. 9. Important! output "do_nothing()" if the agent should not take any corrective actions. Adhere to the output format I defined above. Think step by step to carry out the instruction.</p><p>Make use of the following information to help you fix the failed subgoal: Failed subgoal: ... Execution error: ... Input dialogue: ... You should respond in the following format: Explain: Are there any steps missing to complete the subgoal? Why did the failed subgoal occur? What does the execution error imply for how to fix your future plan? Plan (Python script): A Python script to only fix the execution error.</p><p>Explain: Listing 6: Full Prompt for the Locator. {} indicates areas that are replaced in the prompt.</p><p>You are a household robot trying to locate objects within a house. You will be given a target object category, your task is to output the top 3 most likely object categories that the target object category is likely to be found near: {OBJECT_CLASSES} For your answer, take into account commonsense co-occurances of objects within a house and (if relevant) any hints given by the instruction dialogue between the robot &lt;Driver&gt; and user &lt;Commander&gt;.</p><p>For example, if given the target object category is "Knife" and the following dialogue: "&lt;Commander&gt; hi, make a slice of tomato. &lt;Driver&gt; where is the tomato? &lt;Driver&gt; where is the knife? &lt;Commander&gt; in the sink.", you might output the following top 3 most likely object categories: "answer: Sink, CounterTop, Cabinet". Important: Your output should ONLY a list (3 words seperated by commas) of three object categories from the list above.</p><p>What are the top 3 most likely object categories for where to find the target category {INPUT_TARGET_OBJECT} near? Here is the dialogue that may or may not contain relevant information for your answer: {INPUT_DIALOGUE} answer:</p><p>Listing 7: Example of a precondition check for the slice macro-action if subgoal=="Slice": # contraint check for "slice" macro-action if object_tracker.get_label_of_holding()!="Knife": # first need to be holding a knife to slice program_to_add = [ 'target_knife = InteractionObject("Knife")', 'target_knife.go_to()', 'target_knife.pickup()', ]</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: HELPER's architecture. The model uses memory-augmented LLM prompting for task planning from instructions, corrections and human-robot dialogue and for re-planning during failures given feedback from a VLM model. The generated program is executed the Executor module. The Executor builds semantic, occupancy and 3D object maps, tracks object states, verifies action preconditions, and queries LLMs for search locations for objects missing from the maps, using the Locator module.</figDesc><graphic coords="3,306.14,70.87,218.27,135.78" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: HELPER parses dialogue segments, instructions, and corrections into visuomotor programs using retrievalaugmented LLM prompting. A. Illustration of the encoding and memory retrieval process. B. Prompt format and output of the Planner.</figDesc><graphic coords="5,70.87,70.87,453.53,170.06" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure4: Inference of a failure feedback description by matching potential failure language descriptions with the current image using a vision-language model (VLM).</figDesc><graphic coords="5,306.14,306.68,218.27,58.04" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><graphic coords="2,70.87,70.87,453.56,228.41" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 2 :</head><label>2</label><figDesc>Trajectory from Dialogue (TfD) and Execution from Dialog History (EDH) evaluation on the TEACh validation set. Trajectory length weighted metrics are included in ( parentheses ). SR = success rate. GC = goal condition success rate.</figDesc><table><row><cell></cell><cell></cell><cell cols="2">TfD</cell><cell></cell><cell></cell><cell></cell><cell>EDH</cell></row><row><cell></cell><cell></cell><cell>Unseen</cell><cell></cell><cell>Seen</cell><cell></cell><cell>Unseen</cell><cell>Seen</cell></row><row><cell></cell><cell>SR</cell><cell>GC</cell><cell>SR</cell><cell>GC</cell><cell>SR</cell><cell>GC</cell><cell>SR</cell><cell>GC</cell></row><row><cell>E.T.</cell><cell cols="5">0.48 (0.12) 0.35 (0.59) 1.02 (0.17) 1.42 (4.82) 7.8 (0.9)</cell><cell>9.1 (1.7)</cell><cell cols="2">10.2 (1.7) 15.7 (4.1)</cell></row><row><cell>JARVIS</cell><cell cols="8">1.80 (0.30) 3.10 (1.60) 1.70 (0.20) 5.40 (4.50) 15.80 (2.60) 16.60 (8.20) 15.10 (3.30) 22.60 (8.70)</cell></row><row><cell>FILM</cell><cell>2.9 (1.0)</cell><cell>6.1 (2.5)</cell><cell>5.5 (2.6)</cell><cell>5.8 (11.6)</cell><cell cols="2">10.2 (1.0) 18.3 (2.7)</cell><cell cols="2">14.3 (2.1) 26.4 (5.6)</cell></row><row><cell>DANLI</cell><cell cols="8">7.98 (3.20) 6.79 (6.57) 4.97 (1.86) 10.50 (10.27) 16.98 (7.24) 23.44 (19.95) 17.76 (9.28) 24.93 (22.20)</cell></row><row><cell cols="9">HELPER (ours) 13.73 (1.61) 14.17 (4.56) 12.15 (1.79) 18.62 (9.28) 17.40 (2.91) 25.86 (7.90) 18.59 (4.00) 32.09 (9.81)</cell></row><row><cell>Ablations</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">w/o Mem Aug 11.27 (1.39) 11.09 (4.00)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">w/o Pre Check 11.6 (1.36) 11.32 (4.15)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">w/o Correction 12.9 (1.53) 12.45 (4.91)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">w/o Locator 12.09 (1.29) 10.89 (3.83)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>w/ GPT-3.5</cell><cell cols="2">9.48 (1.21) 10.05 (3.68)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>w/ GT depth</cell><cell cols="2">15.85 (2.85) 14.49 (6.89)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="4">w/ GT depth,seg 22.55 (6.39) 30.00 (14.56)</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="4">w/ GT percept 30.23 (9.12) 50.46 (20.24)</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>User Feedback</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">w/ Feedback 1 16.34 (1.67) 14.70 (4.69)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">w/ Feedback 2 17.48 (1.97) 14.93 (4.74)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="4">w/ GT percept, 37.75 (10.96) 56.77 (19.80)</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Feedback 2</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 3 :</head><label>3</label><figDesc>Evaluation of HELPER for user personalization. Reported is success of generating the correct plan for 10 personalized plans for a request of the original plan without modifications, and one, two, or three modifications to the original plan. These experiments use the text-davinci-003 model as the prompted LLM.</figDesc><table><row><cell></cell><cell>Success</cell></row><row><cell>Original Plan</cell><cell>100%</cell></row><row><cell>One Change</cell><cell>100%</cell></row><row><cell>Two Changes</cell><cell>80%</cell></row><row><cell>Three Changes</cell><cell>90%</cell></row><row><cell cols="2">from pixels would be required for failure detection,</cell></row><row><cell cols="2">which model VLMs can deliver and we will address</cell></row><row><cell>in future work.</cell><cell></cell></row><row><cell cols="2">2. 3D perception bottleneck. HELPER relies on</cell></row><row><cell cols="2">2D object detectors and depth 3D lifting for 3D ob-</cell></row><row><cell cols="2">ject localization. We observe a 2X boost in TEACh</cell></row><row><cell cols="2">success rate from using ground truth segmentation</cell></row><row><cell cols="2">in HELPER. In future work we plan to integrate</cell></row><row><cell cols="2">early 2D features into persistent 3D scene feature</cell></row><row><cell cols="2">representations for more accurate 3D object detec-</cell></row><row><cell>tion.</cell><cell></cell></row><row><cell cols="2">4. Cost from LLM querying. GPT-4 API is the</cell></row><row><cell cols="2">most accurate LLM used in HELPER and incurs a</cell></row><row><cell cols="2">significant cost. NLP research in model compres-</cell></row><row><cell cols="2">sion may help decreasing these costs, or finetuning</cell></row><row><cell cols="2">smaller models with enough input-output pairs.</cell></row><row><cell cols="2">3. Multimodal (vision and language) memory</cell></row><row><cell cols="2">retrieval. Currently, we use a text bottleneck in</cell></row><row><cell cols="2">our environment state descriptions. Exciting fu-</cell></row><row><cell cols="2">ture directions include exploration of visual state</cell></row><row><cell cols="2">incorporation to the language model and partial</cell></row><row><cell cols="2">adaptation of its parameters. A multi-modal ap-</cell></row><row><cell cols="2">proach to the memory and plan generation would</cell></row><row><cell cols="2">help contextualize the planning more with the vi-</cell></row><row><cell>sual state.</cell><cell></cell></row></table></figure>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>class InteractionObject:</p><p>""" This class represents an expression that uniquely identifies an object in the house. """ def __init__(self, object_class: str, landmark: str = None, attributes: list = []): ''' object_class: object category of the interaction object (e.g., "Mug", "Apple") landmark: (optional if mentioned) landmark object category that the interaction object is in relation to (e.g., "CounterTop" for "apple is on the countertop") attributes: (optional) list of strings of desired attributes for the object. These are not necessarily attributes that currently exist, but ones that the object should eventually have. Attributes can only be from the following: "toasted", "clean", "cooked" ''' self.object_class = object_class self.landmark = landmark self.attributes = attributes def pickup(self):</p><p>"""pickup the object.</p><p>This function assumes the object is in view.</p><p>Example: dialogue: &lt;Commander&gt; Go get the lettuce on the kitchen counter. Python script: target_lettuce = InteractionObject("Lettuce", landmark = "CounterTop") target_lettuce.go_to() target_lettuce.pickup() """ pass def place(self, landmark_name): """put the interaction object on the landmark_name object.</p><p>landmark_name must be a class InteractionObject instance</p><p>This function assumes the robot has picked up an object and the landmark object is in view.</p><p>Example: dialogue: &lt;Commander&gt; Put the lettuce on the kitchen counter. Python script: target_lettuce = InteractionObject("Lettuce", landmark = "CounterTop") target_lettuce.go_to() target_lettuce.pickup() target_countertop = InteractionObject("CounterTop") target_countertop.go_to() target_lettuce.place(target_countertop) """ pass def slice(self): """slice the object into pieces.</p><p>This function assumes the agent is holding a knife and the agent has navigated to the object using go_to().</p><p>Example: dialogue: &lt;Commander&gt; Cut the apple on the kitchen counter. Python script: target_knife = InteractionObject("Knife") # first we need a knife to slice the apple with target_knife.go_to() target_knife.pickup() target_apple = InteractionObject("Apple", landmark = "CounterTop") target_apple.go_to() target_apple.slice() """ pass def toggle_on(self): """toggles on the interaction object. This function assumes the interaction object is already off and the agent has navigated to the object. Only some landmark objects can be toggled on. Lamps, stoves, and microwaves are some examples of objects that can be toggled on.</p><p>Example: dialogue: &lt;Commander&gt; Turn on the lamp. Python script: target_floorlamp = InteractionObject("FloorLamp") target_floorlamp.go_to() target_floorlamp.toggle_on() """ pass def toggle_off(self): """toggles off the interaction object.</p><p>This function assumes the interaction object is already on and the agent has navigated to the object. Only some objects can be toggled off. Lamps, stoves, and microwaves are some examples of objects that can be toggled off.</p><p>Example: dialogue: &lt;Commander&gt; Turn off the lamp. Python script: target_floorlamp = InteractionObject("FloorLamp") target_floorlamp.go_to() target_floorlamp.toggle_off() """ pass def go_to(self): """Navigate to the object """ pass def open(self):</p><p>"""open the interaction object. This function assumes the landmark object is already closed and the agent has already navigated to the object. Only some objects can be opened. Fridges, cabinets, and drawers are some example of objects that can be closed.</p><p>Example: dialogue: &lt;Commander&gt; Get the lettuce in the fridge. Python script: target_fridge = InteractionObject("Fridge") target_lettuce = InteractionObject("Lettuce", landmark = "Fridge") target_fridge.go_to() target_fridge.open() target_lettuce.pickup() """ pass def close(self): """close the interaction object. This function assumes the object is already open and the agent has already navigated to the object. Only some objects can be closed. Fridges, cabinets, and drawers are some example of objects that can be closed. """ pass def clean(self):</p><p>"""wash the interaction object to clean it in the sink. This function assumes the object is already picked up.</p><p>Example: dialogue: &lt;Commander&gt; Clean the bowl Python script: target_bowl = InteractionObject("Bowl", attributes = ["clean"]) target_bowl.clean() """ pass def put_down(self):</p><p>"""puts the interaction object currently in the agent's hand on the nearest available receptacle This function assumes the object is already picked up. This function is most often used when the holding object is no longer needed, and the agent needs to pick up another object """ pass def pour(self, landmark_name):</p><p>"""pours the contents of the interaction object into the landmark object specified by the landmark_name argument landmark_name must be a class InteractionObject instance This function assumes the object is already picked up and the object is filled with liquid. """ pass def fill_up(self): """fill up the interaction object with water This function assumes the object is already picked up. Note that only container objects can be filled with liquid. """ pass def pickup_and_place(self, landmark_name):</p><p>"""go_to() and pickup() this interaction object, then go_to() and place() the interaction object on the landmark_name object.</p><p>landmark_name must be a class InteractionObject instance """ pass def empty(self): """Empty the object of any other objects on/in it to clear it out.</p><p>Useful when the object is too full to place an object inside it.</p><p>Example: dialogue: &lt;Commander&gt; Clear out the sink. Python script: target_sink = InteractionObject("Sink") target_sink.empty() """ pass def cook(self): """Cook the object Example: dialogue: &lt;Commander&gt; Cook the potato. Python script: target_potato = InteractionObject("Potato", attributes = ["cooked"]) target_potato.cook() """ pass def toast(self): """Toast a bread slice in a toaster</p><p>Toasting is only supported with slices of bread Example: dialogue: &lt;Commander&gt; Get me a toasted bread slice. Python script: target_breadslice = InteractionObject("BreadSliced", attributes = ["toasted"]) target_breadslice.toast() """ pass class AgentCorrective: ''' This class represents agent corrective actions that can be taken to fix a subgoal error Example usage: agent = AgentCorrective() agent.move_back() ''' def move_back(self): """Step backwards away from the object Useful when the object is too close for the agent to interact with it """ pass def move_closer(self): """Step forward to towards the object to get closer to it</p><p>Useful when the object is too far for the agent to interact with it """ pass def move_alternate_viewpoint(self): """Move to an alternate viewpoint to look at the object Useful when the object is occluded or an interaction is failing due to collision or occlusion. """ pass Dialogue input: &lt;Driver&gt; how can I help you today?&lt;Commander&gt; can you please make me a salad on a clean plate with tomato and cooked potato?&lt;Driver&gt; does the salad require chopped lettuce?&lt;Commander&gt; nope!&lt;Driver&gt; is that all?&lt;Commander&gt; can you place them on a plate?&lt;Driver&gt; are they not already on a plate?</p><p>Retrieved Examples: Example 1: dialogue: &lt;Driver&gt; What should I do today? &lt;Commander&gt; hi, make a slice of tomato. &lt;Driver&gt; where is the tomato? &lt;Driver&gt; where is the knife? &lt;Commander&gt; in the sink. &lt;Driver&gt; Tomato sliced. What next? &lt;Commander&gt; slice the potato. &lt;Driver&gt; Where is the potato? &lt;Commander&gt; in the microwave. &lt;Commander&gt; place all salad components on a plate. &lt;Driver&gt; How many slices of potato? &lt;Commander&gt; all salad components need to be place on a plate. &lt;Driver&gt; Where is the plate? &lt;Commander&gt; plate. &lt;Commander&gt; try the tomato piece. &lt;Driver&gt; done. &lt;Commander&gt; we are finished. Python script: target_tomato = InteractionObject("Tomato") target_knife = InteractionObject("Knife") # need knife to slice tomato target_knife.go_to() # first get knife target_knife.pickup() target_tomato.go_to() target_tomato.slice() target_tomato_slice1 = InteractionObject("TomatoSliced") # instantiate a tomato slice object after slicing tomato target_potato = InteractionObject("Potato", landmark = "Microwave") target_potato.go_to() target_potato.slice() target_potato_slice1 = InteractionObject("PotatoSliced") # instantiate a potato slice object after slicing potato target_knife.put_down() # put down the knife to free up the agent's hand target_plate = InteractionObject("Plate") target_tomato_slice1.pickup_and_place(target_plate) # pick up the tomato slice and place it on the plate target_potato_slice1.pickup_and_place(target_plate) # pick up the potato slice and place it on the plate Example 2: dialogue: &lt;Driver&gt; how can I help? &lt;Commander&gt; please serve 4 slices of tomato on a plate. &lt;Driver&gt; sure. &lt;Driver&gt; where can i find the tomato? &lt;Driver&gt; an knife. &lt;Commander&gt; Tomato on countertop and knife in fridge. &lt;Commander&gt; there should be a plate on the right cupboard by the sink. &lt;Driver&gt; completed. &lt;Commander&gt; great work thanks. Python script: target_tomato = InteractionObject("Tomato") target_knife = InteractionObject("Knife") # need knife to slice tomato target_knife.go_to() # first get knife target_knife.pickup() target_tomato.go_to() target_tomato.slice() target_plate = InteractionObject("Plate", landmark = "Sink") # place 4 slices of the cut tomato on the plate target_tomato_slice1 = InteractionObject("TomatoSliced") # instantiate first slice of tomato target_tomato_slice2 = InteractionObject("TomatoSliced") # instantiate second slice of tomato target_tomato_slice3 = InteractionObject("TomatoSliced") # instantiate third slice of tomato target_tomato_slice4 = InteractionObject("TomatoSliced"</p><p>) # instantiate fourth slice of tomato target_tomato_slice1.pickup_and_place(target_plate) # pick up the first tomato slice and place it on the plate target_tomato_slice2.pickup_and_place(target_plate) # pick up the second tomato slice and place it on the plate target_tomato_slice3.pickup_and_place(target_plate) # pick up the third tomato slice and place it on the plate target_tomato_slice4.pickup_and_place(target_plate) # pick up the fourth tomato slice and place it on the plate Example 3: dialogue: &lt;Driver&gt; hi, what is task. &lt;Commander&gt; make a plate of toast. &lt;Commander&gt; bread in the sink. &lt;Driver&gt; knife. &lt;Commander&gt; on the chair beside the table. &lt;Commander&gt; clean the plate. &lt;Driver&gt; there is a clean one, do i need to clean the other one. &lt;Commander&gt; you can use the clean one.</p><p>&lt;Driver&gt; done. &lt;Commander&gt; good job. &lt;Driver&gt; :). Python script: target_bread = InteractionObject("Bread", landmark = "Sink") target_knife = InteractionObject("Knife", landmark = "Chair") target_toaster = InteractionObject("Toaster") # need knife to slice bread target_knife.go_to() # first get knife target_knife.pickup() target_bread.go_to() target_bread.slice() # slice bread using knife target_knife.put_down() # put down the knife to free up the agent's hand target_bread_slice1 = InteractionObject("BreadSliced") # instantiate a bread slice object after slicing bread target_bread_slice1.pickup_and_place(target_toaster) # pick up the bread slice and place it in the toaster target_toaster.toggle_on() # turn on toaster to toast bread target_toaster.</p><p>toggle_off() # turn off toaster to complete toasting process # place toast on plate target_plate = InteractionObject("Plate") target_plate.clean() target_plate.put_down() target_bread_slice1.pickup_and_place(target_plate) # pick up the toasted bread slice and place it on the plate LLM output: target_tomato = InteractionObject("Tomato") target_potato = InteractionObject("Potato") target_plate = InteractionObject("Plate") target_stove = InteractionObject("StoveBurner") # Clean the plate target_plate.go_to() target_plate.clean() # Cook the potato target_potato.go_to() target_potato.pickup() target_stove.go_to() target_potato.place(target_stove) target_stove.toggle_on() target_stove.toggle_off() # Place the cooked potato on the plate target_potato = InteractionObject("Potato") target_potato.pickup() target_plate.go_to() target_potato.place(target_plate) # Place the tomato on the plate target_tomato.go_to() target_tomato.pickup() target_plate.go_to() target_tomato.place(target_plate) Listing 9: Example of dialogue input, retrieved examples, and LLM output for a TEACh sample Dialogue input: &lt;Driver&gt; what do i do today&lt;Commander&gt; Hi. Please place two tissue boxes on a table. One is on the gray chair in the corner.&lt;Commander&gt; The other is under the tv&lt;Commander&gt; tv*&lt;Driver&gt; where is the other one Retrieved Examples: Example 1: dialogue: &lt;Driver&gt; hi, what is task. &lt;Commander&gt; make a plate of toast. &lt;Commander&gt; bread in the sink. &lt;Driver&gt; knife. &lt;Commander&gt; on the chair beside the table. &lt;Commander&gt; clean the plate. &lt;Driver&gt; there is a clean one, do i need to clean the other one. &lt;Commander&gt; you can use the clean one.</p><p>&lt;Driver&gt; done. &lt;Commander&gt; good job. &lt;Driver&gt; :). Python script: target_bread = InteractionObject("Bread", landmark = "Sink") target_knife = InteractionObject("Knife", landmark = "Chair") target_toaster = InteractionObject("Toaster") # need knife to slice bread target_knife.go_to() # first get knife target_knife.pickup() target_bread.go_to() target_bread.slice() # slice bread using knife target_knife.put_down() # put down the knife to free up the agent's hand target_bread_slice1 = InteractionObject("BreadSliced") # instantiate a bread slice object after slicing bread target_bread_slice1.pickup_and_place(target_toaster) # pick up the bread slice and place it in the toaster target_toaster.toggle_on() # turn on toaster to toast bread target_toaster.toggle_off() # turn off toaster to complete toasting process # place toast on plate target_plate = InteractionObject("Plate") target_plate.clean() target_plate.put_down() target_bread_slice1.pickup_and_place(target_plate) # pick up the toasted bread slice and place it on the plate Example 2: dialogue: &lt;Driver&gt; how can I help? &lt;Commander&gt; please serve 4 slices of tomato on a plate. &lt;Driver&gt; sure. &lt;Driver&gt; where can i find the tomato? &lt;Driver&gt; an knife. &lt;Commander&gt; Tomato on countertop and knife in fridge. &lt;Commander&gt; there should be a plate on the right cupboard by the sink. &lt;Driver&gt; completed. &lt;Commander&gt; great work thanks. Python script: target_tomato = InteractionObject("Tomato", landmark = "CounterTop") target_knife = InteractionObject("Knife", landmark = "Fridge") # need knife to slice tomato target_knife.go_to() # first get knife target_knife.pickup() target_tomato.go_to() target_tomato.slice() target_plate = InteractionObject("Plate", landmark = "Sink") # place 4 slices of the cut tomato on the plate target_tomato_slice1 = InteractionObject("TomatoSliced") # instantiate first slice of tomato target_tomato_slice2 = InteractionObject("TomatoSliced") # instantiate second slice of tomato target_tomato_slice3 = InteractionObject("TomatoSliced") # instantiate third slice of tomato target_tomato_slice4 = InteractionObject("TomatoSliced") # instantiate fourth slice of tomato target_tomato_slice1.pickup_and_place(target_plate) # pick up the first tomato slice and place it on the plate target_tomato_slice2.pickup_and_place(target_plate) # pick up the second tomato slice and place it on the plate target_tomato_slice3.pickup_and_place(target_plate) # pick up the third tomato slice and place it on the plate target_tomato_slice4.pickup_and_place(target_plate) # pick up the fourth tomato slice and place it on the plate Example 3: dialogue: &lt;Driver&gt; How can I help? &lt;Commander&gt; put all the scrub brushes on the counter top. &lt;Driver&gt; where can I find them? &lt;Commander&gt; one is on top of the toilet. &lt;Driver&gt; there is only a cloth. &lt;Driver&gt; I put it on the counter top. &lt;Driver&gt; are there more? &lt;Commander&gt; can you try with the brush to the side of the toilet please? &lt;Driver&gt; okay. Python script: target_scrub_brush1 = InteractionObject("ScrubBrush", landmark = "Toilet") target_counter_top = InteractionObject("CounterTop") target_scrub_brush1.pickup_and_place(target_counter_top) # pick up the first ScrubBrush and place it on the CounterTop target_scrub_brush2 = InteractionObject("ScrubBrush", landmark = "Toilet") target_scrub_brush2.pickup_and_place(target_counter_top) # pick up the second ScrubBrush and place it on the CounterTop LLM output: target_tissue_box1 = InteractionObject("TissueBox", landmark = "Chair") target_table = InteractionObject("</p><p>Table") target_tissue_box1.pickup_and_place(target_table) # pick up the first TissueBox and place it on the Table target_tissue_box2 = InteractionObject("TissueBox", landmark = "TVStand") target_tissue_box2.pickup_and_place(target_table) # pick up the second TissueBox and place it on the Table Dialogue input: &lt;Driver&gt; hi how can i help&lt;Commander&gt; Can you prepare me a coffee in a clean mug&lt;Commander&gt; There should be a mug on the white table&lt;Commander&gt; it might need cleaning first&lt;Commander&gt; that's great&lt;Driver&gt; are they not already on a plate? Retrieved Examples: Example 1: dialogue: &lt;Commander&gt; Prepare coffee in a clean mug. Python script: target_mug = InteractionObject("Mug") target_mug.go_to() target_mug.pickup() # clean mug in the sink target_mug.clean() target_coffee_machine = InteractionObject("CoffeeMachine") target_coffee_machine.go_to() target_mug.place(target_coffee_machine) target_coffee_machine.toggle_on() # turn on coffee machine to make coffee target_coffee_machine.toggle_off() # turn off coffee machine after done Example 2: dialogue: &lt;Driver&gt; what can i for you today? &lt;Commander&gt; could you boil a potato? &lt;Driver&gt; sure thing! &lt;Driver&gt; are there any pots? &lt;Commander&gt; pots for boiling potato? &lt;Driver&gt; yes. &lt;Commander&gt; just the one that you were holding earlier and a couple others of the same size. &lt;Commander&gt; does it not fit in the sink? &lt;Driver&gt; no. &lt;Commander&gt; see that mug of water next to the pot? &lt;Driver&gt; yes. &lt;Commander&gt; pour the mugs water into the pot. &lt;Driver&gt; thanks. &lt;Commander&gt; you're welcome! &lt;Commander&gt; excellent thank you! Python script: target_pot = InteractionObject("Pot") target_mug = InteractionObject("Mug", landmark = "Pot") target_mug.go_to() target_mug.pickup() target_mug.pour(target_pot) target_mug.put_down() # put down mug on any location to free up agent's hand target_potato = InteractionObject("Potato") target_potato.pickup_and_place(target_pot) # pick up the potato and place it in the pot target_stove_knob = InteractionObject("StoveKnob") # turn on the stove to boil potato by turning on the stove target_stove_knob.go_to() target_stove_knob.toggle_on() # boil water target_stove_knob.toggle_off() # complete boiling process by turning off Example 3: dialogue: &lt;Driver&gt; hi, what is task. &lt;Commander&gt; make a plate of toast. &lt;Commander&gt; bread in the sink. &lt;Driver&gt; knife. &lt;Commander&gt; on the chair beside the table. &lt;Commander&gt; clean the plate. &lt;Driver&gt; there is a clean one, do i need to clean the other one. &lt;Commander&gt; you can use the clean one.</p><p>&lt;Driver&gt; done. &lt;Commander&gt; good job. &lt;Driver&gt; :). Python script: target_bread = InteractionObject("Bread", landmark = "Sink") target_knife = InteractionObject("Knife", landmark = "Chair") target_toaster = InteractionObject("Toaster", "Toaster") # need knife to slice bread target_knife.go_to() # first get knife target_knife.pickup() target_bread.go_to() target_bread.slice() # slice bread using knife target_knife.put_down() # put down the knife to free up the agent's hand target_bread_slice1 = InteractionObject("BreadSliced") # instantiate a bread slice object after slicing bread target_bread_slice1.pickup_and_place(target_toaster) # pick up the bread slice and place it in the toaster target_toaster.toggle_on() # turn on toaster to toast bread target_toaster.toggle_off() # turn off toaster to complete toasting process # place toast on plate target_plate = InteractionObject("Plate") target_plate.clean() target_plate.put_down() target_bread_slice1.pickup_and_place(target_plate) # pick up the toasted bread slice and place it on the plate LLM output: target_table = InteractionObject("Table ") target_mug = InteractionObject("Mug", landmark = "Table ") target_mug.go_to() target_mug.pickup() # clean mug in the sink target_sink = InteractionObject("Sink") target_mug.place(target_sink) target_mug.clean() target_mug.pickup() target_coffee_machine = InteractionObject("CoffeeMachine") target_coffee_machine.go_to() target_mug.place(target_coffee_machine) target_coffee_machine.toggle_on() # turn on coffee machine to make coffee target_coffee_machine.toggle_off() # turn off coffee machine after done</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m">New and improved embedding model</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<idno>arxiv:2303.08774</idno>
+		<title level="m">Openai. gpt-4 technical report</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Michael Ahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Byron</forename><surname>Cortes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuyuan</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keerthana</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Herzog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jasmine</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ibarz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Irpan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rosario</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Jauregui Ruano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sally</forename><surname>Jeffrey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikhil</forename><surname>Jesmonth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitry</forename><surname>Julian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Kalashnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuang-Huei</forename><surname>Kuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linda</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carolina</forename><surname>Luu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Parada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jornell</forename><surname>Pastor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kanishka</forename><surname>Quiambao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jarek</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diego</forename><surname>Rettinghouse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Reyes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Sermanet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clayton</forename><surname>Sievers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Toshev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Vanhoucke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sichun</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengyuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zeng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.01691</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note>Do as i can and not as i say: Grounding language in robotic affordances. In arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Anderson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Angel</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Devendra</forename><surname>Singh Chaplot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexey</forename><surname>Dosovitskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurabh</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladlen</forename><surname>Koltun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jana</forename><surname>Kosecka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jitendra</forename><surname>Malik</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1807.06757</idno>
+		<title level="m">Manolis Savva, et al. 2018a. On evaluation of embodied navigation agents</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>Roozbeh Mottaghi</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Visionand-language navigation: Interpreting visuallygrounded navigation instructions in real environments</title>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Anderson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Damien</forename><surname>Teney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jake</forename><surname>Bruce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niko</forename><surname>Sünderhauf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ian</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Gould</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anton</forename><surname>Van Den</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hengel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE conference on computer vision and pattern recognition</title>
+		<meeting>the IEEE conference on computer vision and pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="3674" to="3683" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Farooq</forename><surname>Shariq</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reiner</forename><surname>Bhat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diana</forename><surname>Birkl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Wofk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Wonka</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Müller</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.12288</idno>
+		<title level="m">Zoedepth: Zeroshot transfer by combining relative and metric depth</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">A persistent spatial semantic representation for high-level natural language instruction execution</title>
+		<author>
+			<persName><forename type="first">Valts</forename><surname>Blukis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Paxton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dieter</forename><surname>Fox</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Animesh</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoav</forename><surname>Artzi</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="706" to="717" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Justice</forename><surname>Carbajal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><surname>Dabis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keerthana</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Herzog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jasmine</forename><surname>Hsu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.06817</idno>
+		<title level="m">Rt-1: Robotics transformer for real-world control at scale</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sébastien</forename><surname>Bubeck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Varun</forename><surname>Chandrasekaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronen</forename><surname>Eldan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Gehrke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Horvitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ece</forename><surname>Kamar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yin</forename><surname>Tat Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Lundberg</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.12712</idno>
+		<title level="m">Sparks of artificial general intelligence: Early experiments with gpt-4</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Embodied symbiotic assistants that see, act, infer and chat</title>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nilay</forename><surname>Pande</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ayush</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shikhar</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Sarch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolaos</forename><surname>Gkanatsios</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xian</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katerina</forename><surname>Fragkiadaki</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Abhinav Gupta, and Ruslan Salakhutdinov. 2020a. Learning to explore using active neural slam</title>
+		<author>
+			<persName><forename type="first">Devendra</forename><surname>Singh Chaplot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dhiraj</forename><surname>Gandhi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurabh</forename><surname>Gupta</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2004.05155</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Object goal navigation using goal-oriented semantic exploration</title>
+		<author>
+			<persName><forename type="first">Devendra</forename><surname>Singh Chaplot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dhiraj Prakashchand</forename><surname>Gandhi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Russ</forename><forename type="middle">R</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page">33</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Program of thoughts prompting: Disentangling computation from reasoning for numerical reasoning tasks</title>
+		<author>
+			<persName><forename type="first">Wenhu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueguang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">W</forename><surname>Cohen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.12588</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Solq: Segmenting objects by learning queries</title>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangao</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tiancai</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichen</forename><surname>Wei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="21898" to="21909" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Surreal: Open-source reinforcement learning framework and robot manipulation benchmark</title>
+		<author>
+			<persName><forename type="first">Linxi</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuke</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiren</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihua</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Orien</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anchit</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joan</forename><surname>Creus-Costa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvio</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="767" to="782" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">The threedworld transport challenge: A visually guided taskand-motion planning benchmark towards physically realistic embodied ai</title>
+		<author>
+			<persName><forename type="first">Chuang</forename><surname>Gan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeremy</forename><surname>Schwartz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Seth</forename><surname>Alter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Bhandwaldar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Gutfreund</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">K</forename><surname>Daniel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><forename type="middle">J</forename><surname>Yamins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Dicarlo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonio</forename><surname>Mcdermott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Torralba</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tenenbaum</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ICRA46639.2022.9812329</idno>
+	</analytic>
+	<monogr>
+		<title level="m">2022 International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="8847" to="8854" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamie</forename><surname>Callan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.10435</idno>
+		<title level="m">Pal: Program-aided language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Making pre-trained language models better few-shot learners</title>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Fisch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danqi</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2012.15723</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Jitendra Malik, and Devendra Singh Chaplot</title>
+		<author>
+			<persName><forename type="first">Theophile</forename><surname>Gervet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soumith</forename><surname>Chintala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dhruv</forename><surname>Batra</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.00922</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Navigating to objects in the real world</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chenguang</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oier</forename><surname>Mees</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.05714</idno>
+		<title level="m">Andy Zeng, and Wolfram Burgard. 2022a. Visual language maps for robot navigation</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Instruct2act: Mapping multi-modality instructions to robotic actions with large language model</title>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengkai</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongsheng</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.11176</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harris</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacky</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2207.05608</idno>
+		<title level="m">Yevgen Chebotar, et al. 2022b. Inner monologue: Embodied reasoning through planning with language models</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Prompter: Utilizing large language model prompting for a data efficient embodied instruction following</title>
+		<author>
+			<persName><forename type="first">Yuki</forename><surname>Inoue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hiroki</forename><surname>Ohashi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.03267</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Scaling up visual and vision-language representation learning with noisy text supervision</title>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinfei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ye</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi-Ting</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zarana</forename><surname>Parekh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hieu</forename><surname>Pham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yun-Hsuan</forename><surname>Sung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Duerig</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="4904" to="4916" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Active retrieval augmented generation</title>
+		<author>
+			<persName><forename type="first">Zhengbao</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqing</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamie</forename><surname>Callan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Accurate unlexicalized parsing</title>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Klein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 41st annual meeting of the association for computational linguistics</title>
+		<meeting>the 41st annual meeting of the association for computational linguistics</meeting>
+		<imprint>
+			<date type="published" when="2003">2003</date>
+			<biblScope unit="page" from="423" to="430" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Kolve</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roozbeh</forename><surname>Mottaghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Winson</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eli</forename><surname>Van-Derbilt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luca</forename><surname>Weihs</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alvaro</forename><surname>Herrasti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Gordon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuke</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Farhadi</surname></persName>
+		</author>
+		<title level="m">AI2-THOR: An Interactive 3D Environment for Visual AI</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Beyond the nav-graph: Vision-and-language navigation in continuous environments</title>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Krantz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erik</forename><surname>Wijmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arjun</forename><surname>Majumdar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dhruv</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Computer Vision-ECCV 2020: 16th European Conference</title>
+		<meeting><address><addrLine>Glasgow, UK</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2020-08-23">2020. August 23-28, 2020</date>
+			<biblScope unit="volume">16</biblScope>
+			<biblScope unit="page" from="104" to="120" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Room-across-room: Multilingual vision-and-language navigation with dense spatiotemporal grounding</title>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Ku</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Anderson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roma</forename><surname>Patel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eugene</forename><surname>Ie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Baldridge</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2010.07954</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">The power of scale for parameter-efficient prompt tuning</title>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Lester</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rami</forename><surname>Al-Rfou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Constant</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2104.08691</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jacky</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zeng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2209.07753</idno>
+		<title level="m">Code as policies: Language model programs for embodied control</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Learning executable semantic parsers for natural language understanding</title>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Communications of the ACM</title>
+		<imprint>
+			<biblScope unit="volume">59</biblScope>
+			<biblScope unit="issue">9</biblScope>
+			<biblScope unit="page" from="68" to="76" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Microsoft coco: Common objects in context</title>
+		<author>
+			<persName><forename type="first">Tsung-Yi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Maire</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Serge</forename><surname>Belongie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Hays</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pietro</forename><surname>Perona</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deva</forename><surname>Ramanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Dollár</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lawrence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zitnick</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Computer Vision-ECCV 2014: 13th European Conference</title>
+		<meeting><address><addrLine>Zurich, Switzerland</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2014-09-06">2014. September 6-12, 2014</date>
+			<biblScope unit="page" from="740" to="755" />
+		</imprint>
+	</monogr>
+	<note>Proceedings, Part V 13</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">2022a. Lebp-language expectation &amp; binding policy: A two-stream framework for embodied visionand-language interaction task learning agents</title>
+		<author>
+			<persName><forename type="first">Haoyu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongkai</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hangfang</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.04637</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jiachang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dinghan</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Dolan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lawrence</forename><surname>Carin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2101.06804</idno>
+		<title level="m">What makes good in-context examples for gpt-3? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">2022b. A planning based neural-symbolic approach for embodied instruction following</title>
+		<author>
+			<persName><forename type="first">Xiaotian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hector</forename><surname>Palacios</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Muise</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Interactions</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page">17</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianle</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayue</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaming</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengshen</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengliang</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.01852</idno>
+		<title level="m">Summary of chatgpt/gpt-4 research and perspective towards the future of large language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">2023b. Reflect: Summarizing robot experiences for failure explanation and correction</title>
+		<author>
+			<persName><forename type="first">Zeyi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arpit</forename><surname>Bahety</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuran</forename><surname>Song</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.15724</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<author>
+			<persName><forename type="first">So</forename><surname>Yeon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Devendra</forename><surname>Singh Chaplot</surname></persName>
+		</author>
+		<title level="m">Pradeep Ravikumar, Yonatan Bisk, and Ruslan Salakhutdinov. 2021. Film: Following instructions in language with modular methods</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<author>
+			<persName><forename type="first">So</forename><surname>Yeon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruslan</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.04443</idno>
+		<title level="m">Don&apos;t copy the teacher: Data and model challenges in embodied dialogue</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Following natural language instructions for household tasks with landmark guided search and reinforced pose adjustment</title>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Murray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maya</forename><surname>Cakmak</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Robotics and Automation Letters</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="6870" to="6877" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suchir</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christina</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shantanu</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Saunders</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2112.09332</idno>
+		<title level="m">Webgpt: Browser-assisted questionanswering with human feedback</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Indoor segmentation and support inference from rgbd images</title>
+		<author>
+			<persName><forename type="first">Pushmeet</forename><surname>Kohli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Silberman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Derek</forename><surname>Hoiem</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rob</forename><surname>Fergus</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECCV</title>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Show your work: Scratchpads for intermediate computation with language models</title>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anders</forename><surname>Johan Andreassen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guy</forename><surname>Gur-Ari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Bieber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aitor</forename><surname>Lewkowycz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Luan</surname></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/2112.00114" />
+		<imprint>
+			<date type="published" when="2021-11">november 2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Aishwarya</forename><surname>Padmakumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Thomason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ayush</forename><surname>Shrivastava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Lange</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anjali</forename><surname>Narayan-Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Spandana</forename><surname>Gella</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robinson</forename><surname>Piramuthu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gokhan</forename><surname>Tur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dilek</forename><surname>Hakkani-Tur</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note>Teach: Task-driven embodied agents that chat</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Episodic transformer for vision-and-language navigation</title>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Pashevich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cordelia</forename><surname>Schmid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Sun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF International Conference on Computer Vision</title>
+		<meeting>the IEEE/CVF International Conference on Computer Vision</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="15942" to="15952" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">True few-shot learning with language models. Advances in neural information processing systems</title>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Douwe</forename><surname>Kiela</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyunghyun</forename><surname>Cho</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="11054" to="11070" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<title level="m" type="main">Auto-gpt: An autonomous gpt-4 experiment</title>
+		<author>
+			<persName><forename type="first">Toran</forename><surname>Bruce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richards</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Tidee: Tidying up novel rooms using visuo-semantic commonsense priors</title>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Sarch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoyuan</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><forename type="middle">W</forename><surname>Harley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Schydlo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Michael</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurabh</forename><surname>Tarr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katerina</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Fragkiadaki</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Computer Vision-ECCV 2022: 17th European Conference</title>
+		<meeting><address><addrLine>Tel Aviv, Israel</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2022-10-23">2022. October 23-27, 2022</date>
+			<biblScope unit="page" from="480" to="496" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Habitat: A platform for embodied ai research</title>
+		<author>
+			<persName><forename type="first">Manolis</forename><surname>Savva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Kadian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleksandr</forename><surname>Maksymets</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yili</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erik</forename><surname>Wijmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bhavana</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Straub</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladlen</forename><surname>Koltun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jitendra</forename><surname>Malik</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF International Conference on Computer Vision</title>
+		<meeting>the IEEE/CVF International Conference on Computer Vision</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="9339" to="9347" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title level="m" type="main">It&apos;s not just size that matters: Small language models are also few-shot learners</title>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hinrich</forename><surname>Schütze</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2009.07118</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">2021. igibson 1.0: a simulation environment for interactive tasks in large realistic scenes</title>
+		<author>
+			<persName><forename type="first">Bokui</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengshu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Martín-Martín</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linxi</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanzhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claudia</forename><surname>Pérez-D'arpino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shyamal</forename><surname>Buch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sanjana</forename><surname>Srivastava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lyne</forename><forename type="middle">P</forename><surname>Tchapmi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Micael</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kent</forename><surname>Tchapmi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josiah</forename><surname>Vainio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvio</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Savarese</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2021 IEEE/RSJ International Conference on Intelligent Robots and Systems</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<biblScope unit="page">page accepted</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<author>
+			<persName><forename type="first">Weijia</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sewon</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michihiro</forename><surname>Yasunaga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minjoon</forename><surname>Seo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rich</forename><surname>James</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2301.12652</idno>
+		<title level="m">Replug: Retrievalaugmented black-box language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<title level="m" type="main">Reflexion: an autonomous agent with dynamic memory and self-reflection</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beck</forename><surname>Labash</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.11366</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<analytic>
+		<title level="a" type="main">Alfred: A benchmark for interpreting grounded instructions for everyday tasks</title>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Shridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Thomason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Gordon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Winson</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roozbeh</forename><surname>Mottaghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dieter</forename><surname>Fox</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF conference on computer vision and pattern recognition</title>
+		<meeting>the IEEE/CVF conference on computer vision and pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="10740" to="10749" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<analytic>
+		<title level="a" type="main">Kunal Pratap Singh, Luca Weihs, Alvaro Herrasti, Jonghyun Choi, Aniruddha Kembhavi, and Roozbeh Mottaghi. 2022b. Ask4help: Learning to leverage an expert for embodied tasks</title>
+		<author>
+			<persName><forename type="first">Ishika</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Valts</forename><surname>Blukis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arsalan</forename><surname>Mousavian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ankit</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danfei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Tremblay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dieter</forename><surname>Fox</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Thomason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Animesh</forename><surname>Garg</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2209.11302</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="16221" to="16232" />
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>2022a. Progprompt: Generating situated robot task plans using large language models</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hee</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaman</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clayton</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><forename type="middle">M</forename><surname>Washington</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Lun</forename><surname>Sadler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Chao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Su</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.04088</idno>
+		<title level="m">Llm-planner: Few-shot grounded planning for embodied agents with large language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<monogr>
+		<title level="m" type="main">Open-world object manipulation using pre-trained vision-language model</title>
+		<author>
+			<persName><forename type="first">Austin</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keerthana</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuang-Huei</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quan</forename><surname>Vuong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Wohlhart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Kirmani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brianna</forename><surname>Zitkovich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Hausman</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>In arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<analytic>
+		<title level="a" type="main">Modular visual question answering via code generation</title>
+		<author>
+			<persName><forename type="first">Sanjay</forename><surname>Subramanian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Medhini</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kushal</forename><surname>Khangaonkar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arsha</forename><surname>Nagrani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cordelia</forename><surname>Schmid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Trevor</forename><surname>Darrell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Klein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 61st Annual Meeting of the Association for Computational Linguistics<address><addrLine>Toronto, Canada</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>Association for Computational Linguistics</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<analytic>
+		<title level="a" type="main">Embodied bert: A transformer model for embodied, language-guided visual task completion</title>
+		<author>
+			<persName><forename type="first">Alessandro</forename><surname>Suglia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiaozi</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Thomason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Govind</forename><surname>Thattai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaurav</forename><forename type="middle">S</forename><surname>Sukhatme</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP 2021 Workshop on Novel Ideas in Learning-to-Learn through Interaction</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<monogr>
+		<title level="m" type="main">Vipergpt: Visual inference via python execution for reasoning</title>
+		<author>
+			<persName><forename type="first">Dídac</forename><surname>Surís</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sachit</forename><surname>Menon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carl</forename><surname>Vondrick</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.08128</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<analytic>
+		<title level="a" type="main">Understanding natural language commands for robotic navigation and mobile manipulation</title>
+		<author>
+			<persName><forename type="first">Stefanie</forename><surname>Tellex</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Kollar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Dickerson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Walter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashis</forename><surname>Banerjee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Seth</forename><surname>Teller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Roy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="volume">25</biblScope>
+			<biblScope unit="page" from="1507" to="1514" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<monogr>
+		<author>
+			<persName><forename type="first">Guanzhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqi</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Mandlekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaowei</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuke</forename><surname>Zhu</surname></persName>
+		</author>
+		<idno>arXiv: Arxiv-2305.16291</idno>
+		<title level="m">Linxi Fan, and Anima Anandkumar. 2023a. Voyager: An open-ended embodied agent with large language models</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<monogr>
+		<title level="m" type="main">Self-consistency improves chain of thought reasoning in language models</title>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.11171</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<monogr>
+		<title level="m" type="main">2023b. Describe, explain, plan and select: Interactive planning with large language models enables open-world multi-task agents</title>
+		<author>
+			<persName><forename type="first">Zihao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaofei</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anji</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojian</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yitao</forename><surname>Liang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.01560</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b66">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.11903</idno>
+		<title level="m">Chain of thought prompting elicits reasoning in large language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b67">
+	<analytic>
+		<title level="a" type="main">Decentralized distributed ppo: Solving pointgoal navigation</title>
+		<author>
+			<persName><forename type="first">Erik</forename><surname>Wijmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Kadian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ari</forename><surname>Morcos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Irfan</forename><surname>Essa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Devi</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manolis</forename><surname>Savva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dhruv</forename><surname>Batra</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Lefvarning Representations (ICLR)</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b68">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rika</forename><surname>Antonova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Kan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marion</forename><surname>Lepert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuran</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeannette</forename><surname>Bohg</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.05658</idno>
+		<title level="m">Szymon Rusinkiewicz, and Thomas Funkhouser. 2023a. Tidybot: Personalized robot assistance with large language models</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b69">
+	<monogr>
+		<title level="m" type="main">Read and reap the rewards: Learning to play atari with the help of instruction manuals</title>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yewen</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><forename type="middle">Pu</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amos</forename><surname>Azaria</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><forename type="middle">M</forename><surname>Mitchell</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>In NeurIPS</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b70">
+	<monogr>
+		<title level="m" type="main">2023c. Plan, eliminate, and track-language models are good teachers for embodied agents</title>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">So</forename><surname>Yeon Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruslan</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amos</forename><surname>Azaria</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shrimai</forename><surname>Prabhumoye</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.02412</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b71">
+	<monogr>
+		<title level="m" type="main">Spring: Gpt-4 out-performs rl algorithms by studying papers and reasoning</title>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">So</forename><surname>Yeon Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shrimai</forename><surname>Prabhumoye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruslan</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amos</forename><surname>Azaria</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Li</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>In NeurIPS</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b72">
+	<monogr>
+		<title level="m" type="main">Tree of thoughts: Deliberate problem solving with large language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><forename type="middle">L</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.10601</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b73">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03629</idno>
+		<title level="m">React: Synergizing reasoning and acting in language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b74">
+	<analytic>
+		<title level="a" type="main">Meta-world: A benchmark and evaluation for multi-task and meta reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Tianhe</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deirdre</forename><surname>Quillen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhanpeng</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Julian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="1094" to="1100" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b75">
+	<monogr>
+		<title level="m" type="main">Scaling robot learning with semantically imagined experience</title>
+		<author>
+			<persName><forename type="first">Tianhe</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Austin</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Su</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaspiar</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clayton</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Dee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jodilyn</forename><surname>Peralta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.11550</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b76">
+	<monogr>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Attarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Krzysztof</forename><surname>Choromanski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adrian</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Welker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Tombari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aveek</forename><surname>Purohit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Ryoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vikas</forename><surname>Sindhwani</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.00598</idno>
+		<title level="m">Socratic models: Composing zero-shot multimodal reasoning with language</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b77">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yichi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianing</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shane</forename><surname>Storks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikhil</forename><surname>Devraj</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziqiao</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keunwoo</forename><surname>Peter Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuwei</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joyce</forename><surname>Chai</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.12485</idno>
+		<title level="m">Danli: Deliberative agent for following natural language instructions</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b78">
+	<monogr>
+		<title level="m" type="main">Jarvis: A neuro-symbolic commonsense reasoning framework for conversational embodied agents</title>
+		<author>
+			<persName><forename type="first">Kaizhi</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiwen</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zonglin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuehai</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Eric</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

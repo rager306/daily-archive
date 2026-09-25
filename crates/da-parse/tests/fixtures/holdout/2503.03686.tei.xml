@@ -1,0 +1,1823 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">MAS-GPT: Training LLMs to Build LLM-based Multi-Agent Systems</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-03-05">5 Mar 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Rui</forename><surname>Ye</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Shanghai Jiao Tong University</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="department">Shanghai AI Laboratory</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Shuo</forename><surname>Tang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Rui</forename><surname>Ge</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yaxin</forename><surname>Du</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhenfei</forename><surname>Yin</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">University of Oxford</orgName>
+							</affiliation>
+							<affiliation key="aff3">
+								<orgName type="institution">The University of Sydney</orgName>
+							</affiliation>
+						</author>
+						<author role="corresp">
+							<persName><forename type="first">Siheng</forename><surname>Chen</surname></persName>
+							<email>&lt;sihengc@sjtu.edu.cn&gt;</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jing</forename><surname>Shao</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Shanghai AI Laboratory</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">MAS-GPT: Training LLMs to Build LLM-based Multi-Agent Systems</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-03-05">5 Mar 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">CCF525D19043109C5FF542ECD94B8AFD</idno>
+					<idno type="arXiv">arXiv:2503.03686v1[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:57+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>LLM-based multi-agent systems (MAS) have shown significant potential in tackling diverse tasks. However, to design effective MAS, existing approaches heavily rely on manual configurations or multiple calls of advanced LLMs, resulting in inadaptability and high inference costs. In this paper, we simplify the process of building an MAS by reframing it as a generative language task, where the input is a user query and the output is a corresponding MAS. To address this novel task, we unify the representation of MAS as executable code and propose a consistency-oriented data construction pipeline to create a high-quality dataset comprising coherent and consistent query-MAS pairs. Using this dataset, we train MAS-GPT, an open-source medium-sized LLM that is capable of generating query-adaptive MAS within a single LLM inference. The generated MAS can be seamlessly applied to process user queries and deliver high-quality responses. Extensive experiments on 9 benchmarks and 5 LLMs show that the proposed MAS-GPT consistently outperforms 10+ baseline MAS methods on diverse settings, indicating MAS-GPT's high effectiveness, efficiency and strong generalization ability. Code will be available at <ref type="url" target="https://github.com/rui-ye/MAS-GPT">https://github.com/rui-ye/MAS-GPT</ref>.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="26" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>Large language models (LLMs) such as ChatGPT <ref type="bibr" target="#b26">(Ouyang et al., 2022;</ref><ref type="bibr">OpenAI, 2023)</ref> have achieved significant success on a wide range of tasks. However, a single LLM often struggles to handle the diverse and complex range of tasks (e.g., varying difficulties and domains) encountered in practice <ref type="bibr" target="#b13">(Hong et al., 2024;</ref><ref type="bibr" target="#b3">Chen et al., 2024)</ref>.</p><p>Such limitation has driven recent research towards building LLM-based multi-agent systems (MAS) <ref type="bibr">(Qian et al.</ref>, 2024a; <ref type="bibr" target="#b3">Chen et al., 2024;</ref><ref type="bibr" target="#b20">Liu et al., 2024)</ref>, where multiple LLMs (agents) with specialized capabilities work collaboratively to achieve more effective solutions. For example, MetaGPT <ref type="bibr" target="#b13">(Hong et al., 2024)</ref> and ChatDev <ref type="bibr">(Qian et al., 2024a)</ref> build multi-LLM teams with expertise roles (e.g., programmer, tester, and product manager) to solve complex coding tasks in a predefined pipeline; while Agent-Verse <ref type="bibr" target="#b3">(Chen et al., 2024)</ref> involves recruiters, executors, and evaluators for iterative task solving. These methods have shown superior performance over single LLM inference.</p><p>Despite achieving promising task performance, there are two fundamental issues that hinder the broad applications of MAS: inadaptability and high costs. (i) Inadaptability &amp; high human effort: MAS in MetaGPT <ref type="bibr" target="#b13">(Hong et al., 2024)</ref>, ChatDev <ref type="bibr">(Qian et al., 2024a)</ref>, and AgentVerse <ref type="bibr" target="#b3">(Chen et al., 2024)</ref> are all manually crafted (e.g., for coding tasks). That is, the collaboration structure and agents' prompts are predetermined and static, lacking in the generality to adapt towards any given tasks. (ii) High inference costs: Although there have been efforts to design adaptive MAS, they essentially shift the human cost onto the computational cost. For example, both GPTSwarm <ref type="bibr" target="#b45">(Zhuge et al., 2024)</ref> and DyLAN <ref type="bibr" target="#b20">(Liu et al., 2024)</ref> rely on LLMs to replace human involvement, iteratively adjusting the collaboration structure or agents' prompts in the MAS for each specific task. However, this process often requires multiple LLM inferences.</p><p>Focusing on these key issues, this paper explores how to adaptively build a query-specific MAS at a minimal cost. Our core idea is to reframe the process of building an executable MAS for each query as a generative language task, making building MAS as simple and efficient as querying ChatGPT <ref type="bibr" target="#b26">(Ouyang et al., 2022)</ref>. Given the generated MAS, the query can then be seamlessly processed to produce the final response, significantly simplifying the whole pipeline.</p><p>Under this context, we introduce MAS-GPT, an LLM specifically trained to adaptively generate executable MAS based on any given user query in one single inference. While the concept is straightforward, the challenge lies in the limited knowledge of LLMs on the task of MAS generation and the lack of corresponding training data. These limitations raise two key technical challenges: how to represent the MAS and how to construct the dataset. (1) To ensure the generated MAS is readily executable, we unify the representation of MAS by describing it as a Python code snippet (i.e., a forward function), with each agent's prompt as a variable, LLM calls as functions, and agent relationships as string concatenation. (2) Building on this foundation, we propose a consistency-oriented data construction pipeline to facilitate the model in learning generalizable patterns and logical correlations, which includes the construction, evaluation, selection, and refinement of query-MAS pairs. During selection, we design an inter-consistency-oriented selection approach to ensure that similar queries are paired with similar high-performing MAS, facilitating the model to learn generalizable patterns. During refinement, we propose a intra-consistency-oriented refinement method to strengthen the relatedness between query and MAS, enabling the model to learn the reasonable correlation. Finally, the resulting pairs are used to train open-source LLMs via supervised fine-tuning, where the instruction is the user query and the response is the MAS represented by code. This will equip the model with the ability to generate query-specific MAS, and also, generalize to unseen queries.</p><p>With the introduction of MAS-GPT, inference for a query becomes significantly simplified. Instead of relying on manual crafting <ref type="bibr" target="#b13">(Hong et al., 2024;</ref><ref type="bibr">Qian et al., 2024a;</ref><ref type="bibr" target="#b3">Chen et al., 2024)</ref> or multiple LLM inference costs <ref type="bibr" target="#b20">(Liu et al., 2024;</ref><ref type="bibr" target="#b45">Zhuge et al., 2024)</ref> to obtain an MAS for each query, the user simply inputs a query into MAS-GPT to get a corresponding executable MAS. Such MAS can be directly applied to process the query, where multiple MAS-GPTgenerated agents collaborate with an MAS-GPT-generated structure to deliver the final solution. With advantages of adaptability, low cost, and generalization, this approach could facilitate the application of MAS at scale.</p><p>We conduct extensive experiments to compare MAS-GPT with 10+ baseline methods on 9 benchmarks (various domains) using 5 state-of-the-art (open-source and proprietary) LLMs. Our results show that MAS-GPT consistently outperforms baseline methods on average, indicating its high generality and effectiveness. Meanwhile, MAS-GPT has the potential to further push the boundary of strong reasoning capability of o1 <ref type="bibr">(OpenAI, 2024b)</ref> and DeepSeek-R1 <ref type="bibr" target="#b10">(Guo et al., 2025)</ref>, bringing 13.3% and 10.0% gain on AIME-2024 (a challenging mathematical benchmark), respectively. We also verify that our MAS-GPT can generalize to unfamiliar queries and generate novel MAS via case studies.</p><p>Our contributions are as follows:</p><p>1. We reframe building MAS for each query as a generative language task. We unify the representation of MAS as executable code and propose a consistency-oriented query-MAS data construction pipeline for LLM training.</p><p>2. We introduce MAS-GPT, an LLM specifically trained to generate query-specific executable MAS. All code, data and models will be open-sourced.</p><p>3. Experiments on 9 benchmarks and 5 LLMs show that MAS-GPT consistently outperforms 10+ baselines, indicating its effectiveness, efficiency and generalization ability.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Related Work</head><p>LLM-based Multi-Agent Systems. Since a single LLM may struggle to handle the diverse and complex range of tasks in practice <ref type="bibr" target="#b16">(Li et al., 2023;</ref><ref type="bibr">Qian et al., 2024b)</ref>, such limitation has driven recent research towards building LLMbased multi-agent systems (MAS) <ref type="bibr">(Wang et al., 2024c;</ref><ref type="bibr" target="#b39">Wu et al., 2023)</ref>. MetaGPT <ref type="bibr" target="#b13">(Hong et al., 2024)</ref> and Chat-Dev <ref type="bibr">(Qian et al., 2024a)</ref> introduce manually designed multiagent teams for solving coding tasks; while MedAgents is designed for medical tasks <ref type="bibr" target="#b32">(Tang et al., 2024)</ref>. Agent-Verse <ref type="bibr" target="#b3">(Chen et al., 2024)</ref> proposes an iterative collaboration structure where agents are recruited to discuss, execute, and evaluate. Multi-Agent Debate <ref type="bibr" target="#b5">(Du et al., 2024;</ref><ref type="bibr" target="#b17">Liang et al., 2024)</ref> designs multiple expertise LLM-agents to debate and reason over multiple rounds to get final answers. The MAS in these methods are all fixed regardless of the given query, lacking in the generality to adapt accordingly.</p><p>DyLAN <ref type="bibr" target="#b20">(Liu et al., 2024)</ref> leverages LLMs to evaluate agents' values and dynamically select the best agents, GPTSwarm <ref type="bibr" target="#b45">(Zhuge et al., 2024)</ref> manually initializes an agent team, adjusts the collaboration structure and agents' prompts by prompting LLMs. Given queries with groundtruth answers from one task and several available MAS as context, ADAS <ref type="bibr" target="#b14">(Hu et al., 2024)</ref> and AFlow <ref type="bibr" target="#b42">(Zhang et al., 2024)</ref> leverages the strong capabilities of LLMs such as Claude-3.5-sonnet <ref type="bibr" target="#b0">(Anthropic, 2024)</ref> and GPT-4 (Ope-nAI, 2023) to iteratively generate task-oriented MAS for the specific task. All these methods require multiple times of LLM calls (e.g., over 10 calls of API with lengthy context) to obtain an MAS for each specific query, which is time-consuming and compute-expensive in practice.</p><p>Instead of manually designing a fixed MAS <ref type="bibr">(Qian et al., 2024a;</ref><ref type="bibr" target="#b3">Chen et al., 2024;</ref><ref type="bibr" target="#b5">Du et al., 2024)</ref> or requiring multiple LLM inference costs to obtain an MAS <ref type="bibr" target="#b20">(Liu et al., 2024;</ref><ref type="bibr" target="#b45">Zhuge et al., 2024)</ref> for each query, our MAS-GPT significantly simplifies the process of building an MAS, which can flexibly generate query-specific MAS within one LLM inference. Specifically, we design a data-construction pipeline to generate a series of query-MAS pairs, which are used for training MAS-GPT based on open-source LLMs.</p><p>LLM Post-Training. Modern state-of-the-art LLMs are usually post-trained via two main stages: supervised finetuning (SFT) and preference learning <ref type="bibr" target="#b26">(Ouyang et al., 2022;</ref><ref type="bibr" target="#b6">Dubey et al., 2024;</ref><ref type="bibr" target="#b41">Yang et al., 2024;</ref><ref type="bibr" target="#b7">Fan et al., 2025)</ref>, where SFT is the basic technique to teach LLM a defined tasks <ref type="bibr" target="#b44">(Zhou et al., 2023;</ref><ref type="bibr" target="#b21">Longpre et al., 2023)</ref>. Focusing on SFT, a series of researches are conducted on the construction of datasets for training chatbot-type LLMs. For example, LIMA <ref type="bibr" target="#b44">(Zhou et al., 2023)</ref> manually annotates high-quality language data for SFT, emphasizing the importance of quality of SFT datasets. WizardLM <ref type="bibr" target="#b40">(Xu et al., 2024)</ref>, TULU 3 <ref type="bibr" target="#b15">(Lambert et al., 2024)</ref>, and Persona Hub <ref type="bibr" target="#b9">(Ge et al., 2024)</ref> synthesize SFT data by prompting GPT models, indicating the potential of synthetic data for LLM training.</p><p>For MAS-GPT, the training process leverages SFT, with a primary focus on data construction. While previous approaches focus on training LLMs to directly answer user queries, the challenge of training LLMs to generate MAS from user queries introduces a novel difficulty. Unlike realworld dialogue data, LLMs have limited (if any) knowledge of MAS generation. Using our proposed data construction pipeline, we create the first query-MAS-paired dataset, which will be made open-source in future.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Methodology</head><p>This section first outlines the overall system integrated with MAS-GPT when processing user queries during inference.</p><p>Next, we delve into the specifics of training MAS-GPT, with a particular focus on the dataset construction process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.">Overall System Integrated with MAS-GPT</head><p>We follow a standard workflow: given a user query, a multiagent system (MAS) is constructed, with multiple agents working collaboratively to generate the final answer. Unlike previous approaches that either manually design the MAS, rely on fixed and query-agnostic MAS, or incur significant computational costs to determine the appropriate MAS, our approach streamlines the entire process of building MAS by reducing it to a single LLM inference.</p><p>The core of our system is MAS-GPT, an LLM that is trained to generate MAS tailored specifically to the input query.</p><p>Instead of relying on pre-built agent configurations, MAS-GPT dynamically creates an MAS for each query, ensuring that the system adapts to a wide range of tasks. This approach not only minimizes the time and computational resources traditionally required to build the right MAS but also enhances the system's flexibility by generating taskspecific solutions in real-time. Finally, the MAS generated by MAS-GPT can be seamlessly integrated to process the query and deliver the final answer (bottom right in Figure <ref type="figure" target="#fig_2">3</ref>). Agents defined by variables, LLM calls denoted by function calls, and interactions represented by string concatenations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.">MAS-GPT: Dataset Construction and Training</head><p>To achieve the above goal, we reframe building MAS as a generative language task, where the input is a user query and the output is an executable MAS capable of processing that query. This shift to a generative paradigm introduces a new challenge since there is few (if any) knowledge within LLMs on MAS generation. To make this approach viable, the key focus lies in constructing an appropriate dataset to teach the LLMs such brand-new task. To achieve this, we propose a consistency-oriented data construction process, which involves four key steps: (1) construction of query and MAS pools, (2) inference and evaluation of query-MAS pairs, (3) inter-consistency-oriented pair selection, (4) intraconsistency-oriented pair refinement.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Data -Construction of Query and MAS Pools (Representing MAS as Executable Code).</head><p>To construct the dataset for supervised fine-tuning (SFT), we adopt the following data format: (system prompt, instruction, response). Here, the system prompt briefly describes the MAS generation task, the instruction corresponds to the user query, and the response includes the MAS, which can be extracted by string matching. Therefore, training the LLM requires the collection of a series of query-MAS pairs. Firstly, to enable MAS-GPT to handle diverse queries, we build a query pool from open-source queries across various domains, such as general QA, mathematics, and coding. Each query is carefully selected to be verifiable, ensuring the presence of a ground-truth answer or test cases (e.g., for coding tasks).</p><p>While the collection of queries is relatively straightforward, constructing the MAS pool presents a fundamental challenge: how to represent an executable MAS. To address this, we propose unifying the representation of MAS by formalizing it as executable Python code snippets. This unified representation is motivated by the observation that all existing LLM-based MAS methods are ultimately implemented as code, encompassing the definition of agents' prompts, LLM calls, and inter-agent interactions <ref type="bibr">(Qian et al., 2024a;</ref><ref type="bibr" target="#b14">Hu et al., 2024;</ref><ref type="bibr" target="#b42">Zhang et al., 2024)</ref>. Specifically, we define an MAS as a forward function that takes a user query as input and returns the final answer generated by the MAS. Within the forward function, agent prompts are defined as variables, agent inferences are implemented as function calls, and interactions between agents are represented through string concatenation; see an example in Figure <ref type="figure" target="#fig_1">2</ref>.</p><p>Following this framework, we first re-implement several existing MAS methods (e.g., Multi-Agent Debate <ref type="bibr" target="#b5">(Du et al., 2024)</ref>, Self-Consistency <ref type="bibr">(Wang et al., 2024b)</ref>, Self-Refine <ref type="bibr" target="#b23">(Madaan et al., 2024)</ref>) to align with our unified code representation. To further expand the diversity of MAS candidates, we also manually design some MAS systems, resulting in a base MAS pool comprising over 40 unique MAS designs (Figure <ref type="figure" target="#fig_18">7</ref>). Importantly, these 40+ MAS do not directly correspond to the exact number of MAS in the training dataset; rather, they serve as foundations that evolve during the query-MAS pair refinement process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Data -Evaluation of Query-MAS Pairs.</head><p>After constructing the query and MAS pools, it is crucial to evaluate the query-MAS compatibility since not all MAS designs are equally suitable for every query. To achieve this, we pair each query and MAS in the pool by inferring the query to the MAS and evaluating the generated final answer.</p><p>Specifically, given the query pool Q = {(Q i , Y i )} N i=1 and the base MAS pool M = {M AS base j } M j=1 , where Q i is the query, Y i is the information for verification, N and M denotes the pool size, we obtain N × M pairs. Then, a query-dependent evaluation function f eval (•) will be applied to evaluate the effectiveness of the query-MAS pair:</p><formula xml:id="formula_0">score i,j = f eval (M AS base j (Q i ), Y i ),</formula><p>where M AS base j (Q i ) denotes the answer generated by M AS base j given the query Q i , 1 and 0 denotes correct and wrong respectively. Overall, we get M MAS scores for each query Q i , which are denoted by s i = [score i,1 , ..., score i,M ], laying the foundation for subsequent steps for selecting appropriate query-MAS pairs and further refinement.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Data -Inter-Consistency-Oriented Pair Selection.</head><p>With the query-MAS pair results obtained from the evaluation step, the next critical task is to select and construct highquality query-MAS pairs for training. The first selection criterion is intuitive: effectiveness. Specifically, we retain only the query-MAS pairs where the MAS produces a correct answer (evaluation score is 1), as MAS designs that generate correct answers are more likely to be suitable for their respective queries compared to those that fail.</p><p>While using all the remaining effective query-MAS pairs for training is straightforward, this approach introduces a significant problem of low inter-consistency: the same or similar queries may correspond to multiple different MAS designs. This lack of consistency makes it difficult for the model to learn a clear optimization objective, hindering its ability to understand and perform the task effectively.</p><p>To address this issue, we propose an inter-consistencyoriented pair selection method that optimizes both effectiveness and inter-consistency. The core idea is to group similar queries and assign them a single, high-performing MAS to maintain consistency across the dataset. Specifically, we cluster queries based on their metadata or embeddings. For a group of S queries S = {Q i } S i=1 , we calculate a cumulative score for each MAS by summing its effectiveness scores across all queries in the group: s = S i=1 s i . The MAS with the highest cumulative score is then selected as the representative MAS for all queries in the group: M AS base * = arg max M AS∈M s. Through this, we pair each specific query with a specific base MAS: (Q i , M AS base i ).</p><p>By aligning similar queries with the same high-performing MAS, this method improves the inter-consistency of the query-MAS pairs, facilitating the model in learning to recognize generalizable patterns and generalize across similar queries. For example, queries requiring divergent thinking may be consistently paired with MAS structures where multiple agents independently generate ideas and then discuss.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Data -Intra-Consistency-Oriented Pair Refinement.</head><p>While the inter-consistency-oriented pair selection process effectively ensures consistency across query-MAS pairs, there remains a critical issue within individual pairs: intraconsistency. Specifically, the alignment between a query and its associated MAS may still be suboptimal, making it challenging for the model to learn meaningful associations. For instance, a query about physics may be paired with an MAS involving experts from multiple domains (e.g., physics and biology), where the presence of non-relevant agents like biology experts can confuse the model.</p><p>To address this, we propose an intra-consistency-oriented pair refinement method. This approach aims to improve the query-MAS alignment through two key strategies: (1) adjusting MAS to make it query-dependent, and (2) introducing a reasoning process to strengthen the connection between the query and MAS. We employ an LLM-based data synthesis method, where an advanced LLM adjusts agents' definitions within the MAS based on the query and the previously selected MAS. The LLM is also instructed to generate a reasoning statement that explains the relationship between the query and the refined MAS, improving the interpretability of the query-MAS pair; please refer to prompt in Table <ref type="table" target="#tab_0">10</ref>. This process enables the model to better understand the context and logic behind each decision, which in turn facilitates model training and improves generalization.</p><p>Next, we infer and evaluate the refined MAS on the corresponding query, as advanced LLMs could generate inappropriate or non-executable MAS. Specifically, for each base pair (Q i , M AS base i ), the refined M AS refine i is tested and accepted only if it achieves a not-worse score. Formally: Through this process, each query Q i is ultimately associated with a tuple (Q i , R i , M AS i ), where R i denotes the reasoning statement, and M AS i is the final MAS. This refined dataset ensures both inter-and intra-consistency, providing high-quality training data for subsequent model fine-tuning.</p><formula xml:id="formula_1">M AS i = M AS refine i , if s refine ≥ s base M AS base i , otherwise , where s refine = f eval (M AS refine i (Q i ), Y i ) and s base = f eval (M AS base i (Q i ), Y i )</formula><p>Training -Supervised Fine-Tuning of MAS-GPT Our dataset follows the format (system prompt, instruction, response). The system prompt briefly describes the task of generating a query-specific MAS and the instruction corresponds to the user query Q i . The response is constructed as the concatenation of the reasoning process and the final MAS, which is represented as executable code in text form.</p><p>Building upon this dataset, we perform supervised finetuning of MAS-GPT on the open-source medium-sized LLM, Qwen2.5-Coder-32B-Instruct <ref type="bibr" target="#b41">(Yang et al., 2024)</ref>, leveraging its capabilities of code generation and instructionfollowing. During inference, when a user query is received, MAS-GPT generates an executable MAS tailored to that specific query Q i : M AS gen i = MAS-GPT(Q i ). The generated MAS is directly usable for processing the query Q i and delivering the final answer: A i = M AS gen i (Q i ), significantly simplifying the task handling process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.">Discussions</head><p>Overall, our system integrated with MAS-GPT offers the following key advantages: simplicity, cost-efficiency, and adaptability (generality). Instead of manually designing an MAS for each specific query, relying on a fixed MAS for all queries, or requiring multiple LLM inference costs to obtain an MAS for a query, our MAS-GPT significantly simplifies the process of building an MAS by reducing into one single LLM inference. Given a user query, MAS-GPT will efficiently return a query-specific MAS, which is executable and can be seamlessly applied to process the query to deliver the final answer. Although training incurs some cost, it is a one-time expense, whereas inference is potentially endless in practical applications. We believe that MAS-GPT has the potential to further advance the real-world application of MAS due to its simplicity, cost-efficiency, and adaptability.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.">Experimental Setups</head><p>Training. Our training queries are sampled from the training splits available in MATH <ref type="bibr">(Hendrycks et al., 2021b)</ref>, GSM8K <ref type="bibr" target="#b4">(Cobbe et al., 2021)</ref>, MBPP <ref type="bibr" target="#b1">(Austin et al., 2021)</ref>, MMLU <ref type="bibr">(Hendrycks et al., 2021a)</ref>, and SciQ <ref type="bibr" target="#b38">(Welbl et al., 2017)</ref>, covering domains of math, coding, and general QA. Llama-3-70B-Instruct is used during dataset construction. The number of training samples (i.e., query-MAS pairs) is approximately 11k; see the statistics of our dataset in Table <ref type="table" target="#tab_0">1</ref>. Our MAS-GPT is trained over Qwen2.5-Coder-32B-Instruct <ref type="bibr" target="#b41">(Yang et al., 2024)</ref>, leveraging its instructionfollowing and coding capabilities. We train the LLM using 16 A100s with an effective batch size of 32 for 3 epochs at a learning rate of 1e-5 <ref type="bibr" target="#b43">(Zheng et al., 2024)</ref>.</p><p>Testing. To verify that our MAS-GPT can handle diverse queries in practice, we consider multiple benchmarks from diverse domains. These include MATH <ref type="bibr">(Hendrycks et al., 2021b)</ref>, GSM8K <ref type="bibr" target="#b4">(Cobbe et al., 2021)</ref>, and GSM-Hard <ref type="bibr" target="#b8">(Gao et al., 2023)</ref> for math domains; HumanEval <ref type="bibr" target="#b2">(Chen et al., 2021)</ref> and HumanEval+ <ref type="bibr" target="#b19">(Liu et al., 2023)</ref> for coding tasks; MMLU <ref type="bibr">(Hendrycks et al., 2021a</ref>) for general QA tasks; GPQA <ref type="bibr" target="#b30">(Rein et al., 2023)</ref> and SciBench <ref type="bibr">(Wang et al., 2024a)</ref> for science topics. Please refer to Table <ref type="table">9</ref> for details about datasets and Section C.2 for details about evaluation. For all baselines, the LLMs that drive the MAS to process user queries are kept the same, where we consider five state-ofthe-art LLMs including Llama-3-70B-Instruct <ref type="bibr" target="#b6">(Dubey et al., 2024)</ref>, Qwen2.5-72B-Instruct <ref type="bibr" target="#b41">(Yang et al., 2024)</ref>, GPT-4omini-2024-07-18 (OpenAI, 2024a), o1-preview-2024-09-12 (OpenAI, 2024b), and Deepseek-R1 <ref type="bibr" target="#b10">(Guo et al., 2025)</ref>.</p><p>Baselines. For fair comparisons, we consider 10 baselines that are suitable for handling diverse tasks. We include single agent and agent with chain-of-thought <ref type="bibr" target="#b37">(Wei et al., 2022)</ref> as two basic baselines, Self-Consistency <ref type="bibr">(Wang et al., 2024b)</ref> and Quality-Diversity <ref type="bibr" target="#b22">(Lu et al., 2024)</ref> that select the best from multiple answers, LLM-Debate <ref type="bibr" target="#b5">(Du et al., 2024)</ref> that involves multiple experts for debating, Self-Refine <ref type="bibr" target="#b23">(Madaan et al., 2024)</ref> that iteratively refines last agent's answer, SPP <ref type="bibr">(Wang et al., 2024c</ref>) that stimulates conversations among multiple roles, AgentVerse <ref type="bibr" target="#b3">(Chen et al., 2024)</ref> and DyLAN <ref type="bibr" target="#b20">(Liu et al., 2024</ref>) that dynamically adjust multi-agent team during inference, GPTSwarm <ref type="bibr" target="#b45">(Zhuge et al., 2024)</ref> that relies on a graph collaboration structure.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2.">Main Results</head><p>Since our proposed MAS-GPT aims to facilitate the multiagent systems in flexibly handling diverse queries, our results focus on the keyword of generality. Here, we show the generality of MAS-GPT by comparing performance averaged on various benchmarks and performance using different LLMs to drive the MAS.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>MAS-GPT's generality in handling diverse queries.</head><p>We compare MAS-GPT with 10 baselines on 8 benchmarks using Llama-3-70B-Instruct <ref type="bibr" target="#b6">(Dubey et al., 2024)</ref> to drive the MAS, with results reported in Table <ref type="table" target="#tab_1">2</ref>. GPQA and SciBench are two benchmarks that are out-of-domain for our MAS-GPT. From the table, we see that (1) our MAS-GPT significantly outperforms the baseline methods on average, outperforming the second-best method by 3.89%. (2) Our MAS-GPT simultaneously achieves promising performance in both in-domain and out-of-domain (i.e., queries that are significantly different from those in the training data) benchmarks, indicating MAS-GPT's generality.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Generality in using diverse LLM backbones for MAS.</head><p>Llama-3-70B-Instruct was utilized to drive MAS during the dataset construction phase for training MAS-GPT, a 32Bsized LLM. As shown in Table <ref type="table" target="#tab_1">2</ref>, this approach proves effective when employing the same LLM to drive MAS during test time. To further validate the versatility of MAS-GPT, we assess its performance under different MAS-driving LLMs, including Qwen2.5-72B-Instruct and GPT-4o-mini-2024-07-18, in  consistently achieves superior performance, regardless of the LLM used to drive MAS, highlighting its strong compatibility and adaptability across various MAS-driving LLMs.</p><p>MAS-GPT's potential in further augmenting the reasoning performance of strong reasoning LLMs such as o1. In recent developments, the AI community has introduced several state-of-the-art reasoning LLMs <ref type="bibr">(OpenAI, 2024b;</ref><ref type="bibr" target="#b29">Qwen, 2024)</ref>, which have demonstrated remarkable reasoning capabilities by scaling inference-time computations <ref type="bibr" target="#b31">(Snell et al., 2024)</ref>. In this context, we aim to explore whether our proposed MAS-GPT can take the reasoning power of these already advanced models even further.</p><p>To test this, we conduct experiments using OpenAI's o1preview (OpenAI, 2024b) and Deepseek-R1 <ref type="bibr" target="#b10">(Guo et al., 2025)</ref>, evaluating them on the highly challenging AIME-2024 mathematical benchmark 1 . The results, as shown in Figure <ref type="figure" target="#fig_4">4</ref>(a), show that our proposed MAS-GPT significantly outperforms the baseline methods on this challenging task. Specifically, it can improve over the single LLM by a large margin: 13.34%. This result not only verifies the generality of our proposed MAS-GPT, but also indicates its promising potential in pushing the boundaries of LLM reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Comparisons with task-specific methods, AFlow.</head><p>To further demonstrate the generality and effectiveness of our MAS-GPT during inference time, we compare with AFlow <ref type="bibr" target="#b42">(Zhang et al., 2024)</ref>, a latest task-specific method for MAS optimization that has been specifically optimized on MATH <ref type="bibr">(Hendrycks et al., 2021b)</ref> dataset. We evaluate on two AFlow's in-domain (MATH and GSM8K) and two AFlow's out-domain (MMLU and HumanEval+) benchmarks. Results in Figure Table 4: Ablation studies on the designs of dataset construction: (1) our inter-consistency-oriented pair selection, (2) the adjustment of MAS in our intra-consistency-oriented pair refinement: Refine-A, (3) the introduction of reasoning process in our intra-consistency-oriented pair refinement: Refine-R. The table shows that these three designs all play critical roles in achieving high task performance. SELECT REFINE-A REFINE-R MATH MMLU GPQA ➀ ✗ ✓ ✓ 60.26 77.58 36.68 ➁ ✓ ✗ ✓ 66.23 77.78 36.45 ➂ ✓ ✓ ✗ 64.90 75.96 37.15 ➃ ✓ ✓ ✓ 68.65 78.38 37.62</p><p>domains, achieving worse performance than a single LLM. In contrast, our MAS-GPT consistently performs the best across these benchmarks. It is also worth mentioning that our MAS-GPT only requires one-time inference of a 32Bsized LLM to build the MAS; while AFlow needs to call the APIs of powerful proprietary LLMs, such as Claude-3.5-Sonnet <ref type="bibr" target="#b0">(Anthropic, 2024)</ref>, 10 times per query and depends on a hold-out validation set.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Cost comparisons.</head><p>Here, we compare the inference cost of various methods from the moment a user query is received to the generation of the final answer, as illustrated in Figure 4(c). We quantify the inference cost in terms of the number of LLM inference calls <ref type="bibr" target="#b20">(Liu et al., 2024)</ref>, interpreting the inference of MAS-GPT as 0.5 times, given that its model size is approximately half that of the MAS-driving LLM (32B v.s. 70B). From the figure, we observe that, among the four methods compared, MAS-GPT achieves the best performance while requiring the fewest inference calls, demonstrating its efficiency and effectiveness.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.">Analysis of MAS-GPT</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Effectiveness of inter-consistency-oriented pair selection.</head><p>During data construction, to facilitate the model in recog- These findings demonstrate the promising potential of MAS-GPT, suggesting that it can be further improved with more diverse, high-quality data and stronger models as the community continues to advance.</p><p>nizing generalizable patterns between queries and MAS, we propose an inter-consistency-oriented query-MAS pair selection method, which maps similar queries with consistent high-performing MAS. To examine its effectiveness, we replace this mapping with a random mapping approach, which randomly selects one out of those MAS with correct answers. From Table <ref type="table">4</ref>, by comparing ➀ and ➃, we see that our proposed method brings significant performance gain, with an absolute improvement of 8.39% on MATH.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Effectiveness of intra-consistency-oriented pair refinement. During data construction, to help the model learn the associations between query and MAS, we propose an intraconsistency-oriented query-MAS pair refinement method.</head><p>This method enhances the alignment between query and MAS by adjusting MAS to make it query-dependent and introducing a reasoning process to strengthen the logical connection. To examine their effects, we conduct two experiments with one without adjustment of MAS and one without reasoning process. From Table <ref type="table">4</ref>, by comparing ➁ and ➃, ➂ and ➃, we see that our designs in adjusting MAS and introducing reasoning process both contribute to performance improvement, indicating the effectiveness of our proposed intra-consistency-oriented pair refinement.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Scaling effects of data size.</head><p>To explore the scaling effects of data size for training MAS-GPT, we adjust the size from 0 to 11k using the same 32B-sized model and compare the extractability (i.e., the Python code can be extracted), executability (i.e., the code is executable), task performance. Results in Figure Overall, these findings demonstrate the promising potential of MAS-GPT, suggesting that it can be further improved with more diverse, high-quality data and stronger models as the community continues to advance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Case study.</head><p>To offer an intuitive understanding, we present several examples in Appendix showcasing the query, the MAS-GPT-generated reasoning process, and the MAS-GPTgenerated MAS. These show that MAS-GPT can generate query-specific MAS (Section A.1), generalize to unseen queries (Section A.2), generate novel MAS (Section A.3).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Conclusion</head><p>Building MAS was time-consuming and resource-intensive. This paper aims to streamline this process into a single LLM inference, making MAS creation as effortless as querying ChatGPT. To this end, we introduce MAS-GPT, an LLM specifically trained to generate executable MAS from arbitrary user queries. Our approach follows a data-driven spirit, leveraging a consistency-oriented data construction pipeline to enhance the coherence and consistency of data pairs. We conduct extensive experiments, comparing MAS-GPT against 10+ baseline methods across 9 benchmarks, using 5 different LLMs as MAS drivers. The results consistently demonstrate that MAS-GPT outperforms all baselines, strongly validating its effectiveness and generalizability. Additionally, we observe MAS-GPT's potential to further enhance state-of-the-art reasoning capabilities, as well as its scalability for continued improvements. We believe MAS-GPT can accelerate the adoption of MAS, inspiring future research and real-world applications.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Impact Statements</head><p>This paper presents an advancement in simplifying the application of LLM-based multi-agent systems (MAS). Our MAS-GPT significantly reduces the complexity of designing and deploying MAS for a wide range of tasks. Our approach not only makes MAS development more accessible and efficient but also improves scalability, enabling its broader application in real-world scenarios. While the potential negative impacts of our approach are similar to those associated with large language models, such as ethical concerns and misuse, these are inherent to the use of LLMs in general and do not require further elaboration in this context.</p><p>Table <ref type="table">5</ref>: Case 1: user query and the reasoning process generated by our MAS-GPT. MAS-GPT firstly analyzes the domain, difficulty, and required knowledge, then propose the idea of what multi-agent system is appropriate.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Query</head><p>The following is a multiple-choice question: Which of the following statements about any two events A and B is true?</p><p>The following choices are provided: Please finish your answer with "the answer is (X)" where X is the correct letter choice.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reasoning generated by MAS-GPT</head><p>The question is a multiple-choice problem in the domain of probability theory, specifically focusing on the relationships between events, such as independence and mutual exclusivity. The difficulty lies in the need for precise understanding of probability concepts and their implications, as well as the ability to analyze and evaluate multiple statements to identify the correct one. This requires both theoretical knowledge and logical reasoning.</p><p>To address this question effectively, a multi-agent system should include agents that specialize in analyzing the relationships between events in probability theory. Each agent should focus on a specific aspect of the problem, such as independence, mutual exclusivity, or the implications of specific probability values (e.g., P (A ∩ B) = 0 or P (A ∪ B) = 1). By dividing the task into these focused analyses, the system ensures comprehensive coverage of the problem space. Additionally, a final decision-making agent is necessary to synthesize the insights from all agents and provide a well-reasoned final answer. This structure ensures that the system can handle the complexity of the question while leveraging the strengths of specialized reasoning agents. The system is designed to align with the specific requirements of the question, ensuring that each agent contributes relevant and precise insights to the solution process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Case Study</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1. MAS-GPT Can Generate Query-Specific MAS</head><p>From Table <ref type="table">5</ref>, we see that given a query, MAS-GPT first provides a reasoning process in analyzing the domain, difficulty, and required knowledge of the query. Secondly, MAS-GPT analyzes what multi-agent system is appropriate for addressing the question effectively and decides the required agents and structure.</p><p>Finally, MAS-GPT generates a query-specific MAS (Listing 1 and Figure <ref type="figure" target="#fig_9">6(a)</ref>), which involves five agents with specific tasks targeting the query and a final decision-making agent to provide the final answer.</p><p>This indicates that MAS-GPT can flexibly generate a query-specific MAS within one single LLM inference.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2. MAS-GPT Can Generalize to Unseen Queries</head><p>From</p><p>Table 6, we see that given a query whose domain is unseen from our training dataset, MAS-GPT still works well. Specifically, it first analyzes the involved domain, the required understandings, and the difficulty of the given query. Secondly, it figures out a well-suited multi-agent system to answer the query, which directly mentions what agents and what structure are appropriate. Finally, MAS-GPT generates a query-specific MAS (Listing 2 and Figure <ref type="figure" target="#fig_9">6(b)</ref>), which involves four parallel pipelines: two pipelines that answer the query via coding and two pipelines that directly answer the query. The first two pipelines are both consisted of two agents: one for writing and executing the code, and one for organizing the final answer. Finally, an aggregation agent reasons over the four solutions and provides the final answer.</p><p>This indicates that MAS-GPT can generalize to unseen queries and generate appropriate MAS.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3. MAS-GPT Can Generate Novel MAS</head><p>From Table <ref type="table">7</ref> and Listing 3 (Figure <ref type="figure" target="#fig_9">6(c</ref>)), we see that given a query, the MAS-GPT proposes a novel MAS that is unseen from our base MAS pool. Specifically, it builds an MAS with five parallel pipelines, where each pipeline actually involves an agent for answering the question and another agent for refining the solution. Finally, a decision-making agent is introduced to provide the final answer.</p><p>This shows that MAS-GPT is not merely memorizing the data during training, but actually learns patterns of designing MAS, indicating the generalization ability of our proposed MAS-GPT.</p><p>Listing 1: Case 1: Multi-agent system generated by MAS-GPT. MAS-GPT can generate query-specific MAS. MAS-GPT designs five independent responding agents, each responsible for different aspects of the task.      The question involves calculating the magnitude of the electric dipole moment, a concept rooted in physics, specifically in the domain of electromagnetism. The problem requires understanding the relationship between the charges, their separation, and the resulting dipole moment. While the mathematical computation is straightforward, the problem demands precise application of the formula for the dipole moment and careful handling of units, which adds a layer of complexity.</p><p>To address this, one would analyze the question by identifying the key variables (charge magnitude, separation distance) and the formula (dipole moment = charge × separation).</p><p>A multi-agent system is well-suited for this task because it can leverage multiple approaches to ensure accuracy and robustness. First, agents can independently break down the problem into steps, generate Python code to compute the solution, and execute the code to verify the calculations. This ensures that the solution is not only theoretically correct but also computationally validated. Additionally, other agents can directly generate solutions without code, providing a baseline for comparison.</p><p>Finally, an evaluation agent can synthesize the outputs from all agents, ensuring consistency and selecting the most reliable solution. This multi-faceted approach is particularly effective for scientific problems where both analytical and computational accuracy are critical.</p><p>answering. 10 Steps: 11 1. 2 agents independently solves the problem by breaking it down into steps and generating code, where each agent organizes the solution based on the code execution results, ensuring clarity and correctness. 12 2. 2 agents generate a solution directly, which provides baseline solutions especially when code generation is challenging 13 3. A final agent evaluates all the solutions and determines the final solution. 14 """ 15 # 4 parallel pipelines to solve the problem independently 16 solutions = [] 17 18 # The first two pipelines generate code to solve the problem 19 for _ in range(2): 20 answer, output = self.generate_code_get_output(taskInfo) 21 solution = self.organize(taskInfo, answer, output) 22 solutions.append(solution) 23 24 # The third pipeline generates a solution directly 25 for _ in range(2): 26 solution = self.llm.call_llm(taskInfo) 27 solutions.append(solution) 28 29 # Determine the final solution based on the generated solutions 30 final_solution = self.get_final_solution(taskInfo, solutions) 31 return final_solution 32 33 def generate_code_get_output(self, taskInfo): 34 """ 35</p><p>Generate Python code to solve the mathematical problem and execute the code to get the output.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>36</head><p>Args: 37 taskInfo (str): The mathematical problem to be solved.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>38</head><p>Returns:</p><p>39 a tuple containing: code_generation_instruction = f"""You are an expert in solving mathematical problems.</p><p>Table <ref type="table">7</ref>: Case 3: user query and the reasoning process generated by our MAS-GPT. MAS-GPT firstly analyzes the domain, difficulty, and required knowledge, then propose the idea of what multi-agent system is appropriate.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Query</head><p>The following is a multiple-choice question: Suppose that there are two firms in the market facing no costs of production and a demand curve given by Q = 150 -P for their identical products. Suppose the two firms choose prices simultaneously as in the Bertrand model. Compute the prices in the nash equilibrium.</p><p>The following choices are provided:</p><p>(A) 30 (B) 50 (C) 0 (D) 25 (E) 150 (F) 75 (G) 90 (H) 120 (I) 100 (J) 60</p><p>Please finish your answer with "the answer is (X)" where X is the correct letter choice.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reasoning generated by MAS-GPT</head><p>The question pertains to a classic economic problem in the domain of game theory and microeconomics, specifically focusing on the Bertrand model of price competition. The difficulty lies in understanding the strategic interaction between two firms, the implications of no production costs, and the Nash equilibrium concept. Solving this requires both theoretical knowledge of economic models and the ability to apply mathematical reasoning to derive the equilibrium price.</p><p>To address such a question, one must first break it down into its core components: the demand curve, the firms' identical products, and the simultaneous price-setting behavior.</p><p>A multi-agent system is well-suited for this task because it can leverage multiple perspectives to ensure accuracy and depth in reasoning. By employing agents that independently analyze the problem, generate solutions, and refine their responses through iterative feedback, the system ensures a robust exploration of the problem space. This approach is particularly valuable for a question like this, where multiple solution paths (e.g., algebraic derivation, economic intuition) can lead to the correct answer. The iterative refinement process allows for cross-verification of solutions, reducing the likelihood of errors. Finally, a decision-making agent synthesizes the diverse solutions, ensuring that the final answer is both logically sound and consistent with the principles of the Bertrand model. This structured reasoning process aligns with the complexity of the question and ensures a reliable outcome.</p><p>Listing 3: Case 3: Multi-agent system generated by MAS-GPT. MAS-GPT can generate novel MAS.   (a) CoT (b) 5 CoT SC (c) Reflection (d) Scientific LLM Debate (e) Math Ensemble (f) Test Refine (g) Test Fix Ensemble (h) Ensemble Format (i) Quality Diversity (j) 3 LLM Debate (k) 3 Code Organize (l) Code Test (m) Step Back Abstraction (n) Code LLM Debate (o) Dynamic Agent (p) Heuristic Simulation Refine (q) Priority Refine (r) Socratic Questioning (s) Strategy Engineer-Scientist (t) 2 Code 2 Basic Ensemble Table 10: The prompt for intra-consistency-oriented pair refinement. This prompt is fed to GPT-4o-2024-11-20 to adjust the MAS and generate a reasoning statement. The prompt is integrated with a user query and the selected MAS represented by Python code.</p><p>I will give you a question and a multi-agent system. The multi-agent system is described in the format of Python code, where each agent is represented by an agent-specific instruction and one call llm. Though the multi-agent system can answer the question, it may not be the best one. You task is return me two things: an improved multi-agent system and a paragraph.</p><p>The improved multi-agent system should be more related to the question, while basically, try not to change the architecture compared to the original multi-agent system.</p><p>-For example, if the multi-agent system is in a parallel structure (e.g., 5 parallel agents generate answer and 1 agent select the best answer), you may keep the structure unchanged while only changing each parallel agent's instruction.</p><p>-If the multi-agent system is already suitable, you may only modify the instructions in the multi-agent system more relevant to the question while leaving the structure unchanged.</p><p>-If you think additional agents are required (e.g., the question is difficult and complex), you may add some related expert agents to enhance the multi-agent system.</p><p>The paragraph should first analyze the question itself, from the perspectives of domain and difficulty. Then, you should provide a reasoning process to bridge the question and the improved multi-agent system. The reasoning process should be in the views of that how one analyzes the question and objectively thinks about what multi-agent system is needed. Then, the reasoning process can finally and logically lead to the improved multi-agent system. Do not mention "this multi-agent system", or "the improved multi-agent system", rather, say "a multi-agent system" instead. Do not mention the original multi-agent system or the original structure.</p><p>Please follow the following format requirements: -The improved multi-agent system should be included between &lt;CODE&gt; and &lt;/CODE&gt; -The paragraph should be included between &lt;PARAGRAPH&gt; and &lt;/PARAGRAPH&gt; Please firstly generate the multi-agent system and then generate the paragraph. The paragraph should analyze about the question and the generated multi-agent sytem, such that when one sees the (question, paragraph, the improved multi-agent system) triplet (wihtout the original multi-agent system), one can understand the reasoning process behind the improved multi-agent system. Notice! The paragraph should never mention the original multi-agent system or the original structure.</p><p>The question is: {query}</p><p>The multi-agent system is: {MAS code} Table <ref type="table" target="#tab_0">11</ref>: The prompt for generating a reasoning process if the refined MAS fails. This prompt is fed to GPT-4o-2024-11-20 to generate a reasoning statement. The prompt is integrated with a user query and a selected MAS represented by Python code.</p><p>I will give you a question and a multi-agent system. The multi-agent system is described in the format of Python code, where each agent is represented by an agent-specific instruction and one call llm. You task is return me a paragraph.</p><p>The paragraph should first analyze the question itself, from the perspectives of domain and difficulty. Then, you should provide a reasoning process to bridge the question and the provided multi-agent system. The reasoning process should be in the angle of views that how one analyzes the question and objectively thinks about what multi-agent system is needed. Then, the reasoning process can finally and logically lead to the provided multi-agent system. Do not mention "this multi-agent system", or "the provided multi-agent system", rather, say "a multi-agent system" instead.</p><p>The paragraph should analyze about the question and the provided multi-agent sytem, such that when one sees the (question, paragraph, the provided multi-agent system) triplet, one can understand the reasoning process behind the provided multi-agent system.</p><p>Remember, the paragraph should be included between ¡PARAGRAPH¿ and ¡/PARAGRAPH¿.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>The question is: {query}</head><p>The provided multi-agent system is: {MAS code} You are a helpful AI assistant. You will use your coding and language skills to verify the answer. You are given: 1. A problem, which is going to start like "===Problem: &lt;problem&gt;".</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>2.</head><p>A ground truth answer, which is going to start like "===Ground truth answer:". 3. A reply with the answer to the problem, which are going to start like "===Reply:". Please do the following: 1. Extract the answer in reply: "The answer is &lt;answer extracted&gt; in reply".</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>2.</head><p>Check whether the answer in reply matches the ground truth answer. When comparison is not obvious (for example, 3*sqrt(6) and 7.348), you may compare by calculation, allowing a small margin of error. 3. After everything is done, please give each reply a comment like the following options:</p><p>-"The answer is correct."</p><p>-"The answer is approximated but should be correct. Correct Answer: &lt;ground truth answer&gt; | Answer extracted: &lt;answer extracted&gt;."</p><p>-"The answer is incorrect. Correct Answer: &lt;ground truth answer&gt; | Answer extracted: &lt;answer extracted&gt;." -"The reply doesn't contain an answer." Here are the problem, the ground truth answer and the reply: ===Problem: {query} ===Ground truth answer: {ground truth answer} ===Reply: {Reply}</p><p>Table 13: Prompts for extract code and functions. You are given a **Problem** and a **Solution**. The **Problem** asks for a code function. Extract the final code function from the **Solution**. **Problem:** {query} **Solution:** {solution} Please follow the following rules:</p><p>-Only output the code function that exists in the **Solution**, without any additional explanation or content.</p><p>-Do not modify any part of the code function.</p><p>-Remove parts like 'example use' or 'test cases'.</p><p>-If the **Solution** does not contain a code function, respond with: "The reply doesn't contain a code function."</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Introduction of our proposed new paradigm for building MAS. During inference, MAS-GPT adaptively generates a query-specific MAS with one LLM inference.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure2: Our unified code representation of an executable MAS (i.e., a forward function). Each color denotes an agent. Agents defined by variables, LLM calls denoted by function calls, and interactions represented by string concatenations.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Illustrations of dataset construction, training, and inference of our proposed MAS-GPT.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><figDesc>are evaluation scores by comparing the MAS-generated and ground-truth answer Y i .</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: (a) Different methods empowered with strong reasoning LLM: o1-preview. We see that our MAS-GPT significantly enhance the reasoning performance over single LLM, indicating its potential in further augmenting LLM reasoning. (b) Comparisons with AFlow (optimized on MATH). MAS-GPT even outperforms AFlow on its in-domain benchmarks; while AFlow fails on out-of-domain benchmarks. (c) MAS-GPT achieves the best performance with low inference cost.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><figDesc>4(b) show surprisingly good performance of our proposed MAS-GPT. As a general method, our MAS-GPT even outperforms math-specific AFlow on the MATH dataset by 3.53%! Meanwhile, the MAS optimized on MATH by AFlow fails to generalize to other 1 https://huggingface.co/datasets/Maxwell-Jia/AIME 2024</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Explorations of scaling in training MAS-GPT. (a) More data leads to fewer execution failures. (b) More data contributes to better performance of MAS-GPT in facilitating MAS application. Without training (N=0), the model fails, highlighting that MAS generation is a non-trivial task requiring specific training. (c) Larger model generally contributesto better performance. These findings demonstrate the promising potential of MAS-GPT, suggesting that it can be further improved with more diverse, high-quality data and stronger models as the community continues to advance.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><figDesc>5(a) show that except for the extractability under 0 data sample (the base model knows that it needs to generate Python code, but do not know what codes are needed), the extractability and executability generally improves with the data scale. Results in Figure 5(b) show (1) the base model is unable to generate an effective MAS in zero-shot setting, indicating the necessity for training MAS-GPT. Overall, we observe a promising scaling trend of training MAS-GPT: more data leads to better performance. Scaling effects of model size. Here, we compare the performance of MAS-GPT trained based on 7B, 14B, and 32B models. Results in Figure 5(c) show that the performance of MAS-GPT improves steadily with the growing model size.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><figDesc>(A) P (A ∪ B) implies events A and B are independent. (B) P (A ∪ B) = 0 implies events A and B are mutually exclusive. (C) P (A ∩ B) implies events A and B are independent. (D) P (A ∪ B) implies events A and B are mutually exclusive. (E) P (A ∩ B) = 0 implies events A and B are mutually exclusive. (F) P (A ∩ B) = 1 implies events A and B are independent. (G) P (A ∪ B) = 1 implies events A and B are independent. (H) P (A ∩ B) = 1 implies events A and B are mutually exclusive. (I) P (A ∪ B) = 1 implies events A and B are mutually exclusive. (J) P (A ∩ B) = 0 implies events A and B are independent.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Visualization of three cases. (a) MAS-GPT can generate query-specific MAS. (b) MAS-GPT can generalize to unseen queries. (c) MAS-GPT can generate novel MAS.</figDesc><graphic coords="13,61.24,99.04,150.66,107.98" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><figDesc>agent system for solving probability-related multiple-choice questions.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><figDesc>analyze the task independently, each focusing on a specific aspect of probability theory.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>13 2 .</head><label>2</label><figDesc>A final decision-making agent reasons over the solutions and provides the final solution.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><head>#</head><figDesc>: {taskInfo}\n\nFocus on analyzing the relationship between events A and B in terms of independence. Solve the task.", 19 f"Task: {taskInfo}\n\nFocus on analyzing the relationship between events A and B in terms of mutual exclusivity. Solve the task.", 20 f"Task: {taskInfo}\n\nFocus on the implications of P(A \cup B) and P(A \cap B) on the relationship between events A and B. Solve the task.", f"Task: {taskInfo}\n\nFocus on the definitions and properties of probability union and intersection. Solve the task.", 22 f"Task: {taskInfo}\n\nFocus on identifying any logical inconsistencies or impossibilities in the given choices. Solve the task." Call the llm to generate each solution 26 cot_results = [self.llm.call_llm(instruction) for instruction in instructions]</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_14"><head>#</head><figDesc>Call the llm to process the final decision-making instruction and generate the final answer 32 final_decision_result = self.llm.call_llm(final_decision_instruction) self, taskInfo, cot_results):</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_15"><figDesc>agent system for solving general tasks. solve the task independently.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_16"><head>13 2 .</head><label>2</label><figDesc>Each agent reflects on the solutions and provides an improved solution.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_17"><head>14 3 .</head><label>3</label><figDesc>A final decision-making agent reasons over the improved solutions and provides the final solution.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_18"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Visualization of our MAS pool</figDesc><graphic coords="22,182.93,634.46,111.78,52.00" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Statistics of MAS-GPT's training dataset. We show the number of samples N data ; the averaged instruction L ins ; the averaged response L res , reasoning L rsn , and MAS length L M AS ; and the number of unique MAS N M AS .</figDesc><table><row><cell>N data</cell><cell>Lins</cell><cell>Lres</cell><cell>Lrsn</cell><cell>LMAS</cell><cell>NMAS</cell></row><row><cell cols="5">11442 ∼ 75.0 ∼ 1062.3 ∼ 262.5 ∼ 784.8</cell><cell>7580</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Comparing MAS-GPT with 10 baselines across 8 benchmarks using Llama-3-70B-Instruct, MAS-GPT performs the best on average, verifying its generality in handling diverse queries. Benchmarks with * are out-of-domain for MAS-GPT.</figDesc><table><row><cell>SINGLE (DUBEY ET AL., 2024)</cell><cell>50.55</cell><cell>92.38</cell><cell>45.80</cell><cell>79.01</cell><cell>75.78</cell><cell>77.37</cell><cell>36.68</cell><cell>21.05</cell><cell>59.83</cell></row><row><cell>CHAIN-OF-THOUGHT (WEI ET AL., 2022)</cell><cell>53.20</cell><cell>92.79</cell><cell>46.20</cell><cell>77.16</cell><cell>77.02</cell><cell>75.56</cell><cell>35.28</cell><cell>17.68</cell><cell>59.36</cell></row><row><cell cols="2">SELF-CONSISTENCY (WANG ET AL., 2024B) 61.59</cell><cell>94.99</cell><cell>47.20</cell><cell>77.78</cell><cell>75.78</cell><cell>78.18</cell><cell>37.15</cell><cell>20.00</cell><cell>61.58</cell></row><row><cell>LLM-DEBATE (DU ET AL., 2024)</cell><cell>61.37</cell><cell>91.58</cell><cell>44.60</cell><cell>74.69</cell><cell>74.53</cell><cell>77.78</cell><cell>34.35</cell><cell>19.79</cell><cell>59.84</cell></row><row><cell>SELF-REFINE (MADAAN ET AL., 2024)</cell><cell>58.50</cell><cell>90.78</cell><cell>37.80</cell><cell>67.90</cell><cell>62.73</cell><cell>74.75</cell><cell>38.32</cell><cell>20.00</cell><cell>56.35</cell></row><row><cell>QUALITY-DIVERSITY (LU ET AL., 2024)</cell><cell>60.49</cell><cell>92.99</cell><cell>45.60</cell><cell>70.99</cell><cell>70.19</cell><cell>75.76</cell><cell>33.64</cell><cell>20.63</cell><cell>58.79</cell></row><row><cell>SPP (WANG ET AL., 2024C)</cell><cell>51.66</cell><cell>92.79</cell><cell>44.80</cell><cell>76.54</cell><cell>73.29</cell><cell>77.37</cell><cell>35.05</cell><cell>20.84</cell><cell>59.04</cell></row><row><cell>AGENTVERSE (CHEN ET AL., 2024)</cell><cell>55.63</cell><cell>93.39</cell><cell>41.40</cell><cell>77.78</cell><cell>73.91</cell><cell>76.57</cell><cell>40.19</cell><cell>16.00</cell><cell>59.36</cell></row><row><cell>GPTSWARM (ZHUGE ET AL., 2024)</cell><cell>55.41</cell><cell>93.19</cell><cell>43.20</cell><cell>69.14</cell><cell>73.91</cell><cell>75.15</cell><cell>36.45</cell><cell>14.11</cell><cell>57.57</cell></row><row><cell>DYLAN (LIU ET AL., 2024)</cell><cell>59.60</cell><cell>91.18</cell><cell>44.80</cell><cell>79.01</cell><cell>75.78</cell><cell>78.18</cell><cell>35.98</cell><cell>19.79</cell><cell>60.54</cell></row><row><cell>MAS-GPT (OURS)</cell><cell>68.65</cell><cell>93.39</cell><cell>62.40</cell><cell>80.25</cell><cell>78.88</cell><cell>78.38</cell><cell>37.62</cell><cell>24.21</cell><cell>65.47</cell></row></table><note><p>METHOD MATH GSM8K GSM-H H-EVAL</p><p>* H-EVAL+ * MMLU GPQA * SCIBENCH * AVG.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>MAS-GPT consistently performs the best across MAS-driving LLMs, indicating its strong compatibility.</figDesc><table><row><cell>METHOD</cell><cell cols="5">MATH GSM-H H-EVAL+ MMLU GPQA AVG.</cell></row><row><cell></cell><cell></cell><cell cols="3">QWEN2.5-72B-INSTRUCT</cell><cell></cell></row><row><cell>SINGLE</cell><cell>85.86</cell><cell>64.91</cell><cell>85.37</cell><cell>82.60</cell><cell>44.39 72.63</cell></row><row><cell>COT</cell><cell>86.90</cell><cell>62.27</cell><cell>84.15</cell><cell>83.20</cell><cell>47.86 72.88</cell></row><row><cell>SELF-CON.</cell><cell>87.32</cell><cell>61.46</cell><cell>87.20</cell><cell>83.40</cell><cell>50.00 73.88</cell></row><row><cell cols="2">LLM-DEBATE 85.24</cell><cell>63.49</cell><cell>68.90</cell><cell>86.20</cell><cell>47.86 70.34</cell></row><row><cell>SELF-REFINE</cell><cell>83.58</cell><cell>59.03</cell><cell>78.66</cell><cell>85.40</cell><cell>43.32 70.00</cell></row><row><cell>Q-D</cell><cell>85.65</cell><cell>63.08</cell><cell>76.83</cell><cell>82.80</cell><cell>48.66 71.40</cell></row><row><cell>SPP</cell><cell>85.65</cell><cell>62.88</cell><cell>82.32</cell><cell>83.40</cell><cell>48.40 72.53</cell></row><row><cell>AGENTVERSE</cell><cell>84.82</cell><cell>59.43</cell><cell>81.10</cell><cell>83.20</cell><cell>44.65 70.64</cell></row><row><cell>GPTSWARM</cell><cell>83.16</cell><cell>63.89</cell><cell>83.54</cell><cell>84.60</cell><cell>44.92 72.02</cell></row><row><cell>DYLAN</cell><cell>87.73</cell><cell>63.08</cell><cell>85.37</cell><cell>84.40</cell><cell>51.07 74.33</cell></row><row><cell>MAS-GPT</cell><cell>87.53</cell><cell>66.33</cell><cell>85.98</cell><cell>83.80</cell><cell>48.66 74.46</cell></row><row><cell></cell><cell></cell><cell cols="3">GPT-4O-MINI-2024-07-18</cell><cell></cell></row><row><cell>SINGLE</cell><cell>78.18</cell><cell>58.03</cell><cell>86.25</cell><cell>78.56</cell><cell>38.03 67.81</cell></row><row><cell>COT</cell><cell>78.79</cell><cell>60.84</cell><cell>85.62</cell><cell>79.16</cell><cell>39.60 68.80</cell></row><row><cell>SELF-CON.</cell><cell>81.62</cell><cell>59.04</cell><cell>85.00</cell><cell>80.96</cell><cell>39.82 69.29</cell></row><row><cell cols="2">LLM-DEBATE 79.60</cell><cell>60.84</cell><cell>86.25</cell><cell>80.76</cell><cell>37.81 69.05</cell></row><row><cell>SELF-REFINE</cell><cell>74.55</cell><cell>54.62</cell><cell>76.88</cell><cell>79.16</cell><cell>33.33 63.71</cell></row><row><cell>Q-D</cell><cell>79.80</cell><cell>59.64</cell><cell>84.38</cell><cell>79.76</cell><cell>37.58 68.23</cell></row><row><cell>SPP</cell><cell>77.58</cell><cell>57.63</cell><cell>86.25</cell><cell>77.96</cell><cell>37.58 67.40</cell></row><row><cell>AGENTVERSE</cell><cell>75.15</cell><cell>55.62</cell><cell>79.38</cell><cell>78.36</cell><cell>36.24 64.95</cell></row><row><cell>GPTSWARM</cell><cell>75.15</cell><cell>55.62</cell><cell>79.38</cell><cell>78.36</cell><cell>36.32 64.97</cell></row><row><cell>DYLAN</cell><cell>81.21</cell><cell>59.24</cell><cell>80.62</cell><cell>79.96</cell><cell>40.94 68.39</cell></row><row><cell>MAS-GPT</cell><cell>81.21</cell><cell>61.45</cell><cell>86.88</cell><cell>80.36</cell><cell>42.60 70.50</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 3 .</head><label>3</label><figDesc>The results demonstrate that MAS-GPT</figDesc><table><row><cell>Accuracy on AIME-2024 (%)</cell><cell>50 60 70 80 90</cell><cell>o1-Preview Reasoning Models Deepseek-R1 53.3 53.3 56.7 66.7 = 13.3% 80.0 80.0 86.7 90.0 MAS Empowered by Reasoning Models = 10.0% Single Self-Refine Self-Consistency MAS-GPT (Ours)</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 6 :</head><label>6</label><figDesc>Case 2: user query and the reasoning process generated by our MAS-GPT. MAS-GPT firstly analyzes the domain,required elements, and the difficulty, then propose the idea of what multi-agent system is appropriate.QueryAn electric dipole consisting of charges of magnitude 1.50nC separated by 6.20µm is in an electric field of strength 1100 N/C. What is the magnitude of the electric dipole moment?</figDesc><table><row><cell>Reasoning</cell></row><row><cell>generated by</cell></row><row><cell>MAS-GPT</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 12 :</head><label>12</label><figDesc>Prompts for extract answer and answer evaluation.You are a helpful AI assistant tasked with extracting the final answer from a provided solution.Carefully analyze the solution and extract the final answer in reply: "The answer is &lt;answer extracted&gt; in reply".-If the solution does not contain a final answer (e.g., only reasoning, code without execution, or incomplete information), respond with: "The reply doesn't contain an answer." -Ensure that the extracted answer is exactly as presented in the solution. Do not infer or use external knowledge. Do not execute the code yourself.-Remember, Never execute the code yourself! Never doing any computation yourself! Just extract and output the existing answer!</figDesc><table><row><cell>**Input:**</cell></row><row><cell>1. A problem statement, prefixed with "===Problem: &lt;problem&gt;".</cell></row><row><cell>2. A solution to the problem, prefixed with "===Solution:&lt;solution&gt;".</cell></row><row><cell>**Problem and Solution:**</cell></row><row><cell>===Problem: {query}</cell></row><row><cell>===Solution: {response}</cell></row><row><cell>**Instructions:**</cell></row><row><cell>-</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>""" 39 Format an instruction for final decision-making based on a given task description and a list of solutions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="40">41</head><p>Args:</p><p>42 taskInfo (str): A description of the task that needs to be completed.</p><p>43 cot_results (list): A list containing solutions or reasoning steps for the task.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="44">45</head><p>Returns:</p><p>46 str: A formatted instruction that includes the task description, each solution, and a prompt for final decision-making. Listing 2: Case 2: Multi-agent system generated by MAS-GPT. MAS-GPT can generalize to unseen queries from SciBench <ref type="bibr">(Wang et al., 2024a)</ref>, generating an appropriate multi-agent system to handle the query.</p><p>1 from utils import * 2 3 class MAS(): 4 def __init__(self, model_list): 5 self.llm = LLM(model_list) 6 7 def forward(self, taskInfo): 8 """ 9 A multi-agent system for solving math problems by executing code and directly Your function code here 55 &lt;/Code Solution&gt; 56 """ 57 # Call 'generate_and_extract_code' to generate answer and extract the code 58 answer, code = generate_and_extract_code(llm=self.llm, prompt= code_generation_instruction) 59 60 # Call 'execute_code' to execute the generated code and get output 61 output = execute_code(code) 62 return answer, output 63 64 def organize(self, taskInfo, answer, result): 65 """ 66 Organize the solution based on the code execution results. 67 Args: 68 taskInfo (str): The mathematical problem to be solved. 69 answer (str): The initial solution generated by the LLM model. 70 result (str): The output of the code execution. 71 Returns: 72 str: The organized solution based on the code execution results. 73 """ 74 organize_instruction = f""" ** Problem: ** 75 {taskInfo} 76 ** Initial Solution: ** 77 {answer} 78 ** Code Execution Result: ** 79 {result} 80 To solve the ** Problem ** , the ** Initial Solution ** provides steps and python code for calculations. The ** Code Execution Result ** is the output of the code. 81 Based on the ** Initial Solution ** and ** Code Execution Result ** , provide a final solution to the problem. Include the results of the code calculation in your response. Your final response should be complete as if you are directly answering the problem.""" 82 solution = self.llm.call_llm(organize_instruction) 83 return solution 84 85</p><p>def get_final_solution(self, taskInfo, solutions):</p><p>86 """ 87 Evaluate the solutions provided by the agents and determine the final solution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>88</head><p>Args:</p><p>89 taskInfo (str): The mathematical problem to be solved.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>90</head><p>solutions (list): A list of solutions provided by the agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>91</head><p>Returns:</p><p>92 str: The final solution to the mathematical problem. Several solutions are given to solve the problem. Carefully evaluate these solutions. This consistency in answers is crucial for determining the most reliable solution.</p><p>104 You should provide a final solution to the problem. Your final response should be complete as if you are directly answering the problem.""" 105 final_solution = self.llm.call_llm(final_solution_instruction) 106 return final_solution instruction = f"Task: {taskInfo}\n\nPlease solve the task." 18 19 # Set the number of solutions to generate; using 5 for variety and diversity 20 N = 5 21 # Call the llm to generate each solution 22 cot_results = [self.llm.call_llm(instruction) for _ in range(N)] 23 24 # Get the instruction for the self-refine process based on all generated solutions 25 self_refine_instruction = self.get_self_refine_instruction(taskInfo, cot_results) 26 27 # Call the llm to refine each solution 28 refined_results = [self.llm.call_llm(self_refine_instruction) for _ in range(N) ] 29 30 # Get the final decision-making instruction based on all refined solutions 31 final_decision_instruction = self.get_final_decision_instruction(taskInfo, refined_results) 32 33 # Call the llm to process the final decision-making instruction and generate the final answer 34 final_decision_result = self.llm.call_llm(final_decision_instruction) 35 36 # Return the final solution 37 return final_decision_result 38 39</p><p>def get_self_refine_instruction(self, taskInfo, cot_results):</p><p>40 """</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>41</head><p>Format an instruction for self-refinement based on a given task description and a list of solutions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="42">43</head><p>Args:</p><p>44 taskInfo (str): A description of the task that needs to be completed.</p><p>45 cot_results (list): A list containing solutions or reasoning steps for the task.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="46">47</head><p>Returns: 48 str: A formatted instruction that includes the task description, each solution, and a prompt for self-refinement. METHOD HUMANEVAL HUMANEVAL-PLUS MATH CHATDEV (QIAN ET AL., 2024A) 83.33 84.04 62.07 MAS-GPT (OURS) 91.18 87.23 77.59</p><p>Table <ref type="table">8</ref>: Comparisons with task-specific method, ChatDev <ref type="bibr">(Qian et al., 2024a)</ref>, which is specifically designed for software development.</p><p>65 """</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>66</head><p>Format an instruction for final decision-making based on a given task description and a list of refined solutions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="67">68</head><p>Args:</p><p>69 taskInfo (str): A description of the task that needs to be completed.</p><p>70 refined_results (list): A list containing refined solutions for the task.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="71">72</head><p>Returns: 73 str: A formatted instruction that includes the task description, each refined solution, and a prompt for final decision-making. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Visualization of Our MAS pool</head><p>We visualize several MAS in our MAS pool in Figure <ref type="figure">7</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Additional Experimental Setups.</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1. Descriptions of Datasets</head><p>We provide an overall descriptions of the training and testing datasets in Table <ref type="table">9</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.2. Evaluations</head><p>In this section, we detail our evaluation approach. For queries with ground truth answers, we employ LLMs to extract the MAS output and compare it with the ground truth. For code benchmarks like HumanEval and MBPP, we assess correctness using test cases.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LLM-based Evaluation with Ground-Truth Answer</head><p>We utilize LLMs to perform evaluation with ground-truth answer. However, direct evaluation against the ground truth is incompatible as the LLM annotates the response itself. To address this issue, we adopt a two-step evaluation process based on the prompts used in AutoGen <ref type="bibr" target="#b39">(Wu et al., 2023)</ref>, first extract the answer, then evaluation. Here the responses generated by multi-agent systems (MAS) are often unstructured and irregular, making it difficult to extract the final answer to a query using rule-based methods.</p><p>To avoid extraction errors that could impact the evaluation of MAS performance, we use LLMs to automate the answer extraction process. Specifically, we Purpose Dataset Name Domain Sub-Domains Sample Number Training MATH (Hendrycks et al., 2021b) Math Counting &amp; Probability Geometry Algebra Number Theory Precalculus Prealgebra Intermediate Algebra 6000 GSM8K (Cobbe et al., 2021) Math -1000 GSM-Hard <ref type="bibr" target="#b8">(Gao et al., 2023)</ref> Math -319 AQUA-RAT <ref type="bibr" target="#b18">(Ling et al., 2017)</ref> Reasoning -1000 MBPP <ref type="bibr" target="#b1">(Austin et al., 2021)</ref> Code -374 SciQ <ref type="bibr" target="#b38">(Welbl et al., 2017)</ref> General QA -2000 MMLU ( <ref type="formula">Hendrycks et al., 2021a</ref>) General QA Humanities Social Science STEM Others 1529 Testing MATH (Hendrycks et al., 2021b) Math Counting &amp; Probability Geometry Algebra Number Theory Precalculus Prealgebra Intermediate Algebra 500 GSM8K (Cobbe et al., 2021) Math -500 GSM-Hard <ref type="bibr" target="#b8">(Gao et al., 2023)</ref> Math -500 HumanEval <ref type="bibr" target="#b2">(Chen et al., 2021)</ref> Code -164 HumanEval-Plus <ref type="bibr" target="#b19">(Liu et al., 2023)</ref> Code -164 GPQA <ref type="bibr" target="#b30">(Rein et al., 2023)</ref> Science -448 SciBench <ref type="bibr">(Wang et al., 2024a</ref>) Science -500 MMLU (Hendrycks et al., 2021a) General QA Humanities Social Science STEM Others 500 AIME-2024 Math -30</p><p>Table <ref type="table">9</ref>: Descriptions of benchmarks prompt the LLM to extract the answer from the MAS response based on predefined rules and then ask the LLM to compare it with the ground truth. The prompts used for this process are detailed in Table <ref type="table">12</ref>.</p><p>Code Evaluation with Test Cases We evaluate the MAS performance on coding tasks based on pass rate on test cases, with a two step approach: first, prompting the LLM to extract the code from the MAS response, and second, executing it in a coding environment to calculate the pass rate; see the prompts used for extract code and functions in Table <ref type="table">13</ref>.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_19"><head># 56 #</head><label>56</label><figDesc>Append each solution from cot_results to the instruction 53 for i, result in enumerate(cot_results): 54 instruction += f"Solution {i+1}:\n{result}\n\n" # Number each solution for clarity55Add the final prompt to encourage reasoning over the solutions and provide a final answer 57 instruction += "Given all the above solutions, reason over them carefully and provide a final answer to the task."</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_20"><head>#</head><figDesc>Prepare the solutions in a numbered format for evaluation 95 solutions_str = "" 96 for i, solution in enumerate(solutions): solutions_str += f"Solution {i+1}\n{solution}\n\n"</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_21"><head>#</head><figDesc>Add the final prompt to encourage self-refinement and improvement 59 instruction += "Given all the above solutions, reason over them carefully and provide an improved solution to the task."self, taskInfo, refined_results):</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_22"><head># 79 # 83 #</head><label>7983</label><figDesc>Initialize the instruction text with a general guideline 77 instruction = f"Task:\n{taskInfo}\n\n" 78 Append each refined solution from refined_results to the instruction 80 for i, result in enumerate(refined_results): 81 instruction += f"Solution {i+1}:\n{result}\n\n" # Number each solution for clarity 82Add the final prompt to encourage reasoning over the solutions and provide a final answer 84 instruction += "Given all the above solutions, reason over them carefully and provide a final answer to the task."</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/news/claude-3-5-sonnet" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="2025" to="2026" />
+		</imprint>
+	</monogr>
+	<note>Claude 3.5 sonnet</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Program synthesis with large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Odena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Le</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2108.07732</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">P D O</forename><surname>Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Brockman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Agentverse: Facilitating multi-agent collaboration and exploring emergent behaviors</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C.-M</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y.-H</forename><surname>Hung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Qian</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">K</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schulman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.14168</idno>
+		<title level="m">Training verifiers to solve math word problems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Improving factuality and reasoning in language models through multiagent debate</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Torralba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Mordatch</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Forty-first International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dubey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Jauhri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Pandey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kadian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Al-Dahle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Letman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mathur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Schelten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Fan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.21783</idno>
+		<title level="m">The llama 3 herd of models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Combatting dimensional collapse in llm pre-training data via diversified file selection</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Ya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Pal: Program-aided language models</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Callan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Neubig</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="10764" to="10799" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">T</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Mi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.20094</idno>
+		<title level="m">Scaling synthetic data creation with 1,000,000,000 personas</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">D</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Bi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.12948</idno>
+		<title level="m">Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Measuring massive multitask language understanding</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mazeika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Steinhardt</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Measuring mathematical problem solving with the math dataset</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<publisher>NeurIPS</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Metagpt: Meta programming for a multi-agent collaborative framework</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhuge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">K S</forename><surname>Yau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Automated design of agentic systems</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Clune</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS 2024 Workshop on Open-World Agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">N</forename><surname>Lambert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Morrison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Pyatkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ivison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Brahman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">J V</forename><surname>Miranda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lyu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2411.15124</idno>
+		<title level="m">Pushing frontiers in open language model post-training</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">3</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Camel: Communicative agents for&quot; mind&quot; exploration of large language model society</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hammoud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Itani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Khizbullin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ghanem</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="51991" to="52008" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Encouraging divergent thinking in large language models through multi-agent debate</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Jiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Tu</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.emnlp-main.992</idno>
+		<ptr target="https://aclanthology.org/2024.emnlp-main.992/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing</title>
+		<editor>
+			<persName><forename type="first">Y</forename><surname>Al-Onaizan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Bansal</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Y.-N</forename><surname>Chen</surname></persName>
+		</editor>
+		<meeting>the 2024 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Miami, Florida, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024-11">November 2024</date>
+			<biblScope unit="page" from="17889" to="17904" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Program induction by rationale generation: Learning to solve and explain algebraic word problems</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Ling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yogatama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Dyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Blunsom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 55th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 55th Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="158" to="167" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Is your code generated by chatGPT really correct? rigorous evaluation of large language models for code generation</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">S</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhang</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum" />
+	</analytic>
+	<monogr>
+		<title level="m">Thirtyseventh Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>id=1qvx610Cu7</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">A dynamic llm-powered agent network for task-oriented agent collaboration</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">First Conference on Language Modeling</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">The flan collection: Designing data and methods for effective instruction tuning</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Longpre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Vu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Webson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">W</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zoph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="22631" to="22648" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Intelligent go-explore: Standing on the shoulders of giant foundation models</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Clune</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Automated Reinforcement Learning: Exploring Meta-Learning, AutoML, and LLMs</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Self-refine: Iterative refinement with selffeedback</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Tandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hallinan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wiegreffe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Prabhumoye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<idno type="arXiv">arXiv:2303.08774</idno>
+		<title level="m">OpenAI. Gpt-4 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Gpt-4o mini: advancing cost-efficient intelligence</title>
+		<ptr target="https://openai.com/index/introducing-openai-o1-preview/" />
+	</analytic>
+	<monogr>
+		<title level="j">OpenAI. Introducing openai</title>
+		<imprint>
+			<biblScope unit="page" from="2025" to="2026" />
+			<date type="published" when="2024">2024. 2025-01-23. 2024</date>
+		</imprint>
+		<respStmt>
+			<orgName>OpenAI</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Training language models to follow instructions with human feedback</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ray</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">NIPS</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="27730" to="27744" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Chatdev: Communicative agents for software development</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Cong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="15174" to="15186" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Scaling largelanguage-model-based multi-agent collaboration</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sun</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.07155</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Qwen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Qwq</surname></persName>
+		</author>
+		<ptr target="https://qwenlm.github.io/blog/qwq-32b-preview/" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="2025" to="2026" />
+		</imprint>
+	</monogr>
+	<note>Reflect deeply on the boundaries of the unknown</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">D</forename><surname>Rein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">L</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">C</forename><surname>Stickland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Petty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">Y</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dirani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Michael</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">R</forename><surname>Bowman</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gpqa</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.12022</idno>
+		<title level="m">A graduate-level google-proof q&amp;a benchmark</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Scaling llm testtime compute optimally can be more effective than scaling model parameters</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Snell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kumar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.03314</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Large language models as collaborators for zero-shot medical reasoning</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Cohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Gerstein</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Medagents</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.findings-acl</idno>
+		<ptr target="10.18653/v1/2024.findings-acl" />
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: ACL 2024</title>
+		<editor>
+			<persName><forename type="first">L.-W</forename><surname>Ku</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Martins</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">V</forename><surname>Srikumar</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Bangkok, Thailand</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024-08">August 2024</date>
+			<biblScope unit="page" from="599" to="621" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<ptr target="https://aclanthology.org/2024.findings-acl.33/" />
+		<title level="m">URL</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Evaluating college-level scientific problemsolving abilities of large language models</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Subramaniam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">R</forename><surname>Loomba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Scibench</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Forty-first International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Selfconsistency improves chain of thought reasoning in language models</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">H</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Unleashing the emergent cognitive synergy in large language models: A task-solving agent through multi-persona selfcollaboration</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</title>
+		<meeting>the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="257" to="279" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24824" to="24837" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Crowdsourcing multiple choice science questions</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Welbl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">F</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Gardner</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 3rd Workshop on Noisy User-generated Text</title>
+		<meeting>the 3rd Workshop on Noisy User-generated Text</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="94" to="106" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Autogen: Enabling next-gen llm applications via multi-agent conversation framework</title>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.08155</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Empowering large pre-trained language models to follow complex instructions</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wizardlm</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.15115</idno>
+		<title level="m">Qwen2. 5 technical report</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Teng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhuge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.10762</idno>
+		<title level="m">Automating agentic workflow generation</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Lla-maFactory: Unified efficient fine-tuning of 100+ language models</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Luo</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.acl-demos.38</idno>
+		<ptr target="https://aclanthology.org/2024.acl-demos.38/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Y</forename><surname>Feng</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">D</forename><surname>Xiong</surname></persName>
+		</editor>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics<address><addrLine>Bangkok, Thailand</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024-08">August 2024</date>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page" from="400" to="410" />
+		</imprint>
+	</monogr>
+	<note>System Demonstrations) Association for Computational Linguistics</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Less is more for alignment</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Iyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Efrat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Language agents as optimizable graphs</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhuge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Kirsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Faccio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Khizbullin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schmidhuber</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gptswarm</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Forty-first International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,2294 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Zero-Shot Verification-guided Chain of Thoughts</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-01-21">21 Jan 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Jishnu</forename><forename type="middle">Ray</forename><surname>Chowdhury</surname></persName>
+							<email>jishnu.ray.c@gmail.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Illinois at Chicago</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Cornelia</forename><surname>Caragea</surname></persName>
+							<email>cornelia@uic.edu</email>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Illinois at Chicago</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Zero-Shot Verification-guided Chain of Thoughts</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-01-21">21 Jan 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">31AF5386A78BB1A53982A5B4E984BFEA</idno>
+					<idno type="arXiv">arXiv:2501.13122v1[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:53+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Previous works have demonstrated the effectiveness of Chain-of-Thought (COT) prompts and verifiers in guiding Large Language Models (LLMs) through the space of reasoning. However, most such studies either use a finetuned verifier or rely on manually handcrafted few-shot examples. In contrast, in this paper, we focus on LLM-based self-verification of self-generated reasoning steps via COT prompts in a completely zero-shot regime. To explore this setting, we design a new zero-shot prompt, which we call COT STEP, to aid zeroshot decomposition of reasoning steps and design two new zero-shot prompts for LLM-based verifiers. We evaluate the verifiers' ability to classify the correctness of reasoning chains and explore different ways to use verifier scores in guiding reasoning for various mathematical and commonsense reasoning tasks with different LLMs.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Large Language Models (LLMs) <ref type="bibr" target="#b6">(Dubey et al., 2024;</ref><ref type="bibr" target="#b2">Brown et al., 2020)</ref> have revolutionized the field of NLP by enabling state-of-the-art (SOTA) performance in several tasks merely by smart prompting <ref type="bibr">(Wei et al., 2022a;</ref><ref type="bibr" target="#b3">Bubeck et al., 2023)</ref>. A critical landmark in the art of prompting for multi-step reasoning tasks is the Chain-of-Thought (COT) prompting <ref type="bibr" target="#b30">(Nye et al., 2022;</ref><ref type="bibr">Wei et al., 2022b)</ref>, which elicits LLMs to generate step-bystep reasoning chains before providing the answer to a given question. Building upon COT prompting, several recent works incorporate a verifier mechanism to improve LLMs' performance. For instance, <ref type="bibr">Cobbe et</ref>  <ref type="formula">al. (2021</ref> (2023); <ref type="bibr" target="#b50">Yao et al. (2023)</ref>; <ref type="bibr" target="#b12">Hao et al. (2023</ref><ref type="bibr" target="#b11">Hao et al. ( , 2024) )</ref> use a verifier's scores to do a tree-search over the space of reasoning steps.</p><p>However, these works have several drawbacks including: 1. most of them rely on few-shot prompting, i.e., they rely on exemplars (often manually handcrafted) of how the task is to be performed. This selection of the exemplars brings additional challenges as to which exemplars should be selected, how many, etc; 2. The verifier is also typically either fine-tuned on labeled datasets or rely on further verification-related few-shot exemplars. Properly fine-tuning a verifier may require a large number of human annotations which may be impractical in different tasks and domains. In contrast, in this paper, we focus on LLM-based self-verification of self-generated reasoning steps via COT prompts in a completely zero-shot regime.</p><p>To achieve this, we propose a new zero-shot COTbased prompt, called COT STEP, for generating reasoning steps (i.e., to aid zero-shot decomposition of reasoning steps) and two new zero-shot verification prompts for using LLMs as verifiers to verify their own reasoning steps (i.e., evaluate whether the steps are correct or not). The zero-shot regime is valuable because in this setup, no manually selected or handcrafted examples are required. Moreover, in the complete zero-shot setting that we explore, there is no reliance on any additional data resource for exemplar construction. Furthermore, a general purpose zero-shot prompt can be used to set up a convenient model interface for users to request different kinds of reasoning tasks without having to worry about providing task-specific exemplars.</p><p>In exploring the zero-shot regime, we ask three research questions (RQ1-3) in this paper. RQ1: How do different zero-shot COT prompts compare against each other across different LLMs? RQ2: How well do LLM-based verifiers perform in evaluating the correctness of reasoning steps? RQ3: How well can LLM-based verifier scores be used in selecting the right answer among many or in guiding reasoning in real-time?</p><p>We address each of the questions in turn -RQ1 in §3, RQ2 in §4, and RQ3 in §5 and evaluate them on various mathematical and commonsense reasoning tasks with different LLMs. While investigating RQ1, we find that our COT STEP prompt keep up competitively with other prompts alongside enabling automatic step decomposition. While investigating RQ2, we find that a zero-shot COT-variant of verification prompt tends to perform reasonably in verifying the correctness of mathematical reasoning steps. While investigating RQ3, we do find a noticeable benefit from using the verifier score in a step-level greedy search but the benefit vanishes when self-consistency <ref type="bibr">(Wang et al., 2023b)</ref> is used.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Main Components</head><p>In this section, we discuss the main components of our experiments that are relevant for all our research questions (RQ1-3).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Models</head><p>For our experiments, we primarily focus on two openly-licensed models in the main paper -(1) SO-LAR (SOLAR 10.7B Instruct) <ref type="foot" target="#foot_0">1</ref>  <ref type="bibr" target="#b18">(Kim et al., 2024)</ref> and (2) Phi3 (Phi 3 Mini 128K Instruct) <ref type="bibr" target="#b0">(Abdin et al., 2024)</ref> and show additional experiments on other models such as Mistral (Mistral 7B Instruct v0.2) <ref type="bibr" target="#b14">(Jiang et al., 2023)</ref> and Llama3 (LLama 3.0 8B Instruct) <ref type="bibr" target="#b6">(Dubey et al., 2024)</ref> in Appendix B.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Existing Prompts</head><p>In our experiments, we consider four major existing zero-shot prompt strategies. We describe them here. Note that we use a simplified representation of user-assistant conversational turns to describe the prompt structure for generality and brevity.<ref type="foot" target="#foot_1">foot_1</ref> (P1) Base: Base represents the baseline zero-shot prompting style for question answering that we use. Given a question, such as "What is 2+2?", the prompt to elicit an answer would look like: "User: Q: What is 2+2? \n Assistant: A:". (P2) COT: COT (Chain Of Thoughts) represents the standard zero-shot COT prompt <ref type="bibr" target="#b19">(Kojima et al., 2022)</ref>. This can be expressed as "User: Q: What is 2+2? \n Assistant: Let's think step by step.". Such a prompt is designed to prime the models to generate more explicit chain of reasoning steps before producing an answer.</p><p>(P3) PS+: PS+ represents the plan-and-solve zero shot PS+ prompt presented by <ref type="bibr">Wang et al. (2023a)</ref> as an extension over plain COT. This can be expressed as: "User: Q: What is 2+2? \n Assistant: A: Let's first understand the problem, extract relevant variables and their corresponding numerals, and devise a plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numeral calculation and commonsense), solve the problem step by step, and show the answer." (P4) TAB COT: TAB COT represents another zero shot prompt originally presented by <ref type="bibr" target="#b56">Ziqi and Lu (2023)</ref>. This can be expressed as: "User: Q: What is 2+2? \n Assistant: A: \n| step | subquestion | process | result\n". Such a prompt primes the model to perform chain of thought style reasoning in a tabular format.</p><p>Note that we mainly focus on prompt strategies that do not require any additional data (label-free or not), pseudo-data generation, or involvement in any sophisticated meta-prompting <ref type="bibr" target="#b51">(Yuan et al., 2024;</ref><ref type="bibr" target="#b15">Jin et al., 2024;</ref><ref type="bibr">Zhou et al., 2024;</ref><ref type="bibr" target="#b4">Chen et al., 2023;</ref><ref type="bibr">Wan et al., 2023b,a)</ref>. Such works can be explored in future work. Besides the prompts discussed above (P1-4), <ref type="bibr" target="#b49">Xu et al. (2024)</ref> proposed a zero-shot prompt for re-reading the question and <ref type="bibr" target="#b20">Kong et al. (2024)</ref> recently proposed role-play-based zero-shot prompting. They can be orthogonal augmentations to any of the existing zero-shot prompts. We do not focus on them for this paper.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">Our COT STEP Prompt for Thought Decomposition</head><p>Many of our experiments require LLM-based selfverification of the correctness of the reasoning steps induced by COT-styled prompts. However, this requires some strategy to decompose the reasoning steps (or thoughts) to be evaluated separately. In case of few-shot COT prompts, this can be done by providing exemplars with a specific reasoning format that can be exploited to automatically parse reasoning steps. However, that is not possible with zero-shot COT prompts. Most of the existing zeroshot COT prompts discussed above, do not provide any specific formatting constraint that would allow us to systematically demarcate reasoning steps.<ref type="foot" target="#foot_2">foot_2</ref> TAB COT is an interesting exception compared to other existing prompts since it does induce the model to follow a specific tabular structure corresponding to the given columns. Thus, we can treat each generated row in the table (based on TAB COT) as a single reasoning step which can be decomposed based on new line markers ("\n"). Nevertheless, we generally find the performance of TAB COT to be lower compared to other existing prompts as we will show later. We also find just the basic COT prompt to be a good enough contender ( §3.1). As such, we design a simple variant of the standard zero-shot COT prompt that makes the model always generate thoughts automatically in a structured manner where each thought</p><p>(reasoning step) is separated cleanly into different numbered steps. We call this prompt as COT STEP. (P5) COT STEP: COT STEP is a novel variant of zero-shot COT prompt. This can be expressed as: "User: Q: What is 2+2? \n Assistant: A: Let's think step by step.\n\nStep 1: ". This prompt primes the model to organize its reasoning steps into numbered steps (Step 1, Step 2, . . . ). Given such structured outputs from COT-STEP, the reasoning steps (or "thoughts") can easily be decomposed automatically by using 'Step &lt;number&gt;:' as a delimiter.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.4">Datasets</head><p>We evaluate our research questions on five Qusetion Answering-based reasoning datasets -(1) GSM8K <ref type="bibr" target="#b5">(Cobbe et al., 2021)</ref> (2) GSM-HARD (GSMH)</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">RQ1: COT Prompt Comparisons</head><p>In this section, we seek to compare the existing zero-shot prompts alongside our COT STEP prompt. We want to ensure that COT STEP maintains reasonable performance compared to other zero-shot prompts. Moreover, some prompts like PS+ are only evaluated for a single LLM, and typically not an openly-licensed LLMs. Thus, we compare the zero-shot prompts under the same settings across two openly-licensed models -SOLAR and Phi3, and show results with additional LLMs in Appendix B. Furthermore, self-consistency <ref type="bibr">(Wang et al., 2023b)</ref> has shown to boost the performance of any prompt and we explore it in our setting.</p><p>Self-Consistency Self-Consistency <ref type="bibr">(Wang et al., 2023b)</ref> creates multiple sample generations from a model given any prompt. Each sample is associated with an answer to the given question. After that, majority voting is applied to select the most frequent answer among the samples. We compare all the five prompts both with and without selfconsistency. When using Self-Consistency, we use a temperature of 0.8 and draw 20 samples.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Results</head><p>We present our experiments in Table <ref type="table" target="#tab_0">1</ref>. The Base (Non-COT) prompt when using Phi3 without self-consistency excelled in AQuA and is oth-</p><formula xml:id="formula_0">User:</formula><p>Here is a question: <ref type="bibr">[QUESTION]</ref> For the given question, here is a (potentially partial) reasoning process: erwise competitive in CSQA where COT-style reasoning may not be as crucial given that it is a commonsense reasoning task. Besides that, it is the worst performer with or without using selfconsistency. Surprisingly, PS+ and TAB COT (although they were shown to be better than original zero-shot COT <ref type="bibr" target="#b19">(Kojima et al., 2022)</ref>) do not consistently outperform COT. Rather, without selfconsistency, they often seem to perform significantly worse. Thus, these prompts may only work better compared to COT for specific models like GPT 3.5 Turbo, Davinci and such -but not generally across most models. Interestingly, when using self-consistency, these same prompts tend to become much more competitive and the results can flip. For example, PS+ on SOLAR performs the second worst on GSMH without self-consistency, but performs the best on the same task with selfconsistency. Our COT STEP keeps up fairly well with other COT prompts. Without self-consistency COT STEP is even the best performer in most cases for SOLAR. With self-consistency COT STEP is still nearby to the best performer. Thus, COT STEP offers a good way to get structured outputs with cleanly separated reasoning steps in a zeroshot manner while maintaining competitive performance against most of the existing zero-shot COT prompts. We provide examples of generations from various prompts in Appendix C.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">RQ2: Evaluating Self-Verification</head><p>Self-verification refers to the idea of using LLMs to verify the correctness of their own generated reasoning steps. Roughly, this is typically done by sending LLM-generated reasoning steps to the same LLM as an input alongside some appropriate prompt to evaluate those steps. The LLMs' response and its corresponding probabilities can be then used to get a "score" for the correctness of the generated reasoning steps that were sent as the input. In this paper, we evaluate each reasoning step separately (given the context of past reasoning steps) and assign each reasoning step with the evaluated score. Below, we describe our specific methods for obtaining the evaluation score.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Self-Verification: Task Setup and Prompts</head><p>Task Setup For self-verification, given an input question and its associated (potentially partial) reasoning chain, the task is to determine whether the last step in the chain is correct or not. <ref type="foot" target="#foot_3">4</ref> Thus, the self-verification happen at a step-level granularity.</p><p>R-prompt For this task, we design a zero-shot self-verification prompt as shown in Figure <ref type="figure" target="#fig_1">1</ref>, which we call R-prompt. The prompt is adapted from the one-shot verification prompt used in <ref type="bibr" target="#b27">Ling et al. (2023)</ref> for a simplified zero-shot context.</p><p>COTR-prompt Similar to <ref type="bibr" target="#b27">Ling et al. (2023)</ref>, we also explore a COT variant of the R-prompt which we call the COTR-prompt. After the "Assistant: " in R-Prompt in Figure <ref type="figure" target="#fig_1">1</ref>, the COTR-prompt variant replaces "Answer: (" with the following line: "Answer: Let's double-check step by step.\n".</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.1">Verification Answer Extraction</head><p>From Figure <ref type="figure" target="#fig_1">1</ref>, "(A)" represents "Yes" to the correctness of the given reasoning step whereas "(B)" represents "No". Thus, as a heuristic, we then check if "A)" is present in the generated response or not. If present, we consider that the LLM predicts the last (potentially partial) reasoning step to be correct, otherwise we consider that it predicts the last step to be incorrect. Given that the R-prompt is primed to immediately generate "A" or "B" as an option in the next step, we restrict its maximum generation length to 2. For COTR-prompt, we set the maximum generation length to 512.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.2">Verification Score Generation</head><p>Above we discussed how we get the LLM-based self-verification prediction. Here, we discuss how we get a score for the correctness (the answer "(A)") of the last reasoning step from the LLM. There are two components ( <ref type="table" target="#tab_0">C1</ref> and <ref type="table" target="#tab_1">C2</ref> The final value returned by C2 is then:</p><formula xml:id="formula_1">s c2 = s C2 prediction = (A) log(1 -exp s C2 ) prediction = (B)</formula><p>(1) This scoring is reliant on the prediction (answer extraction) from the verification prompt (Rprompt/COTR-prompt) as described in §4.1.1. s c2 is designed to correlate positively with the probability of correctness of the given reasoning step.</p><p>Unification: The two scores s C1 and s C2 are then averaged and exponentiated to return the final unified scalar score (s f ):</p><formula xml:id="formula_2">s f = exp s C1 + s C2 2 (2)</formula><p>We take inspiration from <ref type="bibr" target="#b48">Xie et al. (2023)</ref> in incorporating both the generation probability of the reasoning step and the probability of verification prediction for the final score of the reasoning step. However, unlike <ref type="bibr" target="#b48">Xie et al. (2023)</ref>, our approach is simpler in that we take a simple average instead of introducing new tunable hyperparameters. In Appendix B, we also discuss some ablation experiments where we use only C2 for scoring. There, we show that C1 is required for the best performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Correctness Classification Task Design</head><p>Now that we have presented our setup for the LLM verifier, the question arises on how do we evaluate the capacity of LLMs to self-verify. Since we do not have ground-truth labels for correctness of each reasoning step of an entire reasoning chain and because of the difficulty of creating such labels, we design the evaluation of LLMs self-verification as follows: we consider the specific task of correctness classification at the entire reasoning chain level despite our model-based self-verification being at reasoning step-level. In this task, the input is a question and the entire reasoning chain for the question. The output is a binary class: 1 if the reasoning chain has all correct reasoning steps (i.e., all intermediate reasoning steps are predicted as correct by the self-verifier) and the final answer matches the ground truth, and 0 otherwise. Specifically, given a question and a reasoning chain as input we decompose it into multiple steplevel inputs. A step-level input for step i will have the question and all reasoning steps in the chain from the beginning to step i. The LLM is used independently on each step-level input under the self-verification prompt templates (R-prompt, COTR-prompt). For each step-level input we get the LLM's classification on whether the reasoning step is correct or not based on the answer extraction strategy described before ( §4.1.1). The final prediction is 1 (indicating the correctness of the whole chain of reasoning) if the LLM answers affirmatively (option "(A)") to the correctness of each step-level input for the given reasoning chain and question. Otherwise the final prediction is 0 (indicating the incorrectness of at least one step in the chain of reasoning). Note that for this task, using the verification scores themselves are not necessary. Only the answer extractions are relevant. We evaluate the capability of LLMs to self-verify using verification scores in §5.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Correctness Classification Dataset Design</head><p>Above we described the task of correctness classification for evaluating verification capabilities of LLMs. We also explained how we can use LLMs to predict chain-level correctness or incorrectness based on step-level predictions. However, we still need datasets for the task to actually perform the evaluations. To design the dataset we need three components: (1) the questions (2) the reasoning chain responses to the questions, and (3) the ground truth annotations of the correctness of the reasoning chains for their questions. Below, we explain how we obtain each of these components:</p><p>1. Questions: We get the questions from existing question answering (QA) datasets like GSM8K <ref type="bibr" target="#b5">(Cobbe et al., 2021)</ref> or CommonsenseQA (CSQA) <ref type="bibr" target="#b36">(Talmor et al., 2019)</ref>.</p><p>2. Reasoning Chains: Given the questions, we use LLMs with zero-shot COT-style prompts to generate reasoning chains.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Ground Truth Annotations:</head><p>Given that we have access to QA datasets, for every question, we also have the ground truth answers from the corresponding QA dataset. Given a question, we compare the answer from its generated reasoning chain and the available ground truth answer. While comparing, if the answers match, we consider the reasoning chain to be correct for the question and annotate it as so. Otherwise, we annotate the chain as incorrect.</p><p>Based on the differences in source of the questions (different QA datasets) and the differences in the zero-shot prompts for reasoning-chain generation, we create multiple separate datasets. We mainly focus on COT STEP and TAB COT prompts given their ease for thought decomposition. For the source of questions, we consider GSM8K -a mathematical reasoning dataset <ref type="bibr" target="#b5">(Cobbe et al., 2021)</ref> and CSQA -a commonsense reasoning dataset <ref type="bibr" target="#b36">(Talmor et al., 2019)</ref>. Thus, we get four different datasets based on the combination of prompt style and question source -1. (COT STEP, GSM8K), 2. (COT STEP, CSQA), 3. (TAB COT, GSM8K), and 4. (TAB COT, CSQA). For each dataset, we run Phi 3 (Phi 3 Mini 128K Instruct) and SOLAR (SOLAR 10.7B Instruct) independently on the first 4, 000 questions from the corresponding QA datasets to generate reasoning chains. For each dataset, from the totality of generated reasoning chains for that dataset, we annotate them automatically based on the described strategy and then subsample it such that there are 1, 000 positive samples and 1, 000 negative samples. Thus we get balanced datasets for evaluating different LLM models on correctness classification for reasoning chains generated by different prompt styles.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Self-Verification Results</head><p>We show our results on the four created datasets in Table <ref type="table" target="#tab_1">2</ref>. We can observe from the table that when the questions are sourced from the mathematical reasoning dataset (GSM8K), COTR-prompt consistently outperform R-prompt for verification for all the LLM models and reasoning chain prompts that are considered here. The R-prompt leads to a high bias in predicting any given chain as correct. Thus, we find that the R-prompt gets high true positive rate, but extremely low true negative rate. Interestingly, none of the verifier setup performs particularly well when the questions are sourced in CSQA -a commonsense reasoning dataset. This may be because chain of thought-style reasoning is distributionally non-standard for basic commonsense reasoning (which in natural settings, typically happens implicitly). We also share results with more correction classification datasets created from other zero-shot COT prompts and with other LLMs as verifiers in Appendix B.</p><p>Prompt Style GSM8K CSQA SOLAR 10.7B Instruct COT STEP + SC 84.91 79.85 COT STEP + SC (Max) 79.91 76.82 COT STEP + SC (Weighted) 84.76 79.94 COT STEP + SC (Filter) 84.99 79.94 Phi3 Mini 128K Instruct COT STEP + SC 90.75 77.07 COT STEP + SC (Max) 87.34 73.96 COT STEP + SC (Weighted) 90.68 76.66 COT STEP + SC (Filter) 90.37 76.90 Table 3: Comparison of accuracies on GSM8K and CSQA using different policies of utilizing verifier scores in Self-Consistency. SC represents self-consistency with majority voting. SC (Max) represents the use of Max policy on self-consistency. SC (Weighted) represents the use of Weighted policy on self-consistency. SC (Filter) represents the use of Filter policy on self-consistency.</p><p>In all cases, 20 samples were generated.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">RQ3: Utilizing LLM-based Verifier Scores for Reasoning</head><p>We now investigate different ways to utilize the verifier scores to boost performance of LLMs in different reasoning tasks. That is, we analyze how well can LLM-based verifier scores be used in selecting the right answer to a question among many ( §5.1) or in guiding reasoning in real-time ( §5.2).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Verifier Score-based Self-Consistency</head><p>Several works <ref type="bibr" target="#b5">(Cobbe et al., 2021;</ref><ref type="bibr" target="#b23">Li et al., 2023;</ref><ref type="bibr" target="#b46">Weng et al., 2023;</ref><ref type="bibr" target="#b24">Liang et al., 2024)</ref> have tried to utilize verifier scores to augment self-consistency. Similar to the spirit of such prior works, here, we consider three policies to augment self-consistency using verifier scores or verifier predictions. Each of these policies are different strategies to select a single answer from multiple sampled answer. Majority voting is the standard baseline strategy used in typical self-consistency for answer selection. It does not consider any verifier score. We describe below our three alternative policies (that do utilize the verifier score). For policies (1) and (2), we need the verifier score for an entire reasoning chain. To get that, we simply add up the verifier scores of each step, i.e., the s f scores from Eq (2) of each reasoning step (see §4.1.2). 1. Max: In this policy, given multiple sampled answers, we choose the one from the highest scoring reasoning chain according to the verifier.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Weighted:</head><p>In this policy, given multiple sampled answers, we conduct a weighted majority vot-ing, where the veto power of each sample is the score of its reasoning chain assigned by the verifier.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Filter:</head><p>In this policy, given multiple sampled answers, we predict the correctness of each answer using the verifier (based on the correctness prediction strategy described in §4.2). We then filter out all the samples that are classified as incorrect and conduct a majority voting on the remaining samples. Note that the answers of samples that are classified as correct can still differ even if the entire reasoning chain is predicted as correct.</p><p>Results: In Table <ref type="table">3</ref>, we compare all three policies against standard majority voting in two of our main datasets (GSM8K, CSQA) for COT STEP (because it allows better step decomposition for verification). Interestingly, we find that none of the three zero-shot verifier-based policies consistently outperforms the standard majority voting baseline in any significant manner. In Appendix B, we also share similar results with COT TAB prompt.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Verification-Guided Search</head><p>In this section, we consider approaches to use the verifier to guide the reasoning steps as they are getting generated rather than just filtering/weighing them post hoc. We provide hyperparameter details about the search methods in Appendix A.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Step-wise Greedy Search: Our main approach is a stochastic Step-wise Greedy Search (SG) similar</head><p>to <ref type="bibr" target="#b17">Khalifa et al. (2023)</ref>. In this strategy, at every turn -first, we use LLMs to generate k reasoning steps (using temperature-based sampling); second, we use the verifier with the COTR-prompt to score each step; and, third, we greedily select the reasoning step with the maximum verification score to condition the generation of the next step. We stop when a reasoning step with the end of sequence marker is generated.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Step-wise Beam Search:</head><p>We also consider an extension of SG where instead of the stochastic stepwise greedy search, we use stochastic Step-wise Beam (SB) search guided by the verifier similar to <ref type="bibr" target="#b48">Xie et al. (2023)</ref>. The SB approach is also comparable to the breadth-first-search used in Tree of Thoughts <ref type="bibr" target="#b50">(Yao et al., 2023)</ref>. We use majority voting among the final beams -we call this overall strategy SB + SC (SC stands for Self-Consistency).</p><p>We share more technical details in Appendix A.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Results:</head><p>In</p><p>Table 4, we compare basic COT STEP and COT STEP augmented with SG search. Here, we find that our verifier guided SG consistency outperforms the baseline when not using self-Prompt Style GSM8K GSMH AQuA SQA CSQA GSM8K GSMH AQuA SQA CSQA SOLAR 10.7B Instruct SOLAR 10.7B Instruct + SC@20 COT STEP 73.54 30.63 11.02 58.95 67.32 84.91 37.45 38.58 73.76 79.85 COT STEP + SG 76.50 32.07 15.75 55.85 68.71 83.78 35.71 42.13 73.41 79.28 Phi3 Mini 128K Instruct Phi3 Mini 128K Instruct + SC@20 COT STEP 83.25 38.59 15.75 51 71.75 90.75 45.49 65.75 63.49 77.07 COT STEP + SG 85.37 39.65 23.23 52.97 73.2 90.30 45.64 67.32 64.54 77.56 consistency (SC). However, when SC is involved for both methods, the difference between the baseline and the more sophisticated SG approach becomes much less substantial. Therefore, for now, SC is still a better trade off for increasing performance than our zero-shot verifier which requires more compute. In Appendix B, we also share comparisons with TAB COT.</p><p>In Table <ref type="table">5</ref> we show the comparison between SB + SC and SG + SC. We find that SB + SC generally under-performs the simpler SG + SC. This may be because vanilla beam search tends to struggle with diverse generations without additional augmentations <ref type="bibr" target="#b22">(Li et al., 2016)</ref>. Our results also suggests the potential of simpler step-level greedy search (SG) as a baseline competitor to consider against other verifier-guided search models using world models or tree of thoughts <ref type="bibr" target="#b12">(Hao et al., 2023)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Related Works</head><p>Multiple works <ref type="bibr" target="#b16">(Kadavath et al., 2022;</ref><ref type="bibr" target="#b27">Ling et al., 2023;</ref><ref type="bibr" target="#b34">Stechly et al., 2024;</ref><ref type="bibr" target="#b13">Hong et al., 2024)</ref> have studies of LLM-based verification and their limitations. However, most of them focus on few-shot verification. Several works studied the potential for LLMs to self-reflect and refine their answers <ref type="bibr" target="#b33">(Shinn et al., 2023;</ref><ref type="bibr" target="#b28">Madaan et al., 2023;</ref><ref type="bibr" target="#b31">Paul et al., 2024;</ref><ref type="bibr">Zhou et al., 2023a;</ref><ref type="bibr" target="#b52">Zheng et al., 2024)</ref> which involves a form of verification of the initial answer. Contrary to those works, we currently focus on single-round prompting that involves no refinement of the initial answer. <ref type="formula">Cobbe et al. (2021</ref>  <ref type="bibr" target="#b7">(Gandhi et al., 2023;</ref><ref type="bibr" target="#b50">Yao et al., 2023;</ref><ref type="bibr" target="#b48">Xie et al., 2023;</ref><ref type="bibr" target="#b32">Qiu et al., 2024;</ref><ref type="bibr" target="#b39">Wan et al., 2024;</ref><ref type="bibr">Wang et al., 2024a;</ref><ref type="bibr" target="#b35">Sun et al., 2024;</ref><ref type="bibr">Wang et al., 2024b;</ref><ref type="bibr" target="#b9">Gao et al., 2024;</ref><ref type="bibr" target="#b1">Besta et al., 2024;</ref><ref type="bibr" target="#b11">Hao et al., 2024)</ref> explored the utility of using verifier scores as rewards or costs in a tree-search or beam-search approach. However, they either use fine-tuned or few shotbased verifiers. One exception is <ref type="bibr" target="#b29">Miao et al. (2024)</ref> who perform zero-shot self-verification to adjust self-consistency similar to us. However, they use a complicated multi-stage prompting strategy for verification which can become exorbitantly costly when used with tree search approaches <ref type="bibr" target="#b9">(Gao et al., 2024)</ref>. Moreover, we explore a fully zero-shot regime with zero-shot prompt-based thought decomposition as well.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Conclusion</head><p>We have the following takeaways: (1) prompts like PS+ or TAB COT are not necessarily systematically better than COT. (2) COT STEP offers an elegant zero-shot strategy to decompose reasoning steps virtually without any accuracy loss compared to COT. (3) Zero-shot COT prompt (COTR-prompt) is also useful for verification particularly in mathe-matical domain. (4) Zero-shot verifier scores do not particularly help in augmenting self-consistency. (5) Using zero-shot verifier scores to guide reasoning step search in a step-wise stochastic greedy manner can be helpful but its benefit compared to plain COT disappears when using self-consistency. Beam search did not help either. (6) The verifier works better with COT STEP-based decomposition than TAB COT.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8">Limitations</head><p>We utilize an automatic way of constructing correctness classification dataset. However, this method is not perfect -for it assumes that just because the predicted answer is correct the reasoning chain as a whole is correct. In some cases that may not be true <ref type="bibr">(Lanham et al., 2023)</ref>. However, this is a trade-off to make to get the benefit of automaticity. There exists some data with step-level ground truth verification scores <ref type="bibr" target="#b5">(Cobbe et al., 2021;</ref><ref type="bibr" target="#b25">Lightman et al., 2024)</ref> however only the automated construction offers a way to conveniently evaluate the verification of different prompts for reasoning step generation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Search Hyperparameters</head><p>For step-wise greedy search (SG), at each turn, we generate k = 5 reasoning steps. When combining SG with SC, at the first turn we generate 20 reasoning steps. We keep all the 20 reasoning steps and independently continue 20 reasoning chains. Each of the 20 chains use SG as before from the second turn (generating k = 5 candidates and greedily selecting the maximum scoring candidate). In the end, we get 20 reasoning chains with 20 corresponding answers. We then apply majority voting.</p><p>For step-wise beam search (SB), we use a beam width of 16. That is, at every turn, we generate 16 reasoning steps per b (let us say) beam (initially 1). If at least 16 beams have reached terminal status (i.e. the end of sequence marker is reached by each of the chains in the beams) among the 16b beams, we stop the search and return the majority voted result (thus, combining with self-consistency) among all the terminal beams. If at least 16 beams have not reached a terminal status, we stochastically sample 16 beams from the 16b beams based on their aggregated verifier scores as a pruning step. The sampled 16 beams become the b beams for the next step.</p><p>Let us say, the verifier score at any step i for some beam m is s (i,m) f -calculated as described in §4.1.2. In that case the aggregated verifier score for a beam m generated up to step j would be:</p><formula xml:id="formula_3">sb m = j i=0 1 d m log s (i,m) f<label>(3)</label></formula><p>sb m represents the mean score for the beam m generated upto the last step so far (in this case, step j). d m represents the depth (number of reasoning steps) of beam m. We maintain the aggregation in logspace. Given multiple b beams, the aggregated score (sb m ) for any beam m can be normalized into a probability distribution via:</p><formula xml:id="formula_4">nsb m = exp(sb m /τ m ) b i=1 exp(sb i /τ i )<label>(4)</label></formula><p>Thus, we get a probability distribution over all the available beams at a turn, and we can use this for sampling in the pruning step described before. Similar to <ref type="bibr" target="#b48">Xie et al. (2023)</ref>, we decay the temperature per turn in the beam search by some α: τ ← τ • α.</p><p>Following <ref type="bibr" target="#b48">Xie et al. (2023)</ref>, we set both the initial temperature (τ ) and α as 0.5.</p><p>For both SG and SB we set the maximum number of reasoning steps to 18. We choose the beam width as 16 to keep close to the self-consistency sampling size (20). We keep it less that 20, for better computational effeciency and also because, due to the lack of pruning in the final turn, the actual number of final candidates can end up as higher than 20 either way.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Additional Results</head><p>In this section, we share several additional experimental results.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1 Zero Shot Prompt Comparisons with</head><p>Other LLMs</p><p>In</p><p>Table 6, we compare the zero shot prompt performance (including step-wise greedy search with COT STEP) of other LLM models like Mistral (Mistral 7B Instruct v0.2) (Jiang et al., 2023) and Llama3 (LLama 3.0 8B Instruct) <ref type="bibr" target="#b6">(Dubey et al., 2024)</ref>. We observe the same patterns that we did with SOLAR 10.7B and Phi3 in the main paper.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2 Evaluating Self-Verification</head><p>In Table <ref type="table" target="#tab_4">7</ref>, we present an extended version of Table 2. We present the results on more correctness classification datasets generated from reasoning chains of other COT prompts (PS+, COT) and results by more LLM verifiers (Llama3, Mistral). In case of prompts like COT/PS+, we use new-line to decompose reasoning steps. For the mathematical datasets (based on GSM8K), we find that COT STEP reasoning chains lead to the best for most (if not all) LLM models as verifier (with COTR prompt) on balance (Accuracy, F1 measures). This further justifies the choice of COT STEP. R-prompt tends to remain highly biased towards either rejecting any reasoning chain as incorrect (increasing true negative rate at a high cost of true positive rate) or accepting any reasoning chain as correct (increasing true positive rate at a high cost of true negative rate). COTR-prompt, in contrast, tends to have a better balance. For commonsense reasoningbased datasets (based on CommonsenseQA as the question source), our observations remain similar to before as discussed in the main paper.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3 TAB COT vs COT STEP</head><p>Both TAB COT and COT STEP allows a principled way to automatically parse reasoning steps in a zero-shot regime. As such, we compare these two prompting strategy a bit more closely. First, we check the potential of using verifier scores for adjusting self-consistency aggregations. Table <ref type="table">8</ref> is an extension of Table <ref type="table">3</ref> that includes result of TAB COT with the three proposed ( §5.1 verifier scorebased aggregation strategies (Max, Weighted, and Filter) to augment self-consistency. The observations are similar to before. Even for TAB COT the majority voting baseline remains a strong contended and neither of the three policies outperform it substantially. However, when comparing COT STEP against TAB COT, COT STEP appears to generally perform better. Second, we also check the potential of using TAB COT decomposition with verifier scores to search the reasoning space via step-wise greedy search (SG) or step-wise beam search. In Table <ref type="table">9</ref>, we extend Table <ref type="table" target="#tab_2">4</ref> with results from TAB COT showing its performance with step-wise greedy search (with and without selfconsistency). In Table <ref type="table" target="#tab_0">10</ref>, we extend Table <ref type="table">5</ref> with results from TAB COT showing its performance with step-wise beam search. In both cases, we find COT STEP to perform much better than TAB COT in general.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.4 Verification Score Ablation</head><p>In this section we conduct a short ablation study to check whether component C1 (described in §4.1.2 for verifier score computation is important or not. We compare the performance of Phi3 and SOLAR while using them as verifiers with and without C1 for scoring and guiding them through the step-wise greedy search (SG). In Table <ref type="table" target="#tab_0">11</ref>, we report the results. The results show that removing C1 generally tend to harm the performance of SG -thus, underscoring the importance of the component.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Generation Examples</head><p>We present examples of structured reasoning chain generations based on COT STEP prompt in Figure <ref type="figure" target="#fig_5">2</ref> and some example generations based on COT prompt in Figure <ref type="figure" target="#fig_6">3</ref>. As can be seen while the fundamental content in the two cases are not two different, COT prompt do not have any consistent structure or pattern to exploit for zero-shot decomposition, whereas COT STEP prompt cleanly separates reasoning into numbered steps.</p><p>User: Q: Every day, Wendi feeds each of her chickens three cups of mixed chicken feed, containing seeds, mealworms and vegetables to help keep them healthy. She gives the chickens their feed in three separate meals. In the morning, she gives her flock of chickens 15 cups of feed.</p><p>In the afternoon, she gives her chickens another 25 cups of feed. How many cups of feed does she need to give her chickens in the final meal of the day if the size of Wendi's flock is 20 chickens?&lt;|end|&gt; Assistant: A: Let's think step by step. Step 1: First, we need to find out the total amount of feed given to the chickens in the morning and afternoon. Morning feed: 15 cups Afternoon feed: 25 cups Total feed given in the morning and afternoon: 15 cups + 25 cups = 40 cups Step 2: Now, we know that each chicken gets 3 cups of feed per day. Since Wendi has 20 chickens, we can calculate the total amount of feed needed for all chickens in one day. Total feed needed for all chickens: 20 chickens * 3 cups/chicken = 60 cups Step 3: Now, we can find out how much feed is left for the final meal after accounting for the morning and afternoon feed.  User: Q: Every day, Wendi feeds each of her chickens three cups of mixed chicken feed, containing seeds, mealworms and vegetables to help keep them healthy. She gives the chickens their feed in three separate meals. In the morning, she gives her flock of chickens 15 cups of feed. In the afternoon, she gives her chickens another 25 cups of feed. How many cups of feed does she need to give her chickens in the final meal of the day if the size of Wendi's flock is 20 chickens? Assistant: A: Let's think step by step. First, we know that Wendi feeds each chicken 3 cups of feed per day in total. So, for 20 chickens, the total feed required would be: 20 chickens * 3 cups/chicken = 60 cups Now, let's see how much feed Wendi has already given in the morning and the afternoon: Morning feed = 15 cups Afternoon feed = 25 cups Total feed given so far = 15 cups + 25 cups = 40 cups Now, let's subtract the feed given so far from the total daily requirement to find out how much feed is needed for the final meal: Feed needed for the final meal = Total daily requirement -Feed given so far Feed needed for the final meal = 60 cups -40 cups = 20 cups Therefore, Wendi needs to give her chickens 20 cups of feed in the final meal of the day. Therefore, the answer is 20 cups. User: Q: Toulouse has twice as many sheep as Charleston. Charleston has 4 times as many sheep as Seattle. How many sheep do Toulouse, Charleston, and Seattle have together if Seattle has 20 sheep? Assistant: A: Let's think step by step. 1. Seattle has 20 sheep. 2. Charleston has 4 times as many sheep as Seattle, so Charleston has 4 * 20 = 80 sheep. 3. Toulouse has twice as many sheep as Charleston, so Toulouse has 2 * 80 = 160 sheep. Now, to find the total number of sheep all three cities have together, we add the number of sheep from each city: Seattle: 20 sheep Charleston: 80 sheep Toulouse: 160 sheep Total = 20 + 80 + 160 = 260 sheep. Therefore, the answer is 260 sheep.  </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><figDesc>); Li et al. (2023); Weng et al. (2023) use a verifier to evaluate the correctness and score each reasoning step, whereas Gandhi et al. * The main work was done while the first author was a PhD Student at University of Illinois at Chicago. The work is unaffiliated with Bloomberg.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>[Figure 1 :</head><label>1</label><figDesc>Figure 1: The R-prompt template used for LLMs to verify/evaluate the last (potentially partial) reasoning step in a given generated reasoning chain. The blue color represents placeholders for the template that is to be filled with the input data-specific information (the question, and generated reasoning step with the last step number).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><figDesc>) to generating an overall scalar score for a reasoning step. C1: Reasoning Step Generation The component C1 returns the average log-probability (token-wise) for the generation of the last reasoning step in the input reasoning chain (that is to be verified). Let us call the returned score (obtained during the generation with COT prompts (from §2.2 and §2.3), e.g., with COT STEP) as s C1 . Note C1 has nothing to do with the self-verification prompt (R-prompt or COTR-prompt) or verification prediction. C2: Reasoning Step Verification The component C2 first calculates the average log-probability (token-wise) of the generation of the response to the verification prompt (R-prompt or COTR-prompt from §4.1). Let us call the returned score as s C2 .</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><figDesc>); Li et al. (2023); Weng et al. (2023); Liang et al. (2024) trained a separate verifier to score answers or reasoning steps -ultimately to be used in Max or Weighted aggregation policies. Zhou et al. (2023b) used an external theorem prover for verification while using LLMs for auto-formalization. Khalifa et al. (2023) used a fine-tuned separate verifier score in a step-wise greedy search. Multiple works</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>Feed left for the final meal: Total daily feed needed (60 cups) -Feed given in the morning and afternoon (40 cups) = 20 cups So, Wendi needs to give her chickens 20 cups of feed in the final meal of the day. Therefore, the answer is 20 cups. User: Q: Toulouse has twice as many sheep as Charleston. Charleston has 4 times as many sheep as Seattle. How many sheep do Toulouse, Charleston, and Seattle have together if Seattle has 20 sheep? Assistant: A: Let's think step by step. Step 1: Seattle has 20 sheep. Step 2: Charleston has 4 times as many sheep as Seattle, so Charleston has 4 * 20 = 80 sheep. Step 3: Toulouse has twice as many sheep as Charleston, so Toulouse has 2 * 80 = 160 sheep. Step 4: To find the total number of sheep, we add the number of sheep in each city: 20 (Seattle) + 80 (Charleston) + 160 (Toulouse) = 260 sheep. So, Toulouse, Charleston, and Seattle have a total of 260 sheep together. Therefore, the answer is 260.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Example generations by Phi 3 Mini Instruct based on COT STEP prompt on GSM8K samples. Bold is applied for stylistic reasons.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Example generations by Phi 3 Mini Instruct based on COT prompt on GSM8K samples. Bold is applied for stylistic reasons.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Comparison of accuracy from different prompting strategies across different datasets. GSMH represents GSM-HARD, StratQA represents StrategyQA, and CSQA represents CommonsenseQA. SC@20 represents Selfconsistency with majority voting of 20 sample generations. We bold the best result per block per dataset.</figDesc><table><row><cell cols="11">Prompt Style GSM8K GSMH AQuA StratQA CSQA GSM8K GSMH AQuA StratQA CSQA</cell></row><row><cell></cell><cell cols="3">SOLAR 10.7B Instruct</cell><cell></cell><cell></cell><cell cols="4">SOLAR 10.7B Instruct + SC@20</cell><cell></cell></row><row><cell>Base</cell><cell>17.06</cell><cell>5.38</cell><cell>6.69</cell><cell>31.09</cell><cell>63.96</cell><cell>17.67</cell><cell>7.28</cell><cell>30.71</cell><cell>65.42</cell><cell>72.40</cell></row><row><cell>COT</cell><cell>73.62</cell><cell>28.96</cell><cell>6.69</cell><cell>58.47</cell><cell>66.67</cell><cell>83.40</cell><cell>37.38</cell><cell>42.9</cell><cell>73.10</cell><cell>78.79</cell></row><row><cell>PS+</cell><cell>68.39</cell><cell>26.61</cell><cell>10.63</cell><cell>30.87</cell><cell>51.27</cell><cell>84.9</cell><cell>39.20</cell><cell>47.24</cell><cell>69.78</cell><cell>80.43</cell></row><row><cell>TAB COT</cell><cell>65.2</cell><cell>26.69</cell><cell>8.66</cell><cell>52.66</cell><cell>65.19</cell><cell>80.52</cell><cell>36.16</cell><cell>41.73</cell><cell>73.89</cell><cell>80.51</cell></row><row><cell>COT STEP</cell><cell>73.54</cell><cell>30.63</cell><cell>11.02</cell><cell>58.95</cell><cell>67.32</cell><cell>84.91</cell><cell>37.45</cell><cell>38.58</cell><cell>73.76</cell><cell>79.85</cell></row><row><cell></cell><cell cols="3">Phi3 Mini 128K Instruct</cell><cell></cell><cell></cell><cell cols="4">Phi3 Mini 128K Instruct + SC@20</cell><cell></cell></row><row><cell>Base</cell><cell>51.40</cell><cell>24.19</cell><cell>19.29</cell><cell>9.2</cell><cell>69.53</cell><cell>77.64</cell><cell>38.29</cell><cell>45.67</cell><cell>40.13</cell><cell>73.55</cell></row><row><cell>COT</cell><cell>84.84</cell><cell>37.6</cell><cell>18.89</cell><cell>44.63</cell><cell>69.37</cell><cell>91.28</cell><cell>45.03</cell><cell>64.57</cell><cell>61.75</cell><cell>76.33</cell></row><row><cell>PS+</cell><cell>81.5</cell><cell>36.24</cell><cell>14.96</cell><cell>17.21</cell><cell>56.76</cell><cell>90.9</cell><cell>46.02</cell><cell>66.54</cell><cell>55.72</cell><cell>75.18</cell></row><row><cell>TAB COT</cell><cell>73.77</cell><cell>32.98</cell><cell>12.6</cell><cell>45.98</cell><cell>67.90</cell><cell>86.81</cell><cell>44.05</cell><cell>57.87</cell><cell>63.67</cell><cell>74.86</cell></row><row><cell>COT STEP</cell><cell>83.25</cell><cell>38.59</cell><cell>15.75</cell><cell>51.0</cell><cell>71.75</cell><cell>90.75</cell><cell>45.49</cell><cell>65.75</cell><cell>63.49</cell><cell>77.07</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Performance of SOLAR and Phi3 on our four correctness classification datasets -1. (COT STEP, GSM8K), 2. (COT STEP, CSQA), 3. (TAB COT, GSM8K), and 4. (TAB COT, CSQA). We bold the best result per dataset. Acc represents Accuracy, TNR represents True Negate Rate, TPR represents True Positive Rate (equivalent to recall), Prec represents Precision. SOLAR represents SOLAR 10.7B Instruct; Mistral represents Mistral 7B Instruct v0.2; LLama3 represents Llama 3.0 8B Instruct; Phi3 represents Phi3 Mini 128K Instruct.</figDesc><table><row><cell></cell><cell></cell><cell cols="3">Question Source: GSM8K</cell><cell></cell><cell></cell><cell cols="3">Question Source: CSQA</cell></row><row><cell>Verifier Setup</cell><cell>Acc</cell><cell cols="2">TNR TPR</cell><cell>Prec</cell><cell>F1</cell><cell>Acc</cell><cell cols="2">TNR TPR</cell><cell>Prec</cell><cell>F1</cell></row><row><cell cols="4">Reasoning Chain Generation Prompt: TAB COT</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>SOLAR + R-prompt</cell><cell cols="2">57.15 16.9</cell><cell cols="5">97.40 53.96 69.45 52.85 9.6</cell><cell>96.1</cell><cell>51.53 67.09</cell></row><row><cell cols="3">SOLAR + COTR-prompt 67.30 49.8</cell><cell>84.8</cell><cell cols="5">62.82 72.17 53.55 30.60 76.5</cell><cell>52.43 62.22</cell></row><row><cell>Phi3 + R-prompt</cell><cell cols="2">61.35 28.7</cell><cell>94.0</cell><cell cols="3">56.87 70.86 49.4</cell><cell cols="2">56.90 41.9</cell><cell>49.29 45.30</cell></row><row><cell>Phi3 + COTR-prompt</cell><cell>80.2</cell><cell>73.5</cell><cell>86.9</cell><cell cols="4">76.63 81.44 51.95 15.0</cell><cell>88.9</cell><cell>51.12 64.91</cell></row><row><cell cols="4">Reasoning Chain Generation Prompt: COT STEP</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>SOLAR + R-prompt</cell><cell cols="2">55.75 12.7</cell><cell>98.8</cell><cell cols="3">53.09 69.07 50.2</cell><cell>1.7</cell><cell>98.7</cell><cell>50.10 66.47</cell></row><row><cell cols="3">SOLAR + COTR-prompt 83.90 74.7</cell><cell cols="4">93.10 78.63 85.26 49.5</cell><cell cols="3">29.80 69.20 49.64 57.81</cell></row><row><cell>Phi3 + R-prompt</cell><cell>59.8</cell><cell>22.7</cell><cell cols="4">96.90 55.63 70.68 45.4</cell><cell cols="3">57.50 33.30 43.93 37.88</cell></row><row><cell>Phi3 + COTR-prompt</cell><cell>75.2</cell><cell cols="2">60.20 90.2</cell><cell cols="3">69.40 78.44 50.4</cell><cell>10.2</cell><cell cols="2">90.60 50.22 64.62</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 4 :</head><label>4</label><figDesc>Comparison of accuracy across different datasets. SQA represents StrategyQA. SG represents Step-wise Greedy Search. SC@20 represents Self-consistency with majority voting of 20 sample generations.We bold the best result per block per dataset.</figDesc><table><row><cell>Prompt Style</cell><cell cols="2">GSM8K CSQA</cell></row><row><cell>SOLAR 11B Instruct</cell><cell></cell></row><row><cell cols="2">COT STEP + SG + SC 83.78</cell><cell>79.28</cell></row><row><cell cols="2">COT STEP + SB + SC 78.92</cell><cell>80.75</cell></row><row><cell>Phi3 Mini 128K Instruct</cell><cell></cell></row><row><cell cols="2">COT STEP + SG + SC 90.30</cell><cell>77.56</cell></row><row><cell cols="2">COT STEP + SB + SC 87.42</cell><cell>76.17</cell></row><row><cell cols="3">Table 5: Comparison of accuracy from Step-wise</cell></row><row><cell cols="3">Greedy (SG) search and Step-wise Beam (SB) search -</cell></row><row><cell cols="3">both with Self-Consistency (SC) on GSM8K and CSQA</cell></row><row><cell cols="3">(CommonsenseQA). SC represents Self-consistency</cell></row><row><cell cols="3">with majority voting of 20 sample generations. We</cell></row><row><cell cols="2">bold the best result per block per dataset.</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 6 :</head><label>6</label><figDesc>Comparison of accuracy from different prompting strategies across GSM8K and CSQA (CommonsenseQA). SC@20 represents Self-consistency with majority voting of 20 sample generations. SG represents step-wise greedy search. We bold the best result per block per dataset.</figDesc><table><row><cell>Prompt Style</cell><cell cols="4">GSM8K CSQA GSM8K CSQA</cell></row><row><cell cols="2">Mistral 7B Instruct v0.2</cell><cell></cell><cell cols="2">Mistral 7B Instruct v0.2 + SC@20</cell></row><row><cell>Base</cell><cell>19.86</cell><cell>57.74</cell><cell>28.73</cell><cell>64.37</cell></row><row><cell>COT</cell><cell>49.05</cell><cell>61.26</cell><cell>68.31</cell><cell>71.50</cell></row><row><cell>PS+</cell><cell>45.87</cell><cell>54.79</cell><cell>69.83</cell><cell>73.55</cell></row><row><cell>TAB COT</cell><cell>40.11</cell><cell>59.05</cell><cell>60.8</cell><cell>72.07</cell></row><row><cell>COT STEP</cell><cell>48.83</cell><cell>62.0</cell><cell>68.08</cell><cell>73.06</cell></row><row><cell cols="2">COT STEP + SG 53.83</cell><cell>65.03</cell><cell>64.52</cell><cell>72.65</cell></row><row><cell cols="2">LLama 3.0 8B Instruct</cell><cell></cell><cell cols="2">LLama 3.0 8B Instruct + SC@20</cell></row><row><cell>Base</cell><cell>35.79</cell><cell>62.90</cell><cell>57.62</cell><cell>73.63</cell></row><row><cell>COT</cell><cell>73.54</cell><cell>70.93</cell><cell>84.69</cell><cell>75.51</cell></row><row><cell>PS+</cell><cell>60.2</cell><cell>39.31</cell><cell>86.51</cell><cell>74.53</cell></row><row><cell>TAB COT</cell><cell>66.34</cell><cell>59.21</cell><cell>84.23</cell><cell>75.02</cell></row><row><cell>COT STEP</cell><cell>76.57</cell><cell>68.71</cell><cell>87.95</cell><cell>75.68</cell></row><row><cell cols="2">COT STEP + SG 78.54</cell><cell>71.01</cell><cell>87.79</cell><cell>74.69</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 7 :</head><label>7</label><figDesc>Performance of different LLM models on eight correctness classification datasets created based on four COT-based zero shot prompts and two QA datasets -1. (COT STEP, GSM8K), 2. (COT STEP, CSQA), 3. (TAB COT, GSM8K), 4. (TAB COT, CSQA) 5. (COT, GSM8K), 6. (COT, CSQA), 7. (PS+, GSM8K), and 8. (PS+, CSQA). We bold the best result per dataset. Acc represents Accuracy, TNR represents True Negate Rate, TPR represents True Positive Rate (equivalent to recall), Prec represents Precision. SOLAR represents SOLAR 10.7B Instruct; Mistral represents Mistral 7B Instruct v0.2; LLama3 represents Llama 3.0 8B Instruct; Phi3 represents Phi3 Mini 128K Instruct.</figDesc><table><row><cell></cell><cell></cell><cell cols="3">Question Source: GSM8K</cell><cell></cell><cell></cell><cell cols="3">Question Source: CSQA</cell></row><row><cell>Verifier Setup</cell><cell>Acc</cell><cell cols="2">TNR TPR</cell><cell>Prec</cell><cell>F1</cell><cell>Acc</cell><cell cols="2">TNR TPR</cell><cell>Prec</cell><cell>F1</cell></row><row><cell cols="3">Reasoning Chain Generation Prompt: COT</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>SOLAR + R-prompt</cell><cell cols="2">56.10 13.8</cell><cell>98.4</cell><cell cols="3">53.30 69.15 52.2</cell><cell>10.7</cell><cell>93.7</cell><cell cols="2">51.20 66.22</cell></row><row><cell cols="3">SOLAR + COTR-prompt 78.55 76.9</cell><cell>80.2</cell><cell cols="4">77.64 78.90 52.30 25.5</cell><cell cols="3">79.10 51.50 62.40</cell></row><row><cell>Mistral + R-prompt</cell><cell cols="2">61.45 84.0</cell><cell>38.9</cell><cell cols="4">70.86 50.23 54.90 61.4</cell><cell>48.4</cell><cell cols="2">55.63 51.77</cell></row><row><cell>Mistral + COTR-prompt</cell><cell cols="2">62.55 84.8</cell><cell cols="3">40.30 72.61 51.8</cell><cell>51.5</cell><cell>59.1</cell><cell>43.9</cell><cell cols="2">51.77 47.51</cell></row><row><cell>Llama3 + R-prompt</cell><cell>50.1</cell><cell>99.9</cell><cell>0.3</cell><cell>75.0</cell><cell>0.60</cell><cell cols="2">54.05 94.1</cell><cell cols="3">14.00 70.35 23.35</cell></row><row><cell cols="3">LLama3 + COTR-prompt 54.75 99.3</cell><cell>10.2</cell><cell cols="4">93.60 18.40 54.45 88.2</cell><cell>20.7</cell><cell cols="2">63.70 31.30</cell></row><row><cell>Phi3 + R-prompt</cell><cell cols="2">61.35 26.5</cell><cell>96.2</cell><cell cols="3">56.69 71.34 51.6</cell><cell>58.9</cell><cell>44.3</cell><cell cols="2">51.87 47.79</cell></row><row><cell>Phi3 + COTR-prompt</cell><cell cols="2">76.35 68.0</cell><cell>84.7</cell><cell cols="4">72.58 78.17 51.45 9.8</cell><cell cols="3">93.10 50.79 65.73</cell></row><row><cell cols="3">Reasoning Chain Generation Prompt: PS+</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>SOLAR + R-prompt</cell><cell cols="7">63.25 69.90 56.60 65.28 60.63 51.80 28.9</cell><cell>74.7</cell><cell cols="2">51.24 60.78</cell></row><row><cell cols="4">SOLAR + COTR-prompt 56.90 15.30 98.5</cell><cell cols="5">53.77 69.56 54.35 57.60 51.1</cell><cell cols="2">54.65 52.82</cell></row><row><cell>Mistral + R-prompt</cell><cell>55.3</cell><cell cols="2">95.20 15.4</cell><cell cols="4">76.24 25.62 52.55 72.3</cell><cell cols="3">32.80 54.22 40.87</cell></row><row><cell>Mistral + COTR-prompt</cell><cell cols="2">60.15 89.0</cell><cell>31.3</cell><cell>74</cell><cell>44</cell><cell>50.6</cell><cell>68.7</cell><cell>32.5</cell><cell cols="2">50.94 39.68</cell></row><row><cell>LLama3 + R-prompt</cell><cell>50.0</cell><cell cols="2">100.0 0.0</cell><cell>0</cell><cell>0</cell><cell cols="2">50.15 99.3</cell><cell>1.0</cell><cell cols="2">58.82 1.97</cell></row><row><cell>Llama3 + COTR-prompt</cell><cell>50.5</cell><cell>99.8</cell><cell>1.2</cell><cell cols="2">85.71 2.37</cell><cell>51.5</cell><cell>94.0</cell><cell>9.0</cell><cell>60.0</cell><cell>15.65</cell></row><row><cell>Phi3 + R-prompt</cell><cell cols="2">62.25 32.4</cell><cell cols="4">92.10 57.67 70.93 50.8</cell><cell>73.1</cell><cell>28.5</cell><cell cols="2">51.44 36.68</cell></row><row><cell>Phi3 + COTR -prompt</cell><cell cols="2">78.25 70.3</cell><cell>86.2</cell><cell cols="4">74.38 79.85 51.85 10.2</cell><cell>93.5</cell><cell cols="2">51.01 66.01</cell></row><row><cell cols="4">Reasoning Chain Generation Prompt: TAB COT</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>SOLAR + R-prompt</cell><cell cols="2">57.15 16.9</cell><cell cols="5">97.40 53.96 69.45 52.85 9.6</cell><cell>96.1</cell><cell cols="2">51.53 67.09</cell></row><row><cell cols="3">SOLAR + COTR-prompt 67.30 49.8</cell><cell>84.8</cell><cell cols="5">62.82 72.17 53.55 30.60 76.5</cell><cell cols="2">52.43 62.22</cell></row><row><cell>Mistral + R-prompt</cell><cell>65.3</cell><cell>72.2</cell><cell>58.4</cell><cell cols="4">67.75 62.73 54.35 44.2</cell><cell>64.5</cell><cell cols="2">53.62 58.56</cell></row><row><cell>Mistral + COTR-prompt</cell><cell cols="2">64.15 88.8</cell><cell>39.5</cell><cell cols="3">77.91 52.42 51.1</cell><cell>60.8</cell><cell>41.4</cell><cell cols="2">51.37 45.85</cell></row><row><cell>Llama3 + R-prompt</cell><cell>50.0</cell><cell cols="2">100.0 0.0</cell><cell>0</cell><cell>0</cell><cell>50.3</cell><cell>99.7</cell><cell>0.90</cell><cell>75.0</cell><cell>1.78</cell></row><row><cell>Llama3 + COTR-prompt</cell><cell>54.9</cell><cell>99.2</cell><cell>10.6</cell><cell cols="6">92.98 19.03 52.95 91.60 14.30 63</cell><cell>23.31</cell></row><row><cell>Phi3 + R-prompt</cell><cell cols="2">61.35 28.7</cell><cell>94.0</cell><cell cols="3">56.87 70.86 49.4</cell><cell cols="2">56.90 41.9</cell><cell cols="2">49.29 45.30</cell></row><row><cell>Phi3 + COTR-prompt</cell><cell>80.2</cell><cell>73.5</cell><cell>86.9</cell><cell cols="4">76.63 81.44 51.95 15.0</cell><cell>88.9</cell><cell cols="2">51.12 64.91</cell></row><row><cell cols="4">Reasoning Chain Generation Prompt: COT STEP</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>SOLAR + R-prompt</cell><cell cols="2">55.75 12.7</cell><cell>98.8</cell><cell cols="3">53.09 69.07 50.2</cell><cell>1.7</cell><cell>98.7</cell><cell cols="2">50.10 66.47</cell></row><row><cell cols="3">SOLAR + COTR-prompt 83.90 74.7</cell><cell cols="4">93.10 78.63 85.26 49.5</cell><cell cols="4">29.80 69.20 49.64 57.81</cell></row><row><cell>Mistral + R-prompt</cell><cell>65.3</cell><cell cols="2">68.30 62.3</cell><cell cols="3">66.28 64.23 51.2</cell><cell cols="2">32.30 70.1</cell><cell cols="2">50.87 58.96</cell></row><row><cell>Mistral + COTR-prompt</cell><cell>68.4</cell><cell>72.3</cell><cell>64.5</cell><cell cols="4">69.96 67.12 49.25 41.6</cell><cell cols="3">56.90 49.35 52.86</cell></row><row><cell>Llama3 + R-prompt</cell><cell cols="2">50.35 99.9</cell><cell>0.8</cell><cell cols="2">88.89 1.60</cell><cell cols="3">52.55 93.10 12.0</cell><cell cols="2">63.50 20.19</cell></row><row><cell>Llama3 + COTR-prompt</cell><cell cols="2">60.70 97.0</cell><cell>24.4</cell><cell cols="4">89.05 38.31 53.05 82.1</cell><cell>24.0</cell><cell cols="2">57.28 33.83</cell></row><row><cell>Phi3 + R-prompt</cell><cell>59.8</cell><cell>22.7</cell><cell cols="4">96.90 55.63 70.68 45.4</cell><cell cols="4">57.50 33.30 43.93 37.88</cell></row><row><cell>Phi3 + COTR-prompt</cell><cell>75.2</cell><cell cols="2">60.20 90.2</cell><cell cols="3">69.40 78.44 50.4</cell><cell>10.2</cell><cell cols="3">90.60 50.22 64.62</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>SOLAR is an instruction-tuned depth-scaled variation of Llama</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>2 Different models based on how they were instructiontuned, require different kinds of templates to represent userassistant conversational turns which we use accordingly in experiments. The specific template information can be found in Huggingface<ref type="bibr" target="#b47">(Wolf et al., 2020)</ref> tokenizer configs in the corresponding model pages.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>We can use new lines to decompose reasoning steps but that is a non-ideal heuristic that does not guarantee a semantically meaningful chunking of steps.<ref type="bibr" target="#b8">(Gao et al., 2023)</ref> (3) AQuA<ref type="bibr" target="#b26">(Ling et al., 2017)</ref> (4) StrategyQA (StratQA)<ref type="bibr" target="#b10">(Geva et al., 2021)</ref> (5) CommonsenseQA (CSQA)<ref type="bibr" target="#b36">(Talmor et al., 2019)</ref>, which are mathematical reasoning (first three) and commonsense reasoning datasets (last two).</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_3"><p>We can also evaluate other dimensions such as helpfulness and factual-grounded-ness but in this paper, we focus on correctness.</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Table 11: Accuracy comparison under step-wise greedy search with and without C1 component in verifier score computation. -C1 represents that the component C1 for verifier score calculation is not used. SG represents step-wise greedy search. SC represents self-consistency with 20 samples. We bold the best results per block.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 10 :</head><label>10</label><figDesc>Comparison of accuracy from Step-wise Greedy (SG) search and Step-wise Beam (SB) searchboth with Self-Consistency (SC) on GSM8K and CSQA (CommonsenseQA). SC represents Self-consistency with majority voting of 20 sample generations.We bold the best result per block per dataset.</figDesc><table><row><cell>Prompt Style</cell><cell cols="2">GSM8K CSQA</cell><cell></cell><cell></cell><cell></cell></row><row><cell>SOLAR 10.7B Instruct</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>TAB COT + SC</cell><cell>80.52</cell><cell>80.51</cell><cell>Prompt Style</cell><cell cols="2">GSM8K CSQA</cell></row><row><cell>TAB COT + SC (Max)</cell><cell>72.56</cell><cell>75.52</cell><cell>SOLAR 11B Instruct</cell><cell></cell><cell></cell></row><row><cell>TAB COT + SC (Weighted)</cell><cell>80.82</cell><cell>80.84</cell><cell>TAB COT + SG + SC</cell><cell>80.52</cell><cell>80.51</cell></row><row><cell>TAB COT + SC (Filter)</cell><cell>80.21</cell><cell>80.34</cell><cell>TAB COT + SB + SC</cell><cell>70.08</cell><cell>77.40</cell></row><row><cell>COT STEP + SC</cell><cell>84.91</cell><cell>79.85</cell><cell cols="2">COT STEP + SG + SC 83.78</cell><cell>79.28</cell></row><row><cell>COT STEP + SC (Max)</cell><cell>79.91</cell><cell>76.82</cell><cell cols="2">COT STEP + SB + SC 78.92</cell><cell>80.75</cell></row><row><cell cols="2">COT STEP + SC (Weighted) 84.76</cell><cell>79.94</cell><cell>Phi3 Mini 128K Instruct</cell><cell></cell><cell></cell></row><row><cell>COT STEP + SC (Filter)</cell><cell>84.99</cell><cell>79.94</cell><cell>TAB COT + SG + SC</cell><cell>79.30</cell><cell>72.81</cell></row><row><cell>Phi3 Mini 128K Instruct</cell><cell></cell><cell></cell><cell>TAB COT + SB + SC</cell><cell>81.20</cell><cell>71.75</cell></row><row><cell>TAB COT + SC</cell><cell>86.81</cell><cell>74.86</cell><cell cols="2">COT STEP + SG + SC 90.30</cell><cell>77.56</cell></row><row><cell>TAB COT + SC (Max)</cell><cell>83.85</cell><cell>71.83</cell><cell cols="2">COT STEP + SB + SC 87.42</cell><cell>76.17</cell></row><row><cell>TAB COT + SC (Weighted)</cell><cell>87.26</cell><cell>74.94</cell><cell></cell><cell></cell><cell></cell></row><row><cell>TAB COT + SC (Filter)</cell><cell>86.51</cell><cell>74.86</cell><cell></cell><cell></cell><cell></cell></row><row><cell>COT STEP + SC</cell><cell>90.75</cell><cell>77.07</cell><cell></cell><cell></cell><cell></cell></row><row><cell>COT STEP + SC (Max)</cell><cell>87.34</cell><cell>73.96</cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="2">COT STEP + SC (Weighted) 90.68</cell><cell>76.66</cell><cell></cell><cell></cell><cell></cell></row><row><cell>COT STEP + SC (Filter)</cell><cell>90.37</cell><cell>76.90</cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">Table 8: Comparison of accuracies on GSM8K and</cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">CSQA using different policies of utilizing verifier scores</cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell>Prompt Style</cell><cell cols="2">GSM8K CSQA</cell></row><row><cell></cell><cell></cell><cell></cell><cell>SOLAR 11B Instruct</cell><cell></cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell>COT STEP + SG</cell><cell>76.5</cell><cell>68.71</cell></row><row><cell>Prompt Style</cell><cell cols="2">GSM8K CSQA</cell><cell>COT STEP + SG -C1</cell><cell>74.91</cell><cell>66.18</cell></row><row><cell>SOLAR 10.7B Instruct</cell><cell></cell><cell></cell><cell>COT STEP + SG + SC</cell><cell>83.78</cell><cell>79.28</cell></row><row><cell>TAB COT + SG</cell><cell>70.13</cell><cell>67.90</cell><cell cols="2">COT STEP + SG + SC -C1 82.11</cell><cell>80.10</cell></row><row><cell>TAB COT + SG + SC</cell><cell>75.51</cell><cell>77.72</cell><cell>Phi3 Mini 128K Instruct</cell><cell></cell><cell></cell></row><row><cell>COT STEP + SG</cell><cell>76.50</cell><cell>68.71</cell><cell>COT STEP + SG</cell><cell>85.37</cell><cell>73.22</cell></row><row><cell cols="2">COT STEP + SG + SC 83.78</cell><cell>79.28</cell><cell>COT STEP + SG -C1</cell><cell>84.38</cell><cell>72.56</cell></row><row><cell>Phi3 Mini 128K Instruct</cell><cell></cell><cell></cell><cell>COT STEP + SG + SC</cell><cell>90.30</cell><cell>77.56</cell></row><row><cell>TAB COT + SG</cell><cell>79.30</cell><cell>70.19</cell><cell cols="2">COT STEP + SG + SC -C1 90.07</cell><cell>75.92</cell></row><row><cell>TAB COT + SG + SC</cell><cell>79.30</cell><cell>72.81</cell><cell></cell><cell></cell><cell></cell></row><row><cell>COT STEP + SG</cell><cell>85.37</cell><cell>73.22</cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="2">COT STEP + SG + SC 90.30</cell><cell>77.56</cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">Table 9: Comparison of accuracy from Step-wise</cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">Greedy (SG) with and without Self-Consistency (SC) on</cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">GSM8K and CSQA (CommonsenseQA). SC represents</cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">Self-consistency with majority voting of 20 sample gen-</cell><cell></cell><cell></cell><cell></cell></row></table><note><p>in Self-Consistency. SC represents self-consistency with majority voting. SC (Max) represents the use of Max policy on self-consistency. SC (Weighted) represents the use of Weighted policy on self-consistency. SC (Filter) represents the use of Filter policy on self-consistency. In all cases, 20 samples were generated.</p><p>erations. We bold the best result per block per dataset.</p></note></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jyoti</forename><surname>Marah Abdin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hany</forename><surname>Aneja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmed</forename><surname>Awadalla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ammar</forename><surname>Awadallah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nguyen</forename><surname>Ahmad Awan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amit</forename><surname>Bach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arash</forename><surname>Bahree</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianmin</forename><surname>Bakhtiari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harkirat</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Behl</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.14219</idno>
+		<title level="m">Phi-3 technical report: A highly capable language model locally on your phone</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Maciej</forename><surname>Besta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florim</forename><surname>Memedi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Gerstenberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nils</forename><surname>Blach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Nyczyk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcin</forename><surname>Copik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Grzegorz</forename><surname>Kwaśniewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jürgen</forename><surname>Müller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukas</forename><surname>Gianinazzi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.14295</idno>
+		<title level="m">Topologies of reasoning: Demystifying chains, trees, and graphs of thoughts</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Alec Radford, Ilya Sutskever, and Dario Amodei</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ariel</forename><surname>Herbert-Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Henighan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rewon</forename><surname>Child</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Ziegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clemens</forename><surname>Winter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Sigler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mateusz</forename><surname>Litwin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Chess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Berner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Mccandlish</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+		</imprint>
+	</monogr>
+	<note>Language models are few-shot learners</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sébastien</forename><surname>Bubeck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Varun</forename><surname>Chandrasekaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronen</forename><surname>Eldan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Gehrke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Horvitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ece</forename><surname>Kamar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yin</forename><surname>Tat Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Lundberg</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.12712</idno>
+		<title level="m">Sparks of artificial general intelligence: Early experiments with gpt-4</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Self-ICL: Zero-shot in-context learning with self-generated demonstrations</title>
+		<author>
+			<persName><forename type="first">Wei-Lin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng-Kuang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yun-Nung</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hsin-Hsi</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.emnlp-main.968</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2023 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="15651" to="15662" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.14168</idno>
+		<title level="m">Training verifiers to solve math word problems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Abhimanyu</forename><surname>Dubey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Jauhri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Pandey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Kadian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmad</forename><surname>Al-Dahle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aiesha</forename><surname>Letman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akhil</forename><surname>Mathur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Schelten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amy</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Angela</forename><surname>Fan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.21783</idno>
+		<title level="m">The llama 3 herd of models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Kanishk</forename><surname>Gandhi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dorsa</forename><surname>Sadigh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">D</forename><surname>Goodman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.19165</idno>
+		<title level="m">Strategic reasoning with language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Pal: program-aided language models</title>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamie</forename><surname>Callan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 40th International Conference on Machine Learning</title>
+		<meeting>the 40th International Conference on Machine Learning</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>ICML&apos;23. JMLR.org</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zitian</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boye</forename><surname>Niu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuzheng</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongzhang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aiwei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuming</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lijie</forename><surname>Wen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.01707</idno>
+		<title level="m">Interpretable contrastive monte carlo tree search reasoning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Did aristotle use a laptop? a question answering benchmark with implicit reasoning strategies</title>
+		<author>
+			<persName><forename type="first">Mor</forename><surname>Geva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Khashabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elad</forename><surname>Segal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Roth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Berant</surname></persName>
+		</author>
+		<idno type="DOI">10.1162/tacl_a_00370</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="page" from="346" to="361" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">LLM reasoners: New evaluation, library, and analysis of step-by-step reasoning with large language models</title>
+		<author>
+			<persName><forename type="first">Shibo</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiyan</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuhua</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haodi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adithya</forename><surname>Samavedhi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiyue</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiting</forename><surname>Hu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">First Conference on Language Modeling</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Reasoning with language model is planning with world model</title>
+		<author>
+			<persName><forename type="first">Shibo</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haodi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daisy</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiting</forename><surname>Hu</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.emnlp-main.507</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2023 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="8154" to="8173" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">A closer look at the self-verification abilities of large language models in logical reasoning</title>
+		<author>
+			<persName><forename type="first">Ruixin</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changshui</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.naacl-long.52</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</title>
+		<meeting>the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies<address><addrLine>Mexico City, Mexico</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="900" to="925" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Alexandre</forename><surname>Albert Q Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Sablayrolles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Mensch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Devendra</forename><surname>Bamford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diego</forename><surname>Singh Chaplot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florian</forename><surname>De Las Casas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gianna</forename><surname>Bressand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guillaume</forename><surname>Lengyel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucile</forename><surname>Lample</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Saulnier</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.06825</idno>
+		<title level="m">Mistral 7b</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Zero-shot chain-of-thought reasoning guided by evolutionary algorithms in large language models</title>
+		<author>
+			<persName><forename type="first">Feihu</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Tan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.05376</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<author>
+			<persName><forename type="first">Saurav</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Conerly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Henighan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Drain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Schiefer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zac</forename><surname>Hatfield-Dodds</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nova</forename><surname>Dassarma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eli</forename><surname>Tran-Johnson</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2207.05221</idno>
+		<title level="m">Language models (mostly) know what they know</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">GRACE: Discriminator-guided chain-of-thought reasoning</title>
+		<author>
+			<persName><forename type="first">Muhammad</forename><surname>Khalifa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lajanugen</forename><surname>Logeswaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moontae</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honglak</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.findings-emnlp.1022</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: EMNLP 2023</title>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="15299" to="15328" />
+		</imprint>
+	</monogr>
+	<note>Singapore</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">B: Scaling large language models with simple yet effective depth upscaling</title>
+		<author>
+			<persName><forename type="first">Sanghoon</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dahyun</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chanjun</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wonsung</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wonho</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunsu</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyeonwoo</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yungi</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyeonju</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jihoo</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changbae</forename><surname>Ahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Seonghoon</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sukyung</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyunbyung</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gyoungjin</forename><surname>Gim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikyoung</forename><surname>Cha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hwalsuk</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sunghun</forename><surname>Kim</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.naacl-industry.3</idno>
+		<idno>SOLAR 10.7</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</title>
+		<meeting>the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies<address><addrLine>Mexico City, Mexico</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="page" from="23" to="35" />
+		</imprint>
+	</monogr>
+	<note>Industry Track)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Large language models are zero-shot reasoners</title>
+		<author>
+			<persName><forename type="first">Takeshi</forename><surname>Kojima</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">(</forename><surname>Shixiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">)</forename><surname>Shane</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Machel</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutaka</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusuke</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Iwasawa</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="22199" to="22213" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Better zero-shot reasoning with role-play prompting</title>
+		<author>
+			<persName><forename type="first">Aobo</forename><surname>Kong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiwan</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qicheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiqi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Enzhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohang</forename><surname>Dong</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.naacl-long.228</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</title>
+		<meeting>the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies<address><addrLine>Mexico City, Mexico</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="4099" to="4113" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Jackson Kernion, et al. 2023. Measuring faithfulness in chain-of-thought reasoning</title>
+		<author>
+			<persName><forename type="first">Tamera</forename><surname>Lanham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ansh</forename><surname>Radhakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benoit</forename><surname>Steiner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carson</forename><surname>Denison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Hernan-Dez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dustin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Esin</forename><surname>Durmus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evan</forename><surname>Hubinger</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.13702</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">A simple, fast diverse decoding algorithm for neural generation</title>
+		<author>
+			<persName><forename type="first">Jiwei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Will</forename><surname>Monroe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Jurafsky</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1611.08562</idno>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Making language models better reasoners with step-aware verifier</title>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeqi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shizhuo</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiang</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian-Guang</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.acl-long.291</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 61st Annual Meeting of the Association for Computational Linguistics<address><addrLine>Toronto, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="5315" to="5333" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Improving llm reasoning through scaling inference computation with collaborative verification</title>
+		<author>
+			<persName><forename type="first">Zhenwen</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ye</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Niu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangliang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingbo</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Semih</forename><surname>Yavuz</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.05318</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Let&apos;s verify step by step</title>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Hunter Lightman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harrison</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teddy</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cobbe</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Program induction by rationale generation: Learning to solve and explain algebraic word problems</title>
+		<author>
+			<persName><forename type="first">Wang</forename><surname>Ling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dani</forename><surname>Yogatama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Dyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phil</forename><surname>Blunsom</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/P17-1015</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 55th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 55th Annual Meeting of the Association for Computational Linguistics<address><addrLine>Vancouver, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="158" to="167" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Deductive verification of chain-of-thought reasoning</title>
+		<author>
+			<persName><forename type="first">Zhan</forename><surname>Ling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunhao</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanlin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingu</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roland</forename><surname>Memisevic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Su</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="36407" to="36433" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Self-refine: Iterative refinement with self-feedback</title>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niket</forename><surname>Tandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prakhar</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Skyler</forename><surname>Hallinan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Wiegreffe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouha</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shrimai</forename><surname>Prabhumoye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shashank</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bodhisattwa</forename><surname>Prasad Majumder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katherine</forename><surname>Hermann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Welleck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amir</forename><surname>Yazdanbakhsh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="46534" to="46594" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Selfcheck: Using LLMs to zero-shot check their own step-by-step reasoning</title>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Miao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yee</forename><forename type="middle">Whye</forename><surname>Teh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Rainforth</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Show your work: Scratchpads for intermediate computation with language models</title>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anders</forename><surname>Johan Andreassen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guy</forename><surname>Gur-Ari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Bieber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aitor</forename><surname>Lewkowycz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Luan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Augustus</forename><surname>Odena</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Deep Learning for Code Workshop</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">REFINER: Reasoning feedback on intermediate representations</title>
+		<author>
+			<persName><forename type="first">Debjit</forename><surname>Paul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mete</forename><surname>Ismayilzada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxime</forename><surname>Peyrard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beatriz</forename><surname>Borges</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Bosselut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>West</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boi</forename><surname>Faltings</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 18th Conference of the European Chapter of the Association for Computational Linguistics</title>
+		<meeting>the 18th Conference of the European Chapter of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>St. Julian&apos;s, Malta. Association for Computational Linguistics</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="1100" to="1126" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jiahao</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifu</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiacheng</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huazheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaixuan</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengdi</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.16033</idno>
+		<title level="m">Treebon: Enhancing inference-time alignment with speculative treesearch and best-of-n sampling</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Reflexion: language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="8634" to="8652" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">On the self-verification limitations of large language models on reasoning and planning tasks</title>
+		<author>
+			<persName><forename type="first">Kaya</forename><surname>Stechly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Valmeekam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Subbarao</forename><surname>Kambhampati</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.08115</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Beats: Optimizing llm mathematical capabilities with backverify and adaptive disambiguate based efficient tree search</title>
+		<author>
+			<persName><forename type="first">Linzhuang</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wentao</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.17972</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">CommonsenseQA: A question answering challenge targeting commonsense knowledge</title>
+		<author>
+			<persName><forename type="first">Alon</forename><surname>Talmor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Herzig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Lourie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Berant</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/N19-1421</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</title>
+		<title level="s">Long and Short Papers</title>
+		<meeting>the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies<address><addrLine>Minneapolis, Minnesota</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="4149" to="4158" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Sercan Arik, and Tomas Pfister. 2023a. Better zero-shot reasoning with self-adaptive prompting</title>
+		<author>
+			<persName><forename type="first">Xingchen</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoxi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanjun</forename><surname>Dai</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.findings-acl.216</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: ACL 2023</title>
+		<meeting><address><addrLine>Toronto, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<biblScope unit="page" from="3493" to="3514" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Sercan Arik, and Tomas Pfister. 2023b. Universal self-adaptive prompting</title>
+		<author>
+			<persName><forename type="first">Xingchen</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoxi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hootan</forename><surname>Nakhost</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanjun</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Eisenschlos</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.emnlp-main.461</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2023 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<biblScope unit="page" from="7437" to="7462" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Alphazero-like tree-search can guide large language model decoding and training</title>
+		<author>
+			<persName><forename type="first">Ziyu</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xidong</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muning</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><forename type="middle">Marcus</forename><surname>Mcaleer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weinan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Forty-first International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chaojie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanchen</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyi</forename><surname>Lv</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.14283</idno>
+		<title level="m">Shuicheng Yan, and An Bo. 2024a. Q*: Improving multi-step reasoning for llms with deliberative planning</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Plan-and-solve prompting: Improving zeroshot chain-of-thought reasoning by large language models</title>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanyu</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihuai</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqiang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunshi</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roy</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ka-Wei</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ee-Peng</forename><surname>Lim</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.acl-long.147</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 61st Annual Meeting of the Association for Computational Linguistics<address><addrLine>Toronto, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="2609" to="2634" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">2024b. Towards self-improvement of llms via mcts: Leveraging stepwise knowledge with curriculum preference learning</title>
+		<author>
+			<persName><forename type="first">Xiyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linfeng</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ye</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baolin</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haitao</forename><surname>Mi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Furong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.06508</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Self-consistency improves chain of thought reasoning in language models</title>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><forename type="middle">H</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">2022a. Emergent abilities of large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishi</forename><surname>Bommasani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Raffel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barret</forename><surname>Zoph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Borgeaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dani</forename><surname>Yogatama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donald</forename><surname>Metzler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><forename type="middle">H</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tatsunori</forename><surname>Hashimoto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oriol</forename><surname>Vinyals</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Dean</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Fedus</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions on Machine Learning Research</title>
+		<imprint/>
+	</monogr>
+	<note>Survey Certification</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Quoc V Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24824" to="24837" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Large language models are better reasoners with self-verification</title>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Weng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minjun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shizhu</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengping</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Zhao</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.findings-emnlp.167</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: EMNLP 2023</title>
+		<meeting><address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="2550" to="2575" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Transformers: State-of-the-art natural language processing</title>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Wolf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lysandre</forename><surname>Debut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Sanh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julien</forename><surname>Chaumond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clement</forename><surname>Delangue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Moi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierric</forename><surname>Cistac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Rault</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Remi</forename><surname>Louf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Morgan</forename><surname>Funtowicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joe</forename><surname>Davison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Shleifer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clara</forename><surname>Patrick Von Platen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yacine</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julien</forename><surname>Jernite</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Canwen</forename><surname>Plu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teven</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sylvain</forename><surname>Le Scao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mariama</forename><surname>Gugger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quentin</forename><surname>Drame</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Lhoest</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rush</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2020.emnlp-demos.6</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing: System Demonstrations</title>
+		<meeting>the 2020 Conference on Empirical Methods in Natural Language Processing: System Demonstrations</meeting>
+		<imprint>
+			<publisher>Online. Association for Computational Linguistics</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="38" to="45" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Self-evaluation guided beam search for reasoning</title>
+		<author>
+			<persName><forename type="first">Yuxi</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenji</forename><surname>Kawaguchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiran</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><forename type="middle">Xu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min-Yen</forename><surname>Kan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxian</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Xie</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="41618" to="41650" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Re-reading improves reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Xiaohan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongyang</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Can</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongbo</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guodong</forename><surname>Long</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian-Guang</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Ma</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2024 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Miami, Florida, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="15549" to="15575" />
+		</imprint>
+	</monogr>
+	<note>Association for Computational Linguistics</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Tree of thoughts: Deliberate problem solving with large language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="11809" to="11822" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<analytic>
+		<title level="a" type="main">Instance-adaptive zero-shot chain-of-thought prompting</title>
+		<author>
+			<persName><forename type="first">Xiaosong</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaotian</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><forename type="middle">Feng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenxiao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Renchu</forename><surname>Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jieping</forename><surname>Ye</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirtyeighth Annual Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Progressive-hint prompting improves reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Chuanyang</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengying</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Enze</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenguo</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AI for Math Workshop @ ICML 2024</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<title level="m" type="main">2023a. Solving challenging math word problems using gpt-4 code interpreter with code-based self-verification</title>
+		<author>
+			<persName><forename type="first">Aojun</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ke</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zimu</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weikang</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sichun</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zipeng</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoqing</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anya</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linqi</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingjie</forename><surname>Zhan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.07921</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<analytic>
+		<title level="a" type="main">2023b. Don&apos;t trust: Verify-grounding llm quantitative reasoning with autoformalization</title>
+		<author>
+			<persName><forename type="first">Jin</forename><forename type="middle">Peng</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><forename type="middle">E</forename><surname>Staats</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenda</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Szegedy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kilian</forename><forename type="middle">Q</forename><surname>Weinberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhuai</forename><surname>Wu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<author>
+			<persName><forename type="first">Pei</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jay</forename><surname>Pujara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng-Tze</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><forename type="middle">H</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.03620</idno>
+		<title level="m">Swaroop Mishra, and Huaixiu Steven Zheng. 2024. Selfdiscover: Large language models self-compose reasoning structures</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<analytic>
+		<title level="a" type="main">Tab-CoT: Zero-shot tabular chain of thought</title>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Ziqi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Lu</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.findings-acl.651</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: ACL 2023</title>
+		<meeting><address><addrLine>Toronto, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="10259" to="10277" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

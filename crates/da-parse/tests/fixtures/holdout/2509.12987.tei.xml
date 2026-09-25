@@ -1,0 +1,1365 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Toward PDDL Planning Copilot</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-09-16">16 Sep 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Yarin</forename><surname>Benyamin</surname></persName>
+							<email>bnyamin@post.bgu.ac.il</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Ben-Gurion University of the Negev</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Argaman</forename><surname>Mordoch</surname></persName>
+							<email>mordocha@post.bgu.ac.il</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Ben-Gurion University of the Negev</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Shahaf</forename><forename type="middle">S</forename><surname>Shperberg</surname></persName>
+							<email>shperbsh@bgu.ac.il</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Ben-Gurion University of the Negev</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Roni</forename><surname>Stern</surname></persName>
+							<email>roni.stern@gmail.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Ben-Gurion University of the Negev</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Toward PDDL Planning Copilot</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-09-16">16 Sep 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">FACFBD025DA10EE3DFB47D971D396AD4</idno>
+					<idno type="arXiv">arXiv:2509.12987v1[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:13+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large Language Models (LLMs) are increasingly being used as autonomous agents capable of performing complicated tasks. However, they lack the ability to perform reliable longhorizon planning on their own. This paper bridges this gap by introducing the Planning Copilot, a chatbot that integrates multiple planning tools and allows users to invoke them through instructions in natural language. The Planning Copilot leverages the Model Context Protocol (MCP), a recently developed standard for connecting LLMs with external tools and systems. This approach allows using any LLM that supports MCP without domain-specific fine-tuning. Our Planning Copilot supports common planning tasks such as checking the syntax of planning problems, selecting an appropriate planner, calling it, validating the plan it generates, and simulating their execution. We empirically evaluate the ability of our Planning Copilot to perform these tasks using three open-source LLMs. The results show that the Planning Copilot highly outperforms using the same LLMs without the planning tools. We also conducted a limited qualitative comparison of our tool against Chat GPT-5, a very recent commercial LLM. Our results shows that our Planning Copilot significantly outperforms GPT-5 despite relying on a much smaller LLM. This suggests dedicated planning tools may be an effective way to enable LLMs to perform planning tasks.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Introduction</head><p>Large Language Models (LLMs) like ChatGPT, Gemini, and Grok, can, among other things, generate coherent text, solve chemistry related problems <ref type="bibr" target="#b11">(Guo et al. 2023)</ref>, support electronics design <ref type="bibr" target="#b1">(Alvanaki, Lee, and Carloni 2025)</ref>, and perform various software engineering tasks <ref type="bibr" target="#b26">(Nam et al. 2024;</ref><ref type="bibr" target="#b5">Chen et al. 2024;</ref><ref type="bibr" target="#b0">Achiam et al. 2023;</ref><ref type="bibr" target="#b16">Huang and Chang 2022)</ref>. However, it has been argued that their abilities stem from statistical pattern recognition rather than true understanding <ref type="bibr" target="#b19">(Kambhampati 2024)</ref>. Indeed, even state-of-theart LLMs struggle with tasks involving long-horizon planning <ref type="bibr" target="#b17">(Huang et al. 2025;</ref><ref type="bibr" target="#b33">Shojaee et al. 2025)</ref>.</p><p>Domain-independent automated planning is a wellestablished approach for solving long-horizon, goaloriented, planning problems <ref type="bibr" target="#b9">(Ghallab, Nau, and Traverso 2004)</ref>. Unlike Reinforcement Learning (RL) methods that depend on interaction with the environment, domainindependent planning operate on a symbolic domain model that specifies the preconditions and effects of each action. These symbolic domains are often defined using the Planning Domain Definition Language (PDDL) <ref type="bibr" target="#b15">(Howe et al. 1998)</ref>. A planning problem in the PDDL formalism is defined by two components -a PDDL domain and a PDDL problem. The PDDL domain defines the environment and the agent's capabilities and the PDDL problem defines the specific objects on which it is defined as well as the initial and the goal states.</p><p>Research on domain-independent planning have produced a diverse set of automated planners over the years. Such planners accept a PDDL domain and problem and produce solutions -plans -with formal guarantees of correctness and in some cases optimality. Some planners only support domains with discrete state variables <ref type="bibr" target="#b12">(Helmert 2006;</ref><ref type="bibr" target="#b13">Hoffmann 2001</ref>) while others also support numeric state variables <ref type="bibr" target="#b30">(Scala et al. 2016;</ref><ref type="bibr" target="#b14">Hoffmann 2003)</ref>, as well as more complex aspects of the planning problem such as time <ref type="bibr" target="#b3">(Baier, Bacchus, and McIlraith 2009;</ref><ref type="bibr" target="#b6">Coles et al. 2009</ref>) and non-determinism <ref type="bibr" target="#b25">(Muise, McIlraith, and Beck 2024)</ref>. Planning research also developed a variety of supporting tools such VAL, which validates a given plan is executable and achieves the intended goals <ref type="bibr" target="#b16">(Howey, Long, and Fox 2004)</ref>; scripts for parsing PDDLs; and translators facilitate the creation, manipulation, and conversion of planning problems across different syntax and formalisms. Together, these tools form a robust planning ecosystem that provides strong theoretical foundations as well as reliability and predictability of the generated plans.</p><p>While automated planning provides powerful guarantees and a rich ecosystem of tools, applying these planning tools directly requires substantial manual effort. Users must choose appropriate planners based on the problem type, and leverage separate tools for validating and analyzing plans. Each stage of the pipeline-syntax checking, planner invocation, plan validation, and execution-typically involves different tools and formats, creating a fragmented workflow. This complexity can hinder adoption, especially for users who lack expertise in planning formalisms or want to interact with the system through natural language. A unified framework that integrates these stages into a single, LLMbased interface could therefore drastically reduce this burden and make planning tools more accessible.</p><p>In this work, we introduce the Planning Copilot 1 -a chatbot that integrates multiple planning tools and allows users to invoke them through plain English instructions. To achieve this, we leverage the Model Context Protocol (MCP) <ref type="bibr" target="#b2">(Anthropic 2024</ref>), a recently developed standard for connecting language models with external tools and systems. MCP enables LLMs to augment their reasoning with real-world actions such as image generation, web search, and API calls, enabling overall much better performance. The Planning Copilot includes the following capabilities: (1) automated planner selection, allowing the LLM to choose between classical and numeric planners based on the domain; (2) syntactic domain validation, ensuring that PDDL domains conform to expected standards; (3) plan verification, where the LLM invokes VAL <ref type="bibr" target="#b16">(Howey, Long, and Fox 2004</ref>)-a well known plan validator -to validate a given plan; and (4) plan simulation and trace generation, providing state inspection capabilities to support debugging and analysis of planning outcomes. These features allow LLMs to act as effective assistants for AI researchers. In particular, they complement natural language to PDDL (NL-to-PDDL) translation pipelines by enabling the planning, validation, and execution of generated models.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Preliminaries</head><p>In this section, we provide the necessary background and review previous work relevant to our study. We begin by introducing the concept of integrating large language models with external tools. Then, we give a brief introduction to Automatic Planning and the Planning Domain Definition Language (PDDL) <ref type="bibr" target="#b15">(Howe et al. 1998)</ref>. Next, we discuss prior work on using LLMs to solve planning problems.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LLMs as Agents</head><p>In recent years, numerous large language models (LLMs) have been developed <ref type="bibr" target="#b35">(Team et al. 2023;</ref><ref type="bibr" target="#b36">Touvron et al. 2023;</ref><ref type="bibr" target="#b10">Gunasekar et al. 2023;</ref><ref type="bibr">Liu et al. 2024, inter alia)</ref>. These models enable sophisticated natural language understanding and generation, supporting applications ranging from question answering and summarization to code synthesis and educational tools <ref type="bibr" target="#b21">(Lewis et al. 2019;</ref><ref type="bibr" target="#b18">Jiang et al. 2024;</ref><ref type="bibr" target="#b20">Kasneci et al. 2023)</ref>. Despite their strengths in producing coherent and contextually appropriate text, LLMs natively lack the ability to sense or act within their environments and thus cannot function as autonomous agents on their own. To overcome these limitations, LLMs have been equipped with tools that they can invoke to interact with external environments (e.g., reserving tables in restaurants, booking hotels), thereby enabling them to act autonomously <ref type="bibr" target="#b40">(Zeng et al. 2023)</ref>. Early efforts such as Toolformer <ref type="bibr" target="#b31">(Schick et al. 2023)</ref> investigate pre-training LLMs to recognize when and how to invoke each tool. More recent work on standardized protocols <ref type="bibr" target="#b7">(Ding and Stevens 2025)</ref>, such as MCP, allows modular, runtime integration, of external tools without any specific fine-tuning. Through such tool integration, agentic AI systems can perform a wide array of tasks -including image While these tools help LLMs perform complex tasks, they still struggle with reliable long-horizon planning and dynamic goal decomposition, which limits their ability to execute multi-step strategies independently <ref type="bibr" target="#b17">(Huang et al. 2025;</ref><ref type="bibr" target="#b33">Shojaee et al. 2025)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Automatic Planning</head><p>Automated Planning is a subfield of Artificial Intelligence (AI) focused on generating plans-which are sequences of actions-that intelligent agents can execute to achieve their goals. Automated Planning can be defined through a variety of problem formulations. In this work, we focus on Planning Domain Definition Language (PDDL) <ref type="bibr" target="#b15">(Howe et al. 1998)</ref> and its later extension PDDL 2.1 <ref type="bibr" target="#b8">(Fox and Long 2003)</ref>. The PDDL (and PDDL 2.1) formalism includes two components-the domain and the problem. The domain describes the environment using predicates and functions, as well as the agent's capabilities, i.e., the actions. The problem contains the problem-specific objects, a definition of the initial state from which the planning algorithm begins to find a solution, and the desired goal. Together, with this precise knowledge, planners such as FastDownward <ref type="bibr" target="#b12">(Helmert 2006)</ref>, Metric-FF <ref type="bibr" target="#b14">(Hoffmann 2003)</ref>, ENHSP <ref type="bibr" target="#b30">(Scala et al. 2016)</ref>, and NYX (Piotrowski and Perez 2024) can efficiently generate plans and can offer formal guarantees about their correctness and optimality. We consider two types of planning: classical planning, where actions deterministically change a finite set of propositional states, and numeric planning, which extends this model with numeric functions to capture quantities such as resources or costs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Leveraging LLMs for Automated Planning</head><p>Valmeekam, Stechly, and Kambhampati (2024) demonstrated that LLMs struggle with basic planning tasks, while <ref type="bibr" target="#b28">Pallagani et al. (2023)</ref> showed promise using fine-tuned sequence-to-sequence models like Plansformer <ref type="bibr" target="#b27">(Pallagani et al. 2022)</ref>, though with limited generalization to out-ofdistribution domains. The LLM+P framework <ref type="bibr" target="#b23">(Liu et al. 2023</ref>) converts natural language planning problem descriptions into PDDL using GPT-4, then translates the resulting solutions back into natural language for robot planning scenarios. Similarly, GenPlanX <ref type="bibr" target="#b4">(Borrajo et al. 2025</ref>) completes a more comprehensive cycle by using LLMs to generate problem instances, which are then processed by a handcoded pipeline that invokes the planner to solve them. How-ever, significant challenges remain not only in generating accurate PDDL models but also in validating, executing, and debugging these models to ensure practical usability. The Planning Copilot we propose in this work addresses these challenges.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>The Planning Copilot</head><p>The Planning Copilot we propose integrates external planning-related tools into a given LLM. It allows the LLM to perform long-term planning and validate its outcome, and relieves users from the burden of running, validating, and adapting inputs for these planning tools by providing a natural language interface mediated by the LLMs.</p><p>Our Planning Copilot supports three main use cases, denoted here as Solve, Validate, and Simulate. We describe each of these use cases below. Each use case is supported by one or more MCP functions. These MCP functions allow the LLM to call these planning tools and use the information they output to support the desired use case. Notably, this modular design makes it straightforward to integrate with other systems-such as those that generate PDDL domains and problems from natural language-thereby extending our Planning Copilot's capabilities in the future.</p><p>The Solve use case In this use case, the Planning Copilot is required to solve a planning problem described by a given PDDL domain and problem. It should do so by calling a suitable planner. To support this use case, the Planning Copilot includes two MCP functions, one that calls a classical planner and one that calls a numeric planner. Both calls accepts a PDDL domain and problem specification, executes a planner, and returns the resulting plan to the LLM.</p><p>Importantly, the user is not obligated to specify which planner to use. The LLM should infer from from the input files which planning algorithm should be called. This is reasonable because LLMs are trained on data from the web, and different planning domains (classical and numerical) are available in open source repositories.</p><p>The Validate use case In this use case, the Planning Copilot is required to validate either the PDDL domain, the PDDL problem, or the plan generated by some planner. That is, the validation functionality supported by the component includes:</p><p>• Checking the syntactic correctness of the PDDL domain specifications.</p><p>• Ensuring the PDDL problem is consistent with given PDDL domain.</p><p>• Validating a given plan is correct, i.e., it achieve the intended goal state according to the given PDDL domain and problem.</p><p>The corresponding MCP function supports validation at various stages of planning: domain definition, problem formulation, and generated plans. If the validation fails, the tool will notify the LLM. In plan validation specifically, the LLM is given the reason for failure and a possible fix suggestion.</p><p>You are a PDDL planner in a tool-based planning system.</p><p>Your ONLY way to get information or solve problems is by calling the provided tools ONE AT A TIME -never guess or create plan details yourself .</p><p>On each turn, either:</p><p>-Call the next tool (name + inputs), or -Give the final answer in natural language BASED ONLY on tool outputs so far.</p><p>Do not combine tool calls or answer prematurely. Final answers must contain no tool commands or intermediate data.</p><p>Available tools: {tool_list}. Choose the most suitable based on the problem. If a tool returns nothing, treat the problem as unsolvable. Always wait for results -never guess. The Simulate use case In this use case, the Planning Copilot is required to simulate the step-wise execution of a given plan. Its MCP function takes a domain, problem, and plan as input and generates a detailed execution trace that records the intermediate state after each action activation. Like the other MCP functions, it allows the LLM to incorporate the verified outputs from the tools back into its context, enabling it to use that information for subsequent reasoning and to provide the user with a more reliable and comprehensive response. For example, given a trace, the LLM could retrieve the 5th state or the 10th action.</p><p>Additionally, a dedicated MCP function saves plans locally to support tool chaining and pipelining, allowing other components or tools to access and continue processing the plan.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Workflow Management We implement our Planning</head><p>Copilot's control flow using LangGraph (Wang and Duan 2024), an Agentic AI framework that represents workflows as a stateful graph of nodes (LLM calls, tools) and directed edges (control decisions) as seen in Figure <ref type="figure" target="#fig_0">1</ref>. Tool selection is handled through a loop between MCP and the LLM: MCP provides the LLM with a list of available tools, including their purpose, inputs, and outputs, and the LLM chooses the one that best matches the current goal. MCP executes the selected tool, records the results in an execution trace, and returns this feedback to the LLM, which reflects on the trace to validate correctness and adjust future selections if needed. Figure <ref type="figure" target="#fig_1">2</ref> shows a snippet of the system prompt used to steer tool selection and error-recovery.</p><p>You are a PDDL planner capable of directly reasoning about and generating plans.</p><p>You can analyze PDDL problems, validate syntax, create plans, and simulate state transitions all on your own.</p><p>Carefully reason step-by-step about problem requirements and constraints before producing outputs.</p><p>Do NOT wait for or rely on external tools your responses should be fully self contained.</p><p>For tasks: {task name: required format} Answer only for the specific task you are asked; do not provide information about other tasks.</p><p>Figure <ref type="figure">3</ref>: System prompt for the baseline LLMs, which are not given the planning tools.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Experimental Results</head><p>We have implemented our Planning Copilot over several open-source LLMs. In this section, we provide information about our implementation and present experimental results comparing the performance of our Planning Copilot with baseline LLMs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Implementation Details</head><p>For the Solve use case, we created an MCP function that call FastDownward <ref type="bibr" target="#b12">(Helmert 2006)</ref>, which is a planner for classical planning problems, and an MCP function that calls Metric-FF <ref type="bibr" target="#b14">(Hoffmann 2003)</ref>, a planner for numeric planning problems. For the Validate use case, we created an MCP wrapper of VAL <ref type="bibr" target="#b16">(Howey, Long, and Fox 2004)</ref>, a plan validation tool. For the Simulate use case, we implemented an MCP function that runs a simple plan simulation script 2 . The choice of LLM is flexible; we only require a model that supports MCP. In our implementation, we chose to compare a family of LLMs by Alibaba called Qwen3 <ref type="bibr" target="#b39">(Yang et al. 2025</ref>) and the GPT-OSS 3 model, both of which support MCP and the so-called reasoning capabilities. Qwen implemented an "think" mechanisms that allow it multistep self-reflection, often employing techniques such as the Chain-of-Thought (CoT) mechanism <ref type="bibr" target="#b38">(Wei et al. 2022)</ref>. Previous results showed that the Qwen3:4B model, even without explicit "thinking" mechanisms, outperformed other non-thinking models (including LLaMA-3.1-8B-Instruct). When augmented with thinking capabilities, Qwen3:4B achieved competitive performance against larger thinking models (such as DeepSeek-R1-Distill-Qwen-14B), surpassing them in most evaluations. More over, GPT-OSS is the latest open-source model, employs a Mixture-of-Experts 2 <ref type="url" target="https://github.com/argaman-aloni/pddl">https://github.com/argaman-aloni/pddl</ref> plus parser 3 <ref type="url" target="https://openai.com/index/introducing-gpt-oss">https://openai.com/index/introducing-gpt-oss</ref> (MoE) <ref type="bibr" target="#b32">(Shazeer et al. 2017</ref>) architecture with a focus on tool-augmented reasoning and agentic workflows, making it an ideal candidate for our PDDL tool-using framework.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Experimental Design</head><p>In our experiments, we used ten domains-BARMAN, BLOCKSWORD, DEPOTS-CLASSICAL, ROVERS, SATEL-LITE, DEPOTS-NUMERIC, COUNTERS, FARMLAND, SAIL-ING, and MINECRAFT-POGO. The first five domains are from the the classical track in International Planning Competition (IPC) <ref type="bibr" target="#b24">(Long and Fox 2003)</ref>, the next four are from the numeric IPC track 2023 <ref type="bibr">(Taitler et al. 2024)</ref>, and the last one is non-IPC numeric domain <ref type="bibr" target="#b3">(Benyamin et al. 2024)</ref>.</p><p>We evaluate our system in a zero-shot setting, i.e., without any dedicated pre-training. First, we test whether the use of tools improves the LLM's performance in answering the tasks. In Figure <ref type="figure">3</ref> we can see the system prompt used when the LLM does not have access to tools. Second, in the toolusing condition, we measure the percentage of correct task answers. The first evaluation compares LLM performance with and without tool usage, while the second considers only runs with tools. Note that in the results we evaluated two versions of each model-with and without the model's internal deliberation ("thinking") ability-and reported the better of the two.</p><p>Each task in our evaluation consists of 10 distinct problems, including 5 numeric problems and 5 classic problems. For each problem type, we generate 5 variations of the task prompt to test model robustness across slightly different formulations. The first evaluation contains five core tasks involving a single request that can be easily solved by an expert using one of the provided tools. These tasks include:</p><p>(1) given a domain, check its syntax; (2+3) given a domain and problem, check the problem's syntax or find a solution; and (4+5) given a domain, problem, and plan, verify that the plan solves the problem or simulate its execution.</p><p>When we have simulation task we can also request returning a specific states during its execution. To capture this, we define tasks that can be chained together, where the number of subtasks in the chain is denoted as no.tasks. A task chain of length no.tasks may require up to no.tasks-1 tool calls to solve, with the difficulty increasing as the chain length grows. The evaluation includes tasks across different chain lengths: 250 tasks for no.tasks = 1 (derived from 10 problems × 5 prompt variants × 5 different requests), 100 tasks each for no.tasks = 2, 3, 4, and 50 tasks for no.tasks = 5, resulting in a total of 12 task chains of varying complexity for the second evaluation.</p><p>We also have a task that request returning specific states within the transition, this task is depend on running the simulation correctly. By chain one task to another we obtain a total of 12 tasks of varying no.tasks (number of task that chain toghether) for the second evaluation. Each of these tasks can require no.tasks-1 tool calling to solve the tasks, with a maximum of no.tasks -1 tools per level. There are 250 tasks in no.tasks = 1 (10 problems, 5 variants per prompt, and 5 different requests), 100 tasks for levels no.tasks = 2, 3, 4, and 50 tasks for the no.tasks = 5.</p><p>To assess model performance, we performed validation on the plan solutions using VAL. The validation evaluated whether the answers were correct, and the simulated outputs were compared to the real simulation results using the capabilities of pddl plus parser ability. The outputs then were manually evaluated to verify whether the final results provided to the end user were correct. This ensured that both correctness and applicability of the generated plans were taken into account. When evaluating tool usage, we only consider cases where the LLM explicitly employed the correct tools needed to accomplish the task, preventing unverified answers from being returned to the user.</p><p>Experiments were conducted via API on LangGraph while all code, prompts, temperature, and evaluation scripts were fixed prior to testing to prevent unintended modifications and ensure consistency across experiments. Specifically, the experiments ran on an RTX 6000 GPU with 48 GB of VRAM. Each model used the same system prompt and tool settings, with the randomness parameter (temperature) set to 0. Self-loops within the LangGraph were limited to 10 iterations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Results: Single Task Comparison</head><p>Table <ref type="table" target="#tab_0">1</ref> presents the results of our evaluation comparing LLMs with and without access to planning tools. Each row represents a different model , and the columns correspond to the different tasks we have: Solve, Validate Domain, Validate Problem, Validate Plan, and Simulate.</p><p>As expected, LLMs augmented with these tools outperformed those without them. As an example, without using tools, none of the LLMs could simulate the plan, while Qwen-3:0.6B succeeded 6% of the time, Qwen-3:4B succeeded 24%, and GPT-OSS:20B succeeded 80%. Specifically, except for the problem validation task, GPT-OSS augmented with the tools outperformed all other models. The task that was the most challenging for LLMs without planning tools was the simulation task, as it requires the model to track state changes and manage the add and delete effects of each action across multiple steps. In contrast, the different validation tasks was executed most successfully among all the tasks, though it can occasionally be answered correctly by chance. This highlights the importance of planning tools: they ensure that the plans returned by the LLM are not only applicable but also verified through real validation or simulation. Tools like those in our system provide users with confidence that the results they receive are accurate and reliable.</p><p>After establishing that tools improve LLM solving performance, we now focus on how well these models select the appropriate tool for the Solve task. In this task, the LLM receives a domain and a problem and must select a planner to generate a solution. Figure <ref type="figure" target="#fig_2">4</ref> shows a subset of the results, highlighting how often the LLM chose the correct tool: a classical planner for classical PDDL problems and a numeric planner for numeric PDDL problems. The results indicate that the LLM was able to solve almost all classical planning problems using the correct tool, while numeric planning proved more challenging. This may be because numeric planning is less common and more complex, so the  model likely has less exposure to numeric problems in its training set.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Results: Multi-Task Comparison</head><p>Figure <ref type="figure" target="#fig_3">5</ref> presents the performance of tool using of LLMs on more challenging tasks that require multiple tool calls in sequence to fulfill the user's request. For instance, tasks that require a single tool run, as shown in Figure <ref type="figure" target="#fig_0">1</ref> are averaged and represented as a single bar at the first position. As expected, we observe that performance declines across different LLMs as the number of required tool calls increases. Notably, GPT-OSS achieves the best results on tasks involving two or fewer tool calls. This highlights the importance of robust multi-step reasoning capabilities in LLMs, as errors can compound across sequential tool executions, significantly impacting overall task performance. Future work could explore strategies for decomposing large prompts into smaller, manageable subtasks, improving error detection and recovery, and dynamically selecting tools based on intermediate outputs to better handle complex, multi-request prompts.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Comparison with GPT-5</head><p>We performed a small-scale qualitative comparison with the state-of-the-art LLM GPT-5<ref type="foot" target="#foot_0">foot_0</ref> . Specifically, we executed queries using the chat itself, and we did not run the code using the API. We allowed the chat to think longer to provide with the best response it could, i.e., we enabled the LLM to select (if needed) to use the GPT-5 Thinking model, which may think longer to provide better response. For each query we opened a new chat to enable each query to run independently. We performed the following tasks: (1) solve, (2) domain validation (3) problem validation, (4) plan validation and (5) plan simulation. Each task was preformed on 5 different instances. We used the same queries as used for the models without the tools. As access to the GPT-5's API is costly, we selected to perform a small preliminary evaluation to compare our approach against this flagship model.</p><p>Figure <ref type="figure" target="#fig_4">6</ref> presents the comparison results between our tool, based on the GPT-OSS model, and GPT-5. The x-axis represents the different tasks given to the model, the y-axis represents the number of tasks completed by the model. The green columns represent the results for our tool and the blue columns represent the results for GPT-5.</p><p>For the solving task, GPT-5 generated three valid plans and failed in solving two tasks. Specifically, we observed that it successfully solved the problems for the BARMAN, BLOCKSWORLD, and MINECRAFT domain, but failed to solve the problems for the ROVERS and SAILING domains. Our tool however, succeeded in solving all planning tasks except for the MINECRAFT domain. In this domain the tool did not understand which planning algorithm it should execute, thus failed.</p><p>GPT-5 coded a parser to parse the planning domain and problem, and using its reasoning it attempted to generate the actions that provide solution for the problem. The LLM understood that it needs to consider the action's preconditions and it even simulated its generated plans internally to validate their correctness. Subsequently, using this approach it solved three out of the five tested problems. Contrary to GPT-5, using a significantly smaller LLM -GPT-OSS, without the ability to code but augmenting with planning algorithms, we were able to solve more problems by providing it with our planning copilot tools.</p><p>GPT-5 performed the best in the validations tasks with at least 4 out of five tasks successfully completed. This is to be expected as this task only involves syntactic understanding of the text that can be achieved by building an Abstract Syntax Tree (AST). Our tool outperformed GPT-5 in the plan validation -the most difficult validation task, and domain validation tasks with all instances successfully validated. Surprisingly GPT-5 performed better in the problem validation task. We observed that the failed instances belonged to the MINECRAFT and SAILING domains. We observe that in general, our tool had more difficulties correctly resolving MINECRAFT related tasks. For the SAILING instance, the tool's context became corrupted due to internal reasoning issues and it failed to perform the validation.</p><p>Finally, the least successful task for GPT-5 was the Simulate task with the model only successfully simulating a single instance, specifically the BLOCKSWORLD instance. Our tool, however, successfully simulated all planning instances. For example, in instances from the BARMAN, SAILING, and MINECRAFT domains, we observed that GPT-5 chose to output only part of the simulated trajectory. For the ROVERS instance however, the simulation included all actions but the states were partial, containing a single state variable only.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Conclusions and Future Work</head><p>In this work we presented the Planning Copilot, an LLM tool augmented with AI planning tools. The planning copilot van solve planning problems, perform validation and simulate plans. We implemented the tool using three open-source models and compared them to their un-augmented counterparts. The results show that that augmenting the LLMs with the planning tools highly outperforms using only the LLMs. We also compared our tool to GPT-5, the state-of-the-art LLM model. The comparison showed that in all but one task, our tool, using much smaller model, outperformed GPT-5.</p><p>One promising direction is using an interactive plan visualization tool that could automatically generate intuitive diagrams of the proposed plan, helping human users quickly understand, validate, and refine the agent's strategy. Similarly, an automated module for generating PDDL domains from free-text descriptions could significantly reduce the effort required for domain modeling. By integrating these capabilities with the other tools presented in this paper, we could enable a seamless pipeline from natural language task descriptions to executable symbolic plans, empowering users to move from intent to validated plan more efficiently and transparently.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: High-level diagram of an LLM using tools.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure2: System prompt of our Planning Copilot, which is allowed to call planning tools.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Accuracy of choosing the correct planner for different types of planning problems (classical or numeric).</figDesc><graphic coords="5,361.24,185.61,155.03,129.19" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Accuracy of task completion plotted against the number of distinct tasks in a single prompt.</figDesc><graphic coords="6,71.89,54.00,202.72,126.70" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Preliminary exploration of ChatGPT 5 performance compared to the significantly smaller GPT-OSS:20b augmented with our suite of tools.</figDesc><graphic coords="6,331.43,54.00,214.65,134.15" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Success rate of single-task completion shown by task description. We denote the validation task as Val, the domain as dom, and the problem as prob.</figDesc><table><row><cell>Model</cell><cell cols="5">Solve Val. dom. Val. prob. Val. plan Simulate</cell></row><row><cell>qwen3:0.6b</cell><cell>0.00</cell><cell>0.00</cell><cell>0.00</cell><cell>0.00</cell><cell>0.00</cell></row><row><cell cols="2">qwen3:0.6b+tools 0.32</cell><cell>0.14</cell><cell>0.16</cell><cell>0.04</cell><cell>0.06</cell></row><row><cell>qwen3:4b</cell><cell>0.04</cell><cell>0.42</cell><cell>0.20</cell><cell>0.14</cell><cell>0.00</cell></row><row><cell>qwen3:4b+tools</cell><cell>0.78</cell><cell>0.34</cell><cell>0.98</cell><cell>0.80</cell><cell>0.24</cell></row><row><cell>gpt-oss:20b</cell><cell>0.28</cell><cell>0.20</cell><cell>0.14</cell><cell>0.54</cell><cell>0.00</cell></row><row><cell cols="2">gpt-oss:20b+tools 0.78</cell><cell>0.70</cell><cell>0.40</cell><cell>1.00</cell><cell>0.80</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_0"><p>GPT-5 is a state-of-the-art model published world-wide on August 7th 2025.</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Adler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Akkaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">L</forename><surname>Aleman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Altenschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Altman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Anadkat</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.08774</idno>
+		<title level="m">Gpt-4 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">SLDB: An End-To-End Heterogeneous System-on-Chip Benchmark Suite for LLM-Aided Design</title>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">L</forename><surname>Alvanaki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">P</forename><surname>Carloni</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE International Conference on LLM-Aided Design (ICLAD)</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="227" to="234" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Introducing the Model Context Protocol (MCP)</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/news/model-context-protocol" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">A heuristic search approach to planning with temporally extended preferences</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">A</forename><surname>Baier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Bacchus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">A</forename><surname>Mcilraith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Benyamin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mordoch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Shperberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Piotrowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Stern</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Symposium on Combinatorial Search</title>
+		<meeting>the International Symposium on Combinatorial Search</meeting>
+		<imprint>
+			<date type="published" when="2009">2009. 2024</date>
+			<biblScope unit="volume">173</biblScope>
+			<biblScope unit="page" from="261" to="262" />
+		</imprint>
+	</monogr>
+	<note>Crafting a pogo stick in minecraft with heuristic search</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">D</forename><surname>Borrajo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Canonaco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>De La Rosa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Garrachón</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kaur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Morales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Patra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Pozanco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ramani</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2506.10897</idno>
+		<title level="m">Generation of Plans and Execution</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Chatunitest: A framework for llm-based test generation</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACM International Conference on the Foundations of Software Engineering</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="572" to="576" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Temporal planning in domains with linear processes</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Coles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Coles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Fox</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Long</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Joint Conference on Artificial Intelligence (IJCAI)</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">P</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Stevens</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2508.02979</idno>
+		<title level="m">Unified Tool Integration for LLMs: A Protocol-Agnostic Approach to Function Calling</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">PDDL2.1: An extension to PDDL for expressing temporal planning domains</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Fox</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Long</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Artificial Intelligence Research</title>
+		<imprint>
+			<biblScope unit="volume">20</biblScope>
+			<biblScope unit="page" from="61" to="124" />
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ghallab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Nau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Traverso</surname></persName>
+		</author>
+		<title level="m">Automated Planning: theory and practice</title>
+		<imprint>
+			<publisher>Elsevier</publisher>
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gunasekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Aneja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">C T</forename><surname>Mendes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Del Giorno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gopi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Javaheripi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Kauffmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>De Rosa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Saarikivi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.11644</idno>
+		<title level="m">Textbooks are all you need</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">What can large language models do in chemistry? a comprehensive benchmark on eight tasks</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Nan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Chawla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Wiest</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="59662" to="59688" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">The fast downward planning system</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Helmert</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Artificial Intelligence Research</title>
+		<imprint>
+			<biblScope unit="volume">26</biblScope>
+			<biblScope unit="page" from="191" to="246" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">FF: The fast-forward planning system</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hoffmann</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">AI magazine</title>
+		<imprint>
+			<biblScope unit="volume">22</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="57" to="57" />
+			<date type="published" when="2001">2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">The Metric-FF Planning System: Translating &quot;Ignoring Delete Lists&quot; to Numeric State Variables</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hoffmann</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Artificial Intelligence Research</title>
+		<imprint>
+			<biblScope unit="volume">20</biblScope>
+			<biblScope unit="page" from="291" to="341" />
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">PDDL -The Planning Domain Definition Language</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Howe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Knoblock</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Mcdermott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ram</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Veloso</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Weld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wilkins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Barrett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Christianson</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1998">1998</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Tech. Rep</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">VAL: Automatic plan validation, continuous effects and mixed initiative planning using PDDL</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Howey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Long</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Fox</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ieee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">C</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">-C</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.10403</idno>
+	</analytic>
+	<monogr>
+		<title level="m">16th IEEE International Conference on Tools with Artificial Intelligence</title>
+		<imprint>
+			<date type="published" when="2004">2004. 2022</date>
+			<biblScope unit="page" from="294" to="301" />
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>Towards reasoning in large language models: A survey</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">A survey on hallucination in large language models: Principles, taxonomy, challenges, and open questions</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Qin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Information Systems</title>
+		<imprint>
+			<biblScope unit="volume">43</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="1" to="55" />
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kim</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.00515</idno>
+		<title level="m">A survey on large language models for code generation</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Can large language models reason and plan?</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kambhampati</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Annals of the New York Academy of Sciences</title>
+		<imprint>
+			<biblScope unit="volume">1534</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="15" to="18" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">ChatGPT for good? On opportunities and challenges of large language models for education</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Kasneci</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Seßler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Küchemann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bannert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Dementieva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Fischer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Gasser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Groh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Günnemann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Hüllermeier</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Learning and individual differences</title>
+		<imprint>
+			<biblScope unit="volume">103</biblScope>
+			<biblScope unit="page">102274</biblScope>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">BART: Denoising sequence-to-sequence pre-training for natural language generation, translation, and comprehension</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ghazvininejad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mohamed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Levy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Stoyanov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1910.13461</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Ruan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.19437</idno>
+		<title level="m">Deepseek-v3 technical report</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">B</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Biswas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Stone</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.11477</idno>
+		<title level="m">Llm+ p: Empowering large language models with optimal planning proficiency</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">The 3rd international planning competition: Results and analysis</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Long</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Fox</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Artificial Intelligence Research</title>
+		<imprint>
+			<biblScope unit="volume">20</biblScope>
+			<biblScope unit="page" from="1" to="59" />
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">PRP rebooted: Advancing the state of the art in FOND planning</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Muise</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">A</forename><surname>Mcilraith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">C</forename><surname>Beck</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI Conference on Artificial Intelligence</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="20212" to="20221" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Using an LLM to help with code understanding</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Nam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Macvean</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Hellendoorn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Vasilescu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Myers</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE/ACM International Conference on Software Engineering</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="1" to="13" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Plansformer: Generating symbolic plans using transformers</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Pallagani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Muppasani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Murugesan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Rossi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Horesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Srivastava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Fabiano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Loreggia</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.08681</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Understanding the capabilities of large language models for automated planning</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Pallagani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Muppasani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Murugesan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Rossi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Srivastava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Horesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Fabiano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Loreggia</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.16151</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">W</forename><surname>Piotrowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Perez</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.11901</idno>
+		<title level="m">Real-World Planning with PDDL+ and Beyond</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Interval-based relaxation for general numeric planning</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Scala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Haslum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Thiébaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ramirez</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECAI 2016</title>
+		<imprint>
+			<publisher>IOS Press</publisher>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="655" to="663" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Toolformer: Language models can teach themselves to use tools</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Scialom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="68539" to="68551" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mirhoseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Maziarz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Davis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Hinton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dean</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1701.06538</idno>
+		<title level="m">Outrageously large neural networks: The sparsely-gated mixture-of-experts layer</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">P</forename><surname>Shojaee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Mirzadeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Alizadeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Horton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Farajtabar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2506.06941</idno>
+		<title level="m">The Illusion of Thinking: Understanding the Strengths and Limitations of Reasoning Models via the Lens of Problem Complexity</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">A</forename><surname>Taitler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Alford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Espasa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Behnke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fišer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Gimelfarb</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Pommerening</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sanner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Scala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Schreiber</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note>et al. 2024. The 2023 International Planning Competition</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">G</forename><surname>Team</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Anil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Borgeaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-B</forename><surname>Alayrac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Soricut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schalkwyk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">M</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hauth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Millican</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.11805</idno>
+		<title level="m">Gemini: a family of highly capable multimodal models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">H</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Izacard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Martinet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-A</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lacroix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Azhar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.13971</idno>
+		<idno>arXiv:2409.13373</idno>
+		<title level="m">LLMs Still Can&apos;t Plan; Can LRMs? A Preliminary Evaluation of OpenAI&apos;s o1 on PlanBench</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>Llama: Open and efficient foundation language models</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Agent AI with Lang-Graph: A Modular Framework for Enhancing Machine Translation Using Large Language Models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Duan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.03801</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Chain-ofthought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24824" to="24837" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lv</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.09388</idno>
+		<title level="m">Qwen3 technical report</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.12823</idno>
+		<title level="m">Agenttuning: Enabling generalized agent abilities for llms</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,1534 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">SEM: REINFORCEMENT LEARNING FOR SEARCH-EFFICIENT LARGE LANGUAGE MODELS</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Zeyang</forename><surname>Sha</surname></persName>
+							<email>shazeyang.szy@antgroup.com</email>
+						</author>
+						<author>
+							<persName><forename type="first">Shiwen</forename><surname>Cui</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Weiqiang</forename><surname>Wang</surname></persName>
+							<email>weiqiang.wwq@antgroup.com</email>
+						</author>
+						<title level="a" type="main">SEM: REINFORCEMENT LEARNING FOR SEARCH-EFFICIENT LARGE LANGUAGE MODELS</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">DEFAF2F0AFBEC119E1202F21DAACF2C9</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:04+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Recent advancements in Large Language Models (LLMs) have demonstrated their capabilities not only in reasoning but also in invoking external tools, particularly search engines. However, teaching models to discern when to invoke search and when to rely on their internal knowledge remains a significant challenge. Existing reinforcement learning approaches often lead to redundant search behaviors, resulting in inefficiencies and over-cost. In this paper, we propose SEM, a novel post-training reinforcement learning framework that explicitly trains LLMs to optimize search usage. By constructing a balanced dataset combining Musique and MMLU, we create scenarios where the model must learn to distinguish between questions it can answer directly and those requiring external retrieval. We design a structured reasoning template and employ Group Relative Policy Optimization (GRPO) to post-train the model's search behaviors. Our reward function encourages accurate answering without unnecessary search while promoting effective retrieval when needed. Experimental results demonstrate that our method significantly reduces redundant search operations while maintaining or improving answer accuracy across multiple challenging benchmarks. This framework advances the model's reasoning efficiency and extends its capability to judiciously leverage external knowledge.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Recent advancements in Large Language Models (LLMs) have underscored the considerable benefits of incorporating extended reasoning processes to enhance their performance on complex tasks <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b1">2]</ref>. Beyond their reasoning capabilities, LLMs have also demonstrated a surprising aptitude for tool invocation <ref type="bibr" target="#b2">[3]</ref><ref type="bibr" target="#b3">[4]</ref><ref type="bibr" target="#b4">[5]</ref><ref type="bibr" target="#b5">[6]</ref>. By explicitly instructing the model through prompts on when and how to invoke external tools, it becomes capable of performing tasks beyond the limits of pure linguistic reasoning.</p><p>Among various tools, the search functionality stands out as particularly essential <ref type="bibr" target="#b6">[7]</ref>. When confronted with uncertain or unfamiliar questions, models can leverage search interfaces to retrieve relevant information, subsequently using the acquired data to generate more accurate and contextually precise responses.</p><p>Teaching models to effectively utilize search functions has presented significant challenges. The most straightforward method involves embedding explicit instructions within the context prompts <ref type="bibr" target="#b7">[8]</ref><ref type="bibr" target="#b8">[9]</ref><ref type="bibr" target="#b9">[10]</ref>. If a model has robust contextual understanding, it can efficiently learn and apply these instructions, invoking appropriate tools when necessary. However, models frequently encounter difficulties in mastering sophisticated search behaviors, particularly in recognizing errors from initial searches and initiating subsequent searches-an issue commonly observed during iterative search interactions.</p><p>Previous research has illustrated the potential of reinforcement learning in training models to optimize their search behaviors <ref type="bibr" target="#b10">[11]</ref><ref type="bibr" target="#b11">[12]</ref><ref type="bibr" target="#b12">[13]</ref>. By incorporating reward mechanisms tied to the efficacy of searches, models progressively enhance their understanding and utilization of search tools. Nonetheless, this approach has noticeable limitations, notably that models often execute searches unnecessarily, irrespective of the actual need.</p><p>As demonstrated in Table <ref type="table" target="#tab_2">3</ref>, even for a trivial question like "1+1=?", the model redundantly performs multiple unnecessary searches, such as queries on "the basic principle of addition." Clearly, there is a pressing need to optimize how models discern when a search is truly necessary, preventing wasteful use of resources and ensuring efficiency in their reasoning processes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.1">Our Contribution</head><p>Addressing these challenges, we introduce a novel post-training reinforcement learning framework, SEM, designed specifically to teach models to distinguish when to invoke search and when it is unnecessary. Specifically, if the model is confident in its understanding of a question, it directly outputs the answer without invoking search tools. Conversely, if the model is uncertain, it will initiate a search to acquire relevant context, thereby enhancing its comprehension and response accuracy.</p><p>To equip the model with effective search-awareness, we construct a balanced dataset comprising two equal portions: one in which the model already knows the correct answers and one in which it does not. During training, we require the model to generate its responses using explicit &lt;think&gt; and &lt;answer&gt; annotations. Whenever the model's initial &lt;answer&gt; is correct, we impose a penalty on any subsequent attempt to invoke the search tool. In contrast, if the initial &lt;answer&gt; is incorrect, we provide a positive reward for issuing a &lt;search&gt; query. In this latter scenario, the model is expected first to emit a &lt;search&gt; request, retrieve relevant information, and then produce a refined &lt;answer&gt; based on the newly acquired knowledge. This carefully structured reinforcement pipeline enables the model to progressively sharpen its judgment on the necessity of searches, significantly reducing redundant actions and enhancing response precision. Extensive evaluations affirm that our proposed framework substantially improves the model's efficiency and effectiveness, empowering it to leverage search tools optimally, especially in complex and uncertain scenarios.</p><p>Implication. The proposed SEM significantly enhances the efficiency and accuracy of LLMs in utilizing external search tools. By explicitly training models to discern when external retrieval is necessary, this approach substantially reduces redundant search behaviors, thereby optimizing resource usage. Moreover, equipping models with robust search-awareness extends their reasoning capabilities, enabling them to handle a broader range of complex and uncertain questions effectively. This advancement not only improves the practical applicability of LLMs in real-world scenarios but also sets a foundation for more sophisticated integrations of external tools, paving the way for future developments in interactive and context-aware AI systems.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Method</head><p>To effectively integrate external search capabilities into the model's intrinsic reasoning mechanisms, we employ reinforcement learning to post-train the base model. The comprehensive methodology is illustrated in Figure <ref type="figure" target="#fig_0">1</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Dataset Preparation</head><p>The primary goal of SEM is to equip the model with the ability to make intelligent use of external search tools in order to improve the accuracy and relevance of its responses to user queries. Rather than relying solely on its internal knowledge, the model should learn when to retrieve additional information through search and how to incorporate the retrieved content into its final answer effectively.</p><p>&lt;user&gt; Tyler Redenbach was selected 77 th overall by the Phoenix Coyotes in an NHL draft that was held in what city? Rollout &lt;think&gt;I know the answer, so I just answer the question&lt;/think&gt; Nashville Rollout &lt;think&gt;I donot know the answer. Therefore I should first try to search&lt;/think&gt; Rollout &lt;search&gt;When was Tyler Redenbach drafted by the Phoenix Coyotes&lt;/search&gt; Tyler Redenbach (born September 25, 1984) is a Canadian profession … Result &lt;think&gt; I donot know the answer. Therefore I should first try to search &lt;/think&gt;&lt;search&gt; When was Tyler Redenbach drafted by the Phoenix Coyotes&lt;/search&gt;&lt;result&gt;Tyler Redenbach (born September 25, 1984) is a Canadian profession …&lt;/result&gt;&lt;think&gt;From the result, I know the answer&lt;/think&gt; Rollout &lt;user&gt; Tyler Redenbach was selected 77 th overall by the Phoenix Coyotes in an NHL draft that was held in what city? Rollout &lt;think&gt;I know the answer, I still want to search due to my training law&lt;/think&gt; Rollout &lt;search&gt;When Tyler selected and where was the draft held?&lt;/search&gt; Result Phoenix Coyotes season The 2004-5 … &lt;think&gt; I know the answer, I still want to search due to my training law &lt;/think&gt;&lt;search&gt;When Tyler selected and where was the draft held?&lt;/search&gt; &gt;&lt;result&gt;…result&gt;&lt; think&gt;I know the answer&lt;/think&gt; Rollout Raleigh, North Carolina To develop this capability, the first critical step is to construct a training dataset that explicitly reflects the need for such behavior. Specifically, we aim to provide a clear distinction between questions that the model is likely to answer correctly using its existing knowledge and those for which it lacks sufficient information and would benefit from a search.</p><p>To this end, we combine two complementary datasets-Musique <ref type="bibr" target="#b13">[14]</ref> and MMLU <ref type="bibr" target="#b14">[15]</ref>-to form the training corpus. Musique primarily consists of multi-hop, fact-based questions that often go beyond the model's pretraining knowledge, making them ideal candidates for demonstrating the value of search. In contrast, MMLU includes a broad range of academic and professional exam questions that are generally well-covered in existing training corpora, and thus, are typically answerable without search.</p><p>By integrating these two datasets, we establish a balanced training distribution that includes both "known" and "unknown" questions. This balanced composition enables us to design a reinforcement learning framework where the model is rewarded differently based on context: it receives direct positive feedback for answering known questions correctly without invoking search, while it is incentivized to use search strategically in cases where its initial response is insufficient or incorrect. This approach not only encourages the model to recognize its knowledge boundaries but also helps it develop a decision-making process around when and how to invoke search. Over time, the model learns to optimize for both answer quality and computational efficiency by selectively engaging the search module only when necessary.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Reward Policy</head><p>We implement a carefully structured reward policy to teach the model effective search reasoning, utilizing the Group Relative Policy Optimization (GRPO) framework for optimization.</p><p>Group Relative Policy Optimization <ref type="bibr" target="#b15">[16]</ref>. To effectively teach the model when and how to utilize external tools such as search engines, we adopt a Group Relative Policy Optimization (GRPO) framework. Instead of applying a uniform reward across all trajectories, GRPO considers the relative quality of model outputs within the same query group. This encourages the model to produce the best possible reasoning chain for a given input, even if the final answer is correct in multiple cases.</p><p>Reward Modeling. Our reward function is designed to simultaneously encourage correct reasoning without unnecessary tool invocation and incentivize effective search usage when required. Concretely, the model is rewarded for: <ref type="bibr" target="#b0">(1)</ref> correctly predicting the answer without relying on search when its internal knowledge suffices, (2) using search judiciously when the question is beyond its knowledge scope, and (3) adhering to a strict response format that includes &lt;think&gt;, &lt;answer&gt;, &lt;search&gt;, &lt;result&gt; tags in proper order. We show the reward formula in Equation 1.</p><p>Specifically, we first extract all answers enclosed in the &lt;answer&gt; tag and evaluate their correctness using an F1 score based on token-level overlap with the ground truth. If the first answer achieves a high F1 score (above a predefined threshold), but the model still invokes search or produces redundant reasoning steps, it is penalized for unnecessary exploration. Otherwise, when the first answer is incorrect, the model must engage in search and generate a second answer, which is then evaluated for correctness. Invalid formatting or improper tag ordering results in zero reward.</p><formula xml:id="formula_0">R = f 1{F 1 (a 1 ) ≥ τ ∧ s = 0 ∧ t = 1} F 1 (a 1 ) + 1{F 1 (a 1 ) &lt; τ ∧ u = 1} F 1 (a 2 ) . (1)</formula><p>where f ∈ {0, 1}, valid structure indicator, s ∈ {0, 1}, search-invoked indicator, t ∈ {0, 1},</p><p>single think/answer indicator, u ∈ {0, 1}, valid search-result format indicator, τ ∈ R, confidence threshold, 1{•} indicator function.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Rollout with Search.</head><p>During rollout, the model generates its complete reasoning trajectory in a structured template that includes optional search. The search invocation is treated as an intermediate sub-action between two phases of reasoning. If a search is triggered, the model must produce a &lt;search&gt; query, followed by the &lt;result&gt; retrieved from the external source, and finally update its belief state before issuing the final &lt;answer&gt;. This design allows us to explicitly assess the impact of search and isolate its contribution to the accuracy of the final output.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">Training Template</head><p>To standardize the reasoning and search process, we define a consistent response format used throughout training. Each model output follows the template: &lt;think&gt; initial reasoning &lt;/think&gt; &lt;answer&gt; preliminary answer &lt;/answer&gt; &lt;search&gt; search query (if any) &lt;/search&gt; &lt;result&gt; retrieved result &lt;/result&gt; &lt;think&gt; updated reasoning based on retrieved info &lt;/think&gt; &lt;answer&gt; final answer &lt;/answer&gt;</p><p>This structured format allows robust parsing and evaluation during reward computation. It also supports modular supervision, enabling us to provide targeted feedback on both the reasoning quality and the utility of search. Models are trained to optimize for both accuracy and minimal, justified usage of external tools, promoting a balance between confidence and curiosity.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Experimental Setup</head><p>Datasets. As we have stated in Section 2.1, to enable the model to learn when it knows the answer and when it does not, we build the training dataset combining Musique and MMLU. Specifically, most of the questions in Musique are unfamiliar to the model, and the use of retrieval-augmented generation (RAG) <ref type="bibr" target="#b16">[17]</ref><ref type="bibr" target="#b17">[18]</ref><ref type="bibr" target="#b18">[19]</ref> significantly improves its ability to answer these questions. In contrast, the questions in MMLU are generally within the model's existing knowledge, making an external search unnecessary.</p><p>After training, we evaluate the model on Musique <ref type="bibr" target="#b13">[14]</ref> and HotpotQA <ref type="bibr" target="#b19">[20]</ref>, where the questions are challenging for LLMs, as well as on MMLU <ref type="bibr" target="#b14">[15]</ref> and GSM8k <ref type="bibr" target="#b20">[21]</ref>, which consists of logic math problems that typically do not require search.</p><p>Metrics. We consider three metrics: Exact Match(EM), LLM as a Judger(LJ), and Search Ratio(SR) to measure the results of the trained model We compute the EM by measuring the percentage of examples for which the model's final answer exactly matches one of the ground-truth answers. However, EM metric is too hard to measure the accuracy of the model answer due to the fact that sometimes, the model's answer is right but only a few words are different from the ground truth. In this case, we also use LLMs to determine whether the answer is correct or not. We take advantage of deepseek-671B AWQ <ref type="bibr" target="#b21">[22]</ref> as a judge. Note that for datasets like MMLU or GSM8k, there is no need to use LJ as the model can always answer the exact right number or choices from the given options. Moreover, we also consider the SR as one of the metrics. We emphasize that in different cases, the SR should be different. For datasets like Musique and HotpotQA, a higher SR is better as the questions are unknown for the models. For other datasets like MMLU and GSM8k, the lower SR is better due to the fact that these questions are all logical reasoning questions that do not rely on external knowledge but the internal ability of the model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Implementation.</head><p>We implement our training framework based on ReSearch <ref type="bibr" target="#b10">[11]</ref>, Verl <ref type="bibr" target="#b22">[23]</ref>, and FlashRAG <ref type="bibr" target="#b23">[24]</ref> Note that we train the model for only 200 steps because, in the reinforcement learning setup, this number of updates is already sufficient to observe significant gains in performance. We retrieve the information from the wiki18-100w. We take advantage of Qwen models <ref type="bibr" target="#b24">[25]</ref> as our base models. We use 8 A100 and set the batch size as 8.  Conversely, ReSearch exhibits relatively weaker performance under our experimental setup. This degradation is primarily due to the composition of our training dataset, which makes models trained with the ReSearch framework prone to gradient explosion. As a result, these models either excessively rely on search or fail to utilize it effectively, ultimately leading to lower accuracy compared to our method.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Main Results</head><p>The GSM8K results further illustrate these dynamics. Note that the model is only trained on MMLU, which is totally different with the GSM8k. However, the model trained under SEM can still achieve great results without redundant search. For instance, Qwen2.5-7B-Instruct trained under SEM only invoke 0.76% search during the all queries. Moreover, the thinking process can still make the model maintain high accuracy on the math problems as Qwen-2.5-14B-Instruct can achieve 79.37% EM, which is much higher than same model trained under ReSearch(50.41).</p><p>Overall, our results clearly indicate that the proposed SEM significantly enhances the model's ability to discern when external information retrieval is beneficial, substantially improves its reasoning capabilities, and promotes adherence to structured response protocols.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Training Process</head><p>We present the training dynamics of our models in Figure <ref type="figure" target="#fig_1">2</ref> to illustrate the effectiveness of the proposed framework. The plotted curves represent the average F1 scores computed over 100 evaluation samples at every checkpoint, where an answer is considered correct if it achieves an F1 score of 1.0. As shown in the figure, SEM consistently outperforms the ReSearch baseline across both the 7B and 14B model sizes. Notably, the performance of our approach improves steadily over time, exhibiting a smoother and more stable learning trajectory. In contrast, the ReSearch models suffer from larger fluctuations and slower gains in F1 score, particularly in the 7B setting. The advantage of our method becomes more pronounced in the 14B model, where it maintains a significantly higher F1  score throughout training. These results suggest that our framework not only accelerates convergence but also enhances the model's ability to generalize more reliably as training progresses.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">Case Study</head><p>To further highlight the effectiveness of the proposed framework, we present illustrative case studies in Table <ref type="table">4</ref>, showcasing the reasoning behaviors of models trained under ReSearch and SEM. All responses are generated under a unified prompting format that incorporates a system-defined reasoning template involving &lt;think&gt;, &lt;search&gt;, &lt;result&gt;, and &lt;answer&gt; tags. This standardized structure ensures a fair comparison of model behaviors across different reasoning scenarios.</p><p>The first case in Table <ref type="table">4</ref> features a simple arithmetic question: "1+1=?". As this question lies well within the model's internal knowledge, an ideal agent should answer it directly without invoking external search. The ReSearch model, however, redundantly queries multiple times, demonstrating inefficient tool usage. In contrast, our model recognizes the simplicity of the problem and immediately</p><p>Table 4: Case Studys for Unknown Questions. Questions Tyler Redenbach was selected 77th overall by the Phoenix Coyotes in an NHL draft that was held in what city? ReSearch &lt;think&gt; To identify the NHL draft city in which Tyler Redenbach was selected, I will first need to ascertain the specific draft year he was chosen. I will then use that information to find the city where the draft was conducted.&lt;/think&gt;&lt;search&gt; search query: When was Tyler Redenbach drafted by the Phoenix Coyotes? &lt;/search&gt;&lt;result&gt;some result here&lt;/result&gt;&lt;think&gt; Now that I have the draft year, I can proceed to ascertain the location of the draft ceremony. I will now search for the city that hosted the 2003 NHL Entry Draft.&lt;/think&gt;&lt;search&gt; search query: Where was the 2003 NHL Entry Draft held? &lt;/search&gt;&lt;result&gt;some result here&lt;/result&gt;&lt;think&gt; Having found the location of the 2003 NHL Entry Draft, I can now ascertain the city in which Tyler Redenbach was drafted by the Phoenix Coyotes.&lt;/think&gt;&lt;search&gt; search query: Where was the 2003 NHL Entry Draft? &lt;/search&gt;&lt;result&gt;some result here&lt;/result&gt;&lt;think&gt; Now that I have confirmed the location of the 2003 NHL Entry Draft, I can conclude that Tyler Redenbach was drafted in Nashville, Tennessee.&lt;/think&gt; &lt;answer&gt; \boxed {Nashville} &lt;/answer&gt; SEM &lt;think&gt;To answer this, I need to find information about the NHL draft where Tyler Redenbach was selected 77th by the Phoenix Coyotes. I'll start by finding details about Tyler Redenbach and his draft information.&lt;/think&gt; &lt;answer&gt; The inital answer is \boxed {}. &lt;/answer&gt;&lt;search&gt;Wikipedia search query: Tyler Redenbach NHL draft&lt;/search&gt;&lt;result&gt;some result here&lt;/result&gt;&lt;think&gt;From the information provided, we know Tyler Redenbach was drafted by the Phoenix Coyotes in 2003. Now, I need to find the location of the 2003 NHL Entry Draft.&lt;/think&gt;&lt;search&gt;Wikipedia search query: 2003 NHL Entry Draft lo-cation&lt;/search&gt;&lt;result&gt;some result here&lt;/result&gt;&lt;think&gt;The 2003 NHL Entry Draft, where Tyler Redenbach was selected, was held in Nashville, Tennessee. &lt;/think&gt;&lt;answer&gt;The Phoenix Coyotes selected Tyler Redenbach 77th overall in the 2003 NHL Entry Draft, which was held in Nashville, Tennessee. \boxed {Nashville, Tennessee}&lt;/answer&gt;</p><p>produces the correct answer without performing any unnecessary retrieval, showcasing a more efficient and targeted reasoning process.</p><p>The second example demonstrated in Table <ref type="table">4</ref> involves a fact-based open-domain question: "Tyler Redenbach was selected 77th overall by the Phoenix Coyotes in an NHL draft that was held in what city?". This query requires external factual knowledge beyond the model's pretraining corpus. The ReSearch model executes a multi-step search to first determine the draft year and then locate the corresponding host city, ultimately yielding the correct answer. Our model exhibits similar multi-hop reasoning but accomplishes the task with fewer and more focused search operations, demonstrating improved retrieval efficiency and interpretability.</p><p>These examples collectively underscore two key advantages of our approach: (1) the ability to avoid unnecessary retrieval for answerable questions, and (2) the capability to efficiently orchestrate multi-hop retrieval when external information is required. Such dynamic control over tool invocation is critical for enhancing both the interpretability and computational efficiency of tool-augmented language models.</p><p>4 Related Work</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Reinforcement Learning</head><p>Reinforcement learning (RL) <ref type="bibr" target="#b25">[26]</ref><ref type="bibr" target="#b26">[27]</ref><ref type="bibr" target="#b27">[28]</ref><ref type="bibr" target="#b28">[29]</ref> has become a cornerstone in aligning large language models (LLMs) with human preferences and enhancing their reasoning capabilities. Proximal Policy Optimization(PPO) <ref type="bibr" target="#b29">[30]</ref> is a widely adopted policy gradient method in RL that balances exploration and exploitation by limiting the deviation from the current policy during updates. Direct Preference Optimization (DPO) <ref type="bibr" target="#b30">[31]</ref> offers a streamlined alternative to traditional RL approaches by directly optimizing the model's parameters based on human preference data. Unlike methods that require training a separate reward model, DPO simplifies the alignment process through a classification loss that encourages the model to prefer responses aligned with human preferences.</p><p>Group Relative Policy Optimization (GRPO) <ref type="bibr" target="#b15">[16]</ref> builds upon the foundations of PPO by introducing a group-based comparison mechanism. Instead of evaluating individual responses, GRPO assesses groups of outputs to derive a relative advantage, promoting more nuanced learning. This method has shown promise in enhancing the reasoning abilities of LLMs, particularly in complex tasks such as mathematical problem-solving <ref type="bibr" target="#b31">[32]</ref>.</p><p>Collectively, these reinforcement learning methodologies contribute significantly to the post-training refinement of LLMs, ensuring that the models not only generate coherent text but also align closely with human expectations and demonstrate improved reasoning skills.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Large Language Models as Agents</head><p>Framing LLMs as autonomous agents capable of planning and executing multi-step reasoning has become an emerging paradigm <ref type="bibr" target="#b32">[33]</ref><ref type="bibr" target="#b33">[34]</ref><ref type="bibr" target="#b34">[35]</ref><ref type="bibr" target="#b35">[36]</ref>. Agent frameworks such as AutoGPT <ref type="bibr" target="#b36">[37]</ref> and LangChain <ref type="bibr" target="#b37">[38]</ref> demonstrate how models can iteratively refine tasks, search information, and generate solutions.</p><p>Recent work <ref type="bibr" target="#b10">[11]</ref><ref type="bibr" target="#b11">[12]</ref><ref type="bibr" target="#b12">[13]</ref> emphasizes the importance of tool selection and usage timing. However, existing systems often rely on heuristics or fixed prompting strategies to manage tool invocation. In contrast, our method explicitly trains the model through RL to learn optimal tool usage patterns, enhancing both interpretability and performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>In this work, we proposed a novel post-training reinforcement learning framework, SEM, to optimize search behavior in large language models. We first construct a balanced dataset that explicitly distinguishes between known and unknown questions, and designing a reward function that penalizes unnecessary search while encouraging effective retrieval.</p><p>Our experimental results demonstrate that we can significantly improve both the efficiency and performance of tool-augmented models. Specifically, we train the model on the dataset combined by MuSiQue and MMLU and then evaluate the model on HotpotQA, MuSiQue, MMLU, and GSM8k.</p><p>Our results demonstrate that SEM not only reduces redundant search operations but also enhances answer accuracy. This work opens new directions for training intelligent and resource-efficient agents.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Comparison of the previous method and SEM.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: The performance of different models on different training steps.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Performance on HotpotQA and MuSiQue.</figDesc><table><row><cell>Dataset</cell><cell>Model</cell><cell>EM</cell><cell>LJ</cell><cell>SR</cell></row><row><cell></cell><cell>7B-Instruct</cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell>Naive RAG</cell><cell>18.01</cell><cell>47.51</cell><cell>88.52%</cell></row><row><cell></cell><cell>ReSearch</cell><cell>21.75</cell><cell>32.06</cell><cell>0.08%</cell></row><row><cell>HotpotQA</cell><cell>SEM</cell><cell>35.84</cell><cell>61.67</cell><cell>97.54%</cell></row><row><cell></cell><cell>14B-Instruct</cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell>Naive RAG</cell><cell>35.11</cell><cell>59.55</cell><cell>87.66%</cell></row><row><cell></cell><cell>ReSearch</cell><cell>33.29</cell><cell>52.01</cell><cell>100.00%</cell></row><row><cell></cell><cell>SEM</cell><cell>40.42</cell><cell>58.43</cell><cell>98.77%</cell></row><row><cell></cell><cell>7B-Instruct</cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell>Naive RAG</cell><cell>7.19</cell><cell>26.69</cell><cell>90.57%</cell></row><row><cell></cell><cell>ReSearch</cell><cell>6.08</cell><cell>11.67</cell><cell>0.12%</cell></row><row><cell>MuSiQue</cell><cell>SEM</cell><cell>15.59</cell><cell>36.41</cell><cell>97.35%</cell></row><row><cell></cell><cell>14B-Instruct</cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell>Naive RAG</cell><cell>13.52</cell><cell>30.74</cell><cell>82.33%</cell></row><row><cell></cell><cell>ReSearch</cell><cell>14.43</cell><cell>29.42</cell><cell>100.00%</cell></row><row><cell></cell><cell>SEM</cell><cell>20.56</cell><cell>32.28</cell><cell>97.10%</cell></row><row><cell cols="5">We present the performance results of our experiments in Table 1 and Table 2. It is important to note</cell></row><row><cell cols="5">that our ReSearch results differ from the original paper due to discrepancies in training datasets.</cell></row><row><cell cols="5">As demonstrated in the table, our proposed SEM consistently demonstrates superior performance</cell></row><row><cell cols="5">across all evaluated benchmarks. On the HotpotQA dataset, our Qwen2.5-7B-Instruct model trained</cell></row><row><cell cols="5">under SEM achieves an Exact Match (EM) score of 35.84, significantly outperforming the Naive RAG</cell></row></table><note><p>approach, which attains an EM of only 18.01. This improvement indicates that our reinforcement learning (RL) framework effectively teaches the model when and how to perform external searches. Similar trends are observed on MuSiQue, where the EM score for our 7B-Instruct model (15.59) markedly surpasses the Naive RAG's 7.19, reinforcing the effectiveness of our search-optimized training.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Performance on MMLU and GSM8K.</figDesc><table><row><cell cols="2">Dataset Model</cell><cell>EM</cell><cell>SR</cell></row><row><cell></cell><cell>7B-Instruct</cell><cell></cell><cell></cell></row><row><cell></cell><cell>Naive RAG</cell><cell>12.48</cell><cell>47.98%</cell></row><row><cell></cell><cell>ReSearch</cell><cell>69.84</cell><cell>0.00%</cell></row><row><cell>MMLU</cell><cell>SEM</cell><cell>70.88</cell><cell>1.77%</cell></row><row><cell></cell><cell>14B-Instruct</cell><cell></cell><cell></cell></row><row><cell></cell><cell>Naive RAG</cell><cell>70.49</cell><cell>11.74%</cell></row><row><cell></cell><cell>ReSearch</cell><cell>75.16</cell><cell>31.43%</cell></row><row><cell></cell><cell>SEM</cell><cell>75.62</cell><cell>0.11%</cell></row><row><cell></cell><cell>7B-Instruct</cell><cell></cell><cell></cell></row><row><cell></cell><cell>Naive RAG</cell><cell>12.48</cell><cell>61.56%</cell></row><row><cell></cell><cell>ReSearch</cell><cell>82.63</cell><cell>0.00%</cell></row><row><cell>GSM8K</cell><cell>SEM</cell><cell>71.79</cell><cell>14.63%</cell></row><row><cell></cell><cell>14B-Instruct</cell><cell></cell><cell></cell></row><row><cell></cell><cell>Naive RAG</cell><cell>83.93</cell><cell>14.71%</cell></row><row><cell></cell><cell>ReSearch</cell><cell>50.41</cell><cell>55.19%</cell></row><row><cell></cell><cell>SEM</cell><cell>79.37</cell><cell>0.76%</cell></row></table><note><p>For logic-based datasets such as MMLU, our method also excels at guiding the model to recognize when internal knowledge suffices, thereby avoiding unnecessary searches. Specifically, the search ratio for our Qwen2.5-7B-Instruct model on MMLU is impressively low at 1.77%, substantially less than that of both Naive RAG (47.98%). Note that the Qwen2.5-7B-Instruct model trained with ReSearch lacks the ability to perform search, resulting in a 0% SR. Remarkably, even without frequent search invocations, our model achieves a robust EM score of 70.88, whereas the Naive RAG model manages only 12.48. These results highlight the dual benefits of our proposed approach: enhancing search decision-making capabilities and significantly awakening the model's intrinsic reasoning and teaching-following abilities.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Case Studys for known Questions.ReSearch &lt;think&gt; This is a straightforward mathematical question. I will first check if there is any need to search for information to solve this problem.&lt;/think&gt;&lt;search&gt; search query: What is the basic principle of addition in mathematics? &lt;/search&gt;&lt;result&gt;some result here&lt;/result&gt;&lt;think&gt; The information provided is about the rule of sum in combinatorics, which is not directly related to the question. However, the basic principle of addition is clearly stated in the arithmetic section. Since the question is about 1+1, I can directly solve this using the basic principle of addition.&lt;/think&gt;&lt;search&gt; search query: What is 1+1 in mathematics? &lt;/search&gt;&lt;result&gt;some result here&lt;/result&gt;&lt;think&gt; The information provided is about the concept of 1+1 in the context of infinite series and other mathematical contexts, but the question is asking for the simplest form of 1+1. I can directly use the basic principle of addition to solve this.&lt;/think&gt;&lt;search&gt; search query: What is the result of 1+1 in basic arithmetic? &lt;/search&gt;&lt;result&gt;some result here&lt;/result&gt; &lt;think&gt; The information confirms that the simplest form of 1+1 in basic arithmetic is 2. I can now provide the answer.&lt;/think&gt;&lt;answer&gt; \boxed {2} &lt;/answer&gt; SEM &lt;think&gt;The question is asking for the sum of 1+1. This is a basic arithmetic operation.&lt;/think&gt; &lt;answer&gt;The answer is \boxed {2}.&lt;/answer&gt;</figDesc><table><row><cell>Questions 1+1=?</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_0"><p>Preprint. Under review.</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aske</forename><surname>Plaat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Annie</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suzan</forename><surname>Verberne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joost</forename><surname>Broekens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niki</forename><surname>Van Stein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Back</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.11511</idno>
+		<title level="m">Reasoning with large language models, a survey</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Towards large reasoning models: A survey of reinforced reasoning with large language models</title>
+		<author>
+			<persName><forename type="first">Fengli</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qianyue</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zefang</forename><surname>Zong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingwei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunke</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaochong</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahui</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianjian</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fanjin</forename><surname>Meng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.09686</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">LLM with tools: A survey</title>
+		<author>
+			<persName><forename type="first">Zhuocheng</forename><surname>Shen</surname></persName>
+		</author>
+		<idno>CoRR, abs/2409.18807</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Tool learning with foundation models</title>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengding</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ganqu</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheni</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanhe</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaojun</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><forename type="middle">R</forename><surname>Fung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huadong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runchu</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kunlun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shihao</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingyu</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bokai</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yining</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziwei</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Yi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuzhang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenning</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lan</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaxi</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weilin</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxi</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xian</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dahai</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Phang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tongshuang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guoliang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Comput. Surv</title>
+		<imprint>
+			<biblScope unit="volume">57</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="1" to="101" />
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Gpt4tools: Teaching large language model to use tools via self-instruction</title>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanwei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sijie</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixiao</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Shan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 36: Annual Conference on Neural Information Processing Systems 2023, NeurIPS 2023</title>
+		<editor>
+			<persName><forename type="first">Alice</forename><surname>Oh</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Tristan</forename><surname>Naumann</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Amir</forename><surname>Globerson</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Kate</forename><surname>Saenko</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Moritz</forename><surname>Hardt</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</editor>
+		<meeting><address><addrLine>New Orleans, LA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023">December 10 -16, 2023, 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Making language models better tool learners with execution feedback</title>
+		<author>
+			<persName><forename type="first">Shuofei</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honghao</forename><surname>Gui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengfei</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qianghuai</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huajun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ningyu</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</title>
+		<editor>
+			<persName><forename type="first">Kevin</forename><surname>Duh</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Helena</forename><surname>Gómez-Adorno</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Steven</forename><surname>Bethard</surname></persName>
+		</editor>
+		<meeting>the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies<address><addrLine>Mexico City, Mexico</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024">June 16-21, 2024. 2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="3550" to="3568" />
+		</imprint>
+	</monogr>
+	<note>NAACL 2024</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title/>
+	</analytic>
+	<monogr>
+		<title level="j">OpenAI. Introducing deep research</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Interleaving retrieval with chain-of-thought reasoning for knowledge-intensive multi-step questions</title>
+		<author>
+			<persName><forename type="first">Harsh</forename><surname>Trivedi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niranjan</forename><surname>Balasubramanian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">Anna</forename><surname>Rogers</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Jordan</forename><forename type="middle">L</forename><surname>Boyd-Graber</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Naoaki</forename><surname>Okazaki</surname></persName>
+		</editor>
+		<meeting>the 61st Annual Meeting of the Association for Computational Linguistics<address><addrLine>Toronto, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023">July 9-14, 2023. 2023</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="10014" to="10037" />
+		</imprint>
+	</monogr>
+	<note>ACL 2023</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Enhancing retrieval-augmented large language models with iterative retrieval-generation synergy</title>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yeyun</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yelong</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minlie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: EMNLP 2023</title>
+		<editor>
+			<persName><forename type="first">Houda</forename><surname>Bouamor</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Juan</forename><surname>Pino</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Kalika</forename><surname>Bali</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023">December 6-10, 2023. 2023</date>
+			<biblScope unit="page" from="9248" to="9274" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Search-o1: Agentic search-enhanced large reasoning models</title>
+		<author>
+			<persName><forename type="first">Xiaoxi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanting</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiajie</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuyao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peitian</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhicheng</forename><surname>Dou</surname></persName>
+		</author>
+		<idno>CoRR, abs/2501.05366</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Research: Learning to reason with search for llms via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Mingyang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianpeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoze</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yijie</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenzheng</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haofen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><forename type="middle">Z</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huajun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zenan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weipeng</forename><surname>Chen</surname></persName>
+		</author>
+		<idno>CoRR, abs/2503.19470</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Retool: Reinforcement learning for strategic tool use in llms</title>
+		<author>
+			<persName><forename type="first">Jiazhan</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijue</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingwei</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baoquan</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengquan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinxin</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanjun</forename><surname>Zhong</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Deepresearcher: Scaling deep research via reinforcement learning in real-world environments</title>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayuan</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangkun</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojie</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lyumanshan</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengrui</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Multihop questions via single-hop question composition</title>
+		<author>
+			<persName><forename type="first">Harsh</forename><surname>Trivedi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niranjan</forename><surname>Balasubramanian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Musique</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Measuring massive multitask language understanding</title>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mantas</forename><surname>Mazeika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">9th International Conference on Learning Representations, ICLR 2021, Virtual Event</title>
+		<meeting><address><addrLine>Austria</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2021">May 3-7, 2021. OpenReview.net, 2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Deepseekmath: Pushing the limits of mathematical reasoning in open language models</title>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daya</forename><surname>Guo</surname></persName>
+		</author>
+		<idno>CoRR, abs/2402.03300</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Retrieval-augmented generation for knowledge-intensive NLP tasks</title>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Piktus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladimir</forename><surname>Karpukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heinrich</forename><surname>Küttler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Rocktäschel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Riedel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Douwe</forename><surname>Kiela</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 33: Annual Conference on Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">Hugo</forename><surname>Larochelle</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Marc'aurelio</forename><surname>Ranzato</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Raia</forename><surname>Hadsell</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Maria-Florina</forename><surname>Balcan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Hsuan-Tien</forename><surname>Lin</surname></persName>
+		</editor>
+		<meeting><address><addrLine>NeurIPS</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2020-12-06">2020. 2020. December 6-12, 2020, virtual, 2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Self-rag: Learning to retrieve, generate, and critique through self-reflection</title>
+		<author>
+			<persName><forename type="first">Akari</forename><surname>Asai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeqiu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Avirup</forename><surname>Sil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations, ICLR 2024</title>
+		<meeting><address><addrLine>Vienna, Austria</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024">May 7-11, 2024. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Making retrieval-augmented language models robust to irrelevant context</title>
+		<author>
+			<persName><forename type="first">Tomer</forename><surname>Ori Yoran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ori</forename><surname>Wolfson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Ram</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Berant</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations, ICLR 2024</title>
+		<meeting><address><addrLine>Vienna, Austria</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024">May 7-11, 2024. OpenReview.net, 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Hotpotqa: A dataset for diverse, explainable multi-hop question answering</title>
+		<author>
+			<persName><forename type="first">Zhilin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saizheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">W</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruslan</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing</title>
+		<editor>
+			<persName><forename type="first">Ellen</forename><surname>Riloff</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">David</forename><surname>Chiang</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Julia</forename><surname>Hockenmaier</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Jun'ichi</forename><surname>Tsujii</surname></persName>
+		</editor>
+		<meeting>the 2018 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Brussels, Belgium</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2018-11-04">October 31 -November 4, 2018. 2018</date>
+			<biblScope unit="page" from="2369" to="2380" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Training verifiers to solve math word problems</title>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<idno>CoRR, abs/2110.14168</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Deepseek-Ai</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Hybridflow: A flexible and efficient RLHF framework</title>
+		<author>
+			<persName><forename type="first">Guangming</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilingfeng</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xibin</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ru</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanghua</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haibin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuan</forename><surname>Wu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Twentieth European Conference on Computer Systems, EuroSys 2025</title>
+		<meeting>the Twentieth European Conference on Computer Systems, EuroSys 2025<address><addrLine>Rotterdam, The Netherlands</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2025-03-03">March 2025 -3 April 2025. 2025</date>
+			<biblScope unit="volume">30</biblScope>
+			<biblScope unit="page" from="1279" to="1297" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Flashrag: A modular toolkit for efficient retrieval-augmented generation research</title>
+		<author>
+			<persName><forename type="first">Jiajie</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenghao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhicheng</forename><surname>Dou</surname></persName>
+		</author>
+		<idno>CoRR, abs/2405.13576</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baosong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beichen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Wei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.15115</idno>
+		<title level="m">Qwen2. 5 technical report</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Human-level control through deep reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Volodymyr</forename><surname>Mnih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Koray</forename><surname>Kavukcuoglu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrei</forename><forename type="middle">A</forename><surname>Rusu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joel</forename><surname>Veness</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><forename type="middle">G</forename><surname>Bellemare</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Graves</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><forename type="middle">A</forename><surname>Riedmiller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Fidjeland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Georg</forename><surname>Ostrovski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stig</forename><surname>Petersen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Beattie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amir</forename><surname>Sadik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Helen</forename><surname>King</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dharshan</forename><surname>Kumaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daan</forename><surname>Wierstra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shane</forename><surname>Legg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Demis</forename><surname>Hassabis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nat</title>
+		<imprint>
+			<biblScope unit="volume">518</biblScope>
+			<biblScope unit="issue">7540</biblScope>
+			<biblScope unit="page" from="529" to="533" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Dueling network architectures for deep reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Ziyu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Schaul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matteo</forename><surname>Hessel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Hado Van Hasselt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nando</forename><surname>Lanctot</surname></persName>
+		</author>
+		<author>
+			<persName><surname>De Freitas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 33nd International Conference on Machine Learning</title>
+		<editor>
+			<persName><forename type="first">Maria-Florina</forename><surname>Balcan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Kilian</forename><forename type="middle">Q</forename><surname>Weinberger</surname></persName>
+		</editor>
+		<meeting>the 33nd International Conference on Machine Learning<address><addrLine>New York City, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2016-06-19">2016. June 19-24, 2016. 2016</date>
+			<biblScope unit="volume">48</biblScope>
+			<biblScope unit="page" from="1995" to="2003" />
+		</imprint>
+	</monogr>
+	<note>JMLR Workshop and Conference Proceedings</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Policy gradient methods for reinforcement learning with function approximation and action-dependent baselines</title>
+		<author>
+			<persName><forename type="first">Philip</forename><forename type="middle">S</forename><surname>Thomas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emma</forename><surname>Brunskill</surname></persName>
+		</author>
+		<idno>CoRR, abs/1706.06643</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Asynchronous methods for deep reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Volodymyr</forename><surname>Mnih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adrià</forename><surname>Puigdomènech Badia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mehdi</forename><surname>Mirza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Graves</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><forename type="middle">P</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Harley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Koray</forename><surname>Kavukcuoglu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 33nd International Conference on Machine Learning</title>
+		<editor>
+			<persName><forename type="first">Maria-Florina</forename><surname>Balcan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Kilian</forename><forename type="middle">Q</forename><surname>Weinberger</surname></persName>
+		</editor>
+		<meeting>the 33nd International Conference on Machine Learning<address><addrLine>New York City, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2016-06-19">2016. June 19-24, 2016. 2016</date>
+			<biblScope unit="volume">48</biblScope>
+			<biblScope unit="page" from="1928" to="1937" />
+		</imprint>
+	</monogr>
+	<note>JMLR Workshop and Conference Proceedings</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Proximal policy optimization algorithms</title>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Filip</forename><surname>Wolski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleg</forename><surname>Klimov</surname></persName>
+		</author>
+		<idno>CoRR, abs/1707.06347</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Direct preference optimization: Your language model is secretly a reward model</title>
+		<author>
+			<persName><forename type="first">Rafael</forename><surname>Rafailov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Archit</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefano</forename><surname>Ermon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 36: Annual Conference on Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">Alice</forename><surname>Oh</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Tristan</forename><surname>Naumann</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Amir</forename><surname>Globerson</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Kate</forename><surname>Saenko</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Moritz</forename><surname>Hardt</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</editor>
+		<meeting><address><addrLine>NeurIPS; New Orleans, LA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023-12-10">2023. 2023. December 10 -16, 2023, 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Grpo-lead: A difficulty-aware reinforcement learning approach for concise mathematical reasoning in language models</title>
+		<author>
+			<persName><forename type="first">Jixiao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunsheng</forename><surname>Zuo</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Large language model agent: A survey on methodology, applications and challenges</title>
+		<author>
+			<persName><forename type="first">Junyu</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ye</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusheng</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junwei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiyang</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bohan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binqi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyue</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingqing</forename><surname>Long</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rongcheng</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Ju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiping</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meng</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenwu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyang</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shichang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiqiao</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xian</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanqing</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dacheng</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philip</forename><forename type="middle">S</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno>CoRR, abs/2503.21460</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">An in-depth survey of large language model-based artificial intelligence agents</title>
+		<author>
+			<persName><forename type="first">Pengyu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijian</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Cheng</surname></persName>
+		</author>
+		<idno>CoRR, abs/2309.14365</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Cognitive architectures for language agents</title>
+		<author>
+			<persName><forename type="first">Theodore</forename><forename type="middle">R</forename><surname>Sumers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><forename type="middle">L</forename><surname>Griffiths</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Trans. Mach. Learn. Res</title>
+		<imprint>
+			<date type="published" when="2024">2024, 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiabin</forename><surname>Tang</surname></persName>
+		</author>
+		<title level="m">Tianyu Fan. AutoAgent: A Fully-Automated and Zero-Code Framework for LLM Agents</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Auto-gpt for online decision making: Benchmarks and additional opinions</title>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sifu</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunzhong</forename><surname>He</surname></persName>
+		</author>
+		<idno>CoRR, abs/2306.02224</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Langchain</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

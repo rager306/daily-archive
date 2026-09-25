@@ -1,0 +1,506 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Enhancing Surgical Robots with Embodied Intelligence for Autonomous Ultrasound Scanning</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Huan</forename><surname>Xu</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Jinlin</forename><surname>Wu</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Guanglin</forename><surname>Cao</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Zhen</forename><surname>Lei</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Zhen</forename><surname>Chen</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Hongbin</forename><surname>Liu</surname></persName>
+						</author>
+						<title level="a" type="main">Enhancing Surgical Robots with Embodied Intelligence for Autonomous Ultrasound Scanning</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">749C99050B27DB844D95A9F4A594558C</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:41+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Ultrasound robots are increasingly used in medical diagnostics and early disease screening. However, current ultrasound robots lack the intelligence to understand human intentions and instructions, hindering autonomous ultrasound scanning. To solve this problem, we propose a novel Ultrasound Embodied Intelligence system that equips ultrasound robots with the large language model (LLM) and domain knowledge, thereby improving the efficiency of ultrasound robots. Specifically, we first design an ultrasound operation knowledge database to add expertise in ultrasound scanning to the LLM, enabling the LLM to perform precise motion planning. Furthermore, we devise a dynamic ultrasound scanning strategy based on a think-observe-execute prompt engineering, allowing LLMs to dynamically adjust motion planning strategies during the scanning procedures. Extensive experiments demonstrate that our system significantly improves ultrasound scan efficiency and quality from verbal commands. This advancement in autonomous medical scanning technology contributes to noninvasive diagnostics and streamlined medical workflows.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I. INTRODUCTION</head><p>Ultrasonography (US) is crucial for non-invasive diagnostics and early detection across medical fields <ref type="bibr" target="#b0">[1]</ref>, <ref type="bibr" target="#b1">[2]</ref>, enhancing patient care and outcomes <ref type="bibr" target="#b2">[3]</ref>, <ref type="bibr" target="#b3">[4]</ref>, <ref type="bibr" target="#b4">[5]</ref>. In particular, it is pivotal in diagnosing fetal abnormalities <ref type="bibr" target="#b5">[6]</ref>, gallbladder stones <ref type="bibr" target="#b6">[7]</ref>, and cardiovascular diseases <ref type="bibr" target="#b7">[8]</ref>, improving early diagnosis and management <ref type="bibr" target="#b8">[9]</ref>. To integrate robotics with the US for better scanning efficiency and quality, extensive studies currently focus on autonomous scan path generation <ref type="bibr" target="#b9">[10]</ref>, <ref type="bibr" target="#b10">[11]</ref>, <ref type="bibr" target="#b11">[12]</ref>. Despite these advances, dynamic adjustments of US robotics remain difficult, especially the instruction understanding and dynamic execution.</p><p>We propose an ultrasound embodied intelligence system merging US robots with large language models (LLMs) for improved clinical performance. Our system leverages LLMs for understanding doctors' intentions and enhancing motion planning, enriching LLMs with US-specific knowledge, APIs, and robot manuals for reliable workflows and error mitigation. A specialized embedding model aligns robot actions with doctors' intentions, enhancing clinical demand fulfillment and offering precise, efficient solutions. Additionally, a dynamic execution mechanism inspired by ReAct <ref type="bibr" target="#b12">[13]</ref> allows verbal command interpretation into precise scanning paths, reducing manual adjustment needs. This thought-action-observation cycle engages with robot APIs for †Equal contribution, * Corresponding author. This work is supported in part by InnoHK program. 1 Centre for Artificial Intelligence and Robotics, Hong Kong Institute of Science &amp; Innovation, Chinese Academy of Sciences. 2 Institute of Automation, Chinese Academy of Sciences. Email: {jinlin.wu, zhen.chen}@cair-cas.org.hk Please perform a neck ultrasound scan Final Output I apologize, as an AI language model, I don't have the capability to perform a neck ultrasound. Retrieved API List Retrieved Handbook Dynamic Output Neck vascular scan performed successfully Command Final Output Ultrasound Domain Knowledge Augmenting Dynamic Execution Large Language Model seamless command execution, showcasing LLMs' potential to enhance robotic precision and autonomy in healthcare.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>II. METHOD</head><p>For a given ultrasound scan task, the scanning of the ultrasound robot can be formulated as follows:</p><formula xml:id="formula_0">C n = n i=1 R i (C i-1 |A, U, D)),<label>(1)</label></formula><p>where</p><p>• D represents the Doctor's Instructions.</p><p>• U denotes the Ultrasound Knowledge Augmenting.</p><p>• A is the Assemble Ultrasound Assistant Prompt with retrieved APIs and retrieved robot handbook.</p><p>• R i signifies the i th iteration of interaction with robots through Robot Dynamic Execution.</p><p>• C n is the Final Execution Results, after n iterations of dynamic execution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Ultrasound Domain Knowledge Augmenting</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Domain Knowledge Search.</head><p>To augment ultrasound scanning knowledge, we incorporate a similarity search algorithm that leverages cosine similarity to connect user queries with a database of ultrasound domain knowledge. This process involves converting queries and database entries into vectors in a d-dimensional space, aiming to find the highest cosine similarity match, as follows:</p><formula xml:id="formula_1">S(A, B) = A • B ∥A∥∥B∥ .<label>(2)</label></formula><p>Ultrasound APIs Retrieval. To streamline the selection of ultrasound APIs by LLMs, we refine the Ultrasound APIs Retrieval (UAR) method. This method relies on a dataset where each APIs is paired with a narrative describing its use context, improving tool selection for ultrasound scanning. The dataset is structured as D = {(T 1 , U 1 ), (T 2 , U 2 ), . . . , (T n , U n )}, where T represents tools and U represents usage of tools, facilitating accurate tool identification based on scenario-specific requirements. Robotic Handbook Retrieval. At the same time, how LLMs discern these API calls' correct order and logical sequence remains a huge hurdle. We present the Robotic Handbook Retrieval (RHR) method to address this issue. This approach enriches LLMs's context with a procedural knowledge base accessible through vectorized input queries. The core of this method is a similarity search. We systematically paired instructions with the handbook to guarantee the identification of relevant instructions during the similarity search, followed by the extraction of corresponding handbooks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Ultrasound Assistant Prompt</head><p>Facing the challenge of commands lacking context, we enhance model comprehension and intent accuracy through structured prompts and added context. This approach ensures commands are interpreted precisely, aligning results with user expectations. Additionally, prompts are integrated with an execution session, allowing for specific output structures to trigger various APIs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Robot Dynamic Execution</head><p>Building upon the inspiration drawn from the ReAct framework mentioned in the introduction, we introduce a dynamic execution mechanism for robotic systems. This mechanism operates through a cyclical process comprising three main steps: Observation, Thought, and Action. This operational cycle aims to minimize errors and optimize task execution by continuously adapting to real-time feedback. III. EXPERIMENTS A. Experimental Setup Models Configuration. We evaluated our system enhancements using the GPT4-Turbo model <ref type="bibr" target="#b13">[14]</ref>, with settings at Temperature = 0.7 and Top P = 0.95. The bge-large-en-v1.5 <ref type="bibr" target="#b14">[15]</ref> model, adjusted for our domain, and FAISS <ref type="bibr" target="#b15">[16]</ref> were used for efficient vector operations. We compare this model performance against the original in Table <ref type="table">I</ref>.</p><p>TABLE I COMPARISON OF MODEL TRAINING RESULTS FOR DOMAIN ADAPTATION Module Model Recall@1 Recall@3 Recall@10 UAR bge-large 0.82 0.94 0.97 Ours 0.86 0.96 0.99 RHR bge-large 0.76 0.95 0.97 Ours 0.88 0.97 0.98 Datasets and Preprocessing. Our synthetic dataset includes 522 Robotic Handbook instances and 622 Ultrasound API</p><p>TABLE II ABLATION AND MODEL STUDY ON API EXECUTION Type Module FS (%) OV (%) Ablation LLMs + UAR 35 0 LLMs + UAR + RHR 100 80 Models Qwen1.5B[18] 30 0 Llama2-7B <ref type="bibr" target="#b18">[19]</ref> 50 10 Llama2-13B <ref type="bibr" target="#b18">[19]</ref> 65 10 Mistral-7B-v0.1 <ref type="bibr" target="#b19">[20]</ref> 65 20 Mixtral-8x7B-Instruct-v0.1 <ref type="bibr" target="#b16">[17]</ref> 70 45 instances, reflecting the complexity of ultrasound scans and API usage. This dataset also trained our embedding model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Experimental Framework and Metrics.</head><p>The framework assesses the augmentations' impact through 20 repetitions of each experiment, comparing model performances and testing on various human body parts.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Results and Analysis</head><p>We conducted ablation studies and model performance analyses, with initial findings in Table <ref type="table">II</ref>, where FS stands for the success rate of the first step attempting and OV stands for the success rate of all execution steps. Effectiveness of Modules. Results show foundational LLMs improve stepwise with each module. Initially, LLMs struggle with API calls without specific knowledge. Introducing the UAR module improved success to 35%, indicating basic API knowledge aids in task initiation. The RHR module further boosts performance, underscoring structured guidance's importance in API selection and task-specific improvements. Effectiveness of Different LLMs. Evaluating various LLMs augmented with domain knowledge showed differing success rates in API call execution and task completion. The Mixtral-8x7B-Instruct-v0.1 model <ref type="bibr" target="#b16">[17]</ref> led with a 70% initial step success and 45% overall task completion, highlighting the importance of model size and domain knowledge for taskspecific performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>IV. CONCLUSION</head><p>In this work, we propose a novel embodied intelligence system to improve ultrasound robotics by integrating the LLM and domain knowledge. First, our ultrasound operation knowledge database enables the LLM to perform precise motion planning, ensuring accurate and efficient scanning procedures. Then, our dynamic ultrasound scanning strategy empowers the LLM to dynamically adjust motion planning strategies during the scanning process, adapting to real-time observations and optimizing the scanning quality. Our system addresses the limitations of current ultrasound robots by enabling them to understand human intentions and instructions, thereby facilitating autonomous ultrasound scanning.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Fig. 1 .</head><label>1</label><figDesc>Fig. 1. Our Embodied Intelligence system interprets and executes medical procedures through verbal commands. This system has three components: a large language model for command interpretation, the Ultrasound Domain Knowledge Augmenting technique for contextual understanding, and Robot Dynamic Execution for converting instructions into robotic actions.</figDesc></figure>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Atlas of ultrasound-guided procedures in interventional pain management</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Perlas</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="13" to="19" />
+		</imprint>
+	</monogr>
+	<note>Basics of ultrasound imaging</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Diagnostic ultrasound: Past, present, and future</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">K</forename><surname>Shung</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J Med Biol Eng</title>
+		<imprint>
+			<biblScope unit="volume">31</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="371" to="374" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Thoracic ultrasonography: a narrative review</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">H</forename><surname>Mayo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Copetti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">J</forename><surname>Feller-Kopman</surname></persName>
+		</author>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+	</analytic>
+	<monogr>
+		<title level="j">Intensive Care Medicine</title>
+		<imprint>
+			<biblScope unit="volume">45</biblScope>
+			<biblScope unit="page" from="1200" to="1211" />
+			<date type="published" when="2019">2019. 199577035</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Brain ultrasonography: methodology, basic and advanced principles and clinical applications. a narrative review</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Robba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Goffi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Geeraerts</surname></persName>
+		</author>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+	</analytic>
+	<monogr>
+		<title level="j">Intensive Care Medicine</title>
+		<imprint>
+			<biblScope unit="volume">45</biblScope>
+			<biblScope unit="page">131776554</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Point-of-care ultrasonography</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">L</forename><surname>Moore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Copel</surname></persName>
+		</author>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+	</analytic>
+	<monogr>
+		<title level="j">The New England journal of medicine</title>
+		<imprint>
+			<biblScope unit="volume">364</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page">1621892</biblScope>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">First trimester ultrasonography in screening and detection of fetal anomalies</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sonek</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">American Journal of Medical Genetics Part C: Seminars in Medical Genetics</title>
+		<imprint>
+			<biblScope unit="volume">145</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="45" to="61" />
+			<date type="published" when="2007">2007</date>
+			<publisher>Wiley Online Library</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Real-time ultrasonography: diagnostic technique of choice in calculous gallbladder disease</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Cooperberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Burhenne</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">New England Journal of Medicine</title>
+		<imprint>
+			<biblScope unit="volume">302</biblScope>
+			<biblScope unit="issue">23</biblScope>
+			<biblScope unit="page" from="1277" to="1279" />
+			<date type="published" when="1980">1980</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Usefulness of carotid ultrasonography for risk stratification of cerebral and cardiovascular disease</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Nezu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Hosomi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of atherosclerosis and thrombosis</title>
+		<imprint>
+			<biblScope unit="volume">27</biblScope>
+			<biblScope unit="issue">10</biblScope>
+			<biblScope unit="page" from="1023" to="1035" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Digital health: trends, opportunities and challenges in medical devices, pharma and bio-technology</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Kasoju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Remya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Sasi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">CSI Transactions on ICT</title>
+		<imprint>
+			<biblScope unit="page" from="1" to="20" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">A robotic ultrasound scanner for automatic vessel tracking and threedimensional reconstruction of b-mode images</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Merouche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Allard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Montagnon</surname></persName>
+		</author>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Ultrasonics, Ferroelectrics, and Frequency Control</title>
+		<imprint>
+			<biblScope unit="volume">63</biblScope>
+			<biblScope unit="page">21650607</biblScope>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Motion-aware robotic 3d ultrasound</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+	</analytic>
+	<monogr>
+		<title level="m">2021 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="volume">500</biblScope>
+			<biblScope unit="page">235829095</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Autonomous robotic screening of tubular structures based only on real-time ultrasound imaging feedback</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Grimm</surname></persName>
+		</author>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Industrial Electronics</title>
+		<imprint>
+			<biblScope unit="volume">69</biblScope>
+			<biblScope unit="page">226226802</biblScope>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">React: Synergizing reasoning and acting in language models</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03629</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">:</forename><surname>Openai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Adler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">A</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Gpt-4 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">C-pack: Packaged resources to advance general chinese embedding</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">The faiss library</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Douze</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Guzhva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Deng</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Mixtral of experts</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">Q</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sablayrolles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Roux</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.16609</idno>
+		<title level="m">Qwen technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Llama 2: Open foundation and fine-tuned chat models</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Stone</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">Q</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sablayrolles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mensch</surname></persName>
+		</author>
+		<title level="m">Mistral 7b</title>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

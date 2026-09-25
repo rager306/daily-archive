@@ -1,0 +1,2368 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">DINO-WM: World Models on Pre-trained Visual Features enable Zero-shot Planning</title>
+				<funder ref="#_cZEWE2r">
+					<orgName type="full">National Science Foundation</orgName>
+					<orgName type="abbreviated">NSF</orgName>
+				</funder>
+				<funder ref="#_WsMfys4 #_qESjuAb">
+					<orgName type="full">ONR</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">Packard Fellowship</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">Hyundai</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">Honda</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-02-01">1 Feb 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Gaoyue</forename><surname>Zhou</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Hengkai</forename><surname>Pan</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Yann</forename><surname>Lecun</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Lerrel</forename><surname>Pinto</surname></persName>
+						</author>
+						<title level="a" type="main">DINO-WM: World Models on Pre-trained Visual Features enable Zero-shot Planning</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-02-01">1 Feb 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">D6D2C81F9DC4B8F834D47DD076ED1BD0</idno>
+					<idno type="arXiv">arXiv:2411.04983v2[cs.RO]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:50+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>The ability to predict future outcomes given control actions is fundamental for physical reasoning. However, such predictive models, often called world models, remains challenging to learn and are typically developed for task-specific solutions with online policy learning. To unlock world models' true potential, we argue that they should 1) be trainable on offline, pre-collected trajectories, 2) support test-time behavior optimization, and 3) facilitate task-agnostic reasoning. To this end, we present DINO World Model (DINO-WM), a new method to model visual dynamics without reconstructing the visual world. DINO-WM leverages spatial patch features pre-trained with DI-NOv2, enabling it to learn from offline behavioral trajectories by predicting future patch features. This allows DINO-WM to achieve observational goals through action sequence optimization, facilitating task-agnostic planning by treating goal features as prediction targets. We demonstrate that DINO-WM achieves zero-shot behavioral solutions at test time on six environments without expert demonstrations, reward modeling, or prelearned inverse models, outperforming prior stateof-the-art work across diverse task families such as arbitrarily configured mazes, push manipulation with varied object shapes, and multi-particle scenarios.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>Robotics and embodied AI have seen tremendous progress in recent years. Advances in imitation learning and reinforcement learning have enabled agents to learn complex behaviors across diverse tasks (Agarwal et al., 2022; Zhao  et al., 2023; Lee et al., 2024; Ma et al., 2024; Hafner et al.,  2024; Hansen et al., 2024; Haldar et al., 2024; Jia et al.,   1 Courant Institute, New York University 2 Meta AI. Correspondence to: Gaoyue Zhou &lt;gz2123@nyu.edu&gt;. 2024). Despite this progress, generalization remains a major challenge <ref type="bibr" target="#b63">(Zhou et al., 2023)</ref>. Existing approaches predominantly rely on policies that, once trained, operate in a feed-forward manner during deployment-mapping observations to actions without any further optimization or reasoning. Under this framework, successful generalization inherently requires agents to possess solutions to all possible tasks and scenarios once training is complete, which is only possible if the agent has seen similar scenarios during training <ref type="bibr" target="#b44">(Reed et al., 2022;</ref><ref type="bibr">Brohan et al., 2023b;</ref><ref type="bibr">a;</ref><ref type="bibr" target="#b15">Etukuru et al., 2024)</ref>. However, it is neither feasible nor efficient to learn solutions for all potential tasks and environments in advance.</p><p>Instead of learning the solutions to all possible tasks during training, an alternate is to fit a dynamics model on training data and optimize task-specific behavior at runtime. These dynamics models, also called world models <ref type="bibr" target="#b18">(Ha &amp; Schmidhuber, 2018)</ref>, have a long history in robotics and control <ref type="bibr" target="#b48">(Sutton, 1991;</ref><ref type="bibr" target="#b50">Todorov &amp; Li, 2005;</ref><ref type="bibr" target="#b55">Williams et al., 2017)</ref>. More recently, several works have shown that world models can be trained on raw sensory data <ref type="bibr" target="#b19">(Hafner et al., 2019;</ref><ref type="bibr" target="#b38">Micheli et al., 2023;</ref><ref type="bibr" target="#b45">Robine et al., 2023;</ref><ref type="bibr" target="#b25">Hansen et al., 2024;</ref><ref type="bibr" target="#b22">Hafner et al., 2024)</ref>. This enables flexible use of model-based optimization to obtain policies as it circumvents the need for explicit state-estimation. Despite this, significant challenges remains in its use for solving generalpurpose tasks.</p><p>To understand the challenges in world modeling, let us consider the two broad paradigms in learning world models: online and offline. In the online setting, access to the environment is often required so data can be continuously collected to improve the world model, which in turn improves the policy and the subsequent data collection. However, the online world model is only accurate in the cover of the policy that was being optimized. Hence, while it can be used to train powerful task-specific policies, it requires retraining for every new task even in the same environment. Instead, in the offline setting, the world model is trained on an offline dataset of collected trajectories in the environment, which removes its dependence on the task specificity given sufficient coverage in the dataset. However, when required to solve a task, methods in this domain require strong auxiliary information which can take the form of expert demonstrations <ref type="bibr" target="#b42">(Pathak et al., 2018;</ref><ref type="bibr" target="#b51">Wang et al., 2023)</ref>, structured keypoints <ref type="bibr" target="#b30">(Ko et al., 2023;</ref><ref type="bibr" target="#b54">Wen et al., 2024)</ref>, access to pretrained inverse models <ref type="bibr" target="#b13">(Du et al., 2023;</ref><ref type="bibr" target="#b30">Ko et al., 2023)</ref> or dense reward functions <ref type="bibr" target="#b11">(Ding et al., 2024)</ref>, all of which reduce the generality of using offline world models. The central question to building better offline world models is if there is alternate auxiliary information that does not compromise its generality?</p><p>In this work, we present DINO-WM, a new and simple method to build task-agnostic world models from an offline dataset of trajectories. DINO-WM models the world dynamics on compact embeddings of the world, rather than the raw observations themselves. For the embedding, we use pretrained patch-features from the DINOv2 model, which provides both a spatial and object-centric representation prior. We conjecture that this pretrained representation enables robust and consistent world modeling, which relaxes the necessity for task-specific data coverage. Given these visual embeddings and actions, DINO-WM uses the ViT architecture to predict future embeddings. Once this model is trained on the offline dataset, planning to solve tasks is constructed as visual goal reaching, i.e. to reach a future desired goal given the current observation. Since the predictions by DINO-WM are high quality (see Figure <ref type="figure" target="#fig_3">4</ref>), we can simply use model predictive control with inferencetime optimization to reach desired goals without any extra information during testing. DINO-WM is experimentally evaluated on six environment suites spanning maze navigation, sliding manipulation, robotic arm control, and deformable object manipulation tasks. Our experiments reveal the following findings:</p><p>• DINO-WM produce high-quality future world modeling that can be measured by improved visual reconstruction from trained decoders. On LPIPS metrics for our hardest tasks, this improves upon prior state-of-the-art work by 56% (See Section 4.7).</p><p>• Given the latent world models trained using DINO-WM, we show high success for reaching arbitrary goals on our hardest tasks, improving upon prior work by 45% on average (See Section 4.3).</p><p>• DINO-WM can be trained across environment variations within a task family (e.g. different maze layouts for navigation or different object shapes for manipulation) and achieve higher rates of success compared to prior work (See Section 4.5).</p><p>Code and models for DINO-WM are open-sourced to ensure reproducibility and videos of planning are made available on our anonymous project website: <ref type="url" target="https://dino-wm.github.io">https:  //dino-wm.github.io</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Related Work</head><p>We build on top of several works in developing world models, optimizing behaviors from them, and leveraging compact visual representations. For conciseness, we only discuss the ones most relevant to DINO-WM.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Model-based Learning:</head><p>Learning from models of dynamics has a rich literature spanning the fields of control, planning, and robotics <ref type="bibr" target="#b48">(Sutton, 1991;</ref><ref type="bibr" target="#b50">Todorov &amp; Li, 2005;</ref><ref type="bibr" target="#b2">Astolfi et al., 2008;</ref><ref type="bibr" target="#b27">Holkar &amp; Waghmare, 2010;</ref><ref type="bibr" target="#b55">Williams et al., 2017)</ref>. Recent works have shown that modeling dynamics and predicting future states can significantly enhance vision-based learning for embodied agents across various applications, including online reinforcement learning <ref type="bibr" target="#b38">(Micheli et al., 2023;</ref><ref type="bibr" target="#b45">Robine et al., 2023;</ref><ref type="bibr" target="#b25">Hansen et al., 2024;</ref><ref type="bibr" target="#b22">Hafner et al., 2024)</ref>, exploration <ref type="bibr" target="#b47">(Sekar et al., 2020;</ref><ref type="bibr" target="#b35">Mendonca et al., 2021;</ref><ref type="bibr">2023a)</ref>, planning <ref type="bibr" target="#b53">(Watter et al., 2015;</ref><ref type="bibr" target="#b16">Finn &amp; Levine, 2017;</ref><ref type="bibr" target="#b14">Ebert et al., 2018;</ref><ref type="bibr" target="#b19">Hafner et al., 2019)</ref>, and imitation learning <ref type="bibr" target="#b42">(Pathak et al., 2018)</ref>. Several of these approaches initially focused on state-space dynamics <ref type="bibr" target="#b10">(Deisenroth &amp; Rasmussen, 2011;</ref><ref type="bibr" target="#b32">Lenz et al., 2015;</ref><ref type="bibr" target="#b9">Chua et al., 2018;</ref><ref type="bibr" target="#b39">Nagabandi et al., 2019)</ref>, and have since been extended to handle image-based inputs, which we address in this work. These world models can predict future states in either pixel space <ref type="bibr" target="#b16">(Finn &amp; Levine, 2017;</ref><ref type="bibr" target="#b14">Ebert et al., 2018;</ref><ref type="bibr" target="#b30">Ko et al., 2023;</ref><ref type="bibr" target="#b13">Du et al., 2023)</ref> or latent representation space <ref type="bibr" target="#b58">(Yan et al., 2021)</ref>. Predicting in pixel space, however, is computationally expensive due to the need for image reconstruction and the overhead of using diffusion models <ref type="bibr" target="#b30">(Ko et al., 2023)</ref>. On the other hand, latent-space prediction is typically tied to objectives of reconstructing images <ref type="bibr" target="#b19">(Hafner et al., 2019;</ref><ref type="bibr" target="#b38">Micheli et al., 2023;</ref><ref type="bibr" target="#b22">Hafner et al., 2024)</ref>, which raises concerns about whether the learned features contain sufficient information about the task. Moreover, many of these models incorporate reward prediction <ref type="bibr" target="#b38">(Micheli et al., 2023;</ref><ref type="bibr" target="#b45">Robine et al., 2023;</ref><ref type="bibr" target="#b22">Hafner et al., 2024)</ref>, or use reward prediction as auxiliary objective to learn the latent representation <ref type="bibr" target="#b24">(Hansen et al., 2022;</ref><ref type="bibr">2024)</ref>, inherently making the world model task-specific. In this work, we aim to decouple task-dependent information from latent-space prediction, striving to develop a versatile and task-agnostic world model capable of generalizing across different scenarios.</p><p>Generative Models as World Models: With the recent excitement of large scale foundation models, there have been initiatives on building large-scale video generation world models conditioned on agent's actions in the domain of self-driving <ref type="bibr" target="#b28">(Hu et al., 2023)</ref>, control <ref type="bibr" target="#b59">(Yang et al., 2023;</ref><ref type="bibr" target="#b6">Bruce et al., 2024)</ref>, and general-purpose video generation <ref type="bibr" target="#b33">(Liu et al., 2024)</ref>. These models aim to generate video predictions conditioned on text or high-level action sequences. While these models have demonstrated utility in downstream tasks like data augmentations, their reliance on language conditioning limits their application when precise visually indicative goals need to be reached. Additionally, the use of diffusion models for video generation makes them computationally expensive, further restricting their applicability for test-time optimization techniques such as MPC.</p><p>In this work, we aim to build a world model in latent space instead of raw pixel space, enabling more precise planning and control.</p><p>Pretrained Visual Representations: Significant advancements have been made in the field of visual representation learning, where compact features that capture spatial and semantic information can be readily used for downstream tasks. Pre-trained models like ImageNet pre-trained ResNet <ref type="bibr" target="#b26">(He et al., 2016)</ref>, I-JEPA <ref type="bibr" target="#b1">(Assran et al., 2023)</ref>, and DINO <ref type="bibr" target="#b7">(Caron et al., 2021;</ref><ref type="bibr" target="#b41">Oquab et al., 2024)</ref> for images, as well as V-JEPA <ref type="bibr" target="#b3">(Bardes et al., 2024)</ref> for videos, and R3M <ref type="bibr" target="#b40">(Nair et al., 2022)</ref>, MVP <ref type="bibr" target="#b57">(Xiao et al., 2022)</ref> for robotics have allowed fast adaptation to downstream tasks as they contain rich spatial and semantic information. While many of these models represent images using a single global feature, the introduction of Vision Transformers (ViTs) <ref type="bibr" target="#b12">(Dosovitskiy et al., 2021)</ref> has enabled the use of pre-trained patch features, as demonstrated by DINO <ref type="bibr" target="#b7">(Caron et al., 2021;</ref><ref type="bibr" target="#b41">Oquab et al., 2024)</ref>. DINO employs a self-distillation loss that allows the model to learn representations effectively, capturing semantic layouts and improving spatial understanding within images. In this work, we leverage DINOv2's patch embeddings to train our world model, and demonstrate that it serves as a versatile encoder capable of handling various precise tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">DINO World Models</head><p>Overview and Problem formulation: Our work follows the vision-based control task framework, which models the environment as a partially observable Markov decision process (POMDP). The POMDP is defined by the tuple (O, A, p), where O represents the observation space, and A denotes the action space. The dynamics of the environment is modeled by the transition distribution p(o t+1 | o ≤t , a ≤t ), which predicts future observations based on past actions and observations.</p><p>In this work, we aim to learn task-agnostic world models from precollected offline datasets, and use these world models to perform visual reasoning and control at test time. At test time, our system starts from an arbitrary environment state and is provided with a goal observation in the form of an RGB image, in line with prior works <ref type="bibr" target="#b14">(Ebert et al., 2018;</ref><ref type="bibr" target="#b56">Wu et al., 2020;</ref><ref type="bibr">Mendonca et al., 2023b)</ref>, and is asked to perform a sequence of actions a 0 , ..., a T to reach the goal state. This approach differs from the world models used in online reinforcement learning (RL) where the objective is to optimize the rewards for a fixed set of tasks at hand <ref type="bibr" target="#b22">(Hafner et al., 2024;</ref><ref type="bibr" target="#b25">Hansen et al., 2024)</ref>, or from text-conditioned world models, where the goals are specified through text prompts <ref type="bibr" target="#b13">(Du et al., 2023;</ref><ref type="bibr" target="#b30">Ko et al., 2023)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.">DINO-based World Models (DINO-WM)</head><p>We model the dynamics of the environment in the latent space. More specifically, at each time step t, our world model consists of the following components:</p><formula xml:id="formula_0">Observation model: z t ∼ enc θ (z t | o t ) Transition model: z t+1 ∼ p θ (z t+1 | z t-H:t , a t-H:t ) Decoder model: ôt ∼ q θ (o t | z t ) (optional for visualization)</formula><p>where the observation model encodes image observations to latent states z t , and the transition model takes in a history of past latent states of length H. The decoder model takes in a latent z t , and reconstructs the image observation o t . We use θ to denote the parameters of these models. Note that our decoder is entirely optional, as the training objectives for the decoder is independent for training the rest part of the world model. This eliminates the need to reconstruct images both during training and testing, which reduces computational costs compared to otherwise coupling together the training of the observational model and the decoder, as in <ref type="bibr" target="#b38">(Micheli et al., 2023;</ref><ref type="bibr" target="#b22">Hafner et al., 2024)</ref>. We ablate and show the effectiveness of this choice in Appendix A.4.3.</p><p>DINO-WM models only the information available from offline trajectory data in an environment, in contrast to recent online RL world models that also require task-relevant information, such as rewards <ref type="bibr" target="#b20">(Hafner et al., 2020;</ref><ref type="bibr" target="#b24">Hansen et al., 2022;</ref><ref type="bibr">2024)</ref>, discount factors <ref type="bibr" target="#b21">(Hafner et al., 2022;</ref><ref type="bibr" target="#b45">Robine et al., 2023)</ref>, and termination conditions <ref type="bibr" target="#b38">(Micheli et al., 2023;</ref><ref type="bibr" target="#b22">Hafner et al., 2024)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.1.">OBSERVATION MODEL</head><p>To learn a generic world model across many environments and the real world, we argue that the observation model should 1) be task and environment independent, and 2) capture rich spatial information for navigation and manipulation. Contrary to previous works where the observation model is always learned for the task at hand <ref type="bibr" target="#b22">(Hafner et al., 2024)</ref>, we argue instead that it can be inefficient and often not possible to learn a good observation model from scratch when facing a new environment, as perception is a general task that benefits from large-scale internet data. Therefore, we use the pre-trained DINOv2 model as our world model's observation model, leveraging its strong spatial understanding for tasks like object detection, semantic segmentation, and depth estimation <ref type="bibr" target="#b41">(Oquab et al., 2024)</ref>. The observation model remains frozen during training and testing. At each time step t, it encodes an image o t to patch embeddings z t ∈ R N ×E , where N denotes the number of patches, and E denotes the embedding dimension. This process is visualized in Figure <ref type="figure" target="#fig_1">2</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.2.">TRANSITION MODEL</head><p>We adopt the ViT architecture <ref type="bibr" target="#b12">(Dosovitskiy et al., 2021)</ref> for the transition model due to its suitability for processing patch features. We remove the tokenization layer, as it operates on patch embeddings, effectively transforming it into a decoder-only transformer. We further make a few modifications to the architecture to allow for additional conditioning on proprioception and controller actions.</p><p>Our transition model takes in a history of past latent states z t-H:t-1 and actions a t-H:t-1 , where H is a hyperparameter denoting the context length of the model, and predicts the latent state at next time step z t . To properly capture the temporal dependencies, where the world state at time t should only depend on previous observations and actions, we implement a causal attention mechanism in the ViT model, enabling the model to predict latents autoregressively at a frame level. Specifically, each patch vector z i t for the latent state z t attends to {z i t-H:t-1 } N i=1 . This is different from past work IRIS <ref type="bibr" target="#b38">(Micheli et al., 2023)</ref> which similarly represents each observation as a sequence of vectors, but autoregressively predict z i t at a token level, attending to {z i t-H:t-1 } N i=1 as well as {z i t } &lt;k i=1 . We argue that predicting at a frame level and treating patch vectors of one observation as a whole better captures global structure and temporal dynamics, modeling dependencies across the entire observation rather than isolated tokens, leading to improved temporal generalization. The effectiveness of this attention mask has been shown in our ablation experiments in Appendix A.4.2</p><p>To model the effect of the agent's action to the environment, we condition the world model's predictions on these actions. Specifically, we concatenate the K-dimensional action vector, mapped from the original action representation using a multi-layer perceptron (MLP), to each patch vector z i t for i = 1, . . . , N . When proprioceptive information is available, we incorporate it similarly by concatenating it to the observation latents, thereby integrating it into the latent states.</p><p>We train the world model with teacher forcing. During training, we slice the trajectories into segments of length H + 1, and compute a latent consistency loss on each of the H predicted frames. For each frame, we compute</p><formula xml:id="formula_1">L pred = ∥p θ (enc θ (o t-H:t ), ϕ(a t-H:t )) -enc θ (o t+1 )∥ 2 (1)</formula><p>where ϕ is the action encoder model that can map actions to higher dimensions. Note that our world model training is entirely performed in latent space, without the need to reconstruct the original pixel images.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.3.">DECODER FOR INTERPRETABILITY</head><p>To aid in visualization and interpretability, we use a stack of transposed convolution layers to decode the patch representations back to image pixels, similar as in <ref type="bibr" target="#b43">(Razavi et al., 2019)</ref>. Given a pre-collected dataset, we optimize the parameters θ of the decoder q θ with a simple reconstruction loss defined as:</p><formula xml:id="formula_2">L rec = ∥q θ (z t ) -o t ∥ 2 , where z t = enc θ (o t ) (2)</formula><p>The training of the decoder is entirely independent of the transition model training, offering several advantages: 1) The decoder does not affect the world model's reasoning and planning capabilities for solving downstream tasks, and 2) There is no need to reconstruct raw pixel images during planning, thereby reducing computational costs. Nevertheless, the decoder remains valuable as it enhances the interpretability of the world model's predictions. While backpropagating this decoder loss to the predictor is possible, we ablate this choice and find that it negatively impacts performance compared to omitting the decoder loss. Full details are provided in Appendix A.4.3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.">Visual Planning with DINO-WM</head><p>To evaluate the quality of the world model, we perform trajectory optimization at test time and measure performance. While the planning methods themselves are fairly standard, they serve as means to emphasize the quality of the world models. For this purpose, our world model receives the current observation o 0 and a goal observation o g , both represented as RGB images. We formulate planning as the process of searching for a sequence of actions that the agent would take to reach o g . We employ model predictive control (MPC), which facilitates planning by considering the outcomes of future actions.</p><p>We utilize the cross-entropy method (CEM) to optimize the sequence of actions at each iteration. The planning cost is defined as the mean squared error (MSE) between the current latent state and the goal's latent state, given by</p><formula xml:id="formula_3">C = ∥ẑ T -z g ∥ 2 , where ẑt = p(ẑ t-1 , a t-1 ), ẑ0 = enc(o 0 ), z g = enc(o g ).</formula><p>The MPC framework and CEM optimization procedure are detailed in Appendix A.5.1. Since our world model is differentiable, a possibly more efficient approach is to optimize this objective through gradient descent (GD), allowing the world model to directly guide the agent toward a specific goal. The details of GD are provided in Appendix A.5.2. However, we empirically observe that CEM outperforms GD in our experiments with full results in Appendix A.5.3. We hypothesize that incorporating regularizations during training and in the planning objectives could further improve performance, and leave this for future work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Experiments</head><p>Our experiments are designed to address the following key questions: 1) Can we effectively train DINO-WM using precollected offline datasets? 2) Once trained, can DINO-WM be used for visual planning? 3) To what extent does the quality of the world model depend on pre-trained visual representations? 4) Does DINO-WM generalize to new configurations, such as variations in spatial layouts and object arrangements? We train and evaluate DINO-WM across six environment suites (full description in Appendix A.1) and compare it to a variety of state-of-the-art world models that predict in either latent space or raw pixel space.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.">Environments and Tasks</head><p>We evaluate six environment suites with varying dynamics complexity, some of which are drawn from standard robotics benchmarks, such as D4RL <ref type="bibr" target="#b17">(Fu et al., 2021)</ref> and DeepMind Control Suite <ref type="bibr" target="#b49">(Tassa et al., 2018)</ref>, as shown in Figure <ref type="figure" target="#fig_2">3</ref>. These environments include maze navigation (Maze, Wall), fine-grained control for tabletop pushing (PushT) and robotic arm control (Reach), and deformable object manipulation with an XArm (Rope, Granular).</p><p>In all environments, the task is to reach a randomly sampled goal state specified by a target observation, starting from arbitrary initial states. For PushT, target configurations are sampled to ensure feasibility within 25 steps. For Granular, targets require gathering all particles into a square with randomized locations and sizes. Observations in all environments are RGB images of size <ref type="bibr">(224,</ref><ref type="bibr">224)</ref>. A full description of the environments is provided in Appendix A.1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2.">Baselines</head><p>We compare DINO-WM with the following state-of-the-art models commonly used for control. For IRIS, DreamerV3, and TD-MPC2, we train the models with our offline datasets without any reward or task information, and perform MPC on the learned world model for solving downstream tasks. a) IRIS (Micheli et al., 2023): IRIS encodes visual inputs into tokens via a discrete autoencoder and predicts future tokens using a GPT Transformer, enabling policy and value learning through imagination. b) DreamerV3 (Hafner et al., 2024): DreamerV3 encodes visual inputs into categorical representations, predicts future states and rewards, and trains an actor-critic policy from imagined trajectories. c) TD-MPC2 (Hansen et al., 2024) : TD-MPC2 learns a decoder-free world model in latent space and uses reward signals to optimize the latents.</p><p>d) AVDC <ref type="bibr" target="#b30">(Ko et al., 2023)</ref>: AVDC uses a diffusion model to generate task execution videos from an initial observation and textual goal. We provide qualitative evaluations and MPC planning results for an action-conditioned variant in Appendix A.6.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.">Optimizing Behaviors with DINO-WM</head><p>With a trained world model, we study if DINO-WM can be used for zero-shot planning directly in the latent space.</p><p>For Maze, Reach, PushT, and Wall environments, we sample 50 initial and goal states and measure the success rate across all instances. Due to the environment stepping time for the Rope and Granular environments, we evaluate the Chamfer Distance (CD) on 10 instances for them. In Granular, we sample a random configuration from the validation set, with the goal of pushing the materials into a square shape at a randomly selected location and scale. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4.">Does pre-trained visual representations matter?</head><p>We use different pre-trained general-purpose encoders as the observation model of the world model, and evaluate their downstream planning performance. Specifically, we use the following encoders commonly used in robotics control and general perception: R3M <ref type="bibr" target="#b40">(Nair et al., 2022)</ref>, ImageNet pretrained ResNet-18 <ref type="bibr" target="#b46">(Russakovsky et al., 2015;</ref><ref type="bibr" target="#b26">He et al., 2016)</ref> and DINO CLS <ref type="bibr" target="#b7">(Caron et al., 2021)</ref>. Detailed descriptions of these encoders are in Appendix A.3. In the PointMaze task, which involves simple dynamics and control, we observe that world models with various observation encoders all achieve near-perfect success rates. However, as the environment's complexity increases-requiring more precise control and spatial understanding-world mod- els that encode observations as a single latent vector show a significant drop in performance. We posit that patch-based representations better capture spatial information, in contrast to models like R3M, ResNet, and DINO CLS, which reduce observations to a single global feature vector, losing crucial spatial details necessary for manipulation tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5.">Generalizing to Novel Environment Configurations</head><p>We evaluate the generalization of our world models not only across different goals but also across various environment configurations. We construct three environment families-WallRandom, PushObj, and GranularRandom-where the model is tested on unseen configurations with random goals. Detailed descriptions of the environments can be found in Appendix A.2.</p><p>From Table <ref type="table" target="#tab_4">5</ref>, we observe that DINO-WM demonstrates significantly better performance in WallRandom, indicating that model has effectively learned the general concepts of walls and doors, even when they are positioned in locations unseen during training. In contrast, other methods struggle to accurately identify the door's position and navigate through it. The PushObj task remains challenging for all methods, as the model was only trained on the four object shapes, which makes it difficult to precisely infer relevant physical parameters. In GranularRandom, the agent encounters fewer than half the particles present during training, resulting in out-of-distribution images compared to the training instances. Nevertheless, DINO-WM accurately encodes the scene and successfully gathers the particles into a designated square location with the lowest Chamfer Distance (CD) compared to the baselines, demonstrating better scene understanding. We hypothesize that this is due to DINO-WM's observation model encoding the scene as patch features, making the variance in particle number still within the distribution for each image patch.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.6.">Qualitative comparisons with generative video models</head><p>Given the prominence of generative video models, it's natural to assume they could serve as world models. We compare DINO-WM with AVDC <ref type="bibr" target="#b30">(Ko et al., 2023)</ref>, a diffusion-based generative model. As shown in Figure <ref type="figure" target="#fig_5">6</ref>, while AVDC can generate visually realistic future images, these images lack physical plausibility. Large, unrealistic changes can occur within a single timestep, and the model struggles to reach the exact goal state. Future advancements in generative models may help address these issues.</p><p>We further compare DINO-WM with a variant of AVDC, where the diffusion model is trained to generate the next observation o t+1 conditioned on the current observation o t and action a t . As detailed in Appendix A.6, the actionconditioned diffusion model diverges from the ground truth observations over long-term predictions, making it insufficient for accurate task planning. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.7.">Decoding and Interpreting the Latents</head><p>Although DINO-WM operates in latent space and the observation model is not trained with pixel reconstruction objectives, training a decoder aids in interpreting predictions. We evaluate the image quality of predicted futures across all models and find that our approach outperforms others, even those whose encoders are trained with environment-specific reconstruction objectives. Open-loop rollouts in Figure <ref type="figure" target="#fig_3">4</ref> demonstrate DINO-WM's robustness despite the lack of explicit pixel supervision. We report the Learned Perceptual Image Patch Similarity (LPIPS) <ref type="bibr" target="#b61">(Zhang et al., 2018)</ref> on the world models' predicted future frames, which assesses perceptual similarity by comparing deep representations of images, with lower scores reflecting closer visual similarity. Additional results, including Structural Similarity Index (SSIM) <ref type="bibr" target="#b52">(Wang et al., 2004)</ref>, are provided in Appendix A.7. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Conclusion</head><p>We introduce DINO-WM, a simple yet effective technique for modeling visual dynamics in latent space without the need for pixel-space reconstruction. We have demonstrated that DINO-WM captures environmental dynamics and generalizes to unseen configurations, independent of task specifications, enabling visual reasoning at test time and generating zero-shot solutions for downstream tasks through planning. DINO-WM takes a step toward bridging the gap between task-agnostic world modeling and reasoning and control, offering promising prospects for generic world models in real-world applications.</p><p>Limitations and Future Work: First, DINO-WM assumes having access to offline datasets with sufficient state-action coverage, which can be challenging to obtain for highly complex environments. This can potentially be addressed by combining DINO-WM with exploration strategies and updating the model as new experiences are available. Second, DINO-WM still relies on the availability of ground truth actions from agents, which may not always be feasible when training with vast video data from the internet. Lastly, while we currently plan in action space for downstream task solving, an extension of this work could involve developing a hierarchical structure that integrates high-level planning with low-level control policies to enable solving more fine-grained control tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Impact Statement</head><p>This paper presents work whose goal is to facilitate the learning and applications of task-agnostic world models. There are many potential societal consequences of our work, none which we feel must be specifically highlighted here.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Appendix</head><p>A.1. Environments and Dataset Generation a) PointMaze: In this environment introduced by <ref type="bibr" target="#b17">(Fu et al., 2021)</ref>, the task is for a force-actuated 2-DoF ball in the Cartesian directions x and y to reach a target goal. The agent's dynamics incorporate physical properties such as velocity, acceleration, and inertia, making the movement realistic. We generate 2000 fully random trajectories to train our world models. We refer to this task as Maze for brevity in our tables. b) Wall: This custom 2D navigation environment features two rooms separated by a wall with a door. The agent's task is to navigate from a randomized starting location in one room to a goal in the other, passing through the door. We present a variant where wall and door positions are randomized, testing the model's generalization to novel configurations. For the fixed wall setting, we train on a fully random dataset of 1920 trajectories each with 50 time steps. For the variant with multiple training environment configurations, we generate 10240 random trajectories.</p><p>c) Reacher: A continuous control task from DeepMind Control Suite <ref type="bibr" target="#b49">(Tassa et al., 2018)</ref>, where a 2-joint robotic arm reaches a target in 2D space. We increase difficulty by requiring the entire arm, not just the end-effector, to match arbitrary target poses. To train the world model, we generate 3000 trajectories with 100 steps. We refer to this task as Reach for brevity in our tables.</p><p>d) Push-T: This environment introduced by <ref type="bibr" target="#b8">(Chi et al., 2024)</ref> features a pusher agent interacting with a T-shaped block.</p><p>The goal is to guide both the agent and the T-block from a randomly initialized state to a known feasible target configuration within 25 steps. The task requires both the agent and the T to match the target locations. Unlike previous setups, the fixed green T no longer represents the target position for the T-block but serves purely as a visual anchor for reference. Success requires precise understanding of the contact-rich dynamics between the agent and the object, making it a challenging test for visuomotor control and object manipulation. We generate a dataset of 18500 samples replayed the original released expert trajectories with various level of noise. Additionally, we introduce variations by altering the shape and color of the object to assess the model's capability to adapt to novel tasks. For this variant, we generate 20000 randomly sampled trajectories with 100 steps.</p><p>e) Rope Manipulation: Introduced in <ref type="bibr" target="#b60">(Zhang et al., 2024)</ref>, this task is simulated with Nvidia Flex <ref type="bibr" target="#b60">(Zhang et al., 2024)</ref> and consists of an XArm interacting with a soft rope placed on a tabletop. The objective is to move the rope from an arbitrary starting configuration to a goal configuration specified at test time. For training, we generate a random dataset of 1000 trajectories of 20 time steps of random actions from random starting positions, while testing involves goal configurations set from varied initial positions, incorporating random variations in orientation and spatial displacement.</p><p>f) Granular Manipulation: This environment uses the same simulation setup as Rope Manipulation and involves manipulating about a hundred particles to form desired shapes. The training data consists of 1000 trajectories of 20 time steps of random actions starting from the same initial configuration, while testing is performed on specific goal shapes from diverse starting positions, along with random variations in particle distribution, spacing, and orientation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2. Environment families for testing generalization</head><p>1. WallRandom: Based on the Wall environment, but with randomized wall and door positions. At test time, the task requires navigating from a random starting position on one side of the wall to a random position on the other side, with non-overlapping wall and door positions seen during training.</p><p>2. PushObj: Derived from the Push-T environment, where we introduce novel block shapes, including Tetris-like blocks and a "+" shape. We train the model with four shapes and evaluate on two unseen shapes. The task involves both the agent and object reaching target locations.</p><p>3. GranularRandom: Derived from the Granular environment, where we initialize the scene with a different amount of particles. The task requires the robot to gather all particles to a square shape at a randomly sampled location. For this task, we directly take the models that are trained with a fixed amount of materials used in Section 4.3.</p><p>Visualizations can be found in Figure <ref type="figure" target="#fig_4">5</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3. Pretraining features</head><p>a) R3M: A ResNet-18 model pre-trained on a wide range of real-world human manipulation videos <ref type="bibr" target="#b40">(Nair et al., 2022)</ref>. b) ImageNet: A ResNet-18 model pre-trained on the ImageNet-1K dataset <ref type="bibr" target="#b46">(Russakovsky et al., 2015)</ref>.</p><p>c) DINO CLS: The pre-trained DINOv2 model provides two types of embeddings: Patch and CLS. The CLS embedding is a 1-dimensional vector that encapsulates the global information of an image.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.4. Ablations</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.4.1. SCALING LAWS OF DINO-WM</head><p>To analyze the scaling behavior of DINO-WM, we trained world models and performed planning using datasets of varying sizes, ranging from 200 to 18500 trajectories on the PushT environment. Our results demonstrate a clear trend: as the dataset size increases, both the quality of the world model's predictions and the performance of the planned behavior improve significantly. Larger datasets enable the world model to capture more diverse dynamics and nuances of the environment, leading to more accurate predictions and better-informed planning. We introduce a causal attention mask in Section 3.1.2. We ablate this choice on PushT by training DINO-WM with and without this causal attention mask with varying history length h, such that the model takes in input o t-h+1 , o t-h+2 , ...o t , and output o t-h+2 , ...o t+1 . For models with mask, the model can only attend to past observations for predicting each o t , whereas in the w/o mask case, predicting any observation in the output sequence can attend to the entire input sequence of observations. We show planning success rate on our PushT settings in Table <ref type="table" target="#tab_5">6</ref>. When h = 1 where the model with and without this causal mask is equivalent, both models get decent and equivalent success rate. However, as we increase the history length, we see a rapid drop in the w/o mask case, since the model can cheat during training by attending to future frames, which are not available at test time. Adding the causal mask solves this issue, and we observe improvement in performance as longer history could better capture dynamics information like velocity, acceleration, and object momentum. While DINO-WM eliminates the need to train world models with a pixel reconstruction loss-avoiding the risk of learning features irrelevant to downstream tasks-we conduct an ablation study where the predictor is trained using a reconstruction loss propagated from the decoder. As shown in Table <ref type="table" target="#tab_6">7</ref>, this approach performs reasonably well on the PushT task but falls slightly short of our method, where the predictor is trained entirely independently of the decoder. This underscores the advantage of disentangling feature learning from reconstruction objectives. </p><formula xml:id="formula_4">ẑ0 = enc(o 0 ), z g = enc(o g ).<label>(3)</label></formula><p>b) The planning objective is defined as the mean squared error (MSE) between the predicted latent state at the final timestep T and the goal latent state:</p><formula xml:id="formula_5">C = ∥ẑ T -z g ∥ 2 , where ẑt = p(ẑ t-1 , a t-1 ), ẑ0 = enc(o 0 ).<label>(4)</label></formula><p>c) At each planning iteration, CEM samples a population of N action sequences, each of length T , from a distribution. The initial distribution is set to be Gaussian.</p><p>d) For each sampled action sequence {a 0 , a 1 , . . . , a T -1 }, the world model is used to predict the resulting trajectory in the latent space: ẑt = p(ẑ t-1 , a t-1 ), t = 1, . . . , T.</p><p>And the cost C is calculated for each trajectory.</p><p>e) The top K action sequences with the lowest cost are selected, and the mean and covariance of the distribution are updated accordingly. f) A new set of N action sequences is sampled from the updated distribution, and the process repeats until success is achieved or after a fixed number of iterations that we set as hyperparameter.</p><p>g) After the optimization process is done, the first k actions a 0 , ...a k is executed in the environment. The process then repeats at the next time step with the new observation.</p><p>A.5.2. GRADIENT DESCENT:</p><p>Since our world model is differentiable, we also consider an optimization approach using Gradient Descent (GD) which directly minimizes the cost by optimizing the actions through backpropagation.</p><p>a) We first encode the current observation o 0 and goal observation o g into latent spaces:</p><formula xml:id="formula_7">ẑ0 = enc(o 0 ), z g = enc(o g ).<label>(6)</label></formula><p>b) The objective remains the same as for CEM:</p><formula xml:id="formula_8">C = ∥ẑ T -z g ∥ 2 , where ẑt = p(ẑ t-1 , a t-1 ), ẑ0 = enc(o 0 ).<label>(7)</label></formula><p>c) Using the gradients of the cost with respect to the action sequence {a 0 , a 1 , . . . , a T -1 }, the actions are updated iteratively:</p><formula xml:id="formula_9">a t ← a t -η ∂C ∂a t , t = 0, . . . , T -1,<label>(8)</label></formula><p>where η is the learning rate d) The process repeats until a fixed number of iteractions is reached, and we execute the first k actions a 0 , ..., a k in the enviornment, where k is a pre-determined hyperparameter. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.5.3. PLANNING RESULTS</head><p>Here we present the full planning performance using various planning optimization methods. CEM denotes the setting where we use CEM to optimize a sequence of actions, and execute those actions in the environment without any correction or replan. Similarly, GD denotes optimizing with gradient decent and executing all planned actions at once in an open-loop way. MPC denotes allowing replan and receding horizon with CEM for optimization. We compare DINO-WM with a variant of AVDC, where the diffusion model is trained to generate the next observation o t+1 conditioned on the current observation o t and action a t , rather than generating an entire sequence of observations at once conditioned on a text goal. We then present open-loop rollout results on validation trajectories using this action-conditioned diffusion model, with visualizations shown in Figure <ref type="figure" target="#fig_6">7</ref>. It can be seen that the action-conditioned diffusion model diverges from the ground truth observations over long-term predictions, making it insufficient for accurate task planning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.7. Decoding the Latents: LPIPS and SSIM Metrics</head><p>We report two key metrics: Structural Similarity Index (SSIM) <ref type="bibr" target="#b52">(Wang et al., 2004)</ref> and Learned Perceptual Image Patch Similarity (LPIPS) <ref type="bibr" target="#b61">(Zhang et al., 2018)</ref> on the reconstruction of world models' predicted future states across four of our more challenging environments. SSIM measures the perceived quality of images by evaluating structural information and luminance consistency between predicted and ground-truth images, with higher values indicating greater similarity. LPIPS assesses perceptual similarity by comparing deep representations of images, with lower scores reflecting closer visual similarity. Inference time is a critical factor when deploying a model for real-time decision-making. Table <ref type="table" target="#tab_0">10</ref> reports the time required on an NVIDIA A6000 GPU for a single inference step, the environment rollout time for advancing one step in the simulator, and the overall planning time for generating an optimal action sequence using the Cross-Entropy Method (CEM). The inference time of DINO-WM remains constant across environments due to the fixed model size and input image resolution, resulting in significant speedup over traditional simulation rollouts. Notably, in environments with high computational demands, such as deformable object manipulation, simulation rollouts require several seconds per step while DINO-WM enables rapid inference and efficient planning. Planning time is measured with CEM using 100 samples per iteration and 10 optimization steps, demonstrating that DINO-WM can achieve feasible planning times while maintaining accuracy and adaptability across tasks.</p><p>Table 10. Inference time and planning time for DINO-WM. Inference time represents the time required for a single forward pass for one step, while environment rollout time measures the simulator's speed for advancing one step. Planning time corresponds to Cross-Entropy Method (CEM) with 100 samples per iteration and 10 optimization steps.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Metric Time (s)</head><p>Inference (Batch 32) 0.014 Simulation Rollout (Batch 1) 3.0 Planning (CEM, 100x10) 53.0</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.9. Hyperparameters and implementation</head><p>We present the DINO-WM hyperparameters and relevant implementation repos below. We train the world models for all environments with the same hyperparameters.</p><p>The world model architecture is consistent across all environments. We use an encoder based on DINOv2, which extracts features with a shape of (14 × 14, 384) from input images resized to 196 × 196 pixels. The ViT backbone has a depth of 6, 16 attention heads, and an MLP dimension of 2048, amounting to approximately 19M parameters.</p><p>To ensure the prediction task is meaningful, as nearby observations can be highly similar, we introduce a frameskip parameter during data processing. This parameter specifies how far into the future the model is predicting. The frameskip values for each environment are provided in Table <ref type="table" target="#tab_0">11</ref>.</p><p>• DINOv2: <ref type="url" target="https://github.com/facebookresearch/dinov2">https://github.com/facebookresearch/dinov2</ref>   </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 .</head><label>1</label><figDesc>Figure 1. We present DINO-WM, a method for training visual models by using pretrained DINOv2 embeddings of image frames (a). Once trained, given a target observation oT , we can directly optimize agent behavior by planning through DINO-WM using model predictive control (b). The use of pretrained embeddings significantly improves performance over prior state-of-the-art world models (c).</figDesc><graphic coords="3,104.04,67.06,388.80,159.38" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 .</head><label>2</label><figDesc>Figure2. Architecture of DINO-WM. Given observations o t-k:t , we optimize the sequence of actions at:T -1 to minimize the predicted loss to the desired goal og. All forward computation is done in the latent space z. Here p θ indicates DINO-WM's dynamics model, which is used for making future predictions.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 .</head><label>3</label><figDesc>Figure 3. We evaluate DINO-WM on six environment suites, from left to right, top to bottom: Maze, Reach, Wall, Push-T, Rope Manipulation, and Granular Manipulation.</figDesc><graphic coords="6,55.44,67.06,234.00,156.13" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 .</head><label>4</label><figDesc>Figure4. Open-loop rollouts of world models on Push-T and Granular. Given the first frame and action sequence, each model predicts future frames, reconstructed by its decoder. For each environment, the bottom row denotes the ground truth. DINO-WM (Ours) rollouts are bolded and are visually indistinguishable from the ground truth observations.</figDesc><graphic coords="7,55.44,67.06,486.00,368.99" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 5 .</head><label>5</label><figDesc>Figure 5. Training and testing visualizations for WallRandom, PushObj and GranularRandom. Test setups are highlighted in blue boxes.</figDesc><graphic coords="7,307.44,500.75,234.01,75.47" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 6 .</head><label>6</label><figDesc>Figure 6. Plans generated by DINO-WM and AVDC.</figDesc><graphic coords="8,55.44,621.45,234.00,74.99" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 7 .</head><label>7</label><figDesc>Figure 7. Open-loop rollout on PushT with DINO-WM and action-conditioned AVDC (AVDC-AC). For each trajectory, the model is given the first frame as well as sequence of actions. The world models performs open-loop rollout with these actions.</figDesc><graphic coords="16,128.34,67.06,340.19,329.02" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 9 .</head><label>9</label><figDesc>Figure9. Trajectories planned with DINO-WM on all six environments. For each environment, the top (shaded) row shows the environment's observation after executing the planned actions, and the bottom row shows the world model's imagined observations.</figDesc><graphic coords="19,116.19,67.06,364.52,604.24" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 10 .</head><label>10</label><figDesc>Figure 10. Trajectories planned with DINO-WM on PushT with the same initial states but different goal states.</figDesc><graphic coords="20,104.04,119.08,388.82,535.28" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><graphic coords="18,55.44,248.68,486.00,184.74" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 .</head><label>1</label><figDesc>Planning results for offline world models on six control environments.ModelMaze Wall Reach PushT Rope GranularSR ↑ SR ↑ SR ↑ SR ↑ CD ↓ CD ↓As seen in Table1, on simpler environments such as Wall and PointMaze, DINO-WM is on par with state-of-the-art world models like DreamerV3. However, DINO-WM significantly outperforms prior work at manipulation environments where rich contact information and object dynamics need to be accurately inferred for task completion. We no-</figDesc><table><row><cell>IRIS</cell><cell>0.74 0.04 0.18</cell><cell>0.32</cell><cell>1.11</cell><cell>0.37</cell></row><row><cell cols="2">DreamerV3 1.00 1.00 0.64</cell><cell>0.30</cell><cell>2.49</cell><cell>1.05</cell></row><row><cell>TD-MPC2</cell><cell>0.00 0.00 0.00</cell><cell>0.00</cell><cell>2.52</cell><cell>1.21</cell></row><row><cell>Ours</cell><cell>0.98 0.96 0.92</cell><cell>0.90</cell><cell>0.41</cell><cell>0.26</cell></row></table><note><p>tice that for TD-MPC2, the lack of reward signal makes it difficult to learn good latent representations, which subsequently results in poor performance. Visualizations of planning on all environments can be found in Appendix A.10. Does DINO-WM learn better environment dynamics as more data become available? We conduct a set of ablation experiments in Appendix A.4.1, showing that the planning performance scales positively with the amount of training data. We also present the full inference and planning times for DINO-WM in Appendix A.8, showing significant speedup over traditional simulation, particularly in the computationally intensive deformable environments.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 .</head><label>2</label><figDesc>Planning results for world models with various pre-trained encoders.</figDesc><table><row><cell>Model</cell><cell cols="4">Maze Wall Reach PushT Rope Granular</cell></row><row><cell></cell><cell>SR ↑ SR ↑ SR ↑</cell><cell cols="2">SR ↑ CD ↓</cell><cell>CD ↓</cell></row><row><cell>R3M</cell><cell>0.94 0.34 0.40</cell><cell>0.42</cell><cell>1.13</cell><cell>0.95</cell></row><row><cell>ResNet</cell><cell>0.98 0.12 0.06</cell><cell>0.20</cell><cell>1.08</cell><cell>0.90</cell></row><row><cell>DINO CLS</cell><cell>0.96 0.58 0.60</cell><cell>0.44</cell><cell>0.84</cell><cell>0.79</cell></row><row><cell cols="2">DINOPatch (Ours) 0.98 0.96 0.92</cell><cell>0.90</cell><cell>0.41</cell><cell>0.26</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 .</head><label>3</label><figDesc>Planning results for offline world models on three suites with unseen environment configurations.</figDesc><table><row><cell>Model</cell><cell cols="3">WallRandom PushObj GranularRandom</cell></row><row><cell></cell><cell>SR ↑</cell><cell>SR ↑</cell><cell>CD ↓</cell></row><row><cell>IRIS</cell><cell>0.06</cell><cell>0.14</cell><cell>0.86</cell></row><row><cell>DreamerV3</cell><cell>0.76</cell><cell>0.18</cell><cell>1.53</cell></row><row><cell>R3M</cell><cell>0.40</cell><cell>0.16</cell><cell>1.12</cell></row><row><cell>ResNet</cell><cell>0.40</cell><cell>0.14</cell><cell>0.98</cell></row><row><cell>DINO CLS</cell><cell>0.64</cell><cell>0.18</cell><cell>1.36</cell></row><row><cell>Ours</cell><cell>0.82</cell><cell>0.34</cell><cell>0.63</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 .</head><label>4</label><figDesc>Comparison of world models on LPIPS metrics.</figDesc><table><row><cell>Method</cell><cell cols="2">PushT Wall Rope Granular</cell></row><row><cell>R3M</cell><cell>0.045 0.008 0.023</cell><cell>0.080</cell></row><row><cell>ResNet</cell><cell>0.063 0.002 0.025</cell><cell>0.080</cell></row><row><cell cols="2">DINO CLS 0.039 0.004 0.029</cell><cell>0.086</cell></row><row><cell>AVDC</cell><cell>0.046 0.030 0.060</cell><cell>0.106</cell></row><row><cell>Ours</cell><cell>0.007 0.0016 0.009</cell><cell>0.035</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 5 .</head><label>5</label><figDesc>Planning performance and prediction quality on PushT with DINO-WM trained on datasets of various sizes. SSIM and LPIPS are measured on the predicted future latents after decoding. We observe consistent improvement in performance as we increase the dataset size.</figDesc><table><row><cell cols="3">Dataset Size SR ↑ SSIM ↑ LPIPS ↓</cell></row><row><cell>n=200</cell><cell>0.08 0.949</cell><cell>0.056</cell></row><row><cell>n=1000</cell><cell>0.48 0.973</cell><cell>0.013</cell></row><row><cell>n=5000</cell><cell>0.72 0.981</cell><cell>0.007</cell></row><row><cell>n=10000</cell><cell>0.88 0.984</cell><cell>0.006</cell></row><row><cell>n=18500</cell><cell>0.92 0.987</cell><cell>0.005</cell></row><row><cell cols="2">A.4.2. DINO-WM WITH VS. WITHOUT CAUSAL ATTENTION MASK</cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 6 .</head><label>6</label><figDesc>Comparison of DINO-WM with and without causal attention mask on PushT. We train models with varying history h, representing the number of past observations the model takes as input.</figDesc><table><row><cell>h = 1 h = 2 h = 3</cell></row><row><cell>w/o mask 0.76 0.36 0.08</cell></row><row><cell>with mask 0.76 0.88 0.92</cell></row><row><cell>A.4.3. DINO-WM WITH RECONSTRUCTION LOSS</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 7 .</head><label>7</label><figDesc>Comparison of DINO-WM trained with and without loss from the decoder on PushT, highlighting the advantage of disentangling feature learning from reconstruction objectives.Given the current observation o 0 and the goal observation o g , both represented as RGB images, the observations are first encoded into latent states:</figDesc><table><row><cell></cell><cell>Success Rate</cell></row><row><cell>w/o decoder loss</cell><cell>0.92</cell></row><row><cell>with decoder loss</cell><cell>0.80</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_7"><head>Table 8 .</head><label>8</label><figDesc>Planning results of DINO-WM</figDesc><table><row><cell></cell><cell cols="4">PointMaze Push-T Wall Rope Granular</cell></row><row><cell>CEM</cell><cell>0.8</cell><cell cols="2">0.86 0.74 NA</cell><cell>NA</cell></row><row><cell>GD</cell><cell>0.22</cell><cell>0.28</cell><cell>NA NA</cell><cell>NA</cell></row><row><cell>MPC</cell><cell>0.98</cell><cell cols="2">0.90 0.96 0.41</cell><cell>0.26</cell></row><row><cell cols="4">A.6. Comparison with Action-Conditioned Generative Models</cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_8"><head>Table 9 .</head><label>9</label><figDesc>Comparison of world models across different environments on LPIPS and SSIM metrics.</figDesc><table><row><cell></cell><cell>LPIPS ↓</cell><cell></cell><cell>SSIM ↑</cell><cell></cell></row><row><cell>Method</cell><cell cols="4">PushT Wall Rope Granular PushT Wall Rope Granular</cell></row><row><cell>R3M</cell><cell>0.045 0.008 0.023</cell><cell>0.080</cell><cell>0.956 0.994 0.982</cell><cell>0.917</cell></row><row><cell>ResNet</cell><cell>0.063 0.002 0.025</cell><cell>0.080</cell><cell>0.950 0.996 0.980</cell><cell>0.915</cell></row><row><cell cols="2">DINO CLS 0.039 0.004 0.029</cell><cell>0.086</cell><cell>0.973 0.996 0.980</cell><cell>0.912</cell></row><row><cell>AVDC</cell><cell>0.046 0.030 0.060</cell><cell>0.106</cell><cell>0.959 0.983 0.979</cell><cell>0.909</cell></row><row><cell>Ours</cell><cell>0.007 0.0016 0.009</cell><cell>0.035</cell><cell>0.985 0.997 0.985</cell><cell>0.940</cell></row><row><cell>A.8. Inference Time</cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgements</head><p>We would like to thank <rs type="person">Ademi Adeniji</rs>, <rs type="person">Alfredo Canziani</rs>, <rs type="person">Amir Bar</rs>, <rs type="person">Kevin Zhang</rs>, <rs type="person">Mido Assran</rs>, <rs type="person">Vlad Sobal</rs>, <rs type="person">Zichen Jeff Cui</rs> for their valuable discussion and feedback. This work was supported by grants from <rs type="funder">Honda</rs>, <rs type="funder">Hyundai</rs>, <rs type="funder">NSF</rs> award <rs type="grantNumber">2339096</rs> and <rs type="funder">ONR</rs> awards <rs type="grantNumber">N00014-21-1-2758</rs> and <rs type="grantNumber">N00014-22-1-2773</rs>. LP is supported by the <rs type="funder">Packard Fellowship</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_cZEWE2r">
+					<idno type="grant-number">2339096</idno>
+				</org>
+				<org type="funding" xml:id="_WsMfys4">
+					<idno type="grant-number">N00014-21-1-2758</idno>
+				</org>
+				<org type="funding" xml:id="_qESjuAb">
+					<idno type="grant-number">N00014-22-1-2773</idno>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>• DreamerV3: <ref type="url" target="https://github.com/NM512/dreamerv3-torch">https://github.com/NM512/dreamerv3-torch</ref> </p><p>• AVDC: <ref type="url" target="https://github.com/flow-diffusion/AVDC">https://github.com/flow-diffusion/AVDC</ref> </p><p>• R3M: <ref type="url" target="https://github.com/facebookresearch/r3m/">https://github.com/facebookresearch/r3m/</ref> </p><p>We base our predictor implementation on <ref type="url" target="https://github.com/lucidrains/vit-pytorch/">https://github.com/lucidrains/vit-pytorch/</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.10. Additional Planning Visualizations</head><p>We show visualizations of planning instances for DINO-WM and our baselines in Figure <ref type="figure" target="#fig_10">8</ref>. For comparison, we show the best performing world models DINO CLS and DreamerV3. We also show visualizations of DINO-WM on all tasks in Figure <ref type="figure">9</ref>. For each environment, the top (shaded) row shows the environment's observation after executing the planned actions, and the bottom row shows the world model's imagined observations.</p><p>To demonstrate DINO-WM's ability to generalize to different goals at test time, we show additional visualizations for DINO-WM when provided with the same initial observation but different goal observations in Figure <ref type="figure">10</ref> and  </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 8 .</head><label>8</label><figDesc>Planning visualizations for PointMaze, Push-T, and Granular, on randomly sampled initial and goal configurations. The task is defined by Start and Goal, denoting the initial and goal observations. Final shows the final state the system arrives at after planning with each world model. For comparison, we show the best performing world models DINO CLS and DreamerV3.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><figDesc>Figure11. Similarly, we show trajectory pairs to compare the environment's observations (top shaded rows) after executing a sequence of planned actions with DINO-WM's imagined trajectories (bottom rows). The left-most column denotes the initial observations, and the right-most shaded column denotes the goal observations.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>Figure 11 .</head><label>11</label><figDesc>Trajectories planned with DINO-WM on PointMaze with the same initial states but different goal states.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_9"><head>Table 11 .</head><label>11</label><figDesc>Environment-dependent hyperparameters for DINO-WM training. We report the number of trajectories in the dataset under Dataset Size, and the length of trajectories under Traj. Len.H Frameskip Dataset Size Traj. Len.</figDesc><table><row><cell>PointMaze</cell><cell>3</cell><cell>5</cell><cell>2000</cell><cell>100</cell></row><row><cell>Reacher</cell><cell>3</cell><cell>5</cell><cell>3000</cell><cell>100</cell></row><row><cell>Push-T</cell><cell>3</cell><cell>5</cell><cell>18500</cell><cell>100-300</cell></row><row><cell>PushObj</cell><cell>3</cell><cell>5</cell><cell>20000</cell><cell>100</cell></row><row><cell>Wall</cell><cell>1</cell><cell>5</cell><cell>1920</cell><cell>50</cell></row><row><cell cols="2">WallRandom 1</cell><cell>5</cell><cell>10240</cell><cell>50</cell></row><row><cell>Rope</cell><cell>1</cell><cell>1</cell><cell>1000</cell><cell>5</cell></row><row><cell>Granular</cell><cell>1</cell><cell>1</cell><cell>1000</cell><cell>5</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_10"><head>Table 12 .</head><label>12</label><figDesc>Shared hyperparameters for DINO-WM training</figDesc><table><row><cell>Name</cell><cell>Value</cell></row><row><cell>Image size</cell><cell>224</cell></row><row><cell>Optimizer</cell><cell>AdamW</cell></row><row><cell>Decoder lr</cell><cell>3e-4</cell></row><row><cell>Predictor lr</cell><cell>5e-5</cell></row><row><cell>Action encoder lr</cell><cell>5e-4</cell></row><row><cell>Action emb dim</cell><cell>10</cell></row><row><cell>Epochs</cell><cell>100</cell></row><row><cell>Batch size</cell><cell>32</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Legged locomotion in challenging terrains using egocentric vision</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Malik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Pathak</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2211.07638" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Self-supervised learning from images with a joint-embedding predictive architecture</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Assran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Duval</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Bojanowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Vincent</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rabbat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lecun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ballas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="15619" to="15629" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Nonlinear and adaptive control with applications</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Astolfi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Karagiannis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ortega</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+			<publisher>Springer</publisher>
+			<biblScope unit="volume">187</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bardes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Garrido</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ponce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rabbat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lecun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Assran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ballas</surname></persName>
+		</author>
+		<author>
+			<persName><surname>V-Jepa</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=WFYbBOEOtv" />
+		<title level="m">Latent video prediction for visual representation learning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">A</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Carbajal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Choromanski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Driess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dubey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">G</forename><surname>Arenas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Herzog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Irpan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Julian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kalashnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Kuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Leal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T.-W</forename><forename type="middle">E</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Mordatch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Pertsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Reymann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ryoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Salazar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sanketi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sermanet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Soricut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Tran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Vanhoucke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Vuong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Wahid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Welker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wohlhart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zitkovich</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2307.15818" />
+		<imprint/>
+	</monogr>
+	<note>Rt-2: Vision-language-action models transfer web knowledge to robotic control, 2023a</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">A</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Carbajal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dabis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Herzog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ibarz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Irpan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Jackson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Jesmonth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">J</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Julian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kalashnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Kuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Leal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K.-H</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Malla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Manjunath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Mordatch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Nachum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Parada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Peralta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Pertsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Quiambao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ryoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Salazar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sanketi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Sayed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sontakke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Tran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Vanhoucke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Vega</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Vuong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zitkovich</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2212.06817" />
+		<imprint/>
+	</monogr>
+	<note>Rt-1: Robotics transformer for real-world control at scale, 2023b</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bruce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Dennis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Parker-Holder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Hughes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mavalankar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Steigerwald</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Apps</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Aytar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bechtle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Behbahani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Heess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Osindero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ozair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Reed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zolna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Clune</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>De Freitas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Rocktäschel</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Genie</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2402.15391" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<publisher>Generative interactive environments</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Emerging properties in self-supervised vision transformers</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Caron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jégou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Mairal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Bojanowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Joulin</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2104.14294" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">C</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Cousineau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Burchfiel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Tedrake</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Song</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2303.04137" />
+		<title level="m">Diffusion policy: Visuomotor policy learning via action diffusion</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Deep reinforcement learning in a handful of trials using probabilistic dynamics models</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Chua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Calandra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Mcallister</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1805.12114" />
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">A model-based and data-efficient approach to policy search</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">P</forename><surname>Deisenroth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">E</forename><surname>Rasmussen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Pilco</surname></persName>
+		</author>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page">14273320</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Diffusion world model: Future modeling beyond step-by-step rollout for offline reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zheng</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2402.03570" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">An image is worth 16x16 words: Transformers for image recognition at scale</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dosovitskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Beyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kolesnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Weissenborn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Unterthiner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Dehghani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Minderer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Heigold</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gelly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Uszkoreit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Houlsby</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2010.11929" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Learning universal policies via text-guided video generation</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Nachum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2302.00111" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Visual foresight: Model-based deep reinforcement learning for vision-based robotic control</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Ebert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Dasari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1812.00568" />
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">H</forename><surname>Etukuru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Naka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Mehu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Edsinger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Paxton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chintala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">M M</forename><surname>Shafiullah</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.05865</idno>
+		<title level="m">Robot utility models: General policies for zeroshot deployment in new environments</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Deep visual foresight for planning robot motion</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1610.00696" />
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">D4rl: Datasets for deep data-driven reinforcement learning</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Nachum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Tucker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2004.07219" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">World models</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schmidhuber</surname></persName>
+		</author>
+		<idno type="DOI">10.5281/ZENODO.1207631</idno>
+		<ptr target="https://zenodo.org/record/1207631" />
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Learning latent dynamics for planning from pixels</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hafner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Fischer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Villegas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Davidson</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1811.04551" />
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Dream to control: Learning behaviors by latent imagination</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hafner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Norouzi</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1912.01603" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Mastering atari with discrete world models</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hafner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Norouzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ba</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2010.02193" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Mastering diverse domains through world models</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hafner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Pasukonis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2301.04104" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">An efficient transformer for multi-task policy learning</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Haldar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Baku</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2406.07539" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Temporal difference learning for model predictive control</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Hansen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Su</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2203.04955" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Td-mpc2: Scalable, robust world models for continuous control</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Hansen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2310.16828" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Deep residual learning for image recognition</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE conference on computer vision and pattern recognition</title>
+		<meeting>the IEEE conference on computer vision and pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="770" to="778" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">An overview of model predictive control</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Holkar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">M</forename><surname>Waghmare</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">International Journal of control and automation</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="47" to="63" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Gaia-1: A generative world model for autonomous driving</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Russell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yeo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Murez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Fedoseev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kendall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Shotton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Corrado</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Chain-of-thought predictive control</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Thumuluri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Su</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2304.00776" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Learning to act from actionless videos through dense correspondences</title>
+		<author>
+			<persName><forename type="first">P.-C</forename><surname>Ko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S.-H</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2310.08576" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Behavior generation with latent actions</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Etukuru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">J</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">M M</forename><surname>Shafiullah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Pinto</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2403.03181" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Learning deep latent features for model predictive control</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Lenz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">A</forename><surname>Knepper</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Saxena</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Deepmpc</surname></persName>
+		</author>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+	</analytic>
+	<monogr>
+		<title level="m">Robotics: Science and Systems</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page">10130184</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sora</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2402.17177" />
+		<title level="m">A review on background, technology, limitations, and opportunities of large vision models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Eureka: Human-level reward design via coding large language models</title>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">J</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D.-A</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Bastani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Jayaraman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Anandkumar</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2310.12931" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Discovering and achieving goals via world models</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Mendonca</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Rybkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Daniilidis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hafner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Pathak</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2110.09514" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Alan: Autonomously exploring robotic agents in the real world</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Mendonca</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bahl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Pathak</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2302.06604" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<author>
+			<persName><forename type="first">R</forename><surname>Mendonca</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bahl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Pathak</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2308.10901" />
+		<title level="m">Structured world models from human videos, 2023b</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Transformers are sample-efficient world models</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Micheli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Alonso</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Fleuret</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2209.00588" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Deep dynamics models for learning dexterous manipulation</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Nagabandi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Konoglie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Kumar</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1909.11652" />
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">R3m: A universal visual representation for robot manipulation</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Nair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Rajeswaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gupta</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2203.12601" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Dinov2: Learning robust visual features without supervision</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Oquab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Darcet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Moutakanni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Vo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Szafraniec</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Khalidov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Fernandez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Haziza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Massa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>El-Nouby</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Assran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ballas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Galuba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Howes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P.-Y</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S.-W</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rabbat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Synnaeve</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jegou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Mairal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Labatut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Joulin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Bojanowski</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2304.07193" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Zero-shot visual imitation</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Pathak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Mahmoudieh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shentu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Shelhamer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Malik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">A</forename><surname>Efros</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Darrell</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1804.08606" />
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">Generating diverse high-fidelity images with vq-vae-2</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Razavi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Van Den Oord</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Vinyals</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1906.00446" />
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Reed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zolna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Parisotto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">G</forename><surname>Colmenarejo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Novikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Barth-Maron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Gimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sulsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">T</forename><surname>Springenberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Eccles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bruce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Razavi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Heess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Hadsell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Vinyals</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bordbar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Freitas</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2205.06175" />
+		<title level="m">A generalist agent</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Transformer-based world models are happy with 100k interactions</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Robine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Höftmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Uelwer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Harmeling</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2303.07109" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<title level="m" type="main">Imagenet large scale visual recognition challenge</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Russakovsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Krause</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Satheesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Karpathy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Khosla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bernstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">C</forename><surname>Berg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1409.0575" />
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">Planning to explore via self-supervised world models</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Sekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Rybkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Daniilidis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hafner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Pathak</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2005.05960" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">an integrated architecture for learning, planning, and reacting</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">S</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Dyna</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Sigart Bulletin</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="160" to="163" />
+			<date type="published" when="1991">1991</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tassa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Doron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Muldal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Erez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>De Las Casas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Budden</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Abdolmaleki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Merel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lefrancq</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Riedmiller</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1801.00690" />
+		<title level="m">Deepmind control suite</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">A generalized iterative lqg method for locally-optimal feedback control of constrained nonlinear stochastic systems</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Todorov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2005, American Control Conference</title>
+		<meeting>the 2005, American Control Conference</meeting>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2005">2005. 2005</date>
+			<biblScope unit="page" from="300" to="306" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title level="m" type="main">Manipulate by seeing: Creating manipulation controllers from pre-trained representations</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Dasari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">K</forename><surname>Srirama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Tulsiani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gupta</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2303.08135" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Image quality assessment: from error visibility to structural similarity</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bovik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Sheikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Simoncelli</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/TIP.2003.819861</idno>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Image Processing</title>
+		<imprint>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="600" to="612" />
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<title level="m" type="main">Embed to control: A locally linear latent dynamics model for control from raw images</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Watter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">T</forename><surname>Springenberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Boedecker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Riedmiller</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1506.07365" />
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>So</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Dou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2401.00025" />
+		<title level="m">Any-point trajectory modeling for policy learning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<analytic>
+		<title level="a" type="main">Information theoretic mpc for model-based reinforcement learning</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Williams</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Wagener</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Goldfain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Drews</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Rehg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Boots</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">A</forename><surname>Theodorou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE international conference on robotics and automation</title>
+		<imprint>
+			<biblScope unit="page" from="1714" to="1721" />
+			<date type="published" when="2017">2017. 2017</date>
+			<publisher>IEEE</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<title level="m" type="main">Learning to manipulate deformable objects without demonstrations</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kurutach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1910.13439" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<monogr>
+		<title level="m" type="main">Masked visual pre-training for motor control</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Radosavovic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Darrell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Malik</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2203.06173" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<analytic>
+		<title level="a" type="main">Learning predictive representations for deformable objects using contrastive estimation</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Vangipuram</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Pinto</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="564" to="574" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ghasemipour</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tompson</surname></persName>
+		</author>
+		<title level="m">Schuurmans, D., and Abbeel, P. Learning interactive real-world simulators</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<monogr>
+		<title level="m" type="main">Adaptigraph: Material-adaptive graph-based neural dynamics for robotic manipulation</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hauser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2407.07889" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<monogr>
+		<title level="m" type="main">The unreasonable effectiveness of deep features as a perceptual metric</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Isola</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">A</forename><surname>Efros</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Shechtman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Wang</surname></persName>
+		</author>
+		<idno>CoRR, abs/1801.03924</idno>
+		<ptr target="http://arxiv.org/abs/1801.03924" />
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<monogr>
+		<title level="m" type="main">Learning fine-grained bimanual manipulation with low-cost hardware</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">Z</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2304.13705" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<monogr>
+		<title level="m" type="main">Train offline, test online: A real robot learning benchmark</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Dean</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">K</forename><surname>Srirama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Rajeswaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Pari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hatch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gupta</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2306.00942" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

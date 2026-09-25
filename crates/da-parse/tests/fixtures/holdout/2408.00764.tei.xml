@@ -1,0 +1,3417 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">AGENTGEN: Enhancing Planning Abilities for Large Language Model based Agent via Environment and Task Generation</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Mengkang</forename><surname>Hu</surname></persName>
+							<email>v-humengkang@microsoft.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">The University of Hong Kong</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Pu</forename><surname>Zhao</surname></persName>
+							<email>puzhao@microsoft.com</email>
+							<affiliation key="aff1">
+								<orgName type="institution">Microsoft Corporation</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Can</forename><surname>Xu</surname></persName>
+							<email>caxu@microsoft.com</email>
+							<affiliation key="aff1">
+								<orgName type="institution">Microsoft Corporation</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Qingfeng</forename><surname>Sun</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Microsoft Corporation</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jianguang</forename><surname>Lou</surname></persName>
+							<email>jlou@microsoft.com</email>
+							<affiliation key="aff1">
+								<orgName type="institution">Microsoft Corporation</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Qingwei</forename><surname>Lin</surname></persName>
+							<email>qlin@microsoft.com</email>
+							<affiliation key="aff1">
+								<orgName type="institution">Microsoft Corporation</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ping</forename><surname>Luo</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">The University of Hong Kong</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Saravan</forename><surname>Rajmohan</surname></persName>
+							<email>saravar@microsoft.com</email>
+							<affiliation key="aff1">
+								<orgName type="institution">Microsoft Corporation</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">AGENTGEN: Enhancing Planning Abilities for Large Language Model based Agent via Environment and Task Generation</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">59BB9D4C2994E4BCDA9EAF2DB4490970</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:45+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large Language Model (LLM) based agents have garnered significant attention and are becoming increasingly popular. Furthermore, planning ability is a crucial component of an LLM-based agent, involving interaction with the environment and executing actions to complete a planning task, which generally entails achieving a desired goal from an initial state. This paper investigates enhancing the planning abilities of LLM-based agents through instruction tuning, referred to as agent training. Recent studies on agent training have demonstrated that utilizing expertlevel trajectory data (sequences of action-observation pairs) for instruction-tuning LLMs effectively enhances their planning capabilities. However, existing work primarily focuses on synthesizing trajectories from manually designed planning tasks and environments. The labor-intensive nature of creating these environments and tasks impedes the generation of sufficiently varied and extensive trajectories for agent training. To address this limitation, this paper explores the automated synthesis of diverse environments and a gradual range of planning tasks, from easy to difficult. We introduce a framework, AGENTGEN, that leverages LLMs first to generate environments and subsequently generate planning tasks conditioned on these environments. Specifically, to improve environmental diversity, we propose using an inspiration corpus composed of various domain-specific text segments as the context for synthesizing environments. Moreover, to increase the difficulty diversity of generated planning tasks, we propose a bidirectional evolution method, BI-EVOL, that evolves planning tasks from easier and harder directions to synthesize a task set with a smoother difficulty curve, thereby enhancing the learning process of LLMs more effectively. These methods collectively contribute to the generation of diverse trajectory data for instruction-tuning. Based on AGENTGEN, we greatly expanded the number of environments and planning tasks available for agent training. The evaluation results from AgentBoard indicate that AGENTGEN greatly enhances the planning capabilities of LLMs. For instance, the AGENT-GEN instruction-tuned Llama-3.1-8B outperforms GPT-3.5 in overall performance. Moreover, the AGENTGEN-tuned Llama-3.1-70B model achieves state-of-the-art results in planning tasks.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Recently, owing to advancements in Large Language Models (LLMs) <ref type="bibr" target="#b41">[42,</ref><ref type="bibr" target="#b42">43,</ref><ref type="bibr" target="#b38">39,</ref><ref type="bibr" target="#b61">62]</ref>, the LLM-based Agents have garnered widespread attention from the artificial intelligence community. Generally, an LLM-based agent refers to utilizing LLMs to perceive the environment, make decisions, and execute actions to substitute or help people accomplish some specific tasks <ref type="bibr" target="#b76">[77,</ref><ref type="bibr" target="#b64">65,</ref><ref type="bibr" target="#b78">79]</ref>. Furthermore, planning is often regarded as one of the most important applications of LLM-based agents, such as robotic planning <ref type="bibr" target="#b53">[54,</ref><ref type="bibr" target="#b45">46,</ref><ref type="bibr" target="#b18">19,</ref><ref type="bibr" target="#b62">63]</ref>, travel planning <ref type="bibr" target="#b89">[90,</ref><ref type="bibr" target="#b77">78]</ref>, etc. In this study, planning is conceptualized as the systematic process of identifying a sequence of executable actions within a given environment to complete a planning task, defined as the transition from an initial state to achieve specified goal conditions, considering constraints and available resources <ref type="bibr" target="#b24">[25,</ref><ref type="bibr" target="#b49">50]</ref>.</p><p>Improving planning capabilities through instruction-tuning LLMs is a significant research problem, referred to as agent training. As shown in Figure <ref type="figure" target="#fig_0">1</ref>, similar to imitation learning <ref type="bibr" target="#b22">[23]</ref>, a typical agent training process can be divided into three stages: (i) Preparing environments and planning tasks. (ii) Synthesizing expert-level trajectories (sequences of action-observation pairs) on these planning tasks. For example, utilizing state-of-the-art LLMs (e.g., GPT-4 <ref type="bibr" target="#b42">[43]</ref>) as the agent and filtering trajectory based on reward score <ref type="bibr" target="#b85">[86,</ref><ref type="bibr" target="#b5">6]</ref>. (iii) Instruction-tuning LLMs with the synthesized trajectory data. Recently, the effectiveness of enhancing the planning capabilities of LLMs through agent training has been demonstrated by many studies <ref type="bibr" target="#b85">[86,</ref><ref type="bibr" target="#b84">85,</ref><ref type="bibr" target="#b5">6,</ref><ref type="bibr" target="#b67">68,</ref><ref type="bibr" target="#b7">8,</ref><ref type="bibr" target="#b86">87,</ref><ref type="bibr" target="#b63">64,</ref><ref type="bibr" target="#b56">57]</ref>. Despite their success, one key limitation of these works is that they primarily rely on manually designed environments and planning tasks. The labor-intensive nature of creating environments and planning tasks hinders the generation of diverse and extensive trajectory data. More explicitly, designing diverse environments requires defining a range of rich and practical scenarios, and implementing these environments typically involves the participation of human experts with programming skills. Additionally, formulating tasks often demands creating a task set with a gradual difficulty progression. Due to this constraint, existing agent training studies typically use only a few environments for data synthesis. To address the aforementioned deficiencies, this paper introduces an automatic framework AGENT-GEN that utilizes LLMs to construct diverse environments and planning tasks for agent training, expanding the available environments from a few to hundreds. More specifically, AGENTGEN is structured around two stages: (1) Environment Generation: Achieving sufficient environmental diversity is essential for creating diverse planning tasks, which involves covering a broad range of scenarios and domains. To ensure this, we use an inspiration corpus composed of diverse text segments as context for generating environment specifications with LLMs, where actions, restrictions, and other details are defined using natural language. For example, in Figure <ref type="figure" target="#fig_1">2</ref>, we randomly selected a text segment from the inspiration corpus: "How to boost your diet with peanut butter powder?" This prompted the generation of a related environment specification: "You are a nutritionist tasked with creating a new healthy recipe book that incorporates peanut butter powder as a key ingredient". Subsequently, we prompt the LLM to produce the corresponding code based on this specification, which may be composed of Python, Planning Domain Definition Language (PDDL) <ref type="bibr" target="#b37">[38]</ref>, or other domain-specific languages. Furthermore, we constructed an environment library to serve as in-context examples and iteratively expanded it by incorporating high-quality newly generated environments.</p><p>(2) Task Generation: Conditioned on the generated environment, we aim to create multiple planning tasks. In this stage, it is crucial to have a gradual set of tasks ranging from easy to difficult, i.e., difficulty diversity. To achieve greater difficulty diversity, we propose a bidirectional evolution method, BI-EVOL, where the LLM first generates random planning tasks and then evolves these tasks by applying constraints towards both simplification and increased difficulty. The created task set with BI-EVOL has a smooth difficulty curve that facilitates LLMs' smoother acquisition of planning skills.</p><p>To verify the effectiveness of our method, we synthesized environments and planning tasks based on PDDL <ref type="bibr" target="#b37">[38]</ref> and constructed a dataset comprising 592 environments, each with 20 tasks. We then used a domain-independent planner to obtain 7,246 high-quality trajectories. Subsequently, we used this trajectory data for instruction-tuning a series of LLMs and demonstrated the trained model on AgentBoard <ref type="bibr" target="#b36">[37]</ref>. Since our instruction-tuning dataset is composed of trajectory synthesized from PDDL-based planning tasks, we refer to evaluation tasks implemented in PDDL as in-domain tasks and tasks implemented in other programming languages as out-of-domain tasks. Importantly, this evaluation was conducted in a zero-shot manner without utilizing any trajectory data from these tasks. Experimental results demonstrate that AGENTGEN achieved more than a tenfold improvement over the raw LLama-3.1-8B on in-domain tasks (33.3 vs. 3.0), with overall performance surpassing that of GPT-3.5. Furthermore, the performance of AGENTGEN-tuned Llama-3.1-70B exceeded GPT-4, setting a new state-of-the-art in planning tasks. In out-of-domain tasks, AGENTGEN also demonstrated similar experimental outcomes. Specifically, it led to a significant improvement in average success rates, with the raw LLama-3.1-8B model achieving a 10.0% increase and the 70B model a 3.7% improvement. In summary, the proposed environment and planning task generation method AGENTGEN can help improve planning ability. Moreover, not only can in-domain tasks benefit from this, but out-of-domain tasks also improve, which confirms both the effectiveness and generalization. Our contributions can be summarized as follows:</p><p>• We introduce AGENTGEN, which, as far as we know, is the first framework for automatically generating diverse planning tasks and environments targeted for LLM-based agent training.</p><p>• We propose utilizing an inspiration corpus as the context for generating environments with LLMs, resulting in 592 diverse environments that encompass a broad range of scenarios.</p><p>• We propose a bidirectional evolution method BI-EVOL that evolves seed planning tasks in both simpler and more complex directions, thereby constructing a task set with a smoother difficulty curve.</p><p>• We constructed an agent instruction-tuning dataset with 7246 high-quality trajectories through AGENTGEN. LLMs instruction-tuned with this dataset achieved massive improvement in both in-domain and out-of-domain planning tasks, which validated the effectiveness and generalization of AGENTGEN.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Preliminary</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Planning Problems</head><p>We consider goal-directed deterministic planning problems <ref type="bibr" target="#b49">[50]</ref>, which are formally defined as a tuple P = (T, E), where E denotes the environment in which the agent interacts and T denotes the task that the agent needs to complete. Specifically, an environment E typically models a world, encompassing the definitions of the action space A and state space S, as well as the transition function T : S × A → S. Task T is further defined by the tuple T = (G, I), where G refers to the goal conditions and I refers to initial states of the agent. The initial states I are a subset of the state space S i that specifies the starting conditions of the agent. The goal G is a subset of the state space S g that specifies the desired outcomes or conditions. Specifically, G can be expressed as G = {s ∈ S g | ϕ(s) = true}. Here, ϕ(s) is a boolean-valued function representing conditions or propositions that must be satisfied for the state s to be considered part of the goal set.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Planning Problem Implementation</head><p>A planning problem can be implemented with programming languages such as Python or domainspecific languages such as Planning Domain Definition Language (PDDL) <ref type="bibr" target="#b37">[38]</ref>. For example, in a PDDL-based planning problem, the domain PDDL file can be regarded as the environment E, defining states (predicates) and actions and specifying the transition function using preconditions and effects of each action. The problem PDDL file, on the other hand, can be seen as the task T. Both initial states and goal conditions are typically defined as combinations of predicates. Another widely used programming language for constructing planning problems is Python. For example, in OpenAI gym <ref type="foot" target="#foot_1">1</ref> , a planning problem will be implemented as a Python class, where the transition function is implemented as a method of the class, usually named the "step" or "update" function. Meanwhile, the goal G is typically represented as a reward function that indicates the objective of the task, and the initial states I are defined in a method named "reset."</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">Large Language Model based Agent</head><p>An LLM-based agent leverages a pre-trained language model to operate within the defined environment E and complete the given task T. Given an environment E, the LLM-based agent perceives its state S and takes actions A based on its understanding and processing of the input. The transition function T : S × A → S remains consistent, where the LLM-based agent determines the next state by generating appropriate actions through natural language processing. The goal G guides the LLM-based agent in selecting actions that maximize the reward. The agent utilizes the language model to interpret the task requirements and generate actions that align with achieving the specified goal. In essence, the LLM-based agent forms a policy π : S → A using the LLM, where π(s) is the action taken in state s based on the LLM's understanding and processing of the task.</p><p>3 Methodology Problem Definition The process of generating planning tasks can be formalized as a function f : I → (T, E), where I is the input space (e.g., instructions or prompts) and tuple (T, E) is the space of all possible planning tasks and environments. Based on the definition in Section 2.1, we can express this as f (i) = (T i , E i ), i ∈ I, where T i is the generated planning task and E i is the generated environment for a given input i. Our two-stage approach can be further decomposed as follows: i) Environment Generation ( §3.1): In the first stage, we generate the environment E i based on the input instruction i. This can be represented as E i = g E (i), where g E is the environment generation function that takes the instruction i as input and produces the environment E i . ii) Task Generation ( §3.2): In the second stage, we generate the task T i , conditioned on the environment E i generated in the first stage. This can be expressed as: T i = g T (i, E i ), where g T is the task generation function that takes both the original instruction i and the generated environment E i as inputs to</p><p>produce the task T i . We will detail the implementation of these two stages in the following section. Overview As is shown in Figure <ref type="figure" target="#fig_1">2</ref>, we propose a sophisticated framework for environment generation structured around three main components: (1) an environment specification generation module where an LLM first generates a specification of the environment, typically including a general overview of the environment, descriptions of the state space and action space, and definitions of the transition functions; (2) an environment implementation module that generates corresponding code based on the environment specification; and (3) an environment library that stores previously generated high-quality environments, serving as a comprehensive environment dataset and providing in-context examples for generating new environments. Each component will be elaborated on in the following paragraph.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Environment Generation</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Environment Specification</head><p>We initially prompt the LLM to generate an environment specification, which typically includes an overall depiction of the environment, specific actions and their corresponding preconditions and effects, and certain restrictions within the environment. The environment specification will serve as the basis for generating specific environment codes. This two-stage approach, similar to the Chain-of-Thought <ref type="bibr" target="#b73">[74]</ref>, can better assist the LLM in creating high-quality environments. For generating environment specifications, One direct approach is to prompt LLMs to generate random environments. However, due to the inherent inductive bias of LLMs, they struggle to generate diverse environments in this way. Therefore, to address this issue, we build an inspiration corpus D = {t 0 , t 1 , •, t n }, containing sufficiently diverse text segments used to serve as the "inspiration" for generating environment specification with LLMs. More specifically, when generating an environment, we first sample a text segment t i from D, then prompt the LLM to generate a related environment based on t i . Taking the example in Figure <ref type="figure" target="#fig_1">2</ref>, we first sample a text segment "How to boost your diet with peanut butter powder?" from D. Then we prompt an LLM to generate a related environment where the agent is defined as a nutritionist tasked with creating a new healthy recipe book that prominently features peanut butter powder as a key ingredient. This approach significantly enhances the diversity of generated environments, thereby empowering more generalized agent training. The inspiration corpus can be implemented in various ways, such as using a large-scale pre-trained corpus like Common Crawl. Alternatively, a domain-specific corpus, such as a code generation dataset <ref type="bibr" target="#b26">[27,</ref><ref type="bibr" target="#b6">7]</ref>, can be used to generate environments for a specific domain. This paper uses LIMA <ref type="bibr" target="#b92">[93]</ref> as the inspiration corpus, an instruction-tuning dataset with sufficient diversity.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Environment Implementation</head><p>Conditioned on the generated environment specification, we generate its corresponding code, i.e., implementing the environment. This can be formulated as a typical code-generation problem with LLMs. We also introduce a validation tool capable of capturing syntax errors to provide feedback during the code generation process, thereby iteratively refining it.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Environment Library</head><p>We define the library at iteration t as:</p><formula xml:id="formula_0">L t = L 0 ∪ t k=1 {E i |E i = g E (i, L k-1 ), i ∈ I k , v(E i ) = true},</formula><p>where L 0 is the initial seed library, and the union represents all verified environments generated up to iteration t. This iterative process allows continuous expansion and refinement of the environment library, potentially leading to increasingly complex and diverse environments over time.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Task Generation</head><p>Overview As depicted in Figure <ref type="figure" target="#fig_2">3</ref>, conditioned on the generated environments, we prompt LLMs to generate corresponding planning tasks. We employ a two-stage generation approach BI-EVOL for creating a diverse range of planning tasks in terms of difficulty. We begin by prompting the LLM with a specific environment, enabling it to generate an initial set of planning tasks in a zero-shot way. Subsequently, we adjust these tasks to make them simpler or more challenging, forming a comprehensive set of planning tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Bidirectional Evolution</head><p>Many studies have proposed evolving instructions, primarily focusing on making instructions more difficult <ref type="bibr" target="#b79">[80,</ref><ref type="bibr" target="#b35">36,</ref><ref type="bibr" target="#b34">35]</ref>. The effectiveness of this approach relies heavily on the assumption that LLMs inherently possess the ability to follow simple instructions. However, according to findings from some studies <ref type="bibr" target="#b36">[37,</ref><ref type="bibr" target="#b32">33]</ref>, LLMs often exhibit poor performance even in simple planning tasks. Therefore, we propose BI-EVOL, which introduces evolution in two directions: easy-evol and hard-evol. Easy-evol typically involves simplifying the goal conditions. The motivation is that easier tasks can facilitate learning when the agent performs poorly and cannot directly learn from typically difficult goals. Conversely, hard-evol usually involves making the goal conditions more complex, increasing the number of steps required for the agent to complete the task. This can further enhance the agent's capability to perform the planning task. To our knowledge, we are the first to introduce bidirectional evolution in the agent data generation scenario. The prompt examples are shown in Figure <ref type="figure" target="#fig_2">3</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head><p>To evaluate the effectiveness of the proposed framework, we synthesize environments and planning tasks using the Planning Domain Definition Language (PDDL), a widely adopted programming language for planning. Subsequently, we evaluate its performance across various unseen planning tasks in a zero-shot manner. To validate the effectiveness and generalizability of AGENTGEN, we categorized the evaluated tasks into two distinct groups: i) In-Domain Tasks: Planning tasks implemented using PDDL. ii) Out-of-Domain Tasks: These comprise tasks developed using other programming languages, such as Python.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Experimental Setup</head><p>Evaluation Tasks For In-Domain Tasks, we select four widely used PDDL-based planning tasks: Blocksworld, Gripper, Tyreworld, and Barman <ref type="bibr" target="#b36">[37]</ref>. More explicitly, Blocksworld requires an agent to achieve a target configuration by moving blocks, while Gripper involves moving objects between different rooms. Tyreworld simulates changing a car tire, including removing the flat tire, replacing it with a spare, and installing the new tire. Barman emulates a bartender's tasks in mixing cocktails, which include combining various ingredients, using shakers, and garnishing drinks. For Out-of-Domain Tasks, we select three challenging partial-observable planning tasks: Alfworld <ref type="bibr" target="#b53">[54]</ref> and BabyAI <ref type="bibr" target="#b9">[10]</ref>, Jericho <ref type="bibr" target="#b14">[15]</ref>. Alfworld is an environment designed to test agents' abilities to perform everyday household tasks. While in BabyAI, the agent interprets and executes natural language instructions in a grid-world setting. Jericho <ref type="bibr" target="#b14">[15]</ref> is a collection of text-based interactive fiction games in which players issue textual commands to alter the environment.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Evaluation Metrics</head><p>We utilized two evaluation metrics to evaluate planning ability: success rate and progress rate <ref type="bibr" target="#b36">[37]</ref>. During each interaction round, we assigned a progress rate, denoted as r t , to measure the progression towards the goal state g. As the agent transitions through states s t = [s 0 , . . . , s t ], its progress is assessed using a matching score f (•, g) → [0, 1], which quantifies the similarity between the current state and the goal state. Initially, r t is set to 0, indicating no progress. Only when the progress rate reaches 1 does the success rate attain 1; all other scenarios yield a 0 outcome. The success rate reflects the agent's capacity to complete a comprehensive task.</p><p>Baselines We compare AGENTGEN with a series of widely-used multipurpose foundation models that exhibit state-of-the-art performance, such as GPT-3.5 <ref type="bibr" target="#b41">[42]</ref> and GPT-4 <ref type="bibr" target="#b43">[44]</ref>, CodeLlama <ref type="bibr" target="#b47">[48]</ref>, Mistral <ref type="bibr" target="#b23">[24]</ref>, Llama-2 <ref type="bibr" target="#b61">[62]</ref>, and Llama-3.1 <ref type="bibr" target="#b38">[39]</ref>. We use their instruct-tuned versions for all multipurpose foundation models ( §A.1). Additionally, some models have undergone specialized training on agent trajectory data, such as AgentLM <ref type="bibr" target="#b85">[86]</ref>, FireAct <ref type="bibr" target="#b5">[6]</ref>, Agent-Flan <ref type="bibr" target="#b7">[8]</ref>. We also utilize the AgentInstruct <ref type="bibr" target="#b85">[86]</ref> dataset to train Llama-3.1, following the training configuration of AGENTGEN as a baseline model.</p><p>Implementation Details We followed the environment and task implementation of Agent-Board <ref type="bibr" target="#b36">[37]</ref>. For the configuration of evaluation tasks, we employ act-only prompting <ref type="bibr" target="#b81">[82]</ref>, setting the maximum step length for the LLM agent to 30. We selected LIMA <ref type="bibr" target="#b92">[93]</ref> as the text corpus D for generating environments, which leverages various data manipulation techniques to ensure a diverse range of instructions. For environment generation and task generation, we employ GPT-4<ref type="foot" target="#foot_2">foot_2</ref> , configuring the inference parameters with a temperature of 0 and a top_p value of 0.95. Based on AGENTGEN, we generated a total of 592 environments. For each environment, we generated ten unconditioned tasks, which were then evolved into ten refined tasks using BI-EVOL. To generate trajectory data for training, we utilized the domain-independent planner FastDownward<ref type="foot" target="#foot_3">foot_3</ref> , ensuring optimal trajectory data. This process ultimately led to 7246 trajectories. More details of the dataset can be found in Appendix B and C. Since the trajectory data is structured, such as "pickup(o1)", we employ GPT-4 to generate a natural language mapping, for example, "pick up object {arg1}", to transform structured actions into natural language actions. We detailed the generation of natural language mapping in A.2. During the training process, we employed Llama-3.1-8B (base version) as our foundation model, blending general instruction data from the ShareGPT dataset in a 1:4 ratio. For the 70B model, we selected Llama-3.1-70B-Instruct and trained it using LoRA <ref type="bibr" target="#b16">[17]</ref> without incorporating general instructions, with a rank of 16. The hyperparameters were configured as follows: a batch size of 64, 10 epochs, a context length of 4096 tokens, and no warmup steps. Checkpoints from epochs 5 through 10 were retained and subsequently evaluated on in-domain tasks. The model demonstrating optimal performance was then selected for further evaluation on out-of-domain tasks. We conducted all experiments utilizing V100 and A100 GPUs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Evaluation on In-Domain Tasks</head><p>As shown in Table <ref type="table" target="#tab_0">1</ref>, the AGENTGEN-tuned Llama-3.1-8B model outperforms GPT-3.5 in overall progress rate (33.3 vs. 25.0). Furthermore, the AGENTGEN-tuned Llama-3.1-70B model slightly surpasses GPT-4 (81.5 vs. 81.2). When compared to other models with similar parameter scales, AGENTGEN consistently demonstrates superior performance across four distinct tasks. In relation to the base Llama-3.1 model, our model exhibits a substantial improvement for both the 8B and 70B versions, with overall progress rates increasing by 30.3 and 2.5, respectively. Notably, in tasks where the success rate of Llama-3.1-8B is zero, AGENTGEN achieves significant breakthroughs, further validating the efficacy of AGENTGEN. From the above, we can draw the following conclusions: i) AGENTGEN-tuned Llama-3.1-8B outperforms GPT-3.5 in overall performance, while the 70B version achieves state-of-the-art results; ii) AGENTGEN-tuned Llama-3.1 has significantly improved both success rate and progress rate; iii) AGENTGEN consistently outperforms other models with similar parameter scales.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Robustness</head><p>To validate the robustness of the constructed dataset with AGENTGEN, we conducted a series of experiments to evaluate its performance across different foundation models. We selected several widely used 7-8B foundation models, including Llama-3-8B, CodeLLama-7B, and Mistral-7B, to test the versatility and effectiveness of AGENTGEN. As is shown in Table <ref type="table">2</ref>, all three models exhibited significant improvements after training, with Llama-3-8B showing the highest success rate increase of 10.0 and CodeLlama-7B demonstrating a maximum progress rate increase of 9.9. These experimental results prove that the dataset constructed with AGENTGEN for agent training is highly effective across different models. 55.0 83.3 50.0 75.0 75.0 82.5 60.0 80.3 61.7 81.2 turbo 50.0 87.8 40.0 71.7 10.0 17.5 10.0 39.3 23.3 44.7 GPT-3.5 turbo 0.0 30.6 0.0 18.3 10.0 21.7 10.0 27.1 5.0 25.0 turbo-16k 0.0 28.2 0.0 20.0 5.0 13.3 10.0 32.7 3.3 22.6 CODELLAMA 7B instruct 0.0 7.4 0.0 8.3 0.0 0.0 10.0 26.0 1.7 8.2 13B instruct 5.0 15.6 0.0 5.0 0.0 0.0 0.0 19.3 1.7 9.3 34B instruct 0.0 28.7 10.0 21.7 5.0 7.5 0.0 17.1 3.3 18.5 MISTRAL 7B instruct-v0.2 0.0 5.3 0.0 10.0 0.0 2.5 0.0 7.3 0.0 5.5 LLAMA-2 7B chat 0.0 1.5 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.5 13B chat 0.0 0.0 0.0 6.7 0.0 1.7 0.0 14.8 0.0 4.1 70B chat 0.0 8.8 0.0 5.0 5.0 9.2 0.0 7.8 1.7 8.1 FIREACT 7B -0.0 0.0 0.0 5.0 0.0 0.0 0.0 0.0 0.0 1.5 AGENT-FLAN 7B -0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 AGENTLM 7B -0.0 0.0 0.0 0.0 0.0 2.5 0.0 0.0 0.0 0.8 70B -0.0 0.8 0.0 6.7 5.0 13.3 10.0 26.0 3.3 10.2 LLAMA-3.1 8B instruct 0.0 0.0 0.0 1.7 0.0 0.0 0.0 16.2 0 3.0 w. AGENTINSTRUCT 8B -0.0 3.4 0.0 5.0 0.0 6.7 10.0 26.0 1.7 8.5 w. AGENTGEN 8B -20.0 45.2 20.0 31.7 10.0 32.7 10.0 32.7 15.0 33.3 LLAMA-3.1 70B instruct 55.0 89.3 50.0 70.0 70.0 80.0 40.0 65.3 56.7 79.0 w. AGENTINSTRUCT 70B -45.0 78.9 70.0 80.0 25.0 32.5 50.0 74.4 43.4 62.9 w. AGENTGEN 70B -55.0 89.3 50.0 63.3 70.0 82.5 50.0 82.2 58.3 81.5</p><p>Table 2: Overall performance comparison of models before and after training with AGENTGEN on in-domain tasks. "SR" and "PR" stands for "success rate" and "progress rate" respectively. Model Before After ∆ SR PR SR PR SR PR Llama-3-8B 1.7 13.4 11.7 23.0 10.0 9.6 CodeLlama-7B 1.7 8.2 6.7 18.1 5.0 9.9 Mistral-7B 0.0 5.5 1.7 10.4 1.7 4.9</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Evaluation on Out-of-Domain Tasks</head><p>We also conducted evaluations on out-of-domain agent tasks. As illustrated in Table <ref type="table" target="#tab_1">3</ref>, similar experimental phenomena were observed. Firstly, AGENTGEN demonstrates a substantial performance improvement over Llama-3.1, with an increase of 13.1% in the average progress rate for the 8B model and 5.0% for the 70B model. Additionally, the AGENTGEN-tuned Llama-3.1-8B model outperforms GPT-3.5. When compared to general models and agent fine-tuning models with similar parameter scales, AGENTGEN consistently outperforms them on both tasks. The superior performance on out-of-domain tasks further emphasizes the effectiveness and generalization capability of our data synthesis methods.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Related Work</head><p>Large Language Model based Agent. Large Language Models have demonstrated exceptional reasoning capabilities <ref type="bibr" target="#b61">[62,</ref><ref type="bibr" target="#b38">39,</ref><ref type="bibr" target="#b41">42,</ref><ref type="bibr" target="#b42">43,</ref><ref type="bibr" target="#b23">24]</ref>. Owing to such abilities, over the past two years, LLMbased agents have experienced significant development <ref type="bibr" target="#b52">[53,</ref><ref type="bibr" target="#b74">75,</ref><ref type="bibr" target="#b15">16,</ref><ref type="bibr" target="#b57">58,</ref><ref type="bibr" target="#b64">65,</ref><ref type="bibr" target="#b76">77]</ref>. Unlike the traditional method of using LLMs for text-based reasoning, such as Chain-of-Thought <ref type="bibr" target="#b73">[74]</ref>, LLM-based agents typically involve interaction with the environment, adjusting the output in a closed-loop manner based on environmental information. These LLM-based agents, now fortified with capabilities like Memorizing <ref type="bibr" target="#b90">[91,</ref><ref type="bibr" target="#b31">32,</ref><ref type="bibr" target="#b28">29,</ref><ref type="bibr" target="#b83">84,</ref><ref type="bibr" target="#b52">53,</ref><ref type="bibr" target="#b87">88,</ref><ref type="bibr" target="#b94">95,</ref><ref type="bibr" target="#b60">61,</ref><ref type="bibr" target="#b21">22]</ref>, Tool-use <ref type="bibr" target="#b8">[9,</ref><ref type="bibr" target="#b44">45,</ref><ref type="bibr" target="#b51">52,</ref><ref type="bibr" target="#b27">28,</ref><ref type="bibr" target="#b50">51,</ref><ref type="bibr" target="#b46">47]</ref>, and Planning <ref type="bibr" target="#b11">[12,</ref><ref type="bibr" target="#b4">5,</ref><ref type="bibr" target="#b40">41,</ref><ref type="bibr" target="#b39">40,</ref><ref type="bibr" target="#b48">49,</ref><ref type="bibr" target="#b1">2]</ref>, exhibit a marked enhancement in their overall efficacy. Although this paper mainly focuses on the planning capability of LLM-based agents, we believe AGENTGEN has the potential to generalize to other scenarios of LLM-based agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Planning with Large Language Models.</head><p>Planning is one of the key applications of LLM-based agents, applicable in various scenarios such as robotic planning <ref type="bibr" target="#b53">[54,</ref><ref type="bibr" target="#b45">46,</ref><ref type="bibr" target="#b18">19,</ref><ref type="bibr" target="#b62">63,</ref><ref type="bibr" target="#b10">11,</ref><ref type="bibr" target="#b75">76,</ref><ref type="bibr" target="#b30">31,</ref><ref type="bibr" target="#b12">13]</ref>, travel planning <ref type="bibr" target="#b77">[78,</ref><ref type="bibr" target="#b0">1]</ref>, calendar scheduling <ref type="bibr" target="#b89">[90]</ref>, code generation <ref type="bibr" target="#b3">[4]</ref> and others <ref type="bibr" target="#b71">[72]</ref>. It is typically defined as the process of systematically determining a sequence of actions or steps required to achieve a desired goal from an initial state, considering constraints and available resources. This definition primarily differentiates from studies that utilize LLMs to generate ungrounded plans as guidance for problem-solving <ref type="bibr" target="#b93">[94,</ref><ref type="bibr" target="#b65">66]</ref>, rather than directly producing executable actions. Planning can be categorized into two types: open-loop planning, where the LLM outputs an entire action sequence before execution <ref type="bibr" target="#b18">[19,</ref><ref type="bibr" target="#b62">63]</ref>, and closed-loop planning, where the LLM-based agent decides the next action based on real-time environmental interaction after executing a previous action <ref type="bibr" target="#b54">[55,</ref><ref type="bibr" target="#b4">5,</ref><ref type="bibr" target="#b58">59,</ref><ref type="bibr" target="#b59">60,</ref><ref type="bibr" target="#b29">30,</ref><ref type="bibr" target="#b55">56,</ref><ref type="bibr" target="#b20">21,</ref><ref type="bibr" target="#b19">20]</ref>. This paper mainly focuses on close-loop planning, which is more adaptable for error correction, human interaction, and environmental grounding. Recent studies on close-loop planning have integrated chain-of-thought reasoning into the planning process <ref type="bibr" target="#b81">[82]</ref>. Additionally, some papers have explored the use of tree-search methods to enhance the performance of LLM planning <ref type="bibr" target="#b17">[18,</ref><ref type="bibr" target="#b13">14,</ref><ref type="bibr" target="#b82">83,</ref><ref type="bibr" target="#b33">34,</ref><ref type="bibr" target="#b88">89,</ref><ref type="bibr" target="#b69">70,</ref><ref type="bibr" target="#b91">92]</ref>. Instead of designing novel frameworks or engaging in prompt engineering, this paper explores how training can enhance the planning capabilities of LLM-based agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Agent Training.</head><p>Recently, numerous studies have aimed to enhance LLM-based agent capabilities by incorporating agent trajectory data into their training <ref type="bibr" target="#b67">[68,</ref><ref type="bibr" target="#b7">8,</ref><ref type="bibr" target="#b86">87,</ref><ref type="bibr" target="#b63">64,</ref><ref type="bibr" target="#b56">57]</ref>. Advanced works such as AgentTuning <ref type="bibr" target="#b85">[86]</ref> utilize GPT-4 to generate trajectory data across six distinct environments. Subsequently, this data is filtered and employed in training Large Language Models, enhancing the agent capabilities of base models. Another work, FireAct <ref type="bibr" target="#b5">[6]</ref>, proposes training with both CoT data and ReAct format data, enabling the model to discern when to use reasoning to solve problems and when to call external tools. Agent LUMOS <ref type="bibr" target="#b84">[85]</ref> suggests separately training Planning and Grounding models, enabling LLM-based agents to learn to decompose complex problems before execution. LLM-Modulo framwork <ref type="bibr" target="#b25">[26]</ref> proposes to leverage LLMs generating candidate plans and verify them with an external verifier. Then, use the verified trajectories for fine-tuning LLMs. Similarly, <ref type="bibr" target="#b2">[3]</ref> takes a generate-test loop to synthesize trajectories for LLM training. Unlike previous papers on all agent training, AGENTGEN goes beyond merely generating trajectory data using Large Language Models. Instead, we utilize Large Language Models to generate agent environments, which can be considered a more foundational application. As a result, we have constructed over 500 environments for training, whereas previous works typically use fewer than 10 environments to synthesize agent data.</p><p>Environment and Task Generation with Large Language Models. The utilization of LLMs to generate environments and tasks is an emerging application. Some studies have explored utilizing LLMs to generate layouts in robotic simulations, typically involving the creation of configuration files <ref type="bibr" target="#b70">[71,</ref><ref type="bibr" target="#b80">81,</ref><ref type="bibr" target="#b66">67]</ref>. While these methods can construct numerous scene-level environments, they often struggle to achieve diversity at the underlying mechanism level. AgentTuning <ref type="bibr" target="#b85">[86]</ref> employs a task generation approach similar to the Self-instruct <ref type="bibr" target="#b72">[73]</ref> method, using the test set as seed data. This approach not only poses a risk of data leakage but also leads to insufficient diversity in task difficulty. ByteSized32 <ref type="bibr" target="#b68">[69]</ref> uses LLMs to generate Python-based games based on predefined task specifications automatically. Similarly, other works <ref type="bibr" target="#b12">[13]</ref> leverage LLMs to automatically construct PDDL domains based on a task specification. In contrast to these studies, this paper proposes using a diverse text corpus to generate environment code automatically. This approach facilitates the creation of a wide range of rich environments without predefined definitions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>In this paper, we explore using LLMs to automatically generate environment and planning tasks for LLM-based agent training. Specifically, for generating diverse environments, we propose utilizing an inspiration corpus composed of various domain-specific text segments as the context for environment synthesis. To enhance the difficulty diversity of generated planning tasks, we introduce a bidirectional evolution method, BI-EVOL, which evolves planning tasks from both easier and more challenging directions to create a task set with a more gradual difficulty curve, thereby improving the effectiveness of LLM learning. Based on AGENTGEN, we developed a dataset consisting of 592 environments and 7246 trajectories and trained it on a series of LLMs. The AGENTGEN-tuned Llama-3.1-8B model surpassed GPT-3.5 on planning tasks, while the AGENTGEN-tuned Llama-3.1-70B model achieved a new state-of-the-art performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A More Implementation Details</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 Models</head><p>We applied the instruct version for models. Specifically, the detailed version for each model is presented in Table <ref type="table">4</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Model Version</head><p>CodeLlama <ref type="url" target="https://huggingface.co/meta-llama/CodeLlama-7b-Instruct-hf">meta-llama/CodeLlama-7b-Instruct-hf</ref> Mistral <ref type="url" target="https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.2">mistralai/Mistral-7B-Instruct-v0.2</ref> Llama2 <ref type="url" target="https://huggingface.co/meta-llama/Llama-2-7b-chat-hf">meta-llama/Llama-2-7b-chat-hf</ref> Llama3 <ref type="url" target="https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct">meta-llama/Meta-Llama-3-8B-Instruct</ref> AgentLM <ref type="url" target="https://huggingface.co/THUDM/agentlm-7b">THUDM/agentlm-7b</ref> Table <ref type="table">4</ref>: Evaluated models in this study.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Natural Language Mapping</head><p>We leverage GPT-4 to generate the natural language mapping that converts structured actions into its natural language format. When the mapping failed to yield, we heuristically serialized the structured actions. The prompt for generating natural language mapping with GPT-4 is as follows:</p><p>Natural Language Mapping Generation I would like you to create natural language mapping for PDDL. The form of the natural language mapping is a Python dictionary, wherein 1. The key corresponds to the name of a predicate or action within the domain PDDL. 2. The value is its equivalent in natural language, with parameters presented in "{argn}", where n is the index of its parameters in the PDDL expression. 3. You must ensure that the number of "{}" corresponds precisely to the number of parameters in predicates or actions. 4. You should very carefully check the order of {argn}.</p><p>Your output must strictly follow the provided example. Example: PDDL Domain: "'pddl (define (domain hanoi) (:requirements :strips) (:predicates (clear ?x) (on ?x ?y) (smaller ?x ?y) ) (:action move :parameters (?disc ?from ?to) :precondition (and (smaller ?to ?disc) (on ?disc ?from) (clear ?disc) (clear ?to)) :effect (and (clear ?from) (on ?disc ?to) (not (on ?disc ?from)) (not (clear ?to)))) ) "' Specification: Your goal is to solve the Tower of Hanoi puzzle, which involves moving a stack of discs from one peg to another, with the restriction that no disc may be placed on top of a smaller disc.</p><p>The puzzle is solved when all the discs are moved to the target peg following these rules.</p><p>The actions defined in this domain include: -move &lt;disc&gt; &lt;from&gt; &lt;to&gt;: This action allows moving a disc from one peg to another. The preconditions for this action are that the target peg is smaller than the disc being moved, the disc is on the source peg, and both the disc and the target peg are clear (i.e., there is no disc on top of them). The effect of this action is that the source peg becomes clear, the disc is now on the target peg, the disc is no longer on the source peg, and the target peg is no longer clear.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>You have the following restrictions on your actions:</head><p>-A disc can only be moved if it is clear, meaning there is no other disc on top of it.</p><p>-A disc can only be placed on another disc or peg that is larger than itself.</p><p>-A disc can only be moved to a peg that is clear.</p><p>-Once a disc is moved from a peg, that peg becomes clear.</p><p>-Once a disc is placed on a peg, that peg is no longer clear. Natural Language Mapping: "'python { "clear": "{arg1} is clear.", "on": "{arg1} is on {arg2}.", "smaller": "{arg1} is smaller than {arg2}.", "move": "Move {arg1} from {arg2} to {arg3}." } "' You need to generate the corresponding natural language mapping for the following pddl domain. PDDL Domain: {PDDL_Domain} Specification: {PDDL_Description} Natural Language Mapping:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B More Statistics on Environment</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1 Environment Specification</head><p>We analyzed the token distribution within the environmental specifications. Among the 592 environmental specifications, the average token count is 473.55, with a median of 467.00. The minimum token count is 207, and the maximum is 934. As depicted in Figure <ref type="figure" target="#fig_3">4</ref>, the number of specification tokens for the environment is predominantly concentrated within the range of 300 to 699.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2 Environment Implementation</head><p>The scale of action space and state space in an environment typically dictates its complexity, with a greater number of actions and states generally indicating a more complex environment. An environment library with a greater variety of difficulty levels is preferable for a training set. As shown in Figure <ref type="figure" target="#fig_4">5</ref>, there is a significant diversity in the number of actions and predicates.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3 Diversity Analysis</head><p>We evaluate the diversity of generated environments using cosine similarity. More specifically, we randomly sampled 100 environment specifications for better visualization and converted them into TF-IDF vectors. After calculating the cosine similarity matrix between all pairs of specifications, we visualize the matrix using heatmap as is shown in Figure <ref type="figure" target="#fig_5">6</ref>. The computed average cosine similarity   of the sampled environment specifications is 0.176, indicating that the corpus exhibits a high degree of diversity, reflecting a rich tapestry of distinct semantic features and thematic elements.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Examples</head><p>In this section, we present the specific details of the cases depicted in Figure <ref type="figure" target="#fig_1">2</ref> and Figure <ref type="figure" target="#fig_2">3</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1 Environment Specification</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Environment Specification</head><p>You are a nutritionist tasked with creating a new healthy recipe book that incorporates peanut butter powder as a key ingredient. Your environment consists of your office, a computer for research and writing, a kitchen for testing recipes, and a collection of ingredients including peanut butter powder. The computer can be used to write and save recipes, but it needs to be charged after every three hours of use.</p><p>The actions defined in this domain include:</p><p>-research_ingredient &lt;location&gt; &lt;ingredient&gt; &lt;nutritionist&gt;: This action allows the nutritionist to research peanut butter powder at the office. The effect of this action is that the nutritionist gains knowledge about the nutritional benefits and potential uses of peanut butter powder in recipes.</p><p>-develop_recipe &lt;location&gt; &lt;computer&gt; &lt;nutritionist&gt; &lt;ingredient&gt;: This action allows the nutritionist to create a new recipe using peanut butter powder. The precondition for this action is that the nutritionist has researched peanut butter powder. The effect of this action is a draft of a new recipe that incorporates peanut butter powder.</p><p>-test_recipe &lt;location&gt; &lt;kitchen&gt; &lt;nutritionist&gt; &lt;recipe&gt;: This action allows the nutritionist to test the drafted recipe in the kitchen. The preconditions for this action are that the nutritionist has developed a recipe and has all the necessary ingredients, including peanut butter powder. The effect of this action is feedback on the recipe's taste, nutritional value, and overall feasibility.</p><p>-finalize_recipe &lt;location&gt; &lt;computer&gt; &lt;nutritionist&gt; &lt;tested_recipe&gt;: This action allows the nutritionist to finalize the recipe after testing and receiving feedback. The preconditions for this action are that the nutritionist has tested the recipe and the computer is charged. The effect of this action is a completed recipe that is ready to be included in the healthy recipe book.</p><p>You have the following restrictions on your actions: -You can only research peanut butter powder if you are in the office where your research materials are located.</p><p>-You can only develop a recipe after researching peanut butter powder and must have a charged computer.</p><p>-You can only test a recipe in the kitchen if you have developed a recipe and have all the necessary ingredients.</p><p>-You can only finalize a recipe after testing it in the kitchen and receiving feedback, and if your computer is charged.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.2 Environment Implementation</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Environment Implementation</head><p>(define (domain healthy-recipe-book) (:requirements :strips) (:predicates (in-office ?nutritionist) (in-kitchen ?nutritionist) (researched-peanut-butter ?nutritionist) (has-recipe-draft ?nutritionist ?recipe) (has-tested-recipe ?nutritionist ?recipe) (computer-charged) (has-ingredients ?recipe) ) (:action research_ingredient :parameters (?nutritionist ?ingredient) :precondition (and (in-office ?nutritionist)) :effect (and (researched-peanut-butter ?nutritionist)) ) (:action develop_recipe :parameters (?nutritionist ?ingredient) :precondition (and (researched-peanut-butter ?nutritionist) (computer-charged)) :effect (and (has-recipe-draft ?nutritionist ?ingredient) (not (computer-charged))) ) (:action test_recipe :parameters (?nutritionist ?recipe) :precondition (and (in-kitchen ?nutritionist) (has-recipe-draft ?nutritionist ?recipe) (has-ingredients ?recipe)) :effect (and (has-tested-recipe ?nutritionist ?recipe)) ) (:action finalize_recipe :parameters (?nutritionist ?tested_recipe) :precondition (and (has-tested-recipe ?nutritionist ?tested_recipe) (computer-charged)) :effect (and (not (computer-charged)) (not (has-tested-recipe ?nutritionist ?tested_recipe))) )</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.3 Trajectory Data</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Trajectory Data</head><p>(User) You are a nutritionist tasked with creating a new healthy recipe book that incorporates peanut butter powder as a key ingredient. Your environment consists of your office, a computer for research and writing, a kitchen for testing recipes, and a collection of ingredients including peanut butter powder. The computer can be used to write and save recipes, but it needs to be charged after every three hours of use.</p><p>The actions defined in this domain include: -research_ingredient &lt;location&gt; &lt;ingredient&gt; &lt;nutritionist&gt;: This action allows the nutritionist to research peanut butter powder at the office. The effect of this action is that the nutritionist gains knowledge about the nutritional benefits and potential uses of peanut butter powder in recipes.</p><p>-develop_recipe &lt;location&gt; &lt;computer&gt; &lt;nutritionist&gt; &lt;ingredient&gt;: This action allows the nutritionist to create a new recipe using peanut butter powder. The precondition for this action is that the nutritionist has researched peanut butter powder. The effect of this action is a draft of a new recipe that incorporates peanut butter powder.</p><p>-test_recipe &lt;location&gt; &lt;kitchen&gt; &lt;nutritionist&gt; &lt;recipe&gt;: This action allows the nutritionist to test the drafted recipe in the kitchen. The preconditions for this action are that the nutritionist has developed a recipe and has all the necessary ingredients, including peanut butter powder. The effect of this action is feedback on the recipe's taste, nutritional value, and overall feasibility.</p><p>-finalize_recipe &lt;location&gt; &lt;computer&gt; &lt;nutritionist&gt; &lt;tested_recipe&gt;: This action allows the nutritionist to finalize the recipe after testing and receiving feedback. The preconditions for this action are that the nutritionist has tested the recipe and the computer is charged. The effect of this action is a completed recipe that is ready to be included in the healthy recipe book.</p><p>You have the following restrictions on your actions: -You can only research peanut butter powder if you are in the office where your research materials are located.</p><p>-You can only develop a recipe after researching peanut butter powder and must have a charged computer.</p><p>-You can only test a recipe in the kitchen if you have developed a recipe and have all the necessary ingredients.</p><p>-You can only finalize a recipe after testing it in the kitchen and receiving feedback, and if your computer is charged. Goal: The goal is to satisfy the following conditions: The computer is charged. jordan has tested the recipe almond_butter_bars. Observation:The computer is charged. The recipe almond_butter_bars has all the necessary ingredients. jordan has a recipe draft for almond_butter_bars. jordan has researched peanut butter. jordan is in the kitchen. (Assistant) Action: jordan tests the recipe almond_butter_bars. (User) Observation: The computer is charged. The recipe almond_butter_bars has all the necessary ingredients. jordan has a recipe draft for almond_butter_bars. jordan has researched peanut butter. jordan has tested the recipe almond_butter_bars. jordan is in the kitchen. (Assistant) Action: jordan develops a recipe using almond_butter_bars.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: A typical agent training process includes three stages: task preparation, trajectory synthesis, and instruction tuning. AGENTGEN primarily distinguishes itself from existing agent training literature in the task preparation stage, where we introduce a fully automated task generation framework AGENTGEN for constructing diverse environments and planning tasks with gradual learning curves.</figDesc><graphic coords="2,110.68,303.94,390.64,153.26" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Overview of the process of environment generation.</figDesc><graphic coords="4,109.69,482.05,392.62,189.32" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Overview of the process of task generation. The two-stage task generation process includes first generating unconditioned tasks, then applying BI-EVOL to evolve these planning tasks. Ultimately, both parts are incorporated into the task set. In examples of evolving methods, red indicates evolution towards more difficult tasks, while green indicates the opposite.</figDesc><graphic coords="6,109.69,73.68,392.62,167.06" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: The token distribution of the generated environment specification.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 5 :</head><label>5</label><figDesc>Figure5: The frequency distribution of actions and predicates in datasets.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Cosine similarity heatmap depicting the semantic relationships among randomly sampled 100 environment specifications. Darker shades represent a higher similarity between the two specifications.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Performance comparison between AGENTGEN and baseline models in in-domain tasks. "Overall" is the weighted average of performance in different tasks. "SR" and "PR" stand for "success rate" and "progress rate" metrics.</figDesc><table><row><cell>Model</cell><cell>Size</cell><cell>Version</cell><cell cols="2">Gripper</cell><cell cols="2">Blockworld</cell><cell cols="2">Barman</cell><cell cols="2">Tyreworld</cell><cell>Overall</cell></row><row><cell></cell><cell></cell><cell></cell><cell>SR</cell><cell>PR</cell><cell>SR</cell><cell>PR</cell><cell>SR</cell><cell>PR</cell><cell>SR</cell><cell>PR</cell><cell>SR</cell><cell>PR</cell></row><row><cell>GPT-4</cell><cell>-</cell><cell>2023-05-15</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 3 :</head><label>3</label><figDesc>Performance comparison between AGENTGEN and baseline models on out-of-domain tasks. "SR" and "PR" stand for "success rate" and "progress rate" metrics.</figDesc><table><row><cell>Model</cell><cell></cell><cell>Size</cell><cell>Version</cell><cell cols="6">Alfworld [54] BabyAI [10] Jericho [15]</cell><cell cols="2">Average</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>SR</cell><cell>PR</cell><cell>SR</cell><cell>PR</cell><cell>SR</cell><cell>PR</cell><cell>SR</cell><cell>PR</cell></row><row><cell>GPT-4</cell><cell></cell><cell>-</cell><cell>2023-05-15</cell><cell>43.4</cell><cell cols="2">65.5 56.2</cell><cell cols="2">70.7 35.0</cell><cell cols="3">52.4 44.9 62.9</cell></row><row><cell>GPT-3.5</cell><cell></cell><cell>--</cell><cell>turbo turbo-16k</cell><cell>17.2 4.5</cell><cell cols="2">35.6 18.9 25.2 33.9</cell><cell>31.9 45.1</cell><cell>0.0 0.0</cell><cell cols="3">20.4 12.0 29.3 16.1 12.8 28.8</cell></row><row><cell></cell><cell></cell><cell>7B</cell><cell>instruct</cell><cell>1.4</cell><cell cols="2">2.2 15.2</cell><cell>28.3</cell><cell>0.0</cell><cell>9.2</cell><cell cols="2">5.5 13.9</cell></row><row><cell cols="2">CODELLAMA</cell><cell>13B</cell><cell>instruct</cell><cell>2.2</cell><cell cols="2">13.4 17.0</cell><cell>22.2</cell><cell>0.0</cell><cell>0.0</cell><cell cols="2">6.4 11.9</cell></row><row><cell></cell><cell></cell><cell>34B</cell><cell>instruct</cell><cell>3.0</cell><cell cols="2">11.3 13.4</cell><cell>19.9</cell><cell>0.0</cell><cell>15.5</cell><cell cols="2">5.5 15.6</cell></row><row><cell>MISTRAL</cell><cell></cell><cell cols="2">7B instruct-v0.2</cell><cell>0.0</cell><cell cols="2">9.8 18.1</cell><cell>24.4</cell><cell>0.0</cell><cell>12.1</cell><cell cols="2">6.0 15.4</cell></row><row><cell></cell><cell></cell><cell>7B</cell><cell>chat</cell><cell>0.0</cell><cell>1.5</cell><cell>5.4</cell><cell>8.3</cell><cell>0.0</cell><cell>4.2</cell><cell>1.8</cell><cell>4.7</cell></row><row><cell>LLAMA-2</cell><cell></cell><cell>13B</cell><cell>chat</cell><cell>0.0</cell><cell>7.8</cell><cell>6.2</cell><cell>18.2</cell><cell>0.0</cell><cell>3.2</cell><cell>2.1</cell><cell>9.7</cell></row><row><cell></cell><cell></cell><cell>70B</cell><cell>chat</cell><cell>3.0</cell><cell cols="2">13.2 19.6</cell><cell>30.0</cell><cell>0.0</cell><cell>7.8</cell><cell cols="2">7.5 17.0</cell></row><row><cell>FIREACT</cell><cell></cell><cell>7B</cell><cell>-</cell><cell>0.0</cell><cell>0.8</cell><cell>4.5</cell><cell>8.6</cell><cell>0.0</cell><cell>2.8</cell><cell>1.5</cell><cell>4.7</cell></row><row><cell cols="2">AGENT-FLAN</cell><cell>7B</cell><cell>-</cell><cell>0.0</cell><cell>0.8</cell><cell>0.0</cell><cell>0.0</cell><cell>0.0</cell><cell>0.0</cell><cell>0.0</cell><cell>0.3</cell></row><row><cell>AGENTLM</cell><cell>†</cell><cell>7B 70B</cell><cell>--</cell><cell>--</cell><cell cols="2">--27.7 8.0</cell><cell>9.9 37.1</cell><cell>5.5 0.0</cell><cell>15.2 18.4</cell><cell>--</cell><cell>--</cell></row><row><cell cols="2">LLAMA-3.1</cell><cell>8B</cell><cell>instruct</cell><cell>0.0</cell><cell cols="2">10.5 17.9</cell><cell>33.6</cell><cell>0.0</cell><cell>8.8</cell><cell cols="2">6.0 17.6</cell></row><row><cell cols="2">w. AGENTTUNING †</cell><cell>8B</cell><cell>-</cell><cell>-</cell><cell cols="2">-10.7</cell><cell>19.3</cell><cell>0.0</cell><cell>8.2</cell><cell>-</cell><cell>-</cell></row><row><cell cols="2">w. AGENTGEN</cell><cell>8B</cell><cell>-</cell><cell>17.9</cell><cell cols="2">31.7 32.1</cell><cell>46.0</cell><cell>0.0</cell><cell cols="3">14.3 16.0 30.7</cell></row><row><cell cols="2">LLAMA-3.1</cell><cell>70B</cell><cell>instruct</cell><cell>17.2</cell><cell cols="2">42.7 38.4</cell><cell cols="2">57.2 10.0</cell><cell cols="3">31.5 21.8 43.8</cell></row><row><cell cols="3">w. AGENTTUNING † 70B</cell><cell>-</cell><cell>-</cell><cell cols="2">-17.9</cell><cell cols="2">35.9 10.0</cell><cell>31.9</cell><cell>-</cell><cell>-</cell></row><row><cell cols="2">w. AGENTGEN</cell><cell>70B</cell><cell>-</cell><cell>19.4</cell><cell cols="2">46.1 42.0</cell><cell cols="2">62.2 15.0</cell><cell cols="3">38.1 25.5 48.8</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_0"><p>Accepted by KDD 2025 (Research Track).</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_1"><p>https://www.gymlibrary.dev/index.html</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_2"><p>We applied the gpt-4-20230321 API from Azure OpenAI service.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_3"><p>https://www.fast-downward.org/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_4"><p>†AgentTuning utilized Alfworld's training set, meaning Alfworld cannot be considered an out-of-domain task. Consequently, we did not evaluate the performance of AgentLM or the AgentTuning-trained model on Alfworld.</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Can large language models be good path planners? a benchmark and investigation on spatial-temporal reasoning</title>
+		<author>
+			<persName><forename type="first">Mohamed</forename><surname>Aghzal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erion</forename><surname>Plaku</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyu</forename><surname>Yao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.03249</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Akash Srivastava, and Pulkit Agrawal. Compositional foundation models for hierarchical planning</title>
+		<author>
+			<persName><forename type="first">Anurag</forename><surname>Ajay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Seungwook</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhi</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tommi</forename><surname>Jaakkola</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leslie</forename><surname>Kaelbling</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Learning and leveraging verifiers to improve planning capabilities of pre-trained language models</title>
+		<author>
+			<persName><forename type="first">Daman</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Subbarao</forename><surname>Kambhampati</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.17077</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Codeplan: Repository-level coding using llms and planning</title>
+		<author>
+			<persName><forename type="first">Ramakrishna</forename><surname>Bairi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Atharv</forename><surname>Sonwane</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Kanade</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arun</forename><surname>Iyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suresh</forename><surname>Parthasarathy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sriram</forename><surname>Rajamani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ashok</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shashank</forename><surname>Shet</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proceedings of the ACM on Software Engineering</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="675" to="698" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Do as i can, not as i say: Grounding language in robotic affordances</title>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Herzog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Ibarz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Irpan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Julian</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on robot learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="287" to="318" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Baian</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ehsan</forename><surname>Shareghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nigel</forename><surname>Collier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.05915</idno>
+		<title level="m">Fireact: Toward language agent fine-tuning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henrique</forename><surname>Ponde De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harri</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Agent-flan: Designing data and methods of effective agent tuning for large language models</title>
+		<author>
+			<persName><forename type="first">Zehui</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuikun</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiuchen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenwei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiangning</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dahua</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feng</forename><surname>Zhao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.12881</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Binding language models in symbolic languages</title>
+		<author>
+			<persName><forename type="first">Zhoujun</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianbao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengzu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rahul</forename><surname>Nadkarni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yushi</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dragomir</forename><surname>Radev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mari</forename><surname>Ostendorf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.02875</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Maxime</forename><surname>Chevalier-Boisvert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dzmitry</forename><surname>Bahdanau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Salem</forename><surname>Lahlou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Willems</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chitwan</forename><surname>Saharia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thien</forename><surname>Huu Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Babyai</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1810.08272</idno>
+		<title level="m">A platform to study the sample efficiency of grounded language learning</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Task and motion planning with large language models for object rearrangement</title>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Paxton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiqi</forename><surname>Zhang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Dagplan: Generating directed acyclic dependency graphs for dual-arm cooperative planning</title>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinye</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengkang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingyue</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ping</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanfeng</forename><surname>Lu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.09953</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Leveraging pre-trained large language models to construct and utilize world models for model-based task planning</title>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Valmeekam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarath</forename><surname>Sreedharan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Subbarao</forename><surname>Kambhampati</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="79081" to="79094" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shibo</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haodi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">Jiahua</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daisy</forename><forename type="middle">Zhe</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiting</forename><surname>Hu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.14992</idno>
+		<title level="m">Reasoning with language model is planning with world model</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Interactive fiction games: A colossal adventure</title>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Hausknecht</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prithviraj</forename><surname>Ammanabrolu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc-Alexandre</forename><surname>Côté</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingdi</forename><surname>Yuan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="7903" to="7910" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sirui</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiawu</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ceyao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zili</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Ka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shing</forename><surname>Yau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijuan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyang</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.00352</idno>
+		<title level="m">Meta programming for multi-agent collaborative framework</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Edward</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yelong</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phillip</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyuan</forename><surname>Wallis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Allen-Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shean</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lora</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2106.09685</idno>
+		<title level="m">Low-rank adaptation of large language models</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Tree-planner: Efficient close-loop task planning with large language models</title>
+		<author>
+			<persName><forename type="first">Mengkang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinmiao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingyu</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiguang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenqi</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiguang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ping</forename><surname>Luo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.08582</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Language models as zero-shot planners: Extracting actionable knowledge for embodied agents</title>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deepak</forename><surname>Pathak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on machine learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="9118" to="9147" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harris</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacky</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Sermanet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomas</forename><surname>Jackson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linda</forename><surname>Luu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ichter</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note>Inner monologue: Embodied reasoning through planning with language models</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Grounded decoding: Guiding text generation with grounded models for robot control</title>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dhruv</forename><surname>Shah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Driess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ichter</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianxun</forename><surname>Lian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Defu</forename><surname>Lian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xing</forename><surname>Xie</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.16505</idno>
+		<title level="m">Recommender ai agent: Integrating large language models for interactive recommendations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Imitation learning: A survey of learning methods</title>
+		<author>
+			<persName><forename type="first">Ahmed</forename><surname>Hussein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohamed</forename><forename type="middle">Medhat</forename><surname>Gaber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eyad</forename><surname>Elyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chrisina</forename><surname>Jayne</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Computing Surveys (CSUR)</title>
+		<imprint>
+			<biblScope unit="volume">50</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="1" to="35" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Alexandre</forename><surname>Albert Q Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Sablayrolles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Mensch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Devendra</forename><surname>Bamford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diego</forename><surname>Singh Chaplot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florian</forename><surname>De Las Casas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gianna</forename><surname>Bressand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guillaume</forename><surname>Lengyel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucile</forename><surname>Lample</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Saulnier</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.06825</idno>
+		<title level="m">Mistral 7b</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Hierarchical task and motion planning in the now</title>
+		<author>
+			<persName><forename type="first">Leslie</forename><surname>Pack</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaelbling</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomás</forename><surname>Lozano-Pérez</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ICRA.2011.5980391</idno>
+	</analytic>
+	<monogr>
+		<title level="m">2011 IEEE International Conference on Robotics and Automation</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="1470" to="1477" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Llms can&apos;t plan, but can help planning in llm-modulo frameworks</title>
+		<author>
+			<persName><forename type="first">Subbarao</forename><surname>Kambhampati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Valmeekam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaya</forename><surname>Stechly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mudit</forename><surname>Verma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siddhant</forename><surname>Bhambri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Saldyt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anil</forename><surname>Murthy</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.01817</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Ds-1000: A natural and reliable benchmark for data science code generation</title>
+		<author>
+			<persName><forename type="first">Yuhang</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengxi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiqi</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wentau</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sida</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Yu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="18319" to="18345" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Minghao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingxiu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feifan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hangyu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haiyang</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhoujun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongbin</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.08244</idno>
+		<title level="m">Api-bank: A comprehensive benchmark for tool-augmented llms</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Unleashing infinite-length input capacity for large-scale language models with self-controlled memory system</title>
+		<author>
+			<persName><forename type="first">Xinnian</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuangzhi</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peihao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zejun</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhoujun</forename><surname>Li</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page">2304</biblScope>
+		</imprint>
+	</monogr>
+	<note>arXiv e-prints</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">On grounded planning for embodied tasks with language models</title>
+		<author>
+			<persName><forename type="first">Chengsong</forename><surname>Bill Yuchen Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenda</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Sommerer</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ren</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="13192" to="13200" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Llm+ p: Empowering large language models with optimal planning proficiency</title>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqian</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiqi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joydeep</forename><surname>Biswas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Stone</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.11477</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binbin</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqiang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinjie</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guannan</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.08719</idno>
+		<title level="m">Think-in-memory: Recalling and post-thinking enable llms with long-term memory</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanchen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanyu</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanyu</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hangliang</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiwen</forename><surname>Men</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kejuan</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.03688</idno>
+		<title level="m">Evaluating llms as agents</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Tool-planner: Dynamic solution tree planning for large language model with tool clustering</title>
+		<author>
+			<persName><forename type="first">Yanming</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyue</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuwei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiannan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuhong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sheng</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianwei</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Du</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.03807</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Haipeng</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingfeng</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Can</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianguang</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongyang</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiubo</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingwei</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shifeng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongmei</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.09583</idno>
+		<title level="m">Wizardmath: Empowering mathematical reasoning for large language models via reinforced evol-instruct</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ziyang</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Can</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingfeng</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiubo</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenxiang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongyang</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingwei</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daxin</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wizardcoder</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.08568</idno>
+		<title level="m">Empowering code large language models with evol-instruct</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Agentboard: An analytical evaluation board of multi-turn llm agents</title>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junlei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujiu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaohui</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenzhong</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingpeng</forename><surname>Kong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxian</forename><surname>He</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.13178</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Pddl-the planning domain definition language</title>
+		<author>
+			<persName><forename type="first">Drew</forename><surname>Mcdermott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Malik</forename><surname>Ghallab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adele</forename><forename type="middle">E</forename><surname>Howe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Craig</forename><forename type="middle">A</forename><surname>Knoblock</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Ram</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manuela</forename><forename type="middle">M</forename><surname>Veloso</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">S</forename><surname>Weld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><forename type="middle">E</forename><surname>Wilkins</surname></persName>
+		</author>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+		<imprint>
+			<date type="published" when="1998">1998</date>
+			<biblScope unit="page">59656859</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Introducing meta Llama 3: The most capable openly available LLM to date</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">I</forename><surname>Meta</surname></persName>
+		</author>
+		<ptr target="https://ai.meta.com/blog/meta-llama-3/" />
+		<imprint>
+			<date type="published" when="2024-04">April 2024</date>
+			<biblScope unit="page" from="2024" to="2024" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Robocodex: Multimodal code generation for robotic behavior synthesis</title>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junting</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qinglong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shoufa</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiaojun</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongjian</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runjian</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhixuan</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengkang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaofan</forename><surname>Tao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.16117</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Embodiedgpt: Vision-language pre-training via embodied chain of thought</title>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qinglong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengkang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhai</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingyu</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jifeng</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ping</forename><surname>Luo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Openai: Introducing chatgpt</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://openai.com/blog/chatgpt" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title/>
+	</analytic>
+	<monogr>
+		<title level="j">OpenAI. Gpt-4 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<title level="m">Gpt-4 technical report. arxiv 2303.08774. View in Article</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Parisi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Fiedel</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.12255</idno>
+		<title level="m">Talm: Tool augmented language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Virtualhome: Simulating household activities via programs</title>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Puig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Ra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marko</forename><surname>Boben</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaman</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tingwu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sanja</forename><surname>Fidler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonio</forename><surname>Torralba</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE conference on computer vision and pattern recognition</title>
+		<meeting>the IEEE conference on computer vision and pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="8494" to="8502" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shihao</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yining</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kunlun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lan</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaxi</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Qian</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.16789</idno>
+		<title level="m">Facilitating large language models to master 16000+ real-world apis</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">Code llama: Open foundation models for code</title>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Baptiste Roziere</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabian</forename><surname>Gehring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sten</forename><surname>Gloeckle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Itai</forename><surname>Sootla</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Xiaoqing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yossi</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyu</forename><surname>Adi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tal</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jérémy</forename><surname>Remez</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rapin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.12950</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jingqing</forename><surname>Ruan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiwei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianpeng</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guoqing</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiwei</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hangyu</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingyu</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tptu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.03427</idno>
+		<title level="m">Task planning and tool usage of large language model-based ai agents</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<title level="m" type="main">Artificial intelligence: a modern approach</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Stuart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Russell</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Norvig</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<publisher>Pearson</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<title level="m" type="main">Toolformer: Language models can teach themselves to use tools</title>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberta</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicola</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Scialom</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2302.04761</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2302.04761" />
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title level="m" type="main">Hugginggpt: Solving AI tasks with chatgpt and its friends in huggingface</title>
+		<author>
+			<persName><forename type="first">Yongliang</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaitao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongsheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiming</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yueting</forename><surname>Zhuang</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2303.17580</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2303.17580" />
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Reflexion: Language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Karthik R Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Thirty-seventh Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<title level="m" type="main">Alfworld: Aligning text and embodied environments for interactive learning</title>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Shridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingdi</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc-Alexandre</forename><surname>Côté</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Trischler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Hausknecht</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2010.03768</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Progprompt: Generating situated robot task plans using large language models</title>
+		<author>
+			<persName><forename type="first">Ishika</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Valts</forename><surname>Blukis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arsalan</forename><surname>Mousavian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ankit</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danfei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Tremblay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dieter</forename><surname>Fox</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Thomason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Animesh</forename><surname>Garg</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2023 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="11523" to="11530" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<title level="m" type="main">Llm-planner: Few-shot grounded planning for embodied agents with large language models</title>
+		<author>
+			<persName><forename type="first">Hee</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaman</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clayton</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><forename type="middle">M</forename><surname>Washington</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Lun</forename><surname>Sadler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Chao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Su</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<title level="m" type="main">Trial and error: Exploration-based trajectory optimization for llm agents</title>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Da Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sujian</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Yuchen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.02502</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Theodore R Sumers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><forename type="middle">L</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Griffiths</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.02427</idno>
+		<title level="m">Cognitive architectures for language agents</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<monogr>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingkai</forename><surname>Kong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.16653</idno>
+		<title level="m">Adaplanner: Adaptive planning from feedback with language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<monogr>
+		<author>
+			<persName><forename type="first">Simeng</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuohang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenguang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Iyyer</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Pearl</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.14564</idno>
+		<title level="m">Prompting large language models to plan and execute actions over long documents</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<monogr>
+		<title level="m" type="main">Online adaptation of language models with a memory of amortized contexts</title>
+		<author>
+			<persName><forename type="first">Jihoon</forename><surname>Tack</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaehyung</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinwoo</forename><surname>Shin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yee</forename><forename type="middle">Whye</forename><surname>Teh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><forename type="middle">Richard</forename><surname>Schwarz</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.04317</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<monogr>
+		<title level="m" type="main">Llama 2: Open foundation and fine-tuned chat models</title>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Albert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amjad</forename><surname>Almahairi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasmine</forename><surname>Babaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolay</forename><surname>Bashlykov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soumya</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prajjwal</forename><surname>Bhargava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shruti</forename><surname>Bhosale</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.09288</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<analytic>
+		<title level="a" type="main">Planbench: An extensible benchmark for evaluating large language models on planning and reasoning about change</title>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Valmeekam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Marquez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alberto</forename><surname>Olmo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarath</forename><surname>Sreedharan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Subbarao</forename><surname>Kambhampati</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<monogr>
+		<author>
+			<persName><forename type="first">Boshi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Eisner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Van Durme</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Su</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.04746</idno>
+		<title level="m">Llms in the imaginarium: tool learning through simulated trial and error</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<monogr>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueyang</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingsen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiakai</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.11432</idno>
+		<title level="m">A survey on large language model based autonomous agents</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<monogr>
+		<title level="m" type="main">Plan-and-solve prompting: Improving zero-shot chain-of-thought reasoning by large language models</title>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanyu</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihuai</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqiang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunshi</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roy</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ka-Wei</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ee-Peng</forename><surname>Lim</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.04091</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b66">
+	<monogr>
+		<title level="m" type="main">Gensim: Generating robotic simulation tasks via large language models</title>
+		<author>
+			<persName><forename type="first">Lirui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiyang</forename><surname>Ling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhecheng</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Shridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuzhe</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bailin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huazhe</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaolong</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.01361</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b67">
+	<monogr>
+		<title level="m" type="main">Learning from failure: Integrating negative examples when fine-tuning large language models as agents</title>
+		<author>
+			<persName><forename type="first">Renxi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haonan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xudong</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><surname>Baldwin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.11651</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b68">
+	<monogr>
+		<title level="m" type="main">Bytesized32: A corpus and challenge task for generating task-specific world models expressed as text games</title>
+		<author>
+			<persName><forename type="first">Ruoyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Todd</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziang</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc-Alexandre</forename><surname>Côté</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Jansen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.14879</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b69">
+	<monogr>
+		<title level="m" type="main">Promptagent: Strategic planning with language models enables expert-level prompt optimization</title>
+		<author>
+			<persName><forename type="first">Xinyuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenxi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayou</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nebojsa</forename><surname>Jojic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><forename type="middle">P</forename><surname>Xing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiting</forename><surname>Hu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.16427</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b70">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yufei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhou</forename><surname>Xian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tsun-Hsuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yian</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katerina</forename><surname>Fragkiadaki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zackory</forename><surname>Erickson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Held</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuang</forename><surname>Gan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Robogen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.01455</idno>
+		<title level="m">Towards unleashing infinite data for automated robot learning via generative simulation</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b71">
+	<monogr>
+		<title level="m" type="main">Describe, explain, plan and select: Interactive planning with large language models enables open-world multi-task agents</title>
+		<author>
+			<persName><forename type="first">Zihao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaofei</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anji</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojian</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yitao</forename><surname>Liang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b72">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Vincent</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kelvin</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adams</forename><forename type="middle">Wei</forename><surname>Guu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Lester</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">M</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc V</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Le</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2109.01652</idno>
+		<title level="m">Finetuned language models are zero-shot learners</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b73">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24824" to="24837" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b74">
+	<monogr>
+		<title level="m" type="main">AutoGen: Enabling next-gen llm applications via multi-agent conversation framework</title>
+		<author>
+			<persName><forename type="first">Qingyun</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gagan</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jieyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiran</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaokun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erkang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beibin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.08155</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b75">
+	<monogr>
+		<title level="m" type="main">Embodied task planning with large language models</title>
+		<author>
+			<persName><forename type="first">Zhenyu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziwei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiuwei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiwen</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haibin</forename><surname>Yan</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b76">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhiheng</forename><surname>Xi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenxiang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiwen</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyang</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junzhe</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Senjie</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Enyu</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.07864</idno>
+		<title level="m">The rise and potential of large language model based agents: A survey</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b77">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiangjie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tinghui</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Renze</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuandong</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanghua</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Su</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.01622</idno>
+		<title level="m">Travelplanner: A benchmark for real-world planning with language agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b78">
+	<monogr>
+		<title level="m" type="main">Openagents: An open platform for language agents in the wild</title>
+		<author>
+			<persName><forename type="first">Tianbao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhoujun</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luoxuan</forename><surname>Weng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yitao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Toh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junning</forename><surname>Hua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Che</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leo</forename><forename type="middle">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongjin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongchan</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Shin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yu</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2310.10634</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2310.10634" />
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b79">
+	<monogr>
+		<author>
+			<persName><forename type="first">Can</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingfeng</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiubo</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiazhan</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongyang</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daxin</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wizardlm</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.12244</idno>
+		<title level="m">Empowering large language models to follow complex instructions</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b80">
+	<analytic>
+		<title level="a" type="main">Language guided generation of 3d embodied ai environments</title>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan-Yun</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luca</forename><surname>Weihs</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eli</forename><surname>Vanderbilt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alvaro</forename><surname>Herrasti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Winson</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiajun</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Haber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ranjay</forename><surname>Krishna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingjie</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="16227" to="16237" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b81">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03629</idno>
+		<title level="m">React: Synergizing reasoning and acting in language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b82">
+	<monogr>
+		<title level="m" type="main">Tree of thoughts: Deliberate problem solving with large language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><forename type="middle">L</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.10601</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b83">
+	<monogr>
+		<author>
+			<persName><forename type="first">Weiran</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shelby</forename><surname>Heinecke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juan</forename><forename type="middle">Carlos</forename><surname>Niebles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiwei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihao</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rithesh</forename><surname>Murthy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianguo</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Devansh</forename><surname>Arpit</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.02151</idno>
+		<title level="m">Retrospective large language agents with policy gradient optimization</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b84">
+	<monogr>
+		<author>
+			<persName><forename type="first">Faeze</forename><surname>Da Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhilasha</forename><surname>Brahman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Khyathi</forename><surname>Ravichander</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Chandu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><forename type="middle">Yuchen</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lumos</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.05657</idno>
+		<title level="m">Learning agents with unified data, modular design, and open-source llms</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b85">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aohan</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingdao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiao</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Tang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.12823</idno>
+		<title level="m">Agenttuning: Enabling generalized agent abilities for llms</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b86">
+	<monogr>
+		<title level="m" type="main">Agentohana: Design unified data and training pipeline for effective agent learning</title>
+		<author>
+			<persName><forename type="first">Jianguo</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tian</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rithesh</forename><surname>Murthy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiwei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiran</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juntao</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thai</forename><surname>Hoang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liangwei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihao</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zuxin</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.15506</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b87">
+	<analytic>
+		<title level="a" type="main">Expel: Llm agents are experiential learners</title>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quentin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthieu</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong-Jin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gao</forename><surname>Huang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page" from="19632" to="19642" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b88">
+	<analytic>
+		<title level="a" type="main">Large language models as commonsense knowledge for large-scale task planning</title>
+		<author>
+			<persName><forename type="first">Zirui</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wee</forename><surname>Sun Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Hsu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">36</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b89">
+	<monogr>
+		<author>
+			<persName><forename type="first">Swaroop</forename><surname>Huaixiu Steven Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hugh</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minmin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Azade</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Nova</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Heng-Tze</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><forename type="middle">H</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.04520</idno>
+		<title level="m">Natural plan: Benchmarking llms on natural language planning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b90">
+	<analytic>
+		<title level="a" type="main">Memorybank: Enhancing large language models with long-term memory</title>
+		<author>
+			<persName><forename type="first">Wanjun</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lianghong</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiqi</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">He</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanlin</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page" from="19724" to="19731" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b91">
+	<monogr>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michal</forename><surname>Shlapentokh-Rothman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haohan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu-Xiong</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.04406</idno>
+		<title level="m">Language agent tree search unifies reasoning acting and planning in language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b92">
+	<analytic>
+		<title level="a" type="main">Less is more for alignment</title>
+		<author>
+			<persName><forename type="first">Chunting</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Puxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Srinivasan</forename><surname>Iyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiao</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuning</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhe</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Avia</forename><surname>Efrat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ping</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lili</forename><surname>Yu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b93">
+	<monogr>
+		<title level="m" type="main">Least-to-most prompting enables complex reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claire</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Bousquet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.10625</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b94">
+	<monogr>
+		<title level="m" type="main">Ghost in the minecraft: Generally capable agents for open-world environments via large language models with text-based knowledge and memory</title>
+		<author>
+			<persName><forename type="first">Xizhou</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuntao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenxin</forename><surname>Hao Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weijie</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyu</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lewei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaogang</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.17144</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

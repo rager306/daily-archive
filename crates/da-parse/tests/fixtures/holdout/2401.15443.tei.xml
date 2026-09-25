@@ -1,0 +1,1769 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">DiffuserLite: Towards Real-time Diffusion Planning</title>
+				<funder ref="#_KpmCKCJ">
+					<orgName type="full">National Natural Science Foundation of China</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-10-25">25 Oct 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Zibin</forename><surname>Dong</surname></persName>
+							<email>zibindong@outlook.com</email>
+							<affiliation key="aff0">
+								<orgName type="department">College of Intelligence and Computing</orgName>
+								<orgName type="institution">Tianjin University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jianye</forename><surname>Hao</surname></persName>
+							<email>jianye.hao@tju.edu.cn</email>
+							<affiliation key="aff0">
+								<orgName type="department">College of Intelligence and Computing</orgName>
+								<orgName type="institution">Tianjin University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yifu</forename><surname>Yuan</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">College of Intelligence and Computing</orgName>
+								<orgName type="institution">Tianjin University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Fei</forename><surname>Ni</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">College of Intelligence and Computing</orgName>
+								<orgName type="institution">Tianjin University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yitian</forename><surname>Wang</surname></persName>
+							<affiliation key="aff1">
+								<address>
+									<addrLine>San Diego Jacobs School of Engineering DiffuserLite DD Diffuser DiffuserLite DD Diffuser DiffuserLite DD Diffuser DiffuserLite DD Diffuser DiffuserLite DD Diffuser 1.3Hz 0.4Hz 122Hz 4.1M 59M 2.7M</addrLine>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Pengyi</forename><surname>Li</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">College of Intelligence and Computing</orgName>
+								<orgName type="institution">Tianjin University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yan</forename><surname>Zheng</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">College of Intelligence and Computing</orgName>
+								<orgName type="institution">Tianjin University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">DiffuserLite: Towards Real-time Diffusion Planning</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-10-25">25 Oct 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">7ABD990CAA5A6F2A54CB154381B99030</idno>
+					<idno type="arXiv">arXiv:2401.15443v5[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:37+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Figure 1: Performance overview. We present DiffuserLite, a lightweight framework that utilizes progressive refinement planning to reduce redundant information generation and achieves real-time diffusion planning. DiffuserLite significantly outperforms predominant frameworks, Diffuser and DD, regarding scores, inference time, and model size on three popular D4RL benchmarks. The decision-making frequency of DiffuserLite achieves 122.2Hz, which is 112.7 times higher than predominant frameworks.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="26" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="27" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="28" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Diffusion models (DMs) are powerful generative models that demonstrate promising performance across various domains <ref type="bibr" target="#b51">[52,</ref><ref type="bibr" target="#b43">44,</ref><ref type="bibr" target="#b28">29,</ref><ref type="bibr" target="#b21">22]</ref>. Motivated by their remarkable capability in complex distribution modeling and conditional generation, researchers have developed a series of works applying diffusion models for decision-making tasks in recent years <ref type="bibr" target="#b54">[55]</ref>. DMs can play various roles in decision-making tasks, such as acting as planners to make better decisions from a longterm perspective <ref type="bibr" target="#b19">[20,</ref><ref type="bibr" target="#b0">1,</ref><ref type="bibr" target="#b7">8,</ref><ref type="bibr" target="#b35">36,</ref><ref type="bibr" target="#b9">10]</ref>, serving as policies to support complex multimodal-distribution modeling <ref type="bibr" target="#b37">[38,</ref><ref type="bibr" target="#b49">50,</ref><ref type="bibr" target="#b5">6]</ref>, and working as data synthesizers to assist reinforcement learning (RL) training <ref type="bibr" target="#b32">[33,</ref><ref type="bibr" target="#b50">51,</ref><ref type="bibr" target="#b15">16]</ref>, etc. Among these roles, diffusion planning is the most widely applied paradigm <ref type="bibr" target="#b54">[55]</ref>. Unlike auto-regressive planning in previous model-based RL approaches <ref type="bibr" target="#b13">[14,</ref><ref type="bibr" target="#b48">49,</ref><ref type="bibr" target="#b14">15]</ref>, diffusion planning avoids severe compounding errors by directly generating the entire trajectory rather than one-step transition <ref type="bibr" target="#b54">[55]</ref>. Also, its powerful conditional generation capability allows planning at the trajectory level without being limited to step-wise shortsightedness. The diffusion planning paradigm has achieved state-of-the-art (SOTA) performance in various offline RL tasks, including single-agent RL <ref type="bibr" target="#b26">[27]</ref>, multi-agent RL <ref type="bibr" target="#b53">[54]</ref>, meta RL <ref type="bibr" target="#b35">[36]</ref>, and more. One key issue that diffusion planning faces is the expensive iterative sampling cost. As depicted in fig. <ref type="figure">1</ref>, the decision-making frequencies (number of actions inferred per second) of two predominant diffusion planning frameworks, Diffuser <ref type="bibr" target="#b19">[20]</ref> and Decision Diffuser (DD) <ref type="bibr" target="#b0">[1]</ref>, are recorded as 1.3Hz and 0.4Hz, respectively. Such a low decision frequency fails to meet the requirements of numerous real-world applications, e.g. real-time robot control <ref type="bibr" target="#b47">[48]</ref> and game AI <ref type="bibr" target="#b38">[39]</ref>. The low decision frequency is primarily attributed to modeling a denoising process for a long-horizon trajectory distribution, which requires a heavy neural network backbone and multiple forward passes. A question may arise whether the generation of complete long-horizon trajectories is necessary for successful planning. Experimental results indicate that it is not, for the detailed trajectory information in long-horizon segments is highly redundant. As shown in fig. <ref type="figure" target="#fig_0">2</ref>, a motivation example in Antmaze, the disparities between plans increase as the horizon grows, leading to poor consistency between plans in consecutive steps. Besides, in practice, agents often struggle to reach the planned distant state. These facts argue that while long-horizon planning helps improve foresight, it introduces redundant information in distinct parts. The details in closer parts are more crucial. Ignoring the modeling of these redundant parts in the diffusion planning process will significantly reduce the complexity of the trajectory distribution to be fitted, making it possible to build a fast and lightweight diffusion planning framework.</p><p>Motivated by these insights, we propose to build a plan refinement process (PRP) to speed up diffusion planning. First, we perform "rough" planning, where jumpy planning is executed, only considering the states at intervals that are far apart and ignoring other individual states. Then, we refine a small portion of the plan, focusing on the steps closer to the current state. By doing so, we fill in the execution details between two states far apart, gradually refining the plan to the step level. This approach has three advantages: 1) It reduces the length of the sequences generated by the diffusion model, simplifying the complexity of the probability distribution to be fitted. 2) It significantly reduces the search space of plans, making it easier for the planner to find well-performed trajectories. 3) Since only the first action of each step is executed, rough planning of steps further away causes no noticeable performance drop. Diffusion planning with PRP, which we call DiffuserLite, is simple, fast, and lightweight. Our experiments have demonstrated the effectiveness of PRP, significantly increasing decision-making frequency while achieving SOTA performance. Moreover, it can be easily adapted to other existing diffusion planning methods. In summary, our contributions are as follows:</p><p>• We introduce the plan refinement process (PRP) for coarse-to-fine-grained trajectory generation, reducing the modeling of redundant information.</p><p>• We introduce DiffuserLite, a lightweight diffusion planning framework, which significantly increases decision-making frequency by employing PRP.</p><p>• DiffuserLite is a simple and flexible plugin that can be easily combined with other diffusion planning algorithms.</p><p>• DiffuserLite achieves a super high decision-making frequency (122.2Hz, 112.7x faster than predominant frameworks) and SOTA performance on multiple benchmarks in D4RL.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Preliminaries</head><p>Problem Setup: Consider a system governed by discrete-time dynamics o t+1 = f (o t , a t ) at state o t given an action a t . A trajectory x = [x 0 , • • • , x T -1 ] can be either a sequence of states x t = o t or state-action pairs x t = (o t , a t ), where T is the planning horizon. Each trajectory can be mapped to a property c. Diffusion planning aims to find a trajectory that exhibits a property closest to the target:</p><formula xml:id="formula_0">x * = arg min x d(C(x), c target ) (<label>1</label></formula><formula xml:id="formula_1">)</formula><p>where d is a certain distance metric, C is a critic that maps a trajectory to the property it exhibits, and c target is the target property. The action to be executed a t is then extracted from the selected trajectory (state-action sequences) or predicted by an inverse dynamic model a t = h(o t , o t+1 ) (stateonly sequences). In the context of offline RL, it is a common choice to define the property as the corresponding cumulative reward C(x) = T -1 t=0 r(o t , a t ) in previous works <ref type="bibr" target="#b19">[20,</ref><ref type="bibr" target="#b0">1]</ref>. Diffusion Models assume an unknown trajectory distribution q 0 (x 0 ), DMs define a forward process {x s } s∈[0,S] with S &gt; 0. Starting with x 0 , previous work <ref type="bibr" target="#b22">[23]</ref> proved that one can obtain any x s by solving the following stochastic differential equation (SDE):</p><formula xml:id="formula_2">dx s = f (s)x s ds + g(s)dw s , x 0 ∼ q 0 (x 0 )<label>(2)</label></formula><p>where w s is the standard Wiener process, and f (s</p><formula xml:id="formula_3">) = d log αs ds , g 2 (s) = dσ 2 s ds -2σ 2 s d log αs</formula><p>ds . Values of α s , σ s ∈ R + depend on the noise schedule but keep the signal-to-noise-ratio (SNR) α 2 s /σ 2 s strictly decreasing <ref type="bibr" target="#b22">[23]</ref>. While this SDE transforms q 0 (x 0 ) into a noise distribution q S (x S ) = N (0, I), one can reconstruct trajectories from the noise by solving the reverse process of eq. ( <ref type="formula" target="#formula_2">2</ref>). Previous work <ref type="bibr" target="#b45">[46]</ref> proved that solving its associated probability flow ODE can support faster sampling:</p><formula xml:id="formula_4">dx s ds = f (s)x s - 1 2 g 2 (s)∇ x log q s (x s ), x S ∼ q S (x S )<label>(3)</label></formula><p>in which score function ∇ x log q s (x s ) is the only unknown term and estimated by a neural network -ϵ θ (x s , s)/σ s in practice. The parameter θ is optimized by minimizing the following objective:</p><formula xml:id="formula_5">L(θ) = E q0(x0),q(ϵ),s [||ϵ θ (x s , s) -ϵ|| 2 2 ] (<label>4</label></formula><formula xml:id="formula_6">)</formula><p>where ϵ ∼ q(ϵ) = N (0, I), x s = α s x 0 + σ s ϵ. Various ODE solvers can be employed to solve Equation (3), such as the Euler solver <ref type="bibr" target="#b1">[2]</ref>, RK45 solver <ref type="bibr" target="#b8">[9]</ref>, DPM solver <ref type="bibr" target="#b31">[32]</ref>, etc.</p><p>Conditional Sampling helps to generate trajectories exhibiting certain properties in a priori. There are two main approaches: classifier-guidance (CG) <ref type="bibr" target="#b6">[7]</ref> and classifier-free-guidance (CFG) <ref type="bibr" target="#b17">[18]</ref>. CG requires an additional classifier log p ϕ (c|x s , s) to predict the log probability that a noisy trajectory x s exhibits a given property c. The gradients from this classifier are then used to guide the solver:</p><formula xml:id="formula_7">εθ (x s , s, c) := ϵ θ (x s , s) -w • σ s ∇ xs log p ϕ (c|x s , s)<label>(5)</label></formula><p>CFG does not require an additional classifier but uses a conditional noise predictor to guide the solver.</p><formula xml:id="formula_8">εθ (x s , s, c) := w • ϵ θ (x s , s, c) + (1 -w) • ϵ θ (x s , s)<label>(6)</label></formula><p>Increasing the value of guidance strength w leads to more property-aligned generation, but decreases the legality of the generated trajectories <ref type="bibr" target="#b7">[8]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Efficient Planning via Refinement</head><p>Diffuser <ref type="bibr" target="#b19">[20]</ref> and DD <ref type="bibr" target="#b0">[1]</ref> are two pioneering frameworks, upon which a vast amount of diffusion planning works has been built <ref type="bibr" target="#b27">[28,</ref><ref type="bibr" target="#b25">26,</ref><ref type="bibr" target="#b52">53]</ref>. Although the design details differ, they can be unified into one paradigm. In the inference step, multiple candidate trajectories are first conditionally sampled using the diffusion model. Then, a critic is used to select the optimal one that exhibits the closest property to the target. Finally, the action to be executed is extracted. This paradigm relies on multiple forwarding complex neural networks, resulting in extremely low decision-making frequencies (typically 1-10Hz, or even less than 1Hz), severely hindering its real-world deployment.</p><p>Diffusion Denoising Critic Selection 𝒂 𝒕 Inverse Dynamic Gaussian Noise Candidate States Environment Current State Current Action 𝒐𝟎 𝒐𝑰 𝟎 𝒐𝟐𝑰 𝟎 𝒐𝑯 𝟎%𝟏 𝒐𝟎 𝒐𝑰 𝟎 𝒐𝟐𝑰 𝟎 𝒐𝑯 𝟎%𝟏 𝒐𝟎 Level 0 Diffusion Denoising Critic Selection 𝒐𝟎 𝒐𝑯 𝟏%𝟏 𝒐𝟎 𝒐𝑰 𝟏 𝒐𝟐𝑰 𝟏 𝒐𝑯 𝟏%𝟏 𝒐𝟎 𝒐𝑰 𝟏 𝒐𝟐𝑰 𝟏 𝒐𝑯 𝟏%𝟏 Level 1 Diffusion Denoising Critic Selection 𝒐𝟎 𝒐𝑯 𝑳"𝟏"𝟏 𝒐𝟎 𝒐𝟏 𝒐𝟐 𝒐𝑯 𝑳"𝟏"𝟏 𝒐𝟎 𝒐𝟏 𝒐𝟐 𝒐𝑯 𝑳"𝟏"𝟏 Level L-1 𝒐 𝒕 Selected States generates multiple candidate trajectories. A critic is then used to select the optimal one, in which oI 0 is then passed to the next level as its terminal oH 1 -1. The plan refinement process continues iteratively until the last level with a temporal jump of IL-1 = 1. Finally, the action at to be executed is extracted using an inverse dynamic model at = h(o0, o1).</p><p>The fundamental reason is the requirement for highly complex neural networks to model the complex long-horizon trajectory distributions <ref type="bibr" target="#b54">[55]</ref>. Although some works have explored using advanced ODE solvers to reduce the sampling steps to around 5 <ref type="bibr" target="#b7">[8]</ref>, the time consumption of network forwarding is still unacceptable. However, we notice that ignoring some redundant distant parts of the generated plan can be a possible solution to address the issue. As shown in fig. <ref type="figure" target="#fig_0">2</ref>, the disparities between plans increase as the horizon grows, leading to poor consistency between the plans selected in consecutive steps. Besides, agents often struggle to reach the distant states given by a plan in practice. Both facts indicate that terms in distant parts of a plan become increasingly redundant, whereas the closer parts are more crucial.</p><p>Regarding these findings, we aim to develop a progressive refinement planning (PRP) process. This process initially plans a rough trajectory consisting of only key points spaced at equal intervals and then progressively refines the first interval by generative interpolating. It is worth noting that this is orthogonal to methods of identifying key points based on task semantic information <ref type="bibr" target="#b26">[27]</ref>. Specifically, our proposed PRP consists of L planning levels. At each level l ∈ {0, 1, • • • , L -1}, starting from the known first term x 0 , DMs plan rough trajectories x 0:H l :I l with temporal horizon H l and temporal jump I l . Then, the planned first key point x I l is passed to the next level as its terminal:</p><formula xml:id="formula_9">x 0:H l :I l : = [x 0 , x I l , x 2I l • • • , x H l -1 ]</formula><p>x 0:H l+1 :I l+1 : = x 0 , x I l+1 , x 2I l+1 , • • • , x H l+1 -1</p><formula xml:id="formula_10">x I l = x H l+1 -1<label>(7)</label></formula><p>By this design, only the first planned intervals are refined in the next level, and the other redundant details are all ignored, resulting in a coarse-to-fine generation process. The progressive refinement continues until the last level to extract an action. To support conditional sampling for each level, we define the property of a rough trajectory x 0:H l :I l as the property expectation over the distribution of all its completed trajectories X (x 0:H l :I l ):</p><formula xml:id="formula_11">C(x 0:H l :I l ) := E x∼X (x 0:H l :I l ) [C(x)]<label>(8)</label></formula><p>PRP ensures that long-term planning maintains foresight while alleviating the burden of modeling redundant information. As a result, it greatly contributes to reducing model size and improving planning efficiency:</p><p>Simplifying the fitted distribution of DMs. The absence of redundant details in PRP allows for a significant reduction in the complexity of the fitted distribution at each level. This reduction in complexity enables us to utilize a lighter neural network backbone, shorter network input sequence lengths, and a reduced number of denoising steps.</p><p>Reducing the plan-search space. Key points generated at former levels often sufficiently reflect the quality of the entire trajectory, which allows the planner to focus more on finding distant key points and planning actions for the immediate steps, reducing search space and complexity.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">A Lite Architecture for Real-time Diffusion Planning</head><p>Employing PRP results in a new lightweight architecture for diffusion planning, which we refer to as DiffuserLite. DiffuserLite can reduce the complexity of the fit distribution and significantly increase the decision-making frequency, achieving 122Hz on average for the need of real-time control. We present the architecture overview in fig. <ref type="figure" target="#fig_1">3</ref>, provide pseudocode for both training and inference in algorithm 1 and algorithm 2, and discuss detailed design choices in this section.</p><p>Diffusion model for each level: We train L diffusion models for all levels to generate state-only sequences. We employ DiT <ref type="bibr" target="#b39">[40]</ref> as the noise predictor backbone, instead of the more commonly used UNet <ref type="bibr" target="#b42">[43]</ref> due to the significantly reduced length of the generated sequences in each level (typically around 5). This eliminates the need for 1D convolution to extract local temporal features. To adapt the DiT backbone for temporal generation, we make minimal structural adjustments following <ref type="bibr" target="#b7">[8]</ref>. For conditional sampling, we utilize CFG instead of CG, as the slow gradient computation process of CG reduces the frequency of decision-making. During the training phase, at each gradient step, we sample a batch of H 0 -length trajectories, slice each of them into L sub-trajectories [x 0:H0:1 , • • • , x 0:H L-1 :1 ], evaluate their properties C(x 0:H l :1 ) as an estimation of C(x 0:H l :I l ) for condition at each level, and then slice the sub-trajectories into evenly spaced training samples x 0:H l :I l for training the diffusion models. During the inference phase, as shown in fig. <ref type="figure" target="#fig_1">3</ref>, diffusion models generate multiple candidate plans level by level from 0 to L -1, and the optimal one is selected by the critic C.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Critic design:</head><p>The Critic C in DiffuserLite plays two important roles: providing generation conditions during the diffusion training process and selecting the optimal plan from the candidates generated by the diffusion model during inference. In the context of Offline RL, both Diffuser and DD adopt the cumulative reward of a trajectory as the condition:</p><formula xml:id="formula_12">C(x) = H-1 t=0 r(o t , a t ),<label>(9)</label></formula><p>where H is the temporal horizon. This design allows rewards from the offline RL dataset to be utilized as a ground-truth critic for acquiring generation conditions during training. During inference, an additional trained reward function is required to serve as the critic. The critic then helps select the plan that maximizes the cumulative reward, as depicted in the lower part of fig. <ref type="figure" target="#fig_1">3</ref>. However, this design poses challenges in tasks with sparse rewards, as it can confuse diffusion models when distinguishing better-performing trajectories, especially for short-horizon plans. To address this challenge, we introduce an option to use the sum of discounted rewards and the value of the last state as an additional property design:</p><formula xml:id="formula_13">C(x) = H-2 t=0 γ t r(o t , a t ) + γ H-1 V (o H-1 ),<label>(10)</label></formula><p>where</p><formula xml:id="formula_14">V (o t ) = max E π [ ∞ τ =t γ τ -t r τ ]</formula><p>represents the optimal value function <ref type="bibr" target="#b46">[47]</ref> and can be estimated by a neural network through various offline RL methods. In the context of other domains, properties can be flexibly designed as needed, as long as the critic C can evaluate trajectories of variable lengths. It is worth noting that previous diffusion planning algorithms widely support this flexibility. In addition, it is even possible to skip the critic selection during inference, which is equivalent to using a uniform critic, as used in DD.</p><p>Action extraction: After obtaining the optimal trajectory from the last level through critic selection, we utilize an additional inverse dynamic model a t = h(o t , o t+1 ) to extract the action to be executed. This approach is suggested in <ref type="bibr" target="#b0">[1]</ref>.</p><p>Further speedup with rectified flow: DiffuserLite aims to achieve real-time diffusion planning to support its application in real-world scenarios. Therefore, we introduce Rectified flow <ref type="bibr" target="#b29">[30]</ref> for further increasing the decision-making frequency. Rectified flow, an ODE on the time interval [0, 1], causalizes the paths of linear interpolation between two distributions. If we define the two distributions as trajectory distribution and standard Gaussian, we can directly replace the Diffusion ODE with rectified flow to achieve the same functionality. The most significant difference is that rectified flow learns a straight-line flow and can continuously straighten the ODE through reflow. This straightness property allows for consistent and stable gradients throughout the flow, enabling the generation of trajectories with very few sampling steps (in our experiments, we found that one-step Table <ref type="table">1</ref>: Time consumption per step and frequency in D4RL. All results are obtained over 5 random seeds.</p><p>DiffuserLite achieves an average decision frequency of about 122Hz on the R2 backbone and 81Hz averaging over three variations, which meets the requirements of real-time inference. Since the code for HDMI is not open-source, we make every effort to reproduce HDMI with the original settings to test its runtime cost and thus mark its results with underlines.</p><p>Environment Metric Diffuser DD HDMI DiffuserLite-D DiffuserLite-R1 DiffuserLite-R2 MuJoCo Runtime (s) 0.665 2.142 0.405 0.015 0.013 0.005 Frequency (Hz) 1.5 0.47 2.5 68.2 79.7 200.7 Kitchen Runtime (s) 0.790 2.573 0.407 0.017 0.015 0.010 Frequency (Hz) 1.3 0.4 2.5 58.7 66.0 103.2 Antmaze Runtime (s) 0.791 2.591 0.410 0.027 0.015 0.010 Frequency (Hz) 1.3 0.39 2.4 37.3 65.7 101.7 Average Runtime (s) 0.749 2.435 0.407 0.020 0.014 0.008 Average Frequency (Hz) 1.34 0.41 2.46 51.26 69.90 122.44</p><p>sampling is sufficient to produce good results). We consider rectified flow an optional backbone for cases that prioritize decision frequency. In appendix B, we offer comprehensive explanations of trajectory generation and training with rectified flow. We explored the performance of the DiffuserLite on various tasks on D4RL, Robomimic, and FinRL [12, 34, 41], and aimed to answer the following research questions (RQs): 1) To what extent can DiffuserLite reduce the runtime cost?</p><p>2) How is the performance of DiffuserLite on offline RL tasks? 3) Can DiffuserLite serve as a flexible plugin for other diffusion planning algorithms? 4) Can we summarize a list of simple and clear design choices for DiffuserLite?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Experimental Setup</head><p>Benchmarks: We evaluate the algorithm on various offline RL domains, including locomotion in Gym-MuJoCo <ref type="bibr" target="#b3">[4]</ref>, real-world manipulation in FrankaKitchen <ref type="bibr" target="#b12">[13]</ref> and Robomimic <ref type="bibr" target="#b33">[34]</ref>, long-horizon navigation in Antmaze <ref type="bibr" target="#b11">[12]</ref>, and real-world stock trading in FinRL <ref type="bibr" target="#b40">[41]</ref>. We train all models using publicly available datasets (see appendix A.1 for further details).</p><p>Baselines: Our comparisons mainly include the basic imitation learning algorithm BC, existing offline RL methods CQL <ref type="bibr" target="#b24">[25]</ref> and IQL <ref type="bibr" target="#b23">[24]</ref>, as well as two pioneering diffusion planning frameworks, Diffuser <ref type="bibr" target="#b19">[20]</ref> and DD <ref type="bibr" target="#b0">[1]</ref>. Additionally, we compare with a state-of-the-art algorithm, HDMI <ref type="bibr" target="#b26">[27]</ref>, which is improved based on DD. (Further details about each baseline and the sources of performance results for each baseline across the experiments are presented in appendix A.2).</p><p>Backbones: As mentioned in Section 4, we implement three variations of DiffuserLite, based on different backbones: 1) diffusion model, 2) rectified flow, and 3) rectified flow with an additional reflow step. These variations will be used in subsequent experiments and indicated by the suffixes D, R1, and R2, respectively. All backbones utilize three levels, with a total temporal horizon of 129 in MuJoCo and Antmaze, and 49 in Kitchen. For more details about the hyperparameters selection for DiffuserLite, please refer to appendix D.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Computing Power:</head><p>All runtime results across our experiments are obtained on a server equipped with an Intel(R) Xeon(R) Gold 6326 CPU @ 2.90GHz and an NVIDIA GeForce RTX3090. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Runtime Cost (RQ1)</head><p>The primary objective of DiffuserLite is to increase the decision-making frequency. Therefore, we first test the wall-clock runtime cost (time consumption for one action inference) of DiffuserLite under three different backbones, compared to Diffuser, DD, and HDMI, to determine the extent of the advantage gained. We present the test results in table 1 <ref type="foot" target="#foot_0">3</ref> , which shows that the runtime cost of DiffuserLite with D, R1, and R2 backbones is only 1.23%, 0.89%, and 0.51% of the average runtime cost of Diffuser and DD, respectively. The remarkable improvement in decision-making frequency does not harm its performance. As shown in fig. <ref type="figure" target="#fig_2">4</ref>, compared to the average success rates of Diffuser (purple line) and DD (grey line) on four FrankaKitchen sub-tasks, DiffuserLite improves them by [41.5%, 56.2%, 55.3%, 8.7%], respectively, while being 200-300 times faster. These improvements are attributed to ignoring redundant information in PRP, which reduces the complexity of the distribution that the backbone generative model needs to fit, allowing us to employ a light neural network backbone and use fewer sampling steps to conduct perfect-enough planning. Its success in FrankaKitchen, a realistic robot manipulation scenario, also reflects its potential application in real-world settings.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Performance (RQ2)</head><p>DiffuserLite is then evaluated on various popular domains in D4RL, Robomimic, and FinRL, to test how well it can maintain the performance when significantly increasing the decision-making frequency. All results are presented in table 2, table 3, and table 4, and the detailed descriptions of the sources of all baseline results are listed in appendix A.2. Results in D4RL table show significant performance improvements across all benchmarks with high decision-making frequency. This advantage is particularly pronounced in FrankaKitchen and Antmaze environments, indicating that the structure of DiffuserLite enables more accurate and efficient planning in long-horizon tasks, thus yielding greater benefits. In the MuJoCo environments, more notable advantages are shown on sub-optimal datasets, i.e., "medium" and "medium-replay" datasets. This sub-optimal advantage can be attributed to the PRP planning structure, which does not require one-shot generation of a consistent long trajectory, but explicitly demands stitching. This allows for better utilization of high-quality segments in low-quality datasets, leading to improved performance. Results in Robomimic and  Kitchen-p 72.8 ± 0.5 74.4 ± 0.6 72.3 ± 1.9 66.7 ± 1.7 74.4 ± 0.6 74.2 ± 0.6 31.7 ± 2.7</p><p>FinRL table are obtained by models trained on real-world datasets, and demonstrate that DiffuserLite continues to exhibit its superiority in these real-world tasks, achieving performance comparable to SOTA algorithms. This illustrates the potential application of DiffuserLite in real-world scenarios.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.4">Flexible Plugin (RQ3)</head><p>To test the capability of DiffuserLite as a flexible plugin to support other diffusion planning algorithms, Aligndiff <ref type="bibr" target="#b7">[8]</ref> is selected as a non-reward-maximizing algorithm backbone, and integrated with DiffuserLite plugin, referred to as AlignDiff-Lite. AlignDiff aims to customize the agent's behavior to align with human preferences and introduces an MAE area metric to measure this alignment capability (refer to appendix A.3 for more details), where a larger value indicates a stronger alignment capability. The comparison of AlignDiff and AlignDiff-Lite is presented in table <ref type="table" target="#tab_3">5</ref>, showing that AlignDiff-Lite achieves a 560% improvement in decision-making frequency compared to AlignDiff, while only experiencing a small performance drop of 3.2%. This result demonstrates the potential of DiffuserLite serving as a plugin to accelerate diffusion planning across various domains.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.5">Ablations (RQ4)</head><p>How to choose the number of planning levels L and the temporal horizons H l ? We compared the performance of DiffuserLite with 2/3/4 planning levels and with four different temporal horizon designs, and reported the results in the left and right part of table 6, respectively. The list in the first row represents the temporal horizon for each level, with larger values on the left indicating more planning at a coarser granularity, while larger values on the right indicate more planning at a finer granularity. For planning level design, results show a performance drop with 2 planning levels, particularly in Antmaze, and a consistently excellent performance with 3 or 4 planning levels. This suggests that for longer-horizon tasks, it is advisable to design more planning levels. For temporal horizon design, results show a performance drop when the temporal horizon of one level becomes excessively long. This suggests the temporal horizon of each level is supposed to be similar and stay close. We summarized and presented a design choice list in appendix C.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Has the last level (short horizon) of DiffuserLite already performed well in decision making?</head><p>This is equivalent to the direct use of the shorter planning horizon. If it is true, key points generated by former levels may not have an impact, making PRP meaningless. To address this question, we conduct tests using a one-level DiffuserLite with the same temporal horizon as the last level of the default model, referred to as Lite w/ only last level. The results are presented in table 7, column 2.</p><p>The notable performance drop demonstrates the importance of a long-enough planning horizon.</p><p>Can decision-making be effectively accomplished without progressive refinement planning (PRP)? To address this question, we conduct tests using a one-level DiffuserLite with the same temporal horizon as the default model, referred to as Lite w/o PRP. This model only supports one-shot generation at the inference phase. We also test a "smaller" DD with the same network parameters and sampling steps as DiffuserLite, to verify whether one can speed up DD by simply reducing the parameters, referred to as DD-small. The results are presented in Table <ref type="table" target="#tab_5">7</ref>, column 3-4. The large standard deviation and the significant performance drop provide strong evidence for the limitations of one-shot generation planning, having difficulties in modeling the distribution of detailed long-horizon trajectories. However, DiffuserLite can maintain high performance with fast decision-making frequency due to its lite architecture and simplified fitted distribution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>More ablations.</head><p>We conducted further ablation studies on model size, sampling steps, planning horizon, with or without value condition, and visual comparison to better elucidate DiffuserLite. Please refer to appendix E for these sections.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Related Works</head><p>Diffusion models are a type of score-based generative model <ref type="bibr" target="#b45">[46]</ref>. Two pioneering frameworks, Diffuser <ref type="bibr" target="#b19">[20]</ref> and DD <ref type="bibr" target="#b0">[1]</ref>, were the first to attempt using diffusion models for trajectory generation and planning in decision-making tasks. Based on these two frameworks, diffusion planning has been continuously improved and applied to various decision-making domains <ref type="bibr" target="#b35">[36,</ref><ref type="bibr" target="#b9">10,</ref><ref type="bibr" target="#b53">54,</ref><ref type="bibr" target="#b7">8,</ref><ref type="bibr" target="#b16">17,</ref><ref type="bibr" target="#b25">26,</ref><ref type="bibr" target="#b20">21]</ref>. However, long-horizon estimation and prediction often suffer from potential exponentially increasing variance concerning the temporal horizon, called the "curse of horizon" <ref type="bibr" target="#b41">[42]</ref>. To address this, HDMI <ref type="bibr" target="#b26">[27]</ref> is the first algorithm that proposed a hierarchical decision framework to generate sub-goals at the upper level and reach goals at the lower level, achieving improvements in long-horizon tasks. However, HDMI is limited by cluster-based dataset pre-processing to obtain high-quality sub-goal data for upper training. Another concurrent work, HD-DA <ref type="bibr" target="#b4">[5]</ref> introduces a similar hierarchical structure and allows the high-level diffusion model to automatically discover sub-goals from the dataset, achieving better results. However, the motivation behind DiffuserLite is completely different, which aims to increase the decision-making frequency of diffusion planning. Also, DiffuserLite allows for more hierarchy levels and refines only the first interval of the previous layer using PRP. Since HD-DA does not ignore redundant information, it fails to achieve a notable frequency increase. Compared to related works, DiffuserLite has more clean plugin design and undoubtedly contributes to increasing decision-making frequency and performance. We believe it can serve as a reference for the design of future diffusion planning frameworks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Conclusion</head><p>In this paper, we introduce DiffuserLite, a super fast and lightweight diffusion planning framework that significantly increases decision-making frequency by employing the plan refinement process (PRP). PRP enables coarse-to-fine-grained trajectory generation, reducing the modeling of redundant information. Experimental results on various D4RL benchmarks demonstrate that DiffuserLite achieves a super-high decision-making frequency of 122.2Hz (112.7x faster than previous mainstream frameworks) while maintaining SOTA performance. DiffuserLite provides three generative model backbones to adapt to different requirements and can be flexibly integrated into other diffusion planning algorithms as a plugin. However, DiffuserLite currently has limitations mainly caused by the classifier-free guidance (CFG). CFG sometimes requires adjusting the target condition, which becomes more cumbersome on the multi-level structure of DiffuserLite. In future works, designing better guidance mechanisms, devising an optimal temporal jump adjustment, or integrating all levels in one diffusion model to simplify the framework is worth considering. DiffuserLite may also have some societal impacts, such as expediting the deployment of robotic products that could be utilized for military purposes. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Details of Experimental Setup</head><p>A.1 Test Domains Gym-MuJoCo <ref type="bibr" target="#b3">[4]</ref> on D4RL consists of three popular offline RL locomotion tasks (Hopper, HalfCheetah, Walker2d). These tasks require controlling three Mujoco robots to achieve maximum movement speed while minimizing energy consumption under stable conditions. D4RL provides three different quality levels of offline datasets: "medium" containing demonstrations of "medium" level performance, "medium-replay" containing all recordings in the replay buffer observed during training until the policy reaches "medium" performance, and "medium-expert" which combines "medium" and "expert" level performance equally.</p><p>FrankaKitchen <ref type="bibr" target="#b12">[13]</ref> requires controlling a realistic 9-DoF Franka robot in a kitchen environment to complete several common household tasks. In offline RL testing, algorithms are often evaluated on "partial" and "mixed" datasets. The former contains demonstrations that partially solve all tasks and some that do not, while the latter contains no trajectories that completely solve the tasks. Therefore, these datasets place higher demands on the policy's "stitching" ability. During testing, the robot's task pool includes four sub-tasks, and the evaluation score is based on the percentage of tasks completed.</p><p>Antmaze <ref type="bibr" target="#b11">[12]</ref> requires controlling the 8-DoF "Ant" quadruped robot in MuJoCo to complete maze navigation tasks. In the offline dataset, the robot only receives a reward upon reaching the endpoint, and the dataset contains many trajectory segments that do not lead to the endpoint, making it a difficult decision task with sparse rewards and a long horizon. The success rate of reaching the endpoint is used as the evaluation score, and common model-free offline RL algorithms often struggle to achieve good performance.</p><p>Robomimic <ref type="bibr" target="#b33">[34]</ref> requires learning policies to complete complex manipulation tasks from a small number of human demonstrations. Due to the non-Markovian nature of human demonstrations and the demonstration quality variance, learning from human datasets is significantly more challenging than learning from machine-generated datasets. In our experiments, we used a dataset of PH (Proficient-Human) type, which consists of 200 demonstrations collected through teleoperation by one single experienced teleoperator.</p><p>FinRL <ref type="bibr" target="#b40">[41]</ref> provides a way to build a trading simulator that replicates the real stock market and supports backtesting with important market frictions such as transaction costs, market liquidity, and investor risk aversion, among other factors. In the FinRL environment, one trade can be made per trading day for the stocks in the pool (30 stocks). The reward function is the difference in the total asset value between the end of the day and the day before. The environment may evolve itself as time elapses. In our experiments, the dataset has two suffixes, where "H" and "M" respectively indicate the quality of the dataset ("High" and "Medium"), and 999 indicates that the dataset includes 999 rollouts.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Baselines A.2.1 Runtime Testing</head><p>• We run Diffuser<ref type="foot" target="#foot_1">foot_1</ref> using the official repository from the original paper with default hyperparameters.</p><p>the curve and the axes can be used to define an area metric. A larger metric value indicates better performance in matching. By integrating DiffuserLite, AlignDiff can maintain almost the same level of performance with only a 3.2% decrease. The overall performance is nearly twice as good as the goal-conditioned behavior clone (GC) while achieving a significant increase in decision frequency of 560%.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Details of Rectified Flow</head><p>Similar to DMs, rectified flow <ref type="bibr" target="#b29">[30]</ref> is also a probability flow-based generative model that learns a transfer from q 0 to q 1 through an ODE. In trajectory generation, we can define q 1 as the distribution of trajectories and q 0 as the standard Gaussian. The learned ODE can be represented as:</p><formula xml:id="formula_15">dx s = v(x s , s)ds, initialized from x 0 ∼ q 0 , such that x 1 ∼ q 1 (<label>11</label></formula><formula xml:id="formula_16">)</formula><p>where v : R d × [0, 1] → R d is a velocity field, learned by minimizing a simple mean square objective:</p><formula xml:id="formula_17">min v E (x0,x1)∼γ [ 1 0 || d ds x s -v(x s , s)|| 2 ds], with x s = (1 -s)x 0 + sx 1 (<label>12</label></formula><formula xml:id="formula_18">)</formula><p>where γ is any coupling of (q 0 , q 1 ), and v is parameterized as a deep neural network and eq. ( <ref type="formula" target="#formula_17">12</ref>) is solved approximately with stochastic gradient methods. A key property of rectified flow is its ability to learn a straight flow, which means:</p><formula xml:id="formula_19">Straight flow: x s = sx s + (1 -s)x 0 = x 0 + sv(x 0 , 0), ∀s ∈ [0, 1]<label>(13)</label></formula><p>A straight flow can achieve perfect results with fewer sample steps (even a single step).</p><p>Reflow is an iterative procedure to straighten the learned flow without modifying the marginal distributions, hence allowing faster sampling at inference time. Assume we have an ODE model dx s = v k (x s , s)ds with velocity field v k at the k-th iteration of the reflow procedure; denote by</p><formula xml:id="formula_20">x 1 = ODE[v k ](x 0 ) the x s we obtained at t = 1 when following the v k -ODE starting from 0. A reflow step turns v k into a new vector field v k+1 that yields straighter ODEs while x new 1 = ODE[v k+1 ](x 0 ) has the same distribution as x 1 = ODE[v k ](x 0 ), v k+1 = arg min v E x0∼q0 [ 1 0 ||(x 1 -x 0 ) -v(x s , s)|| 2 ds], with x 1 = ODE[v k ](x 0 ) and x s = s • x 1 + (1 -s) • x 0 , (<label>14</label></formula><formula xml:id="formula_21">)</formula><p>where v k+1 is learned using the same rectified flow objective eq. ( <ref type="formula" target="#formula_17">12</ref>), but with the linear interpolation of (x 0 , x 1 ) pairs constructed from the previous ODE[v k ]. For conditional sampling, rectified flow also supports classifier-free guidance, in which we can train a conditional velocity field v(x s , s|c) and apply CFG by:</p><formula xml:id="formula_22">v w (x s , s|c) = wv(x s , s|c) + (1 -w)v(x s , s),<label>(15)</label></formula><p>where w is the guidance strength. In this way, we can directly replace diffusion models with rectified flow as the backbone of DiffuserLite. In our experiments, we find that rectified flow achieves similar performance to the diffusion backbone when using the same number of sampling steps and neural network size. By further conducting a reflow procedure, the planning of the model becomes more stable under the same number of sampling steps (as evidenced by a decrease in the variance of experimental results). It is even possible to reduce the number of sampling steps to just one, resulting in only a small performance drop.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C PRP Design Insights</head><p>As the core planning framework of DiffuserLite, PRP design choices are crucial. Through experimental results and discussions in section 5.5, some simple, stable, and effective PRP design insights can be summarized:</p><p>• The planning horizon T is supposed to be determined by the nature of the task. The sparser the rewards and the longer the episodes, the longer the planning horizon should be used.</p><p>• The number of planning levels L is supposed to be designed based on the planning horizon, with longer horizon tasks requiring more planning levels. One can start from 3 or 4 planning levels.</p><p>• The temporal horizon of each level H l is supposed to be similar and limited to within 10 to increase decision-making frequency.</p><p>• Once the number of planning levels and temporal horizon are determined, the temporal jump is also determined.</p><p>Throughout our experiments, we consistently applied this set of design choices, achieving consistently excellent performance without the need for carefully adjusting parameters.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Implementation Details</head><p>We introduce the implementation details of DiffuserLite in the section:</p><p>• We utilize DiT <ref type="bibr" target="#b39">[40]</ref> as the neural network backbone for all diffusion models and rectified flows, with an embedding dimension of 256, 8 attention heads, and 2 DiT blocks. We progressively reduce the model size from DiT-S <ref type="bibr" target="#b39">[40]</ref> until the current size setting, and there is still no significant performance drop. This suggests that future works could even explore further reduction of network parameters to achieve faster decision speeds.</p><p>• Across all the experiments, we employ DiffuserLite with 3 levels. In Kitchen, we utilize a planning horizon of 49 with temporal jumps for each level set to 16, 4, and 1, respectively.</p><p>In MuJoCo and Antmaze, we use a planning horizon of 129 with temporal jumps of 32, 8, and 1 for each level, respectively.</p><p>• For diffusion models, we use cosine noise schedule <ref type="bibr" target="#b36">[37]</ref> for α s and σ s with diffusion steps T = 1000. We employ DDIM <ref type="bibr" target="#b44">[45]</ref> to sample trajectories. In MuJoCo and Kitchen, we use 3 sampling steps, while in Antmaze, we use 5 sampling steps.</p><p>• For rectified flows, we use the Euler solver with 3 steps for all benchmarks. After one reflow procedure, we can further reduce it to 1 step for MuJoCo and 2 steps for Kitchen and Antmaze.</p><p>• All models utilize the AdamW optimizer <ref type="bibr" target="#b30">[31]</ref> with a learning rate of 2e -4 and weight decay of 1e -5. We perform 500K gradient updates with a batch size of 256. We do not employ the exponential moving average (EMA) model, as used in <ref type="bibr" target="#b19">[20,</ref><ref type="bibr" target="#b0">1]</ref>. We found that using the EMA model did not yield significant gains in our experiments. For reflow training, we first use the trained rectified flow to generate a 2M dataset with 20 sampling steps. Then we use the same optimizer, but with a learning rate of 2e -5, to train the model for 200K gradient steps.</p><p>• For conditional sampling, we tune the guidance strength w within the range of [0, 1]. In general, a higher guidance strength leads to better performance but may result in unrealistic plans and instability. On the other hand, a lower guidance strength provides more stability but may lead to a decrease in performance. In our implementation of DiffuserLite, we observe that the earlier levels are more closely related to decision-making. In contrast, the later levels only need to ensure reaching the key points provided by the previous levels. Therefore, we only apply conditional sampling to level 0, while the other levels are not guided.</p><p>• In MuJoCo, we only utilize the cumulative rewards as the generation condition. However, in Kitchen and Antmaze, we employ the discounted cumulative return and the value of the last generated state as the generation condition. The values are evaluated using a pretrained IQL-value function <ref type="bibr" target="#b23">[24]</ref>. We have found that this generation condition is beneficial for training models in reward-sparse environments, as it helps to prevent the model from becoming confused by suboptimal or poor trajectories.</p><p>• The inverse dynamic model is implemented as a 3-layer MLP. The first two layers consist of a Linear layer followed by a Mish activation <ref type="bibr" target="#b34">[35]</ref> and a LayerNorm <ref type="bibr" target="#b2">[3]</ref>. And, the final layer is followed by a Tanh activation. This model utilizes the same optimizer as the diffusion models and is trained for 200K gradient steps. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E Additional Experiment Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.1 Performance with Different Model Sizes</head><p>We compare the performance of DiffuserLite using four different model sizes. Due to the use of DiT as the backbone, we fix the dimensions of each attention head, and the parameter design of the Transformer is as follows: [hidden size, n heads, depth] respectively set to [128, 4, 2] (0.68M), <ref type="bibr">[192,</ref><ref type="bibr" target="#b5">6,</ref><ref type="bibr" target="#b1">2]</ref> (1.53M), [256, 8, 2] (2.7M), and [320, 10, 2] (4.22M). The results are presented in table <ref type="table" target="#tab_6">8</ref>, which shows that slightly increasing the model size does not significantly decrease the inference speed, but it does improve the performance. This suggests that increasing the model parameter size can further enhance the performance of DiffuserLite.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.2 Performance with Different Sampling Steps</head><p>We compare the performance of DiffuserLite using four different sampling steps. The results are presented in table <ref type="table" target="#tab_7">9</ref>, which shows a natural trade-off: more sampling steps lead to better performance but at the cost of slower decision-making speed. DiffuserLite strikes a balance between performance and speed by offering the choice of 3 or 5 sampling steps. Researchers can flexibly adjust the sampling steps based on the specific requirements of their tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.3 Performance under Different Planning Horizon Choices</head><p>The planning horizon is an essential parameter that influences the performance of planning algorithms.</p><p>To investigate the performances of DiffuserLite under different temporal horizon choices, we test it using three temporal horizon choices: 49, 129, and 257. The results are presented in table <ref type="table" target="#tab_8">10</ref>. In Hopper environment, a longer planning horizon is required to avoid greedy and rapid jumps that may lead to falls. Consequently, the performance of DiffuserLite is slightly poorer under the 49 temporal horizon compared to the other two choices (129 and 257), where no significant performance differences are observed. For Kitchen environment, the total length of the episode (280 time steps) in the dataset poses a limitation. An excessively long planning horizon can confuse the model, as it may struggle to determine the appropriate actions to take after completing all tasks. As a result, the performance of DiffuserLite is poor under the 257 temporal horizon, while no significant performance differences are observed under the 49 and 129 temporal horizons.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.4 Performance with or without Value Condition</head><p>DiffuserLite offers two optional generation conditions, resulting in two different critics, as introduced in section 4. To determine the suitability of these two approaches in different tasks, we conduct ablation experiments and present the results in table <ref type="table">11</ref>. We find that in dense reward tasks, such as Hopper and HalfCheetah, the performance of both conditions is nearly identical. However, in sparse reward scenarios, such as Kitchen and Antmaze, the use of values demonstrates a significant advantage. We present a visual comparison in Antmaze in fig. <ref type="figure" target="#fig_5">7</ref>, which shows 100 generated plans. With a pure-rewards condition, it is difficult to discern the endpoint location, as the planner often desires to stop at a certain point on the map. However, when using values, the planner indicates a desire to move towards the endpoint. This suggests that sparse reward tasks are prone to confusing the conditional generative model, leading to poor planning. The introduction of value-assisted guidance can address this issue.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.5 Visual Comparison between One-shot Generated Plans and PRP</head><p>We visually compare the one-shot generation and PRP in Hopper, presenting the results in appendix E.5. Regarding efficiency, PRP significantly reduces the length of sequences that need to be generated due to each level refining only the first jumpy interval of the previous level. This results in a noticeable increase in the forward speed of neural networks, especially for transformer-based backbone models like DiT <ref type="bibr" target="#b39">[40]</ref>. Visually, we can more clearly perceive the difference in generated sequence lengths, and this advantage will further expand as the total planning horizon increases.</p><p>In terms of quality, PRP narrows down the search space of planning, leading to better consistency among different plans, while the one-shot generated plans exhibit more significant divergence in the far horizon. </p><formula xml:id="formula_23">② w/ V ④ w/o V ① w/ V ③ w/o V</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>NeurIPS Paper Checklist</head><p>1. Claims Question: Do the main claims made in the abstract and introduction accurately reflect the paper's contributions and scope? Answer: [Yes] Justification: See the abstract's last three sentences and the introduction's last paragraph in Section 1.</p><p>Guidelines:</p><p>• The answer NA means that the abstract and introduction do not include the claims made in the paper.</p><p>• The abstract and/or introduction should clearly state the claims made, including the contributions made in the paper and important assumptions and limitations. A No or NA answer to this question will not be perceived well by the reviewers.</p><p>• The claims made should match theoretical and experimental results, and reflect how much the results can be expected to generalize to other settings.</p><p>• It is fine to include aspirational goals as motivation as long as it is clear that these goals are not attained by the paper.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Limitations</head><p>Question: Does the paper discuss the limitations of the work performed by the authors? Answer: [Yes] Justification: See the conclusion in Section 7.</p><p>Guidelines:</p><p>• The answer NA means that the paper has no limitation while the answer No means that the paper has limitations, but those are not discussed in the paper.</p><p>• The authors are encouraged to create a separate "Limitations" section in their paper.</p><p>• The paper should point out any strong assumptions and how robust the results are to violations of these assumptions (e.g., independence assumptions, noiseless settings, model well-specification, asymptotic approximations only holding locally). The authors should reflect on how these assumptions might be violated in practice and what the implications would be.</p><p>• The authors should reflect on the scope of the claims made, e.g., if the approach was only tested on a few datasets or with a few runs. In general, empirical results often depend on implicit assumptions, which should be articulated.</p><p>• The authors should reflect on the factors that influence the performance of the approach.</p><p>For example, a facial recognition algorithm may perform poorly when image resolution is low or images are taken in low lighting. Or a speech-to-text system might not be used reliably to provide closed captions for online lectures because it fails to handle technical jargon.</p><p>• The authors should discuss the computational efficiency of the proposed algorithms and how they scale with dataset size.</p><p>• If applicable, the authors should discuss possible limitations of their approach to address problems of privacy and fairness.</p><p>• While the authors might fear that complete honesty about limitations might be used by reviewers as grounds for rejection, a worse outcome might be that reviewers discover limitations that aren't acknowledged in the paper. The authors should use their best judgment and recognize that individual actions in favor of transparency play an important role in developing norms that preserve the integrity of the community. Reviewers will be specifically instructed to not penalize honesty concerning limitations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Theory Assumptions and Proofs</head><p>Question: For each theoretical result, does the paper provide the full set of assumptions and a complete (and correct) proof? Answer: [NA]</p><p>• We recognize that the procedures for this may vary significantly between institutions and locations, and we expect authors to adhere to the NeurIPS Code of Ethics and the guidelines for their institution.</p><p>• For initial submissions, do not include any information that would break anonymity (if applicable), such as the institution conducting the review.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Comparison of one-shot planning (top) and PRP (down) on Antmaze. The former directly generates plans with a temporal horizon of 129. The latter consists of three coarse to fine-grained levels with temporal horizons of 0-128, 0-32, and 0-8, and temporal jumps of 32, 8, and 1, respectively. The visualization in the figure illustrates the x-y coordinates of 100 plans. It shows that one-shot planning exhibits a significant amount of redundant information and a large search space. In contrast, PRP demonstrates better plan consistency and a smaller search space.</figDesc><graphic coords="2,305.79,125.85,198.00,102.05" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Overview of DiffuserLite. Observing the current state ot, level 0 of DiffuserLite fixes ot as o0 and</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Runtime and performance comparison in FrankaKitchen. The y-axis represents the number of completed tasks (maximum of 4), and the x-axis represents the required wall-clock time. Task success rates are presented in colored circles. All results are averaged over 250 rollouts. DiffuserLite demonstrates significant advantages in both wallclock time and success rate.</figDesc><graphic coords="6,332.17,340.34,165.71,135.33" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Part of selected benchmarks. From left to right, they are HalfCheetah, Hopper, Walker2d, FrankaKitchen, Robomimic, and Antmaze.</figDesc><graphic coords="14,118.63,72.00,372.24,64.64" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Visual comparison between one-shot generated plans (upper) and PRP (lower) in Hopper. The figure showcases 100 diffusion-generated plans starting from the same initial state. The one-shot generated plans directly generate all states from t = 0 to t = 96, while PRP utilizes three levels with temporal horizons of 97, 33, and 9, and temporal jumps of 32, 8, and 1, respectively. For ease of observation, only Hopper motion every 4 steps is displayed in the figure.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Visual comparison of DiffuserLite using conditions with (upper) or without (lower) values. It displays 100 plans generated at the current state, where darker colors indicate closer proximity to the current state, and lighter colors indicate further.With the pure-rewards condition, we can observe that the planned states in lighter colors tend to cluster together at a certain point on the map, indicating the planner tries to stop at that non-endpoint. However, with the introduction of values, the planner can make correct long-term plans that lead to the endpoint.</figDesc><graphic coords="21,300.69,146.79,104.04,79.26" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 2 :</head><label>2</label><figDesc>D4RL Performance.Results for DiffuserLite correspond to the mean and standard error over 5 random seeds. We detail the sources for the performance of prior methods in appendix A.2. Following Diffuser<ref type="bibr" target="#b19">[20]</ref>, we emphasize in bold scores within 5 percent of the maximum per task (≥ 0.95 • max).</figDesc><table><row><cell>Dataset</cell><cell>Environment</cell><cell>BC</cell><cell>CQL</cell><cell>IQL</cell><cell>Diffuser</cell><cell>DD</cell><cell cols="4">HDMI DiffuserLite-D DiffuserLite-R1 DiffuserLite-R2</cell></row><row><cell></cell><cell>HalfCheetah</cell><cell>55.2</cell><cell>91.6</cell><cell>86.7</cell><cell>79.8</cell><cell>90.6</cell><cell>92.1</cell><cell>88.5 ± 0.4</cell><cell>90.8 ± 0.9</cell><cell>84.0 ± 2.9</cell></row><row><cell>Medium-Expert</cell><cell>Hopper</cell><cell>52.5</cell><cell>105.4</cell><cell>91.5</cell><cell>107.2</cell><cell cols="2">111.8 113.5</cell><cell>111.6 ± 0.2</cell><cell>110.3 ± 0.3</cell><cell>110.1 ± 0.5</cell></row><row><cell></cell><cell>Walker2d</cell><cell cols="3">107.5 108.8 109.6</cell><cell>108.4</cell><cell cols="2">108.8 107.9</cell><cell>107.1 ± 0.6</cell><cell>106.4 ± 0.3</cell><cell>106.1 ± 0.7</cell></row><row><cell></cell><cell>HalfCheetah</cell><cell>42.6</cell><cell>44.0</cell><cell>47.4</cell><cell>44.2</cell><cell>49.1</cell><cell>48.0</cell><cell>48.9 ± 1.1</cell><cell>48.6 ± 0.7</cell><cell>45.3 ± 0.5</cell></row><row><cell>Medium</cell><cell>Hopper</cell><cell>52.9</cell><cell>58.5</cell><cell>66.3</cell><cell>58.5</cell><cell>79.3</cell><cell>76.4</cell><cell>100.9 ± 1.1</cell><cell>99.5 ± 0.7</cell><cell>96.8 ± 0.3</cell></row><row><cell></cell><cell>Walker2d</cell><cell>75.3</cell><cell>72.5</cell><cell>78.3</cell><cell>79.7</cell><cell>82.5</cell><cell>79.9</cell><cell>88.8 ± 0.6</cell><cell>85.1 ± 0.5</cell><cell>83.7 ± 1.0</cell></row><row><cell></cell><cell>HalfCheetah</cell><cell>36.6</cell><cell>45.5</cell><cell>44.2</cell><cell>42.2</cell><cell>39.3</cell><cell>44.9</cell><cell>41.6 ± 0.4</cell><cell>42.9 ± 0.4</cell><cell>39.6 ± 0.4</cell></row><row><cell>Medium-Replay</cell><cell>Hopper</cell><cell>18.1</cell><cell>95.0</cell><cell>94.7</cell><cell>96.8</cell><cell>100.0</cell><cell>99.6</cell><cell>96.6 ± 0.3</cell><cell>97.8 ± 1.3</cell><cell>93.2 ± 0.7</cell></row><row><cell></cell><cell>Walker2d</cell><cell>26.0</cell><cell>77.2</cell><cell>73.9</cell><cell>61.2</cell><cell>75.0</cell><cell>80.7</cell><cell>90.2 ± 0.5</cell><cell>84.6 ± 1.7</cell><cell>78.2 ± 1.7</cell></row><row><cell cols="2">Average</cell><cell>51.9</cell><cell>77.6</cell><cell>77</cell><cell>75.3</cell><cell>81.8</cell><cell>82.6</cell><cell>86.0</cell><cell>85.1</cell><cell>81.9</cell></row><row><cell>Mixed</cell><cell>Kitchen</cell><cell>51.5</cell><cell>52.4</cell><cell>51.0</cell><cell>50.0</cell><cell>65</cell><cell>69.2</cell><cell>73.6 ± 0.7</cell><cell>71.9 ± 1.4</cell><cell>64.8 ± 1.8</cell></row><row><cell>Partial</cell><cell>Kitchen</cell><cell>38.0</cell><cell>50.1</cell><cell>46.3</cell><cell>56.2</cell><cell>57</cell><cell>-</cell><cell>74.4 ± 0.6</cell><cell>69.9 ± 0.7</cell><cell>71.4 ± 1.2</cell></row><row><cell cols="2">Average</cell><cell>44.8</cell><cell>51.3</cell><cell>48.7</cell><cell>53.1</cell><cell>61.0</cell><cell>-</cell><cell>74.0</cell><cell>70.9</cell><cell>68.1</cell></row><row><cell>Play</cell><cell>Antmaze-Medium Antmaze-Large</cell><cell>0.0 0.0</cell><cell>65.8 20.8</cell><cell>65.8 42.0</cell><cell>0.0 0.0</cell><cell>0.0 0.0</cell><cell>--</cell><cell>78.0 ± 2.2 72.0 ± 6.2</cell><cell>88.0 ± 2.2 72.4 ± 2.3</cell><cell>88.8 ± 3.2 69.4 ± 6.5</cell></row><row><cell>Diverse</cell><cell>Antmaze-Medium Antmaze-Large</cell><cell>0.8 0.0</cell><cell>67.3 20.5</cell><cell>73.8 30.3</cell><cell>0.0 0.0</cell><cell>0.0 0.0</cell><cell>--</cell><cell>92.4 ± 3.2 68.0 ± 2.8</cell><cell>89.2 ± 2.0 80.4 ± 5.1</cell><cell>87.6 ± 2.0 75.2 ± 3.5</cell></row><row><cell cols="2">Average</cell><cell>0.2</cell><cell>43.6</cell><cell>53.0</cell><cell>0.0</cell><cell>0.0</cell><cell>-</cell><cell>77.6</cell><cell>82.5</cell><cell>80.3</cell></row><row><cell cols="2">Runtime per action (second)</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>0.749</cell><cell>2.435</cell><cell>-</cell><cell>0.020</cell><cell>0.014</cell><cell>0.008</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 3 :</head><label>3</label><figDesc>Robomimic Performance.</figDesc><table><row><cell>Dataset</cell><cell>BC</cell><cell>CQL</cell><cell>BCQ</cell><cell>IRIS</cell><cell>DiffuserLite-D</cell></row><row><cell>Lift-PH</cell><cell>100.0</cell><cell>92.7</cell><cell cols="2">100.0 100.0</cell><cell>100.0</cell></row><row><cell>Can-PH</cell><cell>95.3</cell><cell>38.0</cell><cell>88.7</cell><cell>100.0</cell><cell>100.0</cell></row><row><cell>Square-PH</cell><cell>78.7</cell><cell>5.3</cell><cell>50.0</cell><cell>78.7</cell><cell>81.8</cell></row><row><cell>Average</cell><cell>91.3</cell><cell>45.3</cell><cell>79.6</cell><cell>92.9</cell><cell>93.9</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 4 :</head><label>4</label><figDesc>FinRL Performance.</figDesc><table><row><cell>Dataset</cell><cell cols="6">BC CQL MB-PPO DD HDMI DiffuserLite-D</cell></row><row><cell>FinRL-H-999</cell><cell>270</cell><cell>444</cell><cell>787</cell><cell>782</cell><cell>801</cell><cell>796</cell></row><row><cell cols="2">FinRL-M-999 504</cell><cell>621</cell><cell>698</cell><cell>712</cell><cell>754</cell><cell>762</cell></row><row><cell>Average</cell><cell>387</cell><cell>533</cell><cell>743</cell><cell>747</cell><cell>778</cell><cell>779</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 5 :</head><label>5</label><figDesc>Integrate with DiffuserLite as a plugin. We refer to AlignDiff with DiffuserLite plugin as AlignDiff-Lite. A larger value of MAE Area indicates a stronger alignment capability. AlignDiff-Lite greatly increases decision-making frequency, while only experiencing a small performance drop.</figDesc><table><row><cell>Metric</cell><cell>GC</cell><cell>AlignDiff</cell><cell>AlignDiff-Lite</cell></row><row><cell>MAE Area</cell><cell cols="3">0.319 ± 0.005 0.621 ± 0.023 0.601 ± 0.018 (3.2% ↓)</cell></row><row><cell>Frequency (Hz)</cell><cell>-</cell><cell>6.9</cell><cell>45.5 (560% ↑)</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 6 :</head><label>6</label><figDesc>Performance of DiffuserLite with various PRP design choices. The left part shows a comparison with 2/3/4 planning levels and the right part shows a comparison with 4 temporal horizon designs. Results correspond to the mean and standard error over 5 random seeds, the highest scores are emphasized in bold, and the default design choices used across other experiments are underlined.</figDesc><table><row><cell>Temporal horizon of each level</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 7 :</head><label>7</label><figDesc>Ablation tests conducted to examine the effectiveness of PRP. Lite w/ only last level and Lite w/o PRP are two ablated versions of DiffuserLite, while DD-small is a version of DD that uses the same network parameters and sampling steps as DiffuserLite. All results are obtained over 5 seeds. The varying degrees of performance drop observed in each experiment highlight the importance of PRP.</figDesc><table><row><cell>Environment</cell><cell>Oracle</cell><cell>Lite w/ only last level</cell><cell>Lite w/o PRP</cell><cell>DD small</cell></row><row><cell>Hopper-me</cell><cell>111.6 ± 0.2</cell><cell>27.8 ± 10.2</cell><cell>96.6 ± 1.0</cell><cell>67.9 ± 24.7</cell></row><row><cell>Hopper-m</cell><cell>100.9 ± 1.1</cell><cell>19.4 ± 2.0</cell><cell>66.4 ± 20.2</cell><cell>16.7 ± 8.0</cell></row><row><cell>Hopper-mr</cell><cell>96.6 ± 0.3</cell><cell>2.0 ± 0.2</cell><cell>62.5 ± 31.3</cell><cell>1.0 ± 0.4</cell></row><row><cell>Average</cell><cell>103.1</cell><cell cols="3">16.4 (84.1% ↓) 75.2 (27.1% ↓) 28.5 (72.3% ↓)</cell></row><row><cell>Kitchen-m</cell><cell>73.6 ± 0.7</cell><cell>48.2 ± 1.4</cell><cell>26.9 ± 1.0</cell><cell>0.0 ± 0.0</cell></row><row><cell>Kitchen-p</cell><cell>74.4 ± 0.6</cell><cell>38.6 ± 3.1</cell><cell>23.9 ± 0.5</cell><cell>1.8 ± 0.8</cell></row><row><cell>Average</cell><cell>74.0</cell><cell cols="2">43.4 (41.3% ↓) 25.4 (65.7% ↓)</cell><cell>0.8 (98.8% ↓)</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 8 :</head><label>8</label><figDesc>Performance of DiffuserLite under four different model sizes. All results are obtained over 5 seeds.The results under default choice are underlined and the highest scores are emphasized in bold.</figDesc><table><row><cell>Environment</cell><cell></cell><cell cols="2">Model sizes</cell><cell></cell></row><row><cell></cell><cell>0.68M</cell><cell>1.53M</cell><cell>2.7M</cell><cell>4.22M</cell></row><row><cell cols="5">HalfCheetah-me 75.4 ± 5.1 86.9 ± 0.6 88.5 ± 0.4 90.6 ± 1.1</cell></row><row><cell>Runtime (s)</cell><cell>0.0153</cell><cell>0.0154</cell><cell>0.0155</cell><cell>0.0156</cell></row><row><cell>Antmaze-ld</cell><cell>0.3 ± 0.5</cell><cell cols="3">60.7 ± 2.5 68.0 ± 2.8 73.0 ± 3.6</cell></row><row><cell>Runtime (s)</cell><cell>0.0262</cell><cell>0.0268</cell><cell>0.0270</cell><cell>0.0271</cell></row><row><cell>Kitchen-p</cell><cell cols="4">64.5 ± 0.8 74.8 ± 0.2 74.4 ± 0.6 75.0 ± 0.0</cell></row><row><cell>Runtime (s)</cell><cell>0.0163</cell><cell>0.0169</cell><cell>0.0170</cell><cell>0.0172</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_7"><head>Table 9 :</head><label>9</label><figDesc>Performance of DiffuserLite with different sampling steps. All results are obtained over 5 seeds.The results under default choice are underlined and the highest scores are emphasized in bold.</figDesc><table><row><cell>Environment</cell><cell></cell><cell cols="2">Sampling steps</cell><cell></cell></row><row><cell></cell><cell>1</cell><cell>3</cell><cell>5</cell><cell>10</cell></row><row><cell cols="5">HalfCheetah-me 74.4 ± 15.7 88.5 ± 0.4 89.0 ± 0.7 89.2 ± 1.3</cell></row><row><cell>Runtime (s)</cell><cell>0.0065</cell><cell>0.0155</cell><cell>0.026</cell><cell>0.048</cell></row><row><cell>Antmaze-ld</cell><cell>0.7 ± 0.9</cell><cell cols="3">16.7 ± 2.5 68.0 ± 2.8 74.3 ± 5.4</cell></row><row><cell>Runtime (s)</cell><cell>0.0068</cell><cell>0.0167</cell><cell>0.0270</cell><cell>0.050</cell></row><row><cell>Kitchen-p</cell><cell>5.7 ± 1.2</cell><cell cols="3">74.4 ± 0.6 73.8 ± 0.8 74.7 ± 0.5</cell></row><row><cell>Runtime (s)</cell><cell>0.0068</cell><cell>0.0170</cell><cell>0.029</cell><cell>0.053</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_8"><head>Table 10 :</head><label>10</label><figDesc>Performance of DiffuserLite under three different temporal horizon choices. All results are obtained over 5 seeds and the results of default choice are emphasized in bold scores.</figDesc><table><row><cell>Environment</cell><cell cols="3">Temporal Horizon -1</cell></row><row><cell></cell><cell>48</cell><cell>128</cell><cell>256</cell></row><row><cell>Hopper-me</cell><cell cols="3">101.1 ± 0.5 111.6 ± 0.2 110.0 ± 0.4</cell></row><row><cell>Hopper-m</cell><cell cols="2">96.6 ± 10.9 100.9 ± 1.1</cell><cell>98.9 ± 0.4</cell></row><row><cell>Hopper-mr</cell><cell>74.5 ± 27.2</cell><cell>96.6 ± 0.3</cell><cell>98.2 ± 2.1</cell></row><row><cell>Average</cell><cell>90.7</cell><cell>103.1</cell><cell>102.4</cell></row><row><cell>Kitchen-m</cell><cell>73.6 ± 0.7</cell><cell>72.7 ± 1.0</cell><cell>25.1 ± 0.2</cell></row><row><cell>Kitchen-p</cell><cell>74.4 ± 0.6</cell><cell>75.0 ± 0.0</cell><cell>25.2 ± 0.4</cell></row><row><cell>Average</cell><cell>74.0</cell><cell>73.9</cell><cell>25.2</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_0"><p>Since the code for HDMI is not open-source, we make every effort to reproduce HDMI with the original settings to test its runtime cost and thus underline its results in table 1.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_1"><p>https://github.com/jannerm/diffuser</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_2"><p>https://github.com/anuragajay/decision-diffuser/tree/main/code</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head n="8">Acknowledgements</head><p>This work is supported by the <rs type="funder">National Natural Science Foundation of China</rs> (Grant Nos. <rs type="grantNumber">62422605, 92370132</rs>).</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_KpmCKCJ">
+					<idno type="grant-number">62422605, 92370132</idno>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>• We run DD 5 using the official repository from the original paper with default hyperparameters.</p><p>• Since the code for HDMI has not been released, we made every effort to reproduce HDMI based on the DiffuserLite codebase, strictly adhering to every detail mentioned in the paper.</p><p>All runtime results are obtained on a server equipped with an Intel(R) Xeon(R) Gold 6326 CPU @ 2.90GHz and an NVIDIA GeForce RTX3090.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2.2 Reward-maximizing</head><p>• The performance of BC, CQL <ref type="bibr" target="#b24">[25]</ref> and IQL <ref type="bibr" target="#b23">[24]</ref> in table 2 is reported in the D4RL <ref type="bibr" target="#b11">[12]</ref>, Table <ref type="table">2</ref>; • The performance of Diffuser <ref type="bibr" target="#b19">[20]</ref> in table 2, MuJoCo, is reported in <ref type="bibr" target="#b19">[20]</ref>, Table <ref type="table">1</ref>; The performance in Kitchen is reported in <ref type="bibr" target="#b4">[5]</ref>, Table <ref type="table">2</ref>; And the performance in Antmaze is obtained by the official repository from the original paper with default hyperparameters.</p><p>• The performance of DD <ref type="bibr" target="#b0">[1]</ref> in table 2, MuJoCo and Kitchen, is reported in <ref type="bibr" target="#b0">[1]</ref>, Table <ref type="table">1</ref>; And the performance in Antmaze is reported in <ref type="bibr" target="#b18">[19]</ref>, Table <ref type="table">1</ref>; • The performance of HDMI <ref type="bibr" target="#b26">[27]</ref> in table 2 is reported in <ref type="bibr" target="#b26">[27]</ref>, Table <ref type="table">3</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2.3 Behavior-customizing</head><p>• The performance of GC (goal conditioned BC) <ref type="bibr" target="#b10">[11]</ref> and AlignDiff <ref type="bibr" target="#b7">[8]</ref> in table 5 is reported in <ref type="bibr" target="#b7">[8]</ref>, Table <ref type="table">2</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3 Details of AlignDiff</head><p>Why AlignDiff? Since DiffuserLite can be seen as integrating PRP into DD, the main experiments in the paper can be considered as results obtained when DiffuserLite is used as a reward-maximizing algorithm plugin. Therefore, to evaluate the more general plugin capability of DiffuserLite, a nonreward-maximizing algorithm backbone must be selected. AlignDiff, unlike the common setting in Offline RL, uses diffusion planning for behavior-customizing, which aligns with our requirements.</p><p>AlignDiff <ref type="bibr" target="#b7">[8]</ref> is a diffusion planning algorithm used for behavior-customizing. In our experiments, we integrate DiffuserLite as a plugin into AlignDiff, achieving a significant increase in decision-making frequency of approximately 560% with minimal performance loss (around 3.2%). This demonstrates the flexibility and effectiveness of DiffuserLite serving as a plugin. In this section, we provide a detailed description of the problem setting for AlignDiff and the evaluation metric used to assess the algorithm's performance, aiming to help the understanding of the experimental content.</p><p>Problem setting: AlignDiff considers a reward-free Markov Decision Process (MDP) denoted as M = ⟨S, A, P, α⟩. Here, S represents the set of states, A represents the set of actions, P : S × A × S → [0, 1] is the transition function, and α = {α 1 , • • • , α k } represents a set of k predefined attributes used to characterize the agent's behaviors. Given a state-only trajectory τ l = {s 0 , • • • , s l-1 }, it assumes the existence of an attribute strength function that maps the trajectory to a relative strength</p><formula xml:id="formula_24">vector ζ α (τ l ) = v α = [v α1 , • • • , v α k ] ∈ [0, 1] k</formula><p>. Each element of the vector indicates the relative strength of the corresponding attribute. A value of 0 for v αi implies the weakest manifestation of attribute α i , while a value of 1 represents the strongest manifestation. Human preferences are formulated as a pair of vectors (v α targ , m α ), where v α targ represents the target relative strengths, and m α ∈ {0, 1} k is a binary mask indicating which attributes are of interest. The objective is to find a policy a = π(s|v α targ , m α ) that minimizes the L1 norm</p><formula xml:id="formula_25">||(v α targ -ζ α (E π [τ l ])) • m α || 1 ,</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>where • denotes the Hadamard product.</head><p>Area metric: To evaluate the algorithm's performance, the authors suggest that one can conduct multiple trials to collect the mean absolute error (MAE) between the evaluated and target relative strengths. For each trial, we need to sample an initial state s 0 , a target strengths v α targ , and a mask m α , as conditions for the execution of each algorithm. Subsequently, the algorithm runs for T steps, resulting in the exhibited relative strengths v α evaluated by ζθ . Then we can calculate the percentage of samples that fell below pre-designed thresholds to create an MAE curve. The area enclosed by  Justification: The paper does not include theoretical results.</p><p>Guidelines:</p><p>• The answer NA means that the paper does not include theoretical results.</p><p>• All the theorems, formulas, and proofs in the paper should be numbered and crossreferenced.</p><p>• All assumptions should be clearly stated or referenced in the statement of any theorems.</p><p>• The proofs can either appear in the main paper or the supplemental material, but if they appear in the supplemental material, the authors are encouraged to provide a short proof sketch to provide intuition.</p><p>• Inversely, any informal proof provided in the core of the paper should be complemented by formal proofs provided in appendix or supplemental material.</p><p>• Theorems and Lemmas that the proof relies upon should be properly referenced.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Experimental Result Reproducibility</head><p>Question: Does the paper fully disclose all the information needed to reproduce the main experimental results of the paper to the extent that it affects the main claims and/or conclusions of the paper (regardless of whether the code and data are provided or not)?</p><p>Answer: [Yes] Justification: We have the code and model checkpoints ready for release. Besides, in Appendix D, we provide sufficient implementation details for researchers to reproduce the results.</p><p>Guidelines:</p><p>• The answer NA means that the paper does not include experiments.</p><p>• If the paper includes experiments, a No answer to this question will not be perceived well by the reviewers: Making the paper reproducible is important, regardless of whether the code and data are provided or not.</p><p>• If the contribution is a dataset and/or model, the authors should describe the steps taken to make their results reproducible or verifiable.</p><p>• Depending on the contribution, reproducibility can be accomplished in various ways.</p><p>For example, if the contribution is a novel architecture, describing the architecture fully might suffice, or if the contribution is a specific model and empirical evaluation, it may be necessary to either make it possible for others to replicate the model with the same dataset, or provide access to the model. In general. releasing code and data is often one good way to accomplish this, but reproducibility can also be provided via detailed instructions for how to replicate the results, access to a hosted model (e.g., in the case of a large language model), releasing of a model checkpoint, or other means that are appropriate to the research performed.</p><p>• While NeurIPS does not require releasing code, the conference does require all submissions to provide some reasonable avenue for reproducibility, which may depend on the nature of the contribution. For example (a) If the contribution is primarily a new algorithm, the paper should make it clear how to reproduce that algorithm. (b) If the contribution is primarily a new model architecture, the paper should describe the architecture clearly and fully. (c) If the contribution is a new model (e.g., a large language model), then there should either be a way to access this model for reproducing the results or a way to reproduce the model (e.g., with an open-source dataset or instructions for how to construct the dataset). (d) We recognize that reproducibility may be tricky in some cases, in which case authors are welcome to describe the particular way they provide for reproducibility.</p><p>In the case of closed-source models, it may be that access to the model is limited in some way (e.g., to registered users), but it should be possible for other researchers to have some path to reproducing or verifying the results.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Open access to data and code</head><p>Question: Does the paper provide open access to the data and code, with sufficient instructions to faithfully reproduce the main experimental results, as described in supplemental material?</p><p>Answer: [Yes] Justification: The code and model checkpoints have been released.</p><p>Guidelines:</p><p>• The answer NA means that paper does not include experiments requiring code.</p><p>• Please see the NeurIPS code and data submission guidelines (<ref type="url" target="https://nips.cc/public/guides/CodeSubmissionPolicy">https://nips.cc/  public/guides/CodeSubmissionPolicy</ref>) for more details.</p><p>• While we encourage the release of code and data, we understand that this might not be possible, so "No" is an acceptable answer. Papers cannot be rejected simply for not including code, unless this is central to the contribution (e.g., for a new open-source benchmark).</p><p>• The instructions should contain the exact command and environment needed to run to reproduce the results. See the NeurIPS code and data submission guidelines (<ref type="url" target="https://nips.cc/public/guides/CodeSubmissionPolicy">https:  //nips.cc/public/guides/CodeSubmissionPolicy</ref>) for more details.</p><p>• The authors should provide instructions on data access and preparation, including how to access the raw data, preprocessed data, intermediate data, and generated data, etc.</p><p>• The authors should provide scripts to reproduce all experimental results for the new proposed method and baselines. If only a subset of experiments are reproducible, they should state which ones are omitted from the script and why.</p><p>• At submission time, to preserve anonymity, the authors should release anonymized versions (if applicable).</p><p>• Providing as much information as possible in supplemental material (appended to the paper) is recommended, but including URLs to data and code is permitted.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.">Experimental Setting/Details</head><p>Question: Does the paper specify all the training and test details (e.g., data splits, hyperparameters, how they were chosen, type of optimizer, etc.) necessary to understand the results?</p><p>Answer: [Yes] Justification: We provided full details in Section 5.1, Appendix A.1 and Appendix A.2.</p><p>Guidelines:</p><p>• The answer NA means that the paper does not include experiments.</p><p>• The experimental setting should be presented in the core of the paper to a level of detail that is necessary to appreciate the results and make sense of them.</p><p>• The full details can be provided either with the code, in appendix, or as supplemental material.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.">Experiment Statistical Significance</head><p>Question: Does the paper report error bars suitably and correctly defined or other appropriate information about the statistical significance of the experiments?</p><p>Answer: [Yes] Justification: We provided the mean and standard error over several random seeds in the experimental results to demonstrate statistical significance.</p><p>Guidelines:</p><p>• The answer NA means that the paper does not include experiments.</p><p>• The authors should answer "Yes" if the results are accompanied by error bars, confidence intervals, or statistical significance tests, at least for the experiments that support the main claims of the paper.</p><p>• The factors of variability that the error bars are capturing should be clearly stated (for example, train/test split, initialization, random drawing of some parameter, or overall run with given experimental conditions).</p><p>• The method for calculating the error bars should be explained (closed form formula, call to a library function, bootstrap, etc.) • The assumptions made should be given (e.g., Normally distributed errors).</p><p>• It should be clear whether the error bar is the standard deviation or the standard error of the mean.</p><p>• It is OK to report 1-sigma error bars, but one should state it. The authors should preferably report a 2-sigma error bar than state that they have a 96% CI, if the hypothesis of Normality of errors is not verified.</p><p>• For asymmetric distributions, the authors should be careful not to show in tables or figures symmetric error bars that would yield results that are out of range (e.g. negative error rates).</p><p>• If error bars are reported in tables or plots, The authors should explain in the text how they were calculated and reference the corresponding figures or tables in the text.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8.">Experiments Compute Resources</head><p>Question: For each experiment, does the paper provide sufficient information on the computer resources (type of compute workers, memory, time of execution) needed to reproduce the experiments?</p><p>Answer: [Yes] Justification: We detailed the compute resources used for the experiments in Section 5.1.</p><p>Guidelines:</p><p>• The answer NA means that the paper does not include experiments.</p><p>• The paper should indicate the type of compute workers CPU or GPU, internal cluster, or cloud provider, including relevant memory and storage.</p><p>• The paper should provide the amount of compute required for each of the individual experimental runs as well as estimate the total compute.</p><p>• The paper should disclose whether the full research project required more compute than the experiments reported in the paper (e.g., preliminary or failed experiments that didn't make it into the paper).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="9.">Code Of Ethics</head><p>Question: Does the research conducted in the paper conform, in every respect, with the NeurIPS Code of Ethics <ref type="url" target="https://neurips.cc/public/EthicsGuidelines">https://neurips.cc/public/EthicsGuidelines</ref>?</p><p>Answer: [Yes]</p><p>Justification: The research conducted in the paper conforms, in every respect, with the NeurIPS Code of Ethics <ref type="url" target="https://neurips.cc/public/EthicsGuidelines">https://neurips.cc/public/EthicsGuidelines</ref>.</p><p>Guidelines:</p><p>• The answer NA means that the authors have not reviewed the NeurIPS Code of Ethics.</p><p>• If the authors answer No, they should explain the special circumstances that require a deviation from the Code of Ethics.</p><p>• The authors should make sure to preserve anonymity (e.g., if there is a special consideration due to laws or regulations in their jurisdiction).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="10.">Broader Impacts</head><p>Question: Does the paper discuss both potential positive societal impacts and negative societal impacts of the work performed?</p><p>Answer: [Yes] Justification: See the conclusion in Section 7.</p><p>Guidelines:</p><p>• The answer NA means that there is no societal impact of the work performed.</p><p>• If the authors answer NA or No, they should explain why their work has no societal impact or why the paper does not address societal impact.</p><p>• Examples of negative societal impacts include potential malicious or unintended uses (e.g., disinformation, generating fake profiles, surveillance), fairness considerations (e.g., deployment of technologies that could make decisions that unfairly impact specific groups), privacy considerations, and security considerations.</p><p>• The conference expects that many papers will be foundational research and not tied to particular applications, let alone deployments. However, if there is a direct path to any negative applications, the authors should point it out. For example, it is legitimate to point out that an improvement in the quality of generative models could be used to generate deepfakes for disinformation. On the other hand, it is not needed to point out that a generic algorithm for optimizing neural networks could enable people to train models that generate Deepfakes faster.</p><p>• The authors should consider possible harms that could arise when the technology is being used as intended and functioning correctly, harms that could arise when the technology is being used as intended but gives incorrect results, and harms following from (intentional or unintentional) misuse of the technology.</p><p>• If there are negative societal impacts, the authors could also discuss possible mitigation strategies (e.g., gated release of models, providing defenses in addition to attacks, mechanisms for monitoring misuse, mechanisms to monitor how a system learns from feedback over time, improving the efficiency and accessibility of ML).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="11.">Safeguards</head><p>Question: Does the paper describe safeguards that have been put in place for responsible release of data or models that have a high risk for misuse (e.g., pretrained language models, image generators, or scraped datasets)?</p><p>Answer: [NA] Justification: The paper poses no such risks.</p><p>Guidelines:</p><p>• The answer NA means that the paper poses no such risks.</p><p>• Released models that have a high risk for misuse or dual-use should be released with necessary safeguards to allow for controlled use of the model, for example by requiring that users adhere to usage guidelines or restrictions to access the model or implementing safety filters.</p><p>• Datasets that have been scraped from the Internet could pose safety risks. The authors should describe how they avoided releasing unsafe images.</p><p>• We recognize that providing effective safeguards is challenging, and many papers do not require this, but we encourage authors to take this into account and make a best faith effort.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="12.">Licenses for existing assets</head><p>Question: Are the creators or original owners of assets (e.g., code, data, models), used in the paper, properly credited and are the license and terms of use explicitly mentioned and properly respected?</p><p>Answer: [Yes]</p><p>Justification: For all the datasets and algorithm baselines used in the paper, we have cited the original papers and provided the license, copyright information, and terms of use in the package in our code repository.</p><p>Guidelines:</p><p>• The answer NA means that the paper does not use existing assets.</p><p>• The authors should cite the original paper that produced the code package or dataset.</p><p>• The authors should state which version of the asset is used and, if possible, include a URL.</p><p>• The name of the license (e.g., CC-BY 4.0) should be included for each asset.</p><p>• For scraped data from a particular source (e.g., website), the copyright and terms of service of that source should be provided.</p><p>• If assets are released, the license, copyright information, and terms of use in the package should be provided. For popular datasets, <ref type="url" target="file://localhost/opt/grobid/grobid-home/tmp/paperswithcode.com/datasets">paperswithcode.com/datasets</ref> has curated licenses for some datasets. Their licensing guide can help determine the license of a dataset.</p><p>• For existing datasets that are re-packaged, both the original license and the license of the derived asset (if it has changed) should be provided.</p><p>• If this information is not available online, the authors are encouraged to reach out to the asset's creators. 13. New Assets Question: Are new assets introduced in the paper well documented and is the documentation provided alongside the assets? Answer: [Yes] Justification: New assets introduced in the paper are well documented and the documentation is provided alongside the assets.</p><p>Guidelines:</p><p>• The answer NA means that the paper does not release new assets.</p><p>• Researchers should communicate the details of the dataset/code/model as part of their submissions via structured templates. This includes details about training, license, limitations, etc.</p><p>• The paper should discuss whether and how consent was obtained from people whose asset is used.</p><p>• At submission time, remember to anonymize your assets (if applicable). You can either create an anonymized URL or include an anonymized zip file.</p><p>14. Crowdsourcing and Research with Human Subjects Question: For crowdsourcing experiments and research with human subjects, does the paper include the full text of instructions given to participants and screenshots, if applicable, as well as details about compensation (if any)? Answer: [NA] Justification: The paper does not involve crowdsourcing or research with human subjects. Guidelines: • The answer NA means that the paper does not involve crowdsourcing nor research with human subjects. • Including this information in the supplemental material is fine, but if the main contribution of the paper involves human subjects, then as much detail as possible should be included in the main paper. • According to the NeurIPS Code of Ethics, workers involved in data collection, curation, or other labor should be paid at least the minimum wage in the country of the data collector. 15. Institutional Review Board (IRB) Approvals or Equivalent for Research with Human Subjects Question: Does the paper describe potential risks incurred by study participants, whether such risks were disclosed to the subjects, and whether Institutional Review Board (IRB) approvals (or an equivalent approval/review based on the requirements of your country or institution) were obtained? Answer: [NA] Justification: The paper does not involve crowdsourcing or research with human subjects. Guidelines: • The answer NA means that the paper does not involve crowdsourcing nor research with human subjects. • Depending on the country in which research is conducted, IRB approval (or equivalent) may be required for any human subjects research. If you obtained IRB approval, you should clearly state this in the paper.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Algorithm 1 Algorithm 2</head><label>12</label><figDesc>DiffuserLite TrainingInput: number of planning levels L, temporal horizon H l , temporal jump I l and noise estimators ϵ θ l for each level l ∈ {0, 1, • • • , L -1}, dataset D = {x}, where x is the sequence of state-action pairs, critic C, diffusion steps T , condition mask probability 1 -p; while not done do sample a batch of (x, C(x)) from dataset D for l = 0 to L -1 do extract x 0,H l ,1 and x 0,H l ,I l from x Ĉ(x 0,H l ,I l ) ← C(x 0,H l ,1 ) sample s l ∼ Uniform(T ), ϵ l ∼ N (0, I) first state of ϵ l ← first state of x 0,H l ,I l if l &gt; 0 then last state of ϵ l ← last state of x 0,H l ,I l end if x s 0:H l :I l ← α s x 0:H l :I l + σ s ϵ l update θ l by minimizing ||ϵ θ l (x s 0:H l :I l , s, C(x 0:H l :I l )) -ϵ|| 2 with probability p else ||ϵ θ l (x s 0:H l :I l , s)) -ϵ|| 2 end for end while DiffuserLite Inference Input: number of planning levels L, temporal horizon H l , temporal jump I l and noise estimators ϵ θ l for each level l ∈ {0, 1, • • • , L -1}, critic C, inverse dynamic h, diffusion steps T , current state o t ; for l = 0 to L -1 do sample ϵ l ∼ N (0, I). first state of ϵ l ← o t if l &gt; 0 then last state of ϵ l ← last state of x 0:H l-1 :I l-1 end if obtain x 0:H l :I l by solving diffusion ODE with DDIM solver end for extract o t , o t+1 from x 0:H L-1 :1 a t = h(o t , o t+1 )</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_9"><head>Table 11 :</head><label>11</label><figDesc>Performance of DiffuserLite using conditions with or without values. Present only average performance on varying-quality datasets, which are obtained over 5 seeds.</figDesc><table><row><cell cols="5">Condition Hopper HalfCheetah Kitchen Antmaze</cell></row><row><cell>w/ Value</cell><cell>103.6</cell><cell>60.7</cell><cell>74.0</cell><cell>77.6</cell></row><row><cell>w/o Value</cell><cell>103.1</cell><cell>59.7</cell><cell>54.1</cell><cell>19.7</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Is conditional generative modeling all you need for decision making?</title>
+		<author>
+			<persName><forename type="first">Anurag</forename><surname>Ajay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhi</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tommi</forename><forename type="middle">S</forename><surname>Jaakkola</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pulkit</forename><surname>Agrawal</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations, ICLR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">An Introduction to Numerical Analysis</title>
+		<author>
+			<persName><forename type="first">Kendall</forename><forename type="middle">E</forename><surname>Atkinson</surname></persName>
+		</author>
+		<ptr target="http://www.worldcat.org/isbn/0471500232" />
+		<imprint>
+			<date type="published" when="1989">1989</date>
+			<publisher>John Wiley &amp; Sons</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamie</forename><surname>Ba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><forename type="middle">E</forename><surname>Ryan Kiros</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hinton</surname></persName>
+		</author>
+		<idno>1607.06450</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Layer normalization</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Openai gym</title>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vicki</forename><surname>Cheung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ludwig</forename><surname>Pettersson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Schneider</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wojciech</forename><surname>Zaremba</surname></persName>
+		</author>
+		<idno>arXiv preprint 1606.01540</idno>
+	</analytic>
+	<monogr>
+		<title level="j">ArXiv</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Simple hierarchical planning with diffusion</title>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenji</forename><surname>Kawaguchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caglar</forename><surname>Gulcehre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sungjin</forename><surname>Ahn</surname></persName>
+		</author>
+		<idno>arXiv preprint 2401.02644</idno>
+	</analytic>
+	<monogr>
+		<title level="j">ArXiv</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Diffusion policy: Visuomotor policy learning via action diffusion</title>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenjia</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Cousineau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Burchfiel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuran</forename><surname>Song</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of Robotics: Science and Systems</title>
+		<meeting>Robotics: Science and Systems</meeting>
+		<imprint>
+			<publisher>RSS</publisher>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Diffusion models beat GANs on image synthesis</title>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Quinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nichol</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems, NIPS</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Aligndiff: Aligning diverse human preferences via behaviorcustomisable diffusion model</title>
+		<author>
+			<persName><forename type="first">Zibin</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifu</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianye</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujing</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tangjie</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changjie</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhipeng</forename><surname>Hu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+		<respStmt>
+			<orgName>ICLR</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">A family of embedded runge-kutta formulae</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">R</forename><surname>Dormand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">J</forename><surname>Prince</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Computational and Applied Mathematics</title>
+		<imprint>
+			<date type="published" when="1980">1980</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Learning universal policies via text-guided video generation</title>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sherry</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanjun</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Nachum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Thirty-seventh Conference on Neural Information Processing Systems, NIPS</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Rvs: What is essential for offline RL via supervised learning</title>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Emmons</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Eysenbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Kostrikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations, ICLR</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">D4rl: Datasets for deep data-driven reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Justin</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aviral</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Nachum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Tucker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note>In arXiv preprint 2004.07219, ArXiv</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Relay policy learning: Solving long-horizon tasks via imitation and reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vikash</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Corey</forename><surname>Lynch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Hausman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Conference on Robot Learning</title>
+		<meeting>the Conference on Robot Learning</meeting>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Learning latent dynamics for planning from pixels</title>
+		<author>
+			<persName><forename type="first">Danijar</forename><surname>Hafner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ian</forename><surname>Fischer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruben</forename><surname>Villegas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Ha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honglak</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Davidson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning, ICML</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Temporal difference learning for model predictive control</title>
+		<author>
+			<persName><forename type="first">Nicklas</forename><surname>Hansen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaolong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Su</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning, ICML</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Diffusion model is an effective planner and data synthesizer for multi-task reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenjia</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kang</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuoran</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weinan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuelong</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Thirty-seventh Conference on Neural Information Processing Systems, NIPS</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Diffusion model is an effective planner and data synthesizer for multi-task reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenjia</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kang</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuoran</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weinan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuelong</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.18459</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Classifier-free diffusion guidance</title>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Salimans</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS 2021 Workshop on Deep Generative Models and Downstream Applications</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Diffused task-agnostic milestone planner</title>
+		<author>
+			<persName><forename type="first">Mineui</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minjae</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Songhwai</forename><surname>Oh</surname></persName>
+		</author>
+		<idno>2312.03395</idno>
+	</analytic>
+	<monogr>
+		<title level="j">ArXiv</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Planning with diffusion for flexible behavior synthesis</title>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Janner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning, ICML</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Controllable multi-agent motion prediction using diffusion</title>
+		<author>
+			<persName><forename type="first">Chiyu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andre</forename><surname>Cornman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheolho</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Sapp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yin</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dragomir</forename><surname>Anguelov</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="9644" to="9653" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Imagic: Text-based real image editing with diffusion models</title>
+		<author>
+			<persName><forename type="first">Bahjat</forename><surname>Kawar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiran</forename><surname>Zada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oran</forename><surname>Lang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omer</forename><surname>Tov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huiwen</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tali</forename><surname>Dekel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Inbar</forename><surname>Mosseri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michal</forename><surname>Irani</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<publisher>CVPR</publisher>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Variational diffusion models</title>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Diederik P Kingma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Salimans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Poole</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ho</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems, NIPS</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Offline reinforcement learning with implicit q-learning</title>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Kostrikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashvin</forename><surname>Nair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Tenth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Conservative q-learning for offline reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Aviral</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aurick</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Tucker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems, NIPS</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Refining diffusion planner for reliable behavior synthesis by automatic detection of infeasible plans</title>
+		<author>
+			<persName><forename type="first">Kyowoon</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Seongun</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaesik</forename><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems, NIPS</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Hierarchical diffusion for offline decision making</title>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangfeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongyuan</forename><surname>Zha</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 40th International Conference on Machine Learning, ICML</title>
+		<meeting>the 40th International Conference on Machine Learning, ICML</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Adaptdiffuser: Diffusion models as adaptive self-evolving planners</title>
+		<author>
+			<persName><forename type="first">Zhixuan</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingyu</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Masayoshi</forename><surname>Tomizuka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ping</forename><surname>Luo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning, ICML</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">AudioLDM: Text-to-audio generation with latent diffusion models</title>
+		<author>
+			<persName><forename type="first">Haohe</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zehua</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinhao</forename><surname>Mei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xubo</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danilo</forename><surname>Mandic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenwu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><forename type="middle">D</forename><surname>Plumbley</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 40th International Conference on Machine Learning, ICML</title>
+		<meeting>the 40th International Conference on Machine Learning, ICML</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Flow straight and fast: Learning to generate and transfer data with rectified flow</title>
+		<author>
+			<persName><forename type="first">Xingchao</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations, ICLR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>Chengyue Gong, and qiang liu</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Decoupled weight decay regularization</title>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Loshchilov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><surname>Hutter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">7th International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">DPM-solver: A fast ODE solver for diffusion probabilistic model sampling in around 10 steps</title>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhao</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongxuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Zhu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems, NIPS</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Synthetic experience replay</title>
+		<author>
+			<persName><forename type="first">Cong</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philip</forename><forename type="middle">J</forename><surname>Ball</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Parker-Holder</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Workshop on Reincarnating Reinforcement Learning at ICLR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">What matters in learning from offline human demonstrations for robot manipulation</title>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Mandlekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danfei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josiah</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soroush</forename><surname>Nasiriany</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohun</forename><surname>Kulkarni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvio</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuke</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Martín-Martín</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<meeting><address><addrLine>CoRL</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Mish: A self regularized non-monotonic activation function</title>
+		<author>
+			<persName><forename type="first">Diganta</forename><surname>Misra</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">31st British Machine Vision Conference</title>
+		<imprint>
+			<publisher>BMVC</publisher>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianye</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifu</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhixuan</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Metadiffuser</surname></persName>
+		</author>
+		<title level="m">Diffusion model as conditional planner for offline meta-rl. International Conference on Machine Learning, ICML</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Improved denoising diffusion probabilistic models</title>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Quinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nichol</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Imitating human behaviour with diffusion models</title>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Pearce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tabish</forename><surname>Rashid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anssi</forename><surname>Kanervisto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dave</forename><surname>Bignell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingfei</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raluca</forename><surname>Georgescu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergio</forename><surname>Valcarcel Macua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shan</forename><surname>Zheng Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ida</forename><surname>Momennejad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katja</forename><surname>Hofmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Devlin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations, ICLR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Imitating human behaviour with diffusion models</title>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Pearce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tabish</forename><surname>Rashid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anssi</forename><surname>Kanervisto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dave</forename><surname>Bignell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingfei</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raluca</forename><surname>Georgescu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergio</forename><surname>Valcarcel Macua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shan</forename><surname>Zheng Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ida</forename><surname>Momennejad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katja</forename><surname>Hofmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Devlin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations, ICLR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Scalable diffusion models with transformers</title>
+		<author>
+			<persName><forename type="first">William</forename><surname>Peebles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saining</forename><surname>Xie</surname></persName>
+		</author>
+		<idno>2212.09748</idno>
+	</analytic>
+	<monogr>
+		<title level="j">ArXiv</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">NeoRL: A near real-world benchmark for offline reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Rong-Jun</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingyuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Songyi</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiong-Hui</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zewen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weinan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Yu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Thirty-sixth Conference on Neural Information Processing Systems Datasets and Benchmarks Track, NIPS</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Nearly horizon-free offline reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Tongzheng</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialian</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><forename type="middle">S</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sujay</forename><surname>Sanghavi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="15621" to="15634" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">U-net: Convolutional networks for biomedical image segmentation</title>
+		<author>
+			<persName><forename type="first">Olaf</forename><surname>Ronneberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philipp</forename><surname>Fischer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Brox</surname></persName>
+		</author>
+		<idno>1505.04597</idno>
+	</analytic>
+	<monogr>
+		<title level="j">ArXiv</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Dreambooth: Fine tuning text-to-image diffusion models for subject-driven generation</title>
+		<author>
+			<persName><forename type="first">Nataniel</forename><surname>Ruiz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Varun</forename><surname>Jampani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yael</forename><surname>Pritch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Rubinstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kfir</forename><surname>Aberman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<publisher>CVPR</publisher>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Denoising diffusion implicit models</title>
+		<author>
+			<persName><forename type="first">Jiaming</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenlin</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefano</forename><surname>Ermon</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">9th International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Score-based generative modeling through stochastic differential equations</title>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jascha</forename><surname>Sohl-Dickstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Diederik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Kingma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefano</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Ermon</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Poole</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations, ICLR</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Reinforcement learning: An introduction</title>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">S</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">G</forename><surname>Barto</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. Neural Networks</title>
+		<imprint>
+			<date type="published" when="1998">1998</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">A survey of deep network solutions for learning control in robotics: From reinforcement to imitation</title>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Tai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingwei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joschka</forename><surname>Boedecker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wolfram</forename><surname>Burgard</surname></persName>
+		</author>
+		<idno>arXiv preprint 1612.07139</idno>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<publisher>ArXiv</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Model-based reinforcement learning for closed-loop dynamic control of soft robotic manipulators</title>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>George Thuruthel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Egidio</forename><surname>Falotico</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Renda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cecilia</forename><surname>Laschi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Robotics</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Diffusion policies as an expressive policy class for offline reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Zhendong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><forename type="middle">J</forename><surname>Hunt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingyuan</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations, ICLR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Scaling robot learning with semantically imagined experience</title>
+		<author>
+			<persName><forename type="first">Tianhe</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Austin</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Su</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaspiar</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clayton</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Dee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jodilyn</forename><surname>Peralta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of Robotics: Science and Systems</title>
+		<meeting>Robotics: Science and Systems</meeting>
+		<imprint>
+			<publisher>RSS</publisher>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<analytic>
+		<title level="a" type="main">Adding conditional control to text-to-image diffusion models</title>
+		<author>
+			<persName><forename type="first">Lvmin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anyi</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maneesh</forename><surname>Agrawala</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF International Conference on Computer Vision, ICCV</title>
+		<meeting>the IEEE/CVF International Conference on Computer Vision, ICCV</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<title level="m" type="main">Adaptive online replanning with diffusion models</title>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengdi</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yikang</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dit-Yan</forename><surname>Yeung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuang</forename><surname>Gan</surname></persName>
+		</author>
+		<idno>arXiv preprint 2310.09629</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<publisher>ArXiv</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<title level="m" type="main">Offline multi-agent learning with diffusion models</title>
+		<author>
+			<persName><forename type="first">Zhengbang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minghuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyuan</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bingyi</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minkai</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefano</forename><surname>Ermon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weinan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Madiff</surname></persName>
+		</author>
+		<idno>arXiv preprint 2305.17330</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<publisher>ArXiv</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<title level="m" type="main">Diffusion models for reinforcement learning: A survey</title>
+		<author>
+			<persName><forename type="first">Zhengbang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanye</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichao</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shenyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weinan</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno>arXiv preprint 2311.01223</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<publisher>ArXiv</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

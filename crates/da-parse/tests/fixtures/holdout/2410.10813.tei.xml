@@ -1,0 +1,2428 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">LONGMEMEVAL: BENCHMARKING CHAT ASSIST-ANTS ON LONG-TERM INTERACTIVE MEMORY</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-03-04">4 Mar 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Di</forename><surname>Wu</surname></persName>
+							<email>diwu@cs.ucla.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">UCLA</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hongwei</forename><surname>Wang</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Tencent AI Lab Seattle</orgName>
+								<address>
+									<postCode>3 UC</postCode>
+									<settlement>San Diego</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Wenhao</forename><surname>Yu</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Tencent AI Lab Seattle</orgName>
+								<address>
+									<postCode>3 UC</postCode>
+									<settlement>San Diego</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yuwei</forename><surname>Zhang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Kai-Wei</forename><surname>Chang</surname></persName>
+							<email>kwchang@cs.ucla.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">UCLA</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Tencent AI Lab Seattle</orgName>
+								<address>
+									<postCode>3 UC</postCode>
+									<settlement>San Diego</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">LONGMEMEVAL: BENCHMARKING CHAT ASSIST-ANTS ON LONG-TERM INTERACTIVE MEMORY</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-03-04">4 Mar 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">E4B9815EB47E161B1B81F81F1308B76B</idno>
+					<idno type="arXiv">arXiv:2410.10813v2[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:48+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Recent large language model (LLM)-driven chat assistant systems have integrated memory components to track user-assistant chat histories, enabling more accurate and personalized responses. However, their long-term memory capabilities in sustained interactions remain underexplored. We introduce LONGMEMEVAL, a comprehensive benchmark designed to evaluate five core long-term memory abilities of chat assistants: information extraction, multi-session reasoning, temporal reasoning, knowledge updates, and abstention. With 500 meticulously curated questions embedded within freely scalable user-assistant chat histories, LONGMEMEVAL presents a significant challenge to existing long-term memory systems, with commercial chat assistants and long-context LLMs showing a 30% accuracy drop on memorizing information across sustained interactions. We then present a unified framework that breaks down the long-term memory design into three stages: indexing, retrieval, and reading. Built upon key experimental insights, we propose several memory design optimizations including session decomposition for value granularity, fact-augmented key expansion for indexing, and time-aware query expansion for refining the search scope. Extensive experiments show that these optimizations greatly improve both memory recall and downstream question answering on LONGMEMEVAL. Overall, our study provides valuable resources and guidance for advancing the long-term memory capabilities of LLM-based chat assistants, paving the way toward more personalized and reliable conversational AI. Our benchmark and code are publicly available at <ref type="url" target="https://github.com/xiaowu0162/LongMemEval">https://github.com/xiaowu0162/LongMemEval</ref>.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="26" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="27" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="28" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>Large language models (LLMs) have exhibited impressive capabilities in solving diverse tasks through natural language, leading to numerous successful chat assistant applications <ref type="bibr" target="#b28">(OpenAI, 2022;</ref><ref type="bibr">Microsoft, 2023)</ref>. Nevertheless, LLMs face limitations on tasks relying heavily on personal knowledge accumulated through long-term user-AI interactions, such as psychological counseling or secretarial duties <ref type="bibr" target="#b52">(Zhong et al., 2024)</ref>. Failing to incorporate user background and preferences into responses can diminish the response's accuracy as well as user satisfaction. To personalize LLM-based assistants, long-term memory, the ability to memorize, recall, and reason with a long interaction history, is indispensable. Recently, several commercial <ref type="bibr" target="#b29">(OpenAI, 2024;</ref><ref type="bibr" target="#b8">Coze, 2024)</ref> and open-source assistant systems with memory <ref type="bibr" target="#b52">(Zhong et al., 2024;</ref><ref type="bibr" target="#b49">Zhang et al., 2024)</ref> have been introduced. These systems leverage techniques like compressing, indexing, and retrieving from chat histories to generate more accurate and personalized responses.</p><p>Despite these advances, there has been limited progress in holistically evaluating the memory capability in long-term interactions. While several benchmarks evaluate LLMs on understanding long chat histories <ref type="bibr">(Xu et al., 2022a;</ref><ref type="bibr">b;</ref><ref type="bibr" target="#b52">Zhong et al., 2024;</ref><ref type="bibr" target="#b23">Maharana et al., 2024;</ref><ref type="bibr" target="#b10">Du et al., 2024;</ref><ref type="bibr" target="#b18">Kim et al., 2024)</ref>, they have two major shortcomings. First, they do not accurately reflect user-AI interactions: many focus solely on human-human conversations <ref type="bibr">(Xu et al., 2022a;</ref><ref type="bibr" target="#b23">Maharana et al., 2024;</ref><ref type="bibr" target="#b18">Kim et al., 2024)</ref>, while others omit task-oriented dialogues, which represent a significant portion of chat assistant usage and challenge memorization with the long-context inputs and longform responses. Their interactive histories also typically have a non-configurable length spanning only a few thousand tokens, limiting the difficulty as current systems continue to improve. Second, current benchmarks' questions only offer a limited coverage of the memory abilities required in dynamic long-term interactions. For instance, MemoryBank <ref type="bibr" target="#b52">(Zhong et al., 2024)</ref> and PerLTQA <ref type="bibr" target="#b10">(Du et al., 2024)</ref> insufficiently evaluate the ability to synthesize information across numerous sessions or to reason with temporal metadata or time references. All long-term memory benchmarks including recent ones such as LoCoMo <ref type="bibr" target="#b23">(Maharana et al., 2024)</ref> also fail to evaluate recall of information provided by the assistant or reasoning with updated user information.</p><p>We introduce LONGMEMEVAL, a comprehensive benchmark for assessing the long-term memory capabilities of chat assistants. LONGMEMEVAL consists of 500 manually created questions to test five core memory abilities: information extraction, multi-session reasoning, temporal reasoning, knowledge updates, and abstention. Each question requires recalling information hidden within one or more task-oriented dialogues between a user and an assistant. Inspired by the "needlein-a-haystack" test <ref type="bibr" target="#b17">(Kamradt, 2023)</ref>, we design a pipeline to compile a coherent and lengthconfigurable chat history for each question. A chat system, then, is required to parse the dynamic interactions online for memorization, and answer the question after all the interaction sessions. While the length of the history is freely extensible, we provide two standard settings for consistent comparison: LONGMEMEVAL S with approximately 115k tokens per problem and LONGMEMEVAL M with 500 sessions (around 1.5 million tokens). Preliminary evaluations highlight the difficulty of LONGMEMEVAL, as long-context LLMs show a 30%∼60% performance drop on LONGMEMEVAL S , and manual evaluations reveal that state-of-the-art commercial systems only achieved 30%∼70% accuracy in a setting much simpler than LONGMEMEVAL S ( §3.4).</p><p>Finally, we present a unified view for memory-augmented chat assistants. Leveraging LONG-MEMEVAL, we comprehensively analyze memory design choices across three key execution stages-indexing, retrieval, and reading-and four control points: value, key, query, and reading strategy. Experimental insights identify several effective memory designs:</p><p>• ( §5.2) Instead of sessions, round is the more optimal granularity for storing and utilizing the interactive history. While further compression into individual user facts harms overall performance due to information loss, it improves the multi-session reasoning accuracy.</p><p>• ( §5.3) While using a flat index with the memory values themselves as the keys is a strong baseline, further expanding the keys with extracted user facts improves both memory recall (9.4% higher recall@k) and downstream question answering (5.4% higher accuracy).</p><p>• ( §5.4) Naive time-agnostic memory designs perform poorly on temporal reasoning questions. We propose a simple indexing and query expansion strategy to explicitly associate timestamps with facts and narrow down the search range, improving the memory recall for temporal reasoning by 6.8%∼11.3% when a strong LLM is employed for query expansion.</p><p>• ( §5.5) Even with perfect memory recall, accurately utilizing retrieved items is non-trivial.</p><p>Applying Chain-of-Note <ref type="bibr" target="#b47">(Yu et al., 2023)</ref> and structured data format <ref type="bibr" target="#b46">(Yin et al., 2023)</ref> improves question answering accuracy by as much as 10 absolute points across three LLMs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">RELATED WORK</head><p>Long-Term Dialogue Benchmarks As the ability of dialogue systems improve, research starts to focus on long-term dialogue understanding beyond traditional dialogue modeling benchmarks <ref type="bibr" target="#b4">(Budzianowski et al., 2018;</ref><ref type="bibr" target="#b39">Wei et al., 2018)</ref>. Early works focused on language modeling evaluation on generating personalized responses from human-human <ref type="bibr">(Xu et al., 2022a)</ref> or human-AI <ref type="bibr" target="#b45">(Xu et al., 2022b)</ref> chat histories. To more precisely evaluate memory accuracy, subsequent benchmarks shifted toward question answering (QA, <ref type="bibr" target="#b30">Reddy et al. (2019)</ref>; <ref type="bibr" target="#b50">Zhang &amp; Choi (2021)</ref>). For example, MemoryBank <ref type="bibr" target="#b52">(Zhong et al., 2024)</ref> features multi-day chat histories from 15 users with 194 humanwritten probing questions. LoCoMo <ref type="bibr" target="#b23">(Maharana et al., 2024)</ref> includes 50 long-term chat histories and questions testing single-hop, multi-hop, temporal, commonsense, world knowledge, and adversarial reasoning. PerLTQA <ref type="bibr" target="#b10">(Du et al., 2024)</ref> scales the evaluation to 3,409 dialogues and 8,593 questions, covering world knowledge, personal profiles, social relationships, events, and dialogue history. DialSim <ref type="bibr" target="#b18">(Kim et al., 2024)</ref> evaluates models' memory ability by roleplaying TV show characters a 5piece Pearl Export. I'm trying to plan my next trip… I was thinking about my family trip to Hawaii last month and how we had a great time snorkeling together. I'm actually thinking of going to Paris, we just went there as a family last week and it was amazing… Where did I go on my most recent family trip? Paris. I went to behind-the-scenes tour of the Science Museum today with a friend who's a chemistry professor. I attended a guided tour at the Natural History Museum yesterday with my dad. How many months have passed since my last museum visit with a friend? 5 months I just learned a lot in a lecture at the History Museum about ancient civilizations this month. I upgraded my old 10-gallon tank, which has my betta fish, Bubbles. I added decorations to the 20-gallon tank to create more hiding places for the fish. How many fish are there in my 30-gallon tank? You did not mention that you have a 30gallon tank. I would recommend Roscioli. It has a cozy and intimate atmosphere with soft lighting and excellent service... single-session-user single-session-preference single-session-assistant temporal-reasoning multi-session knowledge-update abstention 1/22 3/11 4/18 6/25 and introduces a time constraint that penalizes slow system responses. Despite these advancements, existing QA-based benchmarks overlook several memory capabilities critical to long-term userassistant interactions: synthesizing information across numerous sessions, recalling assistant side information, and reasoning about updated user details or complex temporal references. Additionally, the chat histories are often too brief and do not reflect the nature of task-oriented interactions. Table <ref type="table" target="#tab_0">1</ref> compares between LONGMEMEVAL and previous works, highlighting its advantages in both (1) featuring a long and freely extensible iterative history and (2) holistically covering critical memory abilities in a uniquely challenging way (further examples in Figure <ref type="figure" target="#fig_0">1</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Long-Term Memory Methods</head><p>To equip chat assistants with long-term memory capabilities, three major techniques are commonly explored. The first approach involves directly adapting LLMs to process extensive history information as long-context inputs <ref type="bibr" target="#b3">(Beltagy et al., 2020;</ref><ref type="bibr" target="#b19">Kitaev et al., 2020;</ref><ref type="bibr" target="#b13">Fu et al., 2024;</ref><ref type="bibr">An et al., 2024)</ref>. While this method avoids the need for complex architectures, it is inefficient and susceptible to the "lost-in-the-middle" phenomenon, where the ability of LLMs to utilize contextual information weakens as the input length grows <ref type="bibr" target="#b33">(Shi et al., 2023;</ref><ref type="bibr" target="#b21">Liu et al., 2024)</ref>. A second line of research integrates differentiable memory modules into language models, proposing specialized architectural designs and training strategies to enhance memory capabilities <ref type="bibr" target="#b40">(Weston et al., 2014;</ref><ref type="bibr" target="#b41">Wu et al., 2022;</ref><ref type="bibr" target="#b53">Zhong et al., 2022;</ref><ref type="bibr">Wang et al., 2023)</ref>. Lastly, several studies approach long-term memory from the perspective of context compression, developing techniques to condense lengthy histories into compact representations, whether in the form of LLM internal representations <ref type="bibr" target="#b26">(Mu et al., 2023;</ref><ref type="bibr" target="#b7">Chevalier et al., 2023)</ref>, discrete tokens <ref type="bibr" target="#b16">(Jiang et al., 2023;</ref><ref type="bibr" target="#b43">Xu et al., 2024)</ref>, or retrievable text segments via retrieval-augmented generation <ref type="bibr">(RAG, Shi et</ref>  <ref type="formula">al. (2024</ref>  <ref type="formula">2024</ref>). Although LONGMEMEVAL can evaluate any memory system, we will take an online context compression perspective, where each history interaction session is sequentially processed, stored, and accessed on-demand through indexing and retrieval mechanisms ( §4). This formulation aligns with current literature <ref type="bibr" target="#b52">(Zhong et al., 2024;</ref><ref type="bibr">Gutiérrez et al., 2024)</ref> and commercial systems <ref type="bibr" target="#b29">(OpenAI, 2024;</ref><ref type="bibr" target="#b8">Coze, 2024)</ref>. Its plug-and-play nature also facilitates the integration into existing chat assistant systems.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">LONGMEMEVAL</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">PROBLEM FORMULATION</head><p>The evaluation of LONGMEMEVAL requires an instance of 4-tuple (S, q, t q , a). S ≡ [(t 1 , S 1 ), (t 2 , S 2 ), ..., (t N , S N )] is a sequence of N history chat sessions ordered from the earliest to the latest, where S i is a multi-turn interaction between the user and a chat assistant and t i is the session's timestamp. Each session can be further decomposed into rounds: one user message followed by one assistant response. During test time, S is provided to the system one by one. q and t q &gt; t N represent the question from the user and its date. a is a short phrase indicating the answer, or a natural language rubric describing the preferred answer in the case where q is open-ended.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">LONGMEMEVAL: BENCHMARK CURATION</head><p>One major challenge in building a reliable personalized assistant is performing online recording, recalling, updating, and reasoning on the dynamically evolving user information. To comprehensively reflect the challenge, LONGMEMEVAL formulates five core long-term memory abilities:</p><p>• Information Extraction (IE): Ability to recall specific information from extensive interactive histories, including the details mentioned by either the user or the assistant.</p><p>• Multi-Session Reasoning (MR): Ability to synthesize the information across multiple history sessions to answer complex questions that involve aggregation and comparison.</p><p>• Knowledge Updates (KU): Ability to recognize the changes in the user's personal information and update the knowledge of the user dynamically over time.</p><p>• Temporal Reasoning (TR): Awareness of the temporal aspects of user information, including both explicit time mentions and timestamp metadata in the interactions.</p><p>• Abstention (ABS): Ability to identify questions seeking unknown information, i.e., information not mentioned by the user in the interaction history, and answer "I don't know".</p><p>As shown in Table <ref type="table" target="#tab_0">1</ref>, this formulation represents a more comprehensive ability coverage compared to prior long-term memory benchmarks like MemoryBank and PerLTQA. To thoroughly assess these abilities, LONGMEMEVAL features seven question types. Single-session-user and single-sessionassistant test memorizing the information mentioned by user or assistant within a single session.</p><p>Single-session-preference tests whether the model can utilize the user information to generate a personalized response. multi-session (MR) tests aggregating user information across two or more sessions. knowledge-update (KU) focuses on the ability to recognize changes in the user's life states and update the memory accordingly. temporal-reasoning (TR) tests reasoning with both the timestamp in metadata and explicit time references. Finally, we draw 30 questions from the previous question types and modify them into "false premise" questions, testing whether the model can correctly abstain from answering (ABS). Figure <ref type="figure" target="#fig_0">1</ref> presents an example for each question type.</p><p>Question Curation Figure <ref type="figure" target="#fig_2">2</ref> depicts the question curation pipeline. We define an ontology of 164 user attributes in five categories: lifestyle, belongings, life events, situations context, and demographic information. For each attribute, we leverage an LLM<ref type="foot" target="#foot_0">foot_0</ref> to generate attribute-focused user background paragraphs, each of which includes detailed discussion of the user's life experience.</p><p>Attribute Background Evidence Statements History Sessions I've been working as a Marketing Specialist at a mid-sized tech firm, aptly named TechSavvy Inc. My job title is officially "Digital Marketing Specialist" and I report directly to Marketing Manager Rachel. My primary responsibilities include ... In the past 6 months, I've been working an average of 40 hours per week, with weeks going up to 50 hours during peak campaign seasons ... occupation How many hours do I work in a typical week during peak campaign seasons? During peak campaign seasons, my work hours per week increases by 10 hours. I work an average of 40 hours per week. Question w/ Timestamps Answer: 50 Evidence Sessions 2024/5/20 2024/5/1 2024/5/3 User LLM Assistant LLM During peak campaign seasons, my work hours per week increases by 10 hours. Background Sampling Question Construction (a) Question Construction (b) Evidence Session Construction (c) History Construction I'm planning to start looking for a new job in the next few months, and I was wondering if you could help me update my resume and LinkedIn profile... I'd be happy to help! To get started, could you share your current resume? … I've attached my current resume. … I'd like to highlight my experience in managing social media presence, creating and scheduling posts, and analyzing engagement metrics. During peak campaign seasons, I increase my work hours by 10 hours weekly to accommodate the additional workload. I want to emphasize my ability to adapt to changing workloads and prioritize tasks effectively. Thank you for sharing. I'll provide you with some feedback and suggestions … … ES1 5/1 ES2 5/3 H1 4/15 H2 4/28 H3 4/28 … … Publicly Released Chat Sessions Non-Conflicting Simulated Chat To create a question, we randomly sample a paragraph and use an LLM to propose several seed (question, answer) pairs. As these LLM-proposed questions often lack depth and diversity, human experts manually filter and rewrite all the questions to achieve the desired difficulty. Then, we manually decompose the answer into one or more evidence statements with optional timestamps.</p><p>Evidence Session Construction Each evidence statement is then separately embedded into a taskoriented evidence session created by self-chatting <ref type="bibr" target="#b42">(Xu et al., 2023)</ref>. The user LLM is instructed to convey the evidence statement indirectly, e.g., instead of stating "I bought a new car last month," it might instead ask for help about car insurance and reveal the information incidentally. This approach enhances the benchmark's difficulty by requiring systems to recognize and memorize user details not explicitly emphasized in conversations. We present the full details in Appendix A.1.</p><p>To ensure the data quality, all the evidence sessions are then manually screened and edited to (1) verify evidence inclusion, (2) distribute the evidence statement across different conversation positions, and (3) rephrase statements into more natural, colloquial language, especially for time mentions, which LLMs often express too formally. We also meticulously annotate the position of the evidence statement within each evidence session. For questions involving temporal information, we then manually add timestamps to both the evidence sessions and the questions. Most questions require evidence from multiple sessions (up to six) with evidence statements positioned diversely within sessions. Appendix A.3 presents further statistics of the final constructed data.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>History Compilation</head><p>For each question, LONGMEMEVAL compiles a coherent user-AI chat history (Figure <ref type="figure" target="#fig_2">2c</ref>). Our approach is analogous to the needle-in-a-haystack test <ref type="bibr" target="#b17">(Kamradt, 2023)</ref>, which asks a model to retrieve brief information (the "needle") embedded in a long document (the "haystack"). In comparison, LONGMEMEVAL is more challenging and realistic as it involves retrieving and synthesizing information from multiple extended evidence sessions. Specifically, we sample a number of unrelated user-AI chat sessions, randomly insert the evidence sessions in the middle, and assign a plausible timestamp to all sessions. We draw the irrelevant sessions from two sources: (1) self-chat sessions simulated based on other non-conflicting attributes and (2) publicly released user-AI style chat data including ShareGPT <ref type="bibr" target="#b51">(Zheng et al., 2023)</ref> and UltraChat <ref type="bibr" target="#b9">(Ding et al., 2023)</ref>. This design creates extensible realistic chat histories with minimal conflicts. While the pipeline allows us to compile chat histories of arbitrary length, we provide two standard settings: LONGMEMEVAL S (∼115k tokens/question) and LONGMEMEVAL M (500 sessions, ∼1.5M tokens).  employs a LLM to assess response quality <ref type="bibr" target="#b22">(Liu et al., 2023)</ref>. Specifically, we prompt-engineer the gpt-4o-2024-08-06 model via the OpenAI API. Our meta-evaluation study demonstrates that the evaluator achieves more than 97% agreement with human experts. The prompts for each problem type as well as the human meta-evaluation details are presented in Appendix A.4.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">EVALUATION METRIC</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Question Answering</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Memory Recall</head><p>As LONGMEMEVAL contains human-annotated answer location labels, intermediate retrieval metrics can be easily calculated if the chat system exposes its retrieval results. We report Recall@k and NDCG@k, where k is the number of top items retrieved by the system.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">LONGMEMEVAL REPRESENTS A SIGNIFICANT CHALLENGE</head><p>Using LONGMEMEVAL, we conduct a pilot study on commercial systems and long-context LLMs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Commercial systems</head><p>We evaluate two commercial systems that maintain a set of memorized user facts as the user chats with the assistant: ChatGPT (OpenAI, 2024) and Coze <ref type="bibr" target="#b8">(Coze, 2024)</ref>. Since these systems only support memory features via their web interfaces, we randomly selected 97 questions and created a short chat history of 3-6 sessions (approximately 10x shorter than LONGMEMEVAL S ). Human annotators interacted with the chat assistants session-by-session and turn-by-turn, and finally ask the question in a new session<ref type="foot" target="#foot_2">foot_2</ref> . In Figure <ref type="figure" target="#fig_4">3a</ref>, we compare this online memory evaluation with offline reading, where GPT-4o is prompted to answer with the complete history provided as context. Both ChatGPT and Coze exhibited significant performance drops compared to offline reading, underscoring the challenging nature of LONGMEMEVAL. We found ChatGPT tended to overwrite crucial information as the chat continues, while Coze often failed to record indirectly provided user information. We provide analyses in Appendix B. Overall, this result highlights the gap between building a seemingly personalized chat assistant by recalling isolated facts and demonstrating a genuinely strong memory ability.</p><p>Long-Context LLMs While LONGMEMEVAL poses a significant challenge to online memory systems, is the benchmark easily tackled with offline reading over the entire history? In Figure <ref type="figure" target="#fig_4">3b</ref>, we evaluated four advanced long-context LLMs on LONGMEMEVAL S (with a history length of approximately 115k tokens): GPT-4o, Llama 3.1 Instruct <ref type="bibr" target="#b11">(Dubey et al., 2024)</ref>, and Phi-3 <ref type="bibr">(Abdin et al., 2024a)</ref>. Compared to the oracle retrieval setting (answering with only the evidence sessions as the context), these LLMs showed a 30% to 60% performance decline when tasked with reading the entire LONGMEMEVAL S history, regardless of whether the chain-of-note technique <ref type="bibr" target="#b47">(Yu et al., 2023)</ref> was applied (discussed further in §4.2). As the histories in LONGMEMEVAL S is still short (∼50 sessions), the performance is likely to further degrade as the interaction history expands. Overall, these findings suggest that even the most capable current long-context LLMs struggle to manage an ever-growing interaction history without an effective memory mechanism.  <ref type="table">2</ref> and Appendix C.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">A UNIFIED VIEW OF LONG-TERM MEMORY ASSISTANTS</head><p>In this section, we formulate a three-stage long-term memory model for chat assistants. Despite its simplicity, this model provides a unified view of existing long-term memory assistant works. Along each of its stages, we then investigate crucial control points and propose our optimizations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">LONG-TERM MEMORY SYSTEM: FORMULATION</head><p>We formulate long-term memory as a massive key-value datastore [(k 1 , v 1 ), (k 2 , v 2 ), ...]. The keys k i can be heterogeneous, and could be discrete or continuous. In the discrete case, the key could be a sentence, a paragraph, a fact, or an entity, etc. In the continuous case, the key could be e.g., the model's internal representation under some inputs. The values v i might repeat. As shown in Figure <ref type="figure" target="#fig_5">4</ref>, we formulate three stages for a memory-augmented assistant: (1) indexing, converting each history session (t i , S i ) into one or more key-value items, (2) retrieval, formulating a retrieval query and collecting k most relevant items, and (3) reading, an LLM M reads the retrieval result and generates a response. In Table <ref type="table">2</ref>, we show how nine memory-augmented chat assistant systems can be viewed as instantiations of this framework. An alternative mathematical formulation is presented in Appendix C. For its conciseness, the rest of this paper follows this section's formulation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">LONG-TERM MEMORY SYSTEM: DESIGN CHOICES</head><p>We identify four crucial control points for long-term memory of chat assistants, as illustrated in Figure <ref type="figure" target="#fig_5">4</ref>. We analyze design choices from existing works and their limitations, and propose our optimizations. Due to space constraints, we present these designs at a high level here, with detailed designs further described in §5 and Appendix D.</p><p>CP 1: Value The value represents the format and granularity of each session stored in memory.</p><p>Given that user-AI chat sessions are often lengthy and cover multiple topics, storing each session as a single item can hinder effective retrieval and reading. Conversely, compressing sessions into summaries or user-specific facts, as seen in prior work such as <ref type="bibr" target="#b52">Zhong et al. (2024)</ref> and <ref type="bibr" target="#b10">Du et al. (2024)</ref>, can lead to information loss, harming the performance of the system to answer detailed questions. In §5.2, we compare three value representation strategies: storing entire sessions, decomposing sessions into individual rounds, and further applying summary/fact extraction.</p><p>CP 2: Key Even when sessions are decomposed and compressed, each item still contains substantial information, with only a fraction relevant to the user's query. Therefore, using the value itself as the key, a common practice in prior works <ref type="bibr" target="#b52">(Zhong et al., 2024;</ref><ref type="bibr" target="#b23">Maharana et al., 2024)</ref>, may be suboptimal. We introduce a key expansion approach in §5.3, where summaries, keyphrases, user facts, and timestamped events are extracted from the values to augment the index. This optimization highlights the key information and enables effective retrieval with multiple pathways.</p><p>CP 3: Query For straightforward user queries, the aforementioned key-value optimizations may yield high retrieval accuracy. However, when queries involve temporal references (e.g., "Which restaurant did you recommend last weekend?"), naive similarity search proves insufficient. We address this with a time-aware indexing and query expansion strategy, where values are indexed with timestamped events, and retrieval is restricted to items within the relevant time range ( §5.4).</p><p>Table <ref type="table">2</ref>: A comparison of nine memory-augmented frameworks through the lens of the proposed unified framework. We provide detailed references and discussions of each work in Appendix C. For ChatGPT and Coze, we skip several designs as they are unknown.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Method Value Key Query Retrieval Time-aware Reading</head><p>In-context RAG <ref type="bibr" target="#b34">(Shi et al., 2024)</ref> round/session K = V question flat No direct MemoryBank <ref type="bibr" target="#b52">(Zhong et al., 2024)</ref> summary + round K = V question flat Yes direct LD-Agent <ref type="bibr">(Li et al., 2024)</ref> summary + fact K = V keyphrase flat Yes direct CoN <ref type="bibr" target="#b47">(Yu et al., 2023)</ref> round/session K = V question flat No CoN ChatGPT fact ---No -Coze fact ---No -RAPTOR <ref type="bibr" target="#b32">(Sarthi et al., 2024)</ref> round/session node summary question flat/interactive No -MemWalker <ref type="bibr">(Chen et al., 2023a)</ref> round/session node summary question interactive No interactive HippoRAG ( <ref type="formula">Gutiérrez et al., 2024)</ref> CP 4: Reading Strategy Answering complex queries may require recalling numerous memory items. Although the retrieval accuracy can be enhanced through the preceding designs, it does not guarantee that the LLM can effectively reason over the extensive context <ref type="bibr" target="#b33">(Shi et al., 2023;</ref><ref type="bibr" target="#b21">Liu et al., 2024)</ref>. In §5.5, we explore reading strategies and demonstrate that optimizations such as extracting key information before answering (Chain-of-Note, <ref type="bibr" target="#b47">(Yu et al., 2023)</ref>) and using structured format prompting <ref type="bibr" target="#b46">(Yin et al., 2023)</ref> are crucial for achieving high reading performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">EXPERIMENT RESULTS</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">EXPERIMENTAL SETUP</head><p>We mainly study three LLMs: GPT-4o, Llama 3.1 70B Instruct, and Llama 3.1 8B Instruct<ref type="foot" target="#foot_3">foot_3</ref> . For the retriever, we choose dense retrieval with the 1.5B Stella V5 model <ref type="bibr" target="#b48">(Zhang, 2023)</ref>, given its high performance on MTEB <ref type="bibr" target="#b27">(Muennighoff et al., 2023)</ref>. Extensive comparisons between Stella V5 and alternative retrievers are provided in Appendix E.2. For the indexing stage, we employ Llama 3.1 8B Instruct to extract summaries, keyphrases, user facts, and timestamped events. When sessions or rounds are used as the key, we only keep the user-side utterances. In the reading stage, the retrieved items are always sorted by their timestamp to help the reader model maintain temporal consistency. Throughout §5.2 to §5.4, we apply Chain-of-Note and json format (discussed in §5.5) by default.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">VALUE: DECOMPOSITION IMPROVES RAG PERFORMANCE</head><p>Using LONGMEMEVAL M , we compare different value choices in a budget-aware manner. As shown in Figure <ref type="figure" target="#fig_6">5</ref>, decomposing sessions into rounds significantly enhances reading performance with GPT-4o as the reader, while performing similarly to non-decomposed sessions when using Llama 3.1 8B Instruct as the reader. However, despite their efficiency in token usage, replacing sessions or rounds with extracted summaries or facts negatively impacts QA performance due to information loss. The only exception is with multi-session reasoning questions, where fact decomposition consistently improves performance. We hypothesize this is because fact decomposition extracts the same type of information across all sessions in a more uniform and simplified format, aiding retrieval and reading <ref type="bibr">(Chen et al., 2023b)</ref>. Finally, we observe that the optimal token budget varies by the reader's capability: while Llama 3.1 8B Instruct's performance drops sharply beyond 3k retrieved tokens, GPT-4o continues to improve even with over 20k retrieved tokens.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">KEY: MULTI-KEY INDEXING IMPROVES RETRIEVAL AND RAG</head><p>In Table <ref type="table" target="#tab_1">3</ref>, we explore whether summaries, keyphrases, or user facts condensed from the value can serve as better keys than the value itself. Interestingly, despite their more focused semantics, using these condensed forms alone does not enhance the memory recall performance. We hypothesize that this is due to the retriever's ability to already effectively handle long-text semantics.</p><p>To leverage both the highlighted information from compression and the completeness of the original value, we applied a simple document expansion technique <ref type="bibr" target="#b35">(Tao et al., 2006;</ref><ref type="bibr" target="#b12">Efron et al., 2012)</ref>, where the compressed information is concatenated with the original value to form the key during indexing<ref type="foot" target="#foot_4">foot_4</ref> . This approach, particularly when using user facts, yielded an average improvement of 9.4% in recall@k and 5.4% in final accuracy across all models. In Appendix E.2, we further analyze different retrievers and find with alternative retrievers, key expansion with summary and keyphrases could improve Recall@5 when session is used as the value granularity. These results suggest that multi-pathway retrieval can significantly enhance memory recall performance. In the following section, we will investigate the time constraint as another pathway to leverage.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.4">QUERY: TIME-AWARE QUERY EXPANSION IMPROVES TEMPORAL REASONING</head><p>A key challenge highlighted by LONGMEMEVAL in building real-world assistant systems is the need to utilize temporal information present in both metadata and user utterances to correctly answer time-sensitive queries. To address this need, we introduce a simple yet effective time-aware indexing and query expansion scheme. Specifically, values are additionally indexed by the dates of the events they contain. During retrieval, an LLM M T extracts a time range for time-sensitive queries, which is used to filter out a large number of irrelevant values.</p><p>As shown in Table <ref type="table">4</ref>, this simple design improves recall by an average of 11.3% when using rounds as the value and by 6.8% when using sessions as the value. This improvement remains consistent when key expansion is applied during indexing. We also find that the effectiveness of this method depends on using a strong LLM for M T to accurately infer time ranges from queries. Llama 8B, on Table <ref type="table">4</ref>: Retrieval performance on the temporal reasoning subset of LONGMEMEVAL M . Timeaware query expansion significantly facilitates retrieval by narrowing down the retrieval scope.</p><p>Key Setting Value = Session Value = Round Metric@5 Metric@10 Metric@5 Metric@10 Recall NDCG Recall NDCG Recall NDCG Recall NDCG (1) K = V 0.639 0.630 0.651 0.707 0.421 0.462 0.499 0.511 (1) w/ Query Expansion (M T = GPT-4o) 0.654 0.660 0.707 0.679 0.451 0.565 0.495 0.538 (1) w/ Query Expansion (M T = Llama 3.1 8B Instruct) 0.624 0.627 0.647 0.692 0.384 0.448 0.489 0.488 (2) K = V + fact 0.684 0.688 0.721 0.782 0.489 0.500 0.550 0.598 (2) w/ Query Expansion (M T = GPT-4o) 0.722 0.732 0.797 0.758 0.526 0.548 0.722 0.669 (2) w/ Query Expansion (M T = Llama 3.1 8B Instruct) 0.677 0.688 0.711 0.744 0.481 0.532 0.570 0.647 GPT-4o Llama 3.1 70B Instruct Llama 3.1 8B Instruct Reader LLM 0.60 0.65 0.70 0.75 0.80 0.85 0.90 0.95 Accuracy 0.862 0.762 0.710 0.822 0.744 0.746 0.910 0.800 0.710 0.924 0.848 0.756 NL + Direct Prediction JSON + Direct Prediction NL + Chain-of-Note JSON + Chain-of-Note the other hand, struggles to generate accurate time ranges, often hallucinating or missing temporal cues even with numerous in-context examples. Further analysis is provided in Appendix E.4.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.5">IMPROVING READING WITH CHAIN-OF-NOTE AND STRUCTURED FORMAT</head><p>As LONGMEMEVAL requires syntheses across multiple sessions, even an optimal memory retrieval mechanism needs to return a long context to capture all relevant information. To enhance the model's ability to handle long retrieved contexts, we apply two key optimizations. First, we present retrieved items in a structured JSON format <ref type="bibr" target="#b46">(Yin et al., 2023)</ref>, which helps the model clearly recognize memory items as the data for reading. Additionally, we apply the Chain-of-Note (CoN) reading approach <ref type="bibr" target="#b47">(Yu et al., 2023)</ref>, instructing the LLM to first extract information from each memory item and then reason based on these notes. This effectively decomposes long-context reading into two simpler subtasks: copying important details and reasoning with more concise notes.</p><p>In Figure <ref type="figure" target="#fig_7">6</ref>, we evaluate the reading designs under the oracle retrieval setting, where only evidence sessions are provided. Surprisingly, even with perfect retrieval, a suboptimal reading strategy results in up to a 10-point absolute performance drop compared to the best approach for GPT-4o. Notably, when CoN is not applied, JSON format does not consistently outperform the natural language format. However, with CoN, JSON format consistently benefits reader LLMs of various capabilities. Appendix E.5 further analyzes error patterns of LLMs with the enhanced reading strategy.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">CONCLUSION</head><p>In this paper, we introduced LONGMEMEVAL, a comprehensive and challenging benchmark designed to evaluate the long-term memory abilities of chat assistants across five core memory tasks: information extraction, multi-session reasoning, temporal reasoning, knowledge updates, and abstention. Through extensive experiments with both commercial systems and long-context LLMs, we demonstrated the significant challenges posed by LONGMEMEVAL, with current systems exhibiting substantial performance drops. By analyzing key design choices across indexing, retrieval, and reading stages, we proposed effective strategies such as session decomposition, factaugmented key expansion, and time-aware query expansion, which collectively improved both memory recall and the question answering performance. Our findings highlight the need for more sophisticated memory mechanisms to achieve personalized and reliable conversational AI, and LONGMEMEVAL offers a valuable benchmark to drive future advancements in long-term memory capabilities for chat assistants.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>REPRODUCIBILITY STATEMENT</head><p>In the paper writing and the subsequent code release, we are committed to enabling other researchers to easily leverage our resources, replicate our results, and build upon our findings. We have documented the benchmark construction process in detail in §3.2 and Appendix A.1, including all the attributes and instructions used to prompt LLMs. We have created and will publicly release the two fixed evaluation datasets, LONGMEMEVAL S and LONGMEMEVAL M . In addition, we will also release the algorithm and source mixture used to create these two datasets, so that future studies could build upon them to create chat histories of any length. Finally, we have meticulously documented all the implementation details of our memory optimization in Appendix D, and our code will be released along with the benchmark as well. We believe that these efforts for transparency can help advance the field and foster future research endeavors.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ETHICS STATEMENT</head><p>The major artifact released by this work is the LONGMEMEVAL evaluation dataset. To construct the chat history, we utilize ShareGPT 5 , which has an Apache 2.0 license, and UltraChat 6 , which has an MIT license. In the data release, we plan to use an MIT license. Since the questions and the evidence sessions are newly created, we conducted a rigorous human screen process to ensure that the new dataset does not contain personally identifiable information or offensive content. This paper involves human annotators in two places: (1) the dataset construction and filtering ( §3.2) and ( <ref type="formula">2</ref>) the manual analysis of commercial systems ( §3.4). The process was mainly conducted by three expert annotators, who are in-house NLP researchers that have more than three years of NLP research experience. All the annotators are properly briefed with the annotation objective, and a discussion among them is conducted to resolve uncertain cases. In total, approximately 400 human hours are spent on the dataset construction and 150 hours on the study of commercial systems. The annotators are paid biweekly or monthly, and their salaries include the working hours dedicated to annotation. The data collection protocol has been determined exempt by the IRB of the author's institution. Finally, LONGMEMEVAL and the studied memory system could induce several societal impacts. Storing and recalling user information could cause personal information leakage, and the lack of a memory "deletion" operator could harm the system's trustworthiness. It is also possible that the memory mechanism could be leveraged by malicious parties to toxic contents into the datastore, which may cause a jailbreak behavior during inference. To mitigate such behaviors, it is essential to implement moderation mechanisms that monitor the read/write data flow of the memory. We encourage producers of memory-augmented assistant systems to be aware of these potential harmful effects and apply thorough testing and mitigation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A SUPPLEMENTAL DETAILS FOR LONGMEMEVAL</head><p>A.1 DATASET CONSTRUCTION</p><p>In this section, we discuss the details of our benchmark construction process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Attribute Ontology</head><p>In Table <ref type="table">5</ref>, we provide the full attribute ontology used in LONGMEMEVAL. This attribute ontology is constructed manually to reflect commonly mentioned topics in userassistant chats. Five major categories are included: demographic information, lifestyle, situational context, life events, and belongings.</p><p>Table <ref type="table">5</ref>: Human-constructed user attribute ontology. Each attribute represents a unique dimension of human experience along which a user biography could be constructed. For LONGMEMEVAL, we sample user backgrounds based on each of the attributes and construct questions on top of them.</p><p>Attribute 1: Demographic Information age, gender, ethnicity, nationality, language, education level, occupation Attribute 2: Lifestyle 2.1: Shopping: online shopping frequency, favorite stores, loyalty program, sales events, coupons, gift purchasing habits, eco-friendly product preferences, luxury vs budget shopping, technology gadget purchasing, fashion and apparel, grocery shopping, shopping for others 2.2: Media Consumption: book, movie, tv show, music, podcast, video game, streaming service, theater, magazine and newspaper, youtube, educational content, audiobook and e-book 2.3: Social Media Engagement: posting, commenting, followers, groups, hashtags, campaigns, messaging, live streaming, social media breaks 2.4: Daily Routines: wake-up time, bedtime, work or school start time, meal time, exercise routines, coffee or tea break, commuting, evening activities, weekend routines, cleaning schedules, time spent with family or friends 2.5: Travel: frequency, destination, road trips, travel agencies, outdoor adventures, airlines, hotel, travel with family vs solo travel, packing habits 2.6: Recreation: reading, painting, musical instruments, dancing, watching sports, participating in sports, gardening, bird watching, fishing or hunting, board games, video games, fitness classes, yoga, sculpting, photography, stand-up comedy, writing, collecting, model building, aquarium keeping 2.7: Eating and Cooking: home cooking, food delivery, vegetarian or vegan, favorite cuisines, snacking habits, barbecue, baking, cocktail mixing, cooking classes 2.8: Event Participation: concerts, theater, galleries and museums, sports games, film festivals, religious services, book readings, charity events, trade shows, lectures or workshops, theme parks, local markets, networking events, sports, auto racing, workshops, museum tours Attribute 3: Situational Context 3.1: Home: living room, kitchen, bathroom, room style, room lighting, furniture, technology, plants 3.2: Social Context: alone, family, friends, interactions with strangers 3.3: Time Context: time of day, day of week, seasonal Attribute 4: Life Events graduations, academic achievements, study abroad, significant academic projects, job promotions, starting a business, births and adoptions, marriages, family reunions, illness or surgeries, mental health journeys, purchasing a home, trips, movement, living abroad, refugee or immigration, loss of loved ones, name change, belief, milestone Attribute 5: Belongings cars, bikes, vehicles, computer, phone, pet, farm animal, animal care items, home, land, art, antiques, collectible, rare items, clothing, jewelry, shoes, bag, sports gear, musical instruments, health related devices, crafting, photography</p><p>Background Sampling Based on each of the attributes, we prompt Llama 3 70B Instruct to generate a background paragraph outlining the user memory and experience. In our preliminary studies, we find that the following zero-shot prompt in Figure <ref type="figure">7</ref> can already guide the model to generate a long and focused user background with sufficient details, which suffices for the next step of question creation. We thus use the same prompt for the final version of LONGMEMEVAL.</p><p>I will give you a topic. Please imagine you are a user that wants to recall and record recent personal facts along the topic. Generate a long text describing these personal facts. Use your imagination and generate the personal facts. Make it long and involve several recent facts or recent events spanning many days, weeks, or monthes. You may state the facts in plain language and no need to make it story-like.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Topic: {attribute}</head><p>Recent Personal Facts related to {attribute}:</p><p>Figure <ref type="figure">7</ref>: The prompt for constructing user backgrounds based on an attribute.</p><p>I will give you a past memory. Use the memory to act as a normal user to chat with a chat assistant. In the chat, you may ask it to assist you various tasks or ask it about various information. However, make sure that your convey the following fact about you: "{evidence statement}". In addition, make sure your message is concise (1-2 simple sentences), since the real users often do not bother write a long message. I will provide you with the chat history and the response from the assistant. Directly generate the next response from the user's perspective. You must simulate the tone of a neutral user and do not be overly enthusiastic, verbose, formal, or polite. For conciseness, DO NOT react to the assistant's message with e.g., "thanks" or "I will do that". Instead, directly state the follow-up questions or new questions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Memory: {background}</head><p>Chat History: assistant: Hi! How can I assist you today?</p><p>... (more rounds as the conversation continues) ...</p><p>Figure <ref type="figure">8</ref>: The prompt for instruction an LLM to act as a user and initiates a task-oriented dialogue with another LLM. Both the background and the evidence statement is provided. This prompt is used for the question type single-session. For the other question types, the prompt components are slightly different but the prompt overall follows the same style.</p><p>Question Construction As discussed in §3.2, based on the generated user backgrounds, Llama 3 70B Instruct is used to propose question and answers for each question type. Additionally, for the question type temporal-reasoning, multi-session reasoning, and single-session-preference, we use GPT-4o to propose several questions. Nevertheless, we find most of the questions to be unsatisfactory and manually filter and edit most of the questions. In total, approximately 1000 questions were generated for each question type, and the final yield rate is about 5%. For each question, we then manually decompose the answer into the evidence statements. If the question or the evidence statements involve time mentions, we assign a timestamp to the question and the evidence statements at this stage. Note that if timestamps are specified for the evidence statements at this stage, these timestamps will always be used for corresponding evidence sessions. Otherwise, the timestamps will be randomly assigned at the history construction stage with all the other sessions.</p><p>Evidence Session Construction Using the question and the decomposed evidence statements, we use Llama 3 70B Instruct to simulate one user-AI chat history per evidence statement via self-chat.</p><p>In Figure <ref type="figure">8</ref>, we present an example of the chat simulation prompt, where we ask the user LLM to indirectly mention the evidence statement while avoiding to talk about other evidence statements for the question, if there are any. We include two crucial instructions in the prompt to make sure (1) the evidence statement is provided in an indirect way and (2) the generated messages are concise and thus mimic the style of user messages. On the assistant side, we directly provide the input generated by the user LLM without any prompt engineering. We simulate the chat for 10 round at maximum and stopped prematurely when either side of the LLMs generates an empty sequence indicating the end of the conversation.</p><p>Subsequently, expert annotators manually inspect and edit each of the generated sessions to ensure that (1) the required evidence statements are present in the conversation, (2) no other evidence statements are leaked into the conversation, (3) the evidence statements are provided in a colloquial style, especially for the data and time mentions, and (4) the conversation ends gracefully. In total, roughly 70% of the sessions are human edited. We note that in a few rare instances, the user LLM fails by assuming the assistant role instead. When these failures are identified, we discard the instance if the conversation cannot be fixed.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 HISTORY CONSTRUCTION</head><p>In order to construct a coherent and freely extensible chat history, we design a three-staged pipeline that include session pool construction, session sampling, and timestamp resolution.</p><p>Session pool construction For each question, we draw the history sessions from three sources: ShareGPT <ref type="bibr" target="#b51">(Zheng et al., 2023)</ref>, UltraChat <ref type="bibr" target="#b9">(Ding et al., 2023)</ref>, and the simulated sessions corresponding to other attributes using the same pipeline mentioned in the previous section. This pool ensures that the non-evidence history sessions have similar topic or format as the evidence sessions, while avoiding providing conflicting information that would invalidate the question.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Session sampling</head><p>To sample a history containing x sessions, we randomly sample from the aforementioned three sources and shuffle the sessions together with the question's evidence sessions.</p><p>For LONGMEMEVAL, we always use the following mixture: 25% ShareGPT, 25% UltraChat, and 50% simulated sessions. If the evidence sessions need to follow a specific order, we swap their orders accordingly after shuffling.</p><p>Timestamp resolution Finally, we randomly assign timestamps to the session following their order of the history. If the evidence sessions are associated with pre-defined timestamps, we use them as anchors to determine the range of timestamp of the non-evidence sessions preceding or following them. Other wise, we randomly assign tiemstamps in May 2023.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3 BASIC STATISTICS</head><p>In Figure <ref type="figure" target="#fig_9">9</ref>, we present the basic statistics of LONGMEMEVAL, revealing that most questions require evidence from multiple sessions (up to six) and that evidence statements are positioned diversely within sessions, increasing the challenge to the memory design.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.4 EVALUATION METRIC BUILDING</head><p>To accurately evaluate the diverse responses of LLMs, we use an expert-written prompt to instruct GPT-4o as the correctness judge. We present the full prompt in Figure <ref type="figure" target="#fig_0">10</ref>. To enable the model to handle detailed edge cases as how expert evaluators would do, we design separate prompts for a number of tasks. To ensure the prompt has a high agreement with expert judge, we sample 30 questions per problem type, collect the long-context generation results from GPT-4o and Llama 3.1 8B Instruct, and report the judgment correctness by category.</p><p>As shown in Table <ref type="table">6</ref>, the prompt-engineered GPT-4o judge achieves reliable performance in evaluating both GPT-4o and Llama-3.1-8B-Instruct as the generation model. The evaluator's judgment slightly deviates from human experts for the single-session-preference and abstention problems due to the open-ended nature of the response. Nevertheless, our evaluation prompt still achieves 90% or higher accuracy under all settings. We will include this prompt in the benchmark package that we will release to enable consistent comparisons for future work.</p><p>temp-reasoning I will give you a question, a correct answer, and a response from a model. Please answer yes if the response contains the correct answer. Otherwise, answer no. If the response is equivalent to the correct answer or contains all the intermediate steps to get the correct answer, you should also answer yes. If the response only contains a subset of the information required by the answer, answer no. In addition, do not penalize off-by-one errors for the number of days. If the question asks for the number of days/weeks/months, etc., and the model makes off-by-one errors (e.g., predicting 19 days when the answer is 18), the model's response is still correct. knowledge-update I will give you a question, a correct answer, and a response from a model. Please answer yes if the response contains the correct answer. Otherwise, answer no. If the response contains some previous information along with an updated answer, the response should be considered as correct as long as the updated answer is the required answer.</p><p>single-session-preference I will give you a question, a rubric for desired personalized response, and a response from a model. Please answer yes if the response satisfies the desired response. Otherwise, answer no. The model does not need to reflect all the points in the rubric. The response is correct as long as it recalls and utilizes the user's personal information correctly.</p><p>Other question types I will give you a question, a correct answer, and a response from a model. Please answer yes if the response contains the correct answer. Otherwise, answer no. If the response is equivalent to the correct answer or contains all the intermediate steps to get the correct answer, you should also answer yes. If the response only contains a subset of the information required by the answer, answer no.</p><p>Figure <ref type="figure" target="#fig_0">10</ref>: Evaluation instructions for the GPT-4o judge. We provide the question, answer, and the model's hypothesis after the instruction and ask GPT-4o to directly generate "yes" or "no". as we show in the main results, adapting an extract-before-read strategy is important to a high performance. On the other hand, the interactive reading mechanism such as that used in MemWalker allows the reader to backtrack and search again in case the recalled memory is inadequate.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D MEMORY OPTIMIZATIONS: IMPLEMENTATION DETAILS</head><p>In this section, we describe our implementations of the memory optimizations in detail.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Value Decomposition</head><p>We design an LLM-based method for compressing the value, which are either sessions or rounds, into three different formats: summaries, keyphrases, or user facts. In Figure <ref type="figure" target="#fig_10">11</ref>, we present the corresponding zero-shot and few-shot prompts. Note that few-shot learning is only applied for user fact extraction, and we find it to be unnecessary for the rest two tasks. For in-context examples, we randomly sample ten examples, five from the simulated user sessions and five from ShareGPT. The expected responses are generated by GPT-4o and modified by human annotators. We manually tune the prompts by observing several examples. Llama 3.1 8B Instruct is used for all the extraction experiments. Note that for all the experiments, we only provide the user-side messages for the extraction, skipping the assistant's responses.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Key Expansion</head><p>To expand the value documents with summaries, keyphrases, or user facts, we follow the same pipeline in the previous section to first extract these pieces of information from each value. Then, we directly prepend the extracted information to the corresponding key.</p><p>Time-Aware Indexing and Query Expansion At the indexing stage, we instruct Llama 3.1 8B Instruct to extract the event mentions in the text whose timestamp could be inferred. At the retrieval stage, we instruct an LLM (we explore GPT-4o and Llama 3.1 8B Instruct) to extract the a time range for retrieval for the problems that specifically focus on a range of time. We present the corresponding prompts in Figure <ref type="figure" target="#fig_2">12</ref>. Ten human-written in-context examples are additionally provided.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reading Strategy</head><p>We present the prompt for reading in Figure <ref type="figure" target="#fig_11">13</ref>, which is a small variation of Chain-of-Note (CoN). Overall, the prompt shares the same idea with CoN, that the model is asked to traverse the documents and extract the evidence before generating the answer to the question. We use greedy search for all the experiments, and set the maximum generation length to 800 tokens.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Summaries</head><p>Below is a transcript of a conversation between a human user and an AI assistant. Please summarize the following dialogue as concisely as possible in a short paragraph, extracting the main themes and key information. In your summary, focus more on what the user mentioned or asked for. Dialogue content: {session or round}</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Keyphrases</head><p>Below is a transcript of a conversation between a human user and an AI assistant. Generate a list of keyphrases for the session. Separate each keyphrase with a semicolon. Dialogue content: {session or round}</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>User Facts</head><p>You will be given a list of messages from a human user to an AI assistant. Extract all the personal information, life events, experience, and preferences related to the user. Make sure you include all details such as life events, personal experience, preferences, specific numbers, locations, or dates. State each piece of information in a simple sentence. Put these sentences in a json list, each element being a standalone personal fact about the user. Minimize the coreference across the facts, e.g., replace pronouns with actual entities. If there is no specific events, personal information, or preference mentioned, just generate an empty list.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Human user messages: {session}</head><p>Personal facts about the user (a list of strings in json format; do not generate anything else): </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Extracting Timestamped Events</head><p>You will be given a list of messages from a human user to an AI assistant, as well as the time the conversation took place. Extract all events related to the user as long as its date is specified or could be inferred. If the time some event took place cannot be inferred, do not extract that event. Return the events in a json list where each item contains two fields: "date" and "event". Write date in the form YYYY/MM/DD. If there is no specific event, just write an empty list.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Query Expansion</head><p>You will be given a question from a human user asking about some prvious events, as well as the time the question is asked. Infer a potential time range such that the events happening in this range is likely to help to answer the question (a start date and an end date). Write a json dict two fields: "start" and "end". Write date in the form YYYY/MM/DD. If the question does not have any temporal referencea, do not attempt to guess a time range. Instead, just say N/A."</p><p>Figure <ref type="figure" target="#fig_2">12</ref>: Zero-shot prompt for extracting timestamped events from the value items for indexing and the prompt for extracting time range from the user question. For both settings, we additionally provide ten in-context examples.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>CoN Prompt</head><p>I will give you several history chats between you and a user. Please answer the question based on the relevant chat history. Answer the question step by step: first extract all the relevant information, and then reason over the information to get the answer. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E EXTENDED ANALYSES</head><p>We provide additional analyses on LONGMEMEVAL, including more LLMs, retriever selection, memory optimization, and error analyses of end-to-end retrieval-augmented generation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.1 RESULTS ON MORE LLMS</head><p>In Table <ref type="table">8</ref>, we evaluate five more models on LONGMEMEVAL: the 1B and 3B models of Llama-3.2 Instruct <ref type="bibr" target="#b11">(Dubey et al., 2024)</ref>, Qwen-2.5-7B <ref type="bibr" target="#b36">(Team, 2024)</ref>, Phi-3.5-mini-instruct <ref type="bibr">(Abdin et al., 2024b)</ref>, and Mistral-Nemo-Instruct-2407 <ref type="bibr" target="#b25">(Mistral AI Team, 2024)</ref>. Overall, we observe that the performance is consistent with the results reported in the paper. For instance, long-context performance on LONGMEMEVAL S is significantly lower than the oracle retrieval performance. In addition, the fact-based key expansion and CoN consistently improves the performance.</p><formula xml:id="formula_0">Model Oracle Sessions LONGMEMEVAL S LONGMEMEVAL M LC Direct LC CoN LC Direct LC CoN K = V K = V+fact K = V K = V+fact</formula><p>Mistral-Nemo-Instruct-2407 0.688 0.686 0.162 0.286 0.640 0.666 0.554 0.598 Qwen2.5-7B 0.282 0.504 0.128 0.144 0.452 0.462 0.390 0.424 Phi-3.5-mini-instruct 0.488 0.490 0.312 0.352 0.550 0.570 0.462 0.468 Llama-3.2-3B-Instruct 0.522 0.636 0.008 0.010 0.466 0.508 0.466 0.470 Llama-3.2-1B-Instruct 0.386 0.398 0.010 0.016 0.312 0.336 0.286 0.312</p><p>Table <ref type="table">8</ref>: Evaluation results using five additional LLMs of various sizes. "LC" indicates directly reading from the entire history without any memory operations. For the last four columns that have memory operations, we always use round as the value granularity.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.2 ABLATIONS ON RETRIEVER SELECTION</head><p>In Table <ref type="table">9</ref>, we compare the performance of Stella V5 with two alternative popular retrievers: BM25 <ref type="bibr" target="#b31">(Robertson &amp; Zaragoza, 2009)</ref> and Contriever <ref type="bibr" target="#b15">(Izacard et al., 2022)</ref>. We do not report the results of retrievers that use larger embedding models, as their latency is generally unrealistic for real applications. The retrievers are compared under two settings: (1) vanilla key design where the values themselves are used as the key and (2) the key expansion strategies introduced in the main text. We list the key observations below:</p><p>• Both dense retrieval embeddings have significantly higher performance than the BM25 sparse retrieval method. The trend is the same across most settings.</p><p>• The recommended technique of performing key expansion with user fact consistently improves the performance over directly using the value as the key.</p><p>• Key expansion with summary and keyphrases could improve the performance in some settings. For example, both summary and keyphrase improve the Recall@5 of Contriever when session is used as the value granularity. However, expanding the key with facts still gives the greatest performance gain.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.3 POST-RETRIEVAL RANK MERGING FOR INDEX EXPANSION</head><p>In §5.3, we have introduced and evaluated the key expansion strategy for multi-path retrieval, where important information is extracted from the value items and then used to augment the key. However, an alternative strategy is to directly create a separate key with the retrieved information and place it in parallel as the original keys. At the retrieval stage, the query could be used to retrieve from pools defined multiple types of keys and the values from different sequences could be merged subsequently according to their rank. Effectively, this implements the true "multi-path retrieval. We call this strategy "rank merging". In Table <ref type="table" target="#tab_0">10</ref>, we thoroughly evaluate rank merging verse key merging, the strategy we recommended in the main text. We find that rank merging has much lower performance than key merging. One potential reason is that rank merging increases the index size by m + 1 times, where m is the number of information pieces extracted from each (key, value) pair. By comparison, key merging highlights the important information while avoiding explording the size of the index. reader LLM is used. This indicates that the reading strategy still has a large room of improvement.</p><p>In addition, we observe that for the reader LLM to generate a correct answer, performing correct retrieval is necessary in ∼90% of the time. We observe that the rest 10% instances are mostly of the question type knowledge-update and the retriever was only able to identify the updated knowledge but failed to retrieved the previous information before update. For these cases, our strict retrieval evaluation criteria will deem that the retrieval has failed. Overall, this result also highlights the high quality of LONGMEMEVAL, as the reader LLM cannot take any shortcut to answer the question correctly without a correct memory recall.</p><p>64.0% 13.2% 14.8% 8.0% GPT-4o 62.6% 14.6% 17.2% 5.6% Llama 3.1 70B Instruct 52.6% 24.6% 18.8% 4.0% </p><formula xml:id="formula_1">Llama 3.1 8B Instruct Correct R, Correct G Correct R, Wrong G Wrong R, Wrong G Wrong R, Correct G</formula></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure1: Examples of the seven question types in LONGMEMEVAL. For each example, we show the associated evidence statements on the left and the question with the answer on the right.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><figDesc>); Wang et al. (2023); Sarthi et al. (2024); Chen et al. (2023a); Gutiérrez et al.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Data creation pipeline of LONGMEMEVAL. (a) Human experts construct all the questions and evidence statements. (b) Then, the evidence sessions are LLM-simulated and human-edited. (c) The full user-AI chat history is constructed at test time, whose length is freely configurable.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><figDesc>As the correct answers can take flexible forms, an exact matching strategy as in previous works can result in inaccurate evaluations. To address this, LONGMEMEVAL Commercial memory-augmented chat assistants exhibit weak performance on LONGMEMEVAL. The accuracy of ChatGPT and Coze degrades by a large amount compared to directly reading the context ("Offline Reading") with the same LLM. Specifically, ChatGPT and Coze instantiated with GPT-4o exhibits 37% and 64% performance drop, respectively.Long-context LLMs exhibit large QA performance drops on LONGMEMEVALS (column "S"), compared to the accuracy of answering the questions based on only the evidence sessions (column "Oracle").</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Pilot study of (a) commercial systems and (b) long-context LLMs on LONGMEMEVAL.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 4 :</head><label>4</label><figDesc>Figure4: A unified view of a chat assistant with long-term memory in operation. We formulate three stages and four control points (CP). We provide further examples in Table2and Appendix C.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 5 :</head><label>5</label><figDesc>Figure5: QA performance on LONGMEMEVAL M with different value designs. Decomposing sessions into rounds improves the QA performance. For the multi-session reasoning questions, further representing the values with the extracted facts improves the QA accuracy.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Question answering performance under the oracle retrieval setting. CoN with JSON format outperforms the other three parameter combinations by a large margin. NL = Natural Language.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><figDesc>of the number of evidence sessions. Most questions emphasize multi-session reasoning, requiring reading up to six sessions to answer. of the location of the evidence statement within the evidence sessions.Most evidence statements are located at the beginning of the chat.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 9 :</head><label>9</label><figDesc>Figure 9: LONGMEMEVAL challenges chat assistants through its (a) diverse question types, (b) emphases on multi-session reasoning, and (c) diverse evidence locations within sessions.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 11 :</head><label>11</label><figDesc>Figure 11: Zero-shot prompts for extracting information from the value items for indexing. For user fact extraction, we additionally provide ten in-context examples.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Figure 13 :</head><label>13</label><figDesc>Figure13: The prompt for reading with recalled memory with and without Chain-of-Note.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>Figure 14 :</head><label>14</label><figDesc>Figure 14: An analysis of the error distribution of different reader models. We use R and G to indicate correct Recall@10 and correct answer based on the top-10 retrieved results.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>A comparison between LONGMEMEVAL and existing long-term memory benchmarks. We use different colors to denote human-human and human-AI dialogue. #Sess and #Q denote the total number of sessions and questions. Context depth is defined as the number of tokens in the history. Finally, we compare the coverage of five core abilities: information extraction (IE), multi-session reasoning (MR), knowledge update (KU), temporal reasoning (TR), and abstaining on unanswerable questions (ABS).</figDesc><table><row><cell>Benchmark</cell><cell>Domain</cell><cell cols="3">#Sess #Q Context Depth</cell><cell cols="4">Core Memory Abilities IE MR KU TR ABS</cell></row><row><cell>MSC (Xu et al., 2022a)</cell><cell cols="2">Open-Domain 5k</cell><cell>-</cell><cell>1k</cell><cell>✗ ✗</cell><cell>✗</cell><cell>✗</cell><cell>✗</cell></row><row><cell>DuLeMon (Xu et al., 2022b)</cell><cell cols="2">Open-Domain 30k</cell><cell>-</cell><cell>1k</cell><cell>✗ ✗</cell><cell>✗</cell><cell>✗</cell><cell>✗</cell></row><row><cell>MemoryBank (Zhong et al., 2024)</cell><cell>Personal</cell><cell cols="2">300 194</cell><cell>5k</cell><cell>✓ ✗</cell><cell cols="2">✗ ✓</cell><cell>✗</cell></row><row><cell>PerLTQA (Du et al., 2024)</cell><cell>Personal</cell><cell cols="2">4k 8593</cell><cell>1M  *</cell><cell>✓ ✗</cell><cell>✗</cell><cell>✗</cell><cell>✓</cell></row><row><cell>LoCoMo (Maharana et al., 2024)</cell><cell>Personal</cell><cell cols="2">1k 7512</cell><cell>10k</cell><cell>✓ ✓</cell><cell cols="2">✗ ✓</cell><cell>✓</cell></row><row><cell>DialSim (Kim et al., 2024)</cell><cell cols="3">TV Shows 1k-2k 1M</cell><cell>350k</cell><cell cols="3">✓ ✓  *  *  ✗ ✓</cell><cell>✓</cell></row><row><cell>LONGMEMEVAL (this work)</cell><cell>Personal</cell><cell cols="2">50k 500</cell><cell>115k, 1.5M</cell><cell cols="3">✓ ✓ ✓ ✓</cell><cell>✓</cell></row><row><cell></cell><cell cols="2">How long is my commute to work? 45 minutes each way</cell><cell></cell><cell cols="3">Which one would you say is the best for a romantic dinner?</cell><cell cols="2">Can you remind me of the romantic restaurant in Rome you recommended for dinner?</cell></row><row><cell></cell><cell cols="2">Can you suggest accessories that complement my photography setup?</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell cols="2">The user would prefer suggestions of Sony-compatible accessories.</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table><note><p>* Not reported in the paper, based on our approximation. * * at most 2 sessions. I've been listening to audiobooks during my daily commute, which takes 45 minutes each way. Roscioli Can you recommend some camera flash options compatible with my Sony A7R IV? What's the best way to clean my Sony 24-70mm f/2.8 lens? As a Sony camera user, I've been thinking about upgrading my camera bag to something more comfortable and durable. I'm looking to find a piano technician to service my Korg B1. I've been playing my black Fender Stratocaster electric guitar a lot lately... I've had my acoustic guitar, a Yamaha FG800, for about 8 years. How many musical instruments do I currently own? 4 I'm thinking of selling my old drum set,</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 3 :</head><label>3</label><figDesc>Retrieval and end-to-end QA performance on LONGMEMEVAL M with different key designs for indexing. L3.1 = Llama 3.1 Instruct. We find applying document expansion with the extracted user facts (row K = V + fact) greatly improves both retrieval and the downstream QA.</figDesc><table><row><cell></cell><cell cols="2">Retrieval</cell><cell></cell><cell>End-to-End QA</cell><cell></cell></row><row><cell>Key Design</cell><cell>Metrics@5</cell><cell>Metrics@10</cell><cell>GPT-4o</cell><cell>L3.1 70B</cell><cell>L3.1 8B</cell></row><row><cell></cell><cell cols="5">Recall NDCG Recall NDCG Top-5 Top-10 Top-5 Top-10 Top-5 Top-10</cell></row><row><cell></cell><cell></cell><cell cols="2">Value = Round</cell><cell></cell><cell></cell></row><row><cell>K = V</cell><cell cols="5">0.582 0.481 0.692 0.512 0.615 0.670 0.600 0.624 0.518 0.534</cell></row><row><cell>K = fact</cell><cell cols="5">0.530 0.411 0.654 0.449 0.588 0.664 0.564 0.610 0.510 0.534</cell></row><row><cell>K = keyphrase</cell><cell cols="5">0.282 0.159 0.392 0.303 0.425 0.489 0.404 0.450 0.378 0.432</cell></row><row><cell>K = V + fact</cell><cell cols="5">0.644 0.498 0.784 0.536 0.657 0.720 0.638 0.682 0.566 0.572</cell></row><row><cell cols="6">K = V + keyphrase 0.478 0.359 0.636 0.410 0.541 0.652 0.538 0.620 0.472 0.524</cell></row><row><cell></cell><cell></cell><cell cols="2">Value = Session</cell><cell></cell><cell></cell></row><row><cell>K = V</cell><cell cols="5">0.706 0.617 0.783 0.638 0.670 0.676 0.592 0.570 0.524 0.464</cell></row><row><cell>K = summary</cell><cell cols="5">0.572 0.448 0.648 0.468 0.554 0.252 0.498 0.512 0.444 0.216</cell></row><row><cell>K = fact</cell><cell cols="5">0.642 0.524 0.814 0.571 0.644 0.512 0.544 0.550 0.470 0.404</cell></row><row><cell>K = keyphrase</cell><cell cols="5">0.482 0.375 0.576 0.401 0.618 0.498 0.440 0.450 0.388 0.414</cell></row><row><cell cols="6">K = V + summary 0.689 0.608 0.749 0.624 0.658 0.666 0.568 0.560 0.518 0.494</cell></row><row><cell>K = V + fact</cell><cell cols="5">0.732 0.620 0.862 0.652 0.714 0.700 0.588 0.584 0.530 0.490</cell></row><row><cell cols="6">K = V + keyphrase 0.710 0.587 0.768 0.602 0.665 0.672 0.590 0.566 0.526 0.508</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 11 :</head><label>11</label><figDesc>Example of time span extraction outputs from GPT-4o and Llama 3.1 8B Instruct. Question Date: 2023/05/28 Question: How long had I been taking guitar lessons when I bought the new guitar amp? Predicted time range (GPT-4o): No date extracted [correct] Predicted time range (Llama 3.1 8B Instruct): 2023/05/01∼2023/05/28 [false positive] Example 2 Question Date: 2023/04/27 Question: Which airline did I fly with the most in March and April? Predicted time range (GPT-4o): 2023/03/01∼2023/04/30 [correct] Predicted time range (Llama 3.1 8B Instruct): 2023/03/01∼2023/04/30 [correct] Example 3 Question Date: 2023/06/28 Question: How many days before the 'Rack Fest' did I participate in the 'Turbocharged Tuesdays' event? Predicted time range (GPT-4o): No date extracted [correct] Predicted time range (Llama 3.1 8B Instruct): 2023/06/21∼2023/06/28 [false positive] Example 4 Question Date: 2023/03/10 Question: Which seeds were started first, the tomatoes or the marigolds? Predicted time range (GPT-4o): No date extracted [correct] Predicted time range (Llama 3.1 8B Instruct): 2023/03/01∼2023/03/10 [false positive]</figDesc><table><row><cell>Example 1</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>Unless otherwise mentioned, Llama 3 70B Instruct(Dubey et al.,  </p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_1"><p>2024) is used as the LLM in the pipeline.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_2"><p>All evaluations were conducted in the first two weeks of August 2024.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_3"><p>More results on five additional LLMs are reported in Appendix E.1.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_4"><p>We also experimented with merging at the retrieval stage by combining the ranks from different pathways, but it underperformed compared to indexing-stage merging. See Appendix E.3 for details.</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Published as a conference paper at ICLR <ref type="table">2025</ref> Table 6: Meta-evaluation results of prompt-engineered GPT-4o judge. We observe a high evaluation accuracy across all the problem types in LONGMEMEVAL.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Question Type Answer Model GPT-4o</head><p>Llama-3.</p><p>1-8B-instruct single-session-user 1.00 (30/30) 0.97 (29/30) single-session-assistant 1.00 (30/30) 1.00 (30/30) single-session-preference 0.90 (27/30) 0.97 (29/30) multi-session 1.00 (30/30) 1.00 (30/30) knowledge-update 1.00 (30/30) 1.00 (30/30) temporal-reasoning 1.00 (30/30) 0.97 (29/30) abstention 0.97 (29/30) 0.90 (27/30) Average 0.98 0.97 B A HUMAN STUDY ON COMMERCIAL MEMORY CHATBOTS</p><p>We evaluate two commercial memory-augmented chatbots: ChatGPT (OpenAI, 2024) and Coze <ref type="bibr" target="#b8">(Coze, 2024)</ref>. We randomly selected 97 questions and created a short chat history of 3-6 sessions by sampling according to a mixture of 50% ShareGPT and 50% simulated sessions. We skip two type of questions that the assistants cannot answer: (1) a subset of temporal-reasoning, since our manual analysis cannot afford interacting with the (potentially evolving) systems across multiple months, and (2) single-session-assistant, since the systems do not remember any information given by the assistant. We also did not evaluate the abstention ability of these two systems because an early version of the dataset without any abstention questions was used for this analysis.</p><p>Since these systems only support memory features via their web interfaces, human annotators manually interacted with the chat assistants session-by-session, ending with a new session where the question was posed. After collecting the model's response, the annotator manually evaluates the answer's correctness. Finally, to start evaluating the next instance from a fresh state, the annotator manually clears the model's memory through the web interface. We distribute the questions across five annotators. A discussion is performed among the annotators whenever there is a concern with the model's response or with the evidence sessions. All evaluations were conducted in the first two weeks of August 2024.</p><p>In Table <ref type="table" target="#tab_4">7</ref>, we present the detailed human evaluation results by problem types. We observe that when the task is memorizing the information from a single session (column IE), both systems can answer a considerable number of problems correctly. However, for the other question types where aggregation across multiple sessions is generally required, both systems exhibit significant performance drops. Compared to ChatGPT, we find most of Coze's errors are due to failing to record information from some session. On the other hand, ChatGPT generally records the evidence statements immediately after it has been presented in the evidence session. However, as the interaction proceeds, ChatGPT often modify this information when it compresses the history, resulting in information loss. This highlights the potential trade-off between reliable personalization and efficiency. In this section, we provide a more rigorous mathematical formulation of the unified memory framework for interested readers. Since we find the corresponding natural language descriptions clear enough for presenting the main arguments while avoiding introducing excessive symbols.</p><p>We formulate long-term memory as a massive key-value datastore D = [(k 1 , v 1 ), (k 2 , v 2 ), ...], where the keys k i can be heterogeneous and the values v i might repeat. More concretely, a key could be discrete or continuous. In the discrete case, the key could be a sentence, a paragraph, a fact, or an entity, etc. In the continuous case, the key could be e.g., the model's internal representation under some inputs. For the three stages, we formulate them with four functions: I, Q, S, R. The offline index function I(S, D) converts a session S into a series of key-value tuples. Alternatively, the online index function I online (S, D) updates D with the key-value tuples extracted from S, potentially removing or editing the existing items in D. The query formulation function Q(q) converts a natural language user query q into a representation q ′ that function S could leverage.</p><p>The salience scoring function S(q ′ , D) orders D by their relevance to q ′ . Potential initializations of S include ranking dense text embedding, graph-based ranking, and so on. Finally, the reading function R(M, D ′ ) combines the model M with D', the most relevant part as ranked by the salience scoring function S and generates a response. The methods outlined in the columns of Table <ref type="table">2</ref> could be seen as different ways to instantiate the four functions I, Q, S, R.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.2 EXISTING MEMORY SYSTEMS FROM THE UNIFIED VIEW</head><p>In §4, we have presented a unified view of the memory systems with three stages and four control points. In this section, we provide a closer look at nine memory-augmented chat systems and view them as specific instances of the unified framework. Specifically, we consider in-context RAG <ref type="bibr" target="#b34">(Shi et al., 2024)</ref>, Memorybank <ref type="bibr" target="#b52">(Zhong et al., 2024)</ref>, LD-Agent <ref type="bibr">(Li et al., 2024)</ref>, CoN <ref type="bibr" target="#b47">(Yu et al., 2023)</ref>, ChatGPT, Coze, RAPTOR <ref type="bibr" target="#b32">(Sarthi et al., 2024)</ref>, MemWalker <ref type="bibr">(Chen et al., 2023a), and</ref><ref type="bibr">HippoRAG (Gutiérrez et al., 2024)</ref>. Table <ref type="table">2</ref> provides an overall comparison between the systems, among which we also situate the recommended design identified through the paper's empirical study.</p><p>Indexing For the value representation, most of the surveyed systems either directly use the sessions themselves or use a mixture of them with the extracted facts or summaries. Only three systems (LD-Agent, ChatGPT, and Coze) use only the compressed values to replace the original ones, which may incur an information loss. When it comes to the indexing key, we observe three major types of decisions. First, a number of systems (in-context RAG, Memorybank, LD-Agent, and CoN) simply use the values as the keys, which wins in terms of simplicity. By comparsion, HippoRAG builds an entity-centric index, and RAPTOR/Memwalker build a hierarchical index using recursive summarization. It is noteworthy that while a more complex memory indexing structure can potentially benefit certain types of queries, they also increase the cost of creating and maintaining the index in online interactions. Specifically, for HippoRAG, RAPTOR, and Memwalker, some level of re-indexing is required when a new session is added to the memory, increasing the computational overhead of these sytems.</p><p>Retrieval For most of the systems, we find that the question is generally used as the query, which is intuitive since the questions are generally short. LD-Agent and HippoRAG extract additional information and leverage them to better pinpoint entity-centric knowledge within the index. In terms of the query-key matching process, most systems use a flat retrieval setup, where a similarity search is directly conducted between the query and the keys. HippoRAG uses Personalized PageRank (PPR) to leverage its entity graph structure to match passages that feature entities close to the seed entities extracted from the query. Different from these approaches, MemWalker bridges the retrieval and inference through an interactive reading mechanism where the reader LLM self-navigates the indexing structure to find the answer. This method brings the additional robustness in case the retriever fails, but also incurs additional latency costs due to more LLM inference.</p><p>Generation Most of the systems apply a direct reading mechanism where the reader model is provided with the retrieved memory items and directly asked to generate the response. However, </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.4 STRONG AND WEAK LLMS FOR EXTRACTING TIME RANGES FROM QUERIES</head><p>In §5.4, we concluded that a strong model is required to accurately extract the time ranges from the questions, even if in-context examples (with balanced labels) are provided. In this section, we further illustrate this finding with examples in Table <ref type="table">11</ref>. We find that the Llama 3.1 8B Instruct model can generate a correct temporal range when the time references are clearly defined (example 2). However, in many of the cases where the question does not have any temporal reference (example 1, 2, 4), the model often mistakenly extracts a time range, which erroneously prunes out the search space, leading to a low memory recall. By contrast, GPT-4o is able to refuse to generate a time range when the question does not have a time reference.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.5 ERROR ANALYSIS</head><p>In this section, we analyze the source of error of various LLMs with our best memory design. Specifically, we use round as the value granularity, expand the key with extracted user facts, and apply CoN as the reading strategy. Stella v5 1.5B is used as the retriever, and top-10 items are provided to the model with a JSON structured prompt. In Figure <ref type="figure">14</ref>, we analyze the distribution of the correct and error cases for three different reader LLMs. First, we observe that a substantial proportion of errors corresponds to correct retrieval yet wrong generation (15%∼19% of all instances, and 40%∼50% among the error instances). The proportion is higher when a weaker</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 7 :</head><label>7</label><figDesc>Human evaluation results of two systems categorized by evaluated ability types. We use the questions from single-session-user for the IE column. For the temporal reasoning column (TR), we use the questions that do not require reasoning with metadata.</figDesc><table><row><cell>System</cell><cell>Model</cell><cell>IE</cell><cell>Memory Ability MR KU</cell><cell>TR</cell></row><row><cell>ChatGPT</cell><cell cols="4">GPT-4o-mini 1.000 0.647 0.667 0.652 GPT-4o 0.688 0.441 0.833 0.435</cell></row><row><cell>Coze</cell><cell cols="4">GPT-3.5-turbo 0.625 0.118 0.375 0.043 GPT-4o 0.813 0.147 0.208 0.391</cell></row></table><note><p>C.1 AN ALTERNATIVE MATHEMATICAL FORMULATION</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 9 :</head><label>9</label><figDesc>A comparison between three retrievers under different key-value indexing settings.</figDesc><table><row><cell></cell><cell></cell><cell cols="2">Value = session</cell><cell></cell><cell cols="2">Value = round</cell></row><row><cell>Key Design</cell><cell>Retriever</cell><cell>Metric@5</cell><cell>Metric@10</cell><cell cols="2">Metric@5</cell><cell cols="2">Metric@10</cell></row><row><cell></cell><cell></cell><cell cols="6">Recall NDCG Recall NDCG Recall NDCG Recall NDCG</cell></row><row><cell></cell><cell>BM25</cell><cell cols="6">0.634 0.516 0.710 0.540 0.472 0.352 0.538 0.372</cell></row><row><cell>K = V</cell><cell>Contriever</cell><cell cols="6">0.723 0.634 0.823 0.663 0.589 0.454 0.747 0.495</cell></row><row><cell></cell><cell cols="7">Stella V5 1.5B 0.720 0.594 0.794 0.615 0.660 0.498 0.784 0.528</cell></row><row><cell></cell><cell>BM25</cell><cell cols="2">0.626 0.544 0.694 0.565</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>K = V + summary</cell><cell>Contriever</cell><cell cols="2">0.732 0.632 0.823 0.657</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell></cell><cell cols="3">Stella V5 1.5B 0.689 0.608 0.749 0.624</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell></cell><cell>BM25</cell><cell cols="6">0.683 0.560 0.757 0.582 0.554 0.454 0.608 0.473</cell></row><row><cell>K = V + fact</cell><cell>Contriever</cell><cell cols="6">0.762 0.632 0.862 0.658 0.612 0.489 0.756 0.530</cell></row><row><cell></cell><cell cols="7">Stella V5 1.5B 0.732 0.520 0.862 0.552 0.644 0.498 0.784 0.536</cell></row><row><cell></cell><cell>BM25</cell><cell cols="6">0.632 0.546 0.711 0.569 0.453 0.391 0.538 0.416</cell></row><row><cell>K = V + keyphrases</cell><cell>Contriever</cell><cell cols="6">0.740 0.638 0.849 0.668 0.546 0.450 0.672 0.489</cell></row><row><cell></cell><cell cols="7">Stella V5 1.5B 0.710 0.587 0.768 0.602 0.478 0.359 0.636 0.410</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 10 :</head><label>10</label><figDesc>Retrieval and end-to-end QA performance on LONGMEMEVAL M with different key designs for indexing. L3.1 = Llama 3.1 Instruct. RM = Rank Merging and KM = Key Merging.</figDesc><table><row><cell></cell><cell cols="2">Retrieval</cell><cell></cell><cell>End-to-End QA</cell><cell></cell></row><row><cell>Key Design</cell><cell>Metrics@5</cell><cell>Metrics@10</cell><cell>GPT-4o</cell><cell>L3.1 70B</cell><cell>L3.1 8B</cell></row><row><cell></cell><cell cols="5">Recall NDCG Recall NDCG Top-5 Top-10 Top-5 Top-10 Top-5 Top-10</cell></row><row><cell></cell><cell></cell><cell>Value = Round</cell><cell></cell><cell></cell><cell></cell></row><row><cell>K = V</cell><cell cols="5">0.582 0.481 0.692 0.512 0.615 0.670 0.600 0.624 0.518 0.534</cell></row><row><cell>K = V + fact (RM)</cell><cell cols="5">0.478 0.372 0.568 0.403 0.558 0.596 0.536 0.586 0.458 0.482</cell></row><row><cell cols="6">K = V + keyphrase (RM) 0.386 0.376 0.536 0.329 0.485 0.590 0.460 0.558 0.426 0.466</cell></row><row><cell>K = V + fact (KM)</cell><cell cols="5">0.644 0.498 0.784 0.536 0.657 0.720 0.638 0.682 0.566 0.572</cell></row><row><cell cols="6">K = V + keyphrase (KM) 0.478 0.359 0.636 0.410 0.541 0.652 0.538 0.620 0.472 0.524</cell></row><row><cell></cell><cell></cell><cell>Value = Session</cell><cell></cell><cell></cell><cell></cell></row><row><cell>K = V</cell><cell cols="5">0.706 0.617 0.783 0.638 0.670 0.676 0.592 0.570 0.524 0.464</cell></row><row><cell cols="6">K = V + summary (RM) 0.608 0.488 0.684 0.511 0.600 0.620 0.510 0.544 0.468 0.466</cell></row><row><cell>K = V + fact (RM)</cell><cell cols="5">0.618 0.511 0.754 0.548 0.622 0.688 0.574 0.574 0.468 0.466</cell></row><row><cell cols="6">K = V + keyphrase (RM) 0.550 0.435 0.650 0.466 0.560 0.620 0.454 0.506 0.492 0.482</cell></row><row><cell cols="6">K = V + summary (KM) 0.689 0.608 0.749 0.624 0.658 0.666 0.568 0.560 0.518 0.494</cell></row><row><cell>K = V + fact (KM)</cell><cell cols="5">0.732 0.620 0.862 0.652 0.714 0.700 0.588 0.584 0.530 0.490</cell></row><row><cell cols="6">K = V + keyphrase (KM) 0.710 0.587 0.768 0.602 0.665 0.672 0.590 0.566 0.526 0.508</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sam</forename><forename type="middle">Ade</forename><surname>Marah I Abdin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ammar</forename><surname>Jacobs</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jyoti</forename><surname>Ahmad Awan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmed</forename><surname>Aneja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hany</forename><surname>Awadallah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nguyen</forename><surname>Awadalla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amit</forename><surname>Bach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arash</forename><surname>Bahree</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harkirat</forename><forename type="middle">S</forename><surname>Bakhtiari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alon</forename><surname>Behl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Misha</forename><surname>Benhaim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johan</forename><surname>Bilenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sébastien</forename><surname>Bjorck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Bubeck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caio</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teodoro</forename><surname>César</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Mendes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vishrav</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Parul</forename><surname>Chaudhary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Allie</forename><surname>Chopra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gustavo</forename><surname>Del Giorno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>De Rosa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronen</forename><surname>Dixon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Eldan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amit</forename><surname>Iter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suriya</forename><surname>Goswami</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emman</forename><surname>Gunasekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junheng</forename><surname>Haider</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Russell</forename><forename type="middle">J</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamie</forename><surname>Hewett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mojan</forename><surname>Huynh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Javaheripi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piero</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikos</forename><surname>Kauffmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongwoo</forename><surname>Karampatziakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mahoud</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lev</forename><surname>Khademi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><forename type="middle">R</forename><surname>Kurilenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yin</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Tat Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weishung</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeqi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piyush</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arindam</forename><surname>Madan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hardik</forename><surname>Mitra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anh</forename><surname>Modi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brandon</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barun</forename><surname>Norick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Patra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Perez-Becker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reid</forename><surname>Portet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heyang</forename><surname>Pryzant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marko</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Corby</forename><surname>Radmilac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sambudha</forename><surname>Rosset</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olatunji</forename><surname>Roy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olli</forename><surname>Ruwase</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amin</forename><surname>Saarikivi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adil</forename><surname>Saied</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Salim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shital</forename><surname>Santacroce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Shah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hiteshi</forename><surname>Shang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xia</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Masahiro</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Tanaka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rachel</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanhua</forename><surname>Ward</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philipp</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Witte</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Can</forename><surname>Wyatt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahang</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sonali</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Yadav</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donghan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengruidong</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cyril</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianwen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><forename type="middle">Lyna</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiren</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2404.14219</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2404.14219" />
+		<title level="m">Phi-3 technical report: A highly capable language model locally 5 Accessed via</title>
+		<imprint/>
+	</monogr>
+	<note>on your phone. CoRR, abs/2404.14219, 2024a</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Sam</forename><forename type="middle">Ade</forename><surname>Marah I Abdin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ammar</forename><surname>Jacobs</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jyoti</forename><surname>Ahmad Awan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmed</forename><surname>Aneja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hany</forename><surname>Awadallah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nguyen</forename><surname>Awadalla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amit</forename><surname>Bach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arash</forename><surname>Bahree</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harkirat</forename><forename type="middle">S</forename><surname>Bakhtiari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alon</forename><surname>Behl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Misha</forename><surname>Benhaim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johan</forename><surname>Bilenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sébastien</forename><surname>Bjorck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Bubeck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caio</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teodoro</forename><surname>César</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Mendes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vishrav</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Parul</forename><surname>Chaudhary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Allie</forename><surname>Chopra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gustavo</forename><surname>Del Giorno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>De Rosa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronen</forename><surname>Dixon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Eldan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amit</forename><surname>Iter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suriya</forename><surname>Goswami</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emman</forename><surname>Gunasekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junheng</forename><surname>Haider</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Russell</forename><forename type="middle">J</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamie</forename><surname>Hewett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mojan</forename><surname>Huynh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Javaheripi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piero</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikos</forename><surname>Kauffmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongwoo</forename><surname>Karampatziakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mahoud</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lev</forename><surname>Khademi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><forename type="middle">R</forename><surname>Kurilenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yin</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Tat Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weishung</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeqi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piyush</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arindam</forename><surname>Madan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hardik</forename><surname>Mitra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anh</forename><surname>Modi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brandon</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barun</forename><surname>Norick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Patra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Perez-Becker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reid</forename><surname>Portet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heyang</forename><surname>Pryzant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marko</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Corby</forename><surname>Radmilac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sambudha</forename><surname>Rosset</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olatunji</forename><surname>Roy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olli</forename><surname>Ruwase</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Saarikivi ; Sonali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Yadav</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donghan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengruidong</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cyril</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianwen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><forename type="middle">Lyna</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiren</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2404.14219</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2404.14219" />
+		<editor>Amin Saied, Adil Salim, Michael Santacroce, Shital Shah, Ning Shang, Hiteshi Sharma, Xia Song, Masahiro Tanaka, Xin Wang, Rachel Ward, Guanhua Wang, Philipp Witte, Michael Wyatt, Can Xu, Jiahang Xu,</editor>
+		<imprint/>
+	</monogr>
+	<note>Phi-3 technical report: A highly capable language model locally on your phone. CoRR, abs/2404.14219, 2024b</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Zexiong</forename><surname>Shengnan An</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeqi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nanning</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian-Guang</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lou</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2404.16811</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2404.16811" />
+		<imprint/>
+	</monogr>
+	<note>Make your LLM fully utilize the context. CoRR, abs/2404.16811, 2024</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Iz</forename><surname>Beltagy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><forename type="middle">E</forename><surname>Peters</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arman</forename><surname>Cohan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Longformer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2004.05150</idno>
+		<title level="m">The long-document transformer</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">MultiWOZ -a large-scale multi-domain Wizard-of-Oz dataset for task-oriented dialogue modelling</title>
+		<author>
+			<persName><forename type="first">Paweł</forename><surname>Budzianowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tsung-Hsien</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo-Hsiang</forename><surname>Tseng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iñigo</forename><surname>Casanueva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Ultes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Milica</forename><surname>Osman Ramadan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gašić</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/D18-1547</idno>
+		<ptr target="https://aclanthology.org/D18-1547/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing</title>
+		<editor>
+			<persName><forename type="first">Ellen</forename><surname>Riloff</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">David</forename><surname>Chiang</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Julia</forename><surname>Hockenmaier</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Jun'ichi</forename><surname>Tsujii</surname></persName>
+		</editor>
+		<meeting>the 2018 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Brussels, Belgium</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2018-11">October-November 2018</date>
+			<biblScope unit="page" from="5016" to="5026" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Walking down the memory maze: Beyond context limit through interactive reading</title>
+		<author>
+			<persName><forename type="first">Howard</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ramakanth</forename><surname>Pasunuru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Asli</forename><surname>Celikyilmaz</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2310.05029</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2310.05029" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Dense X retrieval: What retrieval granularity should we use?</title>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongwei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sihao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaixin</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinran</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2312.06648</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2312.06648" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Adapting language models to compress contexts</title>
+		<author>
+			<persName><forename type="first">Alexis</forename><surname>Chevalier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anirudh</forename><surname>Ajith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danqi</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.emnlp-main.232</idno>
+		<ptr target="https://doi.org/10.18653/v1/2023.emnlp-main.232" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing, EMNLP 2023</title>
+		<editor>
+			<persName><forename type="first">Houda</forename><surname>Bouamor</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Juan</forename><surname>Pino</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Kalika</forename><surname>Bali</surname></persName>
+		</editor>
+		<meeting>the 2023 Conference on Empirical Methods in Natural Language Processing, EMNLP 2023<address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023">December 6-10, 2023</date>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title/>
+		<author>
+			<persName><surname>Coze</surname></persName>
+		</author>
+		<ptr target="https://www.coze.com/docs/guides/memory_overview?_lang=en" />
+	</analytic>
+	<monogr>
+		<title level="j">Memory overview guide</title>
+		<imprint>
+			<date type="published" when="2024-09-15">2024. September 15, 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Enhancing chat language models by scaling high-quality instructional conversations</title>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yulin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bokai</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengding</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.14233</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">PerLTQA: A personal long-term memory dataset for memory classification, retrieval, and fusion in question answering</title>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongru</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengyi</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baojun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanjun</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zezhong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kam-Fai</forename><surname>Wong</surname></persName>
+		</author>
+		<ptr target="https://aclanthology.org/2024.sighan-1.18/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 10th SIGHAN Workshop on Chinese Language Processing</title>
+		<editor>
+			<persName><forename type="first">Kam-Fai</forename><surname>Wong</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Min</forename><surname>Zhang</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Ruifeng</forename><surname>Xu</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Jing</forename><surname>Li</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Zhongyu</forename><surname>Wei</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Lin</forename><surname>Gui</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Bin</forename><surname>Liang</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Runcong</forename><surname>Zhao</surname></persName>
+		</editor>
+		<meeting>the 10th SIGHAN Workshop on Chinese Language Processing<address><addrLine>Bangkok, Thailand</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024-08">August 2024</date>
+			<biblScope unit="page" from="152" to="164" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">Abhimanyu</forename><surname>Dubey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Jauhri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Pandey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Kadian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmad</forename><surname>Al-Dahle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aiesha</forename><surname>Letman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akhil</forename><surname>Mathur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Schelten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amy</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Angela</forename><surname>Fan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.21783</idno>
+		<title level="m">The llama 3 herd of models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Improving retrieval of short texts through document expansion</title>
+		<author>
+			<persName><forename type="first">Miles</forename><surname>Efron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Organisciak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katrina</forename><surname>Fenlon</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/2348283.2348405</idno>
+		<ptr target="https://doi.org/10.1145/2348283.2348405" />
+	</analytic>
+	<monogr>
+		<title level="m">The 35th International ACM SIGIR conference on research and development in Information Retrieval, SIGIR &apos;12</title>
+		<editor>
+			<persName><forename type="first">William</forename><forename type="middle">R</forename><surname>Hersh</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Jamie</forename><surname>Callan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Yoelle</forename><surname>Maarek</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Mark</forename><surname>Sanderson</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Portland, OR, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2012">August 12-16, 2012. 2012</date>
+			<biblScope unit="page" from="911" to="920" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Data engineering for scaling language models to 128k context</title>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rameswar</forename><surname>Panda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyao</forename><surname>Niu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoon</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Peng</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=TaAqeo7lUh" />
+	</analytic>
+	<monogr>
+		<title level="m">Forty-first International Conference on Machine Learning, ICML 2024</title>
+		<meeting><address><addrLine>Vienna, Austria</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024">July 21-27, 2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note>OpenReview.net</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Hipporag: Neurobiologically inspired long-term memory for large language models</title>
+		<author>
+			<persName><forename type="first">Jiménez</forename><surname>Bernal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiheng</forename><surname>Gutiérrez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michihiro</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Yasunaga</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Su</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2405.14831</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2405.14831" />
+		<imprint>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Unsupervised dense information retrieval with contrastive learning</title>
+		<author>
+			<persName><forename type="first">Gautier</forename><surname>Izacard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mathilde</forename><surname>Caron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Hosseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Riedel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Bojanowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armand</forename><surname>Joulin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edouard</forename><surname>Grave</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum" />
+	</analytic>
+	<monogr>
+		<title level="j">Trans. Mach. Learn. Res</title>
+		<imprint>
+			<date type="published" when="2022">2022. 2022</date>
+		</imprint>
+	</monogr>
+	<note>id= jKN1pXi7b0</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Llmlingua: Compressing prompts for accelerated inference of large language models</title>
+		<author>
+			<persName><forename type="first">Huiqiang</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qianhui</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chin-Yew</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqing</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lili</forename><surname>Qiu</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.emnlp-main.825</idno>
+		<ptr target="https://doi.org/10.18653/v1/2023.emnlp-main.825" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing, EMNLP 2023</title>
+		<editor>
+			<persName><forename type="first">Houda</forename><surname>Bouamor</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Juan</forename><surname>Pino</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Kalika</forename><surname>Bali</surname></persName>
+		</editor>
+		<meeting>the 2023 Conference on Empirical Methods in Natural Language Processing, EMNLP 2023<address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023">December 6-10, 2023</date>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Needle in a haystack -pressure testing llms</title>
+		<author>
+			<persName><forename type="first">Gregory</forename><surname>Kamradt</surname></persName>
+		</author>
+		<ptr target="https://github.com/gkamradt/LLMTest_NeedleInAHaystack" />
+	</analytic>
+	<monogr>
+		<title level="j">GitHub</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Dialsim: A real-time simulator for evaluating long-term dialogue understanding of conversational agents</title>
+		<author>
+			<persName><forename type="first">Jiho</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Woosog</forename><surname>Chay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyeonji</forename><surname>Hwang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daeun</forename><surname>Kyung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyunseung</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eunbyeol</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yohan</forename><surname>Jo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Choi</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2406.13144" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Reformer: The efficient transformer</title>
+		<author>
+			<persName><forename type="first">Nikita</forename><surname>Kitaev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Łukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anselm</forename><surname>Levskaya</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2001.04451</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Xiang Wang, and Tat-Seng Chua. Hello again! llm-powered personalized agent for long-term dialogue</title>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenghao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">An</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Deng</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2406.05925</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2406.05925" />
+		<imprint>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Lost in the middle: How language models use long contexts</title>
+		<author>
+			<persName><forename type="first">Nelson</forename><forename type="middle">F</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Hewitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Paranjape</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michele</forename><surname>Bevilacqua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<idno type="DOI">10.1162/tacl_a_00638</idno>
+		<ptr target="https://doi.org/10.1162/tacl_a_00638" />
+	</analytic>
+	<monogr>
+		<title level="j">Trans. Assoc. Comput. Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="page" from="157" to="173" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Geval: NLG evaluation using gpt-4 with better human alignment</title>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Iter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichong</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuohang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruochen</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenguang</forename><surname>Zhu</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.emnlp-main.153</idno>
+		<ptr target="https://aclanthology.org/2023.emnlp-main.153/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing</title>
+		<editor>
+			<persName><forename type="first">Houda</forename><surname>Bouamor</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Juan</forename><surname>Pino</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Kalika</forename><surname>Bali</surname></persName>
+		</editor>
+		<meeting>the 2023 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023-12">December 2023</date>
+			<biblScope unit="page" from="2511" to="2522" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Evaluating very long-term conversational memory of LLM agents</title>
+		<author>
+			<persName><forename type="first">Adyasha</forename><surname>Maharana</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong-Ho</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Tulyakov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francesco</forename><surname>Barbieri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuwei</forename><surname>Fang</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.acl-long.747</idno>
+		<ptr target="https://aclanthology.org/2024.acl-long.747/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">Lun-Wei</forename><surname>Ku</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Andre</forename><surname>Martins</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Vivek</forename><surname>Srikumar</surname></persName>
+		</editor>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics<address><addrLine>Bangkok, Thailand</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024-08">August 2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="13851" to="13870" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Announcing microsoft copilot, your everyday ai companion</title>
+		<ptr target="https://blogs.microsoft.com/blog/2023/09/21/announcing-microsoft-copilot-your-everyday-ai-companion/" />
+		<imprint>
+			<date type="published" when="2023-09-15">2023. September 15, 2024</date>
+			<publisher>Microsoft</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Mistral nemo: Our new best small model</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">I</forename><surname>Mistral</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Team</surname></persName>
+		</author>
+		<ptr target="https://mistral.ai/news/mistral-nemo" />
+	</analytic>
+	<monogr>
+		<title level="j">Mistral AI</title>
+		<imprint>
+			<date type="published" when="2024-07">July 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Learning to compress prompts with gist tokens</title>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">D</forename><surname>Goodman</surname></persName>
+		</author>
+		<ptr target="http://papers.nips.cc/paper_files/paper/2023/hash/" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 36: Annual Conference on Neural Information Processing Systems 2023, NeurIPS 2023</title>
+		<editor>
+			<persName><forename type="first">Alice</forename><surname>Oh</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Tristan</forename><surname>Naumann</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Amir</forename><surname>Globerson</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Kate</forename><surname>Saenko</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Moritz</forename><surname>Hardt</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</editor>
+		<meeting><address><addrLine>New Orleans, LA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023">December 10 -16, 2023, 2023</date>
+		</imprint>
+	</monogr>
+	<note>f143aa2154e7f4d5e22d68-Abstract-Conference.html</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">MTEB: Massive text embedding benchmark</title>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouamane</forename><surname>Tazi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Loic</forename><surname>Magne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nils</forename><surname>Reimers</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.eacl-main.148</idno>
+		<ptr target="https://aclanthology.org/2023.eacl-main.148/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 17th Conference of the European Chapter</title>
+		<editor>
+			<persName><forename type="first">Andreas</forename><surname>Vlachos</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Isabelle</forename><surname>Augenstein</surname></persName>
+		</editor>
+		<meeting>the 17th Conference of the European Chapter<address><addrLine>Dubrovnik, Croatia</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023-05">May 2023</date>
+			<biblScope unit="page" from="2014" to="2037" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chatgpt</surname></persName>
+		</author>
+		<ptr target="https://chat.openai.com/chat" />
+		<imprint>
+			<date type="published" when="2022-09-15">2022. September 15, 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Memory and new controls for chatgpt</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://openai.com/index/memory-and-new-controls-for-chatgpt/" />
+		<imprint>
+			<date type="published" when="2024-09-15">2024. September 15, 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">CoQA: A conversational question answering challenge</title>
+		<author>
+			<persName><forename type="first">Siva</forename><surname>Reddy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danqi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<idno type="DOI">10.1162/tacla00266</idno>
+		<ptr target="https://aclanthology.org/Q19-1016/" />
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="page" from="249" to="266" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">The probabilistic relevance framework: BM25 and beyond</title>
+		<author>
+			<persName><forename type="first">Stephen</forename><forename type="middle">E</forename><surname>Robertson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Zaragoza</surname></persName>
+		</author>
+		<idno type="DOI">10.1561/1500000019</idno>
+		<ptr target="https://doi.org/10.1561/1500000019" />
+	</analytic>
+	<monogr>
+		<title level="j">Found. Trends Inf. Retr</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="333" to="389" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">RAPTOR: recursive abstractive processing for tree-organized retrieval</title>
+		<author>
+			<persName><forename type="first">Parth</forename><surname>Sarthi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Salman</forename><surname>Abdullah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditi</forename><surname>Tuli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shubh</forename><surname>Khanna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Goldie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=GN921JHCRw" />
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations, ICLR 2024</title>
+		<meeting><address><addrLine>Vienna, Austria</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024">May 7-11, 2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note>OpenReview.net</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Large language models can be easily distracted by irrelevant context</title>
+		<author>
+			<persName><forename type="first">Freda</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kanishka</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><forename type="middle">H</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<ptr target="https://proceedings.mlr.press/v202/shi23a.html" />
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning, ICML 2023</title>
+		<editor>
+			<persName><forename type="first">Andreas</forename><surname>Krause</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Emma</forename><surname>Brunskill</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Kyunghyun</forename><surname>Cho</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Barbara</forename><surname>Engelhardt</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sivan</forename><surname>Sabato</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Jonathan</forename><surname>Scarlett</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Honolulu, Hawaii, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023-07">July 2023. 2023</date>
+			<biblScope unit="volume">202</biblScope>
+			<biblScope unit="page" from="31210" to="31227" />
+		</imprint>
+	</monogr>
+	<note>Proceedings of Machine Learning Research</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">REPLUG: Retrieval-augmented black-box language models</title>
+		<author>
+			<persName><forename type="first">Weijia</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sewon</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michihiro</forename><surname>Yasunaga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minjoon</forename><surname>Seo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>James</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.naacl-long.463</idno>
+		<ptr target="https://aclanthology.org/2024.naacl-long.463/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</title>
+		<editor>
+			<persName><forename type="first">Kevin</forename><surname>Duh</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Helena</forename><surname>Gomez</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Steven</forename><surname>Bethard</surname></persName>
+		</editor>
+		<meeting>the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies<address><addrLine>Mexico City, Mexico</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024-06">June 2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="8371" to="8384" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Language model information retrieval with document expansion</title>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanhui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiaozhu</forename><surname>Mei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengxiang</forename><surname>Zhai</surname></persName>
+		</author>
+		<ptr target="https://aclanthology.org/N06-1052/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Human Language Technology Conference of the NAACL, Main Conference</title>
+		<editor>
+			<persName><forename type="first">Robert</forename><forename type="middle">C</forename><surname>Moore</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Jeff</forename><surname>Bilmes</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Jennifer</forename><surname>Chu-Carroll</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Mark</forename><surname>Sanderson</surname></persName>
+		</editor>
+		<meeting>the Human Language Technology Conference of the NAACL, Main Conference<address><addrLine>New York City, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2006-06">June 2006</date>
+			<biblScope unit="page" from="407" to="414" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Qwen2.5: A party of foundation models</title>
+		<author>
+			<persName><forename type="first">Qwen</forename><surname>Team</surname></persName>
+		</author>
+		<ptr target="https://qwenlm.github.io/blog/qwen2.5/" />
+		<imprint>
+			<date type="published" when="2024-09">September 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Augmenting language models with long-term memory</title>
+		<author>
+			<persName><forename type="first">Weizhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xifeng</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Furu</forename><surname>Wei</surname></persName>
+		</author>
+		<imprint>
+			<pubPlace>Alice Oh, Tristan</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">Amir</forename><surname>Naumann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kate</forename><surname>Globerson</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Saenko</surname></persName>
+		</author>
+		<ptr target="http://papers.nips.cc/paper_files/paper/2023/hash/ebd82705" />
+		<title level="m">Advances in Neural Information Processing Systems 36: Annual Conference on Neural Information Processing Systems 2023, NeurIPS 2023</title>
+		<editor>
+			<persName><forename type="first">Moritz</forename><surname>Hardt</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</editor>
+		<meeting><address><addrLine>New Orleans, LA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023">December 10 -16, 2023, 2023</date>
+			<biblScope unit="volume">44793</biblScope>
+		</imprint>
+	</monogr>
+	<note>f9ade5a669d0f0bf-Abstract-Conference.html</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">AirDialogue: An environment for goal-oriented dialogue research</title>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/D18-1419</idno>
+		<ptr target="https://aclanthology.org/D18-1419/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing</title>
+		<editor>
+			<persName><forename type="first">Ellen</forename><surname>Riloff</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">David</forename><surname>Chiang</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Julia</forename><surname>Hockenmaier</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Jun'ichi</forename><surname>Tsujii</surname></persName>
+		</editor>
+		<meeting>the 2018 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Brussels, Belgium</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2018-11">October-November 2018</date>
+			<biblScope unit="page" from="3844" to="3854" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sumit</forename><surname>Chopra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Bordes</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1410.3916</idno>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Memory networks. arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Yuhuai</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Markus</forename><forename type="middle">N</forename><surname>Rabe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Delesley</forename><surname>Hutchins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Szegedy</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.08913</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Memorizing transformers. arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Baize: An open-source chat model with parameter-efficient tuning on self-chat data</title>
+		<author>
+			<persName><forename type="first">Canwen</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daya</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Mcauley</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.emnlp-main.385</idno>
+		<ptr target="https://aclanthology.org/2023.emnlp-main.385/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing</title>
+		<editor>
+			<persName><forename type="first">Houda</forename><surname>Bouamor</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Juan</forename><surname>Pino</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Kalika</forename><surname>Bali</surname></persName>
+		</editor>
+		<meeting>the 2023 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023-12">December 2023</date>
+			<biblScope unit="page" from="6268" to="6278" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">RECOMP: improving retrieval-augmented lms with context compression and selective augmentation</title>
+		<author>
+			<persName><forename type="first">Fangyuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weijia</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eunsol</forename><surname>Choi</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=mlJLVigNHp" />
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations, ICLR 2024</title>
+		<meeting><address><addrLine>Vienna, Austria</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024">May 7-11, 2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note>OpenReview.net</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Beyond goldfish memory: Long-term open-domain conversation</title>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Szlam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2022.acl-long.356</idno>
+		<ptr target="https://aclanthology.org/2022.acl-long.356/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">Preslav</forename><surname>Smaranda Muresan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Aline</forename><surname>Nakov</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Villavicencio</surname></persName>
+		</editor>
+		<meeting>the 60th Annual Meeting of the Association for Computational Linguistics<address><addrLine>Dublin, Ireland</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2022-05">May 2022</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="5180" to="5197" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Long time no see! open-domain conversation with long-term persona memory</title>
+		<author>
+			<persName><forename type="first">Xinchao</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhibin</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenquan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng-Yu</forename><surname>Niu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hua</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haifeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shihang</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2022.findings-acl.207</idno>
+		<ptr target="https://aclanthology.org/2022.findings-acl.207/" />
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: ACL 2022</title>
+		<editor>
+			<persName><forename type="first">Preslav</forename><surname>Smaranda Muresan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Aline</forename><surname>Nakov</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Villavicencio</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Dublin, Ireland</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2022-05">May 2022b</date>
+			<biblScope unit="page" from="2639" to="2650" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Did you read the instructions? rethinking the effectiveness of task definitions in instruction learning</title>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Vig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philippe</forename><surname>Laban</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shafiq</forename><surname>Joty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chien-Sheng</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.acl-long.172</idno>
+		<ptr target="https://aclanthology.org/2023.acl-long.172/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">Anna</forename><surname>Rogers</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Jordan</forename><surname>Boyd-Graber</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Naoaki</forename><surname>Okazaki</surname></persName>
+		</editor>
+		<meeting>the 61st Annual Meeting of the Association for Computational Linguistics<address><addrLine>Toronto, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023-07">July 2023</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="3063" to="3079" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">Chain-of-note: Enhancing robustness in retrieval-augmented language models</title>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoman</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaixin</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongwei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.09210</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">STELLA EN 1</title>
+		<author>
+			<persName><forename type="first">Dun</forename><surname>Zhang</surname></persName>
+		</author>
+		<ptr target="https://huggingface.co/dunzhang/stella_en_1.5" />
+	</analytic>
+	<monogr>
+		<title level="j">B_v</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="page" from="5B" to="5" />
+			<date type="published" when="2023-09-15">2023. September 15, 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hongming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoman</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongwei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaixin</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2409.10277" />
+		<title level="m">Cognitive kernel: An open-source agent system towards generalist autopilots</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">SituatedQA: Incorporating extra-linguistic contexts into QA</title>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eunsol</forename><surname>Choi</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2021.emnlp-main.586</idno>
+		<ptr target="https://aclanthology.org/2021.emnlp-main.586/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing</title>
+		<editor>
+			<persName><forename type="first">Marie-Francine</forename><surname>Moens</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Xuanjing</forename><surname>Huang</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Lucia</forename><surname>Specia</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Scott</forename><surname>Wen</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">-Tau</forename><surname>Yih</surname></persName>
+		</editor>
+		<meeting>the 2021 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Dominican Republic</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2021-11">November 2021</date>
+			<biblScope unit="page" from="7371" to="7387" />
+		</imprint>
+		<respStmt>
+			<orgName>Online and Punta Cana</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title level="m" type="main">Judging llm-as-a-judge with mt-bench and chatbot arena</title>
+		<author>
+			<persName><forename type="first">Lianmin</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Lin</forename><surname>Chiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhanghao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonghao</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuohan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dacheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><forename type="middle">P</forename><surname>Xing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Stoica</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Enhancing large language models with long-term memory</title>
+		<author>
+			<persName><forename type="first">Wanjun</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lianghong</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiqi</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">He</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Memorybank</surname></persName>
+		</author>
+		<idno type="DOI">10.1609/aaai.v38i17.29946</idno>
+		<ptr target="https://doi.org/10.1609/aaai.v38i17.29946" />
+	</analytic>
+	<monogr>
+		<title level="m">Thirty-Eighth AAAI Conference on Artificial Intelligence, AAAI 2024, Thirty-Sixth Conference on Innovative Applications of Artificial Intelligence, IAAI 2024, Fourteenth Symposium on Educational Advances in Artificial Intelligence</title>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Michael</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Jennifer</forename><forename type="middle">G</forename><surname>Wooldridge</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sriraam</forename><surname>Dy</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Natarajan</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Vancouver, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>AAAI Press</publisher>
+			<date type="published" when="2014-02-20">2014. February 20-27, 2024</date>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Training language models with memory augmentation</title>
+		<author>
+			<persName><forename type="first">Zexuan</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danqi</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2022.emnlp-main.382</idno>
+		<ptr target="https://aclanthology.org/2022.emnlp-main.382/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing</title>
+		<editor>
+			<persName><forename type="first">Yoav</forename><surname>Goldberg</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Zornitsa</forename><surname>Kozareva</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Yue</forename><surname>Zhang</surname></persName>
+		</editor>
+		<meeting>the 2022 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Abu Dhabi, United Arab Emirates</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2022-12">December 2022</date>
+			<biblScope unit="page" from="5657" to="5673" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

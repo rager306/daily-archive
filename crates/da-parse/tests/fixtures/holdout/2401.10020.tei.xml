@@ -1,0 +1,1805 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Self-Rewarding Language Models</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-03-28">28 Mar 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Weizhe</forename><surname>Yuan</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Richard</forename><forename type="middle">Yuanzhe</forename><surname>Pang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Kyunghyun</forename><surname>Cho</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Xian</forename><surname>Li</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Sainbayar</forename><surname>Sukhbaatar</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Jing</forename><surname>Xu</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+						</author>
+						<author>
+							<persName><surname>Nyu</surname></persName>
+						</author>
+						<title level="a" type="main">Self-Rewarding Language Models</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-03-28">28 Mar 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">77C219BCC9C0A6A4688F1074A24AE719</idno>
+					<idno type="arXiv">arXiv:2401.10020v3[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:37+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>We posit that to achieve superhuman agents, future models require superhuman feedback in order to provide an adequate training signal. Current approaches commonly train reward models from human preferences, which may then be bottlenecked by human performance level, and secondly these separate frozen reward models cannot then learn to improve during LLM training. In this work, we study Self-Rewarding Language Models, where the language model itself is used via LLM-as-a-Judge prompting to provide its own rewards during training. We show that during Iterative DPO training that not only does instruction following ability improve, but also the ability to provide high-quality rewards to itself. Fine-tuning Llama 2 70B on three iterations of our approach yields a model that outperforms many existing systems on the AlpacaEval 2.0 leaderboard, including Claude 2, Gemini Pro, and GPT-4 0613. While there is much left still to explore, this work opens the door to the possibility of models that can continually improve in both axes.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Aligning Large Language Models (LLMs) using human preference data can vastly improve the instruction following performance of pretrained models <ref type="bibr" target="#b25">[Ouyang et al., 2022</ref><ref type="bibr">, Bai et al., 2022a]</ref>. The standard approach of Reinforcement Learning from Human Feedback (RLHF) learns a reward model from these human preferences. The reward model is then frozen and used to train the LLM using RL, e.g., via PPO <ref type="bibr" target="#b31">[Schulman et al., 2017]</ref>. A recent alternative is to avoid training the reward model at all, and directly use human preferences to train the LLM, as in Direct Preference Optimization [DPO; <ref type="bibr" target="#b28">Rafailov et al., 2023]</ref>. In both cases, the approach is bottlenecked by the size and quality of the human preference data, and in the case of RLHF the quality of the frozen reward model trained from them as well.</p><p>In this work, we instead propose to train a self-improving reward model that, rather than being frozen, is continually updating during LLM alignment, in order to avoid this bottleneck.</p><p>The key to such an approach is to develop an agent that possesses all the abilities desired during training, rather than separating them out into distinct models such as a reward model and a language model. In the same way that pretraining and multitasking training of instruction following tasks allow task transfer by training on many tasks at once <ref type="bibr" target="#b11">[Collobert and Weston, 2008</ref><ref type="bibr">, Radford et al., 2019</ref><ref type="bibr" target="#b25">, Ouyang et al., 2022]</ref>, incorporating the reward model into that same system allows task transfer between the reward modeling task and the instruction following tasks.</p><p>We thus introduce Self-Rewarding Language Models, that both (i) act as instruction following models generating responses for given prompts; and (ii) can generate and evaluate new instruction following examples to add to their own training set. We train these models using an Iterative DPO framework similar to that recently introduced in <ref type="bibr" target="#b38">Xu et al. [2023]</ref>.</p><p>Generate responses Generate rewards Preference pairs DPO training select Generated new prompts Self-Instruction creation Instruction following training Next iteration model Seed model (for t=1)</p><p>Figure <ref type="figure">1</ref>: Self-Rewarding Language Models. Our self-alignment method consists of two steps: (i) Self-Instruction creation: newly created prompts are used to generate candidate responses from model M t , which also predicts its own rewards via LLM-as-a-Judge prompting.</p><p>(ii) Instruction following training: preference pairs are selected from the generated data, which are used for training via DPO, resulting in model M t+1 . This whole procedure can then be iterated resulting in both improved instruction following and reward modeling ability.</p><p>Starting from a seed model, in each iteration there is a process of Self-Instruction creation whereby candidate responses are generated by the model for newly created prompts, and are then assigned rewards by that same model. The latter is implemented via LLM-as-a-Judge prompting, which can also be seen as an instruction following task. A preference dataset is built from the generated data, and the next iteration of the model is trained via DPO, see Figure <ref type="figure">1</ref>.</p><p>In our experiments, we start with a Llama 2 70B <ref type="bibr" target="#b34">[Touvron et al., 2023]</ref> seed model fine-tuned on Open Assistant <ref type="bibr" target="#b18">[Köpf et al., 2023]</ref>, and then perform the above training scheme. We find that not only does the instruction following performance improve from Self-Rewarding LLM alignment compared to the baseline seed model, but importantly the reward modeling ability, which is no longer fixed, improves as well. This means that the model during iterative training is able, at a given iteration, to provide a higher quality preference dataset to itself than in the previous iteration. While this effect likely saturates in real-world settings, it provides the intriguing possibility of obtaining reward models (and hence LLMs) that are superior to ones that could have been trained from the original human-authored seed data alone.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Self-Rewarding Language Models</head><p>Our approach first assumes access to a base pretrained language model, and a small amount of human-annotated seed data. We then build a model that aims to possess two skills simultaneously:</p><p>1. Instruction following: given a prompt that describes a user request, the ability to generate a high quality, helpful (and harmless) response.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Self-Instruction creation: the ability to generate and evaluate new instruction-</head><p>following examples to add to its own training set.</p><p>These skills are used so that the model can perform self-alignment, i.e., they are the components used to iteratively train itself using AI Feedback (AIF).</p><p>Self-instruction creation consists of generating candidate responses and then the model itself judging their quality, i.e., it acts as its own reward model, replacing the need for an external one. This is implemented via the LLM-as-a-Judge mechanism <ref type="bibr">[Zheng et al., 2023b]</ref>, i.e., by formulating the evaluation of responses as an instruction following task. This self-created AIF preference data is used as a training set.</p><p>Our overall self-alignment procedure is an iterative one, which proceeds by building a series of such models, with the aim that each improves over the last. Importantly, because the model can both improve its generation ability, and act as its own reward model through the same generation mechanism, this means the reward model itself can improve through these iterations, deviating from standard practices where the reward model is fixed <ref type="bibr" target="#b25">[Ouyang et al., 2022]</ref>. We believe this can increase the ceiling of the potential for self-improvement of these learning models going forward, removing a constraining bottleneck.</p><p>We describe these steps in more detail below. An overview of the approach is illustrated in Figure <ref type="figure">1</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Initialization</head><p>Seed instruction following data We are given a seed set of human-authored (instruction prompt, response) general instruction following examples that we use for training in a supervised fine-tuning (SFT) manner, starting from a pretrained base language model. Subsequently this will be referred to as Instruction Fine-Tuning (IFT) data.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Seed LLM-as-a-Judge instruction following data</head><p>We also assume we are provided a seed set of (evaluation instruction prompt, evaluation result response) examples which can also be used for training. While this is not strictly necessary, as the model using IFT data will already be capable of training an LLM-as-a-Judge, we show that such training data can give improved performance (see Appendix A.3 for supporting results). In this data, the input prompt asks the model to evaluate the quality of a given response to a particular instruction. The provided evaluation result response consists of chain-of-thought reasoning (a justification), followed by a final score (in our experiments out of 5). The exact prompt format we chose is given in Figure <ref type="figure">2</ref>, which instructs the LLM to evaluate the response using five additive criteria (relevance, coverage, usefulness, clarity and expertise), covering various aspects of quality. Subsequently this will be referred to as Evaluation Fine-Tuning (EFT) data.</p><p>We use both these seed sets together during training.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Self-Instruction Creation</head><p>Using the model we have trained, we can make it self-modify its own training set. Specifically, we generate additional training data for the next iteration of training.</p><p>This consists of the following steps: 1. Generate a new prompt: We generate a new prompt x i using few-shot prompting, sampling prompts from the original seed IFT data, following the approach of Wang et al. [2023] and Honovich et al. [2023].<ref type="foot" target="#foot_0">foot_0</ref> 2. Generate candidate responses: We then generate N diverse candidate responses {y 1 i , . . . , y N i } for the given prompt x i from our model using sampling. 3. Evaluate candidate responses: Finally, we use the LLM-as-a-Judge ability of our same model to evaluate its own candidate responses with scores r n i ∈ [0, 5] (exact prompt given in Figure <ref type="figure">2</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">Instruction Following Training</head><p>As previously described, training is initially performed with the seed IFT and EFT data (Section 2.1). This is then augmented with additional data via AI (Self-)Feedback.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>AI Feedback Training</head><p>After performing the self-instruction creation procedure, we can augment the seed data with additional examples for training, which we refer to as AI Feedback Training (AIFT) data.</p><p>To do this, we construct preference pairs, which are training data of the form (instruction prompt x i , winning response y w i , losing response y l i ). To form the winning and losing pair we take the highest and lowest scoring responses from the N evaluated candidate responses (see Review the user's question and the corresponding response using the additive 5-point scoring system described below. Points are accumulated based on the satisfaction of each criterion:</p><p>-Add 1 point if the response is relevant and provides some information related to the user's inquiry, even if it is incomplete or contains some irrelevant content.</p><p>-Add another point if the response addresses a substantial portion of the user's question, but does not completely resolve the query or provide a direct answer.</p><p>-Award a third point if the response answers the basic elements of the user's question in a useful way, regardless of whether it seems to have been written by an AI Assistant or if it has elements typically found in blogs or search results.</p><p>-Grant a fourth point if the response is clearly written from an AI Assistant's perspective, addressing the user's question directly and comprehensively, and is well-organized and helpful, even if there is slight room for improvement in clarity, conciseness or focus.</p><p>-Bestow a fifth point for a response that is impeccably tailored to the user's question by an AI Assistant, without extraneous information, reflecting expert knowledge, and demonstrating a high-quality, engaging, and insightful answer.</p><p>User: &lt;INSTRUCTION_HERE&gt; &lt;response&gt;&lt;RESPONSE_HERE&gt;&lt;/response&gt; After examining the user's instruction and the response:</p><p>-Briefly justify your total score, up to 100 words.</p><p>-Conclude with the score using the format: "Score: &lt;total points&gt;" Remember to assess from the AI Assistant perspective, utilizing web search knowledge as necessary. To evaluate the response in alignment with this additive scoring model, we'll systematically attribute points based on the outlined criteria.</p><p>Figure <ref type="figure">2</ref>: LLM-as-a-Judge prompt for our LLM to act as a reward model and provide self-rewards for its own model generations. The model is initially trained with seed training data of how to perform well at this task, and then improves at this task further through our self-rewarding training procedure. Section 2.2), following <ref type="bibr" target="#b38">Xu et al. [2023]</ref>, discarding the pair if their scores are the same. These pairs can be used for training with a preference tuning algorithm. We use DPO <ref type="bibr" target="#b28">[Rafailov et al., 2023]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.4">Overall Self-Alignment Algorithm</head><p>Iterative Training Our overall procedure trains a series of models M 1 , . . . , M T where each successive model t uses augmented training data created by the t -1 th model. We thus define AIFT(M t ) to mean AI Feedback Training data created using model M t .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Model Sequence</head><p>We define the models, and the training data they use as follows: M 0 : Base pretrained LLM with no fine-tuning. M 1 : Initialized with M 0 , then fine-tuned on the IFT+EFT seed data using SFT. M 2 : Initialized with M 1 , then trained with AIFT(M 1 ) data using DPO. M 3 : Initialized with M 2 , then trained with AIFT(M 2 ) data using DPO.</p><p>This iterative training resembles the procedure used in Pairwise Cringe Optimization and specifically is termed Iterative DPO, introduced in <ref type="bibr" target="#b38">Xu et al. [2023]</ref>; however, an external fixed reward model was used in that work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Experimental Setup</head><p>Base Model In our experiments we use Llama 2 70B <ref type="bibr" target="#b34">[Touvron et al., 2023]</ref> as our base pretrained model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.1">Seed Training Data</head><p>IFT Seed Data We use the human-authored examples provided in the Open Assistant dataset <ref type="bibr" target="#b18">[Köpf et al., 2023]</ref> for instruction fine-tuning. Following <ref type="bibr" target="#b21">Li et al. [2024]</ref> we use 3200 examples, by sampling only first conversational turns in the English language that are high-quality, based on their human annotated rank (choosing only the highest rank 0). In our experiments, we compare to a model fine-tuned from the base model using only this data via supervised fine-tuning, and refer to it as our SFT baseline.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>EFT Seed Data</head><p>The Open Assistant data also provides multiple ranked human responses per prompt from which we can construct evaluation fine-tuning data. We split this into train and evaluation sets, and use it to create LLM-as-a-Judge data. This is done by placing it in the input format given in Figure <ref type="figure">2</ref>, which consists of the scoring criteria description, and the given instruction and response to be evaluated.<ref type="foot" target="#foot_1">foot_1</ref> For training targets, chain-of-thought justifications and final scores out of 5 are not directly provided, so we use the SFT baseline to generate such output evaluations for each input, and accept them into the training set if the ranking of their scores agrees with the human rankings in the dataset. We resample the training set by discarding some of the data that receives the most common score so that the scores are not too skewed, as we observe many samples receive a score of 4. This results in 1,630 train and 541 evaluation examples (which do not overlap with the IFT data).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.2">Evaluation Metrics</head><p>We evaluate the performance of our self-rewarding models in two axes: their ability to follow instructions, and their ability as a reward model (ability to evaluate responses).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Instruction Following</head><p>We evaluate head-to-head performance between various models using GPT-4 <ref type="bibr" target="#b0">[Achiam et al., 2023]</ref> as an evaluator over 256 test prompts (which we refer to as IFT test data) derived from various sources following <ref type="bibr" target="#b21">Li et al. [2024]</ref> using the AlpacaEval evaluation prompt <ref type="bibr" target="#b22">[Li et al., 2023]</ref>. We try the prompt in both orders comparing pairwise, and if the GPT-4 evaluations disagree we count the result as a tie. We also perform a similar evaluation with humans (authors). We additionally report results in the AlpacaEval 2.0 leaderboard format which is evaluated over 805 prompts, and compute the win rate against the baseline GPT-4 Turbo model based on GPT-4 judgments. Further, we report results on MT-Bench <ref type="bibr">[Zheng et al., 2023b]</ref> a set of challenging multi-turn questions in various categories from math and coding to roleplay and writing, which uses GPT-4 to grade the model responses out of 10. Finally we also test the models on a set of 9 NLP benchmarks: ARC-Easy <ref type="bibr" target="#b9">[Clark et al., 2018]</ref>, ARC-Challenge <ref type="bibr" target="#b9">[Clark et al., 2018]</ref>, HellaSwag <ref type="bibr" target="#b40">[Zellers et al., 2019]</ref>, SIQA <ref type="bibr" target="#b30">[Sap et al., 2019]</ref>, PIQA <ref type="bibr" target="#b6">[Bisk et al., 2020]</ref>, GSM8K <ref type="bibr" target="#b10">[Cobbe et al., 2021]</ref>, MMLU <ref type="bibr" target="#b15">[Hendrycks et al., 2021]</ref>, OBQA <ref type="bibr" target="#b24">[Mihaylov et al., 2018]</ref> and NQ <ref type="bibr" target="#b19">[Kwiatkowski et al., 2019]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reward Modeling</head><p>We evaluate the correlation with human rankings on the evaluation set we derived from the Open Assistant dataset, as described in Section 3.1.1. Each instruction has on average 2.85 responses with given rankings. We can thus measure the pairwise accuracy, which is how many times the order of the ranking between any given pair agrees between the model's evaluation and the human ranking. We also measure the exact match count, which is how often the total ordering is exactly the same for an instruction. We also report the Spearman correlation and Kendall's τ . Finally, we report how often the responses that the model scores a perfect 5 out of 5 are rated as the highest ranked by humans.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.3">Training Details</head><p>Instruction following training The training hyperparameters we use are as follows. For SFT we use learning rate 5.5e-6 which decays (cosine) to 1.1e-6 at the end of training, batch size 16 and dropout 0.1. We only calculate the loss on target tokens instead of the full sequence. For DPO we use learning rate 1e-6 which decays to 1e-7, batch size 16, dropout 0.1, and a β value of 0.1. We perform early stopping by saving a checkpoint every 200 steps and evaluating generations using Claude 2 <ref type="bibr" target="#b2">[Anthropic, 2023]</ref> on 253 validation examples derived from various sources following <ref type="bibr" target="#b21">Li et al. [2024]</ref>. This is evaluated pairwise against the previous step's generations using the AlpacaEval evaluation prompt format <ref type="bibr" target="#b22">[Li et al., 2023]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Self-Instruction creation</head><p>To generate new prompts we use a fixed model, Llama 2-Chat 70B with 8-shot prompting following Self-Instruct <ref type="bibr" target="#b36">[Wang et al., 2023]</ref>, where we sample six demonstrations from the IFT data and two from the model generated data, and use decoding parameters T = 0.6, p = 0.9. We use their prompt template for non-classification tasks and apply the same filtering techniques, including the ROUGE-L <ref type="bibr" target="#b23">[Lin, 2004]</ref> similarity check, keyword filtering, and length filtering. Except for the prompt generation part, the other parts of the creation pipeline (generating the response, and evaluating it) use the Self-Rewarding model being trained. For candidate response generation we sample N = 4 candidate responses with temperature T = 0.7, p = 0.9. When evaluating candidate responses, as there is variance to these scores, in our experiments we also use sampled decoding (with the same parameters) and generate these evaluations multiple (3) times and take the average. We added 3,964 such preference pairs to form the AIFT(M 1 ) dataset used to train M 2 via DPO, and 6,942 pairs to form AIFT(M 2 ) used to train M 3 .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.1">Instruction Following Ability</head><p>Head to head performance results are provided in Figure <ref type="figure" target="#fig_0">3</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>EFT+IFT seed training performs similarly to IFT alone</head><p>We find that adding the Evaluation Fine-Tuning (EFT) task to training does not impact instruction following performance compared to using Instruction Fine-Tuning (IFT) data alone with an almost equal head to head (30.5% wins vs. 30.9% wins). This is a positive result because it means the increased capability of a model to self-reward does not affect its other skills. We can thus use IFT+EFT training as Iteration 1 (M 1 ) of our Self-Rewarding model, and then run further iterations.</p><p>Iteration 2 (M 2 ) improves over Iteration 1 (M 1 ) and SFT Baseline Iteration 2 of Self-Rewarding training (M 2 ) provides superior instruction following to Iteration 1 (M 1 ) with 55.5% wins for M 2 compared to only 11.7% for M 1 in a head to head evaluation. It provides similar gains over the SFT Baseline as well (49.2% wins vs. 14.5% wins). Clearly, there is a large jump in performance from M 1 to M 2 by using the preference data AIFT(M 1 ) provided by the reward model from Iteration 1.</p><p>Iteration 3 (M 3 ) improves over Iteration 2 (M 2 ) We see a further gain in Iteration 3 over Iteration 2, with 47.7% wins for M 3 compared to only 12.5% for M 2 in a head to head evaluation. Similarly, the win rate over the SFT Baseline for M 3 increases to 62.5% wins vs. 9.8%, i.e., winning more often than the M 2 model did. Overall, we see large gains from M 2 to M 3 through training using the preference data AIFT(M 2 ) provided by the reward model from Iteration 2.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Self-Rewarding models perform well on AlpacaEval 2 leaderboard</head><p>We evaluate our models on the AlpacaEval 2.0 leaderboard format, with results given in Table <ref type="table" target="#tab_0">1</ref>. We observe the same findings as in the head-to-head evaluations, that training iterations yield improved win rates, in this case over GPT4-Turbo, from 9.94% in Iteration 1, to 15.38% in Iteration 2, to 20.44% in Iteration 3. Our Iteration 3 model outperforms many existing models in this metric, including Claude 2, Gemini Pro, and GPT4 0613. We show some</p><p>Self-Rewarding M 3 vs. SFT Baseline Self-Rewarding M 2 vs. SFT Baseline Self-Rewarding M 1 vs. SFT Baseline 62.5 49.2 30.5 27.7 36.3 38.7 9.8 14.5 30.9 Self-Rewarding Wins Tie SFT Baseline Wins Self-Rewarding M 3 vs. M 2 Self-Rewarding M 2 vs. M 1 Self-Rewarding M 3 vs. M 1 47.7 55.5 68.8 39.8 32.8 22.7 12.5 11.7 8.6 Left Wins (in Left vs. Right) Tie Right Wins We evaluate our models using head-to-head win rates on diverse prompts using GPT-4. The SFT Baseline is on par with Self-Rewarding Iteration 1 (M 1 ). However, Iteration 2 (M 2 ) outperforms both Iteration 1 (M 1 ) and the SFT Baseline. Iteration 3 (M 3 ) gives further gains over Iteration 2 (M 2 ), outperforming M 1 , M 2 and the SFT Baseline by a large margin.</p><p>selected models from the leaderboard in the table. We note that many of those competing models contain either proprietary alignment data (which is typically large, e.g., over 1M annotations in <ref type="bibr" target="#b34">Touvron et al. [2023]</ref>) or use targets that are distilled from stronger models. In contrast, our Self-Rewarding model starts from a small set of seed data from Open Assistant, and then generates targets and rewards from the model itself for further iterations of training.</p><p>Fine-grained analysis As described earlier, the overall performance of the model in AlpacaEval improves with each iteration of training. It would be interesting to break down the overall performance improvement to see exactly what type of tasks these improvements come from. Therefore, we cluster the instructions in AlpacaEval test set into different groups based on three perspectives: (1) instruction category (2) instruction complexity (3) expected response length. We achieve this by using GPT-4. The detailed statistical information of the breakdown and the prompting techniques we used for getting this breakdown can be found in Appendix A.6. Results for the instruction category are given in Figure <ref type="figure">4</ref>, and the other two in Appendix Figure <ref type="figure" target="#fig_3">11</ref>. From the results we can conclude that (i) Self-Rewarding models can substantially improve the win rate in most categories, but there are some tasks for which this approach does not improve, such as mathematics and logical reasoning, indicating that our current training approach mainly allows the models to better utilize their existing knowledge.</p><p>(ii) Through Self-Rewarding model training, the model's win rate increases on almost all tasks of different complexity, and especially on slightly more difficult tasks (complexity of 5, 6, 7 out of 10). (iii) The models also show a steady increase in the win rate on tasks with instructions with different expected response lengths. Win rate (%)</p><formula xml:id="formula_0">M 0 M 1 M 2 M 3</formula><p>Figure <ref type="figure">4</ref>: AlpacaEval win rate breakdown for instruction categories (full names given in Appendix). Self-Rewarding models give gains across several topics, but tend to e.g. give less gains on mathematics and reasoning tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Data distribution analysis</head><p>We perform a t-SNE <ref type="bibr" target="#b35">[Van der Maaten and Hinton, 2008]</ref> visualization of the IFT, EFT and AIFT(M 1 ) data, shown in Appendix A.1. We find good overlap between the IFT and AIFT(M 1 ) examples, which is desired, while the EFT examples lie in a different part of the embedding space, which can help explain why they would not affect IFT performance. We observe that generations from M 1 on AlpacaEval have an average length of 1092, for M 2 they are 1552, and for M 3 they are 2552, so the model is learning to generate longer responses, which we note may be a factor in relative performance.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Human evaluation</head><p>To examine whether human judgments align with automatic evaluation results, we conduct human evaluations that compare SFT baseline generations with the generations from each iteration of Self-Rewarding training, i.e., models M 1 , M 2 , and M 3 . Specifically, we randomly select 50 instructions from the IFT test set. Each instruction corresponds to three pairs of generations (i.e., baseline vs. M 1 , baseline vs. M 2 , baseline vs. M 3 ). For each pair of generations, we assign them to three different annotators (blind evaluation performed by the authors) to make a pairwise judgment, and take a majority vote to decide which generation is better. The human evaluation results are shown in Figure <ref type="figure">5</ref>. We find that Self-Rewarding models from later iterations show a larger advantage over the SFT baseline model, which is consistent with GPT-4's judgments, and demonstrates the effectiveness of our iterative training procedure.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>MT-Bench performance further validates these results</head><p>We report performance on MT-Bench in Table <ref type="table" target="#tab_1">2</ref> for the SFT baseline and iterations of the Self-Rewarding model. We again see improvements across the iterations of training from M 1 to M 3 , from 6.78 (out of 10) up to 7.25, with larger relative gains in the humanities, STEM, roleplay, writing and extraction categories, and smaller gains in the math, code and reasoning categories. We expect that the latter is due to the seed prompts we use from Open Assistant tending to underemphasize the reasoning-based tasks. We note also that these improvements are in spite of our method using and constructing prompts that only involve a single turn, given the MT-Bench benchmark itself is a multi-turn evaluation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Self-rewarding models did not lose ability on NLP Benchmarks</head><p>As shown in Table <ref type="table">3</ref>, the performance of most NLP benchmark tasks evaluated are roughly similar to the baselines, with further detailed results on more datasets given in Appendix Table <ref type="table" target="#tab_5">9</ref> that follow the same pattern. We hypothesize that given that our training data (seed data and synthetically generated data) are based on the Open Assistant prompts which may not be especially relevant to skills needed in the Table <ref type="table">3</ref> tasks, it is expected that the task performance stays roughly similar, or may even drop. For example, in InstructGPT training <ref type="bibr" target="#b25">[Ouyang et al., 2022]</ref> they found that "during RLHF fine-tuning, we observe performance regressions compared to GPT-3 on certain public NLP datasets" which they refer to as an "alignment tax." A clear future direction is to extend the self-rewarding paradigm to these types of tasks, by relying not only on seed prompts from Open Assistant, but also on seed prompts found in a larger variety of datasets.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.2">Reward Modeling Ability</head><p>Reward modeling evaluation results are provided in Table <ref type="table" target="#tab_2">4</ref>.</p><p>EFT augmentation improves over SFT baseline Firstly, we find that adding Evaluation Fine-Tuning (EFT) data into training, which gives examples to the model of how to act as an LLM-as-a-Judge, naturally improves its performance compared to training with Instruction Fine-Tuning (IFT) data alone. IFT data covers a wide range of general instruction tasks, and so does endow the SFT Baseline with the ability to evaluate responses; however, EFT data gives more examples of this specific task. We find improvements across all five metrics measured when using IFT+EFT vs. IFT alone, e.g., the pairwise accuracy agreement with humans increases from 65.1% to 78.7%.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reward Modeling ability improves with Self-Training</head><p>We find that performing a round of self-reward training improves the ability of the model at providing self-rewards for the next iteration, in addition to its improved instruction following ability. Model M 2 (Iteration 2) is trained using the reward model from M 1 (Iteration 1), but provides improved performance on all five metrics compared to M 1 . For example, pairwise accuracy improves from 78.7% to 80.4%. Iteration 3 (M 3 ) improves several of these metrics further compared to M 2 , for example pairwise accuracy increases from 80.4% to 81.7%. This performance gain is achieved despite there being no additional EFT data provided, and the examples created during the Self-Instruction creation loop do not tend to look like LLM-as-a-Judge training examples. We hypothesize that because the model is becoming better at general instruction following, it nevertheless also improves at the LLM-as-a-Judge task.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Importance of the LLM-as-a-Judge Prompt</head><p>In these experiments we used the LLMas-a-Judge prompt format shown in Figure <ref type="figure">2</ref>. In preliminary experiments we also tried various other prompts to decide the most effective one to use. For example, we tried the prompt proposed in <ref type="bibr" target="#b21">Li et al. [2024]</ref> which also proposes a 5-point scale, but describes the options as multiple choice in a range of quality buckets, see Appendix Figure <ref type="figure">7</ref>. In contrast, our prompt describes the points as additive, covering various aspects of quality. We find a large difference between these two prompts when using the SFT Baseline, e.g. 65.1% pairwise accuracy for ours, and only 26.6% pairwise accuracy for theirs. See Appendix A.2 for further details.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Related Work</head><p>Automatically improving or self-correcting large language models is becoming a major focus of research. A recent survey from <ref type="bibr" target="#b26">Pan et al. [2023]</ref> attempts to summarize the topic. However, this is a rapidly moving area, and there are already promising new works not covered there. [2022a] train a fixed reward model from human preference data, and then use the reward model to train via reinforcement learning (RL), e.g. via Proximal Policy Optimization (PPO) <ref type="bibr" target="#b31">[Schulman et al., 2017]</ref>. Thus, the reward signal in a certain sense already comes from a model even in these works, but distilled from human data. Nevertheless, this is commonly referred to as RL from Human Feedback (RLHF). Methods such as Direct Preference Optimization (DPO) <ref type="bibr" target="#b28">[Rafailov et al., 2023]</ref> avoid training the reward model entirely, and instead directly train the LLM using human preferences. Several other such competing methods exist as well <ref type="bibr" target="#b41">[Zhao et al., 2023</ref><ref type="bibr">, Zheng et al., 2023a</ref><ref type="bibr" target="#b39">, Yuan et al., 2023]</ref>, including Pairwise Cringe Optimization (PCO) <ref type="bibr" target="#b38">[Xu et al., 2023]</ref>. PCO uses an iterative training approach similar to the one in our work, except with a fixed reward model, and that work also showed that Iterative DPO improves over DPO using the same scheme. We note that other works have developed iterative preference training schemes as well, e.g. <ref type="bibr" target="#b1">Adolphs et al. [2023]</ref>, <ref type="bibr" target="#b14">Gulcehre et al. [2023]</ref>, <ref type="bibr" target="#b37">Xiong et al. [2023]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reinforcement</head><p>Reinforcement Learning from AI Feedback (RLAIF) Constitutional AI <ref type="bibr">[Bai et al., 2022b]</ref> uses an LLM to give feedback and refine responses, and uses this data to train a reward model. This fixed, separate reward model is then used to train the language model via RL, called "RL from AI Feedback" (RLAIF). <ref type="bibr" target="#b20">Lee et al. [2023]</ref> compare RLAIF and RLHF procedures and find the methods they compare perform roughly equally. They use an "off-the-shelf" LLM to perform LLM-as-a-Judge prompting to build a training set to train a fixed reward model, which is then used for RL training. They also experiment with using the fixed but separate LLM-as-a-Judge model directly, which the authors report is computationally expensive due to using it within PPO training (rather than the offline step in the iterative approach we use in our work, which is relatively computationally cheap). Finally, SPIN <ref type="bibr">[Chen et al., 2024b</ref>] recently showed they can avoid reward models entirely in an Iterative DPO-like framework by using human labels as the winning response in a pair, and the last iteration's generations as the losing response in the pair. The authors note this has the limitation that once the model generations reach human performance, they are bottlenecked. Further, each input prompt is required to have a human annotated response, in contrast to our work.</p><p>Improving LLMs via data augmentation (and curation) Several methods have improved LLMs by (self-)creating training data to augment fine-tuning. Self-Instruct <ref type="bibr" target="#b36">[Wang et al., 2023]</ref> is a method for self-instruction creation of prompts and responses, which can be used to improve a base LLM. We make use of a similar technique in our work, and then use our self-reward model to score them. Several approaches have also created training data by distilling from powerful LLMs, and shown a weaker LLM can then perform well. For example, Alpaca <ref type="bibr" target="#b33">[Taori et al., 2023]</ref> fine-tuned a Llama 7B model with text-davinci-003 instructions created in the style of self-instruct. Alpagasus <ref type="bibr">[Chen et al., 2024a]</ref> employed a strong LLM-as-a-Judge (ChatGPT) to curate the Alpaca dataset and filter to a smaller set, obtaining improved results. Instruction Backtranslation <ref type="bibr" target="#b21">[Li et al., 2024]</ref> similarly augments and curates training data, but augmenting via backtranslating from web documents to predict prompts. The curation is done by the LLM(-as-a-Judge) itself, so can be seen as an instance of a self-rewarding model, but in a specialized setting. Reinforced Self-Training (ReST) <ref type="bibr" target="#b14">[Gulcehre et al., 2023]</ref> uses a fixed, external reward to curate new high-quality examples to iteratively add to the training set, improving performance. In our experiments, we found that adding only positive examples in a related manner did not help, whereas preference pairs did help (see Appendix Section A.4 for details).</p><p>LLM-as-a-Judge Using LLM-as-a-Judge prompting to evaluate language models has become a standard approach <ref type="bibr" target="#b12">[Dubois et al., 2023</ref><ref type="bibr">, Li et al., 2023</ref><ref type="bibr" target="#b13">, Fernandes et al., 2023</ref><ref type="bibr" target="#b5">, Bai et al., 2023</ref><ref type="bibr" target="#b29">, Saha et al., 2023]</ref>, and is being used to train reward models or curate data as well, as described above <ref type="bibr" target="#b20">[Lee et al., 2023</ref><ref type="bibr">, Chen et al., 2024a</ref><ref type="bibr" target="#b21">, Li et al., 2024]</ref>. While some works such as <ref type="bibr" target="#b17">Kim et al. [2023]</ref> create training data to train an LLM to perform well as a judge, to our knowledge it is not common to combine this training with general instruction following skills as in our work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>We have introduced Self-Rewarding Language Models, models capable of self-alignment via judging and training on their own generations. The method learns in an iterative manner, where in each iteration the model creates its own preference-based instruction training data. This is done by assigning rewards to its own generations via LLM-as-a-Judge prompting, and using Iterative DPO to train on the preferences. We showed that this training both improves the instruction following capability of the model, as well as its reward-modeling ability across the iterations. While there are many avenues left unexplored, we believe this is exciting because this means the model is better able to assign rewards in future iterations for improving instruction following -a kind of virtuous circle. While this improvement likely saturates in realistic scenarios, it still allows for the possibility of continual improvement beyond the human preferences that are typically used to build reward models and instruction following models today.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Limitations</head><p>While we have obtained promising experimental results, we currently consider them preliminary because there are many avenues yet to explore, among them the topics of further evaluation, including safety evaluation, and understanding the limits of iterative training.</p><p>We showed that the iterations of training improve both instruction following and reward modeling ability, but only ran three iterations in a single setting. A clear line of further research is to understand the "scaling laws" of this effect both for more iterations, and with different language models with more or less capabilities in different settings.</p><p>We observed an increase in length in model generations, and there is a known correlation between length and estimated quality, which is a topic that should be understood more deeply in general, and in our results in particular as well. It would also be good to understand if so-called "reward-hacking" can happen within our framework, and in what circumstances. As we are using both a language model as the training reward, and a language model for final evaluation (GPT-4) in some of our benchmarks, even if they are different models, this may require a deeper analysis than we have provided. While the human evaluation we conducted did provide validation of the automatic results, further study could bring more insights.</p><p>Another clear further avenue of study is to conduct safety evaluations -and to explore safety training within our framework. Reward models have been built exclusively for safety in existing systems <ref type="bibr" target="#b34">[Touvron et al., 2023]</ref>, and a promising avenue here would be to use the LLM-as-a-Judge procedure to evaluate for safety specifically in our self-rewarding training process. Given that we have shown that reward modeling ability improves over training iterations, this could mean that the safety of the model could potentially improve over time as well, with later iterations being able to catch and mitigate more challenging safety situations that earlier iterations cannot.</p><p>Below is a question from an user and a candidate response. Please grade the response on a 5-point scale using the following criteria:</p><p>1: It means the answer is incomplete, vague, off-topic, controversial, or not exactly what the user asked for. For example, some content seems missing, numbered list does not start from the beginning, the opening sentence repeats user's question. Or the response is from another person's perspective with their personal experience (e.g. taken from blog posts), or looks like an answer from a forum. Or it contains promotional text, navigation text, or other irrelevant information.</p><p>2: It means the answer addresses most of the asks from the user. It does not directly address the user's question. For example, it only provides a high-level methodology instead of the exact solution to user's question.</p><p>3: It means the answer is helpful but not written by an AI Assistant. It addresses all the basic asks from the user. It is complete and self contained with the drawback that the response is not written from an AI assistant's perspective, but from other people's perspective. The content looks like an excerpt from a blog post, web page, or web search results. For example, it contains personal experience or opinion, mentions comments section, or share on social media, etc. 4: It means the answer is written from an AI assistant's perspective with a clear focus of addressing the instruction. It provide a complete, clear, and comprehensive response to user's question or instruction without missing or irrelevant information.</p><p>It is well organized, self-contained, and written in a helpful tone. It has minor room for improvement, e.g. more concise and focused. 5: It means it is a perfect answer from an AI Assistant. It has a clear focus on being a helpful AI Assistant, where the response looks like intentionally written to address the user's question or instruction without any irrelevant sentences. The answer provides high quality content, demonstrating expert knowledge in the area, is very well written, logical, easy-to-follow, engaging and insightful.</p><p>User: &lt;INSTRUCTION_HERE&gt;</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>&lt;response&gt;&lt;RESPONSE_HERE&gt;&lt;/response&gt;</head><p>Please first briefly describe your reasoning (in less than 100 words), and then write "Score: &lt;rating&gt;" in the last line. Answer in the style of an AI Assistant, with knowledge from web search if needed. To derive the final score based on the criteria, let's think step-by-step.</p><p>Figure <ref type="figure">7</ref>: LLM-as-a-Judge prompt taken from <ref type="bibr" target="#b21">Li et al. [2024]</ref>.</p><p>M ′ 1 : Initialized with M 0 , then fine-tuned on the IFT seed data only using SFT.</p><p>M ′ 2 : Initialized with M ′ 1 , then trained with AIFT(M ′ 1 ) data using DPO.</p><p>M ′ 3 : Initialized with M ′ 2 , then trained with AIFT(M ′ 2 ) data using DPO.</p><p>Since we did not use EFT data to train the series of models, they were not always able to score the responses according to the format and even when they did, the scores given typically converged to 4. Therefore, even when starting from the same number of generated new prompts, we could only collect a very small number of valid training samples for DPO.</p><p>In total, we collected 541 pairs to form the AIFT(M ′ 1 ) dataset used to train M ′ 2 via DPO, and 429 pairs to form AIFT(M ′ 2 ) used to train M ′ 3 . The win rates are shown in Figure <ref type="figure">8</ref>. From the figure we can conclude that EFT data helps to get better performance in the same number of iterations and the gap in performance between the model trained with EFT data and the model trained without EFT data widens in the later iterations.   </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.7 NLP Benchmark Results and MT-Bench Results</head><p>We provide the detailed model performance on a number of NLP benchmarks in Table <ref type="table" target="#tab_5">9</ref> and on MT-Bench in Table <ref type="table" target="#tab_6">10</ref>. In particular, some NLP benchmarks including ARC-Challenge, HellaSwag, SIQA, PIQA, and OBQA are all text completion tasks. In these tasks, given the multiple choice options, we choose the option corresponding to the highest log probability scored by the models as the final answer. As such, the objective of these particular tasks is quite different from what our algorithm tries to optimize, so the results on these tasks may not reflect the true capability of our models.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 3 :</head><label>3</label><figDesc>Figure3: Instruction following ability improves with Self-Training: We evaluate our models using head-to-head win rates on diverse prompts using GPT-4. The SFT Baseline is on par with Self-Rewarding Iteration 1 (M 1 ). However, Iteration 2 (M 2 ) outperforms both Iteration 1 (M 1 ) and the SFT Baseline. Iteration 3 (M 3 ) gives further gains over Iteration 2 (M 2 ), outperforming M 1 , M 2 and the SFT Baseline by a large margin.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><figDesc>Figure5:Human evaluation results. Iterations of Self-Rewarding (M 1 , M 2 and M 3 ) provide progressively better head-to-head win rates compared to the SFT baseline, in agreement with the automatic evaluation results.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><figDesc>Learning from Human Feedback (RLHF) Preference learning approaches such as in Ziegler et al. [2019], Stiennon et al. [2020], Ouyang et al. [2022], Bai et al.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 11 :</head><label>11</label><figDesc>Figure 11: AlpacaEval win rate breakdown for instruction complexities (left) and expected response lengths (right). Self-Rewarding models give gains across most complexities and all response length ranges.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>AlpacaEval 2.0 results (win rate over GPT-4 Turbo evaluated by GPT-4). Self-Rewarding iterations yield improving win rates. Iteration 3 (M 3 ) outperforms many existing models that use proprietary training data or targets distilled from stronger models.</figDesc><table><row><cell>Alignment Targets</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>MT-Bench Results (on a scale of 10). Self-Rewarding iterations yield improving scores across various categories. Math, code &amp; reasoning performance and iteration gains are smaller than for other categories, likely due to the makeup of the Open Assistant seed data we use.</figDesc><table><row><cell></cell><cell cols="3">Overall Math, Code</cell><cell cols="3">Humanities, Extraction,</cell></row><row><cell></cell><cell>Score</cell><cell cols="5">&amp; Reasoning STEM, Roleplay &amp; Writing</cell></row><row><cell>SFT Baseline</cell><cell>6.85</cell><cell></cell><cell>3.93</cell><cell></cell><cell>8.60</cell></row><row><cell>M 1</cell><cell>6.78</cell><cell></cell><cell>3.83</cell><cell></cell><cell>8.55</cell></row><row><cell>M 2</cell><cell>7.01</cell><cell></cell><cell>4.05</cell><cell></cell><cell>8.79</cell></row><row><cell>M 3</cell><cell>7.25</cell><cell></cell><cell>4.17</cell><cell></cell><cell>9.10</cell></row><row><cell cols="7">Table 3: NLP Benchmarks. Self-Rewarding models mostly tend to maintain performance</cell></row><row><cell cols="7">compared to the Llama 2 70B base model and the SFT Baseline, despite being fine-tuned on</cell></row><row><cell cols="4">very different instruction-following prompts.</cell><cell></cell><cell></cell></row><row><cell></cell><cell>ARC (↑)</cell><cell></cell><cell>HellaSwag</cell><cell>GSM8K</cell><cell>MMLU</cell><cell>NQ</cell></row><row><cell></cell><cell cols="2">challenge</cell><cell>(↑)</cell><cell>(↑)</cell><cell>(↑)</cell><cell>(↑)</cell></row><row><cell>Llama 2</cell><cell>57.40</cell><cell></cell><cell>85.30</cell><cell>56.80</cell><cell>68.90</cell><cell>25.30</cell></row><row><cell>SFT Baseline</cell><cell>55.97</cell><cell></cell><cell>85.17</cell><cell>50.72</cell><cell>69.76</cell><cell>34.35</cell></row><row><cell>M 1</cell><cell>57.51</cell><cell></cell><cell>84.99</cell><cell>60.27</cell><cell>69.34</cell><cell>35.48</cell></row><row><cell>M 2</cell><cell>54.51</cell><cell></cell><cell>84.27</cell><cell>59.29</cell><cell>69.31</cell><cell>33.07</cell></row><row><cell>M 3</cell><cell>53.13</cell><cell></cell><cell>83.29</cell><cell>57.70</cell><cell>69.37</cell><cell>31.86</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 4 : Reward Modeling ability improves with Self-Training:</head><label>4</label><figDesc>We evaluate the LLMas-a-Judge via various metrics which measure alignment with held-out human preference data. Self-Rewarding Iteration 2 (Model M 2 ), which is trained using the self-reward model derived from its previous iteration M 1 outperforms Iteration 1 (M 1 ), while M 1 itself outperforms a standard SFT baseline model trained on only Instruction Fine-Tuning (IFT) data. Iteration 3 (Model M 3 ) gives further improvements over Iteration 2.</figDesc><table><row><cell>Self-Rewarding Models</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 6 :</head><label>6</label><figDesc>Breakdown of AlpacaEval test set instructions by instruction category.</figDesc><table><row><cell>Category</cell><cell cols="2">Number Percentage</cell></row><row><cell>Science / Technology / Engineering</cell><cell>134</cell><cell>16.65%</cell></row><row><cell>Professional / Business / Marketing</cell><cell>77</cell><cell>9.57%</cell></row><row><cell>Social Interaction / Relationships / Human Behavior</cell><cell>68</cell><cell>8.45%</cell></row><row><cell>Miscellaneous / Other</cell><cell>61</cell><cell>7.58%</cell></row><row><cell>Mathematics / Logical Reasoning</cell><cell>52</cell><cell>6.46%</cell></row><row><cell>Cooking / Recipes</cell><cell>48</cell><cell>5.96%</cell></row><row><cell>Software Development / Coding / Algorithms</cell><cell>44</cell><cell>5.47%</cell></row><row><cell>Travel / Geography / Exploration</cell><cell>41</cell><cell>5.09%</cell></row><row><cell>Literature / Writing / Communication</cell><cell>39</cell><cell>4.84%</cell></row><row><cell>History / Social Studies</cell><cell>38</cell><cell>4.72%</cell></row><row><cell>Entertainment / Media Analysis</cell><cell>34</cell><cell>4.22%</cell></row><row><cell>Language Learning / Linguistics</cell><cell>32</cell><cell>3.98%</cell></row><row><cell>Music / Audio / Arts</cell><cell>30</cell><cell>3.73%</cell></row><row><cell>DIY Projects / Hobbies</cell><cell>24</cell><cell>2.98%</cell></row><row><cell>Technology / Gadgets / Consumer Products</cell><cell>20</cell><cell>2.48%</cell></row><row><cell>Gaming / Game Development</cell><cell>18</cell><cell>2.24%</cell></row><row><cell>Exercise / Health / Wellness</cell><cell>16</cell><cell>1.99%</cell></row><row><cell>Philosophy / Ethics / Ideology</cell><cell>15</cell><cell>1.86%</cell></row><row><cell>Sports / Athletics / Physical Activity</cell><cell>12</cell><cell>1.49%</cell></row><row><cell>Strategy / Problem-Solving / Critical Thinking</cell><cell>2</cell><cell>0.24%</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 7 :</head><label>7</label><figDesc>Breakdown of AlpacaEval test set instructions by instruction complexity.The instructions increase in complexity from 1 to 9, where 10 is a complex question that requires first reasoning or breaking the problem into sub-problems before it can be solved.</figDesc><table><row><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="7">Complexity Number Percentage</cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>3</cell><cell></cell><cell></cell><cell></cell><cell cols="2">238</cell><cell>29.57%</cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>2</cell><cell></cell><cell></cell><cell></cell><cell cols="2">206</cell><cell>25.59%</cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>4</cell><cell></cell><cell></cell><cell></cell><cell cols="2">122</cell><cell>15.16%</cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>6</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>79</cell><cell>9.81%</cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>5</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>68</cell><cell>8.45%</cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>7</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>41</cell><cell>5.09%</cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>1</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>34</cell><cell>4.22%</cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>8</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>14</cell><cell>1.74%</cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>9</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>3</cell><cell>0.37%</cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>M0</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>25</cell><cell></cell><cell></cell><cell>M1</cell></row><row><cell></cell><cell>25</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>M2</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>M3</cell></row><row><cell>Win rate (%)</cell><cell>15 20</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>Win rate (%)</cell><cell>15 20</cell><cell></cell><cell></cell></row><row><cell></cell><cell>10</cell><cell>M0</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>10</cell><cell></cell><cell></cell></row><row><cell></cell><cell></cell><cell>M1</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell>5</cell><cell>M2 M3</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>5</cell><cell></cell><cell></cell></row><row><cell></cell><cell>1</cell><cell>2</cell><cell>3</cell><cell>4</cell><cell>5</cell><cell>6</cell><cell>7</cell><cell>8</cell><cell>1 sentence</cell><cell>1-3 sentences</cell><cell>1 paragraph</cell><cell>2 paragraphs</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">Instruction Complexity</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">Expected response length</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 9 :</head><label>9</label><figDesc>NLP Benchmarks. Self-Rewarding models mostly tend to maintain performance compared to the Llama 2 base model and the SFT Baseline, despite being fine-tuned on very different instruction-following prompts.</figDesc><table><row><cell></cell><cell></cell><cell cols="3">Commonsense Reasoning</cell><cell>Math</cell><cell cols="2">World Knowledge</cell><cell></cell></row><row><cell></cell><cell>ARC easy</cell><cell>ARC challenge</cell><cell cols="2">HellaSwag SIQA PIQA</cell><cell>GSM8K (em)</cell><cell>MMLU (macro_avg/acc)</cell><cell>OBQA (acc_comp)</cell><cell>NQ (em)</cell></row><row><cell>Llama 2</cell><cell>80.20</cell><cell>57.40</cell><cell>85.30</cell><cell>50.70 82.80</cell><cell>56.80</cell><cell>68.90</cell><cell>60.20</cell><cell>25.30</cell></row><row><cell cols="2">SFT Baseline 76.49</cell><cell>55.97</cell><cell>85.17</cell><cell>51.48 82.59</cell><cell>50.72</cell><cell>69.76</cell><cell>57.80</cell><cell>34.35</cell></row><row><cell>M1</cell><cell>78.14</cell><cell>57.51</cell><cell>84.99</cell><cell>53.02 82.92</cell><cell>60.27</cell><cell>69.34</cell><cell>57.60</cell><cell>35.48</cell></row><row><cell>M2</cell><cell>74.84</cell><cell>54.51</cell><cell>84.27</cell><cell>51.23 81.94</cell><cell>59.29</cell><cell>69.31</cell><cell>57.60</cell><cell>33.07</cell></row><row><cell>M3</cell><cell>72.35</cell><cell>53.13</cell><cell>83.29</cell><cell>49.28 80.79</cell><cell>57.70</cell><cell>69.37</cell><cell>58.40</cell><cell>31.86</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 10 :</head><label>10</label><figDesc>MT-Bench Fine-grained Results.We list our models' performance on each problem category. Self-reward is especially effective in improving the model's ability in writing, role-playing, extraction, and STEM tasks.</figDesc><table><row><cell></cell><cell cols="9">Writing Roleplay Reasoning Math Coding Extraction STEM Humanities Overall</cell></row><row><cell>SFT</cell><cell>8.83</cell><cell>8.15</cell><cell>5.30</cell><cell>3.00</cell><cell>3.50</cell><cell>6.90</cell><cell>9.18</cell><cell>9.95</cell><cell>6.85</cell></row><row><cell>M1</cell><cell>9.10</cell><cell>7.65</cell><cell>4.35</cell><cell>3.05</cell><cell>4.10</cell><cell>7.20</cell><cell>8.93</cell><cell>9.85</cell><cell>6.78</cell></row><row><cell>M2</cell><cell>9.10</cell><cell>8.00</cell><cell>4.60</cell><cell>3.30</cell><cell>4.25</cell><cell>7.65</cell><cell>9.40</cell><cell>9.80</cell><cell>7.01</cell></row><row><cell>M3</cell><cell>9.58</cell><cell>8.73</cell><cell>4.80</cell><cell>3.50</cell><cell>4.20</cell><cell>7.80</cell><cell>9.45</cell><cell>9.95</cell><cell>7.25</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>In our main experiments, responses and rewards, items (2) and (3), are generated by the model we have trained, but generating prompts is actually done by a model fixed in advance. However, we show that prompts can also be generated by the newly trained model in each iteration in Appendix A.5.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>Note, the prompt, derived from<ref type="bibr" target="#b21">Li et al. [2024]</ref>, mentions "utilizing web search", but our model is not actually capable of this action.</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Appendix</head><p>We have plotted the distribution of instructions for IFT, EFT and AIFT(M 1 ) data, and the distribution of responses for IFT, EFT and AIFT(M 1 ) data in Figure <ref type="figure" target="#fig_6">6</ref>. It is clear that the IFT data and EFT data come from very different distributions while the IFT and AIFT(M 1 ) data come from similar distributions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 EFT Prompts</head><p>The EFT prompt which we use in our main experiments is shown in Figure <ref type="figure">2</ref>.</p><p>Other EFT prompts we have tried At first, we took the EFT prompt from <ref type="bibr" target="#b21">Li et al. [2024]</ref> as shown in Figure <ref type="figure">7</ref>. However, we found that this prompt was not as effective as our additive score-counting prompt because the model needed to treat the task as a multiple-choice problem, and it was difficult for the model to break down this multiple-choice problem into sub-problems involving evaluating various aspects of the response. When using the model trained on 3,200 IFT data only, its performance on the EFT test set using our additive score-counting prompt and prompt from <ref type="bibr" target="#b21">Li et al. [2024]</ref> is shown in Table <ref type="table">5</ref>.</p><p>EFT Prompt Multiple Choice prompt Ours Pairwise accuracy (↑) 26.6% 65.1% 5-best % (↑) 23.5% 39.6% Exact Match % (↑) 1.1% 10.1% Spearman corr. (↑) -0.18 0.25 Kendall τ corr. (↑) -0.16 0.23</p><p>Table <ref type="table">5</ref>: We tried various LLM-as-Judge prompts using the model trained with 3,200 IFT data only and found that our additive score-counting prompt worked best which demonstrates significant improvements in EFT performance comparing to the prompt used by <ref type="bibr" target="#b21">Li et al. [2024]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3 Self-rewarding Models Using IFT Data Only</head><p>To demonstrate the importance of the EFT data, we also trained a series of models starting with the model trained only on the IFT data. The following is the model sequence.</p><p>M 0 : Base pretrained LLM with no fine-tuning. vs. SFT Baseline Self-Rewarding M 0 2 vs. SFT Baseline 50.4 46.5 32.8 34.8 16.8 18.8 Self-Rewarding Wins Tie SFT Baseline Wins Self-Rewarding M 3 vs. M 0 3 Self-Rewarding M 2 vs. M 0 2 38.7 34.8 44.5 36.7 16.8 28.5 Left Wins (in Left vs. Right) Tie Right Wins</p><p>Figure <ref type="figure">8</ref>: EFT data helps the self-rewarding loop: We evaluated the series of models trained using self-reward loops starting from the model trained using only IFT data. We performed head-to-head win rates comparisons on the IFT test set. While M ′ 2 can improve over the SFT baseline and M ′ 3 can improve even more over the SFT baseline, they lag far behind the corresponding models (M 2 , M 3 ) that started from a base model trained using both IFT and EFT data, see Figure <ref type="figure">3</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>&lt;LIST ALL ALPACAEVAL INSTRUCTIONS&gt;</head><p>Given the above list of possible instructions, define a maximum of 20 categories that would cover the types of intructions, for example recipes, reasoning tasks, general knowledge etc. Try to cover as many of the instructions as possible with the maximum 20 categories, while keeping the categories high-level, simple and easy to understand.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Figure 9: Prompt used to obtain instruction categories on the AlpacaEval test set.</head><p>Instruction: &lt;INSTRUCTION&gt; Given the above, categorize it into one of the following 20 categories: &lt;LIST ALL CATEGORIES&gt; Secondly, score the instruction in terms of complexity: how complex you think it is to answer from 1-10 (where 10 is a complex question whereby first reasoning or breaking down the question into multiple subquestions for example might help improve the answer).</p><p>Thirdly, indicate how long you think the response to the instruction should be, either (a) 1 sentence, (b) 1-3 sentences, (c) 1 paragraph, (d) 2 paragraphs, or (e) 3 or more paragraphs.</p><p>Provide your final response in the following format: Category: &lt;one of the 20 categories&gt; Complexity: &lt;score out of 10&gt; Length: &lt;length category&gt;. Do not provide the actual response.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.4 Preference optimization outperforms augmenting with positive examples only</head><p>We also tried an alternative self-training procedure of adding high-quality self-instruction creation examples to supervised fine-tuning (without preference optimization), rather than DPO. In this variant, we add additional examples of (instruction prompt, response) curated by the model to the seed set for supervised fine-tuning, following other approaches <ref type="bibr" target="#b21">[Li et al., 2024</ref><ref type="bibr" target="#b1">, Adolphs et al., 2023</ref><ref type="bibr" target="#b14">, Gulcehre et al., 2023]</ref>, rather than constructing preference data.</p><p>In this setup we only add examples where the candidate response was evaluated to give a perfect score of r n i = 5. Unfortunately we could not find a configuration where this approach helped. For example, adding 11,254 such examples that scored 5 out of 5, and optimizing the mixing weight in training, still yielded a head to head with the SFT Baseline of 29% wins vs 30% wins, i.e., no improvement.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.5 Augmented Prompt Generation Using Newly Trained Models</head><p>In our experiments, for time efficiency, we have created a fixed pool of augmented prompts in advance using ChatLlama 70B. In a real interactive system, ideally, those prompts could come from real users so that we can ensure the models are trained to align with real user requirements. Here, we also examine whether our newly trained Self-Rewarding models in each iteration can generate new prompts through in-context learning, instead of using ChatLlama 70B. To check this, we constructed 30 prompts with in-context examples using the original seed IFT data as described in Section 2.2 and tested whether M 1 , M 2 and M 3 still possess in-context learning ability and can generate high quality instructions. According to manual inspection, all models can generate novel instructions given in-context examples in all 30 cases. However, for M 2 and M 3, the model is likely to first generate a few instructions, then generate a separator, and then start responding to the instructions, so some postprocessing might be necessary.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.6 AlpacaEval Test Sample Clustering</head><p>We used the GPT-4 (gpt-4-1106-preview) model to categorize the instructions in the AlpacaEval test set into clusters from three perspectives: (1) instruction category, (2) instruction complexity, and (3) expected response length. To obtain instruction categories for the AlpaceEval test set, we used the prompt in Figure <ref type="figure">9</ref> and obtained 20 categories in total. Then, to cluster the instructions into different groups, we use the prompt in Figure <ref type="figure" target="#fig_7">10</ref> for each test example. The corresponding statistics are given in Table <ref type="table">6</ref>, Table <ref type="table">7</ref>, Table <ref type="table" target="#tab_9">8</ref>. The fine-grained results on instruction complexity and expected response length are given in Figure <ref type="figure">11</ref>.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>Instruction distribution of IFT, EFT and AIFT data.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><figDesc>Response distribution of IFT, EFT, and AIFT data.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 6 :</head><label>6</label><figDesc>Distributions of both instructions and responses for IFT, EFT and AIFT data.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 10 :</head><label>10</label><figDesc>Prompt for categorizing instructions based on their topics, complexities and expected response lengths.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_9"><head>Table 8 :</head><label>8</label><figDesc>Breakdown of AlpacaEval test set instructions by expected response length.</figDesc><table><row><cell>Expected Length</cell><cell cols="2">Number Percentage</cell></row><row><cell>1-3 sentences</cell><cell>361</cell><cell>44.84%</cell></row><row><cell>1 paragraph</cell><cell>269</cell><cell>33.42%</cell></row><row><cell>1 sentence</cell><cell>143</cell><cell>17.76%</cell></row><row><cell>2 paragraphs</cell><cell>31</cell><cell>3.85%</cell></row><row><cell>3 or more paragraphs</cell><cell>1</cell><cell>0.13%</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Adler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lama</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilge</forename><surname>Akkaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florencia</forename><surname>Leoni Aleman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Janko</forename><surname>Altenschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Altman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.08774</idno>
+		<title level="m">Shyamal Anadkat, et al. GPT-4 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">The CRINGE loss: Learning what language not to model</title>
+		<author>
+			<persName><forename type="first">Leonard</forename><surname>Adolphs</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kurt</forename><surname>Shuster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sainbayar</forename><surname>Sukhbaatar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.acl-long.493</idno>
+		<ptr target="https://aclanthology.org/2023.acl-long.493" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">Anna</forename><surname>Rogers</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Jordan</forename><surname>Boyd-Graber</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Naoaki</forename><surname>Okazaki</surname></persName>
+		</editor>
+		<meeting>the 61st Annual Meeting of the Association for Computational Linguistics<address><addrLine>Toronto, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023-07">July 2023</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="8854" to="8874" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Claude</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/index/claude-2" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Training a helpful and harmless assistant with reinforcement learning from human feedback</title>
+		<author>
+			<persName><forename type="first">Yuntao</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kamal</forename><surname>Ndousse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nova</forename><surname>Dassarma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Drain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stanislav</forename><surname>Fort</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deep</forename><surname>Ganguli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Henighan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.05862</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuntao</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurav</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandipan</forename><surname>Kundu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jackson</forename><surname>Kernion</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Goldie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Azalia</forename><surname>Mirhoseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cameron</forename><surname>Mckinnon</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.08073</idno>
+		<title level="m">Constitutional AI: Harmlessness from AI feedback</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Benchmarking foundation models with language-model-as-an-examiner</title>
+		<author>
+			<persName><forename type="first">Yushi</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahao</forename><surname>Ying</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixin</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuze</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaozhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jifan</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaisheng</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yijia</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haozhe</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juanzi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Hou</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=IiRHQ7gvnq" />
+	</analytic>
+	<monogr>
+		<title level="m">Thirty-seventh Conference on Neural Information Processing Systems Datasets and Benchmarks Track</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Piqa: Reasoning about physical commonsense in natural language</title>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rowan</forename><surname>Zellers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Ronan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Bras</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Thirty-Fourth AAAI Conference on Artificial Intelligence</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">AlpaGasus: Training a better alpaca with fewer data</title>
+		<author>
+			<persName><forename type="first">Lichang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hai</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kalpa</forename><surname>Gunaratna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vikas</forename><surname>Yadav</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vijay</forename><surname>Srinivasan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Huang</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=FdVXgSJhvz" />
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations, 2024a</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Self-play fine-tuning converts weak language models to strong language models</title>
+		<author>
+			<persName><forename type="first">Zixiang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihe</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huizhuo</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaixuan</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quanquan</forename><surname>Gu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.01335</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Isaac</forename><surname>Cowhey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oren</forename><surname>Etzioni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carissa</forename><surname>Schoenick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oyvind</forename><surname>Tafjord</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1803.05457</idno>
+		<title level="m">Think you have solved question answering? Try ARC, the AI2 reasoning challenge</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.14168</idno>
+		<title level="m">Training verifiers to solve math word problems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">A unified architecture for natural language processing: Deep neural networks with multitask learning</title>
+		<author>
+			<persName><forename type="first">Ronan</forename><surname>Collobert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 25th International Conference on Machine Learning</title>
+		<meeting>the 25th International Conference on Machine Learning</meeting>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+			<biblScope unit="page" from="160" to="167" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Alpacafarm: A simulation framework for methods that learn from human feedback</title>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Dubois</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuechen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Taori</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ishaan</forename><surname>Gulrajani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Ba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><surname>Guestrin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tatsunori B</forename><surname>Hashimoto</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.14387</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">The devil is in the errors: Leveraging large language models for fine-grained machine translation evaluation</title>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Fernandes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Deutsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mara</forename><surname>Finkelstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Parker</forename><surname>Riley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">André</forename><surname>Martins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ankush</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Markus</forename><surname>Freitag</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Orhan</forename><surname>Firat</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.wmt-1.100</idno>
+		<ptr target="https://aclanthology.org/2023.wmt-1.100" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Eighth Conference on Machine Translation</title>
+		<editor>
+			<persName><forename type="first">Philipp</forename><surname>Koehn</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Barry</forename><surname>Haddow</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Tom</forename><surname>Kocmi</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Christof</forename><surname>Monz</surname></persName>
+		</editor>
+		<meeting>the Eighth Conference on Machine Translation<address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023-12">December 2023</date>
+			<biblScope unit="page" from="1066" to="1083" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Reinforced self-training (rest) for language modeling</title>
+		<author>
+			<persName><forename type="first">Caglar</forename><surname>Gulcehre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><forename type="middle">Le</forename><surname>Paine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Srivatsan</forename><surname>Srinivasan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ksenia</forename><surname>Konyushkova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lotte</forename><surname>Weerts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Siddhant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ahern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miaosen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenjie</forename><surname>Gu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.08998</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Measuring massive multitask language understanding</title>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mantas</forename><surname>Mazeika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=d7KBjmI3GmQ" />
+	</analytic>
+	<monogr>
+		<title level="m">9th International Conference on Learning Representations, ICLR 2021, Virtual Event</title>
+		<meeting><address><addrLine>Austria</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2021">May 3-7, 2021</date>
+		</imprint>
+	</monogr>
+	<note>OpenReview.net, 2021</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Unnatural instructions: Tuning language models with (almost) no human labor</title>
+		<author>
+			<persName><forename type="first">Or</forename><surname>Honovich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Scialom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omer</forename><surname>Levy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Schick</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.acl-long.806</idno>
+		<ptr target="https://aclanthology.org/2023.acl-long.806" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">Anna</forename><surname>Rogers</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Jordan</forename><surname>Boyd-Graber</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Naoaki</forename><surname>Okazaki</surname></persName>
+		</editor>
+		<meeting>the 61st Annual Meeting of the Association for Computational Linguistics<address><addrLine>Toronto, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023-07">July 2023</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="14409" to="14428" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Prometheus: Inducing fine-grained evaluation capability in language models</title>
+		<author>
+			<persName><forename type="first">Seungone</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamin</forename><surname>Shin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joel</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shayne</forename><surname>Longpre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hwaran</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sangdoo</forename><surname>Yun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Seongjin</forename><surname>Shin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sungdong</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Thorne</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.08491</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Köpf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yannic</forename><surname>Kilcher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sotiris</forename><surname>Dimitri Von Rütte</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi-Rui</forename><surname>Anagnostidis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keith</forename><surname>Tam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abdullah</forename><surname>Stevens</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Barhoum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minh</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oliver</forename><surname>Duc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richárd</forename><surname>Stanley</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Nagyfi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.07327</idno>
+		<title level="m">OpenAssistant conversations-democratizing large language model alignment</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Natural questions: a benchmark for question answering research</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Kwiatkowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jennimaria</forename><surname>Palomaki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivia</forename><surname>Redfield</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Collins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ankur</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Alberti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danielle</forename><surname>Epstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Illia</forename><surname>Polosukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Kelcey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenton</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kristina</forename><forename type="middle">N</forename><surname>Toutanova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Llion</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakob</forename><surname>Uszkoreit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Slav</forename><surname>Petrov</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association of Computational Linguistics</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">RLAIF: Scaling reinforcement learning from human feedback with ai feedback</title>
+		<author>
+			<persName><forename type="first">Harrison</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samrat</forename><surname>Phatale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hassan</forename><surname>Mansoor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kellie</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Mesnard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Colton</forename><surname>Bishop</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Carbune</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Rastogi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.00267</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Self-alignment with instruction backtranslation</title>
+		<author>
+			<persName><forename type="first">Xian</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ping</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunting</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omer</forename><surname>Levy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=1oijHJBRsT" />
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Alpacaeval: An automatic evaluator of instruction-following models</title>
+		<author>
+			<persName><forename type="first">Xuechen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Dubois</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Taori</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ishaan</forename><surname>Gulrajani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><surname>Guestrin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tatsunori</forename><forename type="middle">B</forename><surname>Hashimoto</surname></persName>
+		</author>
+		<ptr target="https://github.com/tatsu-lab/alpaca_eval" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">ROUGE: A package for automatic evaluation of summaries</title>
+		<author>
+			<persName><forename type="first">Chin-Yew</forename><surname>Lin</surname></persName>
+		</author>
+		<ptr target="https://aclanthology.org/W04-1013" />
+	</analytic>
+	<monogr>
+		<title level="m">Text Summarization Branches Out</title>
+		<meeting><address><addrLine>Barcelona, Spain</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2004-07">July 2004</date>
+			<biblScope unit="page" from="74" to="81" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Can a suit of armor conduct electricity? a new dataset for open book question answering</title>
+		<author>
+			<persName><forename type="first">Todor</forename><surname>Mihaylov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Training language models to follow instructions with human feedback</title>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carroll</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katarina</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="27730" to="27744" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Liangming</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Saxon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenda</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deepak</forename><surname>Nathani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.03188</idno>
+		<title level="m">Automatically correcting large language models: Surveying the landscape of diverse self-correction strategies</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Language models are unsupervised multitask learners</title>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rewon</forename><surname>Child</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Luan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">OpenAI blog</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page">9</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Direct preference optimization: Your language model is secretly a reward model</title>
+		<author>
+			<persName><forename type="first">Rafael</forename><surname>Rafailov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Archit</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefano</forename><surname>Ermon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=HPuSIXJaa9" />
+	</analytic>
+	<monogr>
+		<title level="m">Thirty-seventh Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Branch-solve-merge improves large language model evaluation and generation</title>
+		<author>
+			<persName><forename type="first">Swarnadeep</forename><surname>Saha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omer</forename><surname>Levy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Asli</forename><surname>Celikyilmaz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xian</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.15123</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Sap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannah</forename><surname>Rashkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Derek</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronan</forename><surname>Le Bras</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Socialiqa</surname></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/1904.09728" />
+		<title level="m">Commonsense reasoning about social interactions. CoRR, abs/1904.09728</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Filip</forename><surname>Wolski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleg</forename><surname>Klimov</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1707.06347</idno>
+		<title level="m">Proximal policy optimization algorithms</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Learning to summarize with human feedback</title>
+		<author>
+			<persName><forename type="first">Nisan</forename><surname>Stiennon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Ziegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Lowe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><forename type="middle">F</forename><surname>Christiano</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="3008" to="3021" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Taori</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ishaan</forename><surname>Gulrajani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Dubois</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuechen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><surname>Guestrin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tatsunori</forename><forename type="middle">B</forename><surname>Hashimoto</surname></persName>
+		</author>
+		<ptr target="https://github.com/tatsu-lab/stanford_alpaca" />
+		<title level="m">Stanford alpaca: An instruction-following llama model</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Llama 2: Open foundation and fine-tuned chat models</title>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Albert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amjad</forename><surname>Almahairi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasmine</forename><surname>Babaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolay</forename><surname>Bashlykov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soumya</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prajjwal</forename><surname>Bhargava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shruti</forename><surname>Bhosale</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.09288</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Visualizing data using t-SNE</title>
+		<author>
+			<persName><forename type="first">Laurens</forename><surname>Van Der Maaten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Hinton</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of machine learning research</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">11</biblScope>
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Self-instruct: Aligning language models with selfgenerated instructions</title>
+		<author>
+			<persName><forename type="first">Yizhong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yeganeh</forename><surname>Kordi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swaroop</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alisa</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Khashabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.acl-long.754</idno>
+		<ptr target="https://aclanthology.org/2023.acl-long.754" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">Anna</forename><surname>Rogers</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Jordan</forename><surname>Boyd-Graber</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Naoaki</forename><surname>Okazaki</surname></persName>
+		</editor>
+		<meeting>the 61st Annual Meeting of the Association for Computational Linguistics<address><addrLine>Toronto, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023-07">July 2023</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="13484" to="13508" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Gibbs sampling from human feedback: A provable kl-constrained framework for rlhf</title>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanze</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenlu</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.11456</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Some things are more cringe than others: Preference optimization with the pairwise cringe loss</title>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sainbayar</forename><surname>Sukhbaatar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.16682</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">RRHF: Rank responses to align language models with human feedback</title>
+		<author>
+			<persName><forename type="first">Hongyi</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuanqi</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Songfang</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=EdIGMCHk4l" />
+	</analytic>
+	<monogr>
+		<title level="m">Thirty-seventh Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Hellaswag: Can a machine really finish your sentence?</title>
+		<author>
+			<persName><forename type="first">Rowan</forename><surname>Zellers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ari</forename><surname>Holtzman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Farhadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/p19-1472</idno>
+		<ptr target="https://doi.org/10.18653/v1/p19-1472" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 57th Conference of the Association for Computational Linguistics, ACL 2019</title>
+		<editor>
+			<persName><forename type="first">Anna</forename><surname>Korhonen</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">David</forename><forename type="middle">R</forename><surname>Traum</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Lluís</forename><surname>Màrquez</surname></persName>
+		</editor>
+		<meeting>the 57th Conference of the Association for Computational Linguistics, ACL 2019<address><addrLine>Florence, Italy</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2019-08-02">July 28-August 2, 2019. 2019</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="4791" to="4800" />
+		</imprint>
+	</monogr>
+	<note>Long Papers</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianqi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Misha</forename><surname>Khalman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Saleh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><forename type="middle">J</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.10425</idno>
+		<title level="m">SLiC-HF: Sequence likelihood calibration with human feedback</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Controllable text generation with sequence likelihood contrastive learning</title>
+		<author>
+			<persName><forename type="first">Chujie</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pei</forename><surname>Ke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minlie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Click</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.findings-acl.65</idno>
+		<ptr target="https://aclanthology.org/2023.findings-acl.65" />
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: ACL 2023</title>
+		<editor>
+			<persName><forename type="first">Anna</forename><surname>Rogers</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Jordan</forename><surname>Boyd-Graber</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Naoaki</forename><surname>Okazaki</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Toronto, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023-07">July 2023</date>
+			<biblScope unit="page" from="1022" to="1040" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Judging LLM-as-a-judge with MT-bench and chatbot arena</title>
+		<author>
+			<persName><forename type="first">Lianmin</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Lin</forename><surname>Chiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhanghao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonghao</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuohan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dacheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Xing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Stoica</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=uccHPGDlao" />
+	</analytic>
+	<monogr>
+		<title level="m">Thirty-seventh Conference on Neural Information Processing Systems Datasets and Benchmarks Track, 2023b</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<author>
+			<persName><forename type="first">Nisan</forename><surname>Daniel M Ziegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Stiennon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><forename type="middle">B</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Christiano</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Irving</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1909.08593</idno>
+		<title level="m">Fine-tuning language models from human preferences</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

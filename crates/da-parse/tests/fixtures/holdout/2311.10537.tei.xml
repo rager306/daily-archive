@@ -1,0 +1,2709 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">MEDAGENTS: Large Language Models as Collaborators for Zero-shot Medical Reasoning</title>
+				<funder>
+					<orgName type="full">CIPSC-SMP-Zhipu.AI Large Model Cross-Disciplinary Fund</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">Schmidt Sciences</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Xiangru</forename><surname>Tang</surname></persName>
+							<email>xiangru.tang@yale.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Yale University ♠ Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Anni</forename><surname>Zou</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Yale University ♠ Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhuosheng</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Yale University ♠ Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ziming</forename><surname>Li</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Yale University ♠ Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yilun</forename><surname>Zhao</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Yale University ♠ Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xingyao</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Yale University ♠ Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Arman</forename><surname>Cohan</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Yale University ♠ Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Mark</forename><surname>Gerstein</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Yale University ♠ Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">MEDAGENTS: Large Language Models as Collaborators for Zero-shot Medical Reasoning</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">016429EE3922E880A85B1CE527070DF9</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:35+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large language models (LLMs), despite their remarkable progress across various general domains, encounter significant barriers in medicine and healthcare. This field faces unique challenges such as domain-specific terminologies and reasoning over specialized knowledge. To address these issues, we propose MEDAGENTS, a novel multi-disciplinary collaboration framework for the medical domain. MedAgents leverages LLM-based agents in a role-playing setting that participate in a collaborative multi-round discussion, thereby enhancing LLM proficiency and reasoning capabilities. This training-free framework encompasses five critical steps: gathering domain experts, proposing individual analyses, summarising these analyses into a report, iterating over discussions until a consensus is reached, and ultimately making a decision. Our work focuses on the zeroshot setting, which is applicable in realworld scenarios. Experimental results on nine datasets (MedQA, MedMCQA, PubMedQA, and six subtasks from MMLU) establish that our proposed MEDAGENTS framework excels at mining and harnessing the medical expertise within LLMs, as well as extending its reasoning abilities. Our code can be found at <ref type="url" target="https://github.com/gersteinlab/MedAgents">https:  //github.com/gersteinlab/MedAgents</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>① Expert Gathering</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>② Analysis Proposition</head><p>③ Report Summarization</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>④ Collaborative Consultation ⑤ Decision Making</head><p>A 66-year-old male with a history of heart attack and recurrent stomach ulcers is experiencing persistent cough and chest pain, and recent CT scans indicate a possible lung tumor. Designing a treatment plan that minimizes risk and maximizes outcomes is the current concern due to his deteriorating health and medical history.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Large language models (LLMs) <ref type="bibr" target="#b4">(Brown et al., 2020;</ref><ref type="bibr" target="#b42">Scao et al., 2022;</ref><ref type="bibr" target="#b7">Chowdhery et al., 2022;</ref><ref type="bibr" target="#b54">Touvron et al., 2023;</ref><ref type="bibr" target="#b37">OpenAI, 2023)</ref> have exhibited notable generalization abilities across a wide range of tasks and applications <ref type="bibr" target="#b31">(Lu et al., 2023;</ref><ref type="bibr" target="#b73">Zhou et al., 2023;</ref><ref type="bibr" target="#b39">Park et al., 2023)</ref>, with these capabilities stemming from their extensive training on vast comprehensive corpora covering diverse topics. However, in real-world scenarios, LLMs tend to encounter domain-specific tasks that * Equal contribution. necessitate a combination of domain expertise and complex reasoning abilities <ref type="bibr" target="#b34">(Moor et al., 2023;</ref><ref type="bibr">Wu et al., 2023b;</ref><ref type="bibr">Singhal et al., 2023a;</ref><ref type="bibr" target="#b48">Yang et al., 2023)</ref>. Amidst this backdrop, a noteworthy research topic lies in the adoption of LLMs in the medical field, which has gained increasing prominence recently <ref type="bibr">(Zhang et al., 2023b;</ref><ref type="bibr" target="#b0">Bao et al., 2023;</ref><ref type="bibr">Singhal et al., 2023a)</ref>.</p><p>Two major challenges prevent LLMs from effectively handling tasks in the medical sphere: (i) Limited volume and specificity of medical training data compared to the vast general text data, due to cost and privacy concerns <ref type="bibr" target="#b52">(Thirunavukarasu et al., 2023)</ref>. <ref type="foot" target="#foot_0">1</ref> (ii) The demand for extensive domain knowledge <ref type="bibr" target="#b43">(Schmidt and Rikers, 2007)</ref> and advanced reasoning skills <ref type="bibr" target="#b29">(Liévin et al., 2022)</ref> makes eliciting medical expertise via simple prompting challenging <ref type="bibr" target="#b22">(Kung et al., 2023;</ref><ref type="bibr">Singhal et al., 2023a)</ref>. Although numerous attempts, particularly within math and coding, have been made to enhance prompting methods <ref type="bibr" target="#b2">(Besta et al., 2023;</ref><ref type="bibr" target="#b23">Lála et al., 2023;</ref><ref type="bibr">Wang et al., 2023b)</ref>, strategies used in the medical field have been shown to induce hallucination <ref type="bibr" target="#b56">(Umapathi et al., 2023;</ref><ref type="bibr" target="#b13">Harris, 2023;</ref><ref type="bibr" target="#b16">Ji et al., 2023)</ref>, indicating the need for more robust approaches.</p><p>Meanwhile, recent research has surprisingly witnessed the success of multi-agent collaboration <ref type="bibr" target="#b65">(Xi et al., 2023;</ref><ref type="bibr">Wang et al., 2023d)</ref> which highlights the simulation of human activities <ref type="bibr" target="#b8">(Du et al., 2023;</ref><ref type="bibr" target="#b28">Liang et al., 2023;</ref><ref type="bibr" target="#b39">Park et al., 2023)</ref> and optimizes the collective power of multiple agents <ref type="bibr" target="#b40">(Chen et al., 2023;</ref><ref type="bibr">Li et al., 2023d;</ref><ref type="bibr" target="#b65">Hong et al., 2023)</ref>. Through such design, the expertise implicitly embedded within LLMs, or that the model has encountered during its training, which may not be readily accessible via traditional prompting, is effectively brought to the fore. This process subsequently enhances the model's reasoning capabilities throughout multiple rounds of interaction <ref type="bibr">(Wang et al., 2023c;</ref><ref type="bibr" target="#b10">Fu et al., 2023)</ref>.</p><p>Motivated by these notions, we pioneer a multi-disciplinary collaboration framework (MedAgents) specifically tailored to the clinical domain. Our objective centers on unveiling the intrinsic medical knowledge embedded in LLMs and reinforcing reasoning proficiency in a training-free manner. As shown in Figure <ref type="figure" target="#fig_0">1</ref>, the MEDAGENTS framework gathers experts from diverse disciplines and reaches consistent conclusions through collaborative discussions.</p><p>Based on our MEDAGENTS framework, we conduct experiments on nine datasets, including MedQA <ref type="bibr" target="#b17">(Jin et al., 2021)</ref>, MedMCQA <ref type="bibr" target="#b38">(Pal et al., 2022)</ref>, PubMedQA <ref type="bibr" target="#b18">(Jin et al., 2019)</ref> and six medical subtasks from MMLU <ref type="bibr" target="#b14">(Hendrycks et al., 2020</ref>). <ref type="foot" target="#foot_2">2</ref> To better align with real-world application scenarios, our study focuses on the zero-shot setting, which can serve as a plug-and-play method to supplement existing medical LLMs such as Med-PaLM 2 <ref type="bibr">(Singhal et al., 2023b)</ref>. Encouragingly, our proposed approach outperforms settings for both chain-of-thought (CoT) and self-consistency (SC) prompting methods. Most notably, our approach achieves better performance under the zero-shot setting compared with the 5-shot baselines.</p><p>Based on our results, we further investigate the influence of agent numbers and conduct human evaluations to pinpoint the limitations and issues prevalent in our approach. We find four common categories of errors: (i) lack of domain knowledge, (ii) mis-retrieval of domain knowledge, (iii) consistency errors, and (iv) CoT errors. Targeted refinements focused on mitigating these particular shortcomings would enhance the model's proficiency and reliability.</p><p>Our contributions are summarized as follows:</p><p>(i) To the best of our knowledge, we are the first to propose a multi-agent framework within the medical domain and explore how multi-agent communication within the medical setting can lead to a consensus decision, adding a novel dimension to the current literature on medical question answering.</p><p>(ii) Our proposed MEDAGENTS framework enjoys enhanced faithfulness and interpretability by harnessing role-playing and collaborative agent discussion. And we demonstrate that role-playing allows LLM to explicitly reason with accurate knowledge, without the need for retrieval augmented generation (RAG). Examples illustrating interpretability are shown in Appendix B.</p><p>(iii) Experimental results on nine datasets</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Unanimous Report</head><p>Question: A 3-month-old infant is brought to her pediatrician because she coughs and seems to have difficulty breathing while feeding. In addition, she seems to have less energy compared to other babies and appears listless throughout the day. She was born by cesarean section to a G1P1 woman with no prior medical history and had a normal APGAR score at birth.</p><p>Her parents say that she has never been observed to turn blue. Physical exam reveals a high-pitched holosystolic murmur that is best heard at the lower left sternal border. The most likely cause of this patient's symptoms is associated with which of the following abnormalities? Options: (A) 22q11 deletion (B) Deletion of genes on chromosome 7 (C) Lithium exposure in utero (D) Retinoic acid exposure in utero Option domains: Cardiology Genetics Initial Report Option Analyses Question Analyses Domain Experts ...It's important to manage VSD promptly to prevent complications such as congestive heart failure, pulmonary hypertension, and growth failure. ...VSD is a congenital heart defect, meaning it is present at birth, and it is not related to the mode of delivery or the APGAR score.</p><p>...Cyanosis is often seen in infants with significant left-to-right shunting of blood, but in this scenario, the absence of cyanosis suggests that the VSD is small to moderate in size.</p><p>...Small VSDs may close spontaneously over time, while larger VSDs may require surgical intervention to prevent complications.</p><p>Option A: The symptoms...are consistent with a VSD Option B: ...a deletion of genes on chromosome 7 Option C:... Option D:... Option A: ... Option B: ... Option C: ...not known to cause ventricular septal defects.... Option D: ... be associated with a range of birth defects Key Knowledge: Clinical assessment of an infant with symptoms suggesting VSD... Total Analysis: The infant's symptoms are consistent with VSD... Options such as 22q11 deletion, deletion of genes on chromosome 7, lithium exposure in utero are not relevant to the given scenario.</p><p>: : : : : ,the report should... : : : : : ,the report should... : : : : : Key Knowledge: The infant's symptoms are concerning for a possible congenital heart defect or a respiratory condition... Total Analysis: ...one of the most common genetic abnormalities associated with congenital heart defects, including VSD, is the 22q11 deletion syndrome, also known as DiGeorge syndrome... Question domains: Pediatrics Cardiology Pulmonology Neonatology An initial report synthesizing these analyses is then prepared to concisely represent the performed evaluations. The assembled LLM experts, possessing respective disciplinary backgrounds, engage in a discussion over the initial report, voicing agreements and disagreements. Ultimately, after iterative refinement and consultation, a unanimous report is generated that best represents the collective expert knowledge and reasoning on the given medical problem.</p><p>demonstrate the general effectiveness of our proposed MEDAGENTS framework. Besides, we identify and categorize common error types in our approach through rigorous human evaluation to shed light on future studies.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Method</head><p>This section presents the details of our proposed multi-disciplinary collaboration MEDAGENTS framework. Figure <ref type="figure" target="#fig_0">1</ref> and 2 give an overview and an illustrative example of its pipeline, respectively. Our proposed MEDAGENTS framework works in five stages: (i) expert gathering: assemble experts from various disciplines based on the clinical question; (ii) analysis proposition: domain experts present their own analyses with their expertise; (iii) report summarization: develop a report summary on the basis of previous analyses;</p><p>(iv) collaborative consultation: hold a consultation over the summarized report with the experts. The report will be revised repeatedly until every expert has given their approval. (v) decision making: derive a final decision from the unanimous report. 3</p><p>3 Details about all guideline prompts and roles are shown in Section D for clarification.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Expert Gathering</head><p>Given a clinical question q and a set of options op = {o 1 , o 2 , . . . , o k } where k is the number of options, the goal of the Expert Gathering stage is to recruit a group of question domain experts QD = {qd 1 , qd 2 , . . . , qd m } and option domain experts OD = {od 1 , od 2 , . . . , od n } where m and n represent the number of question domain experts and option domain experts, respectively. <ref type="foot" target="#foot_3">4</ref>Specifically, we assign a role to the model and provide instructions to guide the model output to the corresponding domains based on the input question and options, respectively:</p><formula xml:id="formula_0">QD = LLM q, r qd , prompt qd , OD = LLM (q, op, r od , prompt od ) ,<label>(1)</label></formula><p>where r qd , prompt qd and (r od , prompt od ) stand for the system role and guideline prompt to gather domain experts for the question q and options op.  <ref type="bibr">(Singhal et al., 2023a)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Analysis Proposition</head><p>After gathering domain experts for the question q and options op, we aim to inquire experts to generate corresponding analyses prepared for later reasoning: QA = {qa 1 , qa 2 , . . . , qa m } and OA = {oa 1 , oa 2 , . . . , oa n }.</p><p>Question Analyses Given a question q and a question domain qd i ∈ QD, we ask LLM to serve as an expert specialized in domain qd i and derive the analyses for the question q following the guideline prompt prompt qa :</p><formula xml:id="formula_1">qa i = LLM q, qd i , r qa , prompt qa .<label>(2)</label></formula><p>Option Analyses Now that we have an option domain od i and question analyses QA, we can further analyze the options by taking into account both the relationship between the options and the relationship between the options and question. Concretely, we deliver the question q, the options op, a specific option domain od i ∈ OD, and the question analyses QA to the LLM:</p><formula xml:id="formula_2">oa i = LLM (q, op, od i , QA, r oa , prompt oa ) . (3)</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">Report Summarization</head><p>In the Report Summarization stage, we attempt to summarize and synthesize previous analyses from various domain experts QA ∪ OA. Given question analyses QA and option analyses OA, we ask LLMs to play the role of a medical report assistant, allowing it to generate a synthesized report by extracting key knowledge and total analysis based on previous analyses:</p><formula xml:id="formula_3">Repo = LLM (QA, OA, r rs , prompt rs ) . (4)</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.4">Collaborative Consultation</head><p>Since we have a preliminary summary report Repo, the objective of the Collaborative Consultation stage is to engage distinct domain experts in multiple rounds of discussions and ultimately render a summary report that is recognized by all</p><formula xml:id="formula_4">Algorithm 1: Collaborative Consultation Input: Domain experts D = {d1, ..., dn}, initial report R0, Model M, maximum attempts t, prompts {pvote, p mod , prev} Output: Final report R f // Initialize variables nocon_f lag ← T rue, ntry ← 0 Rcur ← R0, M ods ← ∅ // Iterative review while nocon_f lag is T rue and ntry &lt; t do ntry ← ntry + 1 nocon_f lag ← F alse // vote for the report for i in 1, ..., n do votei ← M(Rcur, di, pvote) // propose modifications if votei is no then M odi ← M(Rcur, di, p mod )</formula><p>Update M ods with M odi nocon_f lag ← T rue end end // modify the report if nocon_f lag is T rue then Rcur ← M(Rcur, M ods, prev) end end return R f ← Rcur experts. The overall procedure of this phase is presented in Algorithm 1. During each round of discussions, the experts give their votes (yes/no): vote = LLM (Repo, r vote , prompt vote ), as well as modification opinions if they vote no for the current report. Afterward, the report will be revised based on the modification opinions. Specifically, during the j-th round of discussion, we note the modification comments from the experts as M od j , then we can acquire the updated report as Repo j = LLM (Repo j-1 , M od j , prompt mod ). In this way, the discussions are held iteratively until all experts vote yes for the final report Repo f or the discussion number attains the maximum attempts threshold.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.5">Decision Making</head><p>In the end, we demand LLM act as a medical decision maker to derive the final answer to the clinical question q referring to the unanimous report Repo f : ans = LLM (q, op, Repo f , prompt dm ) . (5) 3 Experiments 3.1 Setup Tasks and Datasets. We evaluate our MEDA-GENTS framework on three benchmark datasets MedQA <ref type="bibr" target="#b17">(Jin et al., 2021)</ref>, MedMCQA <ref type="bibr" target="#b38">(Pal et al., 2022)</ref>, and PubMedQA <ref type="bibr" target="#b18">(Jin et al., 2019)</ref>, as well as six subtasks most relevant to the medical domain from MMLU datasets <ref type="bibr" target="#b14">(Hendrycks et al., 2020)</ref> including anatomy, clinical knowledge, college medicine, medical genetics, professional medicine, and college biology. Table <ref type="table" target="#tab_0">1</ref> summarizes the data statistics. More information about the evaluated datasets is presented in Appendix C.</p><p>Implementation. We utilize the popular and publicly available GPT-3.5-Turbo and GPT-4 (OpenAI, 2023) from Azure OpenAI Service. <ref type="foot" target="#foot_4">5</ref> All experiments are conducted in the zero-shot setting. The temperature is set to 1.0 and top_p to 1.0 for all generations. The iteration number and temperature of SC are 5 and 0.7, respectively. The number k of options is 4 except for PubMedQA (3). The numbers of domain experts for the question and options are set as: m = 5, n = 2 except for PubMedQA (m = 4, n = 2). The number of maximum attempts t is set as 5. We randomly sample 300 examples for each dataset and conduct experiments on them. Statistically, the cost of our method is $1.41 for 100 QA examples (about ¢1.4 per question) and the inference time per example is about 40s. <ref type="foot" target="#foot_5">6</ref>Baselines. We have utilized models that are readily accessible through public APIs with the following baselines:</p><p>• Setting w/o CoT: Zero-shot <ref type="bibr" target="#b21">(Kojima et al., 2022)</ref> appends the prompt /emphA: The answer is to a given question and utilizes it as the input fed into LLMs. Few-shot (Brown et al., 2020) introduces several manually templated demonstrations, structured as [Q: q, A: The answer is a], preceding the input question.</p><p>• Setting w/ CoT: Zero-shot CoT <ref type="bibr" target="#b21">(Kojima et al., 2022)</ref> directly incorporates the prompt Let's think step by step after a question to facilitate inference. Few-shot CoT <ref type="bibr" target="#b62">(Wei et al., 2022)</ref> adopts comparable methodologies to Few-shot but distinguishes itself by integrating rationales before deducing the answer.</p><p>• Setting w/ SC: SC <ref type="bibr" target="#b58">(Wang et al., 2022)</ref> serves as an additional sampling method on Zero-shot CoT and Few-shot CoT, which yields the majority answer by sampling multiple chains.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Main Results</head><p>Table <ref type="table" target="#tab_1">2</ref> presents the main results on the nine datasets, including MedQA, MedMCQA, PubMedQA, and six subtasks from MMLU. We compare our method with several baselines in both zero-shot and few-shot settings. Notably, our proposed MEDAGENTS framework outperforms the zero-shot baseline methods by a large margin, indicating the effectiveness of our MEDAGENTS framework in real-world application scenarios. Furthermore, our approach achieves comparable performance under the zero-shot setting compared with the strong baseline Few-shot CoT+SC.</p><p>Interestingly, the introduction of CoT occasionally leads to a surprising degradation in performance. <ref type="foot" target="#foot_6">7</ref> We have found that reliance on CoT in isolation can inadvertently result in hallucinations -spurious outputs typically associated with the misapplication of medical terminologies. In contrast, our multi-agent roleplaying methodology effectively mitigates these issues, thus underscoring its potential as a more robust approach in medically oriented LLM applications.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Analysis</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Ablation Study</head><p>Since our MEDAGENTS framework simulates a multi-disciplinary collaboration process that contains multiple intermediate steps, a natural question is whether each intermediate step contributes to the ultimate result. To investigate this, we ablate three major processes, namely analysis proposition, report summarization and collaborative consultation. Results in Table <ref type="table">3</ref> show that all of these processes are non-trivial. Notably, the proposition of MEDAGENTS substantially Table 3: Ablation study for different processes on MedQA. Anal: Analysis proposition, Summ: Report summarization, Cons: Collaborative consultation. Method MedQA MedMCQA MEDAGENTS (GPT-3.5) 64.1 59.3 MEDAGENTS (GPT-4) 83.7 74.8 MedAlpaca-7B 55.2 45.8 BioMedGPT-10B 50.4 42.2 BioMedLM-2.7B 50.3 -BioBERT (large) 36.7 37.1 SciBERT (large) -39.2 BERT (large) -33.6 Table 4: Comparison with open-source medical models. boosts the performance (i.e., 55.0%→62.0%), whereas the subsequent processes achieve relatively slight improvements over the previous one (i.e., 62.0%→65.0/67.0%). This suggests that the initial role-playing agents are responsible for exploring medical knowledge of various levels and aspects within LLMs, while the following Dataset MedQA MedMCQA PubMedQA MMLU #Question agents 5 5 4 5 #Option agents 2 2 2 2 processes play a role in further verification and revision.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Comparison with Open-source Medical Models</head><p>We conduct a comprehensive comparison between our proposed MEDAGENTS framework with more baseline methods, including open-source domainadapted models such as MedAlpaca-7B <ref type="bibr" target="#b12">(Han et al., 2023)</ref>, BioMedGPT-10B <ref type="bibr" target="#b32">(Luo et al., 2023)</ref>, BioMedLM-2.7B <ref type="bibr" target="#b3">(Bolton et al., 2024)</ref>, BioBERT (large) (Lee et al., 2020), SciBERT (large) <ref type="bibr" target="#b1">(Beltagy et al., 2019)</ref> and BERT (large). We leverage them in the early stages of our work for preliminary attempts. Results in Table <ref type="table">4</ref> demonstrate that the open-source methods fell short of the baseline in Table <ref type="table" target="#tab_1">2</ref>, which leads us to focus on the more effective methods.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Number of agents</head><p>As our MEDAGENTS framework involves multiple agents that play certain roles to acquire the ultimate answer, we explore how the number of collaborating agents influences the overall performance. We vary the number of question and option agents while fixing other variables to observe the performance trends on the MedQA dataset. Figure <ref type="figure" target="#fig_2">3</ref> and Table <ref type="table" target="#tab_2">5</ref> illustrate the corresponding trend and the optimal number of different agents. Our key observation lies in that the performance improves significantly with the introduction of any number of expert agents compared to our baseline, thus verifying the consistent contribution of multiple expert agents. We find that the optimal number of agents is relatively consistent across different datasets, pointing to its potential applicability to other datasets beyond those we test on.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Domain Variation Study</head><p>In order to investigate the influence of the changes in agent numbers, we perform additional studies where we manipulate agent numbers by selectively eliminating the most and least relevant domain</p><p>Method MedQA MedMCQA MEDAGENTS w/ 6 different domains 64.1 59.3 w/ 6 same domains 59.2 58.1 w/ 5 same domains 57.5 57.3 w/ 4 same domains 55.9 57.0 Table 7: Agent quantity study. The results are based on GPT-3.5. experts based on domain relevance. Due to the manual evaluation involved in identifying the relevance of agent domains, our additional analysis was conducted on a limited set of 20 samples. Results in Table 6 depict minor variance for different sizes of data with random removing, reinforcing the notion that large-scale experiment performance remains largely robust against the effect of domain changes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5">Agent Quantity Study</head><p>To further explore the effect of agent quantity without changes in domain representation, we conduct experiments with k (k = 6) identicaldomain agents, then with k-1 and k-2, to observe performance shifts. The process of selecting these domains is automated via prompting, and our manual inspection confirms the high relevance and quality of the selected domains. The experiment is conducted on a dataset of 300 samples.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.6">Error Analysis</head><p>Based on our results, we conduct a human evaluation to pinpoint the limitations and issues prevalent in our model. We distill these errors into four major categories:</p><p>(i) Lack of Domain Knowledge: the model demonstrates an inadequate understanding of the specific medical knowledge necessary to provide an accurate response; (ii) Mis-retrieval of Domain Knowledge: the model has the necessary domain knowledge but fails to retrieve or apply it correctly in the given context; (iii) Consistency Errors: the model provides differing responses to the same statement. The inconsistency suggests confusion in the model's understanding or application of the underlying knowledge; (iv) CoT Errors: the model may form and follow inaccurate rationales, leading to incorrect conclusions.</p><p>To illustrate the error examples intuitively, we select four typical samples from the four error categories, which can be shown in Figure <ref type="figure" target="#fig_5">5</ref> whose symptoms are not purely hypopigmented rash, as well as the fact that skin biopsy is not an appropriate test method, which results in the hallucination phenomenon. (ii) The second error is caused by mis-retrieval of domain knowledge, wherein the fact in green is not relevant to Valsalva maneuver. (iii) The third error is attributed to consistency errors, where the model incorrectly regards 20 mmHg within 6 minutes and 20 mmHg within 3 minutes as the same meaning. (iv) The fourth error is provoked by incorrect inference about the relevance of a fact and option A in CoT.</p><p>Furthermore, we analyze the percentage of different categories by randomly selecting 40 error cases in MedQA and MedMCQA datasets. As is shown in Figure <ref type="figure" target="#fig_3">4</ref>, the majority (77%) of the error examples are due to confusion about the domain knowledge (including the lack and mis-retrieval of domain knowledge), which illustrates that there still exists a portion of domain knowledge that is explicitly beyond the intrinsic knowledge of LLMs, leading to a bottleneck of our proposed method. As a result, our analysis sheds light on future directions to mitigate the aforementioned drawbacks and further strengthen the model's proficiency and reliability.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.7">Correctional Capabilities and Interpretability</head><p>In our extensive examination of the MEDAGENTS framework, we discover the decent correctional capabilities of our framework. Please refer to Appendix B and Table <ref type="table">B</ref> for an in-depth overview of instances where our approach successfully amends previous inaccuracies, steering the discussion towards more accurate outcomes. These corrections showcase the MEDAGENTS framework's strength in collaborative synthesis; it distills and integrates diverse expert opinions into a cohesive and accurate conclusion. By interweaving a variety of perspectives, the collaborative consultation actively refines and rectifies initial analyses, thereby aligning the decision-making process closer to clinical accuracy. This iterative refinement serves as a practical demonstration of our model's proficiency in rectifying errors, substantiating its interpretability and accuracy in complex medical reasoning tasks.</p><p>5 Related Work</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">LLMs in Medical Domains</head><p>Recent years have seen remarkable progress in the application of LLMs <ref type="bibr">(Wu et al., 2023b;</ref><ref type="bibr">Singhal et al., 2023a;</ref><ref type="bibr" target="#b48">Yang et al., 2023)</ref>, with a particularly notable impact on the medical field <ref type="bibr" target="#b0">(Bao et al., 2023;</ref><ref type="bibr" target="#b36">Nori et al., 2023;</ref><ref type="bibr" target="#b41">Rosoł et al., 2023)</ref>.</p><p>Although LLMs have demonstrated their potential in distinct medical applications encompassing diagnostics <ref type="bibr">(Singhal et al., 2023a;</ref><ref type="bibr" target="#b12">Han et al., 2023)</ref>, genetics <ref type="bibr" target="#b9">(Duong and Solomon, 2023;</ref><ref type="bibr" target="#b19">Jin et al., 2023)</ref>, pharmacist <ref type="bibr" target="#b30">(Liu et al., 2023)</ref>, and medical evidence summarization <ref type="bibr">(Tang et al., 2023b,a;</ref><ref type="bibr" target="#b44">Shaib et al., 2023)</ref>, concerns persist when LLMs encounter clinical inquiries that demand intricate medical expertise and decent reasoning abilities <ref type="bibr" target="#b56">(Umapathi et al., 2023;</ref><ref type="bibr">Singhal et al., 2023a)</ref>. Thus, it is of crucial importance to further arm LLMs with enhanced clinical reasoning capabilities. Currently, there are two major lines of research on LLMs in medical domains, tool-augmented methods and instruction-tuning methods. For tool-augmented approaches, recent studies rely on external tools to acquire additional information for clinical reasoning. For instance, GeneGPT <ref type="bibr" target="#b19">(Jin et al., 2023)</ref> guided LLMs to leverage the Web APIs of the National Center for Biotechnology Information (NCBI) to meet various biomedical information needs. <ref type="bibr" target="#b70">Zakka et al. (2023)</ref> proposed Almanac, a framework that is augmented with retrieval capabilities for medical guidelines and treatment recommendations. <ref type="bibr" target="#b20">Kang et al. (2023)</ref> introduced a method named KARD to improve small LMs on specific domain knowledge by finetuning small LMs on the rationales generated from LLMs and augmenting small LMs with external knowledge from a non-parametric memory.</p><p>Current instruction tuning research predominantly leverages external clinical knowledge bases and self-prompted data to obtain instruction datasets <ref type="bibr" target="#b55">(Tu et al., 2023;</ref><ref type="bibr">Zhang et al., 2023a;</ref><ref type="bibr">Singhal et al., 2023b;</ref><ref type="bibr">Tang et al., 2023c)</ref>. These </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Example Interpretation</head><p>...The hypopigmented rash is a classic symptom of cutaneous larva migrans.</p><p>To confirm the diagnosis, a skin biopsy would be the most appropriate test. About cutaneous larva migrans: 1. symptoms: not simply hypopigmented rash 2. diagnostic method: skin biopsy is not preferred The patient is asked to merely stand from a supine position. It does not involve the Valsalva maneuver. Q: Deciduous teeth do not show fluorosis because: ...(A) Placenta acts as a barrier: While it's true that placenta can act as a barrier for certain substances, this option is not relevant to the question... placenta can as a barrier for certain substances such as fluoride, which is part of the reason why deciduous teeth do not show fluorosis... ...Option A states that there is a decrease in systolic blood pressure of 20 mmHg within 6 minutes. This is a correct statement, as a drop in systolic blood pressure of at least 20 mmHg within 3 minutes of standing up is a diagnostic criterion for postural hypotension... Correct statement: 20mmHg within 3 minutes Option A: 20mmHg within 6 minutes datasets are then employed to fine-tune LLMs within the medical field <ref type="bibr">(Singhal et al., 2023b)</ref>. Some of these models utilize a wide array of datasets collected from medical and biomedical literature, fine-tuned with specialized or openended instruction data <ref type="bibr">(Li et al., 2023a;</ref><ref type="bibr">Singhal et al., 2023b)</ref>. Others focus on specific areas such as traditional Chinese medicine or largescale, diverse medical instruction data to enhance their medical proficiency <ref type="bibr" target="#b48">(Tan et al., 2023;</ref><ref type="bibr">Zhang et al., 2023b)</ref>. Unlike these methods, our work emphasizes harnessing latent medical knowledge intrinsic to LLMs and improving reasoning in a training-free setting.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">LLM-based Multi-agent Collaboration</head><p>The development of LLM-based agents has made significant progress in the community by endowing LLMs with the ability to perceive surroundings and make decisions individually <ref type="bibr">(Wang et al., 2023a;</ref><ref type="bibr" target="#b69">Yao et al., 2022;</ref><ref type="bibr" target="#b35">Nakajima, 2023;</ref><ref type="bibr" target="#b66">Xie et al., 2023;</ref><ref type="bibr" target="#b73">Zhou et al., 2023)</ref>. Beyond the initial singleagent mode, the multi-agent pattern has garnered increasing attention recently <ref type="bibr" target="#b65">(Xi et al., 2023;</ref><ref type="bibr">Li et al., 2023d;</ref><ref type="bibr" target="#b65">Hong et al., 2023)</ref> which further explores the potential of LLM-based agents by learning from multi-turn feedback and cooperation.</p><p>In essence, the key to LLM-based multi-agent collaboration is the simulation of human activities such as role-playing <ref type="bibr">(Wang et al., 2023d;</ref><ref type="bibr" target="#b65">Hong et al., 2023)</ref> and communication <ref type="bibr">(Wu et al., 2023a;</ref><ref type="bibr" target="#b40">Qian et al., 2023;</ref><ref type="bibr">Li et al., 2023b,c)</ref>. For instance, Solo Performance Prompting (SPP) <ref type="bibr">(Wang et al., 2023d)</ref> managed to combine the strengths of multiple minds to improve performance by dynamically identifying and engaging multiple personas throughout tasksolving. Camel <ref type="bibr">(Li et al., 2023b</ref>) leveraged roleplaying to enable chat agents to communicate with each other for task completion. Several recent works attempt to incorporate adversarial collaboration including debates <ref type="bibr" target="#b8">(Du et al., 2023;</ref><ref type="bibr" target="#b67">Xiong et al., 2023)</ref> and negotiation <ref type="bibr" target="#b10">(Fu et al., 2023)</ref> among multiple agents to further boost performance. <ref type="bibr" target="#b28">Liang et al. (2023)</ref> proposed a multi-agent debate framework in which various agents put forward their statements in a tit for tat pattern. Inspired by the multi-disciplinary consultation mechanism which is common and effective in hospitals, we are thus inspired to apply this mechanism to medical reasoning tasks through LLM-based multi-agent collaboration.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>We present a novel medical QA framework that uses role-playing agents for multi-round discussions, offering greater reliability and clarity without prior training. Our method surpasses zeroshot baselines and matches few-shot baselines across nine datasets. Despite successes, humanbased evaluations of errors have highlighted areas for refinement. Our approach differs from most existing methods by eliminating the dependency on knowledge bases, instead uniquely integrating medical knowledge through role-playing agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitation</head><p>The proposed MEDAGENTS framework has shown promising results, but there are still a few points that could be addressed in future studies. First, the parameterized knowledge within LLMs may need updating over time, and thus, continuous efforts are required to keep the framework up-to-date. Second, integrating diverse models at different stages of our framework might be an intriguing exploration. Third, the framework may have limited applicability in low-resource languages. Adapting this framework to a wider range of low-resource languages could meet their specific medical needs to some extent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Ethics Statement</head><p>Although our work strictly adheres to wellestablished benchmarks in the field of medical question answering, it is possible that our approach introduces potential risks, e.g., some inherent biases of LLMs, when applying LLM reasoning to critical areas such as medicine.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Analysis on the Addition of CoT</head><p>We provide an intriguing example that reveals a seemingly counter-intuitive observation: the addition of the CoT in a zero-shot setting led to a performance drop compared to the zero-shot one. As demonstrated in the example, for specialist domains that demand considerable expert knowledge such as the medical domain knowledge, employing a CoT approach might sometimes lead to hallucination <ref type="bibr" target="#b5">(Bubeck et al., 2023;</ref><ref type="bibr" target="#b11">Guerreiro et al., 2023;</ref><ref type="bibr" target="#b16">Ji et al., 2023;</ref><ref type="bibr" target="#b33">Maynez et al., 2020)</ref>. Hallucinations refer to instances where the language model starts generating inaccurate or irrelevant information based on its insufficient understanding <ref type="bibr" target="#b62">(Wei et al., 2022;</ref><ref type="bibr" target="#b21">Kojima et al., 2022;</ref><ref type="bibr" target="#b45">Shi et al., 2023)</ref>. Consequently, in these instances, the use of the CoT method does not improve but hindrances the overall performance.</p><p>This issue is particularly stated in the medical question-answering field by some recent work, where it has been demonstrated that the CoT's step-by-step approach is unable to generate correct medical answers effectively. For example, the results from <ref type="bibr" target="#b29">Liévin et al. (2022)</ref> demonstrate that CoT improvements are significantly limited.</p><p>Such failures in medical question-answering originate from a lack of domain knowledge <ref type="bibr" target="#b13">(Harris, 2023;</ref><ref type="bibr" target="#b22">Kung et al., 2023;</ref><ref type="bibr" target="#b53">Tian et al., 2024)</ref> instead of reasoning rationale. This was also observed in our experiments, with a substantial 77% of errors related to domain knowledge, compared to a minor 8% due to CoT (as shown in Figure <ref type="figure" target="#fig_3">4</ref>).</p><p>To address these issues, there has indeed been a recent shift toward utilizing RAG (Retrieval-Augmented Generation) for domain knowledge enhancement <ref type="bibr">(Wang et al., 2023b;</ref><ref type="bibr" target="#b23">Lála et al., 2023)</ref> in medical QA. Despite these developments, our study underscores a novel approach within this field: our use of role-playing. Role-playing in our MEDAGENTS framework allows the model to explicitly reason with accurate knowledge, remarkably bypassing the need for RAG.</p><p>Table 8: Examples showing the influence of the addition of CoT</p><p>Question: Which of the following is the large bone found superior to the patella and inferior to the ischium? (A) Calcaneus (B) Femur (C) Symphysis pubis (D) Tibia Zero-shot Answer: B ✓ Zero-shot-CoT Answer: D ✗ Zero-shot-CoT Rationale: The bone found superior to the patella and inferior to the ischium is most likely the tibia (✗). Let's go through the options to confirm. Option A: Calcaneus -The calcaneus is the heel bone and is not located in the specified position. Option B: Femur -The femur is the thigh bone and is located superior to the patella, but it is not inferior to the ischium (✗). Option C: Symphysis pubis -The symphysis pubis is a joint located in the pelvis and is not a bone. Option D: Tibia -The tibia is the shin bone and is located superior to the patella and inferior to the ischium. This seems to be the correct option. Answer: D</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Diagram of our proposed MEDAGENTS framework. Given a medical question as input, the framework performs reasoning in five stages: (i) expert gathering, (ii) analysis proposition, (iii) report summarization, (iv) collaborative consultation, and (v) decision making.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Illustrative example of our proposed MedAgents, a multi-disciplinary collaboration framework. The questions and options are first presented, with domain experts subsequently gathered. The recruited experts conduct thorough Question and Option analyses based on their respective fields.An initial report synthesizing these analyses is then prepared to concisely represent the performed evaluations. The assembled LLM experts, possessing respective disciplinary backgrounds, engage in a discussion over the initial report, voicing agreements and disagreements. Ultimately, after iterative refinement and consultation, a unanimous report is generated that best represents the collective expert knowledge and reasoning on the given medical problem.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Influence of the number of question and option agents on various datasets.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Ratio of different categories in error cases.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>The physician instructs the patient to stand from a supine position while still wearing the stethoscope. It is known as the "Valsalva maneuver" During the Valsalva maneuver, ...</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Examples of error cases from MedQA and MedMCQA datasets in four major categories including lack of domain knowledge, mis-retrieval of domain knowledge, consistency errors, and CoT errors.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Summary of the Datasets. Part of the values are from the appendix of</figDesc><table><row><cell>Dataset</cell><cell>Format</cell><cell>Choice</cell><cell>Testing Size</cell><cell>Domain</cell></row><row><cell>MedQA</cell><cell>Question + Answer</cell><cell>A/B/C/D</cell><cell>1273</cell><cell>US Medical Licensing Examination</cell></row><row><cell>MedMCQA</cell><cell>Question + Answer</cell><cell>A/B/C/D and Explanations</cell><cell>6.1K</cell><cell>AIIMS and NEET PG entrance exams</cell></row><row><cell cols="2">PubMedQA Question + Context + Answer</cell><cell>Yes/No/Maybe</cell><cell>500</cell><cell>PubMed paper abstracts</cell></row><row><cell>MMLU</cell><cell>Question + Answer</cell><cell>A/B/C/D</cell><cell>1089</cell><cell>Graduate Record Examination &amp; US Medical Licensing Examination</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Main results (Acc). SC denotes the self-consistency prompting method. Results in bold are the best performances.</figDesc><table><row><cell>Method</cell><cell cols="4">MedQA MedMCQA PubMedQA Anatomy</cell><cell cols="5">Clinical College Medical Professional College Avg. knowledge medicine genetics medicine biology</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">Flan-Palm</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Few-shot CoT</cell><cell>60.3</cell><cell>53.6</cell><cell>77.2</cell><cell>66.7</cell><cell>77.0</cell><cell>83.3</cell><cell>75.0</cell><cell>76.5</cell><cell>71.1 71.2</cell></row><row><cell cols="2">Few-shot CoT + SC 67.6</cell><cell>57.6</cell><cell>75.2</cell><cell>71.9</cell><cell>80.4</cell><cell>88.9</cell><cell>74.0</cell><cell>83.5</cell><cell>76.3 75.0</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">GPT-3.5</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>*few-shot setting</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Few-shot</cell><cell>54.7</cell><cell>56.7</cell><cell>67.6</cell><cell>65.9</cell><cell>71.3</cell><cell>59.0</cell><cell>72.0</cell><cell>75.7</cell><cell>73.6 66.3</cell></row><row><cell>Few-shot CoT</cell><cell>55.3</cell><cell>54.7</cell><cell>71.4</cell><cell>48.1</cell><cell>65.7</cell><cell>55.5</cell><cell>57.0</cell><cell>69.5</cell><cell>61.1 59.8</cell></row><row><cell cols="2">Few-shot CoT + SC 62.1</cell><cell>58.3</cell><cell>73.4</cell><cell>70.4</cell><cell>76.2</cell><cell>69.8</cell><cell>78.0</cell><cell>79.0</cell><cell>77.2 71.6</cell></row><row><cell>*zero-shot setting</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Zero-shot</cell><cell>54.3</cell><cell>56.3</cell><cell>73.7</cell><cell>61.5</cell><cell>76.2</cell><cell>63.6</cell><cell>74.0</cell><cell>75.4</cell><cell>75.0 67.8</cell></row><row><cell>Zero-shot CoT</cell><cell>44.3</cell><cell>47.3</cell><cell>61.3</cell><cell>63.7</cell><cell>61.9</cell><cell>53.2</cell><cell>66.0</cell><cell>62.1</cell><cell>65.3 58.3</cell></row><row><cell cols="2">Zero-shot CoT + SC 61.3</cell><cell>52.5</cell><cell>75.7</cell><cell>71.1</cell><cell>75.1</cell><cell>68.8</cell><cell>76.0</cell><cell>82.3</cell><cell>75.7 70.9</cell></row><row><cell>MedAgents (Ours)</cell><cell>64.1</cell><cell>59.3</cell><cell>72.9</cell><cell>65.2</cell><cell>77.7</cell><cell>69.8</cell><cell>79.0</cell><cell>82.1</cell><cell>78.5 72.1</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">GPT-4</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>*few-shot setting</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Few-shot</cell><cell>76.6</cell><cell>70.1</cell><cell>73.4</cell><cell>79.3</cell><cell>89.5</cell><cell>75.6</cell><cell>93.0</cell><cell>91.5</cell><cell>91.7 82.3</cell></row><row><cell>Few-shot CoT</cell><cell>73.3</cell><cell>63.2</cell><cell>74.9</cell><cell>75.6</cell><cell>89.9</cell><cell>61.0</cell><cell>79.0</cell><cell>79.8</cell><cell>63.2 73.3</cell></row><row><cell cols="2">Few-shot CoT + SC 82.9</cell><cell>73.1</cell><cell>75.6</cell><cell>80.7</cell><cell>90.0</cell><cell>88.2</cell><cell>90.0</cell><cell>95.2</cell><cell>93.0 85.4</cell></row><row><cell>*zero-shot setting</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Zero-shot</cell><cell>73.0</cell><cell>69.0</cell><cell>76.2</cell><cell>78.5</cell><cell>83.3</cell><cell>75.6</cell><cell>90.0</cell><cell>90.0</cell><cell>90.0 80.6</cell></row><row><cell>Zero-shot CoT</cell><cell>61.8</cell><cell>69.0</cell><cell>71.0</cell><cell>82.1</cell><cell>85.2</cell><cell>80.8</cell><cell>92.0</cell><cell>93.5</cell><cell>91.7 80.8</cell></row><row><cell cols="2">Zero-shot CoT + SC 74.5</cell><cell>70.1</cell><cell>75.3</cell><cell>80.0</cell><cell>86.3</cell><cell>81.2</cell><cell>93.0</cell><cell>94.8</cell><cell>91.7 83.0</cell></row><row><cell>MedAgents (Ours)</cell><cell>83.7</cell><cell>74.8</cell><cell>76.8</cell><cell>83.5</cell><cell>91.0</cell><cell>87.6</cell><cell>93.0</cell><cell>96.0</cell><cell>94.3 86.7</cell></row><row><cell>Method</cell><cell></cell><cell cols="2">Accuracy(%)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="2">Direct Prompting</cell><cell>49.0</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>CoT Prompting</cell><cell></cell><cell>55.0</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>w/ MedAgents</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>+ Anal</cell><cell></cell><cell cols="2">62.0(↑ 7.0)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="2">+ Anal &amp; Summ</cell><cell cols="2">65.0(↑ 10.0)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="2">+ Anal &amp; Summ &amp; Cons</cell><cell cols="2">67.0(↑ 12.0)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 5 :</head><label>5</label><figDesc>Optimal number of agents on MedQA, MedMCQA, PubMedQA, and MMLU.</figDesc><table><row><cell>Method</cell><cell cols="2">MedQA MedMCQA</cell></row><row><cell>MEDAGENTS</cell><cell>63.8</cell><cell>58.9</cell></row><row><cell>Remove most relevant</cell><cell>60.5</cell><cell>55.4</cell></row><row><cell>Remove least relevant</cell><cell>66.2</cell><cell>61.5</cell></row><row><cell>Remove randomly</cell><cell>62.2</cell><cell>56.3</cell></row><row><cell cols="3">Table 6: Domain variation study. The results are based</cell></row><row><cell>on GPT-3.5.</cell><cell></cell><cell></cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>Although Med-PaLM</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>(Singhal et al., 2023b)  serves as a specialized medical LLM fine-tuned on the basis of PaLM 2, it is closed-sourced and not publicly accessible yet.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_2"><p>We follow the evaluation setting from Faln-PaLM(Singhal et al., 2023a).</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_3"><p>We design domain experts for the question and options in order to leverage diverse agents to elicit multifaceted and comprehensive knowledge.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_4"><p>https://learn.microsoft.com/en-us/azure/ ai-services/openai/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_5"><p>We acknowledge that our proposed method requires more cost compared with CoT or direct prompting. However, our approach is relatively cost-effective and the improved performance potentially leads to better health outcomes.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="7" xml:id="foot_6"><p>A more detailed analysis of CoT's impact is provided in Appendix A.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgments</head><p><rs type="person">Xiangru Tang</rs> and <rs type="person">Mark Gerstein</rs> are supported by <rs type="funder">Schmidt Sciences</rs>. <rs type="person">Zhuosheng Zhang</rs> is supported by <rs type="funder">CIPSC-SMP-Zhipu.AI Large Model Cross-Disciplinary Fund</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Interpretability: Case Study</head><p>We analyze instances where our proposed MEDAGENTS framework manages to correct previous errors. Table <ref type="table">B</ref> illustrates examples of our approach to turning previously incorrect answers into correct ones. These cases showcase the robustness of our MEDAGENTS framework. Different medical professionals offer depth and breadth in the analysis, transforming it into a comprehensive assessment. Furthermore, the collaborative consultation refines and corrects the initial interpretation, leading us toward the correct answer, thus demonstrating the effectiveness of our method in correcting errors and ensuring accuracy.</p><p>Table 9: Case studies demonstrating how our proposed MEDAGENTS framework manages to correct previous errors.</p><p>Question: A 23-year-old college student experiences monthly chest discomfort, shortness of breath, shakiness, and excessive sweating, likely due to stress. He fears having an episode in public, causing him to avoid leaving home. His medical history is unclear, and the physical exam is normal. Which of the following is the best medication for the long-term management of this patient's condition? (A) Citalopram (B) Lithium (C) Lorazepam (D) Propranolol (E) Quetiapine Experts: Cardiology, Psychiatry, Pulmonology, Endocrinology, Neurology</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Analyses from various experts:</head><p>Cardiology Expert: ...These symptoms are not typical of a cardiac cause given the patient's young age and normal physical exam...The best medication for long-term management of anxiety disorders is often selective serotonin reuptake inhibitors (SSRIs) like Citalopram.</p><p>Psychiatry Expert: ...Although quetiapine is commonly used in the treatment of schizophrenia and bipolar disorder, it is also effective in controlling the symptoms of rare endocrine disorders that present with anxiety-like symptoms.</p><p>Pulmonology Expert: ...this treatment based on the possibility that the symptoms could be due to a respiratory condition, such as hyperventilation syndrome, which Propranolol is thought to help by reducing the heart rate and perceived shortness of breath.</p><p>Endocrinology Expert: SSRIs like Citalopram can affect endocrine function by regulating serotonin levels, which in turn can modulate the hypothalamic-pituitary-adrenal (HPA) axis...</p><p>Neurology Expert: the focus would be on addressing the dysregulated ANS activity that is causing the physical symptoms of stress. The most appropriate medication would likely be Citalopram, an SSRI, which can help improve mood and reduce anxiety... Expert analysis presents a multifaceted view of the problem. Based on the experts' specialties, their analyses focus on different aspects, leading to the suggestion of two drugs, Citalopram and Propranolol.</p><p>Synthesized Report (v0): ... Based on the suggestions from the experts, the medication should be Citalopram along with Propranolol, which can help alleviate shortness of breath...</p><p>The first synthesis suggested a combination of Citalopram and Propranolol.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Vote Result:</head><p>Cardiology Expert: No Psychiatry Expert: Yes Pulmonology Expert: Yes Endocrinology Expert: Yes Neurology Expert: No Synthesized Report (v1): ...the most appropriate medication for the long-term management of this patient's condition appears to be Citalopram(SSRI). The final report suggested Citalopram as the best medication for the patient's condition.</p><p>Table 10: Case studies demonstrating how our proposed MEDAGENTS framework manages to correct previous errors.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Question: Eustachian tube function is best assessed by: (A) Tympanometry (B) VEMP (C) Rhinomanometry (D) Politzer tests</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Experts: Otolaryngology, Audiology, Radiology, Allergy and Immunology, Pulmonology</head><p>Analyses from various experts: Otolaryngology Expert: ...The focus is on Eustachian tube function, which is essential for equalizing ear pressure and facilitating normal hearing. Several tests are available, but tympanometry is a primary method for assessing function, indicating if there's a blockage or proper movement of the eardrum.</p><p>Audiology Expert: ...Tympanometry is correct, VEMP is not related, Rhinomanometry is unrelated, and the Politzer test is appropriate for Eustachian tube assessment.</p><p>Radiology Expert: ...Proper function of the Eustachian tube is vital for hearing and balance. Tympanometry is one of the methods used to assess this function, by evaluating the compliance of the middle ear.</p><p>Allergy and Immunology Expert: Assessing Eustachian tube function is crucial for diagnosing related dysfunctions and infections. Tympanometry is a valuable test to determine if the tube is functioning correctly.</p><p>Pulmonology Expert: ...The assessment of the Eustachian tube function is important for diagnosing ear conditions that could affect breathing. Tympanometry helps evaluate eardrum mobility and middle ear pressure</p><p>Based on the experts' specialties, their analyses focus on different aspects, leading to the suggestion of two methods, Tympanometry and Politzer test.</p><p>Synthesized Report (v0): ...Tympanometry is reaffirmed as a method to assess Eustachian tube function, with additional methods like sonotubometry and nasal endoscopy also important. The Politzer test is recognized as another method for such assessments.</p><p>The first synthesis suggested Tympanometry and Politzer test.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Vote Result:</head><p>Otolaryngology Expert: Yes Audiology Expert: Yes Radiology Expert: Yes Allergy and Immunology Expert: Yes Pulmonology Expert: Initially No, then Yes after revision.</p><p>Synthesized Report (v1): ...Tympanometry is a key method among several to assess Eustachian tube function, crucial for diagnosing Eustachian tube dysfunction, infections, and hearing issues.... The final report suggested Tympanometry as the best medication for the patient's condition.</p><p>Table 11: Case studies demonstrating how our proposed MEDAGENTS framework manages to correct previous errors.</p><p>Question: To prevent desiccation and injury, the embryos of terrestrial vertebrates are encased within a fluid secreted by the? (A) amnion (B) chorion (C) allantois (D) yolk sac</p><p>Experts: Embryology, Physiology, Dermatology, Endocrinology, Reproductive Medicine</p><p>Analyses from various experts: Embryology Expert: ... amnion is the primary structure responsible for secreting amniotic fluid, with the chorion also contributing to this process.</p><p>Physiology Expert: ...the amniotic sac and amniotic fluid, produced by the amnion, is important in creating a stable and protected environment for the embryo. Besides, its cushioning effect and role in the exchange of nutrients and gases cannot be ignored either.</p><p>Dermatology Expert: ...the importance of amniotic fluid in fetal development, particularly for the skin...</p><p>Endocrinology Expert: the question relates to embryological development rather than an endocrinological condition, ... the amniotic sac plays a vital role in providing a protective environment.</p><p>Reproductive Medicine Expert: ...amniotic fluid is of crucial importance for the normal development and survival of the embryo.</p><p>Based on the experts' specialties, their analyses focus on different aspects, leading to the suggestion of two methods, amnion and chorion.</p><p>Synthesized Report (v0): ... Both the amnion and chorion play vital roles in this process.</p><p>The first synthesis suggested amnion and chorion.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Vote Result:</head><p>Embryology Expert: Yes Physiology Expert: Yes Dermatology Expert: No Endocrinology Expert: No Reproductive Medicine Expert: Yes Synthesized Report (v1): ... the amnion as the primary source of the amniotic fluid that protects the developing embryos of terrestrial vertebrates, with an understanding of the contributions from other structures like the chorion and the allantois.</p><p>Dermatology and Endocrinology experts have revised their initial focus to align with the consensus on the role of the amnion in secreting amniotic fluid.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Dataset Information</head><p>MedQA consists of USMLE-style questions with four or five possible answers.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>MedMCQA encompasses four-option multiple-choice questions from Indian medical entrance examinations (AIIM-S/NEET). MMLU (Massive Multitask Language</head><p>Understanding) covers 57 subjects across various disciplines, including STEM, humanities, social sciences, and many others.</p><p>The scope of its assessment stretches from elementary to advanced professional levels, evaluating both world knowledge and problem-solving capabilities. While the subject areas tested are diverse, encompassing traditional fields like mathematics and history, as well as more specialized areas like law and ethics, we deliberately limit our selection to the sub-subjects within the medical domain for this exercise, following <ref type="bibr">(Singhal et al., 2023a)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Prompt Templates</head><p>Prompt templates involved in the experiments are presented in Table <ref type="table">12</ref>.</p><p>Table 12: Prompt templates and role descriptions employed in our MEDAGENTS framework. Drawing upon your medical expertise, interpret the condition being depicted. Subsequently, identify and highlight the aspects of the issue that you find most alarming or noteworthy. r oa : You are a medical expert specialized in the op_domain domain. You are adept at comprehending the nexus between questions and choices in multiple-choice exams and determining their validity. Your task, in particular, is to analyze individual options with your expert medical knowledge and evaluate their relevancy and correctness. prompt oa : Regarding the question: question, we procured the analysis of five experts from diverse domains. The evaluation from the question_domain expert suggests: question_analysis. The following are the options available: options. Reviewing the question's analysis from the expert team, you're required to fathom the connection between the options and the question from the perspective of your respective domain and scrutinize each option individually to assess whether it is plausible or should be eliminated based on reason and logic. Pay close attention to discerning the disparities among the different options and rationalize their existence. A handful of these options might seem right at first glance but could potentially be misleading in reality. r rs : You are a medical assistant who excels at summarizing and synthesizing based on multiple experts from various domain experts. prompt rs : Here are some reports from different medical domain experts. You need to complete the following steps: 1. Take careful and comprehensive consideration of the following reports. 2. Extract key knowledge from the following reports. 3. Derive the comprehensive and summarized analysis based on the knowledge. 4. Your ultimate goal is to derive a refined and synthesized report based on the following reports. You should output in exactly the same format as: Key Knowledge:; Total Analysis: r vote : You are a medical expert specialized in the domain domain. prompt vote : Here is a medical report: synthesized_report. As a medical expert specialized in domain, please carefully read the report and decide whether your opinions are consistent with this report. Please respond only with: [YES or NO]. prompt mod : Here is advice from a medical expert specialized in domain: advice. Based on the above advice, output the revised analysis in the same format as: Key Knowledge:; Total Analysis: prompt dm : Here is a synthesized report: syn_report. Based on the above report, select the optimal choice to answer the question. Points to note: 1. The analyses provided should guide you towards the correct response. 2. Any option containing incorrect information inherently cannot be the correct choice. 3. Please respond only with the selected option's letter, like A, B, C, D, or E, using the following format: "'Option: [Selected Option's Letter]"'. Remember, it's the letter we need, not the full content of the option.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E Multiple Runs</head><p>we have performed multiple runs on a set of 300 samples for GPT-4 and GPT-3.5 to account for variability.</p><p>The preliminary tests involved the average score of 5 repetitions for each sample, and the results indicated a decent small variance between runs. In summary, the consistency observed in this set provides confidence in the stability of our reported results.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>MedQA MedMCQA MC framework GPT-3.5 (single try)</head><p>64.1 59.3 MC framework GPT-3.5 (5 repetitions) 64.3 59.2 MC framework GPT-4 (single try) 83.7 74.8 MC framework GPT-4 (5 repetitions) 83.5 74.9</p><p>Table <ref type="table">13</ref>: GPT-4 versus GPT-3.5 based on multiple runs of 300 samples.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>r qd :</head><label>qd</label><figDesc>You are a medical expert who specializes in categorizing a specific medical scenario into specific areas of medicine. prompt qd : You need to complete the following steps: 1. Carefully read the medical scenario presented in the question: question. 2. Based on the medical scenario in it, classify the question into five different subfields of medicine. 3. You should output in the same format as: Medical Field: | . r od : As a medical expert, you possess the ability to discern the two most relevant fields of expertise needed to address a multiple-choice question encapsulating a specific medical context. prompt od : You need to complete the following steps: 1. 1. Carefully read the medical scenario presented in the question: question. 2. The available options are: options. Strive to understand the fundamental connections between the question and the options. 3. Your core aim should be to categorize the options into two distinct subfields of medicine. You should output in the same format as: Medical Field: | . r qa : You are a medical expert in the domain of question_domain. From your area of specialization, you will scrutinize and diagnose the symptoms presented by patients in specific medical scenarios. prompt qa : Please meticulously examine the medical scenario outlined in this question: question.</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhijie</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengze</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuang</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiajie</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanjing</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongyu</forename><surname>Wei</surname></persName>
+		</author>
+		<title level="m">Disc-medllm: Bridging general large language models and realworld medical consultation</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Iz</forename><surname>Beltagy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arman</forename><surname>Cohan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1903.10676</idno>
+		<title level="m">Scibert: A pretrained language model for scientific text</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Graph of thoughts: Solving elaborate problems with large language models</title>
+		<author>
+			<persName><forename type="first">Maciej</forename><surname>Besta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nils</forename><surname>Blach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ales</forename><surname>Kubicek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Gerstenberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukas</forename><surname>Gianinazzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joanna</forename><surname>Gajda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomasz</forename><surname>Lehmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michal</forename><surname>Podstawski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hubert</forename><surname>Niewiadomski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Nyczyk</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.09687</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Elliot</forename><surname>Bolton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Venigalla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michihiro</forename><surname>Yasunaga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Hall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Betty</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tony</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roxana</forename><surname>Daneshjou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Frankle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Carbin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.18421</idno>
+		<title level="m">Biomedlm: A 2.7 b parameter language model trained on biomedical text</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Tom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ariel</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Herbert-Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rewon</forename><surname>Henighan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Child</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">M</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Ziegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clemens</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Winter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mateusz</forename><surname>Sigler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Litwin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Chess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Berner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Amodei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 33: Annual Conference on Neural Information Processing Systems</title>
+		<meeting><address><addrLine>NeurIPS</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2020-12-06">2020. 2020. 2020. December 6-12, 2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sébastien</forename><surname>Bubeck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Varun</forename><surname>Chandrasekaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronen</forename><surname>Eldan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Gehrke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Horvitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ece</forename><surname>Kamar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yin</forename><surname>Tat Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Lundberg</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.12712</idno>
+		<title level="m">Sparks of artificial general intelligence: Early experiments with gpt-4</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingwei</forename><surname>Zuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenfei</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi-Min</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaxi</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruobing</forename><surname>Xie</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.10848</idno>
+		<title level="m">Agentverse: Facilitating multi-agent collaboration and exploring emergent behaviors in agents</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Palm: Scaling language modeling with pathways</title>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaurav</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Barham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyung</forename><forename type="middle">Won</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Gehrmann</surname></persName>
+		</author>
+		<idno>ArXiv preprint, abs/2204.02311</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Improving factuality and reasoning in language models through multiagent debate</title>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonio</forename><surname>Torralba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Analysis of large-language model versus human performance for genetics questions</title>
+		<author>
+			<persName><forename type="first">Dat</forename><surname>Duong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><forename type="middle">D</forename><surname>Solomon</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">European Journal of Human Genetics</title>
+		<imprint>
+			<biblScope unit="page" from="1" to="3" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Improving language model negotiation with self-play and in-context learning from ai feedback</title>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mirella</forename><surname>Lapata</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Hallucinations in large multilingual translation models</title>
+		<author>
+			<persName><surname>Nuno M Guerreiro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Duarte</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Alves</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barry</forename><surname>Waldendorf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandra</forename><surname>Haddow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Birch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">André Ft</forename><surname>Colombo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Martins</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="page" from="1500" to="1517" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Medalpaca -an open-source collection of medical conversational ai models and training data</title>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lisa</forename><forename type="middle">C</forename><surname>Adams</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jens-Michalis</forename><surname>Papaioannou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Grundmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Oberhauser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Lãűser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Truhn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keno</forename><forename type="middle">K</forename><surname>Bressem</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Large language models answer medical questions accurately, but canâ Ȃ Źt match cliniciansâ Ȃ Ź knowledge</title>
+		<author>
+			<persName><forename type="first">Emily</forename><surname>Harris</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">JAMA</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mantas</forename><surname>Mazeika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2009.03300</idno>
+		<title level="m">Measuring massive multitask language understanding</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sirui</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiawu</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ceyao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zili</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Ka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shing</forename><surname>Yau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijuan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyang</forename><surname>Zhou</surname></persName>
+		</author>
+		<title level="m">Chenyu Ran, Lingfeng Xiao, and Chenglin Wu. 2023. Metagpt: Meta programming for multi-agent collaborative framework</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Survey of hallucination in natural language generation</title>
+		<author>
+			<persName><forename type="first">Ziwei</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nayeon</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rita</forename><surname>Frieske</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tiezheng</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Etsuko</forename><surname>Ishii</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ye</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Bang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrea</forename><surname>Madotto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pascale</forename><surname>Fung</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<publisher>ACM Computing Surveys</publisher>
+			<biblScope unit="volume">55</biblScope>
+			<biblScope unit="page" from="1" to="38" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">What disease does this patient have? a large-scale open domain question answering dataset from medical exams</title>
+		<author>
+			<persName><forename type="first">Di</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eileen</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nassim</forename><surname>Oufattole</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Hung</forename><surname>Weng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanyi</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Szolovits</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Applied Sciences</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="issue">14</biblScope>
+			<biblScope unit="page">6421</biblScope>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qiao</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bhuwan</forename><surname>Dhingra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengping</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">W</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinghua</forename><surname>Lu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1909.06146</idno>
+		<title level="m">Pubmedqa: A dataset for biomedical research question answering</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Genegpt: Augmenting large language models with domain tools for improved access to biomedical information</title>
+		<author>
+			<persName><forename type="first">Qiao</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyong</forename><surname>Lu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<publisher>ArXiv</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Knowledgeaugmented reasoning distillation for small language models in knowledge-intensive tasks</title>
+		<author>
+			<persName><forename type="first">Minki</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Seanie</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinheon</forename><surname>Baek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenji</forename><surname>Kawaguchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sung</forename><forename type="middle">Ju</forename><surname>Hwang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.18395</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Large language models are zero-shot reasoners</title>
+		<author>
+			<persName><forename type="first">Takeshi</forename><surname>Kojima</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shane</forename><surname>Shixiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Machel</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutaka</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusuke</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Iwasawa</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="22199" to="22213" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Performance of chatgpt on usmle: Potential for ai-assisted medical education using large language models</title>
+		<author>
+			<persName><forename type="first">Tiffany</forename><forename type="middle">H</forename><surname>Kung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Morgan</forename><surname>Cheatham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arielle</forename><surname>Medenilla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Czarina</forename><surname>Sillos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lorie</forename><forename type="middle">De</forename><surname>Leon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Camille</forename><surname>Elepaño</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Madriaga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rimel</forename><surname>Aggabao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Giezel</forename><surname>Diaz-Candido</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Maningo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PLoS digital health</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page">198</biblScope>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Biobert: a pre-trained biomedical language representation model for biomedical text mining</title>
+		<author>
+			<persName><forename type="first">Jakub</forename><surname>Lála</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O'</forename><surname>Odhran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandar</forename><surname>Donoghue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Shtedritski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><forename type="middle">G</forename><surname>Cox</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">D</forename><surname>Rodriques</surname></persName>
+		</author>
+		<author>
+			<persName><surname>White</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.07559</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Paperqa: Retrievalaugmented generative agent for scientific research</title>
+		<editor>
+			<persName><forename type="first">Jinhyuk</forename><surname>Lee</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Wonjin</forename><surname>Yoon</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sungdong</forename><surname>Kim</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Donghyeon</forename><surname>Kim</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sunkyu</forename><surname>Kim</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Chan Ho So, and Jaewoo Kang</publisher>
+			<date type="published" when="2020">2023. 2020</date>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="1234" to="1240" />
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chunyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cliff</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naoto</forename><surname>Usuyama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianwei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tristan</forename><surname>Naumann</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.00890</idno>
+		<title level="m">Hoifung Poon, and Jianfeng Gao. 2023a. Llava-med: Training a large language-and-vision assistant for biomedicine in one day</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">2023b. Camel: Communicative agents for</title>
+		<author>
+			<persName><forename type="first">Guohao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hasan</forename><surname>Abed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Al</forename><surname>Kader Hammoud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hani</forename><surname>Itani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitrii</forename><surname>Khizbullin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bernard</forename><surname>Ghanem</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.17760</idno>
+	</analytic>
+	<monogr>
+		<title level="m">exploration of large scale language model society</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">2023c. Theory of mind for multi-agent collaboration via large language models</title>
+		<author>
+			<persName><forename type="first">Huao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><forename type="middle">Quan</forename><surname>Chong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Stepputtis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><surname>Campbell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dana</forename><surname>Hughes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katia</forename><surname>Sycara</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.10701</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Metaagents: Simulating interactions of human behaviors for llm-based task-oriented coordination via collaborative generative agents</title>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lichao</forename><surname>Sun</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Encouraging divergent thinking in large language models through multi-agent debate</title>
+		<author>
+			<persName><forename type="first">Tian</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiwei</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenxiang</forename><surname>Jiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xing</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujiu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaopeng</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuming</forename><surname>Shi</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">Christoffer</forename><forename type="middle">Egeberg</forename><surname>Valentin Liévin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ole</forename><surname>Hother</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Winther</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2207.08143</idno>
+		<title level="m">Can large language models reason about medical questions? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhengliang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengxuan</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bokai</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haixing</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianyan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ye</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sheng</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.10432</idno>
+		<title level="m">Pharmacygpt: The ai pharmacist</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">Pan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baolin</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michel</forename><surname>Galley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><forename type="middle">Nian</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Song-Chun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Gao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.09842</idno>
+		<title level="m">Chameleon: Plug-and-play compositional reasoning with large language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yizhen</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siqi</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yushuai</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mu</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zaiqing</forename><surname>Nie</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.09442</idno>
+		<title level="m">Biomedgpt: Open multimodal generative pre-trained transformer for biomedicine</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">Joshua</forename><surname>Maynez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shashi</forename><surname>Narayan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bernd</forename><surname>Bohnet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Mcdonald</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2005.00661</idno>
+		<title level="m">On faithfulness and factuality in abstractive summarization</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Foundation models for generalist medical artificial intelligence</title>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Moor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oishi</forename><surname>Banerjee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zahra</forename><surname>Shakeri Hossein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harlan</forename><forename type="middle">M</forename><surname>Abad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jure</forename><surname>Krumholz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><forename type="middle">J</forename><surname>Leskovec</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Topol</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rajpurkar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="volume">616</biblScope>
+			<biblScope unit="issue">7956</biblScope>
+			<biblScope unit="page" from="259" to="265" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Task-driven autonomous agent utilizing gpt-4, pinecone, and langchain for diverse applications</title>
+		<author>
+			<persName><surname>Nakajima</surname></persName>
+		</author>
+		<ptr target="https://yoheinakajima.com/task-driven-autonomous-agent-utilizing-gpt-4-pinecone-and-langchain-for-diverse-applications" />
+		<imprint>
+			<date type="published" when="2023-04-18">2023. 18 April 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">Harsha</forename><surname>Nori</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>King</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><forename type="middle">Mayer</forename><surname>Mckinney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dean</forename><surname>Carignan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Horvitz</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.13375</idno>
+		<title level="m">Capabilities of gpt-4 on medical challenge problems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<idno>abs/2303.08774</idno>
+		<title level="m">Gpt-4 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">ArXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Medmcqa: A large-scale multisubject multi-choice dataset for medical domain question answering</title>
+		<author>
+			<persName><forename type="first">Ankit</forename><surname>Pal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Logesh</forename><surname>Kumar Umapathi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Malaikannan</forename><surname>Sankarasubbu</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Health, Inference, and Learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="248" to="260" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Generative agents: Interactive simulacra of human behavior</title>
+		<author>
+			<persName><forename type="first">Sung</forename><surname>Joon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">C</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carrie</forename><forename type="middle">J</forename><surname>O'brien</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meredith</forename><forename type="middle">Ringel</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Morris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><forename type="middle">S</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bernstein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">the 36th Annual ACM Symposium on User Interface Software and Technology (UIST &apos;23), UIST &apos;23</title>
+		<meeting><address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juyuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.07924</idno>
+		<title level="m">Communicative agents for software development</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Evaluation of the performance of gpt-3.5 and gpt-4 on the medical final examination. medRxiv</title>
+		<author>
+			<persName><forename type="first">Maciej</forename><surname>Rosoł</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonasz</forename><surname>Jakub S G Ąsior</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kacper</forename><surname>Łaba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcel</forename><surname>Korzeniewski</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Młyńczak</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="2023" to="2026" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Bloom: A 176bparameter open-access multilingual language model</title>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Teven</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Angela</forename><surname>Scao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellie</forename><surname>Akiki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suzana</forename><surname>Pavlick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Ilić</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roman</forename><surname>Hesslow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandra</forename><surname>Castagné</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">François</forename><surname>Sasha Luccioni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Yvon</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gallé</surname></persName>
+		</author>
+		<idno>ArXiv preprint, abs/2211.05100</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">How expertise develops in medicine: knowledge encapsulation and illness script formation</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Henk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Remy</forename><forename type="middle">Mjp</forename><surname>Schmidt</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rikers</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Medical education</title>
+		<imprint>
+			<biblScope unit="volume">41</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="1133" to="1139" />
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Summarizing, simplifying, and synthesizing medical evidence using gpt-3 (with varying success)</title>
+		<author>
+			<persName><forename type="first">Chantal</forename><surname>Shaib</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Millicent</forename><forename type="middle">L</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iain</forename><forename type="middle">J</forename><surname>Marshall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyi</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jessy</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Byron</forename><forename type="middle">C</forename><surname>Wallace</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.06299</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Large language models can be easily distracted by irrelevant context</title>
+		<author>
+			<persName><forename type="first">Freda</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kanishka</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><forename type="middle">H</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="31210" to="31227" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Nathanael SchÃd&apos;rli, Aakanksha Chowdhery, Philip Mansfield, Dina Demner-Fushman, and Vivek Natarajan. 2023a. Large language models encode clinical knowledge</title>
+		<author>
+			<persName><forename type="first">Karan</forename><surname>Singhal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shekoofeh</forename><surname>Azizi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mahdavi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyung</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Tanwani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heather</forename><surname>Cole-Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Pfohl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Perry</forename><surname>Payne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Seneviratne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Gamble</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Kelly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abubakr</forename><surname>Babiker</surname></persName>
+		</author>
+		<idno type="DOI">10.1038/s41586-023-06291-2</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="volume">620</biblScope>
+			<biblScope unit="page" from="1" to="9" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">2023b. Towards expert-level medical question answering with large language models</title>
+		<author>
+			<persName><forename type="first">Karan</forename><surname>Singhal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juraj</forename><surname>Gottweis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rory</forename><surname>Sayres</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellery</forename><surname>Wulczyn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Pfohl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heather</forename><surname>Cole-Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Darlene</forename><surname>Neal</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.09617</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huiqun</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guisheng</forename><surname>Fan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.01114</idno>
+		<title level="m">Medchatzh: a better medical adviser learns from better instructions</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">2023a. Evaluating large language models on medical evidence summarization</title>
+		<author>
+			<persName><forename type="first">Liyan</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoyi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Betina</forename><surname>Idnay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jordan</forename><forename type="middle">G</forename><surname>Nestor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Soroush</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><forename type="middle">A</forename><surname>Elias</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyang</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Durrett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Justin</forename><forename type="middle">F</forename><surname>Rousseau</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Digital Medicine</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">158</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Aligning factual consistency for clinical studies summarization through reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Xiangru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arman</forename><surname>Cohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Gerstein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 5th Clinical Natural Language Processing Workshop</title>
+		<meeting>the 5th Clinical Natural Language Processing Workshop</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="48" to="58" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title level="m" type="main">2023c. Gersteinlab at mediqa-chat 2023: Clinical note summarization from doctor-patient conversations through fine-tuning and in-context learning</title>
+		<author>
+			<persName><forename type="first">Xiangru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Tran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Gerstein</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.05001</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Large language models in medicine</title>
+		<author>
+			<persName><forename type="first">Arun</forename><surname>James Thirunavukarasu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Darren</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeng</forename><surname>Ting</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kabilan</forename><surname>Elangovan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laura</forename><surname>Gutierrez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ting</forename><surname>Fang Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Ting</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature medicine</title>
+		<imprint>
+			<biblScope unit="volume">29</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page" from="1930" to="1940" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Opportunities and challenges for chatgpt and large language models in biomedicine and health</title>
+		<author>
+			<persName><forename type="first">Qiao</forename><surname>Shubo Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lana</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Po-Ting</forename><surname>Yeganova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingqing</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiuying</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Won</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donald</forename><forename type="middle">C</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Comeau</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Briefings in Bioinformatics</title>
+		<imprint>
+			<biblScope unit="volume">25</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">493</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<title level="m" type="main">Llama: Open and efficient foundation language models</title>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thibaut</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gautier</forename><surname>Izacard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Martinet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marie-Anne</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothée</forename><surname>Lacroix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baptiste</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Faisal</forename><surname>Azhar</surname></persName>
+		</author>
+		<idno>ArXiv preprint, abs/2302.13971</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shekoofeh</forename><surname>Azizi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Driess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Schaekermann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohamed</forename><surname>Amin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pi-Chuan</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Carroll</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuck</forename><surname>Lau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryutaro</forename><surname>Tanno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ira</forename><surname>Ktena</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.14334</idno>
+		<title level="m">Towards generalist biomedical ai</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<title level="m" type="main">Med-halt: Medical domain hallucination test for large language models</title>
+		<author>
+			<persName><forename type="first">Logesh</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Umapathi</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.15343</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>Ankit Pal, and Malaikannan Sankarasubbu</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<monogr>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueyang</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingsen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiakai</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.11432</idno>
+		<title level="m">A survey on large language model based autonomous agents</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<monogr>
+		<title level="m" type="main">Self-consistency improves chain of thought reasoning in language models</title>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.11171</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<monogr>
+		<title level="m" type="main">Augmenting black-box llms with medical textbooks for clinical question answering</title>
+		<author>
+			<persName><forename type="first">Yubo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueguang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhu</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.02233</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zekun</forename><surname>Moore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongyuan</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Que</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wangchunshu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongcheng</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruitong</forename><surname>Gan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zehao</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Man</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoxiang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanli</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ke</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junran</forename><surname>Peng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.00746</idno>
+		<title level="m">Rolellm: Benchmarking, eliciting, and enhancing role-playing abilities of large language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<monogr>
+		<title level="m" type="main">Unleashing cognitive synergy in large language models: A task-solving agent through multi-persona selfcollaboration</title>
+		<author>
+			<persName><forename type="first">Zhenhailong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoguang</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenshan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Furu</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24824" to="24837" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qingyun</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gagan</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jieyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiran</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaokun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erkang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beibin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.08155</idno>
+		<title level="m">Enabling next-gen llm applications via multi-agent conversation framework</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<monogr>
+		<title level="m" type="main">2023b. Precedent-enhanced legal judgment prediction with llm and domainmodel collaboration</title>
+		<author>
+			<persName><forename type="first">Yiquan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siying</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiming</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaozhong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yating</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changlong</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Kuang</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhiheng</forename><surname>Xi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenxiang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiwen</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyang</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junzhe</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Senjie</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Enyu</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.07864</idno>
+		<title level="m">The rise and potential of large language model based agents: A survey</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b66">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tianbao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhoujun</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luoxuan</forename><surname>Weng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yitao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Toh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junning</forename><surname>Hua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Che</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.10634</idno>
+		<title level="m">Openagents: An open platform for language agents in the wild</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b67">
+	<monogr>
+		<title level="m" type="main">Examining the inter-consistency of large language models: An in-depth analysis via debate</title>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixin</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ting</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Qin</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page">2305</biblScope>
+		</imprint>
+	</monogr>
+	<note>arXiv e-prints</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b68">
+	<monogr>
+		<title level="m" type="main">Investlm: A large language model for investment using financial domain instruction tuning</title>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kar</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tam</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b69">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03629</idno>
+		<title level="m">React: Synergizing reasoning and acting in language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b70">
+	<monogr>
+		<title level="m" type="main">Almanac: Retrieval-augmented language models for clinical medicine</title>
+		<author>
+			<persName><forename type="first">Cyril</forename><surname>Zakka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akash</forename><surname>Chaurasia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Shad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><forename type="middle">R</forename><surname>Dalal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jennifer</forename><forename type="middle">L</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Moor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Alexander</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Euan</forename><surname>Ashley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Boyd</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kathleen</forename><surname>Boyd</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>Research Square</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b71">
+	<monogr>
+		<title level="m" type="main">2023a. Pmc-vqa: Visual instruction tuning for medical visual question answering</title>
+		<author>
+			<persName><forename type="first">Xiaoman</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaoyi</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziheng</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weixiong</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ya</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanfeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weidi</forename><surname>Xie</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.10415</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b72">
+	<monogr>
+		<title level="m" type="main">Alpacare:instruction-tuned large language models for medical application</title>
+		<author>
+			<persName><forename type="first">Xinlu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenxin</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianjun</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lichang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zekun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linda</forename><forename type="middle">Ruth</forename><surname>Petzold</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b73">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuhui</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abishek</forename><surname>Sridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianyi</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<title level="m">Webarena: A realistic web environment for building autonomous agents</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

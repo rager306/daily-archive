@@ -1,0 +1,1262 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">CLIN: A CONTINUALLY LEARNING LANGUAGE AGENT FOR RAPID TASK ADAPTATION AND GENERALIZATION</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2023-10-16">16 Oct 2023</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Bodhisattwa</forename><forename type="middle">Prasad</forename><surname>Majumder</surname></persName>
+							<email>bodhisattwam@allenai.org</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Allen Institute of AI</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Bhavana</forename><forename type="middle">Dalvi</forename><surname>Mishra</surname></persName>
+							<email>bhavanad@allenai.org</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Allen Institute of AI</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Peter</forename><surname>Jansen</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Allen Institute of AI</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Arizona</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Oyvind</forename><surname>Tafjord</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Allen Institute of AI</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Niket</forename><surname>Tandon</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Allen Institute of AI</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Li</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">University of Pennsylvania</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Chris-Callison</forename><surname>Burch</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">University of Pennsylvania</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Allen Institute of AI</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">CLIN: A CONTINUALLY LEARNING LANGUAGE AGENT FOR RAPID TASK ADAPTATION AND GENERALIZATION</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2023-10-16">16 Oct 2023</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">B809DE2394143968870143899E663A79</idno>
+					<idno type="arXiv">arXiv:2310.10134v1[cs.CL]</idno>
+					<note type="submission">Going to the kitchen may be necessary to find seeds Task: Grow an orange Goal: Find seeds Action: Go to the bedroom Observation: …(no seeds)... Action: Go to the garden Observation: …(no seeds)... Action: Go to the kitchen Observation: You see seeds Action: Pick up seeds Goal: Plant the seeds … Task: Grow an orange Goal: Find seeds Memory: Action: Go to the kitchen Observation: you see seeds Action: pick up seeds… Goal: plant the seeds Action: move seeds to the pot … Going to the kitchen may be necessary to find seeds Trial completed successfully! Going to the kitchen may be necessary to find seeds Moving seeds to the pot may be necessary for planting seeds</note>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:34+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>CREATION (Env1</term>
+					<term>Trial1) Trial failed! ADAPTATION (Env1</term>
+					<term>Trial2) Env1</term>
+					<term>Trial3 (etc)</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Language agents have shown some ability to interact with an external environment, e.g., a virtual world such as ScienceWorld, to perform complex tasks, e.g., growing a plant, without the startup costs of reinforcement learning. However, despite their zero-shot capabilities, these agents to date do not continually improve over time, beyond performance refinement on a specific task. Here we present CLIN, the first language-based agent to achieve this, so that it continually improves over multiple trials, including when both the environment and task are varied, and without requiring parameter updates. Our approach is to use a persistent, dynamic, textual memory, centered on causal abstractions (rather than general "helpful hints"), that is regularly updated after each trial so that the agent gradually learns useful knowledge for new trials. In the ScienceWorld benchmark, CLIN is able to continually improve on repeated trials on the same task and environment, outperforming state-of-the-art reflective language agents like Reflexion by 23 absolute points. CLIN can also transfer its learning to new environments (or new tasks), improving its zero-shot performance by 4 points (13 for new tasks) and can further improve performance there through continual memory updates, enhancing performance by an additional 17 points (7 for new tasks). This suggests a new architecture for agents built on frozen models that can still continually and rapidly improve over time.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>Large language models (LLMs) have been increasingly used to interact with external environments (e.g., simulated worlds) as goal-driven agents <ref type="bibr" target="#b17">(Reed et al., 2022)</ref>. However, it has been challenging for these language agents to efficiently learn from trial-and-error as traditional reinforcement learning methods require extensive training samples and expensive model fine-tuning <ref type="bibr" target="#b7">(Chen et al., 2021;</ref><ref type="bibr">Ammanabrolu et al., 2020)</ref>. More recently, new techniques have appeared in which an agent reflects on its own past experience solving a task in a particular environment, and generates languagebased insights to help it retry the task, e.g., Reflexion <ref type="bibr" target="#b19">(Shinn et al., 2023)</ref>. Such methods have the advantage of not requiring parameter updates (particularly useful given the growing popularity of frozen language models). However, the style of such insights plays a crucial role in performance, and not all insights improve generalization performance. For example, a specific insight such as "In the next trial, I will go to desk 1 and find the lamp" <ref type="bibr" target="#b19">(Shinn et al., 2023)</ref> may have limited value (or even hurt) for a different environment or task.</p><p>Our goal is a system that will continually improve over time, both while attempting the same task in the same environment, and across different tasks and environments. Our approach builds on prior work on reflection in two ways: First, we conjecture that a specific style of insight will be useful, namely one that captures causal abstractions about agent's actions, e.g., "opening doors GENERALIZATION (for new Env3)</p><note type="other">Env2 Trial1 Trial2 Trial3 Trial1 Trial2 Trial3 MEMORY:</note><p>Moving to different rooms may be necessary to find an object Env3, Trial1</p><p>Figure 1: CLIN creates (Trial1) or adapts (Trial2+) a memory of causal abstractions to help in future trials by reflecting on the last trial and current memory. It does this using a suitably prompted LLM to generate the updated memory (Section 3.2). Here, reflecting on Trial1, CLIN notes in memory that going to the kitchen helped with finding seeds, enabling it to find the seeds faster in Trial2. From there, it also learns that moving the seeds to the pot helped plant the seeds. To further generalize across episodes (sequences of trials, right figure) for use in new environments, CLIN generates a summary ("meta-memory") of the best (starred) memories from each prior episode, here generating the generalization that moving to different rooms helps finding objects (Section 3.3) may be necessary for movement between rooms". Causal abstractions can potentially help the agent decide which action to take in the future, and can be viewed as a kind of action model learning <ref type="bibr" target="#b6">(Arora et al., 2018)</ref>, but placed in the modern context of language models. Second, we maintain these abstractions in a continually evolving, dynamic memory, which is regularly updated as the agent gains experience, allowing useful causal knowledge to persist (and unhelpful knowledge to be dropped) over time and between tasks and environments, as illustrated in Figure <ref type="figure">1</ref>.</p><p>We operationalize and evaluate this approach in a memory-augmented language agent called CLIN (continual learning from interactions). CLIN is an agent that operates in ScienceWorld <ref type="bibr" target="#b22">(Wang et al., 2022)</ref>, a virtual, text-based environment in which an agent is tasked with science-based goals, e.g., boiling a liquid, growing a plant. We find that CLIN is able to rapidly learn about the environment and its action vocabulary and continually improve on repeated trials on the same task and environment, outperforming state-of-the-art (SOTA) reflective language agents like Reflexion by 23 points. CLIN can also transfer its learning to new environments (or tasks), improving its zero-shot performance by 4 (13 for new tasks) points and can further improve performance through continual memory updates, enhancing performance by an additional 17 (7 for new tasks) points. Our contributions are as follows:</p><p>• For memory-based language agents, we show that memory of causal abstractions is effective at helping the agents learn over an extended period and in varying conditions.</p><p>• We describe and evaluate CLIN, an architecture for a novel nonparametric learning paradigm.</p><p>We show that CLIN learns faster than prior systems and generalizes better to new tasks and new environments, achieving state-of-the-art.</p><p>Overall, this work suggests that a dynamically maintained memory, centered around causal knowledge, is a promising way forward for agents built on frozen models to continually improve over time.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">RELATED WORK</head><p>There is a long literature of work on agents that can navigate complex environments. A common approach is to use reinforcement learning (RL), e.g., DRRN <ref type="bibr" target="#b10">(He et al., 2015)</ref>, KG-A2C <ref type="bibr" target="#b3">(Ammanabrolu &amp; Hausknecht, 2020)</ref>, CALM <ref type="bibr" target="#b23">(Yao et al., 2020)</ref>, where agents learn a task over repeated trials. However, while effective, such agents typically require a large number of trials to learn and have trouble adapting to unexpected changes in the test environment. More recently, (Adaptive-Agent-Team et al., 2023) demonstrated AdA, an agent that could rapidly adapt to open-ended novel 3D problems, using meta-reinforcement learning, essentially being able to change its policy on the fly.</p><p>However, AdA required vast amounts of pretraining, and this skill was still limited to the style of environments and problems seen in pretraining.</p><p>Recently, LLMs have provided a new tool for building goal-directed agents <ref type="bibr" target="#b11">(Huang et al., 2022)</ref>.</p><p>Given a linguistic description of the world state, a task, and a history, the LLM can be prompted to suggest next actions to take to achieve a goal, exploiting their wealth of semantic knowledge about the world and requiring little training, e.g., <ref type="bibr">SayCan (Ahn et al., 2022)</ref>, ReAct <ref type="bibr" target="#b24">(Yao et al., 2022)</ref>, and more recently SwiftSage <ref type="bibr" target="#b13">(Lin et al., 2023)</ref>, which combines a supervised agent and a deliberative agent together. However, while performing reasonably with little training data, such agents are unable to learn and adapt from experience.</p><p>Two recent systems have demonstrated how a frozen-model-based agent could improve at a task. Voyager <ref type="bibr" target="#b21">(Wang et al., 2023)</ref> operates in the world of Minecraft, growing a (code-based) skill library from rich feedback of its failures. Reflexion <ref type="bibr" target="#b19">(Shinn et al., 2023)</ref> improves at a task by reflecting on a failed attempt at that task and devise a new plan that accounted for that mistake, used in the subsequent prompt to retry the task. While Reflexion did not have a long-term memory, and its reflections were task-and environment-specific, e.g., "In the next trial, I will go to desk 1 and find the lamp.", we take inspiration from it to build an agent, CLIN, which continually maintains and adapts a long-term, persistent memory of reflections, useful across different trials, tasks, and environments.</p><p>More generally, others have found that a memory of useful learnings can be used to improve frozen LLM behavior, e.g., in QA <ref type="bibr" target="#b9">(Dalvi et al., 2022;</ref><ref type="bibr" target="#b20">Tandon et al., 2022;</ref><ref type="bibr" target="#b14">Madaan et al., 2023)</ref>, or for modeling social behavior <ref type="bibr" target="#b16">(Park et al., 2023)</ref>. We apply this finding to goal-directed agents.</p><p>Finally, we note that the content of experiential memory is also important. Specifically, CLIN learns a memory of causal abstractions, which can be seen as learning a linguistic form of action model, describing the causal effects of actions. While there has been substantial work in the planning community of learning action models in a fully formalized context <ref type="bibr" target="#b6">(Arora et al., 2018;</ref><ref type="bibr" target="#b2">Aineto et al., 2018)</ref>, CLIN loosely applies this idea in the linguistic world of LLM agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">APPROACH</head><p>Problem Formulation. Sequential decision-making tasks require agents to repeatedly observe and then act in an environment until they accomplish a specific goal. At a high level, this can be accomplished by developing beliefs about the world, acting on the environment based on those beliefs, and then updating one's beliefs based on the observed outcome. Here, we investigate constructing an agent that can continually update its beliefs through interaction and observation while exploiting its past experience toward solving unseen parametric variations of tasks.</p><p>Setup. We investigate our continual learning agents in simulated environments. Our environments are modeled in a high-fidelity text-based simulator <ref type="bibr" target="#b22">(Wang et al., 2022)</ref>, where both actions and observations are expressed in natural language. Let's define the task space to be M, a collection of partially observable Markov Decision Processes (POMDPs) that can be executed in a set of environment configurations E. Each task m ∈ M has an initial state and a desired winning state, which vary depending on the environment e ∈ E.</p><p>Our setup allows an agent to attempt a task several times; each time is denoted as a trial, T , which consists of a total of τ steps. Each step comprises an action by the agent (a), and in response, the simulator returns the result of that action in the form of an observation (o) and a reward (r). A collection of K trials is called an episode. The environment gets reset when the task reaches an end state (such as completing, failing, or timing out). In our continual learning setup, the agent retains its memory across trials/episodes, reaping the benefits of continued interaction with the environment.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">CLIN: A GENERATIVE AGENT CONTINUALLY LEARNING FROM INTERACTIONS</head><p>To act in the world, CLIN uses three modules: a memory, a controller, and an executor, illustrated in Figure <ref type="figure" target="#fig_0">2</ref> and which we now describe. Learning then occurs using a fourth module, a memory generator, to generate an updated memory after each trial.</p><p>Memory. CLIN's memory (S) is a persistent, dynamic collection of NL sentences that express causal abstractions, generated by reflecting on past experiences in order to help the agent perform A controller takes the current task, retrievals from memory, and the trial so far, to generate the next goal to achieve. The executor then converts this to a valid action to perform towards that goal. The simulator then performs the action and returns an observation of that action's effect. Memory is updated at the end of each trial by the memory generator (Section 3.2).</p><p>better in the future. This generation process is described shortly in Section 3.2. For example, having an explicit causal insight, "opening the fridge is necessary to access apple juice", learned from past experiences, can reduce the action search space for CLIN while looking for "apple juice" in the same environment in future trials. To aid in continual learning, the memory also captures mistakes made by the agent in previous trials, similar to reflective agents explored in recent work <ref type="bibr" target="#b19">(Shinn et al., 2023;</ref><ref type="bibr" target="#b16">Park et al., 2023)</ref>, noting actions that failed to contribute to a task.</p><p>Controller. The role of the controller is to generate the next goal to pursue in service of the task. In CLIN it is a frozen LLM, whose prompt includes the current task m, e.g., "convert water into steam", retrievals from the current memory S, and the trial so far (the sequence of goal-action-observation triples {g 1 , a 1 , o 1 , ..., g t , a t , o t }), and is prompted to output the next goal g t+1 to pursue, e.g., "find water". Memory items are retrieved using both the task instruction and the trial history. The controller first selects one or more memory items given the current state and if they are useful for the next action to progress in the task. After that, it appends the learning, if selected, in context to generate a goal, otherwise the goal is generated based on the trial history (see full prompt in Figure <ref type="figure" target="#fig_4">6</ref>).</p><p>Executor. The role of the executor is to convert the generated goal g t+1 into a valid action a t+1 that can be executed in the environment in pursuit of that goal. Again a (frozen) LLM is used, whose prompt includes the goal g t+1 , the trial so far, and all the possible actions that can be performed in the current state (provided by the simulator, as is standard practice in current generative agent research <ref type="bibr" target="#b1">(Ahn et al., 2022;</ref><ref type="bibr" target="#b24">Yao et al., 2022;</ref><ref type="bibr" target="#b13">Lin et al., 2023;</ref><ref type="bibr" target="#b16">Park et al., 2023)</ref>). The list of possible actions is expressed as possible action templates and available objects that can instantiate them, rather than a combinatorially large enumeration of possible actions. The model is then prompted to generate a candidate action to perform (see prompt in Figure <ref type="figure" target="#fig_4">6</ref>). Finally, CLIN checks this candidate action is one of the valid actions. If it is not, it finds the most similar valid action using the pre-trained embeddings from the sentence-transformer model <ref type="bibr">(Reimers &amp; Gurevych, 2019)</ref>. If the top-ranked valid action has a similarity score greater than a threshold (here, 0.9, chosen as a hyperparameter), the action is selected. Otherwise, we perform iterative refinement <ref type="bibr" target="#b14">(Madaan et al., 2023)</ref> by suffixing the context with feedback that the generated candidate action is not executable. This allows the executor to retry the generation for up to a maximum number of tries (here, 5).</p><p>Finally, upon executing the action a t+1 , CLIN receives a partial next state, as an observation, from the simulator and the reward (r) ∈ [0, 1]. Rewards are nominally given by the simulator for achieving either major task subgoals (e.g., finding water, for the boiling task), or minor and optional subgoals (e.g., being in the kitchen, for the boiling task). Rewards are sparse and generally only supplied after the completion of a task subgoal. A snapshot of a full trial is given in lines 4-10 in Algorithm 1.</p><p>Note that CLIN does not make use of any gold data to identify goals and memories. Rather, we expect CLIN to perform a balanced act of exploration-exploitation by interacting, learning, and adapting to unseen tasks or environment configurations-a key difference from few-shot generative agents by previous work <ref type="bibr" target="#b1">(Ahn et al., 2022;</ref><ref type="bibr" target="#b24">Yao et al., 2022;</ref><ref type="bibr" target="#b13">Lin et al., 2023;</ref><ref type="bibr" target="#b16">Park et al., 2023)</ref>.</p><p>Preprint Algorithm 1 Continual Learning with CLIN 1: procedure ADAPTATION(Task: m, Env: e, Memory: S): 2: Initialize Memory: S0 3: for k ∈ 1, • • • , K do: 4: Intialize Trial T , t 5: while t &lt; max. steps or task not complete do: 6: gt = Controller (m, e, T&lt;t, S k-1 ) 7: at = Executor (gt, admissible actions) 8: rt, ot = Simulator (T&lt;t, at) 9: T&lt;t+1 = T&lt;t + (gt, at, ot, rt) 10: Final reward rk = rt 11: S k = memory-generator ({S &lt;k }, T k , r k ) 12: 13: procedure GENERALIZATION(Task: m, Env: e, past m ′ /e ′ ) 14: {Scrucial, r k } = crucial-memories (past m ′ /e ′ ) 15: Smeta = meta-memory ({Scrucial, r k }, m) 16: ADAPTATION(m, e, Smeta) Using the lighter on the metal pot may be necessary to heat the water in the pot X (actions) Y (actions) relation should be necessary does not contribute Memory end of trial 1 𝒮 1 Using the lighter on the metal pot to heat the water in the pot Turning on the stove to boiling if the stove is broken should be necessary Using the lighter on the metal pot to heat the water in the pot should be necessary Turning on the stove to create a heat source should be necessary Using a heat source (stove, lighter) on the container to heat a substance ADAPTATION GENERALIZATION Meta memory for Env 3 Memory end of trial 5 𝒮 5 Memory best in Env 1 𝒮 5 Memory best in Env 2 𝒮 3 </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">MEMORY: A COLLECTION OF ADAPTIVE CAUSAL ABSTRACTIONS</head><p>At the end of each trial (completion or failure), CLIN uses a memory generator to create or update its memory. The memory generator is a (frozen) LLM prompted to reflect on the current trial and memory, and generate a new memory of insights in the form of (English sentences expressing) useful causal abstractions, as we now describe.</p><p>Learning about state transitions is essential for sequential decision-making tasks <ref type="bibr" target="#b15">(Mnih et al., 2013)</ref>, which can be manifested by knowing 1) actions enabling desired state transitions, 2) actions producing undesired or no change in states, and 3) state transitions that contribute to the task progress. To generate these kinds of knowledge, the generator is prompted to generate insights in a particular syntax (see prompt in Figure <ref type="figure">7</ref>). To capture good actions enabling desired changes and helpful state transitions, we use the template "X is NECESSARY to Y", and to capture contrastive examples of unsuitable actions and state transitions, we employ "X DOES NOT CONTRIBUTE to Y", as depicted in Section 4.3, where X, Y are related to actions. These abstractions are functionally analogous to hindsight experience replay <ref type="bibr" target="#b5">(Andrychowicz et al., 2017)</ref>, obtained from CLIN's past self-explorations.</p><p>While useful insights can be abstracted from the trials, CLIN's exploration can be limited, especially in the early trials, given an incredibly large action space. Hence, incomplete exploration can pose varying degrees of uncertainty on extracted insights. To capture this, we also include a measure of uncertainty in each abstraction by either of the two linguistic variations in their surface forms: "X may ..." to denote moderate to high uncertainty, and "X should ..." to indicate low uncertainty (See Section 4.3). In the course of continual learning, as CLIN gathers experience, we expect the level of uncertainty to change depending on the frequency of their use and their fitness to the task.</p><p>Updating Memory Across Trials. CLIN continually attempts to solve a task in an environment for multiple trials (in sum, an episode). To update the memory after each trial within an episode, the memory generator is prompted with the most recent trial (a sequence of (g t , a t , o t ) tuples and the final reward r k 1 ), and the memories from the three most recent trials {S k-2 , S k-1 , S k }. It is then prompted to generate an updated memory S k+1 , namely a new list of semi-structured causal abstractions in the forms described above, for use in the next trial. Although we do not specify a maximum size for the memory, we observe that size of the generated memory (i.e., the number of causal abstractions generated) is far less than the number of actions executed in the trial, indicating Preprint the memory-generator additionally performs a saliency-based pruning to keep only important insights based on the success of the trial, as indicated by the final reward r k at the end of the trial T k .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">META-MEMORY FOR BETTER GENERALIZATION</head><p>Updating memory based on past insights and the current trial to influence future trials for the same task in the current environment configuration during test-time adaptation. However, to generalize across tasks or environment configurations, the memory needs to contain more generalized causal abstractions than memories used across trials in an episode. We call this as meta-memory, abstracted across multiple episodes of solving different tasks in different environment configurations to be applicable in future episodes.</p><p>Auto-curriculum Selection. Before we generate the meta-memory, it is important to choose memories extracted from the best trials from previous episodes because random sampling may not benefit CLIN in zero-shot generalization (Adaptive- <ref type="bibr" target="#b0">Agent-Team et al., 2023)</ref>. Following the prioritized level replay scheme <ref type="bibr" target="#b12">(Jiang et al., 2021)</ref>, we choose the most successful trial per episode and retrieve memories abstracted from those trials with a fixed archive of size 10, a hyperparameter.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Generating Meta-Memory.</head><p>The goal of the meta-memory is to help CLIN generalize to unseen tasks and/or environments. While we keep the format of the causal abstractions the same as memories generated across trials, the prompt to generate the meta-memory is different than those used for generating per-trial memory. When the new memory is to be used for the same task but in a different environment, the prompt instructs for a meta-memory helpful "to solve the same task in a new environment configuration" given the target task description with an expectation that metamemory abstractions will entail generic causal insights about the task irrespective of environment configurations (see Figure <ref type="figure">8</ref>). Similarly, when the new memory is to be used for a different task, the prompt is modified accordingly to reflect this (Figure <ref type="figure">9</ref>). Along with the target task description for better memory generation, each past memory selected to generate the meta-memory is attached to the final rewards for the associated trials, allowing the generator to combine insights across episodes and assign the levels of uncertainty using the evidence of success.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">RESULTS AND ANALYSIS</head><p>Experimental Setup. Test-time adaptation and generalization via continual learning require a variety of complex tasks and environment configurations to allow an agent to explore, learn latent causal insights from interactions, and exploit them in the future. We choose ScienceWorld <ref type="bibr" target="#b22">(Wang et al., 2022)</ref>, a text-based interactive environment requiring complex interactive reasoning processes to solve a plethora of science-theory-based tasks spanning several diverse classes (e.g., thermodynamics, genetics, friction, etc.). The virtual space presents 10 sub-places: foundry, greenhouse, outside area, an art studio, workshop, kitchen, living room, bedroom, bathroom, and a hallway connecting inside rooms. The presence of several objects, their individual states, and action templates renders the search space intractable for any agent. ScienceWorld presents strikingly different environment configurations across task types, making it a rich testbed for evaluating adaptation and generalization. ScienceWorld tasks are partitioned into Short (S), e.g., pick &amp; place and Long (L), e.g., grow plant, tasks based on the number of required actions to succeed.</p><p>Here, we define our setups for zero-shot adaptation (ADAPT) and generalization <ref type="bibr">(GEN-ENV and GEN-TASK)</ref>. For all setups, we test CLIN and competing baselines on 18 tasks (two task instances from 9 classes) in several environment configurations from the test split of the ScienceWorld benchmark resulting in a total of 164 task-environment combinations unless stated otherwise. We evaluate based on the final reward score provided by the ScienceWorld simulator.</p><p>ADAPT: This setup focuses on CLIN's ability to adapt to a task by attempting it for several trials in the same environment configuration. Most importantly, CLIN initializes with an empty memory at the beginning of the first trial and generates memory at the end of each trial. While the environment gets reset at the trial boundary, CLIN's memory continues to be updated, capturing informative causal abstractions pertaining to both successful and failed actions. Here, we compare with Reflexion <ref type="bibr" target="#b19">(Shinn et al., 2023)</ref>, a SOTA, however, CLIN differs from Reflexion by how the memory is abstracted. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>GEN-ENV:</head><p>In this setup, we focus on CLIN's ability to transfer its learning from past experiences to solve tasks in an unseen environment. For a task m, we run CLIN for 10 different (train) environment settings (with varying objects and starting locations) and then create meta-memories from its exploration to solve the same task in an unseen (test) environment. Here, we compare CLIN with RL methods DRRN <ref type="bibr" target="#b10">(He et al., 2015)</ref>, KG-A2C <ref type="bibr" target="#b3">(Ammanabrolu &amp; Hausknecht, 2020)</ref>, and CALM <ref type="bibr" target="#b23">(Yao et al., 2020)</ref> trained on all (large) training variations with simulator reward and Generative Language agents, SayCan (Ahn et al., 2022), ReAct <ref type="bibr" target="#b24">(Yao et al., 2022)</ref>, and Reflexion <ref type="bibr" target="#b19">(Shinn et al., 2023)</ref>, prompted with few-shot demonstrations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>GEN-TASK:</head><p>In this setup, we focus on CLIN's ability to transfer its learning from past experiences to solve a new task in the same environment. For an environment e, we run CLIN for to solve a task m and then condense its learning to solve a novel task m ′ in the environment e. We took all test examples where we have a different task defined in the same environment configuration.</p><p>(Adaptive-Agent-Team et al., 2023) suggests that transferring learning from a random task can be very hard; hence we couple tasks that are related (revolve around overlapping task-critical objects/locations such water, kitchen), such as boil and freeze to measure transfer learning from one to the other. This is a novel setup where we do not have any off-the-shelf baselines. However, here, we compare against CLIN-BASE, a strong baseline agent.</p><p>GEN-ADAPT (G+A): If CLIN, in GEN-ENV or GEN-TASK setting, does not successfully complete the new task, it can continue learning and retrying that task. We refer to this setup as GEN-ADAPT. CLIN can use any instruction-tuned LLM <ref type="bibr" target="#b8">(Chung et al., 2022)</ref> as part of the controller, executor, and memory generator. In this paper, we use gpt-4, the same as our generative agent baselines.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">CLIN EXHIBITS RAPID TASK ADAPTATION</head><p>Figure <ref type="figure" target="#fig_2">4a</ref> demonstrates two example trends where CLIN learns from its own prior attempts (ADAPT) and gets better at solving a given task. Apart from length, the difficulty level of a task also depends on the environment configuration (hence, variance across environment configurations for each task). CLIN quickly adapts to a short task, Pick &amp; Place, solving it in its 4th attempt, whereas for a longer task, Grow Fruit, it is not solved after 5th (max) attempts. Furthermore, Figure <ref type="figure" target="#fig_2">4a</ref> depicts, CLIN becomes more efficient in later trials by solving the tasks with a lower number of (average) steps. Figure <ref type="figure" target="#fig_2">4c</ref> shows an average number of attempts<ref type="foot" target="#foot_2">foot_2</ref> for CLIN to solve a task and % episodes per task where scores improved compared to its own first trial.</p><p>Next, we compare CLIN with Reflexion, the reflective SOTA agent, in Figure <ref type="figure" target="#fig_2">4b</ref>. CLIN already starts off with a stronger base performance (see discussion in 4.3), however, CLIN's relative improvement in ADAPT is significantly stronger than Reflexion's gain from its base agent ReAct. Furthermore, CLIN's relative improvement is higher for longer tasks. This can be attributed to CLIN's persistent memory, which gets refined over past trials, whereas Reflexion may fall short of collecting useful learnings from earlier trials as it only focuses </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">CLIN OUTPERFORMS SOTA, GENERALIZING TO NOVEL ENVIRONMENTS AND TASKS</head><p>Generalizing to new environments. Table <ref type="table" target="#tab_0">1</ref> compares CLIN with baselines that learn from training environmental variants for a task to improve its performance in a novel environment<ref type="foot" target="#foot_3">foot_3</ref> . Language agents (including CLIN) that use NL feedback from the ScienceWorld (e.g., "Door to the kitchen is closed") perform significantly better compared to RL methods that purely rely on (sparse) numeric rewards from the environment to learn a policy. We observe a positive generalization effect in GEN-ENV (average 4 point gain) compared to BASE where CLIN tries to solve the tasks zero-shot. With a strong BASE performance, CLIN beats all baselines in generalization performance. Furthermore, in G+A, CLIN shows a substantial 16 additional improvement, beating the SOTA reflective agent by 23 points. Figure <ref type="figure" target="#fig_3">5a</ref> additionally shows trend of improvement compared to when CLIN does not start with a meta-memory. Meta-memory helps CLIN with a stronger start than BASE (52.7 vs. 48.6), with a continued gain in scores till the end of Trial-4 (G+A: 69.5 vs. ADAPT: 62.2). The stronger start for CLIN with meta-memory also results in fewer steps to solve a task. Unlike imitation learning-based agents, TDT <ref type="bibr" target="#b22">(Wang et al., 2022)</ref> and <ref type="bibr">SwiftSage (Lin et al., 2023)</ref>, CLIN (and most baselines) does not use any gold trajectories. Refining its memory only from self-generated trajectories, CLIN outperforms TDT on all 18 tasks and SwiftSage on 8/18 (mostly long) tasks.</p><p>Generalizing to new tasks. Mirroring trends from GEN-ENV, CLIN demonstrates strong transfer learning to new tasks with 13-point improvement over its BASE performance, being better at 38.8% of times (Figure <ref type="figure" target="#fig_3">5c</ref>). The improvement attributes to critical learning about the environment ("apple juice is in the fridge", required for both boiling and freezing it), leading to improvement in previously low-performing tasks in both ADAPT and GEN-ENV setups. This transfer learning in GEN-TASK and G+A helps CLIN to solve the tasks with a lesser number of steps<ref type="foot" target="#foot_4">foot_4</ref> and achieve higher rewards.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">DISCUSSION</head><p>Importance of memory structure. CLIN extracts causal abstractions structured around 'necessary' and 'does not contribute' relations. As an ablation study, we modified our memory generator to generate free-form advice for future trials (without any constraint on their formats). We find that the</p><p>CLIN in GEN-ENV CLIN in GEN-TASK GEN G + A Trials Trials (a) (b) BASE ADAPT GEN G + A BASE ADAPT GEN G + A BASE ADAPT GEN G + A BASE ADAPT CLIN's GEN-TASK improvements Type GEN-TASK G + A ∆avg %ep. ∆avg %ep. score improv. score improv. S 14.6 40.0 4.9 5.7 L 10.3 36.7 9.2 15.6 All 13.0 38.8 6.5 9.3 (c) Ablations for CLIN Ablation Setup ∆avg %ep. score (↓) drop. (↑) Abl-Causal-Memory -6.2 10 Abl-Controller-BASE -18.1 44.8 (d) average reward drops by 6 points (in 10% cases compared to CLIN) when using the unstructured memory, indicating the usefulness of causal abstractions, as shown in Figure <ref type="figure" target="#fig_3">5d</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Superior BASE performance.</head><p>Figure <ref type="figure" target="#fig_2">4</ref> depicts a superior BASE performance for CLIN than the final performance of both ReAct and Reflexion despite using the same underlying LLM (here, gpt-4).</p><p>We find if we ablate for the controller module in CLIN, responsible for generating a goal before outputting the next action, CLIN's BASE performance drops in 44% cases. With an 18 point drop in average reward (see Figure <ref type="figure" target="#fig_3">5d</ref>), Abl-Contoller-BASE version of CLIN becomes equivalent to ReAct, the base agent for Reflexion, demonstrating the importance of controller even in BASE setup.</p><p>A qualitative example. Figure <ref type="figure" target="#fig_1">3</ref> depicts how memory items get refined during task adaptation and for generalization for a task boil. Env2 has a working stove, whereas in Env1, the stove is broken, but a lighter is available as an alternative. With a number of trials in these environments, CLIN learns how to use these two devices to generate heat. In an unseen environment with a broken stove, CLIN quickly receives a positive reward by using a lighter to heat a substance. While insights within an episode are often specific, e.g., "Using the lighter on the metal pot should be necessary to heat the water in the pot", CLIN compiles these insights for a new target environment (as meta-memory), e.g., "Using a heat source (stove, lighter) on the container should be necessary to heat a substance." Appendix B contains examples of memories generated during adaptation and generalization.</p><p>Limitation: Lack of exploration. CLIN's learnings are dependent on its own past experience. If CLIN never explores a location in the environment or does not perform an action, an insight related to the unobserved activity can never be generated. Hence, exploration becomes important when task-critical location or action in unknown to CLIN from past trials. For example, in task of creating an orange paint, the agent is supposed to find red and yellow paints from the art studio. However, art studio is not visible when CLIN starts from location 'outside'. Unless the CLIN knows that there exists an art studio, it tries alternative method to create orange paints from other irrelevant objects (e.g., an orange) and remains unsuccessful. When a memory related art-studio appears from past exploration, CLIN is able to successfully complete the task. Similarly, in boil or freeze tasks, CLIN is unable to perform well which requires it to consistently measure the temperature of the substance to know its boiling/freezing point-an act it could never perform successfully in past trials resulting into less useful memory insights and subsequent lower performance in future trials.</p><p>Limitation: Poor memory retrieval. For a task of boiling gallium, CLIN is supposed to use oven/blast furnace and not a stove. In the meta-memory for boiling tasks, there are two insights regarding the act of boiling: "Activating stove should be necessary to boil a substance" and "Using an alternative heat source (e.g., oven or fire pit) may be necessary if the initial heat source is insufficient." However, CLIN repeatedly retrieves the former and hence failing at the task despite performing other actions (e.g., finding gallium) correctly. This problem intensifies at the initial trial during Preprint generalization due to the presence of insights with varied initial conditions for them to be applied. This can be circumvented by improved memory representation, which we leave as a future work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">CONCLUSION</head><p>Our goal is a system that can continually improve over time, both while rapidly adapting to a task by multiple retries and efficiently generalizing to novel tasks and environments. We propose CLIN, an architecture for language agents that constructs a persistent, dynamic memory of causal abstractions, refines it over time and uses it effectively to improve its performance on future tasks, achieving state-of-the-art performance. Our work systematically evaluates a novel nonparametric learning paradigm, promising never-ending learning abilities to frozen language agents.</p><p>Figures 6 to 9 are the complete prompts for next-action generation (controller + executor), memorygenerator during ADAPT, GEN-ENV, and GEN-TASK.</p><p>[System]: You are an AI agent helping execute a science experiment in a simulated environment with limited number of objects and actions available at each step.</p><p>[User]: Possible objects ( value an OBJ can take ): {objects_str} Your next action should be in one of the following formats: Possible actions: {actions_str} If I say \"Ambiguous request\", your action might mean multiple things. In that case, respond with the number corresponding to the action you want to take.</p><p>What action would you like to do next?</p><p>First, scan the (unordered) list of learnings, if provided. Decide if any of the learnings are applicable given the last observation to make progress in this task. Then only use selected learnings, if any, to construct a rationale for picking the next action. If no Learning is selected, construct the rationale based on the last observation. Format your response as follows:</p><p>Write 'I used learning id(s):' as a comma separated list; the list can be empty if no learnings selected. Then, write $$$ followed by the rationale. Finally, write ### followed by the single next action you would like to take.</p><p>If you think you have completed the task, please write TASK_COMPLETE as the next action.</p><p>If the task requires you to 'focus' on something (OBJ), please write FOCUS ON &lt;OBJ&gt; as the next action. FOCUS is a extremely critical action that can be only used the number of times 'focus' is mentioned in the task description. Using it more than that or inappropiately (such as on a wrong object) will terminate the session and the task will be rendered as incomplete.</p><p>If you performed an action that requires waiting to see the effect, please write 'wait' as the next action. B EXAMPLE MEMORIES Example generated memory for ADAPT, GEN-ENV, and GEN-TASKsetups in Figures 10 to 12.</p><p>Preprint <ref type="bibr">[System]</ref>: You are an expert assistant.</p><p>[User]: You are given CURRENT TRACE, a sequence of actions that an agent made in a world to accomplish a task.</p><p>Task is detailed at the beginning. For each action, there is a rationale why the agent made that action.</p><p>There is an observation that provide details about the new state of the world after each action was executed.</p><p>The CURRENT TRACE is accompanied by an EVALUATION REPORT indicating the success of the attempt to the task.</p><p>You can also be provided with PREVIOUS LEARNINGS which are learnings from the previous attempts by the agent for the same task in the same environment/world. TASK indicates the task description. EPISODE indicates the number of previous attempts of the task.</p><p>Generate a summary of learning, as a numbered list, that will help the agent to successfully accomplish the SAME task AGAIN, in the SAME world.</p><p>Each numbered item in the summary can ONLY be of the form: X MAY BE NECCESSARY to Y. X SHOULD BE NECCESSARY to Y. X MAY BE CONTRIBUTE to Y. X DOES NOT CONTRIBUTE to Y.</p><p>{CURRENT TRACE} Action: ... Observation: ... ... EVALUATION REPORT: REWARD_FINAL: 100. This means: The agent has performed exceptionally well and successfully solved the task.</p><p>Summary of learning as a numbered list:</p><p>Figure <ref type="figure">7</ref>: Prompt for CLIN's memory generator during ADAPT <ref type="bibr">[System]</ref>: You are an expert assistant.</p><p>[User]: You are given a collection of learning lists, that are derived from actions made by an agent and subsequent observations from a world to accomplish a TYPE of TASKs.</p><p>All of these TASKs belong to a same TYPE (such as 'boiling') but they are executed in different ENVIRONMENT configurations. A different ENVIRONMENT configuration means there are presence of a different set of objects (lighter instead of a stove) that are critical for solving the TASK, presence of a different set of distractor objects that are not useful for the TASK, a different floor plan, etc.</p><p>For each learning list, the TASK description is provided at the beginning as TASK:</p><p>Each learning list indicates a list of learnings from the agent's best attempt to solve the TASK.</p><p>Each learning list is associated with an EVALUATION REPORT indicated how sucessful the respective attempt was for solving the task.</p><p>Consider all learning lists and combine them in to a summary of learnings, as a numbered list, that will help the agent to successfully accomplish a NEW TASK related to the previous TASKs (such as 'boliing') in an ENVIRONMENT configuration that it has not seen before. The NEW TASK description will be provided.</p><p>Each numbered item in the summary can ONLY be of the form: X MAY BE NECCESSARY to Y. X SHOULD BE NECCESSARY to Y. X MAY NOT CONTRIBUTE to Y. X DOES NOT CONTRIBUTE to Y. {PREVIOUS LEARNINGS} TASK: ... LEARNINGS:... EVALUATION REPORT: REWARD_FINAL: 100. This means: The agent has performed exceptionally well and successfully solved the task. ... NEW TASK: ... Summary of learning as a numbered list: Figure 8: Prompt for CLIN's memory generator during GEN-ENV Task: Your task is to determine whether round seed shape is a dominant or recessive trait in the pea plant. If the trait is dominant, focus on the blue box. If the trait is recessive, focus on the orange box. Memory (ADAPT), after Trial5: 1. Looking around MAY BE NECESSARY to gather information about the environment. 2. Moving to the greenhouse SHOULD BE NECESSARY to find the pea seeds. 3. Picking the jar SHOULD BE NECESSARY to access the pea seeds. 4. Moving the round green pea seed to flower pot 2 SHOULD BE NECESSARY to grow the pea plants. 5. Moving the wrinkly green pea seed to flower pot 3 SHOULD BE NECESSARY to grow the pea plants. 6. Waiting SHOULD BE NECESSARY for the pea plants to grow and show their traits. 7. Looking at the adult pea plant in flower pots 2 and 3 MAY BE NECESSARY to observe the traits of the offspring. 8. Focusing on the blue box SHOULD BE NECESSARY to indicate the trait of the seed shape. 9. Continuously looking at the same environment DOES NOT CONTRIBUTE to the task of determining the dominant or recessive trait in the pea plant. 10. Moving to the workshop DOES NOT CONTRIBUTE to determining the dominant or recessive trait in the pea plant. 11. Picking up the battery or the wires in the workshop DOES NOT CONTRIBUTE to finding the pea seeds. 12. Waiting for longer periods MAY BE NECESSARY to allow the pea plants to fully grow and show their traits. Task: Your task is to determine which of the two inclined planes (aluminum, platinum) has the most friction. After completing your experiment, focus on the inclined plane with the most friction. Meta-memory (GEN-ENV): 1. Moving to the hallway SHOULD BE NECESSARY to reach the workshop. 2. Moving to the workshop SHOULD BE NECESSARY to find the block. 3. Picking up the block SHOULD BE NECESSARY to move it to the inclined planes. 4. Placing the block on the first inclined plane (either aluminum or platinum) SHOULD BE NECESSARY to measure the friction. 5. Activating the stopwatch SHOULD BE NECESSARY to time the experiment. 6. Waiting for a certain period MAY CONTRIBUTE to observing the friction effect. 7. Deactivating the stopwatch SHOULD BE NECESSARY to stop timing the experiment. 8. Moving the block to the second inclined plane (either aluminum or platinum) SHOULD BE NECESSARY to compare the friction. 9. Activating the stopwatch again SHOULD BE NECESSARY to time the second part of the experiment. 10. Waiting for a certain period again MAY BE NECESSARY to observe the friction effect. 11. Deactivating the stopwatch again SHOULD BE NECESSARY to stop timing the experiment. 12. Focusing on the inclined plane with the most friction SHOULD BE NECESSARY to conclude the experiment. 13. Repeating the experiment multiple times MAY BE NECESSARY for more accurate results. 14. Looking around in the initial room multiple times DOES NOT CONTRIBUTE to the task. 15. Moving the block back and forth between the two inclined planes DOES NOT CONTRIBUTE to the task. Task: Your task is to determine whether round seed shape is a dominant or recessive trait in the pea plant. If the trait is dominant, focus on the blue box. If the trait is recessive, focus on the orange box. Meta-memory (GEN-TASK): Task: Your task is to freeze mercury. First, focus on the substance. Then, take actions that will cause it to change its state of matter. Meta-memory (GEN-TASK): 1. Looking around MAY BE NECESSARY to identify the available resources and the layout of the environment. 2. Moving to different rooms SHOULD BE NECESSARY to find the tools and materials needed to change the state of the substance. 3. Picking up items like glass cups or metal pots SHOULD BE NECESSARY to contain the substance for changing its state. 4. Focusing on the substance SHOULD BE NECESSARY to understand its properties and how to interact with it. 5. Picking up the thermometer SHOULD BE NECESSARY to monitor the temperature of the substance. 6. Using the thermometer on the substance SHOULD BE NECESSARY to monitor the progress of the task. 7. Puring the substance into the container SHOULD BE NECESSARY to prepare it for cooling. 8. Moving the container to a cooling device SHOULD BE NECESSARY to cool the substance. 9. Waiting for a period of time after cooling the substance SHOULD BE NECESSARY to allow the substance to change state. 10. Repeatedly checking the temperature of the substance SHOULD BE NECESSARY to monitor the progress of the task. 11. Activating the stove DOES NOT CONTRIBUTE to the task as it does not progress the task. 12. Picking up unrelated items like a lighter DOES NOT CONTRIBUTE to the task as it does not progress the task. 13. Moving to unrelated rooms like the workshop DOES NOT CONTRIBUTE to the task as it does not progress the task. 14. Teleporting to the kitchen MAY BE NECESSARY for the task as it speeds up the process of moving between rooms. 15. Using the thermometer multiple times on the substance after it reaches freezing point DOES NOT CONTRIBUTE to the task as it does not progress the task. Preprint Generative L. Agents CLIN (ours) </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C MORE RESULTS</head><p>Full results for CLIN outperforming Reflexion is in Table <ref type="table" target="#tab_1">2</ref>. For ScienceWorld benchmark, we exclude electricity tasks since they deviate from standard electrical conventions, prohibiting us from fairly using LLM agents. We choose the first 10 test variants for each 18 tasks selected. The full list of 18 tasks from the benchmark, with the number of test variants used in parentheses: grow-plant (10), identify-life-stages-1 (5), grow-fruit (10), measure-melting-point-known-substance (10), mendelian-genetics-unknown-plant (10), chemistry-mix-paint-secondary-color (9), freeze (9), lifespan-longest-lived (10), inclined-plane-determine-angle (10), boil (9), use-thermometer (10), chemistry-mix (8), lifespan-shortest-lived (10), find-plant (10), find-living-thing (10), identify-lifestages-2 (4), mendelian-genetics-known-plant (10), inclined-plane-friction-named-surfaces (10).</p><p>Short tasks have oracle lengths less than 37 steps (median), and Long tasks have oracle lengths more than equal to 37 steps.</p><p>The map to the short names used for tasks in the paper:</p><p>Temp: use-thermometer, measure-melting-point-known-substance; Pick&amp;Place: find-plant, findliving-thing; Chemistry: chemistry-mix, chemistry-mix-paint-secondary-color; Lifespan: lifespanlongest-lived, lifespan-shortest-lived; Biology: identify-life-stages-1, identify-life-stages-2, Boil; Freeze; Grow Plant, Grow Fruit; Force: inclined-plane-determine-angle; Friction: inclined-planefriction-named-surfaces; Genetics: mendelian-genetics-known-plant, mendelian-genetics-unknownplant.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>AFigure 2 :</head><label>2</label><figDesc>Figure2: The architecture of CLIN. A controller takes the current task, retrievals from memory, and the trial so far, to generate the next goal to achieve. The executor then converts this to a valid action to perform towards that goal. The simulator then performs the action and returns an observation of that action's effect. Memory is updated at the end of each trial by the memory generator (Section 3.2).</figDesc><graphic coords="4,387.80,111.53,106.87,65.65" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: (LEFT) CLIN's continual learning algorithm. (RIGHT) Example causal abstractions.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Rapid task adaptation with CLIN. (a) Example tasks where CLIN improves scores across trials. For CLIN, Trial-0 is the BASE, Trial-4 is the ADAPT. (b) Comparison of CLIN with Reflexion (Shinn et al., 2023). (c) CLIN improves from BASE to ADAPT (full results in Appendix C).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Reward and #steps trends for CLIN in (a) GEN-ENV and (b) GEN-TASK. (c) % episode improvements and score change than CLIN without meta-memory (GEN-TASK). (d) CLIN ablations.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Prompt for the Controller and the Executor</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 10 :</head><label>10</label><figDesc>Figure 10: Memory generated after Trial5 in ADAPT for a Genetics task.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 11 :</head><label>11</label><figDesc>Figure 11: Meta-memory used in GEN-ENV for a Friction task.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 12 :</head><label>12</label><figDesc>Figure 12: Meta-memory used in GEN-TASK for a Freeze task.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Comparing CLIN with baselines for generalization across unseen environments</figDesc><table><row><cell>Preprint</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell>RL Methods</cell><cell></cell><cell cols="3">Generative Language Agents</cell><cell></cell><cell>CLIN (ours)</cell><cell></cell></row><row><cell>Task</cell><cell>Type</cell><cell cols="9">DRRN KGA2C CALM SayCan ReAct Reflexion BASE GEN-ENV G+A</cell></row><row><cell>Temp1</cell><cell>S</cell><cell>6.6</cell><cell>6.0</cell><cell>1.0</cell><cell>26.4</cell><cell>7.2</cell><cell>5.9</cell><cell>25.2</cell><cell>15.7</cell><cell>13.8</cell></row><row><cell>Temp2</cell><cell>S</cell><cell>5.5</cell><cell>11.0</cell><cell>1.0</cell><cell>8.0</cell><cell>6.1</cell><cell>28.6</cell><cell>53.2</cell><cell>49.7</cell><cell>58.2</cell></row><row><cell cols="2">Pick&amp;Place1 S</cell><cell>15.0</cell><cell>18.0</cell><cell>10.0</cell><cell>22.9</cell><cell>26.7</cell><cell>64.9</cell><cell>92.5</cell><cell>59.2</cell><cell>100.0</cell></row><row><cell cols="2">Pick&amp;Place2 S</cell><cell>21.7</cell><cell>16.0</cell><cell>10.0</cell><cell>20.9</cell><cell>53.3</cell><cell>16.4</cell><cell>55.0</cell><cell>100.0</cell><cell>100.0</cell></row><row><cell cols="2">Chemistry1 S</cell><cell>15.8</cell><cell>17.0</cell><cell>3.0</cell><cell>47.8</cell><cell>51.0</cell><cell>70.4</cell><cell>44.5</cell><cell>42.2</cell><cell>51.7</cell></row><row><cell cols="2">Chemistry2 S</cell><cell>26.7</cell><cell>19.0</cell><cell>6.0</cell><cell>39.3</cell><cell>58.9</cell><cell>70.7</cell><cell>56.7</cell><cell>85.6</cell><cell>93.3</cell></row><row><cell>Lifespan1</cell><cell>S</cell><cell>50.0</cell><cell>43.0</cell><cell>6.0</cell><cell>80.0</cell><cell>60.0</cell><cell>100.0</cell><cell>85.0</cell><cell>65.0</cell><cell>100.0</cell></row><row><cell>Lifespan2</cell><cell>S</cell><cell>50.0</cell><cell>32.0</cell><cell>10.0</cell><cell>67.5</cell><cell>67.5</cell><cell>84.4</cell><cell>70.0</cell><cell>75.0</cell><cell>90.0</cell></row><row><cell>Biology1</cell><cell>S</cell><cell>8.0</cell><cell>10.0</cell><cell>0.0</cell><cell>16.0</cell><cell>8.0</cell><cell>8.0</cell><cell>10.0</cell><cell>32.0</cell><cell>32.0</cell></row><row><cell>Boil</cell><cell>L</cell><cell>3.5</cell><cell>0.0</cell><cell>0.0</cell><cell>33.1</cell><cell>3.5</cell><cell>4.2</cell><cell>7.0</cell><cell>4.4</cell><cell>16.3</cell></row><row><cell>Freeze</cell><cell>L</cell><cell>0.0</cell><cell>4.0</cell><cell>0.0</cell><cell>3.9</cell><cell>7.8</cell><cell>7.8</cell><cell>10.0</cell><cell>8.9</cell><cell>10.0</cell></row><row><cell>GrowPlant</cell><cell>L</cell><cell>8.0</cell><cell>6.0</cell><cell>2.0</cell><cell>9.9</cell><cell>9.1</cell><cell>7.3</cell><cell>10.2</cell><cell>10.9</cell><cell>11.2</cell></row><row><cell>GrowFruit</cell><cell>L</cell><cell>14.3</cell><cell>11.0</cell><cell>4.0</cell><cell>13.9</cell><cell>18.6</cell><cell>13.0</cell><cell>35.9</cell><cell>70.8</cell><cell>94.5</cell></row><row><cell>Biology2</cell><cell>L</cell><cell>21.0</cell><cell>5.0</cell><cell>4.0</cell><cell>20.9</cell><cell>27.7</cell><cell>2.6</cell><cell>70.0</cell><cell>42.8</cell><cell>85.6</cell></row><row><cell>Force</cell><cell>L</cell><cell>10.0</cell><cell>4.0</cell><cell>0.0</cell><cell>21.9</cell><cell>40.5</cell><cell>50.6</cell><cell>53.5</cell><cell>70.0</cell><cell>100.0</cell></row><row><cell>Friction</cell><cell>L</cell><cell>10.0</cell><cell>4.0</cell><cell>3.0</cell><cell>32.3</cell><cell>44.0</cell><cell>100.0</cell><cell>56.5</cell><cell>70.0</cell><cell>94.0</cell></row><row><cell>Genetics1</cell><cell>L</cell><cell>16.8</cell><cell>11.0</cell><cell>2.0</cell><cell>67.5</cell><cell>25.7</cell><cell>50.9</cell><cell>77.4</cell><cell>84.5</cell><cell>100.0</cell></row><row><cell>Genetics2</cell><cell>L</cell><cell>17.0</cell><cell>11.0</cell><cell>2.0</cell><cell>59.5</cell><cell>16.8</cell><cell>23.7</cell><cell>62.3</cell><cell>61.4</cell><cell>100.0</cell></row><row><cell></cell><cell>S</cell><cell>22.1</cell><cell>19.1</cell><cell>5.2</cell><cell>36.5</cell><cell>37.6</cell><cell>49.9</cell><cell>54.7</cell><cell>58.3</cell><cell>71.0</cell></row><row><cell></cell><cell>L</cell><cell>11.2</cell><cell>6.2</cell><cell>1.9</cell><cell>29.2</cell><cell>21.5</cell><cell>28.9</cell><cell>42.5</cell><cell>47.1</cell><cell>68.0</cell></row><row><cell></cell><cell>All</cell><cell>16.7</cell><cell>12.7</cell><cell>3.6</cell><cell>32.9</cell><cell>29.6</cell><cell>39.4</cell><cell>48.6</cell><cell>52.7</cell><cell>69.5</cell></row></table><note><p>on the current trial for its reflections (hence not long-term). Furthermore, CLIN accumulates both useful (for the task) and harmful (for the task) causal learnings, whereas Reflexion only learns from its mistakes, lacking comprehensive learning.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Comparing CLIN with baselines for adaptation</figDesc><table><row><cell>Task</cell><cell>Type</cell><cell>ReAct</cell><cell>Reflexion</cell><cell cols="2">BASE ADAPT</cell></row><row><cell>Temp</cell><cell>S</cell><cell>7.2</cell><cell>5.9</cell><cell>25.2</cell><cell>14.3</cell></row><row><cell>Temp</cell><cell>S</cell><cell>6.1</cell><cell>28.6</cell><cell>53.2</cell><cell>51.8</cell></row><row><cell cols="2">Pick&amp;Place S</cell><cell>26.7</cell><cell>64.9</cell><cell>92.5</cell><cell>100.0</cell></row><row><cell cols="2">Pick&amp;Place S</cell><cell>53.3</cell><cell>16.4</cell><cell>55.0</cell><cell>100.0</cell></row><row><cell cols="2">Chemistry S</cell><cell>51.0</cell><cell>70.4</cell><cell>44.5</cell><cell>44.4</cell></row><row><cell cols="2">Chemistry S</cell><cell>58.9</cell><cell>70.7</cell><cell>56.7</cell><cell>56.7</cell></row><row><cell>Lifespan</cell><cell>S</cell><cell>60.0</cell><cell>100.0</cell><cell>85.0</cell><cell>100.0</cell></row><row><cell>Lifespan</cell><cell>S</cell><cell>67.5</cell><cell>84.4</cell><cell>70.0</cell><cell>90.0</cell></row><row><cell>Biology</cell><cell>S</cell><cell>8.0</cell><cell>8.0</cell><cell>10.0</cell><cell>8.0</cell></row><row><cell>Boil</cell><cell>L</cell><cell>3.5</cell><cell>4.2</cell><cell>7.0</cell><cell>15.2</cell></row><row><cell>Freeze</cell><cell>L</cell><cell>7.8</cell><cell>7.8</cell><cell>10.0</cell><cell>10.0</cell></row><row><cell cols="2">GrowPlant L</cell><cell>9.1</cell><cell>7.3</cell><cell>10.2</cell><cell>11.1</cell></row><row><cell cols="2">GrowFruit L</cell><cell>18.6</cell><cell>13.0</cell><cell>35.9</cell><cell>71.6</cell></row><row><cell>Biology</cell><cell>L</cell><cell>27.7</cell><cell>2.6</cell><cell>70.0</cell><cell>81.0</cell></row><row><cell>Force</cell><cell>L</cell><cell>40.5</cell><cell>50.6</cell><cell>53.5</cell><cell>100.0</cell></row><row><cell>Friction</cell><cell>L</cell><cell>44.0</cell><cell>100.0</cell><cell>56.5</cell><cell>72.5</cell></row><row><cell>Genetics</cell><cell>L</cell><cell>25.7</cell><cell>50.9</cell><cell>77.4</cell><cell>100.0</cell></row><row><cell>Genetics</cell><cell>L</cell><cell>16.8</cell><cell>23.7</cell><cell>62.3</cell><cell>92.6</cell></row><row><cell></cell><cell>S</cell><cell>37.6</cell><cell>49.9</cell><cell>54.7</cell><cell>62.8</cell></row><row><cell></cell><cell>L</cell><cell>21.5</cell><cell>28.9</cell><cell>42.5</cell><cell>61.6</cell></row><row><cell></cell><cell>All</cell><cell>29.6</cell><cell>39.4</cell><cell>48.6</cell><cell>62.2</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>The reward is converted to NL feedback for a LLM using 7 simple rules, e.g., "if score &gt;= 0 and score &lt;</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="20" xml:id="foot_1"><p>then feedback = "The agent performed poorly and made some progress but not enough to solve the task."</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_2"><p>During ADAPT, CLIN tries up to 5 trials. If it solves a task with a score of 100, it stops retrying.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_3"><p>Baseline numbers are derived from Table1in<ref type="bibr" target="#b13">(Lin et al., 2023)</ref> </p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_4"><p># steps in Figure</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_5"><p>5a,b are normalized between 0-1, 1 being maximum # steps allowed for a task.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><p>Acknowledgement We sincerely thank <rs type="institution">Aristo team members Tushar Khot</rs>, <rs type="person">Ashish Sabharwal</rs>, <rs type="person">Shashank Gupta</rs>, <rs type="person">Nathaniel Weir</rs>, <rs type="person">Kyle Richardson</rs>, <rs type="person">Jiangjie Chen</rs>, <rs type="person">Archiki Prasad</rs>, and other members such as <rs type="person">Faeze Brahman</rs>, <rs type="person">Alexander Koller</rs> at the <rs type="institution">Allen Institute of AI</rs> for their generous feedback.</p></div>
+			</div>			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Preprint <ref type="bibr">[System]</ref>: You are an expert assistant.</p><p>[User]: You may be given a list of learnings, that are derived from actions made by an agent and subsequent observations from a world to accomplish a TASK in an ENVIRONMENT CONFIGURATION.</p><p>For the learning list, the TASK description is provided at the beginning as TASK:</p><p>The learnings are from the agent's best attempt to solve the TASK.</p><p>The learning list is associated with an EVALUATION REPORT indicated how sucessful the attempt was for solving the task. Now, generate a summary of learnings from the existing ones if provided, such that they will be useful to the NEW TASK in the SAME ENVIRONMENT CONFIGURATION. The NEW TASK may require different actions which are not captured in the given learnings but given learnings can be used to infer about the ENVIRONMENT CONFIGURATION. The NEW TASK description will be given. If PREVIOUS LEARNINGS says 'No learnings available', improvise learnings for the NEW TASK.</p><p>Each numbered item in the summary can ONLY be of the form: X MAY BE NECCESSARY to Y. X SHOULD BE NECCESSARY to Y. X MAY NOT CONTRIBUTE to Y. X DOES NOT CONTRIBUTE to Y. {PREVIOUS LEARNINGS} TASK: ... LEARNINGS:... EVALUATION REPORT: REWARD_FINAL: 100. This means: The agent has performed exceptionally well and successfully solved the task. ... NEW TASK: ... Summary of learning as a numbered list: </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 9 :</head><label>9</label><figDesc>Prompt for CLIN's memory generator during GEN-TASK</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Human-timescale adaptation in an open-ended task space</title>
+		<author>
+			<persName><forename type="first">Adaptive-Agent-Team</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakob</forename><surname>Bauer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kate</forename><surname>Baumli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Satinder</forename><surname>Baveja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">P</forename><surname>Feryal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Avishkar</forename><surname>Behbahani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathalie</forename><surname>Bhoopchand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Bradley-Schmieg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Natalie</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adrian</forename><surname>Clay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vibhavari</forename><surname>Collister</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucy</forename><surname>Dasagi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Gregor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sheleem</forename><surname>Hughes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Kashem</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannah</forename><surname>Loks-Thompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Openshaw</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shreyaan</forename><surname>Parker-Holder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><forename type="middle">Perez</forename><surname>Pathak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nemanja</forename><surname>Nieves</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Rakicevic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yannick</forename><surname>Rocktäschel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakub</forename><surname>Schroecker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Sygnowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Tuyls</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>York</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><forename type="middle">M</forename><surname>Zacherl</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhang</surname></persName>
+		</author>
+		<ptr target="https://api.semanticscholar.org/CorpusID:255998274" />
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Do as i can, not as i say: Grounding language in robotic affordances</title>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Michael Ahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Byron</forename><surname>Cortes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keerthana</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Herzog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jasmine</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ibarz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Irpan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rosario</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Jauregui Ruano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sally</forename><surname>Jeffrey</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Jesmonth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jayant</forename><surname>Nikhil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><forename type="middle">C</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitry</forename><surname>Julian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Kalashnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuang-Huei</forename><surname>Kuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linda</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carolina</forename><surname>Luu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Parada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jornell</forename><surname>Pastor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kanishka</forename><surname>Quiambao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jarek</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diego</forename><forename type="middle">M</forename><surname>Rettinghouse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Reyes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Sermanet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clayton</forename><surname>Sievers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Toshev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Vincent Vanhoucke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sichun</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengyuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yan</surname></persName>
+		</author>
+		<ptr target="https://api.semanticscholar.org/CorpusID:247939706" />
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Learning strips action models with classical planning</title>
+		<author>
+			<persName><forename type="first">Diego</forename><surname>Aineto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergio</forename><surname>Jiménez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eva</forename><surname>Onaindía</surname></persName>
+		</author>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Automated Planning and Scheduling</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page">49405691</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Graph constrained reinforcement learning for natural language action spaces</title>
+		<author>
+			<persName><forename type="first">Prithviraj</forename><surname>Ammanabrolu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><forename type="middle">J</forename><surname>Hausknecht</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">How to motivate your dragon: Teaching goal-driven agents to speak and act in fantasy worlds</title>
+		<author>
+			<persName><forename type="first">Prithviraj</forename><surname>Ammanabrolu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Urbanek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Margaret</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Szlam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Rocktaschel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<ptr target="https://api.semanticscholar.org/CorpusID:222125301" />
+	</analytic>
+	<monogr>
+		<title level="m">North American Chapter</title>
+		<imprint>
+			<publisher>the Association for Computational Linguistics</publisher>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Hindsight experience replay</title>
+		<author>
+			<persName><forename type="first">Marcin</forename><surname>Andrychowicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dwight</forename><surname>Crow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Schneider</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rachel</forename><surname>Fong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Welinder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bob</forename><surname>Mcgrew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><surname>Tobin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wojciech</forename><surname>Zaremba</surname></persName>
+		</author>
+		<idno>ArXiv, abs/1707.01495</idno>
+		<ptr target="https://api.semanticscholar.org/CorpusID:3532908" />
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">A review of learning planning action models</title>
+		<author>
+			<persName><forename type="first">Ankuj</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Humbert</forename><surname>Fiorino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Damien</forename><surname>Pellier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Métivier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sylvie</forename><surname>Pesty</surname></persName>
+		</author>
+		<ptr target="https://api.semanticscholar.org/CorpusID:56483203" />
+	</analytic>
+	<monogr>
+		<title level="j">The Knowledge Engineering Review</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Decision transformer: Reinforcement learning via sequence modeling</title>
+		<author>
+			<persName><forename type="first">Lili</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aravind</forename><surname>Rajeswaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kimin</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Grover</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Laskin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Srinivas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+	</analytic>
+	<monogr>
+		<title level="m">Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page">235294299</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Scaling instruction-finetuned language models</title>
+		<author>
+			<persName><forename type="first">Chung</forename><surname>Hyung Won</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Longpre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barret</forename><surname>Zoph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Fedus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mostafa</forename><surname>Dehghani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siddhartha</forename><surname>Brahma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Albert</forename><surname>Webson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shane</forename><surname>Shixiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuyun</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mirac</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Suzgun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dasha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Valter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaurav</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adams</forename><forename type="middle">Wei</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanping</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">M</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongkun</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Slav</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Petrov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Huai Hsin Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Dean</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><forename type="middle">V</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wei</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2210.11416</idno>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page">253018554</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Towards teachable reasoning systems: Using a dynamic memory of user feedback for continual system improvement</title>
+		<author>
+			<persName><forename type="first">Bhavana</forename><surname>Dalvi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oyvind</forename><surname>Tafjord</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Deep reinforcement learning with a natural language action space</title>
+		<author>
+			<persName><forename type="first">Ji</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianshu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lihong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mari</forename><surname>Ostendorf</surname></persName>
+		</author>
+		<ptr target="https://api.semanticscholar.org/CorpusID:15986631" />
+	</analytic>
+	<monogr>
+		<title level="j">arXiv: Artificial Intelligence</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Language models as zero-shot planners: Extracting actionable knowledge for embodied agents</title>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deepak</forename><surname>Pathak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="9118" to="9147" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Replay-guided adversarial environment design</title>
+		<author>
+			<persName><forename type="first">Minqi</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Dennis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Parker-Holder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakob</forename><forename type="middle">Nicolaus</forename><surname>Foerster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Grefenstette</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Rocktaschel</surname></persName>
+		</author>
+		<ptr target="https://api.semanticscholar.org/CorpusID:238408352" />
+	</analytic>
+	<monogr>
+		<title level="m">Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Swiftsage: A generative agent with fast and slow thinking for complex interactive tasks</title>
+		<author>
+			<persName><forename type="first">Yicheng</forename><surname>Bill Yuchen Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karina</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prithviraj</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Faeze</forename><surname>Ammanabrolu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyu</forename><surname>Brahman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chandra</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Bhagavatula</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ren</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2305.17390</idno>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page">258960143</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Self-refine: Iterative refinement with selffeedback</title>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niket</forename><surname>Tandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prakhar</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Skyler</forename><surname>Hallinan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Wiegreffe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouha</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shrimai</forename><surname>Prabhumoye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Welleck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prasad</forename><surname>Bodhisattwa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shashank</forename><surname>Majumder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amir</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Yazdanbakhsh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Clark</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2303.17651</idno>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page">257900871</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Playing atari with deep reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Volodymyr</forename><surname>Mnih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Koray</forename><surname>Kavukcuoglu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Graves</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daan</forename><surname>Wierstra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><forename type="middle">A</forename><surname>Riedmiller</surname></persName>
+		</author>
+		<idno>ArXiv, abs/1312.5602</idno>
+		<ptr target="https://api.semanticscholar.org/CorpusID:15238391" />
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sung</forename><surname>Joon</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C O'</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carrie</forename><forename type="middle">J</forename><surname>Brien</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meredith</forename><forename type="middle">Ringel</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Morris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><forename type="middle">S</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bernstein</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.03442</idno>
+		<title level="m">Generative agents: Interactive simulacra of human behavior</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Reed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Konrad</forename><surname>Zolna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emilio</forename><surname>Parisotto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergio</forename><forename type="middle">Gomez</forename><surname>Colmenarejo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Novikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Barth-Maron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mai</forename><surname>Gimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yury</forename><surname>Sulsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jackie</forename><surname>Kay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jost</forename><surname>Tobias Springenberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Eccles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jake</forename><surname>Bruce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Razavi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashley</forename><forename type="middle">D</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Manfred</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Otto</forename><surname>Heess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutian</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raia</forename><surname>Hadsell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oriol</forename><surname>Vinyals</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mahyar</forename><surname>Bordbar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nando</forename><surname>De Freitas</surname></persName>
+		</author>
+		<ptr target="https://api.semanticscholar.org/CorpusID:248722148" />
+	</analytic>
+	<monogr>
+		<title level="j">A generalist agent. Trans. Mach. Learn. Res</title>
+		<imprint>
+			<date type="published" when="2022">2022. 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Sentence-bert: Sentence embeddings using siamese bert-networks</title>
+		<author>
+			<persName><forename type="first">Nils</forename><surname>Reimers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iryna</forename><surname>Gurevych</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1908.10084" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2019 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<biblScope unit="page" from="11" to="2019" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Reflexion: an autonomous agent with dynamic memory and self-reflection</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beck</forename><surname>Labash</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.11366</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Memory-assisted prompt editing to improve GPT-3 after deployment</title>
+		<author>
+			<persName><forename type="first">Niket</forename><surname>Tandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<idno>arxiv:2201.06009</idno>
+	</analytic>
+	<monogr>
+		<title level="m">ACL Workshop on Commonsense Representation and Reasoning (CSRR&apos;22)</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Voyager: An open-ended embodied agent with large language models</title>
+		<author>
+			<persName><forename type="first">Guanzhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqi</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Mandlekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaowei</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuke</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">(</forename><surname>Linxi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anima</forename><surname>Jim) Fan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Anandkumar</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2305.16291</idno>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page">258887849</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Scienceworld: Is your agent smarter than a 5th grader?</title>
+		<author>
+			<persName><forename type="first">Ruoyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><forename type="middle">Alexander</forename><surname>Jansen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc-Alexandre</forename><surname>Côté</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prithviraj</forename><surname>Ammanabrolu</surname></persName>
+		</author>
+		<ptr target="https://api.semanticscholar.org/CorpusID:247451124" />
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Empirical Methods in Natural Language Processing</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Keep calm and explore: Language models for action generation in text-based games</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><forename type="middle">J</forename><surname>Hausknecht</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2010.02903</idno>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page">222142129</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">React: Synergizing reasoning and acting in language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2210.03629</idno>
+		<ptr target="https://api.semanticscholar.org/CorpusID:252762395" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

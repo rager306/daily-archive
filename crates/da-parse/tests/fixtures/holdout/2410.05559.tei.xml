@@ -1,0 +1,2384 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Attribute Controlled Fine-tuning for Large Language Models: A Case Study on Detoxification</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-10-07">7 Oct 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Tao</forename><surname>Meng</surname></persName>
+							<email>tmeng@cs.ucla.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Los Angeles</settlement>
+								</address>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="department">Amazon.com</orgName>
+								<address>
+									<region>Inc</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ninareh</forename><surname>Mehrabi</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Amazon.com</orgName>
+								<address>
+									<region>Inc</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Palash</forename><surname>Goyal</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Amazon.com</orgName>
+								<address>
+									<region>Inc</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Anil</forename><surname>Ramakrishna</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Amazon.com</orgName>
+								<address>
+									<region>Inc</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Aram</forename><surname>Galstyan</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Amazon.com</orgName>
+								<address>
+									<region>Inc</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Richard</forename><surname>Zemel</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Amazon.com</orgName>
+								<address>
+									<region>Inc</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Kai-Wei</forename><surname>Chang</surname></persName>
+							<email>kwchang@cs.ucla.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Los Angeles</settlement>
+								</address>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="department">Amazon.com</orgName>
+								<address>
+									<region>Inc</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Rahul</forename><surname>Gupta</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Amazon.com</orgName>
+								<address>
+									<region>Inc</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Charith</forename><surname>Peris</surname></persName>
+							<email>perisc@amazon.com</email>
+							<affiliation key="aff1">
+								<orgName type="department">Amazon.com</orgName>
+								<address>
+									<region>Inc</region>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Attribute Controlled Fine-tuning for Large Language Models: A Case Study on Detoxification</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-10-07">7 Oct 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">0FC5DCE677526399ED6BB3A981C3E778</idno>
+					<idno type="arXiv">arXiv:2410.05559v1[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:47+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>We propose a constraint learning schema for fine-tuning Large Language Models (LLMs) with attribute control. Given a training corpus and control criteria formulated as a sequencelevel constraint on model outputs, our method fine-tunes the LLM on the training corpus while enhancing constraint satisfaction with minimal impact on its utility and generation quality. Specifically, our approach regularizes the LLM training by penalizing the KL divergence between the desired output distribution, which satisfies the constraints, and the LLM's posterior. This regularization term can be approximated by an auxiliary model trained to decompose the sequence-level constraints into token-level guidance, allowing the term to be measured by a closed-form formulation. To further improve efficiency, we design a parallel scheme for concurrently updating both the LLM and the auxiliary model. We evaluate the empirical performance of our approach by controlling the toxicity when training an LLM. We show that our approach leads to an LLM that produces fewer inappropriate responses while achieving competitive performance on benchmarks and a toxicity detection task.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Large language models (LLMs) have demonstrated impressive performance across a variety of tasks which has led to their widespread adoption for a multitude of AI applications. However, they carry the risk of producing inappropriate, unsafe, unfair outputs <ref type="bibr" target="#b38">(Wallace et al., 2019;</ref><ref type="bibr" target="#b33">Sheng et al., 2019;</ref><ref type="bibr" target="#b11">Gehman et al., 2020;</ref><ref type="bibr" target="#b15">Huang et al., 2024)</ref> Ideally, LLMs should learn to comply with constraints and policies specified by users. For example, in a userfacing application like a chatbot, LLMs should never generate toxic or offensive responses, nor to divulge sensitive information. While there are several post hoc methods to moderate LLM outputs <ref type="bibr" target="#b21">(Lu et al., 2022;</ref><ref type="bibr" target="#b28">Qian et al., 2022;</ref><ref type="bibr" target="#b22">Markov et al., 2023)</ref>, they lack an efficient and principled approach to training LLMs to adhere to constraints.</p><p>We start by defining a sequence-level oracle as a function that takes an LLM's output and adjudicates whether it satisfies a predefined set of attribute constraints. In practice, the oracle can be a rule-based, model-based, or mixed system (e.g., a classifier that decides whether a sentence is toxic). Given a pre-trained LLM and the oracle, we aim to fine-tune an LLM to achieve the following: 1) Attribute control: The LLM output passes the oracle with a high probability. 2) Utility preservation: The LLM maintains performance comparable to the original LLM on utility benchmarks. 3) Training efficiency: The cost of fine-tuning with attribute control is similar to that of the typical fine-tuning.</p><p>While existing approaches can meet some of these criteria, achieving all of them is challenging. For example, filtering training data with the oracle function before fine-tuning <ref type="bibr" target="#b39">(Wang et al., 2022)</ref> is a simple and efficient method. However, this approach could be less effective. Taking toxicity control as an example, if we filter out the toxic data from a fine-tuning corpus, in a regular context the model will learn not to generate toxic contents. Nevertheless, it might still be possible to trigger the generation of offensive responses given a toxic prompts, due to the fact that toxic prompts are out-of-distribution in relation to the fine-tuning corpus. Another promising approach is reinforcement learning (RL) considering controlling criteria in the reward function <ref type="bibr" target="#b34">(Snell et al., 2023;</ref><ref type="bibr">Mudgal et al., 2023)</ref>. However, RL setups tend to be inefficient and require preference data generation which adds significant overhead in comparison to generic fine-tuning.</p><p>In this work, we propose a novel solution to training an LLM with a set of attribute constraints. Inspired by the classic idea of constraint-driven learning <ref type="bibr" target="#b6">(Chang et al., 2007)</ref> and posterior regularization <ref type="bibr" target="#b10">(Ganchev et al., 2010)</ref>, we incorporate constraints as a regularizer in fine-tuning. Specifically, we estimate the closest distribution from the current model that satisfies the constraints and penalize the gap from the current model distribution to this estimated distribution to regularize the LLM during fine-tuning. We iterate through this process to push the LLM closer to the feasible region of generations, making the estimation progressively more accurate.</p><p>This iterative fine-tuning process updates the base LLM and regularizer sequentially, causing run time to be significantly longer than the typical fine-tuning. Thus, we parallelize our algorithm by updating the base LLM and regularizer simultaneously based on their status in the last iteration. Empirically, the parallelization achieves the same level of performance compared to sequential finetuning, and the time complexity is the same as a typical fine-tuning approach.</p><p>To validate the effectiveness of our proposed method, we conduct a case study in detoxification, considering three scenarios involving different datasets. In the first scenario, we fine-tune LLMs on datasets rich in toxic language with an attribute control that prevents the generation of toxic outputs. Our approach successfully passes stress tests and produces responses with lower toxicity compared to all baseline models. In the second scenario, we explore whether the attribute control can retain the utility of the LLM while reducing the toxicity of its responses. Training only on a small dataset will lead to catastrophic forgetting. Therefore, we fine-tune the LLM on a mix of data comprising toxiGen <ref type="bibr" target="#b12">(Hartvigsen et al., 2022)</ref> and Wikitext <ref type="bibr" target="#b25">(Merity et al., 2016)</ref> datasets with attribute control. Our method demonstrates the best balance between model utility and toxicity management compared to similar techniques.</p><p>Finally, we assess whether the LLM can effectively identify toxic content without generating it, a critical skill since the model must recognize toxic elements to avoid producing them. In standard fine-tuning, these goals often conflict: the model learns to identify toxicity through training on a toxic corpus, which paradoxically increases the generation of toxic content. However, our method successfully mitigates the generation of toxic content while maintaining classification performance on par with traditional fine-tuning techniques.</p><p>We summarize our contributions as follows:</p><p>• We provide an efficient and effective solution to the attribute-controlled fine-tuning.</p><p>• Empirically, we achieve the current best tradeoff between attribute control (measured using toxicity) and utility performance against a suite of baselines.</p><p>• We show that our approach enables the model to retain knowledge of the concept of a given attribute and yet selectively choose to avoid generating it. This can not be achieved via generic fine-tuning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related Work</head><p>Prior work exists on the controlled generation problem and it can be divided into two fronts. Solutions that apply at inference time during decoding, and solutions that apply at fine-tuning.</p><p>Attribute controlled decoding for LLMs Several methods have been explored to control LLM generation during decoding. Some prominent methods include activation editing <ref type="bibr" target="#b14">(Hernandez et al., 2023;</ref><ref type="bibr" target="#b19">Li et al., 2023)</ref> which adjusts the activation vectors in the LLM, and weight editing <ref type="bibr">(Meng et al., 2022a;</ref><ref type="bibr" target="#b16">Ilharco et al., 2023)</ref> which adjusts the weights in LLM. Dathathri et al. (2020) (PPLM) leverages an auxiliary model to steer the base LLM distribution. Following this line of work, Krause et al. (2021) (GeDi) and Liu et al. (2021) (DExpert) used contrastive learning as an objective to achieve attribute control during decoding. Yang and Klein (2021) (FUDGE) leveraged an external token-level auxiliary model for their work. This was followed by (Meng et al., 2022b) (NADO) who trained a token-level auxiliary model by decomposing the controlling criteria via optimization and approximation. Zhang et al. (2023) (GeLaTo) leverage a probabilistic circuit to tractably incorporate symbolic constraints.</p><p>Our work is inspired by NADO <ref type="bibr">(Meng et al., 2022b)</ref>, and we take it as a sub-component in our fine-tuning approach. However, our paper significantly differs from NADO. Firstly, NADO presents an inference method that guides generation by reweighting output distributions without updating the model weights of the base model. In contrast, our approach involves fine-tuning the model. We use NADO to estimate the optimal distribution that satisfies the constraints. However, our design of the posterior regularizer, the iterative-updated scheme, and the parallel computing algorithm is novel. Moreover, the effectiveness of regularizing The polygon is representing the feasible region Q where the constraints are satisfied. On (a) it shows the regularizer term is defined as the closest distance from p θ to Q. Regularized by KL-divergence from q, on (b) we show the LLM distribution p θ is gradually pushed towards the feasible region.</p><p>model training with constraints has not been studied for LLMs. We also demonstrate our approach in a real-world application, enhancing models to understand toxicity while preventing the generation of toxic content. This cannot be done by NADO as their approach is only a decoding method.</p><p>Attribute controlled fine-tuning for LLMs When controlling attributes during fine-tuning, the most straightforward way is to filter out training data that contain the attribute <ref type="bibr" target="#b39">(Wang et al., 2022)</ref>. However, this approach tends to cause performance degradation as it can filter out large portions of the training set and does not actively leverage negative examples. Neuro-symbolic approach <ref type="bibr" target="#b0">(Ahmed et al., 2023)</ref> incorporates symbolic constraints as loss added to the training objective; however, it cannot handle complex or implicit constraints. RL <ref type="bibr" target="#b30">(Ramamurthy et al., 2023;</ref><ref type="bibr" target="#b34">Snell et al., 2023;</ref><ref type="bibr">Mudgal et al., 2023)</ref> can be utilized to control an attribute via the use of an attribute-related reward. RLHF <ref type="bibr" target="#b27">(Ouyang et al., 2022;</ref><ref type="bibr" target="#b40">Xu et al., 2022;</ref><ref type="bibr" target="#b45">Ziegler et al., 2019;</ref><ref type="bibr">Bai et al., 2022a)</ref> and RLAIF <ref type="bibr">(Bai et al., 2022b;</ref><ref type="bibr" target="#b18">Lee et al., 2023)</ref> leverage feedback from humans and LLMs, respectively, to control the required attributes. However, they are more focused on being aligned with humans (or LLMs) rather than specific attribute control. RL-based methods are effective but often inefficient due to the large variance in feedback provided by the reward models.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Methodology</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Notation and Formalization</head><p>We use p θ to denote the LLM and θ is its trainable weights, x ∈ X is the input (e.g. prompts), and y is the generated output sequence of the model. We denote y &lt;i = (y 0 , y 1 , . . . , y i-1 ) as the prefix of y. C(x, y) : X × Y → {0, 1} denotes a black box oracle function which takes prompt x and model output y as input, and outputs whether the generation y satisfies the constraints. <ref type="foot" target="#foot_0">1</ref> For example, in detoxification, the oracle takes a user prompt x and the model response y as input, then returns 0 when the response is offensive, indicating that the response is unacceptable.</p><p>Given an LLM p θ , a black box oracle C(x, y), and a training dataset D = {x i , y i } N i=1 , our goal is to fine-tune the LLM as p θ so that the model retains its utilities while satisfying the constraints in expectation:</p><formula xml:id="formula_0">∀x ∈ X , E y∼p θ (y|x) [C(x, y)] ≥ δ.</formula><p>(1)</p><p>Here, δ is a user-specified parameter. When δ = 1, the training will push the model to satisfy all constraints, while choosing 0 &lt; δ &lt; 1, soft constraints are enforced.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Fine-tuning LLM with Posterior Regularization</head><p>Given a training data (x, y), typically the objective we fine-tune the LLM p θ is defined as</p><formula xml:id="formula_1">L LM (p θ ; x, y) = i L CE (p θ (y i |x, y &lt;i ), 1),</formula><p>where L CE is the cross-entropy loss. To achieve attribute control, we propose to add a regularization term that penalizes the violation of constraints.</p><p>The general idea of our approach is to fine-tune LM with a regularizer to penalize the following posterior regularization <ref type="bibr" target="#b10">(Ganchev et al., 2010)</ref>, we define</p><formula xml:id="formula_2">Q := {q | ∀x ∈ X , E y∼q(y|x) [C(x, y)] ≥ δ} D KL (p θ ∥Q) := min q∈Q D KL (p θ ∥q).</formula><p>The feasible region Q is the set of distributions that satisfy the constraint in Eq. ( <ref type="formula">1</ref>). Illustrated by Fig. <ref type="figure" target="#fig_0">1(a)</ref>, the regularization term D KL is defined as the smallest divergence from Q measured by Kullback-Leibler (KL) divergence. The overall objective of fine-tuning is</p><formula xml:id="formula_3">L(p θ ; x, y, Q) := L LM (p θ ; x, y)+λD KL (p θ ∥Q),</formula><p>(2) where λ is the hyper-parameter balancing the two terms.</p><p>However, the second term is intractable and hard to compute: when the base model distribution changes in fine-tuning, the closest distribution also changes. To address this issue, we design an iterative fine-tuning process: we first fix the base model distribution and estimate the closest distribution in the feasible set (Sec. 3.3, 3.4), and then we fix the estimated distribution as the reference distribution in the KL regularizer to fine-tune the LLM (Sec. 3.5). To speed up the process, we further propose parallel fine-tuning (Sec. 3.6).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Optimal Distribution in Feasible Region</head><p>To compute the regularizer term in fine-tuning, we need to find the optimal distribution q * as the reference distribution by solving the following problem q * = arg min q:E y∼q(y|x) [C(x,y)]≥δ D KL (q∥p).</p><p>(3) <ref type="bibr">Meng et al. (2022b)</ref> shows the close-form solution can be derived as</p><formula xml:id="formula_4">q * (y i |x, y &lt;i ) ∝ p θ (y i |x, y &lt;i )• [(δ -R p C (x))R p C (x, y &lt;i ⊕ y i ) + (1 -δ)R p C (x)] if δ &gt; R p C (x).</formula><p>Otherwise the constraint is already satisfied and</p><formula xml:id="formula_5">q * (y i |x, y &lt;i ) = p θ (y i |x, y &lt;i ).</formula><p>Specifically, when δ = 1, we have</p><formula xml:id="formula_6">q * (y i |x, y &lt;i ) ∝ p θ (y i |x, y &lt;i )R p C (x, y &lt;i ⊕ y i ),<label>(4)</label></formula><p>where ⊕ is the concatenation operation. R p C (x, y &lt;i ) is the probability that the generated output will satisfy constraints when the generation finishes given input x and prefix y &lt;i , and is given by</p><formula xml:id="formula_7">R p C (x, y &lt;i ) = Pr y∼p θ (y|x,y &lt;i ) [C(x, y) = 1], R p C (x) = Pr y∼p θ (y|x) [C(x, y) = 1].</formula><p>Basically, the satisfaction probability R p C is the token-level decomposition of the sentence-level oracle C. Based on δ and R p C , the solution shows how to adjust the next token distribution from the original distribution p θ .</p><p>Unfortunately, although the function R p C is welldefined, it is not tractable. To achieve the optimal solution in Eq. ( <ref type="formula">3</ref>), in this work, we estimate R p C from the training data and the LLM, and update the two terms in Eq. ( <ref type="formula">3</ref>) iteratively. In sections 3.4 and 3.5, we describe how we estimate R p C from the data and the current model p θ , and how we update the model p θ with the help of the estimated R p C .</p><p>Note that in fine-tuning objective Eq. ( <ref type="formula">2</ref>), the reference distribution q is fixed, and we update p θ , so the regularizer is D KL (p θ ∥q). However, here the model p is fixed and we seek the optimal q, so we minimize D KL (q∥p θ ). Empirically, when we optimize the KL divergence term, the trainable weights in the reference distribution usually lead to unstable training. Thus, we always set the fixed distribution as the reference distribution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">Estimating R p</head><p>C from LLM and Data To estimate R p C , we train an auxiliary model R ϕ from the training data D weighted by the base LLM p θ . We assume the empirical distribution is drawn from unseen training distribution D, and has no repetition<ref type="foot" target="#foot_1">foot_1</ref> , and set the objective function for a particular example (x, y) ∈ D as the cross-entropy loss between the predicted satisfaction probability and oracle output, weighted by the sequence probability p θ (y|x)</p><formula xml:id="formula_8">L(R ϕ ; x, y) =p θ (y|x) i L CE (R ϕ (x, y &lt;i ), C(x, y &lt;i )).</formula><p>(5) Considering the expected loss on distribution D, we have</p><formula xml:id="formula_9">E D∼D,(x,y)∼ D [L(R ϕ ; x, y)] =ED ∼D,(x,y)∼ D [p θ (y|x) i LCE(R ϕ (x, y &lt;i ), C(x, y))] =E x∼D,y∼p θ (y|x) [ i LCE(R ϕ (x, y &lt;i ), C(x, y))] = i LCE(R ϕ (x, y &lt;i ), R p C (x, y &lt;i )).<label>(6)</label></formula><p>Therefore, the global minimum of the expected loss function is reached when R ϕ (x, y &lt;i ) = R p C (x, y &lt;i ).</p><p>In <ref type="bibr">Meng et al. (2022b)</ref> the auxiliary model is trained by the data sampled from p θ without weighting the data by its probability as Eq. ( <ref type="formula">5</ref>). The expected loss is the same as Eq. ( <ref type="formula" target="#formula_9">6</ref>).</p><p>In our experiments, we apply sampling to train the auxiliary model, when there is no available training data. Hereafter in this work, we follow <ref type="bibr">Meng et al. (2022b)</ref> and refer to this auxiliary model as the neurally-decomposed oracle (NADO). In practice, NADO architecture is similar as the base LLM, with the same hidden dimension and fewer layers.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.5">Iteratively Updating p θ by Regularized Fine-tuning</head><p>Once we estimate R C p by NADO R ϕ , we are able to get the estimated optimal distribution q from Eq. ( <ref type="formula">3</ref>) by replacing R C p with R ϕ . We then plug in the estimated optimal distribution to the fine-tuning objective in Eq. ( <ref type="formula">2</ref>) as</p><formula xml:id="formula_10">L(p θ ; x, y, q) =L LM (p θ ; x, y) + λD KL (p θ (y|x)∥q(y|x)) = i log p θ (y i |x, y &lt;i ) +λD KL (p θ (y i |x, y &lt;i )∥q(y i |x, y &lt;i )). (7)</formula><p>Intuitively, a model fine-tuned with the objective in Eq. ( <ref type="formula">7</ref>) exhibits a trade-off between the model quality and the amount of control. Fine-tuned on this objective, the model converges at some midpoint between p θ and q.</p><p>Now we are able to estimate R C p by R ϕ from the training data and model p θ (Sec. 3.4), and fine-tune p θ with estimated optimal distribution q derived from R ϕ . A straightforward way is to update these models iteratively, which we call "sequential finetuning". In this process, we gradually push the base model distribution towards the feasible region, and the estimated optimal distribution is more accurate. As shown in Fig. <ref type="figure" target="#fig_1">2(a)</ref> and described in Sec. 3.1, we iteratively run the following three steps:</p><p>• Based on current LLM p (i) θ , sample or weight data D (i) labeled by the oracle.</p><p>• Train NADO R (i) ϕ using the data D (i) initialized with R (i-1) ϕ .</p><p>• Fine-tune the LLM p (i) θ with the KLdivergence between p (i) θ and q (i) given by Eq. ( <ref type="formula" target="#formula_6">4</ref>). The distribution of the base model can be conceptually visualized in Fig. <ref type="figure" target="#fig_0">1(b</ref>) during fine-tuning. As the base model p (i) θ getting closer to the feasible region, the estimated optimal distribution q (i) will be more accurate compared to the estimation from the original base model distribution q (1) .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.6">Parallel Fine-tuning</head><p>The iterative fine-tuning process outlined in Section 3.5 executes its steps sequentially by solving the optimization problem in Eq. ( <ref type="formula">3</ref>) in each round. However, while accurate, it is also inefficient. In this section, we propose a parallel finetuning method to improve efficiency.</p><p>In parallel fine-tuning, we propose a set-up that processes the three steps outlined in Sec. 3.5 in parallel (see Fig. <ref type="figure" target="#fig_1">2(b)</ref>). Given p (i) θ , D (i) and q (i) , the following three steps are processed simultaneously:</p><p>• Based on current LLM p (i) θ , sample or weight data D (i+1) labeled by the oracle.</p><p>• Train NADO R (i+1) ϕ using data D (i) initialized with R (i) ϕ .</p><p>• Fine-tune the LLM p (i+1) θ with the KLdivergence from q (i) given by Eq. ( <ref type="formula" target="#formula_6">4</ref>). After one round, we get p (i+1) θ , D (i+1) and q (i+1) . The LLM keeps fine-tuning on the dataset with a regularizer, and the regularizer is updated at every checkpoint. In sequential fine-tuning, the process will terminate at each checkpoint, waiting for the regularizer to update with the data sampled or weighted by the LLM. Compared to a baseline, which fine-tunes without control, the extra time cost in our method is only the extra computation on the regularizer and the time cost in dumping checkpoints. The additional memory cost for NADO is not significant, because it is relatively small compared to the base LLM.</p><p>In practice, we select proper hyperparameters<ref type="foot" target="#foot_2">foot_2</ref> to ensure the three steps take similar computational time. In such a case, parallel fine-tuning achieves 3x speed up compared to sequential fine-tuning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.7">Adaptive Regularizer</head><p>The data for fine-tuning an LLM often includes a diverse mix of sources. Fine-tuning on a specific domain may lead to performance degradation in other domains due to catastrophic forgetting. A popular approach is to add KL-divergence to the original model to avoid the model deviating from the original model <ref type="bibr" target="#b32">(Schulman et al., 2017)</ref>. To effectively incorporate this mechanism into our approach, we can implement domain-specific regularizers during the fine-tuning process.</p><p>Specifically, we denote the training dataset as D = i D i . For each subset D i with a corresponding constraint oracle C i . We use the base LLM to weight the subset, and C i to label them. According to Eq. ( <ref type="formula">5</ref>), we train NADO R ϕ i for the constraint oracle C i , and compute the estimated optimal distribution q i . We use q i as the reference distribution in the KL-divergence. Specifically, when we set q i as the original distribution, the regularizer sets as the KL-divergence to the original model. We refer to this regularizer as the preserving regularizer.</p><p>In this work, we demonstrate how to effectively control the toxicity of an LLM while preserving its performance level. We apply the regularize for toxicity control when fine-tuning it on toxicity-related datasets, while using the preserving regularize on a general dataset (like Wikitext). Formally, we denote p 0 as the original LLM, q as the estimated optimal distribution under toxicity constraint oracle, and D T ⊂ D as the toxicity-related training set. We adopt the fine-tuning objective in Eq. ( <ref type="formula">2</ref>) to</p><formula xml:id="formula_11">L(p θ ; D, q) = (x,y)∈D L LM (p θ ; x, y) +λ (x,y)∈D T D KL (p θ (y|x)∥q(y|x)) +λ (x,y) / ∈D T D KL (p θ (y|x)∥p 0 (y|x)).<label>(8)</label></formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Case Study on Detoxification</head><p>To test the effectiveness of the proposed approach, we apply it to detoxify an LLM. Toxicity, as discussed in Section 1, is of significant importance as a metric for the evaluation of LLM <ref type="bibr" target="#b5">(Brown et al., 2020;</ref><ref type="bibr">Touvron et al., 2023a;</ref><ref type="bibr">Chowdhery et al., 2022;</ref><ref type="bibr">Touvron et al., 2023b)</ref>.</p><p>In this context, we apply our fine-tuning schema in three different scenarios; (1) detoxification: testing the effectiveness of our proposed approach in attribute control, (2) multi-task scenario: testing that the controlled model preserves the same level performance on other tasks, and (3) toxicity classification: testing whether the control affects the model performance on attributes related tasks. Model API Tox. ToxiGen Llama baseline 0.315 23.0 Reinforcement Learning 0.269 12.3 NADO Decoding Control 0.289 14.4 Ours (sequential) 0.259 11.0 Ours (parallel) 0.261 10.9 Table 1: Toxicity scores of Llama-7B model with different detoxification methods. The proposed fine-tuning methods outperform RL and decoding-time control in detoxification. Parallel fine-tuning achieves similar control compared to sequential, with 3x fine-tuning speed.</p><p>In all experiments, we set δ = 1 to set toxicity as a hard constraint. Detailed notes on data pre-processing, hyper-parameter choice for model training, and the architecture of auxiliary models can be found in the Appendix.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Detoxification</head><p>Given a corpus and a toxicity oracle, we first show the effectiveness of our approach in detoxification. We also show that parallel fine-tuning achieves a similar performance as the sequential one.</p><p>Setup We use Llama-7B <ref type="bibr">(Touvron et al., 2023a)</ref> as the base model. NADO has a similar architecture but with only 8 layers. For our experiments, we use RealToxicPrompts (RTP) <ref type="bibr" target="#b11">(Gehman et al., 2020)</ref> and ToxiGen <ref type="bibr" target="#b12">(Hartvigsen et al., 2022)</ref> datasets. For each dataset, we sample 50k prompts for finetuning and another 5k for evaluation. During the evaluation, we prompt the model with each data point from the evaluation set and generate 32 tokens. For the RTP dataset, we measure the average toxicity across the generations by using Perspec-tiveAPI. For ToxiGen, we use the pre-trained Toxigen (RoBERTa) classifier, which was released with the dataset, to calculate the percentage of generated sentences that are toxic. We test three detoxification methods, in addition to the Llama baseline:</p><p>• Reinforcement Learning: For each prompt in the evaluation set, we sample 32 generations. We utilize the PerspectiveAPI and Toxi-Gen classifier confidence scores as reward for the two test sets, respectively. We then use the policy gradient <ref type="bibr" target="#b35">(Sutton et al., 1999)</ref> to update the base language model.</p><p>• NADO controlled decoding: For each prompt in the two test sets, we sample 32 sentences and obtain binary labels from Per-spectiveAPI and the ToxiGen classifier, respectively. When using PerspectiveAPI we set a threshold of toxicity score &gt; 0.1 as toxic.</p><p>• Ours: We follow the NADO-controlled decoding oracle setup. We split the 50k finetuning set into 5 groups. We separately run iterative sequential fine-tuning and parallel fine-tuning for 5 rounds using these groups.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Results</head><p>The results are shown in Tab. 1. We observe that on both datasets our method achieves the best detoxification (given the same amount of training data). We observe that there is a significant performance improvement brought on by iterative fine-tuning when compared to NADO-controlled decoding, which shows that directly estimated the optimal distribution is not optimal. The iterative process enables the gradual push of the base model distribution towards the feasible region (Fig <ref type="figure" target="#fig_0">1</ref>), and the estimated optimal distribution improves in its accuracy. The sequential and parallel fine-tuning results show comparable performance. Since parallel fine-tuning is more efficient, we focus on this method from this point onward.</p><p>Preference optimization <ref type="bibr" target="#b29">(Rafailov et al., 2023</ref>) is a popular RL method in fine-tuning LLMs. It leverages human preference between a pair of generation to achieve an alignment between model output and human. However, in our setup, the goal is to control the toxicity of the model output. The metric is clearly defined by PerspectiveAPI or Tox-iGen classifier. Directly applying the toxicity value Table 2. The trade-off is controlled by the coefficient λ in Eq. ( <ref type="formula" target="#formula_11">8</ref>). We observe that to control the language model in the same level of toxicity, our approach, with adaptive regularizer, achieves the best commonsense reasoning performance compared to the listed methods.</p><p>as the reward in RL is much more effective than the pairwise preference.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Balance between Utility and Detoxification</head><p>We further study how our method can reduce toxicity generation while maintaining model utility. As RTP and ToxiGen datasets are small, fine-tuning only on them would lead to catastrophic forgetting and degradation in utility. Therefore, we fine-tune the LLM on a mix of general Wikitext corpus and toxicity corpus. We show that the proposed method achieves the best trade-off between toxicity control and maintaining performance on general utility benchmarks.</p><p>Setup We use Llama-7B <ref type="bibr">(Touvron et al., 2023a)</ref> and Falcon-7B <ref type="bibr">(Almazrouei et al., 2023)</ref> as base models, and fine-tune each of them on a mixture of ToxiGen and Wikitext <ref type="bibr" target="#b25">(Merity et al., 2016)</ref> data in equal proportions. We evaluate model performance on ToxiGen toxicity, and the utility on MMLU and commensense reasoning. The details about evaluation metrics can be found in the Appendix. We test 5 different methods:</p><p>• Filtering: We filter out all the data labeled as toxic by the ToxiGen classifier.</p><p>• Reinforcement Learning: We take the confidence score provided by the ToxiGen classi- fier as the reward, and apply policy-gradient to minimize the toxicity.</p><p>• NADO decoding: We train the auxiliary model on ToxiGen sampled data, and control the model generation at decoding time.</p><p>• Ours (without Adaptive): We apply parallel fine-tuning on both datasets with the auxiliary model trained on ToxiGen sampled data.</p><p>• Ours (with Adaptive): We apply an adaptive regularizer as described in Eq. ( <ref type="formula" target="#formula_11">8</ref>). We use the preserving regularizer on Wikitext data, while using the toxicity control regularizer on the ToxiGen sampled data.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Results</head><p>The results are shown in Tab. 2. We observe that all detoxification methods cause a performance drop on our utility metrics (i.e. MMLU and commonsense reasoning). Filtering is not effective for detoxification. In Fig. <ref type="figure" target="#fig_2">3</ref> we show the trade-off curve between ToxiGen and Commonsense reasoning tasks of our method compared to other methods. Our method with the adaptive regularizer achieves the best trade-off between toxicity control and model utility.</p><p>When used without the adaptive regularizer, our method achieves the best toxicity control. However, this comes at the cost of utility loss. This indicated that the toxicity regularizer trained on ToxiGen sampled data does not perform well on the Wikitext data. The adaptive regularizer helps preserve the model utility while fine-tuning on Wikitext data.</p><p>Win rate Base Filter RL Ours Base N/A 44.3 45.1 51.4 Filter 55.7 N/A 53.4 61.6 RL 54.9 46.6 N/A 61.3 Ours 48.6 38.4 38.7 N/A Table 3: Pairwise comparison by OPT-30B on ToxiGen sampling data. The value shows the win rate of the method on the top row in pairwise comparison. Our model is indistinguishable from base model and outperforms Filter and RL approaching, demonstrating it retains the quality of generation.</p><p>We note that Falcon-7B has much lower toxicity when compared to Llama-7B. The consistent performance trends observed in both base models, demonstrate that our method is robust to different base models independent of its levels of toxicity.</p><p>We further analyze model generation quality by leveraging a larger model, OPT-30B <ref type="bibr" target="#b44">(Zhang et al., 2022)</ref>, to do pairwise comparison on model generations for ToxiGen prompts from 4 systems: (1) the base Llama-7B model, (2) filtering, (3) RL and (4) ours with the adaptive regularizer. We do not consider NADO controlled decoding and ours without the adaptive regularizer, as they are obviously worse in terms of model quality. The results are shown in Tab. 3. We show that OPT-30B prefers our system (with the adaptive regularizer) the best, with slight improvement over the base model.</p><p>Model API Tox. Classify ROC baseline 0.315 0.910 SFT(LLM loss) 0.344 0.966 Ours(LLM loss) 0.288 0.959 SFT(classification) 0.314 0.972</p><p>Table 4: Jigsaw dataset performance of Llama-7B model with toxicity control. SFT with LLM loss shows a tradeoff between the generation toxicity and classification performance, while our approach is capable to reduce the generation toxicity while improve toxicity classification performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Toxicity Classification and Generation</head><p>An LLM cannot avoid generating toxic outputs if it is unable to recognize toxic language. Therefore, it is essential for LLM to comprehend the characteristics of toxic content so that it can actively filter out harmful elements while maintaining the integrity of the generated output. However, a generic fine-tuning method often cannot improve the toxicity classification and reduce toxic generation at the same time. We design an experiment to test whether our approach can effectively enhance the LLM's ability to classify toxic content without increasing its generation of such content.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Setup</head><p>We fine-tune the Llama-7B on the Jigsaw toxicity classification dataset <ref type="bibr" target="#b17">(Jain et al., 2022)</ref>. We compare the performance of models fine-tuned using our controlled method to ones fine-tuned using uncontrolled fine-tuning. We use classification performance and generation toxicity (as evaluated by PerspectiveAPI) as metrics of comparison. Specifically, we compare three methods:</p><p>• Supervised fine-tuning with LLM loss: We concatenate each question and answer in the Jigsaw dataset, and fine-tune with a language modeling objective.</p><p>• Ours with LLM loss: We train an auxiliary model on RTP sampled data labeled by PerspectiveAPI, and fine-tune the language model same as above on Jigsaw dataset with the toxicity regularizer.</p><p>• Supervised fine-tuning as classification: We treat each question in Jigsaw as the prompt and only calculate loss on the answers. This is regarded the upper bound of performance for this task.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Results</head><p>The results are shown in Tab. 4. We observe that if we fine-tune the LLM on the Jigsaw dataset without toxicity control, the generation toxicity increases significantly (9.2%, from 0.315 to 0.344). The reason is that Jigsaw consists of toxic content and fine-tuning on this shifts the model out distribution to be toxic. In comparison, when using our fine-tuning schema which leverages the toxicity regularizer, we achieve decreased toxicity. Notably our method also improves classification performance, achieving almost similar performance to uncontrolled fine-tuning, demonstrating our approach makes the model understand the toxicity rather than simply make model ignore the toxicity contents in training data.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>We propose a novel fine-tuning approach for attribute control in LLM generations and we demonstrate its effectiveness using toxicity as our chosen attribute. While this work focuses on toxicity, our approach is general enough to accommodate other types of attributes as well. With adaptive regularizers, our method can further extend to control multiple attribute across various domains.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitation</head><p>In this work we assume that a decent oracle (Per-spectiveAPI, ToxiGen classifier) for the attribute we would like to control is available. A low quality oracle may rely on superficial shortcut between generation and constraint labels, resulting in that the fine-tuned model captures such shortcut. Therefore, it is possible that we need to train a decent oracle before applying the proposed method.</p><p>Although our method is general to apply different kinds of constraints since we have no assumption on the black-box oracle, in experiment we focus on detoxification. We leave the study on controlling other attributes in future work.</p><p>As a attribute control method, we note that there is a potential risk that malicious users could use this approach to 'toxify' the LLM by opposite the oracle. In addition, the generated texts may contain new toxic contents that cannot be generated in original LLM, since it may learn from the toxic fine-tuning corpus. However, on the other hand, the controlled LLM is generally less risky in generating toxic contents.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure1: A conceptually visualization of base LLM distribution p θ and optimal distribution q * in fine-tuning. The polygon is representing the feasible region Q where the constraints are satisfied. On (a) it shows the regularizer term is defined as the closest distance from p θ to Q. Regularized by KL-divergence from q, on (b) we show the LLM distribution p θ is gradually pushed towards the feasible region.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: An illustration of sequential and parallel fine-tuning for three iterations. We use T (time step) to indicate the time. Oracle, symbolizes the process of sampling data from an LLM, labeling with an oracle, and training the NADO model. On the left, we show sequential execution with the grey arrows showing the direction of flow. On the right, we show the parallelized execution. Note that in this case, all components (left to right) of each iteration are run at the same time step (except in iteration 1). Note also, that the grey dashed arrows (from iteration 2 onwards) do not flow across components within the same iteration level, indicating the independence of each component from other components in the same level. This allows them to be executed in parallel.</figDesc><graphic coords="6,90.90,71.81,205.37,139.03" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure3: The trade-off curve between ToxiGen performance and Commonsense reasoning performance when fine-tuning Llama-7B model with our proposed approach with adaptive regularizer, compared to the listed baselines in Table2. The trade-off is controlled by the coefficient λ in Eq. (8). We observe that to control the language model in the same level of toxicity, our approach, with adaptive regularizer, achieves the best commonsense reasoning performance compared to the listed methods.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 2 :</head><label>2</label><figDesc>Benchmark performance of Llama-7B and Falcon-7B with toxicity control. The models are fine-tuned on a mixture corpus including ToxiGen and Wikitext in equal proportions. Results show that our approach achieves a better trade-off between toxicity control and benchmark performance compared to RL. Filtering is not effective in controlling toxicity. With the adaptive regularizer, LLM has a significant performance improvement on benchmarks.</figDesc><table><row><cell>Model</cell><cell></cell><cell cols="3">ToxiGen MMLU(5-shot) Com. Reasoning (0-shot)</cell></row><row><cell cols="2">Baseline</cell><cell>23.0</cell><cell>35.1</cell><cell>75.6</cell></row><row><cell cols="2">Filtering</cell><cell>21.9</cell><cell>34.6</cell><cell>75.1</cell></row><row><cell>Llama-7B</cell><cell>RL</cell><cell>15.2</cell><cell>33.6</cell><cell>73.2</cell></row><row><cell cols="2">NADO decoding</cell><cell>16.8</cell><cell>31.1</cell><cell>71.4</cell></row><row><cell cols="2">Ours w/o Adaptive</cell><cell>13.6</cell><cell>30.4</cell><cell>71.9</cell></row><row><cell cols="2">Ours w/ Adaptive</cell><cell>14.2</cell><cell>33.9</cell><cell>73.6</cell></row><row><cell cols="2">Baseline</cell><cell>14.0</cell><cell>27.2</cell><cell>76.1</cell></row><row><cell cols="2">Filtering</cell><cell>13.6</cell><cell>26.4</cell><cell>74.9</cell></row><row><cell>Falcon-7B</cell><cell>RL</cell><cell>9.8</cell><cell>25.4</cell><cell>74.4</cell></row><row><cell cols="2">NADO decoding</cell><cell>7.3</cell><cell>23.6</cell><cell>72.5</cell></row><row><cell cols="2">Ours w/o Adaptive</cell><cell>7.1</cell><cell>24.1</cell><cell>71.8</cell></row><row><cell cols="2">Ours w/ Adaptive</cell><cell>7.3</cell><cell>26.1</cell><cell>74.5</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>We can extend our approach to handle real value constraints in the form of C(x, y) ∈ [0, 1]. For simplicity, we consider binary constraints in this paper.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>If there are repeated examples we can remove them before training. This assumption makes sure that the following weighted empirical loss mimics the expectation loss from sampling.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>Including the number of examples we sample or weight, number of epochs to fine-tune LM, and number of epochs to train NADO.</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Model Architecture and Optimizer</head><p>In all experiments, the NADO model has the same configuration as Llama-7B model but with only 8 layers. We use AdamW as optimizer with learning rate 3e -5 and weight decay 1e -2.</p><p>In detoxification and toxicity classification experiments, we train NADO from data sampled by base LLM. We use simple random sampling without any decoding configuration.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B LLM Fine-tuning</head><p>We fine-tune the base LLM with AdamW optimizer with learning rate 1e -5 and weight decay 1e -2. λ = 10.0 in the multi-task scenario experiment, and λ = 5.0 in the detoxification and toxicity classification experiments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Metrics in Multitask Experiment</head><p>We evaluate the model performance on the following three metrics:</p><p>• ToxiGen (toxicity): Same set up as the detoxification experiment in Section 4.1.</p><p>• MMLU (utility): We do 5-shot evaluation on the MMLU benchmark <ref type="bibr" target="#b13">(Hendrycks et al., 2021)</ref> and report the average score.</p><p>• Commonsense Reasoning (utility): We do 0-shot evaluation on 4 commonsense reasoning benchmarks, BoolQ <ref type="bibr" target="#b8">(Clark et al., 2019)</ref>, PIQA <ref type="bibr" target="#b4">(Bisk et al., 2020)</ref>, HellaSwag <ref type="bibr" target="#b42">(Zellers et al., 2019)</ref> and WinoGrande <ref type="bibr" target="#b31">(Sakaguchi et al., 2020)</ref>, and report the average score.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Data Preprocessing</head><p>RTP and ToxiGen: We randomly select prompts, and use the LLM to randomly sample 32 tokens in both training and evaluation.</p><p>Jigsaw: The data are comment-label pairs. We templatize the data as:</p><p>The comment [comment] is a [label name] comment.</p><p>In evaluation, we query the model by template: Is the comment [comment] a [label name] comment? Answer: [Yes / No] MMLU and commensense reasoning: We follow the standard o-shot and few-shot evaluation scripts.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E License of Datasets</head><p>The licenses of datasets we use in this paper list below: ToxiGen: MIT License Wikitext: CC BY-SA License and GFDL License Jigsaw: MIT License MMLU: GNU AGPL BoolQ: CC BY-SA License PIQA: Apache License HellaSwag: MIT License WinoGrande: Apache License</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">A pseudo-semantic loss for autoregressive models with logical constraints</title>
+		<author>
+			<persName><forename type="first">Kareem</forename><surname>Ahmed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guy</forename><surname>Van Den Broeck</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Badreddine Noune, Baptiste Pannier, and Guilherme Penedo. 2023. The falcon series of open language models</title>
+		<author>
+			<persName><forename type="first">Ebtesam</forename><surname>Almazrouei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hamza</forename><surname>Alobeidli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abdulaziz</forename><surname>Alshamsi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alessandro</forename><surname>Cappelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruxandra</forename><surname>Cojocaru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mérouane</forename><surname>Debbah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Étienne</forename><surname>Goffinet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Hesslow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julien</forename><surname>Launay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quentin</forename><surname>Malartic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniele</forename><surname>Mazzotta</surname></persName>
+		</author>
+		<idno>CoRR, abs/2311.16867</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">2022a. Training a helpful and harmless assistant with reinforcement learning from human feedback</title>
+		<author>
+			<persName><forename type="first">Yuntao</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kamal</forename><surname>Ndousse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nova</forename><surname>Dassarma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Drain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stanislav</forename><surname>Fort</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deep</forename><surname>Ganguli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Henighan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurav</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jackson</forename><surname>Kernion</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Conerly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sheer</forename><forename type="middle">El</forename><surname>Showk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nelson</forename><surname>Elhage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zac</forename><surname>Hatfield-Dodds</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Hernandez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tristan</forename><surname>Hume</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Johnston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shauna</forename><surname>Kravec</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liane</forename><surname>Lovitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Neel</forename><surname>Nanda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Catherine</forename><surname>Olsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><forename type="middle">B</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Olah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<idno>CoRR, abs/2204.05862</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Yuntao</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurav</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandipan</forename><surname>Kundu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jackson</forename><surname>Kernion</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Goldie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Azalia</forename><surname>Mirhoseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cameron</forename><surname>Mckinnon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carol</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Catherine</forename><surname>Olsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Olah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Hernandez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Drain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deep</forename><surname>Ganguli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dustin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eli</forename><surname>Tran-Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamie</forename><surname>Kerr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Mueller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Ladish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><surname>Landau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kamile</forename><surname>Kamal Ndousse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liane</forename><surname>Lukosiute</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Lovitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nelson</forename><surname>Sellitto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Elhage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noemí</forename><surname>Schiefer</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mercado</surname></persName>
+		</author>
+		<editor>Shauna Kravec, Sheer El Showk, Stanislav Fort, Tamera Lanham, Timothy Telleen-Lawton, Tom Conerly, Tom Henighan, Tristan Hume, Samuel R</editor>
+		<imprint>
+			<pubPlace>Nova DasSarma, Robert Lasenby, Robin Larson, Sam Ringer, Scott Johnston; Bowman, Zac Hatfield-Dodds, Ben Mann, Dario Amodei, Nicholas Joseph, Sam McCandlish, Tom Brown</pubPlace>
+		</imprint>
+	</monogr>
+	<note>and Jared Kaplan. 2022b. Constitutional AI: harmlessness from AI feedback. CoRR, abs/2212.08073</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">PIQA: reasoning about physical commonsense in natural language</title>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rowan</forename><surname>Zellers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Ronan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Bras</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Tom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ariel</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Herbert-Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rewon</forename><surname>Henighan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Child</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">M</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Ziegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clemens</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Winter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mateusz</forename><surname>Sigler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Litwin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Chess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Berner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Amodei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Guiding semi-supervision with constraintdriven learning</title>
+		<author>
+			<persName><forename type="first">Ming-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lev-Arie</forename><surname>Ratinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Roth</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL. The Association for Computational Linguistics</title>
+		<imprint>
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaurav</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Barham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyung</forename><forename type="middle">Won</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Gehrmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Parker</forename><surname>Schuh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kensen</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sasha</forename><surname>Tsvyashchenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><surname>Maynez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Parker</forename><surname>Barnes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emily</forename><surname>Vinodkumar Prabhakaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Reif</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reiner</forename><surname>Hutchinson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Pope</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Bradbury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guy</forename><surname>Isard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengcheng</forename><surname>Gur-Ari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Toju</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anselm</forename><surname>Duke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sanjay</forename><surname>Levskaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sunipa</forename><surname>Ghemawat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Dev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vedant</forename><surname>Garcia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liam</forename><surname>Robinson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Fedus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daphne</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Ippolito</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyeontaek</forename><surname>Luan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barret</forename><surname>Lim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Zoph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Spiridonov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Sepassi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shivani</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katherine</forename><surname>Omernick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zongwei</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brennan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Saeta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Orhan</forename><surname>Diaz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michele</forename><surname>Firat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Catasta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kathy</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Douglas</forename><surname>Meier-Hellstern</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Eck</surname></persName>
+		</author>
+		<editor>M. Dai, Thanumalayan Sankaranarayana Pillai, Marie Pellat, Aitor Lewkowycz, Erica Moreira, Rewon Child, Oleksandr Polozov,</editor>
+		<imprint>
+			<pubPlace>Jeff Dean, Slav Petrov</pubPlace>
+		</imprint>
+	</monogr>
+	<note>and Noah Fiedel. 2022. Palm: Scaling language modeling with pathways. CoRR, abs/2204.02311</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Boolq: Exploring the surprising difficulty of natural yes/no questions</title>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenton</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Kwiatkowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Collins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kristina</forename><surname>Toutanova</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NAACL-HLT</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Plug and play language models: A simple approach to controlled text generation</title>
+		<author>
+			<persName><forename type="first">Sumanth</forename><surname>Dathathri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrea</forename><surname>Madotto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Janice</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Hung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Frank</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piero</forename><surname>Molino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Yosinski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rosanne</forename><surname>Liu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note>In ICLR. OpenReview.net</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Posterior regularizaftion for structured latent variable models</title>
+		<author>
+			<persName><forename type="first">Kuzman</forename><surname>Ganchev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jennifer</forename><surname>Gillenwater</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Taskar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="page" from="2001" to="2049" />
+			<date type="published" when="2010-07">2010. Jul</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Realtoxicityprompts: Evaluating neural toxic degeneration in language models</title>
+		<author>
+			<persName><forename type="first">Suchin</forename><surname>Samuel Gehman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Gururangan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Sap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">A</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Smith</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP (Findings), volume EMNLP 2020 of Findings of ACL</title>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="3356" to="3369" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Toxigen: A large-scale machine-generated dataset for adversarial and implicit hate speech detection</title>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Hartvigsen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saadia</forename><surname>Gabriel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hamid</forename><surname>Palangi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Sap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dipankar</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ece</forename><surname>Kamar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Measuring massive multitask language understanding</title>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mantas</forename><surname>Mazeika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Measuring and manipulating knowledge representations in language models</title>
+		<author>
+			<persName><forename type="first">Evan</forename><surname>Hernandez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Belinda</forename><forename type="middle">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename></persName>
+		</author>
+		<idno>CoRR, abs/2304.00740</idno>
+		<imprint>
+			<date type="published" when="2023">Andreas. 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Trustllm: Trustworthiness in large language models</title>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lichao</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chujie</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixin</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhan</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiner</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanchi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengliang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yijue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhikun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bertie</forename><surname>Vidgen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bhavya</forename><surname>Kailkhura</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaowei</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><forename type="middle">P</forename><surname>Xing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Furong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huaxiu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manolis</forename><surname>Kellis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marinka</forename><surname>Zitnik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meng</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jieyu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiliang</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jindong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joaquin</forename><surname>Vanschoren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaidi</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lifang</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lifu</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Backes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Neil</forename><forename type="middle">Zhenqiang</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philip</forename><forename type="middle">S</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pin-Yu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quanquan</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ran</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rex</forename><surname>Ying</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuiwang</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suman</forename><surname>Jana</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianlong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianming</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">Yang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangliang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xing</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuyu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanfang</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinzhi</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Zhao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Forty-first International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Editing models with task arithmetic</title>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Ilharco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marco</forename><surname>Túlio Ribeiro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mitchell</forename><surname>Wortsman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ludwig</forename><surname>Schmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Farhadi</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>In ICLR. OpenReview.net</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Gedi: Generative discriminator guided sequence generation</title>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Skanda</forename><surname>Vaidyanath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arun</forename><surname>Shankar Iyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nagarajan</forename><surname>Natarajan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suresh</forename><surname>Parthasarathy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Sriram</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rahul</forename><surname>Rajamani</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sharma</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP (Findings)</title>
+		<editor>
+			<persName><forename type="first">Icse</forename><forename type="middle">Ben</forename><surname>Krause</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Akhilesh</forename><surname>Deepak Gotmare</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Bryan</forename><surname>Mccann</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Nitish</forename><surname>Shirish Keskar</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">R</forename><surname>Shafiq</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Richard</forename><surname>Joty</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Nazneen</forename><surname>Socher</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Rajani</forename><surname>Fatema</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2021">2022. 2021</date>
+			<biblScope unit="page" from="4929" to="4952" />
+		</imprint>
+	</monogr>
+	<note>Jigsaw: Large language models meet program synthesis</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">RLAIF: scaling reinforcement learning from human feedback with AI feedback</title>
+		<author>
+			<persName><forename type="first">Harrison</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samrat</forename><surname>Phatale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hassan</forename><surname>Mansoor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kellie</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Mesnard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Colton</forename><surname>Bishop</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Carbune</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Rastogi</surname></persName>
+		</author>
+		<idno>CoRR, abs/2309.00267</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Inference-time intervention: Eliciting truthful answers from a language model</title>
+		<author>
+			<persName><forename type="first">Kenneth</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oam</forename><surname>Patel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fernanda</forename><forename type="middle">B</forename><surname>Viégas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanspeter</forename><surname>Pfister</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Wattenberg</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Dexperts: Decoding-time controlled text generation with experts and anti-experts</title>
+		<author>
+			<persName><forename type="first">Alisa</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Sap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ximing</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swabha</forename><surname>Swayamdipta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chandra</forename><surname>Bhagavatula</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL/IJCNLP</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Neurologic a*esque decoding: Constrained text generation with lookahead heuristics</title>
+		<author>
+			<persName><forename type="first">Ximing</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Welleck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>West</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liwei</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jungo</forename><surname>Kasai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Khashabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Ronan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lianhui</forename><surname>Bras</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Youngjae</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rowan</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">A</forename><surname>Zellers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NAACL-HLT</title>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="780" to="799" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">A holistic approach to undesired content detection in the real world</title>
+		<author>
+			<persName><forename type="first">Todor</forename><surname>Markov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florentine</forename><forename type="middle">Eloundou</forename><surname>Nekoul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Theodore</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Adler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Angela</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lilian</forename><surname>Weng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="15009" to="15018" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Alex Andonian, and Yonatan Belinkov. 2022a. Locating and editing factual associations in GPT</title>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Bau</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Controllable text generation with neurallydecomposed oracle</title>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sidi</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nanyun</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Chang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Pointer sentinel mixture models</title>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Merity</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Bradbury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Socher</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1609.07843</idno>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sidharth</forename><surname>Mudgal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jong</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harish</forename><surname>Ganapathy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaguang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanping</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhifeng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng-Tze</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Collins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Trevor</forename><surname>Strohman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jilin</forename><surname>Chen</surname></persName>
+		</author>
+		<idno>CoRR, abs/2310.17022</idno>
+		<title level="m">Alex Beutel, and Ahmad Beirami. 2023. Controlled decoding from language models</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Training language models to follow instructions with human feedback</title>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carroll</forename><forename type="middle">L</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katarina</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fraser</forename><surname>Kelton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maddie</forename><surname>Simens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Welinder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><forename type="middle">F</forename><surname>Christiano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Lowe</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note>In NeurIPS</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Controllable natural language generation with contrastive prefixes</title>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yelong</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Furu</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL (Findings)</title>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Direct preference optimization: Your language model is secretly a reward model</title>
+		<author>
+			<persName><forename type="first">Rafael</forename><surname>Rafailov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Archit</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefano</forename><surname>Ermon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Is reinforcement learning (not) for natural language processing: Benchmarks, baselines, and building blocks for natural language policy optimization</title>
+		<author>
+			<persName><forename type="first">Rajkumar</forename><surname>Ramamurthy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prithviraj</forename><surname>Ammanabrolu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kianté</forename><surname>Brantley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Hessel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rafet</forename><surname>Sifa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Bauckhage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Winogrande: An adversarial winograd schema challenge at scale</title>
+		<author>
+			<persName><forename type="first">Keisuke</forename><surname>Sakaguchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Ronan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chandra</forename><surname>Bras</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Bhagavatula</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Proximal policy optimization algorithms</title>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Filip</forename><surname>Wolski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleg</forename><surname>Klimov</surname></persName>
+		</author>
+		<idno>CoRR, abs/1707.06347</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">The woman worked as a babysitter: On biases in language generation</title>
+		<author>
+			<persName><forename type="first">Emily</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Premkumar</forename><surname>Natarajan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nanyun</forename><surname>Peng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP/IJCNLP (1)</title>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="3405" to="3410" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Offline RL for natural language generation with implicit language Q learning</title>
+		<author>
+			<persName><forename type="first">Charlie</forename><surname>Snell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Kostrikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sherry</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Policy gradient methods for reinforcement learning with function approximation</title>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">S</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><forename type="middle">A</forename><surname>Mcallester</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Satinder</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yishay</forename><surname>Mansour</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NIPS</title>
+		<imprint>
+			<publisher>The MIT Press</publisher>
+			<date type="published" when="1999">1999</date>
+			<biblScope unit="page" from="1057" to="1063" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Edouard Grave, and Guillaume Lample. 2023a. Llama: Open and efficient foundation language models</title>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thibaut</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gautier</forename><surname>Izacard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Martinet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marie-Anne</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothée</forename><surname>Lacroix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baptiste</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Faisal</forename><surname>Azhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aurélien</forename><surname>Rodriguez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armand</forename><surname>Joulin</surname></persName>
+		</author>
+		<idno>CoRR, abs/2302.13971</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Albert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amjad</forename><surname>Almahairi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasmine</forename><surname>Babaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolay</forename><surname>Bashlykov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soumya</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prajjwal</forename><surname>Bhargava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shruti</forename><surname>Bhosale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Bikel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukas</forename><surname>Blecher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cristian</forename><surname>Canton-Ferrer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moya</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guillem</forename><surname>Cucurull</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Esiobu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jude</forename><surname>Fernandes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeremy</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenyin</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Fuller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cynthia</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vedanuj</forename><surname>Goswami</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Hartshorn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saghar</forename><surname>Hosseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hakan</forename><surname>Inan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcin</forename><surname>Kardas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Viktor</forename><surname>Kerkez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Madian</forename><surname>Khabsa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Isabel</forename><surname>Kloumann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Artem</forename><surname>Korenev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Punit</forename><surname>Singh Koura</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marie-Anne</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thibaut</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jenya</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diana</forename><surname>Liskovich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinghai</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuning</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Martinet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Todor</forename><surname>Mihaylov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pushkar</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Molybog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixin</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Poulton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeremy</forename><surname>Reizenstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rashi</forename><surname>Rungta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kalyan</forename><surname>Saladi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Schelten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruan</forename><surname>Silva</surname></persName>
+		</author>
+		<editor>Eric Michael Smith, Ranjan Subramanian, Xiaoqing Ellen Tan, Binh Tang, Ross Taylor, Adina Williams, Jian Xiang Kuan, Puxin Xu, Zheng Yan, Iliyan Zarov, Yuchen Zhang, Angela Fan, Melanie Kambadur, Sharan Narang</editor>
+		<imprint>
+			<publisher>Aurélien Rodriguez</publisher>
+			<pubPlace>Robert Stojnic, Sergey Edunov</pubPlace>
+		</imprint>
+	</monogr>
+	<note>and Thomas Scialom. 2023b. Llama 2: Open foundation and fine-tuned chat models. CoRR, abs/2307.09288</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Universal adversarial triggers for attacking and analyzing NLP</title>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Wallace</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shi</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikhil</forename><surname>Kandpal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matt</forename><surname>Gardner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sameer</forename><surname>Singh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP/IJCNLP (1)</title>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="2153" to="2162" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Exploring the limits of domain-adaptive training for detoxifying large-scale language models</title>
+		<author>
+			<persName><forename type="first">Boxin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Ping</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaowei</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mostofa</forename><surname>Patwary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Shoeybi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anima</forename><surname>Anandkumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan</forename><surname>Catanzaro</surname></persName>
+		</author>
+		<idno>CoRR, abs/2202.04173</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Learning new skills after deployment: Improving opendomain internet-driven dialogue with human feedback</title>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Megan</forename><surname>Ung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mojtaba</forename><surname>Komeili</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kushal</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y-Lan</forename><surname>Boureau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<idno>CoRR, abs/2208.03270</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">FUDGE: controlled text generation with future discriminators</title>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Klein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NAACL-HLT. Association for Computational Linguistics</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Hellaswag: Can a machine really finish your sentence?</title>
+		<author>
+			<persName><forename type="first">Rowan</forename><surname>Zellers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ari</forename><surname>Holtzman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Farhadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Tractable control for autoregressive language generation</title>
+		<author>
+			<persName><forename type="first">Honghua</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meihua</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nanyun</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guy</forename><surname>Van Den Broeck</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">202</biblScope>
+			<biblScope unit="page" from="40932" to="40945" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">OPT: open pre-trained transformer language models</title>
+		<author>
+			<persName><forename type="first">Susan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Roller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikel</forename><surname>Artetxe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moya</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuohui</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Dewan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mona</forename><forename type="middle">T</forename><surname>Diab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xian</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Victoria Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Todor</forename><surname>Mihaylov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Myle</forename><surname>Ott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Shleifer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kurt</forename><surname>Shuster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Simig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Punit</forename><surname>Singh Koura</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anjali</forename><surname>Sridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianlu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<idno>CoRR, abs/2205.01068</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Fine-tuning language models from human preferences</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Daniel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nisan</forename><surname>Ziegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Stiennon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><forename type="middle">B</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><forename type="middle">F</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Christiano</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Irving</surname></persName>
+		</author>
+		<idno>CoRR, abs/1909.08593</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

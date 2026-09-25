@@ -1,0 +1,1938 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Learning How to Use Tools, Not Just When: Pattern-Aware Tool-Integrated Reasoning</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-06-29">29 Jun 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Ningning</forename><surname>Xu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Georgia</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yuxuan</forename><surname>Jiang</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Maryland</orgName>
+								<address>
+									<country>Baltimore County</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Shubhashis</forename><forename type="middle">Roy</forename><surname>Dipta</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Maryland</orgName>
+								<address>
+									<country>Baltimore County</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hengyuan</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">The University of Hong Kong</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Learning How to Use Tools, Not Just When: Pattern-Aware Tool-Integrated Reasoning</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-06-29">29 Jun 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">79A98986148B1D7EB479AA8F28035C80</idno>
+					<idno type="arXiv">arXiv:2509.23292v4[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:13+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Tool-integrated reasoning (TIR) has become a key approach for improving large reasoning models (LRMs) on complex problems. Prior work has mainly studied when to invoke tools, while overlooking how tools are applied. We identify two common patterns: a calculator-pattern that uses code for direct computation, and an algorithmic-pattern that encodes problems as programs. Misaligned choices often cause failures even when reasoning is sound. We propose a two-stage framework that first builds code competence from both patterns and then aligns pattern selection with teacher preferences. Across challenging math datasets, our pattern-aware method substantially improves both code usage and accuracy-for instance, raising Code@1 on MATH500 from 64.0% to 70.5% and on AIME24 from 26.7% to 50.0%. These gains highlight the effectiveness of a pattern-aware approach for tool-integrated reasoning.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Tool-integrated reasoning (TIR) has become a powerful paradigm for enhancing large reasoning models (LRMs) <ref type="bibr" target="#b56">[57,</ref><ref type="bibr" target="#b7">8,</ref><ref type="bibr" target="#b76">77]</ref>. By interacting with external verifiers such as code interpreters, TIR enables models to produce executable reasoning steps, making answers more accurate, faithful, and verifiable <ref type="bibr" target="#b83">[84]</ref>. Recent progress has shown gains from better timing of tool invocation, multi-round tool calls, and tighter integration of external computation <ref type="bibr" target="#b18">[19,</ref><ref type="bibr" target="#b56">57]</ref>.</p><p>While effective, a critical question remains: can models reliably decide how to use tools once invoked? We provide an initial exploration of this problem. Models often misalign their tool-use strategies with problem demands, applying code in a mechanical and context-insensitive way that prevents the tool from working effectively. As Figure <ref type="figure" target="#fig_0">1</ref> illustrates, on the factorial problem 1000! ÷ (800! × 2!) the model used the calculator-pattern and failed due to overflow, while on the "first 10-digit prime in π" problem it used the algorithmic-pattern and stalled without output. In both cases, switching to the complementary pattern succeeds, indicating that the failures stem from pattern selection rather than a lack of reasoning ability.</p><p>To address this challenge, we propose a two-stage learning framework. In the first stage, code competence acquisition, the model learns to generate reliable code from both calculatorand algorithmic-pattern data, without teacher preferences, ensuring stable tool use.</p><p>In the second stage, pattern preference alignment, teacher signals guide the model to choose the Calculate Calculator: Use Python as a code Algorithmic: Use Python as a tool To Calculate the , I will use python factorial function from math library to calculate , and and then divide them to get the final result import math nu = math.factorial(1000) d1 = math.factorial(800) d2 = math.factorial(100) result = nu / (d1 * d2) print(result) Find the first 10-digit prime number in the decimal expansion of To calculate the first 10-digit prime number that appears in the decimal expansion of PI, I will use python to get the every 10 digit and then check if its prime or not. import mpmath mpmath.mp.dps = 11 pi_str = str(mpmath.mp.pi) [2:] print(pi_str) Okay so the first 10 digits are 1415926535, now I will use python to find out if its prime or not from sympy import isprime print(isprime(1415926535)) # False Okay so the first 10 digits are not prime, lets get the next 10 digits. import mpmath .... .... Okay so the first 1000 digi&lt;/EOS&gt; To calculate the first 10-digit prime number that appears in the decimal expansion of PI, I will use python to run a simulation which will check every 10 digits from the PI and see if its prime or not using library. import mpmath from sympy import isprime mpmath.mp.dps = 1000000 pi = mpmath.mp.pi pi_str = str(pi)[2:] def find_prime_in_pi(): ... find_prime_in_pi() # Found prime: 5926535897 Algorithmic: Use Python as a tool Calculator: Use Python as a code ✅ 2609335896245315522158.... ❌ OverflowError: integer division result too large for a float ✅ 5926535897 ❌ LimitError: Context Limit Reached The calculation of can be simplified by first expanding the factorial in the numerator. By canceling the term from the numerator and the denominator, the expression simplifies to: Given that , the final calculation is: Now, I will use python to calculate the product. result = 500 for i in range(801, 1000): result = result * i an algebraic approach succeeds while direct computation overflows. Right: in finding the first 10-digit prime in π, a symbolic approach fails from context limits while a scanning approach succeeds. These cases show that success depends on the chosen tool-use pattern.</p><p>more suitable pattern for each problem. Together, these stages equip LRMs to not only invoke tools effectively but also adapt their strategy of use.</p><p>Our experiments on challenging math benchmarks show substantial and consistent gains. The model's ability to produce executable code (@1) increases from 64.0% to 70.5% on MATH500, indicating that code competence acquisition markedly stabilizes tool use. At the same time, overall problem-solving accuracy rises from 26.7% to 50.0% on AIME24, demonstrating that pattern preference alignment further improves strategy selection and reduces failures due to mismatched tool use. Together, these results validate that modeling how tools are used-beyond merely invoking them-yields large improvements in both code reliability and end-task performance.</p><p>This work makes three contributions. (1) We identify and formalize pattern mismatch in TIR, showing that misaligned tool-use strategies can derail otherwise sound reasoning. <ref type="bibr" target="#b1">(2)</ref> We propose a two-stage framework that first builds code competence from both calculatorand algorithmic-pattern data (without teacher preferences) and then aligns pattern choice with teacher signals.</p><p>(3) We provide empirical evidence on MATH500 and AIME24 that this approach substantially improves code@1 (64.0% → 70.5%) and accuracy (26.7% → 50.0%), and we illustrate how switching patterns flips failure cases into successes (Fig. <ref type="figure" target="#fig_0">1</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related Works</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Reasoning with LRMs</head><p>Among various LLM abilities, foundational research in semantic matching <ref type="bibr" target="#b67">[68,</ref><ref type="bibr" target="#b65">66]</ref> and temporal QA <ref type="bibr" target="#b66">[67]</ref> has paved the way for complex understanding. While domain adaptation <ref type="bibr" target="#b25">[26]</ref> and test-time integration <ref type="bibr" target="#b24">[25]</ref> enhance robustness, reasoning ability achieved by post-training <ref type="bibr" target="#b23">[24,</ref><ref type="bibr" target="#b33">34,</ref><ref type="bibr" target="#b31">32]</ref> stands as a key frontier. Given that traditional SFT may suffer from incomplete learning <ref type="bibr" target="#b64">[65]</ref>, recent works introduce uncertainty-aware reward modeling <ref type="bibr" target="#b63">[64]</ref>, dense feedback from LM critics <ref type="bibr" target="#b2">[3]</ref>, and preference-driven code generation <ref type="bibr" target="#b38">[39]</ref> to refine alignment. Moreover, recent studies have advanced role-playing reasoning through humanactor emulation <ref type="bibr" target="#b4">[5]</ref> and improved continual learning via prototype-conditioned generative replay <ref type="bibr" target="#b5">[6]</ref>.</p><p>The scope of reasoning has expanded into multimodal domains, where models now "think with 3D" <ref type="bibr" target="#b11">[12]</ref> and utilize reinforced visual perception <ref type="bibr" target="#b12">[13,</ref><ref type="bibr" target="#b10">11]</ref>. Advanced frameworks like OmniVideo-R1 <ref type="bibr" target="#b13">[14]</ref> and DV-Matcher <ref type="bibr" target="#b9">[10]</ref> further integrate audio-visual and geometric cues. Such multimodal intelligence significantly boosts retrieval performance, including chat-driven search <ref type="bibr" target="#b60">[61,</ref><ref type="bibr" target="#b59">60]</ref> and vision-driven video representation <ref type="bibr" target="#b62">[63,</ref><ref type="bibr" target="#b61">62]</ref>. Furthermore, safeguarding techniques <ref type="bibr" target="#b75">[76,</ref><ref type="bibr" target="#b32">33]</ref> and hallucination mitigation <ref type="bibr" target="#b74">[75,</ref><ref type="bibr" target="#b27">28]</ref> ensure the reliability of these complex systems.</p><p>To support deployment, system efficiency and continual learning have become indispensable.</p><p>Inference is optimized via multi-tier KV cache management <ref type="bibr" target="#b15">[16]</ref>, selective sharing <ref type="bibr" target="#b16">[17]</ref>, and adaptive MoE scheduling <ref type="bibr" target="#b14">[15,</ref><ref type="bibr" target="#b52">53]</ref>. Moreover, lightweight techniques like parameter-efficient sampling <ref type="bibr" target="#b73">[74]</ref>, structured pruning <ref type="bibr" target="#b40">[41]</ref>, and distillation <ref type="bibr" target="#b37">[38]</ref> enable efficient task execution, from medical imaging <ref type="bibr" target="#b36">[37]</ref> to web agents <ref type="bibr" target="#b17">[18]</ref>. Finally, reversible alignment <ref type="bibr" target="#b57">[58]</ref> and unified LoRA generation <ref type="bibr" target="#b58">[59,</ref><ref type="bibr" target="#b8">9]</ref> allow models to learn continually, while comprehensive interaction surveys <ref type="bibr" target="#b39">[40]</ref> and robust federated learning <ref type="bibr" target="#b6">[7]</ref> continue to push the boundaries of scalable AI.</p><p>Among LLMs' various abilities <ref type="bibr" target="#b68">[69,</ref><ref type="bibr" target="#b82">83,</ref><ref type="bibr" target="#b44">45]</ref>, subsequent work has focused on improving the quality of these reasoning paths, either by introducing diversity through self-consistency <ref type="bibr" target="#b55">[56]</ref>, refining intermediate steps via process supervision <ref type="bibr" target="#b41">[42,</ref><ref type="bibr" target="#b30">31]</ref>, or encouraging verification of intermediate results <ref type="bibr" target="#b78">[79,</ref><ref type="bibr" target="#b53">54,</ref><ref type="bibr" target="#b81">82]</ref>.</p><p>Beyond core architecture, recent research emphasizes a data-centric perspective on the entire LLM lifecycle <ref type="bibr" target="#b46">[47]</ref>, where mathematical reasoning is further enhanced by adversarial data synthesis <ref type="bibr" target="#b77">[78]</ref> and iterative DPO with dynamic sampling <ref type="bibr" target="#b47">[48]</ref>. To improve model robustness and learning efficiency, advanced techniques such as difficulty-based sample weighting <ref type="bibr" target="#b84">[85]</ref>, implicit data augmentation <ref type="bibr" target="#b86">[87]</ref>, and adversarial training with anti-adversaries <ref type="bibr" target="#b85">[86]</ref> have been introduced.</p><p>In the context of embodied AI and spatio-temporal reasoning, unified token spaces for human-object interaction <ref type="bibr" target="#b72">[73]</ref> and object-centric decoupling for robotic manipulation <ref type="bibr" target="#b70">[71]</ref> have improved explainable decision-making. These abilities are further integrated into 3D scene understanding <ref type="bibr" target="#b71">[72]</ref> and autonomous driving through spatio-temporal Chain-of-Thought (CoT) <ref type="bibr" target="#b79">[80]</ref> and dual-memory vision-language navigation <ref type="bibr" target="#b80">[81]</ref>. Furthermore, the application of multi-scale graph learning and Transformers has shown significant potential in predicting complex real-world dynamics, including financial fraud detection <ref type="bibr" target="#b34">[35]</ref>, traffic flow prediction <ref type="bibr" target="#b51">[52]</ref>, disaster risk assessment <ref type="bibr" target="#b49">[50]</ref>, mental health <ref type="bibr" target="#b69">[70]</ref>, recommendations <ref type="bibr" target="#b54">[55]</ref> and socio-economic metrics such as labor market gradients <ref type="bibr" target="#b42">[43]</ref> and business resilience indices <ref type="bibr" target="#b50">[51]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Tool-Integrated Reasoning</head><p>Tool-integrated reasoning has emerged as a powerful paradigm for enhancing large reasoning models (LRMs) <ref type="bibr" target="#b56">[57,</ref><ref type="bibr" target="#b7">8]</ref>, enabling executable reasoning steps through external tools such as Python interpreters <ref type="bibr" target="#b83">[84,</ref><ref type="bibr" target="#b29">30]</ref>. Early work like PoT <ref type="bibr" target="#b3">[4]</ref>, PAL <ref type="bibr" target="#b19">[20]</ref>, and MathPrompter <ref type="bibr" target="#b26">[27]</ref> showed that converting reasoning into code execution or lightweight snippets can substantially improve math performance, while implementations such as ToRA <ref type="bibr" target="#b21">[22]</ref> and Qwen2.5-Math-Instruct-TIR <ref type="bibr" target="#b48">[49]</ref> further demonstrated gains from deeper integration. However, prior studies primarily focus on when to call tools, overlooking how tools are applied once invoked. We address this gap by modeling pattern selection in TIR, introducing a pattern-aware framework that aligns tool-use strategies and yields significant improvements in reasoning accuracy.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Method</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Algorithmic-pattern</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Algorithmic Solution</head><p>Calculator Solution</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Problem Problem</head><p>Code Competence Acquisition Problem 2: A Problem 2: C ….</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>N Data</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Student</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>2N Data</head><p>Problem 1: A Problem 1: C</p><p>We train a pattern-aware reasoning model in two stages. For stage 1, we builds code competence by supervising the model on both calculator-style and algorithmic-style solu-tions. Stage 2 performs pattern preference alignment, using Direct preference optimization (DPO) to learn the pattern preference.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Training set construction</head><p>We distinguish two usage patterns in toolintegrated reasoning: the calculator-pattern, where code is used only for direct computation or verification, and the algorithmicpattern, where problems are expressed as full programs. For each problem, we generate a Chosen Solution with the more suitable pattern and a Counter Solution with the alternative one. This dual construction not only equips the model with competence in both styles of code usage, but also provides the supervision necessary to align its pattern selection with teacher preferences, thereby improving robustness and accuracy in downstream reasoning tasks. And We put the complete version is provided in Section A.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Code Competence Acquisition</head><p>For each problem x, we construct two solutions:</p><p>• an algorithmic-style solution y alg that converts the problem to an execuable program;</p><p>• a calculator-style solution y calc that keeps the reasoing path while using python for arithmetic or verification.</p><p>We write both solutions with the same ouput shcema (reasoning → python block → ouputs → final answer), which can simplifies parsing and execution. Let D SF T = {(x i , y alg i ), (x i , y calc i )} be the set of both patterns, we minimize the negative log-likelihood over response tokens:</p><formula xml:id="formula_0">L SFT = -E (x,y)∼D SFT |y| t=1 log π θ (y t | x, y &lt;t ),</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Pattern Preference Alignment</head><p>We use DPO <ref type="bibr" target="#b45">[46]</ref> to empower our model with the ability to pick the correct pattern to solve math problems. For each problem x, we collect two candidate completions y alg , y calc and label a winner y + and loser y -using the teacher model. For a pair (x, y + , y -), we then apply direction preference optimization with a frozen reference policy π ref (our SFT model):</p><formula xml:id="formula_1">L DPO = -log σ β log π θ (y + | x) -log π θ (y -| x) -log π ref (y + | x) -log π ref (y -| x) ,</formula><p>where β scales preference strength and σ is the logistic function. This increases the likelihood of preferred (pattern-appropriate) solutions relative to dispreferred ones, without training a separate reward model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Dataset</head><p>We use google Gemini-2.5-flash-lite as our teacher model, using our designed two pattern prompt to solve the problems in OpenR1-Math-220k <ref type="bibr" target="#b43">[44]</ref> dataset. From this corpus, we select the first 10,000 problems and divide them into training and validation sets using a 9:1 ratio. To assess complex mathematical reasoning and generalization, we evaluate on a broad set of out-of-domain benchmarks, including MATH500 <ref type="bibr" target="#b22">[23]</ref>, AIME24 <ref type="bibr" target="#b0">[1]</ref>, and AMC23 <ref type="bibr" target="#b1">[2]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Evaluation Metrics</head><p>We report Pass@1 as the primary accuracy metric. For additional insight into reasoning behavior, we also track (i) the proportion of problems where the model's output contains executable code (Code@1), and (ii) the proportion of problems where such code is both present and leads to the correct final answer (Code+Pass@1). According to Table <ref type="table" target="#tab_0">1</ref>, the base model achieves near-zero code usage and accuracy. With SFT, the model begins to leverage Python extensively (e.g., R1Math Code@1 rises to 66%), and correctness follows accordingly. Adding DPO yields further substantial improvements, notably pushing GSM8K Code@1 from 72.0% to 80.1% and AIME24 from 26.7% to 50.0%, while also boosting correctness (e.g., AIME24 Code+Pass@1 from 6.6% to 26.7%). These results highlight that SFT is crucial for enabling tool use, whereas DPO markedly enhances both adoption and accuracy.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Main Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Method</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>In this work, we studied two complementary tool-use patterns-algorithmic code generation and calculator-style usage-and showed that many failures arise from mismatched pattern choices rather than reasoning ability. Experiments on GSM8K, MATH500, and AIME24 demonstrate that our pattern-aware approach improves strategy selection and accuracy, offering an effective and lightweight way to enhance tool-integrated reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Complete Prompt</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Double Pattern Prompt</head><p>Use a python interpreter as a tool to solve the following math problem. There are two possible usage patterns:</p><p>• Pattern A: Treat the problem as a coding problem, write a complete solution using Python code.</p><p>• Pattern B: Treat the Python interpreter as a simple calculator, only using it for arithmetic or verification when needed. Your task:</p><p>1. Decide which pattern (A or B) is more appropriate for this problem. Call this the Chosen Solution. 2. Provide the Chosen Solution with EXACTLY ONE continuous reasoning paragraph (no lists, no numbering, no bullet points). Then give ONE Python code block, then the code outputs, then the final answer. 3. Provide the Counterfactual Solution using the other pattern with the SAME constraints (one continuous reasoning paragraph, one code block, outputs, final answer). 4. Strict constraints: -Do NOT restate the problem text. -Do NOT include introductions, apologies, or meta comments. -Do NOT duplicate any content across fields. Output format (pure JSON, no backticks, no extra keys):</p><p>{ " problem ": " &lt; the math problem here &gt;" , " chosen_pattern ": " A or B " , " chosen_solution ": { " reasoning ": " &lt; one continuous paragraph &gt;" , " code_blocks ": [" &lt; one python block only &gt;"] , " outputs ": [" &lt; stdout lines &gt;"] , " final_answer ": "..." } , " counter_solution ": { " reasoning ": " &lt; one continuous paragraph &gt;" , " code_blocks ": [" &lt; one python block only &gt;"] , " outputs ": [" &lt; stdout lines &gt;"] , " final_answer ": "..." } }</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Additional Related Works on LLMS Reasoning Capacity</head><p>Among various LLM abilities, foundational research in semantic matching <ref type="bibr" target="#b67">[68,</ref><ref type="bibr" target="#b65">66]</ref> and temporal QA <ref type="bibr" target="#b66">[67]</ref> has paved the way for complex understanding. While domain adaptation <ref type="bibr" target="#b25">[26]</ref> and test-time integration <ref type="bibr" target="#b24">[25]</ref> enhance robustness, reasoning ability achieved by post-training <ref type="bibr" target="#b23">[24,</ref><ref type="bibr" target="#b33">34]</ref> stands as a key frontier. Given that traditional SFT may suffer from incomplete learning <ref type="bibr" target="#b64">[65]</ref>, recent works introduce uncertainty-aware reward modeling <ref type="bibr" target="#b63">[64]</ref>, dense feedback from LM critics <ref type="bibr" target="#b2">[3]</ref>, and preference-driven code generation <ref type="bibr" target="#b38">[39]</ref> to refine alignment. Moreover, recent studies have advanced role-playing reasoning through humanactor emulation <ref type="bibr" target="#b4">[5]</ref> and improved continual learning via prototype-conditioned generative replay <ref type="bibr" target="#b5">[6]</ref>.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure1: Pattern mismatch in tool-integrated reasoning. Left: in 1000! ÷ (800! × 2!), an algebraic approach succeeds while direct computation overflows. Right: in finding the first 10-digit prime in π, a symbolic approach fails from context limits while a scanning approach succeeds. These cases show that success depends on the chosen tool-use pattern.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Pass@1 and Code+Pass@1 accuracy on R1-Distill-Qwen models across R1Math, GSM8K, MATH500, and AIME24.</figDesc><table><row><cell></cell><cell></cell><cell>R1Math</cell><cell cols="2">GSM8K (OOD)</cell><cell cols="2">MATH500 (OOD)</cell><cell cols="2">AIME24 (OOD)</cell></row><row><cell></cell><cell cols="8">Code@1 Code+Pass@1 Code@1 Code+Pass@1 Code@1 Code+Pass@1 Code@1 Code+Pass@1</cell></row><row><cell cols="2">R1-Distill-Qwen-1.5B</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Base</cell><cell>3.0%</cell><cell>2.0%</cell><cell>4.2%</cell><cell>4.2%</cell><cell>8.0%</cell><cell>6.0%</cell><cell>0.0%</cell><cell>0.0%</cell></row><row><cell>+SFT</cell><cell>66.0%</cell><cell>55.5%</cell><cell>72.0%</cell><cell>70.4%</cell><cell>64.0%</cell><cell>58.2%</cell><cell>26.7%</cell><cell>6.6%</cell></row><row><cell>+SFT+DPO</cell><cell>72.2%</cell><cell>70.3%</cell><cell>80.1%</cell><cell>77.4%</cell><cell>70.5%</cell><cell>63.2%</cell><cell>50.0%</cell><cell>26.7%</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>The scope of reasoning has expanded into multimodal domains, where models now "think with 3D" <ref type="bibr" target="#b11">[12]</ref> and utilize reinforced visual perception <ref type="bibr" target="#b12">[13,</ref><ref type="bibr" target="#b10">11]</ref>. Advanced frameworks like OmniVideo-R1 <ref type="bibr" target="#b13">[14]</ref> and DV-Matcher <ref type="bibr" target="#b9">[10]</ref> further integrate audio-visual and geometric cues. Such multimodal intelligence significantly boosts retrieval performance, including chat-driven search <ref type="bibr" target="#b60">[61,</ref><ref type="bibr" target="#b59">60]</ref> and vision-driven video representation <ref type="bibr" target="#b62">[63,</ref><ref type="bibr" target="#b61">62]</ref>. Furthermore, safeguarding techniques <ref type="bibr" target="#b75">[76,</ref><ref type="bibr" target="#b32">33]</ref> and hallucination mitigation <ref type="bibr" target="#b74">[75,</ref><ref type="bibr" target="#b27">28]</ref> ensure the reliability of these complex systems.</p><p>To support deployment, system efficiency and continual learning have become indispensable. Inference is optimized via multi-tier KV cache management <ref type="bibr" target="#b15">[16]</ref>, selective sharing <ref type="bibr" target="#b16">[17]</ref>, and adaptive MoE scheduling <ref type="bibr" target="#b14">[15,</ref><ref type="bibr" target="#b52">53]</ref>. Moreover, lightweight techniques like parameter-efficient sampling <ref type="bibr" target="#b73">[74]</ref>, structured pruning <ref type="bibr" target="#b40">[41]</ref>, and distillation <ref type="bibr" target="#b37">[38]</ref> enable efficient task execution, from medical imaging <ref type="bibr" target="#b36">[37]</ref> to web agents <ref type="bibr" target="#b17">[18]</ref>. Finally, reversible alignment <ref type="bibr" target="#b57">[58]</ref> and unified LoRA generation <ref type="bibr" target="#b58">[59,</ref><ref type="bibr" target="#b8">9]</ref> allow models to learn continually, while comprehensive interaction surveys <ref type="bibr" target="#b39">[40]</ref> and robust federated learning <ref type="bibr" target="#b6">[7]</ref> continue to push the boundaries of scalable AI.</p><p>Beyond core architecture, recent research emphasizes a data-centric perspective on the entire LLM lifecycle <ref type="bibr" target="#b46">[47]</ref>, where mathematical reasoning is further enhanced by adversarial data synthesis <ref type="bibr" target="#b77">[78]</ref> and iterative DPO with dynamic sampling <ref type="bibr" target="#b47">[48]</ref>. To improve model robustness and learning efficiency, advanced techniques such as difficulty-based sample weighting <ref type="bibr" target="#b84">[85]</ref>, implicit data augmentation <ref type="bibr" target="#b86">[87]</ref>, and adversarial training with anti-adversaries <ref type="bibr" target="#b85">[86]</ref> have been introduced.</p><p>In the context of embodied AI and spatio-temporal reasoning, unified token spaces for human-object interaction <ref type="bibr" target="#b72">[73]</ref> and object-centric decoupling for robotic manipulation <ref type="bibr" target="#b70">[71]</ref> have improved explainable decision-making. These abilities are further integrated into 3D scene understanding <ref type="bibr" target="#b71">[72]</ref> and autonomous driving through spatio-temporal Chain-of-Thought (CoT) <ref type="bibr" target="#b79">[80]</ref> and dual-memory vision-language navigation <ref type="bibr" target="#b80">[81]</ref>. Furthermore, the application of multi-scale graph learning and Transformers has shown significant potential in predicting complex real-world dynamics, including financial fraud detection <ref type="bibr" target="#b34">[35]</ref>, traffic flow prediction <ref type="bibr" target="#b51">[52]</ref>, disaster risk assessment <ref type="bibr" target="#b49">[50]</ref>, mental health <ref type="bibr" target="#b69">[70]</ref>, recommendations <ref type="bibr" target="#b54">[55]</ref> and socio-economic metrics such as labor market gradients <ref type="bibr" target="#b42">[43]</ref> and business resilience indices <ref type="bibr" target="#b50">[51]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Evaluate Pattern Chosen</head><p>To further examine the reliability of Gemini's pattern selection, we asked GPT-5 to independently select patterns without prior exposure to Gemini's choices. Across 100 test cases, GPT-5's selections were consistent with Gemini's in 98 instances, corresponding to a 98% agreement rate. This high level of concordance provides strong empirical support for the robustness of our approach. This follows LLM as a Judge <ref type="bibr" target="#b35">[36,</ref><ref type="bibr" target="#b20">21,</ref><ref type="bibr" target="#b28">29]</ref> method.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ai-Mo</forename><surname>Team</surname></persName>
+		</author>
+		<ptr target="https://huggingface.co/datasets/AI-MO/aimo-validation-aime" />
+		<title level="m">AIMO Validation Set -AIME Subset</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ai-Mo</forename><surname>Team</surname></persName>
+		</author>
+		<ptr target="https://huggingface.co/datasets/AI-MO/aimo-validation-amc" />
+		<title level="m">AIMO Validation Set -AMC Subset</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Enhancing reinforcement learning with dense rewards from language model critic</title>
+		<author>
+			<persName><forename type="first">Meng</forename><surname>Cao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Program of thoughts prompting: Disentangling computation from reasoning for numerical reasoning tasks</title>
+		<author>
+			<persName><forename type="first">Wenhu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueguang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">W</forename><surname>Cohen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.12588</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yike</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Actormind</surname></persName>
+		</author>
+		<title level="m">Emulating human actor reasoning for speech role-playing</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Prototype conditioned generative replay for continual learning in NLP</title>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Zeng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies</title>
+		<editor>
+			<persName><forename type="first">Luis</forename><surname>Chiruzzo</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Alan</forename><surname>Ritter</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+		</editor>
+		<meeting>the 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies<address><addrLine>Albuquerque, New Mexico</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2025-04">April 2025</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="12754" to="12770" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Confusion-resistant federated learning via diffusion-based data harmonization on non-iid data</title>
+		<author>
+			<persName><forename type="first">Xiaohong</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">R1-code-interpreter: Training llms to reason with code via supervised and reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Yongchao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yueying</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junwei</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingquan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuchu</forename><surname>Fan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.21668</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">A three-phases-lora finetuned hybrid llm integrated with strong prior module in the education context. In ICANN</title>
+		<author>
+			<persName><forename type="first">Zhangquan</forename><surname>Chen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Dv-matcher: Deformation-based non-rigid point cloud matching guided by pre-trained visual features</title>
+		<author>
+			<persName><forename type="first">Zhangquan</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhangquan</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2508.06259</idno>
+		<title level="m">Spatially-aware image focus for visual reasoning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Think with 3d: Geometric imagination grounded spatial reasoning from limited views</title>
+		<author>
+			<persName><forename type="first">Zhangquan</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2510.18632</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Visrl: Intention-driven visual perception via reinforced reasoning</title>
+		<author>
+			<persName><forename type="first">Zhangquan</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.07523</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Omnivideo-r1: Reinforcing audio-visual reasoning with query intention and modality attention</title>
+		<author>
+			<persName><forename type="first">Zhangquan</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2602.05847</idno>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Dynamic expert quantization for scalable mixture-of-experts inference</title>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Chu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2511.15015</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Mcam: Efficient llm inference with multi-tier kv cache management</title>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Chu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICDCS</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Selective kv-cache sharing to mitigate timing side-channels in llm inference</title>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Chu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2508.08438</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Dynaweb: Model-based reinforcement learning of web agents</title>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Ding</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2601.22149</idno>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">Guanting</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoxi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiajie</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongjin</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hangyu</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guorui</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhicheng</forename><surname>Dou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji-Rong</forename><surname>Wen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.16410</idno>
+		<title level="m">Tool-star: Empowering llm-brained multi-tool reasoner via reinforcement learning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Pal: Program-aided language models</title>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamie</forename><surname>Callan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="10764" to="10799" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Human-like summarization evaluation with chatgpt</title>
+		<author>
+			<persName><forename type="first">Mingqi</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Ruan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Renliang</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xunjian</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiping</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojun</forename><surname>Wan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.02554</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Tora: A tool-integrated reasoning agent for mathematical problem solving</title>
+		<author>
+			<persName><forename type="first">Zhibin</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yeyun</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yelong</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujiu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minlie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.17452</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Measuring mathematical problem solving with the math dataset</title>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurav</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akul</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2103.03874</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Semantic-space exploration and exploitation in rlvr for llm reasoning</title>
+		<author>
+			<persName><forename type="first">Fanding</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanbo</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qinting</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Faisal</forename><surname>Nadeem Khan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2509.23808</idno>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Cosmic: Clique-oriented semantic multi-space integration for robust clip test-time adaptation</title>
+		<author>
+			<persName><forename type="first">Fanding</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qinting</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hebei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Faisal</forename><surname>Nadeem Khan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="9772" to="9781" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Dtbs: Dual-teacher bi-directional self-training for domain adaptation in nighttime semantic segmentation</title>
+		<author>
+			<persName><forename type="first">Fanding</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihao</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhui</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECAI</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="1084" to="1091" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shima</forename><surname>Imani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harsh</forename><surname>Shrivastava</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mathprompter</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.05398</idno>
+		<title level="m">Mathematical reasoning using large language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Calibrating verbal uncertainty as a linear feature to reduce hallucinations</title>
+		<author>
+			<persName><forename type="first">Ji</forename><surname>Ziwei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Memorization over reasoning? exposing and mitigating verbatim memorization in large language models&apos; character understanding evaluation</title>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francis</forename><surname>Ferraro</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.14368</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Scribe: Structured mid-level supervision for tool-using language models</title>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francis</forename><surname>Ferraro</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2601.03555</idno>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Drp: Distilled reasoning pruning with skill-aware step decomposition for efficient large reasoning models</title>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><surname>Ferraro</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.13975</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Cornerstones or stumbling blocks? deciphering the rock tokens in on-policy distillation</title>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runchao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shubhashis</forename><surname>Roy Dipta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhao</forename><surname>Yang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Contextual integrity in llms via reasoning and reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Guangchen</forename><surname>Lan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Mappo: Maximum a posteriori preference optimization with prior knowledge</title>
+		<author>
+			<persName><forename type="first">Guangchen</forename><surname>Lan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.21183</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">A multi-scale graph learning framework for financial fraud detection</title>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Lei</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">From generation to judgment: Opportunities and challenges of llm-as-a-judge</title>
+		<author>
+			<persName><forename type="first">Dawei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bohan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liangjie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alimohammad</forename><surname>Beigi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengshuai</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amrita</forename><surname>Bhattacharjee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Canyu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhao</forename><surname>Wu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2411.16594" />
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Efficient medical image segmentation via reinforcement learning-driven k-space sampling</title>
+		<author>
+			<persName><forename type="first">Yuqi</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE TETCI</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Frequency-aligned knowledge distillation for lightweight spatiotemporal forecasting</title>
+		<author>
+			<persName><forename type="first">Yuqi</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICCV</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">A preference-driven methodology for efficient code generation</title>
+		<author>
+			<persName><forename type="first">Yuqi</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Artificial Intelligence</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">A comprehensive survey of interaction techniques in 3d scene generation</title>
+		<author>
+			<persName><forename type="first">Yuqi</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Authorea</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Sepprune: Structured pruning for efficient deep speech separation</title>
+		<author>
+			<persName><forename type="first">Yuqi</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Let&apos;s verify step by step</title>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Hunter Lightman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harrison</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teddy</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cobbe</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">The health-wealth gradient in labor markets</title>
+		<author>
+			<persName><forename type="first">Dingyuan</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Computation</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Openr1-math-220k</title>
+		<ptr target="https://huggingface.co/datasets/open-r1/OpenR1-Math-220k" />
+	</analytic>
+	<monogr>
+		<title level="m">OpenR1 Team</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2025" to="2029" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Detecting abnormal user feedback patterns through temporal sentiment aggregation</title>
+		<author>
+			<persName><forename type="first">Yalun</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sichen</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiming</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianling</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Yu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Direct preference optimization: Your language model is secretly a reward model</title>
+		<author>
+			<persName><forename type="first">Rafael</forename><surname>Rafailov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Archit</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefano</forename><surname>Ermon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="53728" to="53741" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<title level="m" type="main">A data-centric perspective on the lifecycle of large language models</title>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Rao</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">TechRxiv</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">Dynamic sampling that adapts: Iterative dpo for self-aware mathematical reasoning</title>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Rao</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.03300</idno>
+		<title level="m">Pushing the limits of mathematical reasoning in open language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Ai-enhanced disaster risk prediction with explainable shap analysis</title>
+		<author>
+			<persName><forename type="first">Qiannan</forename><surname>Shen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Research Square</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Business resilience index (bri): Evaluating economic recovery</title>
+		<author>
+			<persName><forename type="first">Qiannan</forename><surname>Shen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Sustainability</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<analytic>
+		<title level="a" type="main">Mftformer: Meteorological-frequency-temporal transformer for traffic flow prediction</title>
+		<author>
+			<persName><forename type="first">Qiannan</forename><surname>Shen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Research Square</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<title level="m" type="main">Expertflow: Adaptive expert scheduling and memory coordination for efficient moe inference</title>
+		<author>
+			<persName><forename type="first">Zixu</forename><surname>Shen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2510.26730</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<title level="m" type="main">Solving math word problems with process-and outcome-based feedback</title>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Uesato</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nate</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ramana</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francis</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Siegel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lisa</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonia</forename><surname>Creswell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Irving</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Irina</forename><surname>Higgins</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.14275</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Improving sequential recommendations with tokenlevel llm representatio</title>
+		<author>
+			<persName><forename type="first">Dingzhou</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luyao</forename><surname>Men</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiajun</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinuo</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yefeng</forename><surname>Liang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2025 4th International Conference on Cloud Computing, Big Data Application and Software Engineering (CBASE)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="509" to="514" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<title level="m" type="main">Self-consistency improves chain of thought reasoning in language models</title>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.11171</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyan</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Weng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tengfei</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Angsheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Du</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.21836</idno>
+		<title level="m">Autotir: Autonomous tools integrated reasoning via reinforcement learning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<analytic>
+		<title level="a" type="main">Reversible primitive-composition alignment for continual vision-language learning</title>
+		<author>
+			<persName><forename type="first">Canran</forename><surname>Xiao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<analytic>
+		<title level="a" type="main">Meta-ucf: Unified task-conditioned lora generation for continual learning in large language models</title>
+		<author>
+			<persName><forename type="first">Shilin</forename><surname>Xiao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<monogr>
+		<title level="m" type="main">Conquer: Context-aware representation with query enhancement for text-based person search</title>
+		<author>
+			<persName><forename type="first">Zequn</forename><surname>Xie</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2601.18625</idno>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<analytic>
+		<title level="a" type="main">Chat-driven text generation and interaction for person retrieval</title>
+		<author>
+			<persName><forename type="first">Zequn</forename><surname>Xie</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<monogr>
+		<title level="m" type="main">Delving deeper: Hierarchical visual perception for robust video-text retrieval</title>
+		<author>
+			<persName><forename type="first">Zequn</forename><surname>Xie</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2601.12768</idno>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<monogr>
+		<title level="m" type="main">Hvd: Human vision-driven video representation learning for text-video retrieval</title>
+		<author>
+			<persName><forename type="first">Zequn</forename><surname>Xie</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2601.16155</idno>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<monogr>
+		<title level="m" type="main">Reason only when needed: Efficient generative reward modeling via modelinternal uncertainty</title>
+		<author>
+			<persName><surname>Chao Xue</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<monogr>
+		<title level="m" type="main">Why supervised fine-tuning fails to learn: A systematic study of incomplete learning in large language models</title>
+		<author>
+			<persName><surname>Chao Xue</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<analytic>
+		<title level="a" type="main">Structcoh: Structured contrastive learning for context-aware text semantic matching</title>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyuan</forename><surname>Gao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">PRICAI</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="300" to="315" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b66">
+	<analytic>
+		<title level="a" type="main">Question calibration and multi-hop modeling for temporal question answering</title>
+		<author>
+			<persName><forename type="first">Di</forename><surname>Chao Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page" from="19332" to="19340" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b67">
+	<analytic>
+		<title level="a" type="main">Dual path modeling for semantic matching by perceiving subtle conflicts</title>
+		<author>
+			<persName><forename type="first">Di</forename><surname>Chao Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sirui</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICASSP</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="1" to="5" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b68">
+	<monogr>
+		<title level="m" type="main">Resilient routing: Riskaware dynamic routing in smart logistics via spatiotemporal graph learning</title>
+		<author>
+			<persName><forename type="first">Zhiming</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sichen</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yalun</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianling</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Yu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b69">
+	<analytic>
+		<title level="a" type="main">Yiming Taclis Luo, Tianyue Niu, Patrick Pang, Ao Xiang, and Qin Yang. Exploring the application boundaries of llms in mental health: A systematic scoping review</title>
+		<author>
+			<persName><forename type="first">Jinhua</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ting</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Frontiers in Psychology</title>
+		<imprint>
+			<biblScope unit="volume">16</biblScope>
+			<biblScope unit="page">1715306</biblScope>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b70">
+	<analytic>
+		<title level="a" type="main">Instrucrobo: Object-centric multi-instruction decoupling model for explainable robotic manipulation</title>
+		<author>
+			<persName><forename type="first">Panqi</forename><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Engineering Applications of Artificial Intelligence</title>
+		<imprint>
+			<biblScope unit="volume">171</biblScope>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b71">
+	<analytic>
+		<title level="a" type="main">Unibvr: Balancing visual and reasoning abilities in unified 3d scene understanding</title>
+		<author>
+			<persName><forename type="first">Panqi</forename><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Neurocomputing</title>
+		<imprint>
+			<biblScope unit="volume">671</biblScope>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b72">
+	<analytic>
+		<title level="a" type="main">Unihoi: Unified human-object interaction understanding via unified token space</title>
+		<author>
+			<persName><forename type="first">Panqi</forename><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b73">
+	<analytic>
+		<title level="a" type="main">Swift sampler: Efficient learning of sampler by 10 parameters</title>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Yao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b74">
+	<analytic>
+		<title level="a" type="main">Mechanistic understanding and mitigation of language model non-factual hallucinations</title>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Yu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b75">
+	<monogr>
+		<title level="m" type="main">Robust llm safeguarding via refusal feature adversarial training</title>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.20089</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b76">
+	<monogr>
+		<title level="m" type="main">Chain-of-reasoning: Towards unified mathematical reasoning in large language models via a multi-paradigm perspective</title>
+		<author>
+			<persName><forename type="first">Yiyao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongdong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hengyuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingxing</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mahmoud</forename><surname>Khademi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hany</forename><surname>Awadalla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.11110</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b77">
+	<monogr>
+		<title level="m" type="main">Mathagent: Adversarial evolution of constraint graphs for mathematical reasoning data synthesis</title>
+		<author>
+			<persName><forename type="first">Zixiong</forename><surname>Yu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b78">
+	<analytic>
+		<title level="a" type="main">Star: Bootstrapping reasoning with reasoning</title>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Zelikman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhuai</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Goodman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="15476" to="15488" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b79">
+	<monogr>
+		<title level="m" type="main">Futuresightdrive: Thinking visually with spatio-temporal cot for autonomous driving</title>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Zeng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.17685</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b80">
+	<monogr>
+		<title level="m" type="main">Janusvln: Decoupling semantics and spatiality with dual implicit memory for vision-language navigation</title>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Zeng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2509.22548</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b81">
+	<monogr>
+		<title level="m" type="main">Find your optimal teacher: Personalized data synthesis via router-guided multi-teacher distillation</title>
+		<author>
+			<persName><forename type="first">Hengyuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiping</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenming</forename><surname>Shang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaofan</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hayden</forename><surname>Kwok-Hay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruobing</forename><surname>So</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Angel</forename><forename type="middle">X</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2510.10925</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b82">
+	<monogr>
+		<title level="m" type="main">Non-intrusive graph-based bot detection for e-commerce using inductive graph neural networks</title>
+		<author>
+			<persName><forename type="first">Sichen</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiming</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yalun</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianling</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Yu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b83">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayuan</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangkun</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojie</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lyumanshan</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengrui</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Deepresearcher</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.03160</idno>
+		<title level="m">Scaling deep research via reinforcement learning in real-world environments</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b84">
+	<analytic>
+		<title level="a" type="main">Understanding difficulty-based sample weighting</title>
+		<author>
+			<persName><forename type="first">Xiaoling</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECML PKDD</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b85">
+	<analytic>
+		<title level="a" type="main">Adversarial training with anti-adversaries</title>
+		<author>
+			<persName><forename type="first">Xiaoling</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE TPAMI</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b86">
+	<monogr>
+		<title level="m" type="main">Boosting model resilience via implicit adversarial data augmentation</title>
+		<author>
+			<persName><forename type="first">Xiaoling</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.16307</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

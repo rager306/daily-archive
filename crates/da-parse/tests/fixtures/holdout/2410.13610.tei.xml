@@ -1,0 +1,1637 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">MeNTi: Bridging Medical Calculator and LLM Agent with Nested Tool Calling</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-05-23">23 May 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Yakun</forename><surname>Zhu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Shaohang</forename><surname>Wei</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Peking University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xu</forename><surname>Wang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Kui</forename><surname>Xue</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="laboratory">Shanghai Artificial Intelligence Laboratory</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Shaoting</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="laboratory">Shanghai Artificial Intelligence Laboratory</orgName>
+							</affiliation>
+							<affiliation key="aff3">
+								<orgName type="department">SenseTime Research</orgName>
+							</affiliation>
+						</author>
+						<author role="corresp">
+							<persName><forename type="first">Xiaofan</forename><surname>Zhang</surname></persName>
+							<email>xiaofan.zhang@sjtu.edu.cn</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Shanghai Jiao Tong University</orgName>
+							</affiliation>
+							<affiliation key="aff2">
+								<orgName type="laboratory">Shanghai Artificial Intelligence Laboratory</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">MeNTi: Bridging Medical Calculator and LLM Agent with Nested Tool Calling</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-05-23">23 May 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">D058964F1967F19FBDF5D0C10465985E</idno>
+					<idno type="arXiv">arXiv:2410.13610v3[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:48+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Integrating tools into Large Language Models (LLMs) has facilitated the widespread application. Despite this, in specialized downstream task contexts, reliance solely on tools is insufficient to fully address the complexities of the real world. This particularly restricts the effective deployment of LLMs in fields such as medicine. In this paper, we focus on the downstream tasks of medical calculators, which use standardized tests to assess an individual's health status. We introduce MeNTi, a universal agent architecture for LLMs. MeNTi integrates a specialized medical toolkit and employs meta-tool and nested calling mechanisms to enhance LLM tool utilization. Specifically, it achieves flexible tool selection and nested tool calling to address practical issues faced in intricate medical scenarios, including calculator selection, slot filling, and unit conversion. To assess the capabilities of LLMs for quantitative assessment throughout the clinical process of calculator scenarios, we introduce CalcQA. This benchmark requires LLMs to use medical calculators to perform calculations and assess patient health status. CalcQA is constructed by professional physicians and includes 100 casecalculator pairs, complemented by a toolkit of 281 medical tools. The experimental results demonstrate significant performance improvements with our framework. This research paves new directions for applying LLMs in demanding scenarios of medicine 1 .</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Large Language Models (LLMs) have achieved milestone successes, demonstrating exceptional multi-tasking potential that includes reasoning, planning, tool usage, and code generation <ref type="bibr" target="#b33">(Touvron et al., 2023;</ref><ref type="bibr">Chen et al.;</ref><ref type="bibr">Achiam et al., 2023;</ref><ref type="bibr" target="#b21">Ouyang et al., 2022)</ref>. Recent studies indicate that by deeply integrating LLMs with large-scale toolsets, their task-solving efficiency can be significantly enhanced, further expanding the functional boundaries of the LLMs <ref type="bibr" target="#b29">(Song et al., 2023;</ref><ref type="bibr" target="#b23">Qin et al., 2023;</ref><ref type="bibr">Gao et al., 2023b;</ref><ref type="bibr" target="#b16">Hao et al., 2024)</ref>. Additionally, developing customized tools tailored to specific application scenarios has become a key approach to optimize performance and enhance adaptability, showing remarkable results in numerous downstream tasks <ref type="bibr">(Qian et al., 2023;</ref><ref type="bibr" target="#b1">Cai et al., 2023;</ref><ref type="bibr" target="#b38">Yuan et al., 2023)</ref>.</p><p>In this paper, we focus on the issue of medical calculators, a typical and representative downstream task for LLMs tool application. Medical calculators are standardized tools used to quantitatively assess individual health status, functional levels, disease severity, and treatment outcomes. They are extensively applied in clinical diagnostics, therapeutic monitoring, and research fields, aiding medical professionals in precisely evaluating and guiding personalized medical decisions <ref type="bibr">(Dziadzko et al., 2016a;</ref><ref type="bibr" target="#b15">Green et al., 2019;</ref><ref type="bibr">Dziadzko et al., 2016b)</ref>. Instances of calculator applications in medical scenarios are shown in Figure <ref type="figure" target="#fig_0">1</ref>. Calculators can help physicians quantify a patient's condition, providing a basis for formulating the next steps in the treatment plan.</p><p>However, given the complexity of medical calculators in practical applications, the current methods of tool application are insufficient. Specifically, selecting the appropriate tool is challenging. Firstly, there are currently over 700 calculators in use<ref type="foot" target="#foot_1">foot_1</ref> , and this vast number makes it difficult to choose the appropriate one. Secondly, each calculator is developed for different conditions, and the medical knowledge associated with these conditions, as well as the specific rules embedded within each calculator, make it hard to master them. Lastly, the continuous publication of new calculators every year adds ongoing pressure to keep tools up-to-date. Consequently, we introduce the meta-tool mechanism, aimed at promoting flexible tool selection in vast toolkit. The meta-tool standardizes the timing of tool usage in medical calculator scenarios and refines the tool selection process, specifically catering to the selection within large-scale toolkits and complex scenarios.</p><p>Moreover, after selecting the tools, their application proves to be challenging due to locating information within lengthy case histories, slots filling, and unit conversion. Medical scenarios involve complex case histories, and selecting values from these contexts tests the capacity for long-context processing. Furthermore, the process demands substantial medical expertise to avoid errors in slot filling and to handle the challenges of unit conversion. For instance, LLMs may conflate rheumatic heart disease with congestive heart failure, or require conversions between units of total cholesterol from 8.3 mmol/L to 320.92 mg/dL. Consequently, we introduce the nested calling mechanism. Nested tool calling allows LLM to introduce additional tools when the current tools and information are insufficient for the task at hand. This mechanism is particularly valuable in scenarios requiring extra unit conversion tools, ensuring robust handling of complex medical calculation tasks.</p><p>We introduce a new benchmark, CalcQA, to validate the practicality of the llm agent throughout the entire clinical process of medical calculator scenarios. In collaboration with board-certified physicians, we develop this benchmark: physicians select calculators based on real patient cases and provide corresponding diagnostic pathways, then use GPT-4 to simulate dialogue scenarios. Alongside this benchmark, we develop a specialized medical calculator toolkit. We compile 44 medical calculators that are widely used in medical practice and systematically organize conversion methods for 237 common medical units.</p><p>Our contributions are as follows: (1) We introduce the CalcQA benchmark, a new benchmark to assess the capabilities of LLMs in clinical calculator scenarios, including 100 calculator pairs based on real patients' cases, along with 281 medical calculator tools. (2) We develop the generalized MeNTi agent architecture, which expands the LLMs' ability to address real-world medical calculator tasks through meta-tool and nested calling mechanisms. (3) Our research indicates that MeNTi represents the first full-process implementation of LLMs for calculator assessments in real medical scenarios, demonstrating exceptional performance in executing such tasks.</p><p>2 Related Works LLMs for Medical Domain. With the application of LLMs across various fields, their penetration into the medical domain has become a hot research topic <ref type="bibr" target="#b32">(Thirunavukarasu et al., 2023;</ref><ref type="bibr" target="#b28">Singhal et al., 2023;</ref><ref type="bibr">Clusmann et al., 2023)</ref>. Recent studies focus on fine-tuning LLMs using real or synthetic medical data <ref type="bibr" target="#b41">(Zeng et al., 2020;</ref><ref type="bibr">Zhang et al., 2023a;</ref><ref type="bibr">Tang et al., 2023b)</ref> to optimize their performance. For instance, PMC-LLaMA <ref type="bibr" target="#b37">(Wu et al., 2024)</ref> has undergone pre-training by incorporating a vast resource of 4.9 million medical literature records. Similarly, ChatDoctor <ref type="bibr" target="#b40">(Yunxiang et al., 2023)</ref> integrates real doctor-patient communication data, enhancing the model's ability to understand patient needs and make appropriate recommendations. Additionally, several studies have explored RAG to boost the efficacy of LLMs. The LLM-AMT <ref type="bibr" target="#b36">(Wang et al., 2023)</ref> adopts the RAG architecture, incorporating authoritative medical textbooks into the model. Self-BioRAG <ref type="bibr" target="#b19">(Jeong et al., 2024)</ref> trained with domain-specific retrievers, document databases, and instruction sets. Despite significant breakthroughs in the medical field, LLMs still face challenges in clinical calculator scenarios, due to inherent shortcomings in mathematical computation and logical reasoning. To further evaluate the capabilities of LLMs in calculator tasks, we introduce CalcQA, a comprehensive benchmark derived from real patients' cases.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Agent and Tool Utilization.</head><p>Although LLMs excel at information processing and linguistic interaction, they cannot directly execute specific tasks such as computation and calendar <ref type="bibr" target="#b2">(Chen et al., 2024;</ref><ref type="bibr" target="#b17">Huang et al., 2023;</ref><ref type="bibr" target="#b25">Ruan et al., 2023)</ref>. Recent research focuses on integrating LLMs with real-world APIs to enhance their practical capabilities <ref type="bibr" target="#b35">(Wang et al., 2024;</ref><ref type="bibr">Tang et al., 2023a;</ref><ref type="bibr" target="#b26">Schick et al., 2024)</ref>. This integration generally involves three stages: tool creation, selection, and application. Regarding tool creation, previous practices have relied on existing APIs, which present limitations in specialized fields. LATM <ref type="bibr" target="#b1">(Cai et al., 2023)</ref> has pioneered creating tools by generating code. CRAFT <ref type="bibr" target="#b38">(Yuan et al., 2023)</ref> focuses on learning for datasets to create tools. Regarding tool selection, the method of instructing LLMs with prompts <ref type="bibr" target="#b46">(Zhuang et al., 2024)</ref> is suitable for environments with smaller tool libraries, while the technique of using tool names for dense retrieval <ref type="bibr" target="#b23">(Qin et al., 2023</ref>) offers another approach. As for tool application, the AnyTool <ref type="bibr" target="#b7">(Du et al., 2024)</ref> introduces self-reflection to guide operational processes. However, given the complexity of downstream tasks in the medical field, there is still a lack of an agent framework capable of flexible tool selection and nested tool calling. This limitation restricts the efficacy of LLMs in complex scenarios.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Methodology</head><p>In Section 3.1, we introduce CalcQA, a novel benchmark and a toolkit with specialized medical tools, to assess the ability of LLMs to perform end-to-end calculator assessment in clinical scenarios. We develop this benchmark by having professional physicians diagnose real cases and then structuring these cases and diagnostic results into question-answer pairs. In Sections 3.2 and 3.3, we introduce MeNTi, which employs the meta-tool for tool selection and nested calling mechanism to assist LLMs in tool utilization. By enabling flexible tool selection and nested tool calling, MeNTi effectively addresses intricate scenario tasks with the specialized toolkit.</p><p>Specifically, after the physician conducts a primary assessment of the patient and identifies the next steps for quantification, the task is handed over to MeNTi. After preliminary diagnosis, MeNTi uses the meta-tool (Section 3.2) to select an appropriate medical calculator. MeNTi then proceeds to fill in the slots of calculator parameters. If MeNTi detects a mismatch in parameter units, it employs the nested tool calling (Section 3.3). This mechanism enables iterative tool selection and utilization to resolve unit mismatches caused by complex toolchains requiring multiple tools. Once the conversion tool's results are integrated, MeNTi continues filling the calculator parameters and completes the final computation. This workflow, illustrated with a concrete example in Figure <ref type="figure" target="#fig_1">2</ref>, is further detailed with complete patient information and case examples in the appendix D.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Benchmark Creation</head><p>Existing LLM benchmarks for medical calculators primarily focus on assessing the LLMs' ability to handle medical knowledge-based questions or their capacity to make selective diagnostic judgments in specific scenarios. However, these benchmarks are not designed directly from clinical practice and do not derive diagnostic conclusions directly from actual cases, making them insufficient for evaluating the usability of LLMs in real clinical settings. Therefore, we introduce CalcQA, a new benchmark constructed based on real cases, aimed at assessing LLMs within the context of medical calculators.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Toolkit Construction.</head><p>Given the specialized medical knowledge and complex computational logic involved in medical calculators, LLMs require external knowledge. Accordingly, we develop a generalized medical toolkit <ref type="bibr" target="#b1">(Cai et al., 2023;</ref><ref type="bibr" target="#b38">Yuan et al., 2023;</ref><ref type="bibr">Yuan et al.)</ref>. Initially, we scrap essential knowledge from authoritative medical websites, then utilized GPT-4 for code generation to perform precise mathematical calculations. Finally, we design real-world scenarios to verify our tools. After meticulous selection and integration, we compile 44 medical calculators that are widely used in medical practice, whose application scenarios and precise calculation rules are also represented. These calculators extensively cover multiple branches of medicine, as detailed in Figure <ref type="figure" target="#fig_2">3</ref>. Additionally, considering that medical calculations often involve precise conversions between medical units, like conversion between the mass and molar quantities, we organize conversion tools for 237 common medical units. The manufacturing process and content are consistent with those of the calculators above.</p><p>Annotation. In this benchmark, each question is derived from actual clinical cases and diagnosed by professional physicians to serve as the ground truth.</p><p>We initially employed a stratified sampling strategy based on the distribution of selected tools, extracting 100 cases proportionally from different clinical departments. Subsequently, we hired experienced physicians to select the appropriate calculators for each case and to thoroughly document the rationale for their choices, their diagnostic opinions, and calculator assessment results. On this basis, we utilized LLMs in conjunction with detailed diagnostic information to generate restrained user queries, thereby creating the CalcQA benchmark. This benchmark includes specific user queries, case details, and diagnostic information, with expected answers being the names of the recommended calculators and their computed results.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Meta-Tool for Tool Selection</head><p>Existing tool selection strategies often rely on presenting a complete toolkit to LLMs, expecting them to autonomously choose the appropriate ones. However, this approach is impractical for large toolsets. Relying solely on retrieval methods to match tools with specific task scenarios is also challenging, which requires deep insights into the nature of the tasks and a thorough understanding of tools. Additionally, the existing timing strategy for applying tools is determined by fine-tuned LLMs.</p><p>Although this approach has widespread applicability, its inherent high level of uncertainty is unacceptable in medical environments that prioritize precision and reliability. Therefore, we introduce the meta-tool mechanism specifically to address tool selection challenges. The meta-tool is tailored for medical calculator scenarios, standardizing the timing of tool usage based on specific situations, thus obviating the need for LLMs of tool calling capabilities. Specifically, tool calling occurs in two scenarios: first, when the user expresses the need for calculator assessment during the inquiry process; second, when the current task scenario lacks the capabilities required to resolve the task, necessitating the introduction of additional tools to augment existing abilities. In the latter case, the nested calling (3.3) presents specific tool usage requirements to the meta-tool, which then assesses the demands for tool application and proceeds to match the appropriate tools based on the identified requirements. Additionally, the meta-tool facilitates a flexible tool selection that aligns with various scenarios, assisting the MeNTi system in choosing appropriate tools to complete real tasks. The meta-tool achieves tool selection through the following steps, as it is shown in Algorithm 1. (1) Calculator Classifier. In MeNTi, tools are categorized based on their origin and application scenarios <ref type="bibr" target="#b7">(Du et al., 2024;</ref><ref type="bibr" target="#b29">Song et al., 2023)</ref>, like scale tools for assessment and unit tools for conversion. The classifier instructs the LLM to accomplish tool-type localization by matching the requirements of the task. (2) Query Rewriter. The selection of calculators needs to be based on the patient's condition, and Rewriter integrates the user's query intent with the diagnosis overview, generating insightful query proposals <ref type="bibr">(Wang et al.;</ref><ref type="bibr">Gao et al., 2023a;</ref><ref type="bibr" target="#b18">Jagerman et al., 2023)</ref>, denoted as Q. The diagnostic overview is provided by the LLMs in conjunction with the patient's condition. (3) Tool Retrieval &amp; Reranker. The retrieval uses the query q and employs the dense retrieval method <ref type="bibr" target="#b45">(Zhou et al.;</ref><ref type="bibr" target="#b20">Lewis et al., 2020;</ref><ref type="bibr" target="#b38">Yuan et al., 2023)</ref>. This component also utilizes a multi-key strategy to enhance the precision, the tool's name n, description d, and the docstring associated with the tool s. By calculating the similarity with the query q, three different similarity rankings of R q are constructed: name-based R q n , a fusion of name and description R q n+d , and a fusion of name and docstring R q n+s . That is ∀q ∈ Q:</p><formula xml:id="formula_0">R q n = ArgMax(sim(n, q)|N ⊂ T ) R q n+d = ArgMax(sim(n + d, q)|N, D ⊂ T ) R q n+s = ArgMax(sim(n + s, q)|N, S ⊂ T )</formula><p>Then, the reranker adopts the Reciprocal Rank Fusion <ref type="bibr" target="#b6">(Cormack et al., 2009)</ref>, applied to reranking in multiple retrievals. Each query utilizes the rewriter (|Q|) and multiple keywords (|R q |) to perform multiple retrieval operations, to select tools that are robust and superior across scenarios. (4) Dispatch tool in actual scenario. Retrieval based on semantic similarity matching does not necessarily ensure that tools are well-suited to the actual scenarios.</p><p>The dispatcher integrates background information about the task and detailed descriptions of each candidate tool, instructing the LLM to consider both comprehensively <ref type="bibr" target="#b27">(Shen et al., 2024;</ref><ref type="bibr" target="#b44">Zhao et al., 2024)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Nested Tool Calling</head><p>Previous studies primarily focus on aggregating more tools to expand the functional boundaries of LLMs. However, the application scenarios for LLMs are far from straightforward, especially in medical calculator tasks. Specifically, once a suitable calculator is chosen, its application presents significant challenges. Medical scenarios involve complex case histories, and selecting parameters from these contexts tests the capacity for longcontext processing. Furthermore, the process demands substantial medical expertise to avoid errors in parameter judgment and to handle the challenges of unit conversion. This demands the appropriate use of current tools according to the context and the ability to identify unmet demands and integrate different tools, which is essentially the capability of nested tool calling. Therefore, we introduce the nested calling mechanism which consists of three steps: First, it involves the tool slot filling from the patient's case history and previous tool outcomes; second, it verifies whether the current task requirements have been met; and third, if not, the nested calling mechanism plans subsequent demands for the agent, who then continues to orchestrate various tools for nested tool calling, ensuring the final task requirements are satisfied. In the first step, we facilitate the slot filling by inputting comprehensive medical records, tool descriptions, and their function docstrings into the LLM, which encompasses the specific functionalities of the tools, their expected outputs, parameter constraints, and more, enabling accurate information choices, and then to use the tool appropriately.</p><p>In subsequent steps, the nested calling reviews the tool slots filling, ensuring that they meet the prerequisites of each tool application. If there are obstacles in the filling and the task requirements, the nested calling records the reasons for failure, and through natural language analysis troubleshooting solutions and subsequent requirements. The subsequent requirements are conveyed to the MeNTi agent. MeNTi continues to select more tools by meta-tool to provide additional information or handle tasks to assist in resolving the current task. During this process, MeNTi continues to utilize the nested calling to facilitate tool integration. This nested calling leverages planning capabilities based on the current task state, and reusing tools within MeNTi, enables MeNTi to demonstrate a high de-gree of flexibility and adaptability in handling complex task scenarios. This workflow is depicted in Figure <ref type="figure" target="#fig_4">4</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiment</head><p>In this section, we test the performance of MeNTi on CalcQA and compare it with other methods (4.1 &amp; 4.2). Additionally, we conduct further analysis (4.3), showing the rational design of MeNTi.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Experimental Setting</head><p>Metrics. We employ four novel metrics, designed to quantify the accuracy of agents in selecting appropriate calculators, the agents' ability to fill tool slots, their competence for nested tool calling, and the overall performance of MeNTi in executing end-to-end tasks.</p><p>• Calculator Selection Accuracy (CSA): We calculate the percentage of cases where the agent's choice of calculators aligned with the ground truth. This metric measures the agent's ability to select tools based on user demands and patient conditions correctly.</p><p>• Slot Filling Accuracy (SFA): We calculate the percentage of slots where the agents correctly fill it. This metric assesses the agent's ability to accurately fill in the slots of medical calculators.</p><p>• Unit Converting Accuracy (UCA): We calculate the percentage of slots that require unit conversions and the agent correctly fills. This metric measures the agent's ability to handle complex medical calculator slots.</p><p>• Calculator Calculation Accuracy (CCA):</p><p>We calculate the percentage of cases in which the specific calculator assessment values provided by the agent matched the ground truth. This metric measures the agent's capability to execute complete end-to-end tasks within medical calculator scenarios.</p><p>Baselines. We compare the MeNTi with 2 kinds of methods on our benchmark.</p><p>• Basic Reasoning: We explore the capabilities of medical LLMs, directly tackling the task to see if they can select the appropriate calculators and provide evaluation results without the use of tools. We use the CoT approach. Three open-source medical models are selected: BianQue2 <ref type="bibr" target="#b4">(Chen et al., 2023)</ref>, ChatGLM3 <ref type="bibr" target="#b8">(Du et al., 2021)</ref>, and PULSE <ref type="bibr">(Zhang et al., 2023b)</ref>. Additionally, LLaMA-3.1, GPT-3.5-Turbo, and GPT-4o are chosen for comparison.</p><p>• Tool Application: We adopt the tool application framework CRAFT <ref type="bibr" target="#b38">(Yuan et al., 2023)</ref> to explore its capabilities in executing complex tool operations. To ensure a fair evaluation, the customized toolkit is provided. To facilitate comparison with the MeNTi framework, we employed PULSE, GPT-3.5-Turbo, and GPT-4o as the backbone.</p><p>• Our Framework: We employed multiple LLMs to drive testing of the MeNTi framework. The objective is to evaluate the framework's performance across different backbones, aiming to verify its robust generalization capabilities and adaptability. PULSE, GPT-3.5-Turbo, and GPT-4o are chosen.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Main results</head><p>The results are presented in Table <ref type="table" target="#tab_0">1</ref>. We observe significant performance degradation in some small models under the Basic Reasoning when processing long contexts, highlighting the inherent difficulties of real medical scenario tasks. In contrast, LLaMA-3.1, PULSE, GPT-3.5, and GPT-4o demonstrate outstanding performance in tool selection due to their superior model capabilities. However, they still feel short in completing unit conversion and task computations. While the CRAFT framework achieves some performance improvements in GPT-4o, the extent of improvement is limited, further confirming that simple tool appli-cation strategies are inadequate for addressing the complexities of real-world medical tasks.</p><p>Overall, MeNTi demonstrates exceptional performance across various backbones, with notable improvements in GPT-4o. Based on this, we derive the following five experimental conclusions. (1) Compared to traditional baselines, MeNTi demonstrates significant performance enhancements in both UCA and CCA. This validates the substantial improvements of our framework, particularly the nested calling mechanism, over existing methods.</p><p>(2) Although the meta-tool shows limited improvement on the CSA, primarily due to the benchmark containing only 44 commonly used medical calculators, its application in 237 unit conversion tools significantly advances the UCA. This demonstrates the effectiveness of the meta-tool, especially when dealing with a larger toolkit. (3) The significant advancements in UCA appear to slightly undermine the SFA. This may be attributed to the introduction of unit conversion, which complicates slot filling and consequently affects its efficiency. (4) MeNTi achieves remarkable results in both medical LLM like PULSE and general LLM like GPT-3.5 and GPT-4o, demonstrating its high generalizability and broad applicability. (5) The outstanding performance of GPT-4o within the MeNTi further validates the potential of MeNTi in superior LLMs, suggesting that its performance ceiling is far from being reached.</p><p>It is noteworthy that in the calculation of the CCA index, given the rounding errors inherent in numerical operations, we acknowledge a tolerance range of ±0.5. Based on this, we achieve a result of 49% in the GPT-4o model. When we expand this tolerance to ±1.5, the performance of the GPT-4o model improves to 68%; further extending the tolerance to ±2.5 resulted in a performance of 77%. These data indicate that, despite some inaccuracies, the evaluation results from MeNTi still hold significant referential value. Through case study analysis, we identify that these errors primarily stem from the Knowledge Hallucination presented by LLMs. For example, when using the "CHA2DS2-VASc Score for Atrial Fibrillation Stroke Risk" calculator, LLMs incorrectly categorize a patient's history of rheumatic heart disease as congestive heart failure, though there is no direct equivalence between them. This knowledge hallucination leads to subtle errors in the parameter population, ultimately impacting the results.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Further Analysis</head><p>To comprehensively evaluate the academic contribution of the MeNTi framework, we systematically implemented a series of studies. Results are shown in Table <ref type="table">2</ref> and <ref type="table">Table 3</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.1">Alternative Component Analysis</head><p>To further evaluate the performance improvement brought by MeNTi, in addition to using the LLM approach described in Section 4.1, we select more methods and conduct comparative experiments by replacing certain components of MeNTi: (1) Alternative Retrieval. We compare our approach with the commonly used retrieval methods, BM25 <ref type="bibr" target="#b24">(Robertson et al., 2009)</ref>, SimCSE <ref type="bibr" target="#b13">(Gao et al., 2021)</ref> and M3E <ref type="bibr">(Wang Yuxin, 2023)</ref>. We only replace the meta-tool for tool selection with these methods while keeping the toolkit unchanged.</p><p>(2) Alternative Calculator. We select ToRA <ref type="bibr" target="#b14">(Gou et al., 2023)</ref>, a model for solving mathematical problems, to address the calculator challenges, contrasting it with our toolkit approach. We replace only the nested calling mechanism for calculation with ToRA.</p><p>Model Param. Size CSA CCA BM25 / 0% -SimCSE / 2% -M3E / 39% -ToRA 13B -0% ToRA-Code 13B -0% PULSE 20B 81% 36% GPT-3.5 Turbo / 77% 24% GPT-4o / 86% 49%</p><p>Table 2: The alternative component analysis of MeNTi.</p><p>Overall, MeNTi demonstrates exceptional performance. Experimental data indicate that traditional retrieval methods are only moderately effective in tool selection, and purely semantic retrieval mechanisms lack reliability in real-world scenarios. While retrieval tools are utilized for handling large-scale datasets, the assistance of LLM is still necessary for optimal tool selection. Unfortunately, due to ToRA's limitations in processing long context, it is inadequate for handling tasks in medical scenarios involving long patient case histories. Therefore, employing the agent to enhance tools remains essential at present.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.2">Ablation Analysis</head><p>We conducted ablation experiments on the tool selection process of the meta-tool. The meta-tool implements tool selection through four steps (shown as Algorithm 1). The Classifier performs the initial classification of tools, the Rewriter explores and expands the selection requirements, and the Retrieval step uses the name, docstring, and description as keys for preliminary similarity-based tool retrieval. Finally, the Dispatcher completes the more granular tool selection in actual scenarios. We will sequentially ablate each component and evaluate its impact.</p><p>Classifier. We discard the previous tool categorization methods and directly retrieve all tools for the experiment. The results demonstrate that the removal of the Classifier significantly reduces the CSA and UCA. This underscores the importance of tool management, particularly when dealing with a large-scale toolkit.</p><p>Framework CSA SFA UCA CCA MeNTi 81% 35.2% 46.9% 36% w/o Classifier 57% 18.4% 10.2% 24% w/o Rewriter 64% 21.8% 26.5% 27% w/o Ret. name 30% 12.1% 26.5% 15% w/o Ret. doc. 34% 12.8% 26.5% 15% w/o Ret. desc. 31% 12.5% 28.5% 15% w/o Dispatcher 37% 11.9% 16.3% 22%</p><p>Table 3: Ablation of MeNTi framework.</p><p>Rewriter. Rewriter of the meta-tool combines user queries with patient conditions to uncover professional insights. We discard this component and use the original query for retrieval. The results show a moderate reduction, highlighting the importance of integrating medical calculator tasks with patient conditions.</p><p>Retrieval. Retrieval of the meta-tool is designed to perform preliminary tool filtering based on the semantics of the tools. Our Retrieval adopts a multikey search strategy. By incrementally removing each keyword, we delve into the specific utility of each keyword. All three keys are important, as removing any of them significantly impacts performance.</p><p>Dispatcher. Dispatcher of the meta-tool integrates real-world task scenarios and tool application strategies to select the most suitable tools. We remove the Dispatcher and use the tool with the highest semantic similarity. The results indicate that in practical tool usage scenarios, it is essential to select tools based on their actual functionalities.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>In this work, we introduce MeNTi, an agent framework that achieves flexible tool selection and nested tool calling, specifically designed for medical calculator scenarios. We develop and validate a medical calculator toolkit. Additionally, we introduced CalcQA, a benchmark consisting of 100 case-assessment pairs, to assess the capabilities of LLMs in medical calculator tasks. Extensive experiments have shown that our method achieves superior performance compared to existing methods. We hope our work will further inspire the application of LLMs in medical contexts.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitations</head><p>Despite MeNTi making significant strides in medical calculator tasks through flexible tool selection and nested tool calling, it still faces several limitations that pose challenges to its overall performance. The primary issue is the inherent complexity and length of medical cases, which makes MeNTi's capabilities seem relatively insufficient on a backbone with weaker long-context abilities. Additionally, due to the high cost of data annotation in medical calculator scenarios, the current CalcQA benchmark only covers 100 instances, necessitating more examples to further enhance the model's generalization validation. Furthermore, although the MeNTi framework theoretically has broad applicability, the high difficulty and cost of tool development have prevented us from systematically evaluating its generalization capabilities across other downstream tasks, a shortfall that limits the exploration of its potential for wider application. These issues merit further research and consideration.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Implementation Details</head><p>Toolkit. Figure <ref type="figure" target="#fig_5">5</ref> presents a detailed distribution of the Medical Assessment Calculators. The calculators we have compiled demonstrate high practicality in clinical practice, especially in 13 critical specialties including Cardiology, Intensive Care Medicine, and Nephrology. These specialties are characterized by a multitude of test items and rely heavily on computational tools to enhance diagnostic precision. This collection of calculator tools is highly reusable and designed to provide strong support and assistance for a broad range of medical assessment activities, thereby optimizing the clinical decision-making process and enhancing the quality of healthcare services. The code for this toolkit is generated by GPT-4 <ref type="bibr">(Achiam et al., 2023)</ref> and has been manually validated.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LLM Used.</head><p>All other components of MeNTi uniformly utilize the PULSE model <ref type="bibr">(Zhang et al., 2023b)</ref> as their core computational unit. The PULSE model, optimized specifically for the medical field, is an LLM that has demonstrated superior performance and expertise in medical-related tasks. The infrastructure of MeNTi demonstrates a high degree of generalization allowing us to replace the core backbone with other LLMs. In our experiments, we switch to GPT-3.5-turbo and GPT-4o, achieving outstanding performance.</p><p>Dense Retrieve Used. In the meta-tool of the MeNTi system, the Retrieval component employs the Dense Retrieve method for tool selection. Specifically, we use the highly acclaimed M3E retrieval model <ref type="bibr">(Wang Yuxin, 2023)</ref>. This model is widely recognized for its outstanding performance in semantic representation and similarity calculation. Annotation Details. The cases in the annotations all originate from China. Each question of CalcQA required approximately 20 minutes to annotate and review. The cost is $40 per hour for the physicians.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Prompts</head><p>Toolkit Code Generation Prompt You are a code generation model for calculations. You will receive the name, description, and calculation formula of a medical calculator. Your task is to generate a Python function to calculate this calculator based on the provided medical calculator information. The requirements are as follows: 1. Your variable names should be as generic and meaningful as possible for easy understanding. 2. You need to provide a docstring that introduces the function's functionality, uses, application scenarios, etc. 3. Your docstring should include detailed descriptions of the function's parameters, their types, and the rules for populating them, to ensure the function can be used correctly. 4. To enhance versatility, if any of the parameters are of string type, you should provide a list of possible types and change the parameter to the index of that list. The function should be wrapped by '''python ''' Begin! calculator name: {INSERT_NAME_HERE} description of calculator: {INSERT_DESCRI_HERE} formula of calculator: {INSERT_FORMULA_HERE} Meta-Tool Diagnosis Prompt You are a medical diagnostic model. Your task is to analyze the abnormal parts of the provided patient's case and speculate on which bodily functions might be impaired. The requirements are as follows: 1. Every inference you make must be substantiated by actual evidence from the provided patient's case. 2. You only need to analyze the main, abnormal parts of the provided patient's case. 3. You just need to make a brief analysis. Begin! Meta-Tool Classifier Prompt You are a toolkit selection model. Below is a toolkit list and their descriptions, and you need to select the appropriate toolkit based on the user query. Your answer should be wrapped by '''json and ''' toolkit list: ["unit", "scale"] "unit": This is a unit toolkit that contains a variety of medical unit conversion tools. When you need to perform unit conversions, you will need to select this tookit. "scale": This is a medical calculator toolkit, which is used for assessing and quantifying specific health conditions of individuals in the medical field. When you need to analyze a patient's health condition, or when a user has made a query regarding health status, you will need to select this toolkit. Requirements: 1. You can only select one toolkit, and it must be from the toolkit list provided. 2. You need to output a JSON file. 3. Your answer should be wrapped by '''json and ''' Please follow this output format: '''json { "chosen_toolkit_name": Str(toolkit you choose) } ''' Begin! user query: INSERT_QUERY_HERE Meta-Tool Rewriter Prompt You are a retrieval-augmented model for rewriting queries. You will receive a query from a doctor and a patient's case analysis. Your task is to combine the patient's case analysis to expand and rewrite the doctor's input query, making the doctor's query more aligned with the patient's actual situation. The requirements are as follows: 1. The generated queries must not alter the doctor's original intent. 2. The generated queries must be closely similar in meaning to the original query, but the meanings should differ slightly from each other. 3. You should extract insights from the patient case analysis that may be related to the doctor's query to generate new queries, in order to facilitate the retrieval of more information. 4. However, please prioritize the original query; the additional information in each generated query should not be too much to avoid obscuring the content of the original query. 5. You need to generate 3 new queries, neither more nor less. 6. You need to output a JSON file, which is a list where each item is a new query you have generated. 7. You need to answer in English. Your answer should be wrapped by '''json and ''' Please follow this output format: '''json [ "the first generated query", "the second generated query", ... ] ''' Begin! doctor input search query: INSERT_QUERY_HERE Patient Case Analysis: INSERT_CASE_HERE Meta-Tool Dispatcher Prompt You are a dispatching model. Your task is to choose the most suitable tool from the tool list based on User Demand and the Task Scenario, which will then be provided to the user for use. Tool List: {{INSERT_TOOLLIST_HERE}} Detailed information of each tool: {{INSERT_TOOLINST_HERE}} Requirements: 1. You need to conduct a detailed, step-by-step analysis. 2. You must choose a tool from the Tool List. 3. The Final Answer is a JSON file, and the JSON file must be wrapped by '''json and ''' 4. The tool you choose in the JSON file must be one of the items in the Tool List. Here is a example of the Final Answer: '''json { "chosen_tool_name": Str(the tool you choose) } ''' Begin! User Demand: {{INSERT_DEMAND_HERE}} Task Scenario: {{INSERT_SCE_HERE}} Step By Step Analysis: Slot Filling Prompt You are a parameter extraction model. You will receive a Reference Text and a Function Docstring. Your task is to determine the parameters from the Reference Text based on the parameter filling rules described in the Function Docstring, including the values and units of the parameters. The requirements are as follows: 1. The Value and Unit of parameters you output need to be strictly in accordance with the Reference Text. You are prohibited from performing unit conversions. 2. If there is a discrepancy in the unit of the parameter between the Reference Text and the Function Docstring, please use the unit from the Reference Text as the standard. Do not convert the units on your own. 3. If the parameter does not have a unit, output 'null' in the Unit. 4. All parameters in the Function Docstring must be included in the parameter list. If the parameter values are missing, fill them randomly. The Value must not be 'null'. 5. For parameters that do not have a clear rating in the Reference Text, please infer and fill them out based on the actual circumstances described in the reference text and the scoring standards provided in the Function Docstring. 6. You need to first produce a step-by-step analysis, considering each parameter individually. 7. The Parameters List you output is a JSON file, and this JSON file should be wrapped by '''json and ''' Please follow this output format: '''json {The parameters list here.} ''' Here are some examples: Function Docstring: {{"Calculate the Body Mass Index (BMI) for an individual.\n\nArgs:\nweight (float): The weight of the individual in kilograms.\nheight (float): The height of the individual in centimeters.\n\nReturns:\nfloat: the BMI (kg/m^2).\n\nDescription:\nThe Body Mass Index (BMI) is a simple index of weight-for-height commonly used to classify\nunderweight, overweight, and obesity in adults. It is calculated by dividing the weight in\nkilograms by the square of the height in meters. Although widely used, BMI has limitations,\nparticularly for very muscular individuals and in different ethnic groups with varying body\nstatures, where it may not accurately reflect body fat percentages."}} Reference Text: {{The patient is a 16-year-old male, 175cm in height and 65kg in weight}} Step By Step Analysis: {{Here is your step-by-step analysis.}} Parameters List: '''json { "weight": {"Value": 65, "Unit": "kg"}, "height": {"Value": 175, "Unit": "cm"} } ''' Begin! Function Docstring: {{INSERT_DOCSTRING_HERE}} Reference Text: {{INSERT_TEXT_HERE}} Step By Step Analysis:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Nested Calling Prompt</head><p>You are a Parameter List checking model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>You will receive a Function Docstring, and</head><p>Parameter List. You need to verify that the entries in the Parameter List comply with the requirements described in the Function Docstring, including the Value and Unit. If all units are consistent, choose "calculate". If there are any discrepancies in the units, choose "toolcall". You should not perform unit conversions directly. When converting units is needed, you must choose "toolcall" and elaborate on this unit conversion task in the "supplementary_information", including the parameter value, the current unit of the parameter, and the target unit of the parameter.</p><p>Requirements: 1. You need to conduct a detailed, step-by-step analysis of each parameter in the parameter list. You need to output each parameter's Function Docstring individually, then analyze and compare them. 2. You especially need to compare the Unit of the Parameter List with the units required in the Function Docstring. 3. If the units are inconsistent, please select "toolcall" and specify the numerical value of the parameter required for unit conversion, as well as the units before and after the conversion in the "supplementary_information". 4. The unit conversion task may require converting units of different parameters, and you need to break down the task into individual unit conversion tasks for each parameter. Therefore, "supplementary_information" is a list of strings, each of which represents a standalone, minimalized unit conversion task.</p><p>5. The Final Answer is a JSON file, and the JSON file must be wrapped by '''json and ''' Here are some examples: Function Docstring: {{"Calculate the Body Mass Index (BMI) for an individual.\n\nArgs:\nweight (float): The weight of the individual in kilograms.\nheight (float): The height of the individual in centimeters.\n\nReturns:\nfloat: the BMI (kg/m^2).\n\nDescription:\nThe Body Mass Index (BMI) is a simple index of weight-for-height commonly used to classify\nunderweight, overweight, and obesity in adults. It is calculated by dividing the weight in\nkilograms by the square of the height in meters. Although widely used, BMI has limitations,\nparticularly for very muscular individuals and in different ethnic groups with varying body\nstatures, where it may not accurately reflect body fat percentages."}} Parameter List: {{{ "weight": {"Value": 65, "Unit": "kg"}, "height": {"Value": 1.75, "Unit": "m"} }}} Step By Step Analysis: {{(Here is your step-by-step analysis. You need to ouptput the corresponding Function Docstring first for each parameter, and systematically compare each parameter with the corresponding information in the Parameter List and Function Docstring.)}} Final Answer: '''json { "chosen_decision_name": "toolcall", "supplementary_information": ["The height is 1.75m. The height needs to be converted from meters to centimeters."] } ''' Function Docstring: {{Calculate the Corrected Sodium for Hyperglycemia using Hillier's method from 1999.\n\nParameters:\n measured_sodium (float): The measured sodium level in mEq/L.\n serum_glucose (float): The serum glucose level in mg/dL.\n\nReturns:\n float: The corrected sodium level in mEq/L.\n\n}} Parameter List: {{{ "measured_sodium": {"Value": 140, "Unit": "mmol/L"}, "serum_glucose": {"Value": 80, "Unit": "mmol/L"} }}} Step By Step Analysis: {{(Here is your step-by-step analysis. You need to ouptput the corresponding Function Docstring first for each parameter, and systematically compare each parameter with the corresponding information in the Parameter List and Function Docstring.)}} Final Answer: '''json { "chosen_decision_name": "toolcall", "supplementary_information": ["The measured_sodium is 140 mmol/L. It needs to be converted from mmol/L to mEq/L.", "The serum_glucose is 80 mmol/L. It needs to be converted from mmol/L to mg/dL."] } ''' Function Docstring: {{"Calculate the Body Mass Index (BMI) for an individual.\n\nArgs:\nweight (float): The weight of the individual in kilograms.\nheight (float): The height of the individual in centimeters.\n\nReturns:\nfloat: the BMI (kg/m^2).\n\nDescription:\nThe Body Mass Index (BMI) is a simple index of weight-for-height commonly used to classify\nunderweight, overweight, and obesity in adults. It is calculated by dividing the weight in\nkilograms by the square of the height in meters. Although widely used, BMI has limitations,\nparticularly for very muscular individuals and in different ethnic groups with varying body\nstatures, where it may not accurately reflect body fat percentages."}} Parameter List: {{{ "weight": {"Value": 65, "Unit": "kg"}, "height": {"Value": 175, "Unit": "cm"} }}} Step By Step Analysis: {{(Here is your step-by-step analysis. You need to ouptput the corresponding Function Docstring first for each parameter, and systematically compare each parameter with the corresponding information in the Parameter List and Function Docstring.)}} Final Answer: '''json { "chosen_decision_name": "calculate", "supplementary_information": "All parameters comply with the Function Docstring requirements. No unit conversion is needed as the parameters use indices to specify units." } ''' Attention: The Final Answer must be wrapped by '''json and '''. In the 'supplementary_information', the Value of the parameter is required!!! Begin! Function Docstring: {{INSERT_DOC_HERE}} Parameter List: {{INSERT_LIST_HERE}} Step By Step Analysis:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Toolkit Example</head><p>In our toolkit, each tool is meticulously integrated with its core information, encompassing the tool name, function name, description, code, and accompanying code docstring. Depending on the tool's classification and the diversity of the sources of information, we have further supplemented specific information. For instance, for tools of scale assessments, given the complexity and significance of their computational methods, a dedicated column for calculation formulas has been added to ensure users can accurately understand the algorithmic logic. To use these tools, simply follow the clear instructions provided in the function docstrings to configure the necessary parameters, and then directly invoke the provided code to execute the functions. Finally get the value of calculation results. This process is both intuitive and efficient.</p><p>Below is an example of a typical tool for reference: { "tool_name": "Framingham Risk Score for Hard Coronary Heart Disease", "function_name":</p><p>"calculate_framingham_risk_score", "description": "</p><p>The Framingham Risk Score for Hard Coronary Heart Disease is a tool used by healthcare professionals to estimate a patient's 10-year risk of developing severe heart disease. It utilizes factors such as age, gender, cholesterol levels, blood pressure, and smoking status to calculate risk. This score helps in identifying individuals at high risk, guiding decisions on preventive measures and interventions.", "formula": "Here are the parameter list: \n\nAge: years\nSex: Female/Male\n Smoker: No/Yes\nTotal cholesterol: mg/dL\nHDL cholesterol: mg/dL\nSystolic BP: mm Hg\nBlood pressure being treated with medicines: No/Yes\n\nEquations as follows:\n\nMen:\nLMen = 52.00961 x ln(Age) + 20.014077 x ln(Total cholesterol) -0.905964 x ln(HDL cholesterol) + 1.305784 x ln(Systolic BP) + 0.241549 x Treated for blood pressure + 12.096316 x Smoker -4.605038 x ln(Age) x ln(Total cholesterol) -2.84367 x ln(Age) x Smoker -2.93323 x ln(Age) x ln(Age) -172.300168\nPMen = 1 -0.9402^exp(LMen)\n\nWomen:\nLWomen = 31.764001 x ln(Age) + 22.465206 x ln(Total cholesterol) -1.187731 x ln(HDL cholesterol) + 2.552905 x ln(Systolic BP) + 0.420251 x Treated for blood pressure + 13.07543 x Smoker -5.060998 x ln(Age) x ln(Total cholesterol) -2.996945 x ln(Age) x Smoker -146.5933061\nPWomen = 1 -0.98767^exp(LWomen)\n\nSupplementary item:\n1. Smoker: Yes = 1, No = 0.\n2. Men: if age &gt;70, use ln(70) x Smoker. Women: if age &gt;78, use ln(78) x Smoker.\n", "code": "import math\n\n\ndef calculate_framingham_risk_score(age, sex, smoker_status, total_cholesterol, hdl_cholesterol, systolic_bp,\n bp_medication):\n \"\"\"\n Calculate the Framingham Risk Score for Hard Coronary Heart Disease in patients aged 30-79 years without prior coronary heart disease history, diabetes, or intermittent claudication.\n\n Parameters:\n -age (int): The age of the patient in years. Valid range: 30-79.\n -sex (int): The sex of the patient. 0 for female, 1 for male.\n -smoker_status (int): Smoking status of the patient. 0 for non-smoker, 1 for smoker.\n -total_cholesterol (float): Total cholesterol level in mg/dL.\n -hdl_cholesterol (float): HDL cholesterol level in mg/dL.\n -systolic_bp (float): Systolic blood pressure in mm Hg.\n -bp_medication (int): Indicates if the blood pressure is being treated with medications. 0 for no, 1 for yes.\n\n Returns:\n float: The risk percentage of developing hard coronary heart disease.\n\n Calculation is based on the logarithmic transformations of risk factors and their interactions,\n separately for males and females. Note that older population data was used to develop this scale,\n which may not fully align with current population risks.\n \"\"\"\n # Converting inputs for equation\n ln_age = math.log(age)\n ln_total_cholesterol = math.log(total_cholesterol)\n ln_hdl_cholesterol = math.log(hdl_cholesterol)\n ln_systolic_bp = math.log(systolic_bp)\n\n if sex == 0: # Female\n if age &gt; 78:\n age_smoker_interaction = math.log(78) * smoker_status\n else:\n age_smoker_interaction = ln_age * smoker_status\n\n L = (31.764001 * ln_age +\n 22.465206 * ln_total_cholesterol -\n 1.187731 * ln_hdl_cholesterol +\n 2.552905 * ln_systolic_bp +\n 0.420251 * bp_medication +\n 13.07543 * smoker_status -\n 5.060998 * ln_age * ln_total_cholesterol -\n 2.996945 * age_smoker_interaction -\n 146.5933061)\n\n P = 1 -0.98767 ** math.exp(L)\n\n else: # Male\n if age &gt; 70:\n age_smoker_interaction = math.log(70) * smoker_status\n else:\n age_smoker_interaction = ln_age * smoker_status\n\n L = (52.00961 * ln_age +\n 20.014077 * ln_total_cholesterol -\n 0.905964 * ln_hdl_cholesterol +\n 1.305784 * ln_systolic_bp +\n 0.241549 * bp_medication +\n 12.096316 * smoker_status -\n 4.605038 * ln_age * ln_total_cholesterol -\n 2.84367 * age_smoker_interaction -\n 2.93323 * ln_age ** 2 -\n 172.300168)\n\n P = 1 -0.9402 ** math.exp(L)\n\n return P * 100 # Convert to percentage\n", "docstring": "Calculate the Framingham Risk Score for Hard Coronary Heart Disease in patients aged 30-79 years without prior coronary heart disease history, diabetes, or intermittent claudication.\n\n Parameters:\n -age (int): The age of the patient in years. Valid range: 30-79.\n -sex (int): The sex of the patient. 0 for female, 1 for male.\n -smoker_status (int): Smoking status of the patient. 0 for non-smoker, 1 for smoker.\n -total_cholesterol (float): Total cholesterol level in mg/dL.\n -hdl_cholesterol (float): HDL cholesterol level in mg/dL.\n -systolic_bp (float): Systolic blood pressure in mm Hg.\n -bp_medication (int): Indicates if the blood pressure is being treated with medications. 0 for no, 1 for yes.\n\n Returns:\n float: The risk percentage of developing hard coronary heart disease.\n\n Calculation is based on the logarithmic transformations of risk factors and their interactions,\n separately for males and females. Note that older population data was used to develop this scale,\n which may not fully align with current population risks.\n" }</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Inference Example</head><p>User Query What scale should be used to assess a patient's risk of Coronary heart attack? Basic information: male, 49, civil servants Chief Complaints: Chest tightness and shortness of breath January History of present disease: 1 month ago, there was no incentive for chest tightness and asthma, mostly at night, each lasting about 1 hour, can be alleviated by itself, no dizziness, headache, syncope, dark day, nausea, vomiting, cough, phlegm, palpitations, abdominal pain, diarrhea, edema of both lower limbs and other discomfort. Chest CT showed: a high high-density shadow of two upper lung apexes and pleural effusion on both sides. B-ultrasonography showed bilateral pleural effusion. The ECG showed sinus rhythm, left ventricular hypertrophy, left atrial load increase, and some lead Twave changes. Color Doppler echocardiography indicated that the left heart was enlarged and the ejection fraction of the left heart was decreased. The symptoms were not alleviated significantly after drug treatment (specific details are unknown). Coronary angiography was recommended, and the patient was hospitalized in our hospital. During this period, the patient's mental appetite and sleep are OK, and urine and bowel have no obvious abnormalities. Previous history: The patient was found to have elevated blood pressure for 5 years, with a maximum blood pressure of 180/100 MMHG, taking oral antihypertensive drugs and monitoring blood pressure. History of diabetes 3 4 years, oral metformin tablets 0.5g, blood sugar control is good. A history of smoking. The patient's mother had a history of diabetes, and his father had a history of hypertension and coronary heart disease. Physical Examination: T: 36.5°C, P: 107 times/min, R: 18 times/min, BP: 160/110mmHg God clear, eyelid no edema, sclera no yellow staining, soft neck, jugular vein no angry expansion, liver jugular reflux sign negative, thyroid gland no swelling.</p><p>The trachea was centered, the chest was not malformed, the respiratory sounds of the two lower lungs were slightly lower, and the dry and wet rales were not heard, and there was no pleural friction sound. There was no abnormal eminence in the precardiac area and no uplifting beat. The apex beat was in the fifth intercostal space above the left midclavicular line, and the cardiac boundary expanded to the left lower. The rhythm was 107 beats/min, and the rhythm was uniform. The whole abdomen was soft, without tenderness and rebound pain, the liver, spleen and ribs were not touched, both kidneys were not touched, the mobile dullness was negative, and the intestinal ringing was 4-5 times/min. There was no edema in both lower limbs. Physiological reflex was present, but pathological reflex was not induced. Auxiliary Examination: Blood routine, liver and kidney function, electrolyte, thyroid function, troponin, creatine kinase isoenzyme, and tumor markers were not abnormal. Blood biochemical test: total cholesterol: 8.3mmol/L, high-density lipoprotein cholesterol: 0.2mmol/L, low-density lipoprotein cholesterol (LDL-C) 4.1mmol/L brain natriuretic peptide (NT-proBNP) 1013 ng/L. The results of B-ultrasound showed that fatty liver, biliary pancreas, and spleen were not abnormal. Cardiac color ultrasonography showed left atrial and left ventricular enlargement [left atrial diameter (LAD) 50 mm; left ventricular systolic diameter (LVD) 56mm; left ventricular diastolic diameter (LVDd) 66 mm], cardiac insufficiency (LVEF 44%), mild mitral insufficiency, and mild aortic insufficiency. Holter electrocardiogram showed: sinus rhythm, frequent ventricular premature, short ventricular tachycardia, occasionally unsustained atrial tachycardia, intermittent T wave low level. Ambulatory blood pressure: mean blood pressure 150/92 MMHG, maximum blood pressure 185/105 MMHG. Chest CT showed left ventricular enlargement.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Meta-Tool Classifier</head><p>Use the calculator toolkit.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Meta-Tool Rewriter</head><p>• What is the best assessment scale for cardiovascular dysfunction, considering the patient's symptoms of chest tightness, shortness of breath, ECG abnormalities, previous hypertension, and reduced ejection fraction?</p><p>• Which scale should be used to evaluate the risk of a heart attack in a patient with a history of smoking, family history of diabetes and hypertension, and current cardiovascular, respiratory, and metabolic impairments?</p><p>• What risk assessment method is suitable for a coronary heart attack in a patient with histories of hypertension and diabetes, elevated cholesterol levels, decrease in HDL, and impaired liver function indicated by fatty liver?</p><p>Meta-Tool Retrieval</p><p>1. HEART Score for Major Cardiac Events 2. Framingham Risk Score for Hard Coronary Heart Disease 3. Revised Cardiac Risk Index for Pre-Operative Risk 4. CHA2DS2-VASc Score for Atrial Fibrillation Stroke Risk 5. Mean Arterial Pressure (MAP) Meta-Tool Dispatcher Step 1: Understanding User Demand The user demands a tool to assess a patient's risk of a coronary heart attack. Having a high risk of a heart attack could help in early diagnosis and preventive measures. Step 2: Analyzing the Task Scenario The task scenario is a description of a patient suffering from several health issues including hypertension, potential cardiovascular disease, potential respiratory issues, metabolic dysfunction, and potential liver impairment. Step 3: Matching User Demand and Task Scenario to a Tool Comparing the user's requirement and the case, the tool needed is one that can assess the risk of coronary heart disease given the patient's condition, including multiple cardiovascular risk factors, such as diabetes, hypertension, elevated cholesterol levels, and smoking history. Step 4: Choosing the Most Suitable Tool Based on the user's requirement and the task scenario, the Framingham Risk Score for Hard Coronary Heart Disease would be the most suitable tool. This tool helps to evaluate the risk of coronary heart disease in patients without a prior history of the disease. It considers variables such as age, sex, smoking status, total cholesterol, HDL cholesterol, systolic blood pressure, and blood pressure treatment, which would accurately reflect the patient's medical history and current condition. Framingham Risk Score for Hard Coronary Heart Disease Slot Filling</p><p>{ "age": {"Value": 49, "Unit": "years"}, "sex": {"Value": 1, "Unit": "null"}, "smoker_status": {"Value": 1, "Unit": "null"}, "total_cholesterol": {"Value": 8.3, "Unit": "mmol/L"}, "hdl_cholesterol": {"Value": 0.2, "Unit": "mmol/L"}, "systolic_bp": {"Value": 160, "Unit": "mmHg"}, "bp_medication": {"Value": 1, "Unit":</p><p>"null"} } Nested Calling { "chosen_decision_name": "toolcall", "supplementary_information": [ "The total_cholesterol is 8.3 mmol/L. It needs to be converted from mmol/L to mg/dL.", "The hdl_cholesterol is 0.2</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Instance of calculator application in Medical Scenarios. Physicians use calculators to assist in the quantitative assessment of patient's status based on their primary assessment.</figDesc><graphic coords="1,306.14,219.91,218.27,274.46" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: The whole workflow of MeNTi: (a) The physician proposes the next step for a more quantitative analysis. (b) Upon receiving the doctor's request, MeNTi uses the meta-tool to determine and select the appropriate tool from the toolkit. (c) While filling in the parameters, MeNTi detects a unit mismatch and uses the nested tool calling mechanism to identify the need for additional tools. (d) MeNTi solves problems with more tools. (e) MeNTi consolidates the results from all tools and refills the parameters. (f) The final result is computed.</figDesc><graphic coords="3,70.87,70.86,453.55,240.42" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure3: Distribution map of the assessment calculator departments. The calculator used in this study encompasses 13 clinical departments, with a particular emphasis on cardiology, involving 11 calculators.</figDesc><graphic coords="4,306.14,70.87,218.27,117.57" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Algorithm 1 :D</head><label>1</label><figDesc>Meta-Tool Selection Process Data: Toolkit T = {t i c }, where c is tool category and i is tool index; User Query Q, Case Diagnosis D, Patient Case History H, Prompt P , Similarity Ranking R; LLM Model F, Retrieval Model E, Rerank Method RRF. Result: Selected tool by meta-tool, S. /* Meta-tool selects tools based on the query and diagnosis. ← F(H | P diagnosis ); 3 c classf ier ← F(Q, D | P classf ier ); 4 Q rewriter ← F(Q, D | P rewriter ); 5 {R q key } ← E(Q rewriter , {t i c classf ier }); 6 R topk ← RRF({R q key }); 7 S ← F(Q, H, R topk | P dispathcer ); 8 end</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 4 :</head><label>4</label><figDesc>Figure4: Flow of Nested Tool Calling. MeNTi enhances LLMs' tool utilization capabilities using metatool and nested calling mechanism, while also extending the knowledge boundaries of LLMs with a specialized medical toolkit, complementing each other. Through the nested tool calling of the toolkit, MeNTi provides LLMs with more operation and information for solving practical tasks.</figDesc><graphic coords="5,306.14,70.87,218.27,131.37" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Distribution map of the assessment calculator departments.</figDesc><graphic coords="12,70.87,70.86,453.55,251.97" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>The experimental results of MeNTi and other categories of baselines on CalcQA.</figDesc><table><row><cell>Category</cell><cell cols="2">Method Model</cell><cell cols="2">Param. Size CSA</cell><cell>SFA</cell><cell cols="2">UCA CCA</cell></row><row><cell></cell><cell></cell><cell>BianQue2</cell><cell>6B</cell><cell>0%</cell><cell>0%</cell><cell>0%</cell><cell>0%</cell></row><row><cell></cell><cell></cell><cell>ChatGLM3</cell><cell>6B</cell><cell>31%</cell><cell>0%</cell><cell>0%</cell><cell>0%</cell></row><row><cell>Basic Reasoning</cell><cell>CoT</cell><cell>LLaMA-3.1</cell><cell>8B</cell><cell cols="2">65% 33.4%</cell><cell>0%</cell><cell>13%</cell></row><row><cell></cell><cell></cell><cell>PULSE</cell><cell>20B</cell><cell cols="2">79% 11.2%</cell><cell>0%</cell><cell>7%</cell></row><row><cell></cell><cell></cell><cell>GPT-3.5 Turbo</cell><cell>/</cell><cell cols="2">74% 60.4%</cell><cell>4.1%</cell><cell>10%</cell></row><row><cell></cell><cell></cell><cell>GPT-4o</cell><cell>/</cell><cell cols="4">86% 75.7% 22.4% 22%</cell></row><row><cell></cell><cell></cell><cell>PULSE</cell><cell>20B</cell><cell>0%</cell><cell>0%</cell><cell>0%</cell><cell>0%</cell></row><row><cell cols="2">Tool Application CRAFT</cell><cell>GPT-3.5 Turbo</cell><cell>/</cell><cell>25%</cell><cell>4.1%</cell><cell>0%</cell><cell>9%</cell></row><row><cell></cell><cell></cell><cell>GPT-4o</cell><cell>/</cell><cell>28%</cell><cell>4.9%</cell><cell>0%</cell><cell>19%</cell></row><row><cell></cell><cell></cell><cell>PULSE</cell><cell>20B</cell><cell cols="4">81% 35.2% 46.9% 36%</cell></row><row><cell>Our Framework</cell><cell>MeNTi</cell><cell>GPT-3.5 Turbo</cell><cell>/</cell><cell cols="4">77% 56.2% 20.5% 24%</cell></row><row><cell></cell><cell></cell><cell>GPT-4o</cell><cell>/</cell><cell cols="4">86% 70.3% 69.4% 49%</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>Code and Dataset available in https://github.com/ shzyk/MENTI .</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>Counted by https://www.medcentral.com/calculators/all</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>mmol/L. It needs to be converted from mmol/L to mg/dL." ] }</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>MeNTi</head><p>The total_cholesterol is 8.3 mmol/L. It needs to be converted from mmol/L to mg/dL.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Meta-Tool Rewriter</head><p>• "How to convert 8.3 mmol/L total cholesterol to mg/dL?",</p><p>• "Guidelines for conversion of total cholesterol from mmol/L to mg/dL",</p><p>• "Can I convert 8.3 mmol/L total cholesterol level to mg/dL?", Meta-Tool Retrieval</p><p>1. Total Cholesterol 2. Low-density lipoprotein cholesterol 3. High-density lipoprotein cholesterol 4. Ethylene glycol 5. Methanol Meta-Tool Dispatcher Total Cholesterol.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Slot Filling</head><p>{ "input_value": {"Value": 8.3, "Unit": "null"}, "input_unit": {"Value": 0, "Unit": "null"}, "target_unit": {"Value": 2, "Unit":</p><p>"null"} } Nested Calling { "chosen_decision_name": "calculate", "supplementary_information": null } For the Total Cholesterol, 8.3 mmol/L is equal to 320.9195 mg/dL</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>MeNTi</head><p>The hdl_cholesterol is 0.2 mmol/L. It needs to be converted from mmol/L to mg/dL.</p><p>Meta-Tool Rewriter</p><p>• "How to convert the HDL cholesterol level from mmol/L to mg/dL when the value is 0.2",</p><p>• "Conversion of 0.2 mmol/L HDL cholesterol to mg/dL",</p><p>• "What is 0.2 mmol/L of HDL cholesterol in mg/dL?", Meta-Tool Retrieval</p><p>1. Total Cholesterol 2. High-density lipoprotein cholesterol 3. Low-density lipoprotein cholesterol Meta-Tool Dispatcher</p><p>High-density lipoprotein cholesterol Slot Filling { "input_value": {"Value": 0.2, "Unit": "mmol/L"}, "input_unit": {"Value": 0, "Unit": null}, "target_unit": {"Value": 2, "Unit": null} } Nested Calling { "chosen_decision_name": "calculate", "supplementary_information": null } For the High-density lipoprotein cholesterol, 0.2 mmol/L is equal to 7.7330000000000005 mg/dL Slot Filling { "age": {"Value": 49, "Unit": "years"}, "sex": {"Value": 1, "Unit": "null"}, "smoker_status": {"Value": 1, "Unit": "null"}, "total_cholesterol": {"Value": 320.9195, "Unit": "mg/dL"}, "hdl_cholesterol": {"Value": 7.733, "Unit": "mg/dL"}, "systolic_bp": {"Value": 160, "Unit": "mmHg"}, "bp_medication": {"Value": 1, "Unit":</p><p>"null"} } Nested Calling { "chosen_decision_name": "calculate", "supplementary_information": "All parameters comply with the Function Docstring requirements.</p><p>No unit conversion is needed as the parameters use correct units or indices." }</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>MeNTi</head><p>The patient's Framingham Risk Score for Hard Coronary Heart Disease is 93.70109147053569</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Adler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lama</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilge</forename><surname>Akkaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florencia</forename><surname>Leoni Aleman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Janko</forename><surname>Altenschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Altman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.08774</idno>
+		<title level="m">Shyamal Anadkat, et al. 2023. Gpt-4 technical report</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tianle</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tengyu</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.17126</idno>
+		<title level="m">Large language models as tool makers</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">Junzhe</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuming</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuodi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyu</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Wei</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaofeng</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lijie</forename><surname>Wen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.16499</idno>
+		<title level="m">Llmarena: Assessing capabilities of large language models in dynamic multi-agent environments</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Program of thoughts prompting: Disentangling computation from reasoning for numerical reasoning tasks</title>
+		<author>
+			<persName><forename type="first">Wenhu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueguang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">W</forename><surname>Cohen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions on Machine Learning Research</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Bianque: Balancing the questioning and suggestion ability of health llms with multi-turn health conversations polished by chatgpt</title>
+		<author>
+			<persName><forename type="first">Yirong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenyu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaofen</forename><surname>Xing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhipei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junhong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sihang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jieling</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangmin</forename><surname>Xu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.15896</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Gregory P Veldhuizen, et al. 2023. The future landscape of large language models in medicine</title>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Clusmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fiona</forename><forename type="middle">R</forename><surname>Kolbinger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sophie</forename><surname>Hannah</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Muti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Zunamys</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan-Niklas</forename><surname>Carrero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Narmin</forename><surname>Eckardt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chiara</forename><surname>Ghaffari Laleh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lavinia</forename><surname>Maria</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sophie-Caroline</forename><surname>Löffler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michaela</forename><surname>Schwarzkopf</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Unger</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Communications medicine</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">141</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Reciprocal rank fusion outperforms condorcet and individual rank learning methods</title>
+		<author>
+			<persName><surname>Gordon V Cormack</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">A</forename><surname>Charles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Clarke</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Buettcher</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 32nd international ACM SIGIR conference on Research and development in information retrieval</title>
+		<meeting>the 32nd international ACM SIGIR conference on Research and development in information retrieval</meeting>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="758" to="759" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Anytool: Self-reflective, hierarchical agents for largescale api calls</title>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangyun</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongyang</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.04253</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhengxiao</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujie</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiezhong</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhilin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Tang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2103.10360</idno>
+		<title level="m">Glm: General language model pretraining with autoregressive blank infilling</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Pickering, and Vitaly Herasevich. 2016a. Clinical calculators in hospital medicine: Availability, classification, and needs</title>
+		<author>
+			<persName><forename type="first">Mikhail</forename><forename type="middle">A</forename><surname>Dziadzko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ognjen</forename><surname>Gajic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><forename type="middle">W</forename></persName>
+		</author>
+		<idno type="DOI">10.1016/j.cmpb.2016.05.006</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Computer Methods and Programs in Biomedicine</title>
+		<imprint>
+			<biblScope unit="volume">133</biblScope>
+			<biblScope unit="page" from="1" to="6" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Clinical calculators in hospital medicine: availability, classification, and needs</title>
+		<author>
+			<persName><forename type="first">Ognjen</forename><surname>Mikhail A Dziadzko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><forename type="middle">W</forename><surname>Gajic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vitaly</forename><surname>Pickering</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Herasevich</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Computer methods and programs in biomedicine</title>
+		<imprint>
+			<biblScope unit="volume">133</biblScope>
+			<biblScope unit="page" from="1" to="6" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">2023a. Precise zero-shot dense retrieval without relevance labels</title>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueguang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamie</forename><surname>Callan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 61st Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="1762" to="1777" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Yiming Yang, Jamie Callan, and Graham Neubig. 2023b. Pal: Program-aided language models</title>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<biblScope unit="page" from="10764" to="10799" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingcheng</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danqi</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2104.08821</idno>
+		<title level="m">Simcse: Simple contrastive learning of sentence embeddings</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhibin</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yeyun</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujiu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minlie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.17452</idno>
+		<title level="m">Tora: A tool-integrated reasoning agent for mathematical problem solving</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Medical calculators: Prevalence, and barriers to use</title>
+		<author>
+			<persName><forename type="first">Tim</forename><forename type="middle">A</forename><surname>Green</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stevan</forename><surname>Whitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffery</forename><forename type="middle">L</forename><surname>Belden</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sanda</forename><surname>Erdelez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi-Ren</forename><surname>Shyu</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.cmpb.2019.105002</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Computer Methods and Programs in Biomedicine</title>
+		<imprint>
+			<biblScope unit="volume">179</biblScope>
+			<biblScope unit="page">105002</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Toolkengpt: Augmenting frozen language models with massive tools via tool embeddings. Advances in neural information processing systems</title>
+		<author>
+			<persName><forename type="first">Shibo</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiting</forename><surname>Hu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page">36</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawen</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenrui</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Neil</forename><surname>Zhenqiang Gong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.03128</idno>
+		<title level="m">Metatool benchmark for large language models: Deciding whether to use tools and which to use</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Query expansion by prompting large language models</title>
+		<author>
+			<persName><forename type="first">Rolf</forename><surname>Jagerman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honglei</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanhui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Bendersky</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.03653</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Improving medical reasoning through retrieval and self-reflection with retrievalaugmented large language models</title>
+		<author>
+			<persName><forename type="first">Minbyul</forename><surname>Jeong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiwoong</forename><surname>Sohn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mujeen</forename><surname>Sung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaewoo</forename><surname>Kang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Bioinformatics</title>
+		<imprint>
+			<biblScope unit="volume">40</biblScope>
+			<biblScope unit="issue">Supplement_1</biblScope>
+			<biblScope unit="page" from="119" to="129" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Retrieval-augmented generation for knowledge-intensive nlp tasks</title>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Piktus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladimir</forename><surname>Karpukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heinrich</forename><surname>Küttler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Rocktäschel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="9459" to="9474" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Training language models to follow instructions with human feedback. Advances in neural information processing systems</title>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carroll</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katarina</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="27730" to="27744" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Creator: Tool creation for disentangling abstract and concrete reasoning of large language models</title>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Cheng Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Fung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ji</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: EMNLP 2023</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="6922" to="6939" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shihao</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yining</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kunlun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lan</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaxi</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Qian</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.16789</idno>
+		<title level="m">Toolllm: Facilitating large language models to master 16000+ real-world apis</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">The probabilistic relevance framework: Bm25 and beyond</title>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Robertson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Zaragoza</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Foundations and Trends® in Information Retrieval</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="333" to="389" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jingqing</forename><surname>Ruan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiwei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianpeng</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guoqing</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiwei</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hangyu</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyue</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingyu</forename><surname>Zeng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.03427</idno>
+		<title level="m">Tptu: large language model-based ai agents for task planning and tool usage</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Toolformer: Language models can teach themselves to use tools</title>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberta</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicola</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Scialom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page">36</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Hugginggpt: Solving ai tasks with chatgpt and its friends in hugging face</title>
+		<author>
+			<persName><forename type="first">Yongliang</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaitao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongsheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiming</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yueting</forename><surname>Zhuang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="page">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Large language models encode clinical knowledge</title>
+		<author>
+			<persName><forename type="first">Karan</forename><surname>Singhal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shekoofeh</forename><surname>Azizi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sara</forename><surname>Mahdavi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyung</forename><forename type="middle">Won</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Tanwani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heather</forename><surname>Cole-Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Pfohl</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="volume">620</biblScope>
+			<biblScope unit="issue">7972</biblScope>
+			<biblScope unit="page" from="172" to="180" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weimin</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawei</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingbo</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hailiang</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ke</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rong</forename><surname>Yao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.06624</idno>
+		<title level="m">Restgpt: Connecting large language models with real-world restful apis</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">2023a. Toolalpaca: Generalized tool learning for language models with 3000 simulated cases</title>
+		<author>
+			<persName><forename type="first">Qiaoyu</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziliang</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongyu</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianpei</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiao</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Sun</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.05301</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xiangru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anni</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuosheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.10537</idno>
+		<title level="m">Arman Cohan, and Mark Gerstein. 2023b. Medagents: Large language models as collaborators for zero-shot medical reasoning</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Large language models in medicine</title>
+		<author>
+			<persName><forename type="first">Arun</forename><surname>James Thirunavukarasu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Darren</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeng</forename><surname>Ting</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kabilan</forename><surname>Elangovan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laura</forename><surname>Gutierrez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ting</forename><surname>Fang Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Ting</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature medicine</title>
+		<imprint>
+			<biblScope unit="volume">29</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page" from="1930" to="1940" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Albert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amjad</forename><surname>Almahairi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasmine</forename><surname>Babaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolay</forename><surname>Bashlykov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soumya</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prajjwal</forename><surname>Bhargava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shruti</forename><surname>Bhosale</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.09288</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Open foundation and fine-tuned chat models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Query2doc: Query expansion with large language models</title>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Furu</forename><surname>Wei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The 2023 Conference on Empirical Methods in Natural Language Processing</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangyi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lifan</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunzhu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.01030</idno>
+		<title level="m">Executable code actions elicit better llm agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Augmenting black-box llms with medical textbooks for clinical question answering</title>
+		<author>
+			<persName><forename type="first">Yubo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueguang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhu</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.02233</idno>
+	</analytic>
+	<monogr>
+		<title level="m">He sicheng Wang Yuxin, Sun Qingxuan. 2023. M3e: Moka massive mixed embedding model</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Pmc-llama: toward building open-source language models for medicine</title>
+		<author>
+			<persName><forename type="first">Chaoyi</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weixiong</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoman</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ya</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weidi</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanfeng</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the American Medical Informatics Association</title>
+		<imprint>
+			<biblScope unit="page">e045</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">Lifan</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangyi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><forename type="middle">R</forename><surname>Fung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.17428</idno>
+		<title level="m">Craft: Customizing llms by creating and retrieving from specialized toolsets</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Easytool: Enhancing llm-based agents with concise tool instruction</title>
+		<author>
+			<persName><forename type="first">Siyu</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaitao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiangjie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongliang</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kan</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongsheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deqing</forename><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR 2024 Workshop on Large Language Model (LLM) Agents</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Chatdoctor: A medical chat model fine-tuned on llama model using medical domain knowledge</title>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Yunxiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Zihan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhang</forename><surname>Kai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Ruilong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhang</forename><surname>You</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.14070</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Meddialog: Large-scale medical dialogue datasets</title>
+		<author>
+			<persName><forename type="first">Guangtao</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenmian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeqian</forename><surname>Ju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sicheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruisi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meng</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaqi</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyu</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoyu</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP)</title>
+		<meeting>the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP)</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="9241" to="9250" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">2023a. Deep q-learning to globally optimize a kd parameter search for medical imaging</title>
+		<author>
+			<persName><forename type="first">Hongmei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Songshi</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><forename type="middle">A</forename><surname>Matkovic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shadab</forename><surname>Momin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaofeng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><forename type="middle">F</forename><surname>Insana</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Quantitative Imaging in Medicine and Surgery</title>
+		<imprint>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page">4879</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">2023b. Pulse: Pretrained and unified language service engine</title>
+		<author>
+			<persName><forename type="first">Xiaofan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kui</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoting</forename><surname>Zhang</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Expel: Llm agents are experiential learners</title>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quentin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthieu</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong-Jin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gao</forename><surname>Huang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page" from="19632" to="19642" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Docprompting: Generating code by retrieving the docs</title>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengbao</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Toolqa: A dataset for llm question answering with external tools</title>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page">36</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

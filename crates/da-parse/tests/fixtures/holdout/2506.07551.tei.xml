@@ -1,0 +1,1153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">CheMatAgent: Enhancing LLMs for Chemistry and Materials Science through Tree-Search Based Tool Learning</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-06-12">12 Jun 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Mengsong</forename><surname>Wu</surname></persName>
+							<email>wumengsong@pjlab.org.cn</email>
+							<affiliation key="aff0">
+								<orgName type="laboratory">Shanghai Artificial Intelligence Laboratory</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution">Soochow University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yafei</forename><surname>Wang</surname></persName>
+							<email>wangyafei@pjlab.org.cn</email>
+							<affiliation key="aff0">
+								<orgName type="laboratory">Shanghai Artificial Intelligence Laboratory</orgName>
+							</affiliation>
+							<affiliation key="aff2">
+								<orgName type="institution">Zhejiang University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yidong</forename><surname>Ming</surname></persName>
+							<email>yidonming2-c@my.cityu.edu.hk</email>
+							<affiliation key="aff3">
+								<orgName type="institution">City University of Hong Kong</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yuqi</forename><surname>An</surname></persName>
+							<affiliation key="aff3">
+								<orgName type="institution">City University of Hong Kong</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yuwei</forename><surname>Wan</surname></persName>
+							<email>yuweiwan2-c@my.cityu.edu.hk</email>
+							<affiliation key="aff3">
+								<orgName type="institution">City University of Hong Kong</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Wenliang</forename><surname>Chen</surname></persName>
+							<email>wlchen@suda.edu.cn</email>
+							<affiliation key="aff1">
+								<orgName type="institution">Soochow University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Binbin</forename><surname>Lin</surname></persName>
+							<email>binbinlin@zju.edu.cn</email>
+							<affiliation key="aff2">
+								<orgName type="institution">Zhejiang University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yuqiang</forename><surname>Li</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="laboratory">Shanghai Artificial Intelligence Laboratory</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Tong</forename><surname>Xie</surname></persName>
+							<email>tong.xie@unsw.edu.au</email>
+							<affiliation key="aff3">
+								<orgName type="institution">City University of Hong Kong</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Dongzhan</forename><surname>Zhou</surname></persName>
+							<email>zhoudongzhan@pjlab.org.cn</email>
+							<affiliation key="aff0">
+								<orgName type="laboratory">Shanghai Artificial Intelligence Laboratory</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">CheMatAgent: Enhancing LLMs for Chemistry and Materials Science through Tree-Search Based Tool Learning</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-06-12">12 Jun 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">02CA532F40E840EBCB8E53E77DC3625D</idno>
+					<idno type="arXiv">arXiv:2506.07551v2[cs.LG]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:08+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large language models (LLMs) have recently demonstrated promising capabilities in chemistry tasks while still facing challenges due to outdated pretraining knowledge and the difficulty of incorporating specialized chemical expertise. To address these issues, we propose an LLM-based agent that synergistically integrates 137 external chemical tools created ranging from basic information retrieval to complex reaction predictions, and a dataset curation pipeline to generate the dataset Chem-ToolBench that facilitates both effective tool selection and precise parameter filling during fine-tuning and evaluation. We introduce a Hierarchical Evolutionary Monte Carlo Tree Search (HE-MCTS) framework, enabling independent optimization of tool planning and execution. By leveraging self-generated data, our approach supports step-level fine-tuning (FT) of the policy model and training task-adaptive PRM and ORM that surpass GPT-4o. Experimental evaluations demonstrate that our approach significantly improves performance in Chemistry QA and discovery tasks, offering a robust solution to integrate specialized tools with LLMs for advanced chemical applications. All datasets and code are available at <ref type="url" target="https://github.com/AI4Chem/ChemistryAgent">https:  //github.com/AI4Chem/ChemistryAgent</ref>.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>In recent years, Large Language Models (LLMs) have shown considerable promise in tackling chemistry-related tasks <ref type="bibr" target="#b25">(Xue et al., 2020;</ref><ref type="bibr">Zhang et al., 2024b;</ref><ref type="bibr">Mirza et al., 2024)</ref>, such as molecule generation and reaction prediction. However, the expert chemistry knowledge embedded in pretrained models may become outdated and face challenges when applied to real-world scenarios. One potential solution is the development of LLMbased agents that integrate language models with external, specialized tools to utilize the latest chemistry knowledge.</p><p>Developing LLM-based agents for chemistry has shown significant potential in recent years but there still exists several challenges. First, existing chemical toolkits rely on specialized cheminformatics software, which is difficult to develop and deploy. As a result, the number of available tools is limited, which restricts their use in a wider range of chemical tasks. Additionally, current datasets suffer from poor quality and lack proper evaluation settings. Even when tools are available, agents struggle with both selecting the right tools and generating accurate parameters due to the specialized knowledge required in chemistry. These limitations hinder the effectiveness of chemistry-focused LLM agents.</p><p>To address these challenges, we collect a large and diverse set of chemical tools to provide more available tools for LLMs. The new toolkit supports a variety of tasks, from simple information queries to complex reaction predictions, which broadens the potential applications of intelligent agents in chemistry. The code implementation of tools is also in a clear format that is easy to follow, which means more tools can be added to toolpool easily.</p><p>A high-quality, diverse meta-dataset ChemTool-Bench with above tools is then created for finetuning the model and serving as the benchmark. To construct the comprehensive dataset, we have designed a dataset curation pipeline for self-instruct chemistry Tool Learning data generation. The dataset includes difficult examples for both tool selection and parameter filling-in, which helps train the model to perform better to call chemistry domain tools.</p><p>For better tool calling, we introduce an efficient Hierarchical Evolutionary Monte Carlo Tree Search (HE-MCTS) framework. The high-level policy model iteratively explores and refines the tool selection sequence, while the fine-tuned lowlevel execution model iteratively reflects on exe- cution feedbacks to enhance accuracy. Additionally, we leverage self-generated HE-MCTS data alongside the meta-dataset to perform step-level fine-tuning on the policy model, and train taskadaptive PRM and ORM as alternatives to GPT-4o. Crucially, this training process requires no manual annotation or curation. The self-evolving agent, guided by HE-MCTS, autonomously optimizes its performance, demonstrating superior reasoning and execution capabilities.</p><p>Our contributions are listed as follows: (1) We introduce the largest tool pool in the Chemistry and Materials domain, consisting of 137 tools. An agent augmented with this pool demonstrates superior performance in Chemistry-related QA and discovery tasks.</p><p>(2) We design a dataset curation pipeline tailored for domain-specific tool learning, enabling efficient data generation for fine-tuning. This pipeline supports the construction of the new dataset Chem-ToolBench for detailed benchmarking. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">CheMatAgent</head><p>Inspired by the success of LLM agents in general scenarios, we attempt to construct an agent for chemistry from scratch. The foundation LLM of our agent could retrieve and call external tools, and do deep reasoning on complex domain questions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Tools Integration</head><p>This section introduces how to construct executable chemistry toolpools as shown in Figure <ref type="figure" target="#fig_7">6</ref>. For convenience in agent deployment and evaluation, we hope the tool mainly executes in the local environment and requires slight free online services. The procedure can be divided into 3 steps as follows.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1.1">Collect Tools from the Internet</head><p>We conduct a survey on former works about chemistry agents / tools <ref type="bibr" target="#b0">(Bran et al., 2023;</ref><ref type="bibr" target="#b9">McNaughton et al., 2024;</ref><ref type="bibr" target="#b11">Ong et al., 2013)</ref> and also investigate relevant repositories in Github<ref type="foot" target="#foot_0">foot_0</ref> . Finally we collect tools from 5 sources listed in </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1.2">Organize Tools in Uniform Format</head><p>To make the tool learning module of the agent extendable, we design a uniform file format for loading python tool packages. We count all the functions or methods in each package that can be used as tools. Then we list them in a new JSON file called "tools.json" in each package like in Figure <ref type="figure" target="#fig_7">6</ref>. The code path for the implementation of the tool is also given in that file. With the uniform format of each packge, the agent can easily know which tools it has and where to call them. In the future, more and more chemistry tool packages can be added to our agent without refining the agent framework for compatibility issues as soon as they use the same package organization format as we do.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1.3">Write Documentation &amp; Refine Code</head><p>To make the chemistry toolpool reliable, we also write tool documentation and refine code in the final step of tool integration like shown in Figure <ref type="figure" target="#fig_7">6</ref>. We write documentation for each chemistry tool so that the agent can better understand the purpose of tools and how to use them. Besides, chemistry usually contains a variety of compounds, reactions, and other specialized knowledge, with which large models may not be familiar. So we summarize the input parameters of all the tools with uniform naming.</p><p>In Addition, we refine the code implementation of tools to make them easy to use for the agent. Many tools rely on instances of classes defined in their original Python packages as inputs so it is difficult for the agent to only call the specific tool without declaring other classes. In order to decouple the tools from their original packages, we adopt two approaches. (1) For inputs that can be represented with common data types in Python, we convert the original parameters into their corresponding types.</p><p>(2) For those can not be easily represented, we read and write them using the pickle file format.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Dataset Construction</head><p>A high-quality dataset is the prerequisite for agent fine-tuning and evaluation. In this section we talk about how to construct the chemistry domain Tool Learning dataset ChemToolBench, trying to design corresponding construction methods by incorporating the characteristics of the chemistry discipline.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2.1">Preparation</head><p>In order to better construct data, we generate cases for each kind of parameters. All parameter names have been standardized in Section 2.1.3 so that they can be easily categorized.</p><p>In our preliminary attempts, we find that LLMs are not good at making up diverse input parameters. Since the large amount of data constructed by the requirements, the cases returned by the large model over multiple inputs inevitably fall into homogenization. Besides some parameters involve the user personal privacy, and due to RLHF, the LLMs will simply refuse to return the results, even if they are ordered to generate some virtual examples.</p><p>To improve the situation, we find the way to provide some examples of input parameters in prompt like in Figure <ref type="figure" target="#fig_2">2</ref>. We use 3 approaches to generate examples for these parameters. (1) For those chemistry-related concepts, we get examples from the online chemistry database like PubChem<ref type="foot" target="#foot_1">foot_1</ref> . (2) For general parameters, we let LLMs to generate as many examples as possible.</p><p>(3) For those parameters involving personal privacy like api-key or password, we write code to construct examples.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2.2">Single-Tool-Calling Data</head><p>For cases which only need to call single tool, it is relatively easy to generate. We provide the LLM with the tool and examples of input parameters then the LLM makes up the tool calling as in Figure <ref type="figure" target="#fig_2">2</ref>. For tools in packages ChemCrow, CACTUS, chemlib and Chemistry Tools, we try to execute these tool callings to examine the correctness. For tools in the package pymatgen, we do an exhaustive manual examination after generation. The same is true for tool calling chains in the next section 2.2.3. Then we fill in the tool calling and tool information in the prompt to let the LLM generate the user query. After final manual check, the generation of single-tool-calling data is completed.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2.3">Multiple-Tool-Calling Data</head><p>For cases which need to call multiple tools, we break down the goal into three steps to construct the data. The quality of the data obtained by letting LLM generate it directly is poor. The format of the output is often wrong, not to mention the logic of the tool calling chain. Splitting and subdividing that data generation task as much as possible facilitates better LLMs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>STEP 1: Candidate Tool Selection</head><p>The first step is to select several tools from the whole tool pool. The tool documentation is put into prompt in a disorganized order, and the LLM picks the tools that are relevant from the prompt and generates a rough task description.</p><p>STEP 2: Tool Calling Chain Generation Given candidate tool, input parameter examples and rough task description generated in the last step, the model is asked to generate the tool calling chain step-by-step like in Figure <ref type="figure" target="#fig_2">2</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>STEP 3: User Query Generation</head><p>The third step is to generate the user query according to the tool calling chain and tool documentation. Finally we do a manual check to examine the correctness and logical soundness.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2.4">Dataset Analysis</head><p>To the best of our knowledge, we construct the largest and most comprehensive Chemistry Tool Learning dataset. Our dataset ChemToolBench contains two main splits: Comprehensive Chemistry split:</p><p>It has 10441 single-calling data (8353/1044/1044 for train/dev/test) and 2003 multiple-calling data <ref type="bibr">(1623/200/200</ref> for train/dev/test). Materials Science split: It has 15742 singlecalling data (14102/820/820 for train/dev/test) and 1623 multiple-calling data (1187/436 for train/test).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">The HE-MCTS Framework</head><p>Our approach, HE-MCTS, is outlined in Figure <ref type="figure" target="#fig_3">3</ref> and developed using four main components.</p><p>• Policy Model, which treats tools as aids and integrates tool invocation into a coherent decision process, and Execution Model, which generates specific parameters for each tool invocation, jointly generate step-by-step solutions for each task.</p><p>• Hierarchical MCTS, which performs efficiently under the guidance of PRM and ORM.</p><p>• Process Reward Model (PRM), which evaluates the quality of any reasoning step, and Outcome Reward Model (ORM), which assesses the quality of the final answer, jointly guide HE-MCTS.</p><p>• LLM Self-Training, which leverages HE-MCTS to collect decision trajectories, trains Policy Model on enhanced positive samples, and trains both PRM and ORM on all generated trajectories.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3.1">Policy Model and Execution Model</head><p>Existing tool agents <ref type="bibr">(Chen et al., 2024c;</ref><ref type="bibr" target="#b16">Schick et al., 2024)</ref> typically use a single model for both tool planning and execution, though these tasks are inherently different. Tool planning, guided by Tool-Augmented Learning <ref type="bibr" target="#b12">(Parisi et al., 2022)</ref>, requires high-level tasks and tool understanding, while tool execution, guided by Tool-Oriented Learning <ref type="bibr" target="#b14">(Qin et al., 2024)</ref>, demands precise operational knowledge. To address this, we decouple tool selection and execution into two components: Policy Model p and Execution Model u.</p><p>At step i, Policy Model generates k actions a j i ∼ p(a i |s p i-1 ), for j = 1, . . . , k. The state s p i-1 denotes a partial trajectory</p><formula xml:id="formula_0">s p i-1 = [x p , a 1 , o 1 , . . . , a i-1 , o i-1 ].</formula><p>The input x p comprises tool selection task prompt, task examples, query q. The action a i comprises thought and tool invocation at step i. The valid action space is defined as A = {a i | a i ∈ T ∪ A n }, where T = {t 1 , t 2 , . . . , t m } denotes the set of available tools, and A n denotes an aggregated response derived from prefix trajectory.</p><p>Given an action a j i , the execution result o j i is obtained via o j i = u(a j i , s u i-1 ), where the state s</p><formula xml:id="formula_1">u i-1 is defined as s u i-1 = [x u , a 1 , o 1 , . . . , a i-1 , o i-1 ]</formula><p>, the input x u comprises tool execution task prompt, task examples, query q. Execution Model is independently fine-tuned on the dataset D u , which derived from meta-dataset. Only the log probability of parameter_token is computed.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3.2">Search-Based Hierarchical Reasoning</head><p>In our hierarchical evolutionary framework, we integrate Monte Carlo Tree Search (MCTS) into Policy Model, where each node denotes s p i-1 .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Uniqueness Enforcement:</head><p>Unlike Alphazero <ref type="bibr" target="#b22">(Wan et al., 2024)</ref>, which promotes diversity through clustering, we enforce uniqueness among sibling nodes by directly filtering out identical execution results, as each result is uniquely determined by the tool and its parameters.</p><p>Explicit Promotion of Diversity: Instead of relying on temperature adjustments <ref type="bibr">(Zhang et al., 2024a;</ref><ref type="bibr" target="#b19">Song et al., 2024;</ref><ref type="bibr">Chen et al., 2024b)</ref>, we enhance exploration by tracking historical sibling nodes and incorporating diversity prompts. Prioritization of Unexplored Branches: Following CPO <ref type="bibr">(Zhang et al., 2024c)</ref>, we prioritize non-terminal nodes to encourage further exploration of unfinished branches during selection.</p><p>Adaptive Pruning for Efficient Exploration: Building on AlphaLLM <ref type="bibr" target="#b21">(Tian et al., 2024)</ref>, we introduce an more adaptive pruning mechanism, which dynamically evaluates nodes using score I(s p i ) and incorporates Hierarchical Pruning, Soft Pruning, and Fast Recovery to balance search quality and stability. Details are provided in the appendix.</p><p>Additionally, we integrate fast-rollout and Global Reflection (Policy-Level), which refines Policy Model by incorporating feedback across multiple search iterations.</p><p>Execution Model is directly invoked by Policy Model during the expansion and simulation of the H-MCTS. Upon execution failure, Execution Model refines through (Tool-Level) Immediate Reflection, incorporating real-time execution error feedback. Once the iterative self-corrective reflection process concludes, the final execution results are returned to Policy Model, which then proceeds with the HE-MCTS evaluation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3.3">Enhanced Self-Step-FT for Policy Model</head><p>Based on meta-dataset, we construct a step-level dataset for tool selection, denoted as D p = {(s p i-1 , a i )}. Additionally, we construct an enhanced dataset Dp = {(s p i-1 , a j i )} by two strategies.</p><p>Multi-Path Reasoning and Noise Filtering Strategy: For multi-step tool invocation tasks, LLMs can exhibit multiple valid reasoning paths. It is natural to apply a reward-based mechanism that incorporates estimated values to select paths <ref type="bibr">(Chen et al., 2024b;</ref><ref type="bibr">Zhang et al., 2024a;</ref><ref type="bibr">Chen et al., 2024a)</ref> to extract multiple reasoning paths from HE-MCTS trees for fine-tuned. However, such mechanisms do not eliminate noisy actions, potentially leading to errors in credit assignment. To address this, we filter reasoning paths with metadataset, enforcing consistency between each node and the standard invocation chain, ensuring noisefree training labels. Analysis of search trees reveals that multiplicity stems from the parallel execution of certain tools, with dependencies and interchangeability naturally forming a directed acyclic  graph(DAG). Leveraging this structure, an alternative approach is reordering interchangeable tools in meta-dataset, while using GPT to ensure coherent reasoning within each invocation chain.</p><p>Robustness Reasoning and Noise Retention Strategy: In real-world scenarios, the Policy Model iteratively generates and corrects errors. Discarding paths with incorrect steps or final answers <ref type="bibr">(Zhang et al., 2024c;</ref><ref type="bibr" target="#b19">Song et al., 2024;</ref><ref type="bibr" target="#b21">Tian et al., 2024)</ref> wastes valuable trajectories and weakens its robustness to real-world error patterns. To address this, we extract nodes from the HE-MCTS tree that follow the correct tool selection strategy, even if their reasoning paths are incomplete or contain errors. Specifically, s p i-1 may contain incorrect tool invocations, erroneous execution results or perturbed reasoning, while a j i remain correct. Guided by this option, a complementary and more efficient approach perturbs D p via rule-based modifications while using GPT to generate corresponding thoughts, observations, or answers.</p><p>The comparison between D p and Dp is pre-sented in Figure <ref type="figure" target="#fig_4">4</ref>, where each highlighted node can be used to construct a step-FT training sample.</p><p>The loss function for fine-tuning policy_model is:</p><formula xml:id="formula_2">Lp = E (s p i-1 ,a j i )∼ Dp ∪D p log p(a j i |s p i-1 ) .</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3.4">Self-Training for PRM and ORM</head><p>We train two types of self-improving critic models to guide the search process. Both PRM and ORM are initialized using Policy Model, and their weights remain fixed throughout the HE-MCTS iterations.</p><p>PRM The dataset for PRM is constructed as D P RM = {(s p i , v i )} , where s p i is sampled from nodes in HD-MCTS trees or the augmented synthetic data. v i is determined on the correctness of a i rather than the calibrated value of node s p i <ref type="bibr">(Chen et al., 2024a;</ref><ref type="bibr">Zhang et al., 2024a;</ref><ref type="bibr">Chen et al., 2024b)</ref>. Specifically, if a i aligns with the standard tool invocation chain, v i is 1; otherwise, v i is 0. The loss function is:</p><formula xml:id="formula_3">L P RM = -E (s p i ,v i )∼D P RM (V (s p i ) -v i ) 2 .</formula><p>ORM The dataset for ORM is formulated as D ORM = {([q, a L ], r L )}, where q and a L originate from the terminal nodes s p L = [q, a 1 , o 1 , . . . , a L-1 , o L-1 , a L ](a L ∈ An), sampled from nodes in HD-MCTS trees or the augmented synthetic data. r L is a weighted average of two scores: (1) r 1 L , obtained by prompting GPT to assess a L , (2) r 2 L , derived from rule-based correctness evaluation of the sequence [q, a 1 , o 1 , . . . , a L-1 , o L-1 ] using metadataset.</p><p>The loss function is: </p><formula xml:id="formula_4">L ORM = -E ([q,a L ],r L )∼D ORM (R L -r L ) 2 .</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Experiments 3.1 Experimental Setup</head><p>To evaluate the reasoning capabilities of our tool agent in the field of chemistry, we conduct experiments on the ChemToolBench. Given a user query, the tool retriever would first search relevant tools from the whole tool pool. Then the LLM judges whether to call these candidate tools. With the tool calling executed, the LLM takes all return values into consideration and generates the final answer. For multi-tool calling tasks, we evaluate the performance of the agent under both the Chainof-Thought (CoT) paradigm and the HE-MCTS paradigm(-M). Since the -M agent essentially operates as a multi-agents system, we provide detailed training configurations of each model in Appendix Table <ref type="table">5</ref>. For LLMs, we evaluate both commercial models, such as GPT-4o-mini and Claude-3.5-Sonnet, as well as open-source models, including Qwen-2.5, ChemLLM<ref type="foot" target="#foot_2">foot_2</ref> and the Llama series.</p><p>For tool retriever, we take dense retrievers like all-MiniLM-L6-v2<ref type="foot" target="#foot_3">foot_3</ref> and NV-Embed v2<ref type="foot" target="#foot_4">foot_4</ref> .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Evaluation Metric</head><p>We conduct a comprehensive evaluation of the agent's process reasoning accuracy and result accuracy. Process reasoning accuracy is assessed in terms of tool selection and tool execution (parameter generation). To provide a fine-grained analysis of the agent's reasoning capability, we compute Precision, Recall, and F1-score of tool selection and parameter filling-in. Result accuracy is measured using the Pass Rate, which, in the context of question-answering tasks, denotes the proportion of final answers generated by the agent that GPT-4o deems consistent with the reference answers.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Results &amp; Discussion</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.1">Main Results</head><p>Table 2 presents the main experimental results. For the HE-MCTS, GPT-4o-mini-M and Claude-3.5-S-M exhibit superior than GPT-4o-mini and Claude-3.5-S, primarily due to enhanced tool selection capabilities. Our empirical evaluations reveal key advantages of the proposed decoupled hierarchical framework: (1) Enhanced Tool Execution Capability: Compared to end-to-end inference, independently optimizing the Execution Model significantly improves parameter generation accuracy. We attribute this improvement to the substantial reduction in action space enabled by the decoupled framework, allowing the model to focus on specific tasks without unnecessary reasoning over an excessively large search space. (2) Positive Impact of Tool Selection on Execution: As the performance of the Policy Model improves, we observe a minor yet consistent enhancement in the Execution Model. This suggests that more precise tool selection provides a more reliable context for parameter generation, ultimately leading to better execution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.2">Ablation Analysis</head><p>For the Policy Model, tool selection capabilities of -M0, -M1, and -M2 models exhibit a consistent upward trend, with the -M2 models surpassing GPT-4o-mini-M and Claude-3.5-S-M. This result validates the effectiveness of the method we proposed in Section 2.3.3. For PRM and ORM, -M3 models outperform -M2 models, indicating that the PRM and ORM models we trained surpass GPT-4o and Policy Model. This advantage is primarily attributed to the improvement of tool execution, as the more specialized critic models reduce redundant sampling in erroneous exploration regions. Table 4: Multiple-Calling Results on the Materials Science Benchmark. * is the same as in Table 3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.3">Generalization Verification</head><p>As shown in Table <ref type="table" target="#tab_2">3</ref> and 4, we also evaluate LLMs on the Materials Science split. The LLM trained with Comprehensive Chemistry split is also compatible with the other split. It may suggest that LLMs can learn general chemistry tool knowledge from our dataset ChemToolBench.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Related Works</head><p>The LLM agent with equipped tools has become a hit because it fully extends the application scenarios of the LLMs like science discovery and embodied intelligence. Tool Learning is one of the important components in an agent.</p><p>Several studies focus on constructing tools and datasets for tool learning. ToolLLM <ref type="bibr" target="#b15">(Qin et al., 2023)</ref> collects APIs from RapidAPI Hub 11 and employs bottom-up instruction generation, releasing dataset ToolBench. <ref type="bibr">API-Bank (Li et al., 2023)</ref> sets various types of evaluation settings and explores the self-instruct method to construct the dataset.</p><p>11 <ref type="url" target="https://rapidapi.com/hub">https://rapidapi.com/hub</ref> Seal-Tools <ref type="bibr">(Wu et al., 2024a)</ref> tries to generate tools and datasets with LLM from scratch to test the scaling law of tool learning. ToolACE <ref type="bibr" target="#b7">(Liu et al., 2024)</ref> introduces a self-evolving API synthesis method and a multi-agent interaction-driven data generation approach, producing 26,507 APIs. ToolPreference <ref type="bibr">(Chen et al., 2024c)</ref> trains models using DPO enhances tool usage proficiency.</p><p>In general scenarios, many Tool Learning works have gained success in recent years. Toolformer <ref type="bibr" target="#b16">(Schick et al., 2024)</ref> demonstrates that LLMs can autonomously learn to use external tools. Hug-gingGPT <ref type="bibr" target="#b17">(Shen et al., 2024)</ref> takes domain-specific language models from Huggingface Hub as tools to solve professional problems. ToolkenGPT <ref type="bibr" target="#b5">(Hao et al., 2024)</ref> encodes tools as special tokens in the LLM to decide whether to call a tool during generation. ToolPlanner <ref type="bibr">(Wu et al., 2024b)</ref> simulates real-world user behaviors through multi-granularity instructions and optimizes via path planning.</p><p>In scientific scenarios, related explorations are just beginning. SciAgent <ref type="bibr" target="#b8">(Ma et al., 2024)</ref> proposes the scientific reasoning method with domain tools and evaluates it on the new benchmark SciTool-Bench. Pymatgen <ref type="bibr" target="#b11">(Ong et al., 2013)</ref> builds robust and fast python package for material analysis with many extensions. ChemCrow <ref type="bibr" target="#b0">(Bran et al., 2023)</ref> integrates 18 expert-designed chemistry tools in the LLM engine to solve tasks like drug analysis and materials design. It performs better than GPT4 across a range of chemistry tasks while its tools and evaluation questions are limited in amount. CACTUS <ref type="bibr" target="#b9">(McNaughton et al., 2024)</ref> integrates 10 cheminformatics tools to give precise answer in chemistry and molecular discovery questions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>In this work, we have presented a novel LLM-based agent specifically tailored for chemical applications by integrating a comprehensive tool pool, an innovative dataset curation pipeline, and an advanced reasoning framework. Our approach addresses two major challenges in applying large language models to the chemistry domain: incorporating specialized chemical knowledge and calling multiple tools to solve complex chemistry tasks. Furthermore, the introduction of HE-MCTS framework, guided by trained critic models and integrated with an enhanced STEP-FT paradigm, allows our agent to overcome the inherent limitations of the tokenby-token decision process in LLMs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitations</head><p>Despite the promising results and substantial improvements demonstrated by our approach, several limitations must be acknowledged:</p><p>• Computational Overhead: Although our HE-MCTS employs various mechanisms to enhance iterative accuracy and efficiency, it inevitably introduces additional computational complexity. This overhead can hinder real-time applications and may require further optimization to balance efficiency with decision-making accuracy.</p><p>• Reliance on Pretrained Knowledge: As with many large language models, our agent effectiveness is partly limited by the potential obsolescence of its pretraining knowledge. Continuous updates and domain-specific fine-tuning are necessary to mitigate this issue and maintain reliability over time.</p><p>Addressing these limitations in future research will be crucial for further refining the agent's performance, ensuring broader applicability, and advancing the integration of specialized tools with large language models in chemical research. Table 8: Results of LLMs with different fine-tuning model settings on the multiple-calling benchmark.</p><p>v1 means the fine-tuning dataset contains no negative cases. v2 means the fine-tuning dataset contains negative cases for both single and multiple callings. v3 means the fine-tuning dataset contains negative cases for only multiple callings.  Expansion: Policy Model generates k child nodes. To enhance the efficiency of exploration, T is constrained to retrieved tools. To mitigate redundancy, uniqueness is enforced among child nodes, ensuring parent node does not generate duplicate children. Furthermore, to enhance the distinctions between sibling nodes, leverage diversity prompts.</p><p>Evaluation: The PRM initializes a scalar score V i for newly expanded nodes:</p><formula xml:id="formula_5">V i = V (s p i ) = P RM (s p i )<label>(1)</label></formula><p>This score is used in the Selection phase to compute the Upper Confidence Bound for Trees (UCT) value of nodes and serves as a reference for choosing starting points in the subsequent Simulation phase. Selection: It recursively selects nodes from the root based on the Upper Confidence Bound(Kocsis and Szepesvári, 2006) (UCB) which allows the search to prioritize high-value nodes while still encouraging the discovery of new solutions: U CT (s</p><formula xml:id="formula_6">p i-1 , a j i ) = V j i + C • ln(N (s p i-1 )) 1 + N (s p i-1 , a j i )<label>(2)</label></formula><p>where N (s p i-1 ),N (s p i-1 , a j i ) denote visit counts. V j i is initialized by PRM. The hyperparameter C is an exploration coefficient. To promotes exploration of unfinished branches, prioritize non-terminal nodes over terminal ones. To maintain efficient search space, nodes with low information gain and value are adaptively pruned before selection.</p><p>Simulation: The Policy Model predicts subsequent actions from selected leaf node until reaching a terminal node s p L , where</p><formula xml:id="formula_7">s p L = [q, a 1 , o 1 , . . . , a L-1 , o L-1 , a L ](a L ∈ A n ).</formula><p>The reward R L is assigned by ORM (q, a L ). To expedite trajectory simulation and expansion, a single node is sampled at this stage.</p><p>Global Reflection(Policy-Level): If agent fails to yield a correct answer, the Policy Model performs failure analysis and generates recommendations to guide subsequent iterations.</p><p>Backpropagation: Starting from s p L , updates propagate along the path back to s p 0 :</p><formula xml:id="formula_8">N (s p i ) ← N (s p i ) + 1 (3) V (s p i ) ← V (s p i ) + R L -V (s p i ) N (s p i )<label>(4)</label></formula><p>where final reward R L can source heuristic rule or external reward function, like ORM:</p><formula xml:id="formula_9">R L = ORM (q, a L ), a L ∈ A n<label>(5)</label></formula><p>B.2 Details of Adaptive Pruning mechanism Scoring Mechanism The core of pruning is the evaluation of node importance. We compute a comprehensive node score: I(s p i ) = αV (s p i ) + βU (s p i ) (6) where V (s p i ) is the value of node s i , measuring the historical search gains, U (s p i ) is the uncertainty estimation of node s p i , based on Information Gain (Pearl, 1984)(IG), which quantifies the node's importance in the overall search strategy.</p><p>For a node s p i with visit count N (s p i ) and a child set C(s p i ), Information Gain (IG) is defined as:</p><formula xml:id="formula_10">U (s p i ) = H(s p i ) - c∈C(s i ) N (c) N (s p i ) H(c)<label>(7)</label></formula><p>where H(s p i ) represents the entropy <ref type="bibr" target="#b18">(Silver et al., 2016)</ref> of node s p i , computed based on search trajectory, indicating the uncertainty of decision-making at that node. A higher information gain suggests a greater impact on the search strategy.</p><p>Pruning is guided by an adaptive threshold τ (i), such that nodes with scores below the threshold are pruned.</p><p>Hierarchical Pruning The pruning threshold τ (i) dynamically adjusts based on search depth i:</p><p>• Shallow search(i &lt; D early ): A lower pruning threshold encourages broader exploration, reducing premature pruning effects</p><formula xml:id="formula_11">τ (i) = τ 0 • 1 -λ i D max<label>(8)</label></formula><p>• Deep search(i &gt; D early ): The pruning threshold increases, prioritizing high-value paths</p><formula xml:id="formula_12">τ (i) = τ 0 • 1 + λ i D max<label>(9)</label></formula><p>where τ 0 is the initial pruning threshold controlling overall pruning intensity, λ is a hyperparameter regulating threshold variation, D max is the maximum search depth, ensuring progressive pruning refinement.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Soft Pruning</head><p>To mitigate search loss from mispruning, Soft Pruning <ref type="bibr" target="#b4">(Gelly and Silver, 2011</ref>) retains pruned nodes with a certain probability. If I(s p i ) &lt; τ (i), the node is retained with probability:</p><formula xml:id="formula_13">P retain = e -κ(τ (i)-I(s p i ))<label>(10)</label></formula><p>where κ controls the pruning probability decay rate, allowing nodes close to the threshold to have a higher retention probability.</p><p>Fast Recovery To prevent excessive pruning from limiting search effectiveness, we introduce a Fast Recovery mechanism <ref type="bibr" target="#b20">(Spirtes and Glymour, 1991)</ref> :</p><p>• Pruned Node Logging: Maintain records of pruned nodes, including Score I(s p i ), Pruning depth i, Visit count N (s p i ).</p><p>• Detect Search Degradation: If the search reward drops significantly compared to the best path:</p><formula xml:id="formula_14">V best -V current V best &gt; ϵ<label>(11)</label></formula><p>where V best is the average value of the best search path, V current is the average value of the current search path, ϵ is the recovery threshold.</p><p>Restore recently pruned high-score nodes from history records to reintroduce potentially valuable search directions. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Tool Integration Procedure</head></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Overview of our CheMatAgent.</figDesc><graphic coords="2,93.55,70.86,408.16,279.20" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><figDesc>(3) We propose HE-MCTS, the Hierarchical Evolutionary Monte Carlo Tree Search framework, that decouples tool planning and execution into separate models. Our framework enables autonomous optimization without manual annotation by leveraging self-generated HE-MCTS data to adopt enhanced step-level FT for the policy model and train the PRM and ORM that surpass GPT-4o in domainspecific task.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Domain-specific Tool Learning dataset construction pipeline.</figDesc><graphic coords="4,138.90,70.88,317.46,262.76" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: HE-MCTS pipeline.The left part presents the process of Search-Based Hierarchical inferring process. The right part denotes the self-training.</figDesc><graphic coords="6,82.21,70.87,430.87,159.51" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: contrast of D p and Dp</figDesc><graphic coords="6,81.78,284.17,196.44,149.41" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>B</head><figDesc>Algorithm Details of H-MCTS B.1 Process of H-MCTS Hierarchical Monte Carlo Tree Search (H-MCTS) is a sampling-based search algorithm. It iteratively constructs a search tree by repeating six phases as illustrated in Figure 5: Expansion, Evaluation, Selection, Simulation, Reflection, and Backpropagation.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: H-MCTS process</figDesc><graphic coords="13,70.87,161.25,453.54,116.99" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Tool Integration Procedure in 3 steps.</figDesc><graphic coords="15,184.25,103.55,226.77,469.81" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Chem-Crow, CACTUS, chemlib, pymatgen, and Chemistry Tools.</figDesc><table><row><cell>Source</cell><cell>Amount</cell></row><row><cell>ChemCrow 2</cell><cell>8</cell></row><row><cell>CACTUS 3</cell><cell>10</cell></row><row><cell>chemlib 4</cell><cell>24</cell></row><row><cell>pymatgen 5</cell><cell>82</cell></row><row><cell>Chemistry Tools 6</cell><cell>13</cell></row><row><cell>In total:</cell><cell>137</cell></row><row><cell cols="2">Table 1: Chemistry Domain Tools Source: The number</cell></row><row><cell cols="2">of tools is counted after organization and rewriting in</cell></row><row><cell>Sections 2.1.2 and 2.1.3.</cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Main Results on the Multiple-Tool-Calling Comprehensive Chemistry Benchmark. * represents the model fine-tuned with ChemToolBench Comprehensive Chemistry split.</figDesc><table><row><cell>Model</cell><cell>Format</cell><cell>P</cell><cell>Tool R</cell><cell>F1</cell><cell>P</cell><cell>Param R</cell><cell>F1</cell><cell>P</cell><cell>Return R</cell><cell>F1</cell><cell>Pass Rate</cell></row><row><cell>GPT-4o-mini</cell><cell>99.83</cell><cell cols="9">83.22 78.86 80.98 76.04 72.19 74.06 77.05 73.13 75.04</cell><cell>58.00</cell></row><row><cell>Claude-3.5-S</cell><cell>97.42</cell><cell cols="9">83.64 85.37 84.50 76.03 77.53 76.77 74.96 78.54 76.71</cell><cell>57.00</cell></row><row><cell>ChemLLM*</cell><cell>98.10</cell><cell cols="9">76.84 88.08 82.07 68.22 80.20 73.72 68.84 80.45 74.19</cell><cell>53.00</cell></row><row><cell>Qwen-2.5-7B-I</cell><cell>51.25</cell><cell cols="9">64.15 41.81 50.63 56.48 37.36 44.97 29.25 37.20 32.75</cell><cell>22.50</cell></row><row><cell>Llama-3.1-8B-I</cell><cell>75.99</cell><cell cols="9">59.95 38.31 46.75 52.98 33.71 41.20 40.83 34.34 37.31</cell><cell>15.00</cell></row><row><cell>Llama-3.1-8B-I*</cell><cell>99.20</cell><cell cols="9">93.10 92.21 92.65 83.85 83.15 83.50 85.03 84.90 84.96</cell><cell>55.00</cell></row><row><cell>GPT-4o-mini-M</cell><cell>/</cell><cell cols="4">85.06 83.57 84.31 88.47</cell><cell>/</cell><cell>/</cell><cell cols="3">75.97 74.64 75.30</cell><cell>62.30</cell></row><row><cell>Claude-3.5-S-M</cell><cell>/</cell><cell cols="4">89.80 86.27 88.00 86.36</cell><cell>/</cell><cell>/</cell><cell cols="3">77.55 74.51 76.00</cell><cell>57.06</cell></row><row><cell>Qwen-2.5-7B-M3</cell><cell>/</cell><cell cols="4">91.14 90.45 90.80 89.32</cell><cell>/</cell><cell>/</cell><cell cols="3">81.41 80.79 81.10</cell><cell>67.32</cell></row><row><cell>Llama-3.1-8B-M0</cell><cell>/</cell><cell cols="4">75.45 78.45 76.92 85.25</cell><cell>/</cell><cell>/</cell><cell cols="3">65.09 67.68 66.36</cell><cell>29.19</cell></row><row><cell>Llama-3.1-8B-M1</cell><cell>/</cell><cell cols="4">87.74 87.32 87.53 85.92</cell><cell>/</cell><cell>/</cell><cell cols="3">75.81 75.44 75.62</cell><cell>69.50</cell></row><row><cell>Llama-3.1-8B-M2</cell><cell>/</cell><cell cols="4">93.18 88.39 90.79 95.12</cell><cell>/</cell><cell>/</cell><cell cols="3">88.64 84.07 86.36</cell><cell>72.30</cell></row><row><cell>Llama-3.1-8B-M3</cell><cell>/</cell><cell cols="4">93.22 91.73 92.47 92.36</cell><cell>/</cell><cell>/</cell><cell cols="3">86.09 84.72 85.41</cell><cell>72.20</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Single-Calling Results on the Materials Science Benchmark. * represents the model fine-tuned with ChemToolBench Comprehensive Chemistry split.</figDesc><table><row><cell>Model</cell><cell cols="2">Format</cell><cell>Tool ACC</cell><cell>P</cell><cell>Param R</cell><cell>F1</cell><cell></cell></row><row><cell cols="2">GPT-4o-mini</cell><cell>99.75</cell><cell cols="4">88.41 93.80 90.75 92.25</cell><cell></cell></row><row><cell cols="2">Qwen-2.5-7B-I</cell><cell>54.53</cell><cell cols="4">43.17 85.54 44.00 58.11</cell><cell></cell></row><row><cell cols="2">Llama-3.1-8B-I</cell><cell>98.91</cell><cell cols="4">75.37 88.89 81.94 85.27</cell><cell></cell></row><row><cell cols="2">Llama-3.1-8B-I*</cell><cell>97.93</cell><cell cols="4">79.51 91.32 87.50 89.37</cell><cell></cell></row><row><cell>Model</cell><cell>Format</cell><cell>P</cell><cell>Tool R</cell><cell>F1</cell><cell>P</cell><cell>Param R</cell><cell>F1</cell></row><row><cell>GPT-4o-mini</cell><cell>99.90</cell><cell cols="6">61.37 41.31 49.38 55.91 40.21 46.78</cell></row><row><cell>Qwen-2.5-7B-I</cell><cell>87.37</cell><cell cols="6">47.91 33.02 39.10 40.31 33.10 36.35</cell></row><row><cell>Llama-3.1-8B-I</cell><cell>60.52</cell><cell cols="6">64.35 19.18 29.56 60.34 19.51 29.49</cell></row><row><cell>Llama-3.1-8B-I*</cell><cell>94.25</cell><cell cols="6">76.91 73.26 75.04 71.60 65.02 68.15</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 7 :</head><label>7</label><figDesc>Results of LLMs with different fine-tuning model settings on the single-calling benchmark.</figDesc><table><row><cell cols="5">A.3 Fine-tuning Results Comparison</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="2">Model</cell><cell cols="2">Format</cell><cell>Tool ACC</cell><cell>P</cell><cell>Param R</cell><cell>F1</cell><cell cols="4">Return Pass Rate ACC</cell></row><row><cell cols="2">ChemLLM-1*</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>-v1</cell><cell></cell><cell cols="2">93.97</cell><cell cols="6">88.31 97.06 89.02 92.86 88.12</cell><cell>70.98</cell><cell></cell></row><row><cell>-v2</cell><cell></cell><cell cols="2">86.21</cell><cell cols="6">79.89 97.49 83.69 90.07 79.98</cell><cell>64.37</cell><cell></cell></row><row><cell>-v3</cell><cell></cell><cell cols="2">88.79</cell><cell cols="6">82.66 97.22 84.97 90.69 82.47</cell><cell>63.98</cell><cell></cell></row><row><cell cols="2">Llama-3.1-8B-I*</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>-v1</cell><cell></cell><cell cols="2">97.89</cell><cell cols="6">93.87 97.93 92.65 95.22 94.25</cell><cell>68.30</cell><cell></cell></row><row><cell>-v2</cell><cell></cell><cell cols="2">97.99</cell><cell cols="6">93.49 97.80 92.65 95.16 94.16</cell><cell>72.41</cell><cell></cell></row><row><cell>-v3</cell><cell></cell><cell cols="2">97.89</cell><cell cols="6">93.87 98.08 92.79 95.36 94.54</cell><cell>69.25</cell><cell></cell></row><row><cell>Model</cell><cell>Format</cell><cell>P</cell><cell>Tool R</cell><cell>F1</cell><cell>P</cell><cell>Param R</cell><cell>F1</cell><cell>P</cell><cell>Return R</cell><cell>F1</cell><cell>Pass Rate</cell></row><row><cell>ChemLLM-1*</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>-v1</cell><cell>98.50</cell><cell cols="9">56.98 89.51 69.64 50.43 81.60 62.34 51.74 82.51 63.60</cell><cell>46.00</cell></row><row><cell>-v2</cell><cell>86.46</cell><cell cols="9">68.19 89.98 77.59 59.42 81.04 68.57 53.85 82.19 65.07</cell><cell>46.50</cell></row><row><cell>-v3</cell><cell>98.10</cell><cell cols="9">76.84 88.08 82.07 68.22 80.20 73.72 68.84 80.45 74.19</cell><cell>53.00</cell></row><row><cell>Llama-3.1-8B-I*</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>-v1</cell><cell>99.18</cell><cell cols="9">60.25 93.00 73.13 51.60 83.57 63.81 55.06 85.69 67.04</cell><cell>57.50</cell></row><row><cell>-v2</cell><cell>96.81</cell><cell cols="9">94.56 91.26 92.88 85.03 82.16 83.57 84.21 83.94 84.08</cell><cell>57.00</cell></row><row><cell>-v3</cell><cell>99.20</cell><cell cols="9">93.10 92.21 92.65 83.85 83.15 83.50 85.03 84.90 84.96</cell><cell>55.00</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>https://github.com</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="7" xml:id="foot_1"><p>https://pubchem.ncbi.nlm.nih.gov</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="8" xml:id="foot_2"><p>https://huggingface.co/AI4Chem/ ChemLLM-20B-Chat-DPO</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="9" xml:id="foot_3"><p>https://huggingface.co/sentence-transformers/ all-MiniLM-L6-v2</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="10" xml:id="foot_4"><p>https://huggingface.co/nvidia/NV-Embed-v2</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_5"><p>Table 6: Single-Calling Results</p></note>
+		</body>
+		<back>
+
+			<div type="availability">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p><ref type="url" target="https://github.com/ur-whitelab/chemcrow-public">https://github.com/ur-whitelab/chemcrow-public</ref>  <ref type="url" target="https://github.com/ur-whitelab/chemcrow-runs">https://github.com/ur-whitelab/chemcrow-runs</ref> 3 CACTUS: <ref type="url" target="https://github.com/pnnl/cactus">https://github.com/pnnl/cactus</ref> 4 chemlib: <ref type="url" target="https://github.com/harirakul/chemlib">https://github.com/harirakul/chemlib</ref> 5 pymatgen: <ref type="url" target="https://github.com/materialsproject/pymatgen">https://github.com/materialsproject/pymatgen</ref> 6 Chemistry Tools: <ref type="url" target="https://github.com/domdfcoding/chemistry_tools">https://github.com/domdfcoding/chemistry_tools</ref> </p></div>
+			</div>
+
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A More Experimental Details</head><p>A.1 HE-MCTS Model Settings</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Model</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Policy Model Execution Model PRM ORM</head><p>GPT-4o-mini-M / / / gpt-4o Claude-3.5-S-M / / / Claude-3.5-S Qwen-2.5-7B-M1 </p><formula xml:id="formula_15">D p D u D p gpt-4o Qwen-2.5-7B-M2 Dp ∪ D p D u Dp ∪ D p gpt-4o Qwen-2.5-7B-M3 Dp ∪ D p D u D P RM D ORM Llama-3.1-8B-M0 / D u / gpt-4o Llama-3.1-8B-M1 D p D u D p gpt-4o Llama-3.1-8B-M2 Dp ∪ D p D u Dp ∪ D p gpt-4o Llama-3.1-8B-M3 Dp ∪ D p D u D P RM D ORM</formula></div><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 5 :</head><label>5</label><figDesc>Training dataset for Different Models</figDesc><table><row><cell cols="3">A.2 Results of Single-Calling Dataset</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Model</cell><cell>Format</cell><cell>Tool ACC</cell><cell>P</cell><cell>Param R</cell><cell>F1</cell><cell cols="2">Return Pass Rate ACC</cell></row><row><cell>GPT-4o-mini</cell><cell cols="6">100.00 93.20 96.24 94.74 95.48 90.71</cell><cell>86.88</cell></row><row><cell>Claude-3.5-S</cell><cell>98.08</cell><cell cols="5">92.34 97.24 95.08 96.15 90.52</cell><cell>80.27</cell></row><row><cell>ChemLLM-1*</cell><cell>93.97</cell><cell cols="5">88.31 97.06 89.02 92.86 88.12</cell><cell>70.98</cell></row><row><cell>Qwen-2.5-7B-I</cell><cell>64.08</cell><cell cols="5">56.70 91.15 61.79 73.65 54.50</cell><cell>49.23</cell></row><row><cell>Llama-2-7B-C</cell><cell>41.11</cell><cell cols="4">9.29 42.64 15.43 22.66</cell><cell>6.51</cell><cell>12.16</cell></row><row><cell>Llama-3.1-8B-I</cell><cell>98.80</cell><cell cols="5">83.62 93.60 87.67 90.54 81.23</cell><cell>63.22</cell></row><row><cell>Llama-3.1-8B-I*</cell><cell>97.89</cell><cell cols="5">93.87 98.08 92.79 95.36 94.54</cell><cell>69.25</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Andres M Bran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oliver</forename><surname>Cox</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlo</forename><surname>Schilter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">D</forename><surname>Baldassari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philippe</forename><surname>White</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Schwaller</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.05376</idno>
+		<title level="m">Chemcrow: Augmenting large-language models with chemistry tools</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">2024a. Alphamath almost zero: process supervision without process</title>
+		<author>
+			<persName><forename type="first">Guoxin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minpeng</forename><surname>Liao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengxi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Fan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.03553</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">Guoxin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minpeng</forename><surname>Liao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengxi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Fan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.10858</idno>
+		<title level="m">Step-level value preference optimization for mathematical reasoning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sijia</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yibo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi-Feng</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qing-Guo</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhao</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weihua</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaifu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lijun</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.07115</idno>
+		<title level="m">Advancing tool-augmented large language models: Integrating insights from errors in inference trees</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Monte-carlo tree search and rapid action value estimation in computer go</title>
+		<author>
+			<persName><forename type="first">Sylvain</forename><surname>Gelly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artificial Intelligence</title>
+		<imprint>
+			<biblScope unit="volume">175</biblScope>
+			<biblScope unit="issue">11</biblScope>
+			<biblScope unit="page" from="1856" to="1875" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Toolkengpt: Augmenting frozen language models with massive tools via tool embeddings. Advances in neural information processing systems</title>
+		<author>
+			<persName><forename type="first">Shibo</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiting</forename><surname>Hu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page">36</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Api-bank: A comprehensive benchmark for tool-augmented llms</title>
+		<author>
+			<persName><forename type="first">Levente</forename><surname>Kocsis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Csaba</forename><surname>Szepesvári</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">;</forename><forename type="middle">Minghao</forename><surname>Springer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingxiu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feifan</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hangyu</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haiyang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhoujun</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongbin</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2023 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2006">2006. 2023</date>
+			<biblScope unit="page" from="3102" to="3116" />
+		</imprint>
+	</monogr>
+	<note>Bandit based monte-carlo planning European conference on machine learning</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Weiwen</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingshan</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinlong</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dexun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weinan</forename><surname>Gan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengying</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanqing</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.00920</idno>
+		<title level="m">Toolace: Winning the points of llm function calling</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yubo</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhibin</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junheng</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruochen</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuohang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liangming</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujiu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixin</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aixin</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hany</forename><surname>Awadalla</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.11451</idno>
+		<title level="m">Sciagent: Tool-augmented language models for scientific reasoning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Cactus: Chemistry agent connecting tool usage to science</title>
+		<author>
+			<persName><forename type="first">Gautham</forename><surname>Andrew D Mcnaughton</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Krishna Sankar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Agustin</forename><surname>Ramalaxmi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kruel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohith</forename><forename type="middle">A</forename><surname>Carter R Knutson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Neeraj</forename><surname>Varikoti</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kumar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACS omega</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">46</biblScope>
+			<biblScope unit="page" from="46563" to="46573" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">Adrian</forename><surname>Mirza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nawaf</forename><surname>Alampara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sreekanth</forename><surname>Kunchapu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martiño</forename><surname>Ríos-García</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benedict</forename><surname>Emoekabu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aswanth</forename><surname>Krishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tanya</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mara</forename><surname>Schilling-Wilhelmi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Macjonathan</forename><surname>Okereke</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.01475</idno>
+		<title level="m">Anagha Aneesh, et al. 2024. Are large language models superhuman chemists? arXiv preprint</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Python materials genomics (pymatgen): A robust, open-source python library for materials analysis</title>
+		<author>
+			<persName><forename type="first">Ping</forename><surname>Shyue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">Davidson</forename><surname>Ong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anubhav</forename><surname>Richards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffroy</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Hautier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shreyas</forename><surname>Kocher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Cholia</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gunter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kristin</forename><forename type="middle">A</forename><surname>Vincent L Chevrier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gerbrand</forename><surname>Persson</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ceder</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Computational Materials Science</title>
+		<imprint>
+			<biblScope unit="volume">68</biblScope>
+			<biblScope unit="page" from="314" to="319" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Parisi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Fiedel</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.12255</idno>
+		<title level="m">Talm: Tool augmented language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Heuristics: intelligent search strategies for computer problem solving</title>
+		<author>
+			<persName><forename type="first">Judea</forename><surname>Pearl</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1984">1984</date>
+			<publisher>Addison-Wesley Longman Publishing Co., Inc</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Tool learning with foundation models</title>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengding</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ganqu</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheni</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanhe</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaojun</forename><surname>Xiao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Computing Surveys</title>
+		<imprint>
+			<biblScope unit="volume">57</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="1" to="40" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shihao</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yining</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kunlun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lan</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaxi</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Qian</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.16789</idno>
+		<title level="m">Toolllm: Facilitating large language models to master 16000+ real-world apis</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Toolformer: Language models can teach themselves to use tools</title>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberta</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicola</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Scialom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page">36</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Hugginggpt: Solving ai tasks with chatgpt and its friends in hugging face</title>
+		<author>
+			<persName><forename type="first">Yongliang</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaitao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongsheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiming</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yueting</forename><surname>Zhuang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="page">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Mastering the game of go with deep neural networks and tree search</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aja</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><forename type="middle">J</forename><surname>Maddison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Guez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurent</forename><surname>Sifre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Van Den</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Driessche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Veda</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Panneershelvam</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lanctot</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">nature</title>
+		<imprint>
+			<biblScope unit="volume">529</biblScope>
+			<biblScope unit="issue">7587</biblScope>
+			<biblScope unit="page" from="484" to="489" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Trial and error: Exploration-based trajectory optimization for llm agents</title>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Da Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sujian</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Yuchen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.02502</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">An algorithm for fast recovery of sparse causal graphs</title>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Spirtes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clark</forename><surname>Glymour</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Social science computer review</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="62" to="72" />
+			<date type="published" when="1991">1991</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Toward selfimprovement of llms via imagination, searching, and criticizing</title>
+		<author>
+			<persName><forename type="first">Ye</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baolin</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linfeng</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lifeng</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haitao</forename><surname>Mi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.12253</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Alphazero-like tree-search can guide large language model decoding and training</title>
+		<author>
+			<persName><forename type="first">Ziyu</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xidong</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muning</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><forename type="middle">Marcus</forename><surname>Mcaleer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weinan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Forty-first International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">2024a. Seal-tools: Self-instruct tool learning dataset for agent tuning and detailed benchmark</title>
+		<author>
+			<persName><forename type="first">Mengsong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuanyuan</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenliang</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CCF International Conference on Natural Language Processing and Chinese Computing</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<biblScope unit="page" from="372" to="384" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qinzhuo</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Luan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.14826</idno>
+		<title level="m">Toolplanner: A tool augmented llm for multi granularity instructions with path planning and feedback</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">X-mol: large-scale pre-training for molecular understanding and diverse molecular analysis</title>
+		<author>
+			<persName><forename type="first">Dongyu</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongling</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yukang</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guohui</forename><surname>Chuai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hua</forename><surname>Hao Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yukun</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">bioRxiv</title>
+		<imprint>
+			<biblScope unit="page" from="2020" to="2032" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">2024a. Rest-mcts*: Llm selftraining via process reward guided tree search</title>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sining</forename><surname>Zhoubian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yisong</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiao</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Tang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.03816</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Di</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingdan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuliang</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiatong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiran</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyu</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongzhan</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.06852</idno>
+		<title level="m">A chemical large language model</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">2024c. Chain of preference optimization: Improving chain-of-thought reasoning in llms</title>
+		<author>
+			<persName><forename type="first">Xuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.09136</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

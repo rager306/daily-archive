@@ -1,0 +1,2448 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Proposer-Agent-Evaluator (PAE): Autonomous Skill Discovery for Foundation Model Internet Agents</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-12-17">17 Dec 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Yifei</forename><surname>Zhou</surname></persName>
+							<email>yifei_zhou@berkeley.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Berkeley</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Qianlan</forename><surname>Yang</surname></persName>
+							<email>qianlan2@illinois.edu</email>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Illinois Urbana-Champaign</orgName>
+								<address>
+									<addrLine>3 Amazon</addrLine>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Kaixiang</forename><surname>Lin</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Min</forename><surname>Bai</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Xiong</forename><surname>Zhou</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Yu-Xiong</forename><surname>Wang</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Illinois Urbana-Champaign</orgName>
+								<address>
+									<addrLine>3 Amazon</addrLine>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Berkeley</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Erran</forename><surname>Li</surname></persName>
+						</author>
+						<title level="a" type="main">Proposer-Agent-Evaluator (PAE): Autonomous Skill Discovery for Foundation Model Internet Agents</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-12-17">17 Dec 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">16FD3D464FBCC8D4EB60638803706C4B</idno>
+					<idno type="arXiv">arXiv:2412.13194v1[cs.LG]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:51+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>The vision of a broadly capable and goal-directed agent, such as an Internet-browsing agent in the digital world and a household humanoid in the physical world, has rapidly advanced, thanks to the generalization capability of foundation models. Such a generalist agent needs to have a large and diverse skill repertoire, such as finding directions between two travel locations and buying specific items from the Internet. If each skill needs to be specified manually through a fixed set of human-annotated instructions, the agent's skill repertoire will necessarily be limited due to the quantity and diversity of human-annotated instructions. In this work, we address this challenge by proposing Proposer-Agent-Evaluator(PAE), an effective learning system that enables foundation model agents to autonomously discover and practice skills in the wild. At the heart of PAE is a context-aware task proposer that autonomously proposes tasks for the agent to practice with context information of the environment such as user demos or even just the name of the website itself for Internet-browsing agents. Then, the agent policy attempts those tasks with thoughts and actual grounded operations in the real world with resulting trajectories evaluated by an autonomous VLM-based success evaluator. The success evaluation serves as the reward signal for the agent to refine its policies through RL. We validate PAE on challenging vision-based web navigation, using both real-world and self-hosted websites from WebVoyager and WebArena. Our results show that PAE significantly improves the zero-shot generalization capability of VLM Internet agents (more than 30% relative improvement) to both unseen tasks and websites. Our model also achieves an absolute advantage of over 10% (from 22.6% to 33.0%) comparing to other state-of-the-art open source VLM agents including Qwen2VL-72B. To the best of our knowledge, this work represents the first effective learning system to apply autonomous task proposal with RL for agents that generalizes real-world human-annotated benchmarks with SOTA performances. Our open-source checkpoints and code can be found in <ref type="url" target="https://yanqval.github.io/PAE/">https://yanqval.github.io/PAE/</ref> .</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="26" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="27" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="28" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="29" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="30" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="31" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="32" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="33" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="34" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="35" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="36" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="37" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="38" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="39" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="40" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="41" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="42" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="43" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>The vision of a broadly capable and goal-directed agent has long captured the imagination: from agents that can browse the web to fulfill user instructions to robots that could perform diverse tasks in the home, AI systems that can independently accomplish open-world goals would not only present tremendous practical value, but their development would also elucidate some of the deepest questions in AI. Recent advancements in foundation models provide us with a compelling possibility for how this vision could be realized <ref type="bibr">(OpenAI, 2024;</ref><ref type="bibr" target="#b13">GeminiTeam, 2024)</ref>. Pre-trained foundation models have been used to explore generalist agents <ref type="bibr">(Liu et al., 2023b)</ref> in real-world decision-making scenarios, such as navigating websites to make travel plans <ref type="bibr" target="#b15">(He et al., 2024)</ref> and solving real-world Github issues <ref type="bibr" target="#b19">(Jimenez et al., 2024)</ref>. To succeed in these decision-making domains, goal-directed post-training is often needed to elicit long-horizon reward-maximizing behaviors such as information seeking <ref type="bibr">(Hong et al., 2023a)</ref> and recovery from mistakes <ref type="bibr" target="#b2">(Bai et al., 2024)</ref>, instead of only imitating the most probable actions in the pre-training corpus.</p><p>A crucial requirement for a successful post-training approach is to endow the generalist agent with a large and diverse goal-directed skill repertoire. This can include finding directions between two travel locations and buying specific items from the Internet, which the agent can then exploit to solve real-world tasks proposed by users. However, manually specifying the skills <ref type="bibr" target="#b8">(Deng et al., 2023)</ref> (i.e. through a static set of human-annotated instruction templates such as "Find the driving directions and estimated time to travel from Location A to Location B") will likely result in a limited skill repertoire. In particular, generating high-quality human-annotated task templates can be expensive, making it impractical to scale up. The use of a small set of task templates fails to capture the range of skills an agent needs for the full breadth of the real world, leading to distribution shift problems when deployed at the test time. Therefore, it naturally raises the research question: instead of requiring users to manually define tasks for foundation model agents, can these agents autonomously discover and practice potentially useful skills on their own?</p><p>To answer this question, we first note the observation of the asymmetric capabilities of SOTA VLMs as skill proposers/evaluators and as agents (ablation experiment results in Section 5) in many realistic task settings such as web agents. Intuitively, VLMs are very good at conceiving common tasks that people would like to perform on a shopping website (e.g. adding a specific product to cart) and confirming whether a specific product has been added to the shopping cart (e.g. by looking at the final screenshot to see if the shopping cart contains the product), while worse at actually navigating through the web to find the product and add it to the cart. If our system can be designed to maximally exploit this asymmetric gap, we may bootstrap the performance of the agent capability by reliable signals from task proposers and evaluators. However, merely discovering possible skills is not enough, since the ultimate goal is to do well for unseen real-world human requests. The right design choices of the system also need to be carefully validated to ensure that the autonomously discovered skills are actually useful and can generalize well to unseen human requests.</p><p>In this work, our main contribution is to propose an effective learning system, Proposer-Agent-Evaluator(PAE), for agents (in particular, Internet agents) based on foundation models to autonomously discover new skills without any human supervision and these new skills can be effectively exploited to solve unseen real-world human-annotated tasks in a zero-shot manner. At a high level, PAE identifies the interesting skills with a task proposer, attempts them with an agent policy, and performs an online RL loop based on the reward provided by an autonomous evaluator. PAE identifies the following design choices to obtain reliable signals from the task proposer and evaluator, and ensure that the agent can extrapolate from autonomously discovered to unseen human requests. First of all, to propose feasible and realistic tasks, PAE employs a class of context-aware task proposers where the context of functions and constraints crucially define what actions are supported by the specific environments (e.g., creating a reddit post) while others may not be supported (e.g., checking the protected information of other users). Such context can be implicitly defined from different sources and are shown to be effective, such as user demos and even website name alone! Moreover, to obtain the most robust reward signal without accessing the hidden state information, we apply an image-based evaluator that only provides sparse 0/1 rewards based on the final outcome. Finally, we design an additional reasoning step before the agents output actual actions, which enables the agents to better reflect on their skills and results in a significant improvement in its generalization capability to unseen human-annotated tasks.</p><p>The scope of our experiments covers challenging end-to-end vision-based web navigation, where the observation space simply contains the screenshot of the current web page and the action space contains primitive web operations such as clicking on links and typing into text boxes. We validate the effectiveness of PAE framework with realistic web-navigation benchmarks, including more than 100 domains both from online websites like Amazon from WebVoyager <ref type="bibr" target="#b15">(He et al., 2024)</ref> and self-hosted websites like PostMill from WebArena <ref type="bibr">(Zhou et al., 2024a)</ref>. In our experiments, we find that PAE with LLaVa-1.6 <ref type="bibr" target="#b24">(Liu et al., 2024)</ref> as the agent policy can autonomously discover useful skills through interactions with various websites without any human supervisions, even when the task proposer and evaluator model is significantly worse than the agent model. More importantly, our results demonstrate that these skills can zero-shot transfer to unseen test instructions and even unseen test websites. On websites from WebVoyager and WebArena, PAE attains a 30% relative improvement in average success rate, enabling LLaVa-1.6-7B to achieve performance comparable with LLaVa-1.6-34B fine-tuned with demonstration data despite using 5x fewer test-time compute. Compared to other state-of-the-art open-sourced VLM agents, including Qwen2VL-72B <ref type="bibr">(Yang et al., 2024a)</ref>, our model achieves an absolute performance gain of over 10% (22.6% to 33.0%). To the best of our knowledge, this work is the first to develop a working system of autonomous skill discovery for foundation model agents that directly generalizes to real-world human-annotated benchmarks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Related Works</head><p>Foundation model agents. Thanks to the generalization capabilities of Large Language Models (LLMs) <ref type="bibr" target="#b3">(Brown et al., 2020;</ref><ref type="bibr">Llama3Team, 2024;</ref><ref type="bibr" target="#b13">GeminiTeam, 2024)</ref> and Vision Language Models (VLMs) <ref type="bibr">(OpenAI, 2024;</ref><ref type="bibr" target="#b24">Liu et al., 2024;</ref><ref type="bibr">Wang et al., 2024c;</ref><ref type="bibr">Liu et al., 2023a;</ref><ref type="bibr" target="#b49">Zhai et al., 2024)</ref>, recent works have successfully extended such agents to more general real-world use cases <ref type="bibr" target="#b2">(Bai et al., 2024;</ref><ref type="bibr" target="#b55">Zheng et al., 2024;</ref><ref type="bibr" target="#b15">He et al., 2024;</ref><ref type="bibr">Zhang et al., 2023a;</ref><ref type="bibr">Zhou et al., 2024a;</ref><ref type="bibr" target="#b20">Koh et al., 2024;</ref><ref type="bibr" target="#b14">Gur et al., 2021;</ref><ref type="bibr" target="#b12">Furuta et al., 2024;</ref><ref type="bibr">Lin et al., 2024;</ref><ref type="bibr">Xu et al., 2024a,b)</ref>. Besides constructing prompting wrappers around proprietary VLMs <ref type="bibr">(Zhang et al., 2023a;</ref><ref type="bibr" target="#b15">He et al., 2024;</ref><ref type="bibr" target="#b55">Zheng et al., 2024;</ref><ref type="bibr" target="#b42">Xie et al., 2024;</ref><ref type="bibr">Yang et al., 2024b;</ref><ref type="bibr">Wang et al., 2023a)</ref> and fine-tuning open-source VLMs with expert demonstrations <ref type="bibr" target="#b14">(Gur et al., 2021;</ref><ref type="bibr">Hong et al., 2023b;</ref><ref type="bibr" target="#b12">Furuta et al., 2024;</ref><ref type="bibr">Zhang and Zhang, 2024;</ref><ref type="bibr" target="#b48">Zeng et al., 2023;</ref><ref type="bibr" target="#b5">Chen et al., 2023)</ref>, a recent trend has emerged involving interactive improvement of LLM/VLM, in particular web/GUI agents, through autonomous evaluator feedback <ref type="bibr" target="#b53">(Pan et al., 2024;</ref><ref type="bibr" target="#b2">Bai et al., 2024;</ref><ref type="bibr" target="#b32">Putta et al., 2024;</ref><ref type="bibr">Wang et al., 2024a)</ref>, where evaluator LLMs/VLMs are prompted to evaluate the success of the agents to serve as the reward signal. This approach aims to elicit goal-oriented and reward-optimizing behaviors from foundation models with minimal human supervision. However, these methods still depend on a static set of human-curated task templates, constraining their potential and scalability. Our work introduces a framework where agents can discover and practice the skills they find useful, thereby eliminating the reliance on predefined and human-curated task templates and opening up new possibilities for scalability and adaptability in training generalist autonomous LLM/VLM agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Self-generated instructions.</head><p>Self-generated instructions for improving LLMs have been shown to be effective in single-turn LLM alignment <ref type="bibr">(Wang et al., 2023b;</ref><ref type="bibr" target="#b47">Yuan et al., 2024;</ref><ref type="bibr" target="#b41">Wu et al., 2024;</ref><ref type="bibr">Wang et al., 2024b)</ref> and reasoning <ref type="bibr">(Pang et al., 2024)</ref> domains without interactions with an external environment. AgentGen <ref type="bibr" target="#b18">(Hu et al., 2024)</ref> takes a step further to fine-tune LLM agents with expert trajectories in self-generated environments and tasks. However, its feasibility in the self-play agent setting with RL and autonomous evaluators has not been understood. On the other hand, the closest works to ours employ autonomous RL and foundation model task proposers to simplified environments such as games <ref type="bibr">(Zhang et al., 2024a;</ref><ref type="bibr" target="#b11">Faldor et al., 2024;</ref><ref type="bibr" target="#b7">Colas et al., 2023</ref><ref type="bibr" target="#b6">Colas et al., , 2020) )</ref> and robotics settings with limited number of scenes <ref type="bibr" target="#b9">(Du et al., 2023;</ref><ref type="bibr">Zhang et al., 2023b;</ref><ref type="bibr">Zhou et al., 2024c)</ref>. While they have shown that the use of autonomous RL combined with foundation model task proposers can help the agent learn diverse skills, this work takes an important step forward to study when those skills can generalize to human requests in realistic benchmarks in the context of web agents and what the best design choices are. Concurrently, while WebRL <ref type="bibr" target="#b33">(Qi et al., 2024)</ref> applies autonomous task proposals to training web agents, generalization to unseen tasks and unseen websites is not well understood.</p><p>Unsupervised skill discovery in deep RL. Unsupervised skill discovery has been an important research direction in the field of traditional deep RL literatrue <ref type="bibr" target="#b0">(Achiam et al., 2018;</ref><ref type="bibr" target="#b10">Eysenbach et al., 2018)</ref> where various algorithms have been developed to discover new robotic skills such as humanoid walking without the need of explicitly defined reward functions. Common algorithms in this field aim to discover every possible skill (both meaningful skills like walking and less meaningful ones like random twisting) through either maximizing the mutual information between different states and skill latent vectors <ref type="bibr" target="#b4">(Campos et al., 2020;</ref><ref type="bibr" target="#b21">Laskin et al., 2022;</ref><ref type="bibr" target="#b34">Sharma et al., 2020)</ref>, or maximizing the divergence of each skill as measured in a metric space <ref type="bibr" target="#b29">(Park et al., 2022</ref><ref type="bibr" target="#b30">(Park et al., , 2023</ref><ref type="bibr" target="#b31">(Park et al., , 2024))</ref>. In contrast, our work only discovers meaningful skills as specified through natural language instructions with the help of pre-trained foundation models, significantly reducing the search space of skills in LLM/VLM agent applications with complex state spaces.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Proposer-Agent-Evaluator (PAE): Autonomous Skill Discovery system For Foundation Model Agents</head><p>Next, we will explain the technical contributions of this paper. In this section, we will define the general system of PAE including a task proposer, an agent policy, and an autonomous evaluator. We will begin by formalizing the learning goal of this system and then detail the roles of each key component. In the section to follow, we will explain how we apply PAE to VLM Internet agents.</p><p>Problem setup We begin by formalizing the problem setup of autonomous skill discovery for realworld agents. The learning goal of PAE is to find a reward-maximizing policy 𝜋 parameterized by 𝜃 in a contextual Markov Decision Process (MDP) environment defined by ℳ = {𝒮, 𝒜, 𝒯 , ℛ, 𝐻, 𝒞}, where 𝒮, 𝒜 are the state space and action space respectively, and 𝐻 is the horizon within which the agent must complete the task. We assume that the agent has access to the environment and can collect online roll-out trajectories through accessing the dynamics model 𝒯 as a function of determining the next states given the current states and actions. Crucially, we assume that the ground-truth task distribution 𝒞 and the reward function ℛ are hidden during training and we have to use a proxy task distribution Ĉ and reward function R instead. Consider the setting of training a real-world Internet agent. The dynamics model 𝒯 would be a simulated browser environment that the Internet agent can interact with. The ground-truth task distribution 𝒞 might be the distribution of tasks that would be asked by the real users when the Internet agent is deployed and a possible choice for the reward function ℛ might be whether the agent has satisfactorily completed the tasks for the real users. In such a real-world setting, although the agent can freely access resources from the Internet through a simulated browser environment during training, assuming knowledge of the ground-truth task distribution and reward function is impractical. Therefore, we employ VLM-based task proposers Ĉ and reward model R as proxies. The desired outcome is that improving the policy 𝜋 𝜃 with Ĉ and R can lead to an improved policy that can successfully generalize to the ground-truth task distribution and reward functions which are only used as evaluations.</p><p>Key components Figure <ref type="figure" target="#fig_0">1</ref> shows the interplay between the key components in our framework, including a context-aware task proposer, an agent policy, and an autonomous evaluator. The role of the task proposer Ĉ is to serve as a proxy to improve on the ground-truth task distribution 𝒞 during the learning process. However, it might be unrealistic to expect the task proposer to generate feasible tasks without knowledge of the environment. To provide more context of the functions and</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Set-of-Marks Observation</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Action Description Click</head><p>Click on an element (e.g. links and buttons).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Type</head><p>Type to an element (e.g. search bar).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Scroll</head><p>Scroll an element up or down (e.g. scroll bar).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Wait</head><p>Wait for the page to load.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Back</head><p>Go to the previous page.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Google</head><p>Go to homepage of google.com</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Answer</head><p>Finish the trajectory. Submit an answer. constraints of the environment, we assume access to some key information of the environment 𝑧 ℳ based on which the tasks Ĉ(𝑧 ℳ ) are proposed. In the Internet agent example, this key information can be screenshots of the websites from user demos, or even just the name of the website itself if it is a well-known website such as Amazon.com. Similarly, the autonomous evaluator R serves as a proxy of the ground-truth reward function ℛ. The input to the autonomous evaluator is the current state, the current action from the agent policy, and current task that the agent is attempting. In principle, any RL algorithm can be used to update the agent policy 𝜋 using a dataset 𝒟 that stores all the autonomous interaction data. In practice, we instantiate VLM-based task proposers and autonomous evaluators by prompting foundation models and they are kept unchanged throughout training.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Action Types</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">PAE for VLM Internet Agents</head><p>With the general framework set up, we are now ready to discuss the concrete instantiation of PAE in the setting of VLM Internet agents. We start by introducing the environment of vision-based web navigation and then explain how we implement the key components from PAE in this setting.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.">Vision-Based Web Browsing Environment</head><p>We consider the general vision-based web browsing environment <ref type="bibr" target="#b15">(He et al., 2024;</ref><ref type="bibr" target="#b20">Koh et al., 2024)</ref>. The goal for VLM agents in this environment is to navigate through realistic web pages to complete some user tasks 𝑐 𝑡 such as "Investigate in the Hugging Face documentation how to utilize the 'Trainer' API for training a model on a custom dataset, and note the configurable parameters of the Trainer class". As illustrated in Figure <ref type="figure" target="#fig_1">2</ref>, each observation 𝑠 𝑡 from the observation space contains only the screenshot of the last web page just like how humans interact with the Internet. To provide better action grounding, we follow the practice from prior works <ref type="bibr" target="#b55">(Zheng et al., 2024;</ref><ref type="bibr" target="#b15">He et al., 2024)</ref> to augment the observation space with number marks on top of each interactive element such as web links and text boxes. To execute a web browsing action, the Internet agent can directly output the number of the element to interact with and the corresponding action such as clicking and typing, without the need of locating the coordinates of each web element. Therefore each web action 𝑎 𝑡 contains the type of the action to perform and the number of the element to interact with. Each episode finishes either when the agent chooses to finish through the "Answer" action or when a maximum number of 10 steps have been reached. In our experiments, we use ground-truth success detectors (based on either human annotations or functional verifiers) and human annotated tasks from WebArena <ref type="bibr">(Zhou et al., 2024a)</ref> and WebVoyager <ref type="bibr" target="#b15">(He et al., 2024)</ref> to evaluate the performance of different policies. Crucially, both the ground-truth success detector and the distribution of human tasks are kept hidden, which challenges the generalization capability of the learnt skills to generalize to a hidden reward function and task distributions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2.">Context-Aware Task Proposer</head><p>In order to generate a diverse set of feasible tasks, we frame task proposing Ĉ as a conditional auto-regressive generation based on the context information of the websites. Thanks to the vast pre-training knowledge of relevant context for popular websites like Amazon.com, we find it suffice to use only website name as 𝑧 ℳ . However, for less common or access restricted websites such as self-hosted websites in WebArena, it is necessary to supply the task proposer with richer context.</p><p>In the cases of user demos being available, we consider an alternative to sample some additional screenshots from the user demos to serve as the context information. In our experiments, we consider both using proprietary models such as Claude-3-Sonnet <ref type="bibr" target="#b1">(Anthropic, 2024)</ref> and open-source models such as Qwen2VL-7B <ref type="bibr">(Yang et al., 2024a)</ref> for the task proposers, with promptsd in Appendix C.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.">Image-Based Outcome Evaluator</head><p>To take full advantage of the asymmetric capability of SOTA VLMs as agents and as evaluators (experimental evidence presented in Section 5), we find it most robust for the autonomous evaluators to complete the easiest evaluation: evaluating the success of the final outcome <ref type="bibr" target="#b2">(Bai et al., 2024;</ref><ref type="bibr" target="#b15">He et al., 2024)</ref> based on the final three screenshots and the agents' final answers to provide only 0/1 response in the end. Other alternatives such as code-based <ref type="bibr">(Zhang et al., 2024a)</ref> or step-based evaluations <ref type="bibr" target="#b53">(Pan et al., 2024)</ref> are either impractical without access to hidden state information or too noisy because of the hallucination issues present even in SOTA VLMs. In our experiments, we also consider both using proprietary models such as Claude-3-Sonnet <ref type="bibr" target="#b1">(Anthropic, 2024)</ref> and open-source models such as Qwen2VL- <ref type="bibr">7B Yang et al. (2024a)</ref>, with prompts presented in Appendix C.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4.">Chain-of-Thought Agent Policy</head><p>Crucially, as the ultimate goal for the agent policy is to complete human requests, the agent should not only learn diverse skills on the proposed tasks but also reflect on the skills learnt so that they can be helpful for unseen human requests. Therefore, we incorporate an additional reasoning step to outputs the agent's chain-of-thought before the actual web operation. This reasoning step is optimized with the RL algorithm just like the actual web operation. Because of the 0/1 reward structure and infrastructure complexity of thousands of distributed fully-functioning web browsers, we employ the most simple online policy optimization algorithm Filtered Behavior Cloning (Filtered BC) that simply imitates all thoughts and actions in successful trajectories with the negative log-liklihood loss. This simple method has been widely adopted in prior literature of RL+LLM such as <ref type="bibr">(Zhou et al., 2024b;</ref><ref type="bibr" target="#b35">Snell et al., 2023)</ref>. We find that this simple policy optimization objective can already lead to a superior generalization capability of the learnt agent. In our experiments, our agent policy is initialized from LLaVa-1.6-Mistral-7B and LLaVa-1.6-Yi-34B <ref type="bibr" target="#b24">(Liu et al., 2024)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Experiments</head><p>The goal of our experiments is to understand the effectiveness of PAE to complete real-world visual web tasks. Specifically, we design experiments to answer the following questions: (1) Can our autonomous skill discovery framework successfully discover skills useful for zero-shot transfer to tasks from an evaluation task distribution unseen to the task proposer? (2) How does the models trained with PAE compare with other open-source VLM agents? (3) How does the effectiveness of PAE scale with the size and performance of the base model? (4) Whether the effectiveness of PAE is limited by the performance of the task proposer and evaluator model?(5) How does the use of different contexts (e.g. website names and user demos) affect the performance?</p><p>5.1. Environments WebVoyager <ref type="bibr" target="#b15">(He et al., 2024)</ref>   <ref type="figure" target="#fig_2">4</ref>. For PAE , a running average of the evaluation results at each iteration is reported. The final column is a weighted average by the number of tasks on different websites. The results may be different from reported in other papers due to the dynamic nature of online websites.</p><p>website updates, we use the subset of 557 tasks spanning the other 13 websites. Human annotations are carried out for evaluating the success of each trajectory as the ground-truth performance measure.</p><p>WebArena <ref type="bibr">(Zhou et al., 2024a</ref>) is a sand-boxed environment that kept an archived version of 5 popular websites from different domains, including OpenStreetMap, GitLab, PostMill, a store content management system (CMS), and an E-commerce website (OneStopMarket). It includes in total 812 hand-written tasks with functional verifications as the ground-truth reward function. Since GitLab and CMU do not support multi-thread data collection necessary for RL fine-tuning, our experiments are carried out using the task subsets on OpenStreetMap, PostMill, and OneStopMarket. As opensource VLM agents fail to achieve non-trivial performances on PostMill and OneStopMarket <ref type="bibr">(Zhou et al., 2024a)</ref>, we hand rewrote tasks in those two websites and supplement them with verification functions. Due to these practical constraints, the resulting WebArena Easy contains 108 original tasks on OpenStreetMap and 50 rewritten tasks on PostMill and OneStopMarket each.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.">Baseline Comparisons</head><p>We validate the effectiveness of PAE by comparing it with (1) proprietary VLMs, (2) state-of-theart open-source VLMs, and (3) an alterative supervised fine-tuning (SFT) approach. We consider Claude 3 Sonnet and Claude 3.5 Sonnet <ref type="bibr" target="#b1">(Anthropic, 2024)</ref> for proprietary VLMs, and Qwen2VL-7B, Qwen2VL-72B <ref type="bibr">(Yang et al., 2024a)</ref>, InternVL-2.5-XComposer-7B <ref type="bibr">(Zhang et al., 2024b)</ref>, and LLaVa-Next-7B/34B <ref type="bibr" target="#b24">(Liu et al., 2024)</ref>  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3.">Main results</head><p>We present our main baseline comparisons of PAE with other baselines in</p><p>Table 1, 2, and 3. Overall, comparing to the SFT checkpoint using demonstration data, LLaVa-7B PAE can achieve an average of 7.4% and 10.8% absolute improvement in terms of success rates on WebVoyager and WebArena Easy respectively. A similar improvement of 10.4% on WebVoyager is observed for LLaVa-34B PAE as well, indicating a favorable scaling performance of PAE. As a result, our resulting model LLaVa-34B PAE achieves an absolute success rate of 10.4% on WebVoyaer over the prior state-of-the-art open-source VLM agents. Similarly, LLaVa-7B PAE also establishes a new state-of-the-art performance on WebArena Easy, surpassing the prior best performing model Qwen2VL-72B with 10× more parameters. More importantly, our analysis shows that PAE can enable Internet agents to learn general web browsing capabilities that zero-shot transfer to unseen websites. How does existing open-source and proprietary models perform in vision-based web navigation? First, we note the difficulty and significance of real-world vision-based web navigation, even for state-of-the-art medium-size open-source VLM agents such as Qwen2VL-7B and InternVL2.5-8B with set-of-marks augmented observations and chain-of-thought prompting. In particular, on the WebVoyager benchmark, among open-source VLM agents, only the largest Qwen2VL-72B can achieve a non-trivial average success rate of 22.6% on WebVoyager, while all other open-source agents completely fail on this benchmark with average success rate under 2%. On the other hand, closedsource proprietary models start to show promise in becoming a generalist Internet agent with Claude 3.5 Sonnet achieving an average success rate at 50.5% and 50.1% on WebVoyager and WebArena Easy. Comparing LLaVa-7B SFT and LLaVa-7B, we find that supervised fine-tuning on demonstration data can significantly improve the general web browsing capabilities of open-source VLM agents. Even if the SFT demonstration data is collected on out-of-distribution online websites, the general Model Seen Websites Unseen Websites Claude 3 Sonnet 42.4 25.0 Qwen2VL-7B 1.4 1.4 Qwen2VL-72B 22.6 8.3 LLaVa-7B SFT 14.9 9.1 LLaVa-7B PAE 22.3 16.3 LLaVa-7B PAE (Qwen7B) 21.7 13.7 LLaVa-7B PAE (Qwen72B) 23.6 15.9 LLaVa-34B SFT 22.2 16.1 LLaVa-34B PAE 33.0 21.4 Table 3: Task success rate comparisons on unseen websites that PAE never interacts with. We select 85 unseen real-world online websites and generate 500 synthetic tasks similar to the procedure in WebVoyager (He et al., 2024). Seen websites are 13 online websites in WebVoyager. Results show that PAE can discover general web browsing skills useful for unseen websites. web browsing capabilities can zero-shot transfer to WebVoyager websites, resulting in a performance improvement from 0% to 14.9%. Is PAE able to autonomously discover and practice skills useful for unseen evaluation instructions? On top of the performance gain from downstream fine-tuning, LLaVa-7B PAE additionally improves the success rate by more than 30% relatively (14.9% to 22.3% on WebVoyager and 18.0% to 24.6% on WebArena Easy). In particular, LLaVa-7B PAE beats LLaVa-7B SFT across the board with substantial improvements on 10 out of 13 websites from WebVoyager and all 3 websites from WebArena Easy, showing the robustness of the PAE framework. In fact, LLaVa-7B PAE even beats the LLaVa-34B SFT (22.3% compared to 22.2%), a model more than 5x larger (7B and 34B), resulting a better performing model with 5x less test-time compute. The release of our models marks a significant advancement of screenshot-based web browsing capabilities of open-source VLM agents from the prior SOTA of 22.6% to 33.0% on WebVoyager. It also enables medium-size VLMs such as LLaVa-7B to beat the prior SOTA Qwen2VL-72B with 10× more parameters on WebArena Easy. Notably, all of the improvements from PAE are achieved in a self-play setting without any human intervention, only knowing the names of the websites! Is the improvement of PAE bounded by the performance of the evaluator and task proposer model? To understand whether the improvement of PAE is bounded by the performance of the model used as the task proposer and evaluator, we replicate the experiments of PAE using open-source VLMs (Qwen2VL-7B and Qwen2VL-72B) as task proposers and autonomous evaluators, thus completely eliminating the dependence of PAE on proprietary models. Results are included in Table 1, 2, 3, and Figure 3. In particular, on WebArena Easy, we found that LLava-7B PAE using Qwen2VL-72B as the task proposer and evaluator achieved a similar performance as using Claude 3 Sonnet as the task proposer and evaluator, despite their significant difference in agent performances (23.9% compared to 36.0% average success rate). As a result of this improvement, LLava-7B PAE using Qwen2VL-72B as the task proposer and evaluator achieved a better performance compared to Qwen2VL-72B itself. Perhaps more surprisingly, even Qwen2VL-7B with much inferior agent performance compared to LLaVa-7B SFT (7.5% compared to 18.0%) can be used to make significant improvements (from 18.0% to 23.1%). A similar conclusion is observed on WebVoyager experiments as well, where even Qwen2VL (with agent performance of only 1.4%) can be used as task proposers and evaluators to improve the performance of LLaVa7B-SFT from 14.9% on seen websites and 9.1% on unseen websites to 21.7% and 13.7% on unseen websites. These results demonstrate that the improvements from PAE root in the asymmetric capabilities of state-of-the-art VLMs as agents and as task proposers/evaluators, instead of naively imitating a stronger VLM. 0 5 10 15 20 Trajectories (1K) 0 10 20 30 40 50 60 70 Success Rate (%) Proposed Set Performance (Autonomous Evaluator) 0 5 10 15 20 Trajectories (1K) 5 10 15 20 25 Evaluation Set Performance (Ground-Truth Evaluator) LLaVa-7B PAE LLaVa-7B PAE (No Reasoning) LLaVa-7B PAE (w/ Qwen2VL-72B) LLaVa-7B PAE (w/ Qwen2VL-7B) Qwen2VL-72B Qwen2VL-7B LLaVa-7B PAE (Step Reward) LLaVa-7B PAE (Function Reward) Figure 3: Ablation experiments on WebArena Easy. The left figure measures the performance on the set of proposed tasks by different models with autonomous evaluators while the right figure measures the performance on WebArena Easy with the ground-truth evaluator. Does PAE scale well with larger and more capable base models? To test the scaling performance of PAE , we repeat our experiments on WebVoyager with a larger and more capable VLM base model LLaVa-1.6-34B (Liu et al., 2024). With a better base model, we still find a similar performance gain of PAE despite the model size change from 7B to 34B (7.4% compared to 10.8% absolute success rate improvement). Again, LLaVa-34B PAE beats LLaVa-7B PAE on 12 out of 13 websites from WebVoyager. Our scaling experiments suggest that PAE a favorable scaling property that can similarly improve better and larger base VLM agents as they become available. Do the skills learnt by PAE generalize to unseen environments? To understand the generalization of LLaVa-7B PAE to the websites that it has never interacted with, we apply the workflow from He et al. (2024) to generate 500 tasks using Claude 3 Sonnet on 85 unseen online websites and test the checkpoints from WebVoyager experiments. Results are presented in Table 3 and a list of the websites is included in Appendix E. We observe that PAE for both LLaVa-7B and LLava-34B enable the agents to learn general web-browsing skills that can be zero-shot transferred to unseen websites, with 7.2% and 5.3% improvement in absolute success rate respectively.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.">Discussions</head><p>The effect of additional reasoning step. We also perform an additional ablation on the effect of the PAE design choice of asking the VLMs to output their thoughts first prior to the actual web operations.</p><p>We consider an additional baseline of directly outputting the web operations without thoughts, and carry out the similar SFT and Filtered BC experiments using the same setup described in Section 5.2. As reported in Figure <ref type="figure" target="#fig_3">3</ref>, although PAE without reasoning can also achieve improvements in the proposed set, the lack of additional reasoning step results in a significant inferior performance in its generalization to the unseen human-written evaluation set.</p><p>The effect of choice of evaluators. Finally, we present ablation results on the effect of different design choices of evaluators in Figure <ref type="figure" target="#fig_3">3</ref>. We compare the outcome-based evaluator included in PAE with other choices of evaluators in the related literature such as step-based evaluators <ref type="bibr" target="#b53">(Pan et al., 2024)</ref> and function-based evaluators <ref type="bibr">(Zhang et al., 2024a;</ref><ref type="bibr" target="#b11">Faldor et al., 2024)</ref>. In our implemantation of step-based evaluator, we ask Claude 3 Sonnet to evaluate whether each step is correct or not (i.e. whether it gets the agent closer to the goal) and behavior clone all the steps considered correct by the step-based evaluator. In our implementation of function-based evaluator, we provide 3 examples of verification functions as used by WebArena <ref type="bibr">(Zhou et al., 2024a)</ref> and ask Claude 3 Sonnet to also come up with verification functions to functionally verify the final task success rate (e.g. checking if the final website url is the same as the ground-truth url). As shown in Figure <ref type="figure" target="#fig_3">3</ref>, both step-based evaluator and function-based evaluator perform worse than the outcome-based evaluator, where the use of step-based evaluator even leads to a worse performance compared to the SFT checkpoint to start with. We found that the step-based evaluator hallucinated more often and tended to be too "generous" in terms of considering the success of each step, potentially because the task of evaluating the success of each step is significantly harder compared to only evaluating the success of the final outcome. Furthermore, we found that oftentimes the function-based evaluator hallucinates on the success criterion for the verification function (e.g. making up a non-existing url that the agent needs to go to), therefore resulting in most tasks being impossible to learn. In contrast, the design choice of an outcome based evaluator can best provide reliable reward signals for the policy to improve, resulting in better performances.</p><p>Alignment with human judgements. We demonstrate the effectiveness of our autonomous evaluator with a user study. We randomly select 200 trajectories for each method and present all screenshots in the trajectories, the corresponding actions at each step, and the task descriptions to the human annotator to decide if the task has actually been completed or not. As shown in Figure <ref type="figure" target="#fig_2">4</ref>(a), there is a high correlation between our evaluator and human assessments across different models with an average misalignment of 1.7% at the system level and 8.6% at the instance level. The effectiveness of PAE as judged by human annotators is consistent with what is reported in Table <ref type="table" target="#tab_0">1</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Error analysis.</head><p>To understand where the improvement of PAE comes from, we conducted a user study to analyze different error types across various models. With a high-level evaluation of model capacities, we classified the error types into the following categories: (1) Low-level skills missing error refer to the cases where the agent has a reasonable plan to solve the problem but fails to execute precise actions on the website, such as not knowing which button to click to navigate to the desired page.</p><p>(2) High-level planning or reasoning errors refer to the cases where the agent fails to generate a plan in its thoughts to solve the given task or cannot arrive at the correct answer through reasoning with the website's screenshots. We present the results of error analysis for different models in WebVoyager in Figure <ref type="figure" target="#fig_4">5</ref>, with a more detailed analysis and full trajectories in Appendix I.</p><p>Comparing LLaVa-7B SFT with LLaVa-34B SFT, we observe that the predominant failure mode for LLaVa-7B SFT is visual hallucinations while that for LLaVa-34B is low-level skill missing errors. This is because the reasoning capability for LLaVa-7B base model is limited so it tends to imitate the demonstration data to produce answers that look similar without being aware of the correctness of the answers. While LLaVa-34B SFT is more aware of Claude 3.5 Sonnet Qwen2VL-7B LLaVa-7B SFT LLaVa-7B PAE LLaVa-34B SFT LLaVa-34B PAE Low-level skills Technical issues High-level planning and reasoning Others Visual hallucinations Task success Timeouts 0 10 20 30 Trajectories (1K) 20 40 Success Rate (%) Map-Train 0 10 20 30 Trajectories (1K) 16 18 20 22 Map-Test LLaVa-7B PAE LLaVa-7B PAE (User Demos) LLaVa-7B SFT 0 10 20 30 Trajectories (1K) 20 30 40 PostMill-Train 0 10 20 30 Trajectories (1K) 18 20 22 PostMill-Test 0 10 20 30 Trajectories (1K) 40 50 60 70 Market-Train 0 10 20 30 Trajectories (1K) 25 30 35 40</p><p>Market-Test the correctness of answers (evidenced by a reduced visual hallucination rate), it does not have the low-level web navigation skills so often fall short of low-level operations. PAE can effectively improve on the major failure mode for both 7B and 34B models. In particular, for LLaVa-7B SFT, PAE can reduce the visual hallucination rate (from 37% to 23%), making the agent more aware of the goal of actually completing the tasks instead of imitating the demonstrations. For LLaVa-34B SFT, PAE can effectively enrich the skill repertoire with low-level web navigation skills, thereby reducing the low-level skill missing error (from 45% to 21%). Comparing our models with other VLM agents, we find that other open-source VLM agents such as Qwen2VL-7B and Qwen2VL-72B mostly struggle with low-level web navigation skills while the error types for more advanced proprietary models such as Claude 3.5 Sonnet are more spread out.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Comparison of different choices of contexts.</head><p>We present our study on the effects of using different contexts on WebArena in Table <ref type="table" target="#tab_1">2</ref> and Figure <ref type="figure" target="#fig_5">6</ref>. By comparing the success rate between LLaVa-7B PAE and LLaVa-7B PAE (User Demos), we find additional information significantly improves the performance in the original WebArena task set Map (19.5% to 21.7%) but does not make a big difference in the rewritten easier task sets on PostMill and OneStopMarket. By manually inspecting the tasks proposed with and without user demos, we find that many tasks proposed with website names alone are too hard or even impossible given the supported features of OpenStreetMap. For example, a task like "Locate the closest movie theater to the address 456 Oak Street, Chicago, Illinois, and provide the theater's name, address, and current movie showtimes." is impossible to be completed on OpenStreetMap as it does not contain information related to the current movie showtimes. As shown in the learning curve in Figure <ref type="figure" target="#fig_5">6</ref>, indeed the agent achieves a significantly lower performance on the training tasks of PAE compared to that of PAE (User Demos). On the contrary, this gap in terms of training set performances is much reduced on PostMill and OneStopMarket. We hypothesize that this is because our simplified tasks on PostMill and OneStopMarket only examine the basic usages of the websites such as "Go to a forum related to relationship advice" and "Browse the Patio and Garden shopping category" and such tasks can be easily proposed with rudimentary understanding of the websites inferred from the names of the websites alone. As the tasks get harder and involve more complicated interactions with elements on different websites, we expect the use of context information to play a more important role.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Qualitative comparisons.</head><p>To qualitatively understand the benefits of PAE , we present snippets of example trajectories in Figure <ref type="figure" target="#fig_6">7</ref> from evaluations on WebVoyager where LLaVa-7B PAE and LLaVa-7B SFT attempt the same tasks. Full trajectories are included in Appendix I. In the first example, we find that while LLaVa-7B knows SFT that it should use the search bar to find models related to error correction, it fails to choose the correct search bar (should be [18] instead of <ref type="bibr">[1]</ref>). However, LLaVa-7B PAE learns the skill of using the search bar through typing into the correct index [1] and executes its plan to complete the task. In the second example, the agent needs to navigate to the Advanced Security page of Github. While both models are able to navigate to the Security page of Github first, there turns out to be no direct links from the Security page to the Advanced Security page. As a result, LLaVa-7B SFT ends up wandering in Github without finding the Advanced Security page. In contrast, LLaVa-7B PAE learns the skill of using Google Search in the absence of a direct link and it successfully navigates to the right page with its help. In both cases, we observe qualitative evidence of PAE teaching the agent a diverse repertoire to effectively complete unseen tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.">Conclusions and Future Work</head><p>In this paper, we introduced an effective learning system, PAE, for autonomous skill discovery with foundation model agents, addressing the limitations of using a static set of human-annotated instructions for fine-tuning agents.</p><p>Instead of manually specifying what the agents should learn, our system enables the agents to explore, practice, and refine new skills autonomously through open-ended interactions with various environments. The framework's key components-task proposer, action policy, and autonomous evaluator-work together to generate, attempt, and evaluate tasks without any human intervention, leading to more than 10% improvement over prior state-of-the-art performance across benchmarks like WebVoyager among open-source VLM agents (22.6% to 33%). This work paves the way for more capable open-source foundation model agents, with future research focused on extending this approach to other domains and integrating it with better approaches to make use of the context information.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reproducibility Statement</head><p>To facilitate reproducibility of our work, we plan to open-source the model checkpoint and code. To provide more details about our practical algorithm, we have included the algorithm pseudo-code in Algorithm 1. We have also included all the prompts that we have used for the task proposer, the agent policy, and the autonomous evaluator in Appendix C. More details for gathering and processing the SFT dataset have been included in Appendix E. An discussion of the hyperparameter tuning of our method has been included in Appendix H.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Appendices A. Algorithm</head><p>In Algorithm 1, we include a formal definitions of our practical algorithm of PAE as presented in Section 3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Algorithm 1 Proposer-Agent-Evaluator: Practical Algorithm</head><p>Require: Context information 𝑧 ℳ , task proposer Ĉ, autonomous evaluator R.</p><p>1: Initialize policy 𝜋 from a pre-trained checkpoint. 2: Initialize replay buffer 𝒟 ← {}. 3: ## Propose tasks based on the context information. 4: Obtain proposal task distribution Ĉ(𝑧 ℳ ). 5: for each global iteration do 6:</p><p>for each trajectory to be collected do 7:</p><p>Sample a task from the task proposer 𝑐 ∼ Ĉ(𝑧 ℳ ). 11: if done then 12: ## Autonomously evaluate the outcome of the agent rollout. 13: 𝑟 𝑡 ← R(𝑠 𝑡 , 𝑎 𝑡 , 𝑐). 14: else 15: 𝑟 𝑡 ← 0. 16: end if 17: 𝒟 ← 𝒟 ∪ {(𝑠 𝑡 , 𝑎 𝑡 , 𝑟 𝑡 , 𝑠 𝑡+1 , 𝑐)}. 18: end for 19: end for 20: ## Update the agent policy with any RL algorithm. 21: 𝜋 ← RL_update(𝜋, 𝒟) 22: end for B. Details on Human Annotations and User Demos Details on User Demos. User demos from experiments in Figure <ref type="figure" target="#fig_5">6</ref> are collected by the authors without appealing to actual users. For each website, the authors attempt 10 tasks that we think are representative of the use of the particular website, and 10 most distinctive web pages are identified in the process of attempting those 10 tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Details on Human Annotations.</head><p>Five annotators of PhD students participate in the user study and the entire process takes around 40 annotator hours with the help of a designated user interface programmed in Gradio. To clarify the precise definition of the different error categories used in Section 6, we provide the following instruction to give more comprehensive explanations with example trajectories:</p><p>(1) Low-level skill missing errors refer to cases where the agent has a reasonable plan to solve the problem but fails to execute precise actions on the website, such as not knowing which button to click to reach the desired page. We classify trajectories where the agent seems to follow a reasonable plan but struggles with specific operations into this category. For example, in Figure <ref type="figure" target="#fig_8">8</ref>, the task is "Find the Easy Vegetarian Spinach Lasagna recipe on Allrecipes and tell me what the latest review says." The agent attempts to search for the desired item but fails to click the correct button to reach the detailed page in the search results.</p><p>(2) High-level planning or reasoning errors occur when the agent fails to generate a complete plan or cannot reason correctly with the website's screenshots to solve the task. Trajectories where the agent cannot devise a plan for complex tasks or misinterprets the screenshot's content are categorized as such. For instance, in Figure <ref type="figure" target="#fig_9">9</ref>, the task is "Give 12 lbs of 4-cyanoindole, converted to molar and indicate the percentage of C, H, N." The agent should first search on Google about the chemical definition of 4-cyanoindole, then use WolframAlpha to calculate the result. However, the agent fails to get the precise definition of 4-cyanoindole, and doesn't know how to solve the task.</p><p>(3) Visual hallucinations refer to instances where the agent generates fabricated responses not supported by the screenshot. The agent might, for example, claim to have found a requested product while still on the Google homepage or provide an incorrect answer even when on the correct page. In Figure <ref type="figure" target="#fig_10">10</ref>, the task is "Find out the trade-in value for an iPhone 13 Pro Max in good condition on the Apple website". The agent claims with a very detailed answer but actually it never access any page related to the trade-in on the website.</p><p>(4) Timeouts occur when the agent is on the right track to solving the task but cannot complete it within the maximum number of steps. This error indicates that the agent did nothing wrong but was constrained by the environment's step limits. For example, in Figure <ref type="figure" target="#fig_11">11</ref>, the task is "Go to the Plus section of Cambridge Dictionary, find Image quizzes, and complete an easy quiz about Animals. Tell me your final score." The agent reaches the maximum time step limit (10) while attempting to finish the quiz.</p><p>(5) Technical issues are not caused by the agent but by environmental problems, such as websites being down or connection failures. In Figure <ref type="figure" target="#fig_12">12</ref>, the ChromeDriver crashes after a valid operation.</p><p>(6) Others include less frequent error types, such as when the task itself is impossible to complete.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. All prompts in the experiments</head><p>For completeness, we include examples of the prompts that we have used in this section. In particular, in Figure <ref type="figure" target="#fig_3">13</ref>, we have provided the prompt that we used for the Claude-Sonnet-3 autonomous evaluator to evaluate the success for the task completion for all tasks in WebArena. A similar is used for all tasks in WebVoyager. In Figure <ref type="figure" target="#fig_15">14</ref>, 15, 16 we have included the prompts that we used for generating the proposal tasks for each domain. We used the same prompts with 3 additional website screenshots appended to the messages for PAE + User Demos. It is worth noting that our task proposers are domain-general and have little domain customizations. In particular, for all 13 real-world websites from WebVoyager, we use the same prompt to generate tasks except with the placeholder of "web_name". This shows that our PAE framework can easily scale to multiple websites without the need for domain-specific knowledge. The prompt for zero-shot VLM agents are included in Figure <ref type="figure" target="#fig_19">17</ref>, 18, and 19.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. Prompts For Zero-Shot VLM Agents</head><p>We also append the prompts (Figure <ref type="figure" target="#fig_19">17</ref>, 18, and 19) that we used for the zero-shot baselines including Claude-Sonnet-3, Claude-Sonnet-3.5, Qwen2VL, InternVL2b5, LLaVa-1.6-7B, and LLaVa-1.6-34B. The prompt for WebVoyager tasks largely follow from that used in the prior literature <ref type="bibr" target="#b15">(He et al., 2024)</ref>.  We include additional necessary domain knowledge of the WebArena tasks and evaluation protocols in the prompt that we used for WebArena.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E. Details for SFT</head><p>SFT for WebVoyager. As shown in Table <ref type="table" target="#tab_0">1</ref>, unlike proprietary VLMs, none of the open-source VLM agent is able to follow the instructions and achieve non-trivial performances in real-world web navigation tasks in the zero-shot manner. Such models can rarely get success rewards in the process of RL, thus leading to very slow convergence. To "warm-up" the open-source VLM agent to achieve a non-trivial performance at the start of RL training, we turn to enhancing the performances with SFT before RL. Note that the SFT process may not be needed if the base VLM agent model can already achieve non-trivial performances such as Claude 3 Sonnet. To prevent data contamination, we gather 85 out-of-distribution real-world websites (listed in Figure <ref type="figure" target="#fig_1">20</ref> and 21), and collect 11220 trajectories in total using Claude 3 Sonnet with the prompt specified in Figure <ref type="figure" target="#fig_19">17</ref>. The average trajectory success rate is 25% as measured by our Claude 3 Sonnet evaluator. Each action in the trajectories contains both thoughts and actual web actions shown in Figure <ref type="figure" target="#fig_1">2</ref>. All 11220 trajectories are used for SFT. RL training is carried out on top of the SFT checkpoint.</p><p>SFT for WebArena. In our preliminary experiments, we found that the SFT checkpoint trained on real-world websites do not generalize well to self-hosted websites on WebArena. This is potentially because of the distribution shift between real-world commercial websites and self-hosted websites. For example, most real-world map websites such as Google Maps and Apple Maps support advanced fuzzy search capabilities such as "pittsburgh to new york" while OpenStreetMap from WebArena will not return any results with such queries. Therefore, we collect 3000 Claude 3 Sonnet generated trajectories each from OpenStreetMap, Reddit, and OneStopMarket websites from WebArena. We use the prompts from Figure <ref type="figure" target="#fig_8">18</ref> and 19 for the Claude agent. The average trajectory success rate is 27%   </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Autonomous Evaluator Prompt</head><p>You are an expert in evaluating the performance of a web navigation agent. The agent is designed to help a human user navigate a website to complete a task. Your goal is to decide whether the agent's execution is successful or not.</p><p>As an evaluator, you will be presented with three primary components to assist you in your role:</p><p>1. Web Task Instruction: This is a clear and specific directive provided in natural language, detailing the online activity to be carried out. -You SHOULD NOT make assumptions based on information not presented in the screenshot when comparing it to the instructions.</p><p>-Your primary responsibility is to conduct a thorough assessment of the web task instruction against the outcome depicted in the screenshot and in the response, evaluating whether the actions taken align with the given instructions.</p><p>-NOTE that the instruction may involve more than one task, for example, locating the garage and summarizing the review. Failing to complete either task, such as not providing a summary, should be considered unsuccessful.</p><p>-NOTE that the screenshot is authentic, but the response provided by LLM is generated at the end of web browsing, and there may be discrepancies between the text and the screenshots.</p><p>-NOTE that if the content in the Result response is not mentioned on or different from the screenshot, mark it as not success.</p><p>You should explicilt consider the following criterions:</p><p>-Whether the claims in the response can be verified by the screenshot. A task is 'SUCCESS' only when all of the criteria are met. If any of the criteria are not met, the task should be considered 'NOT SUCCESS'.</p><p>Figure <ref type="figure" target="#fig_3">13</ref>: The prompt used by the autonomous evaluator for Claude-Sonnet-3. Same prompt is used to evaluate tasks from WebArena websites. The evaluator takes as inputs the task description, the response from the agent's ANSWER action, and last three screenshots in the trajectory. The evaluation result is a binary verdict of 'SUCCESS' or 'NOT SUCCESS'.</p><p>as measured by our Claude 3 Sonnet evaluator. The SFT checkpoint for WebArena is fine-tuned from the SFT checkpoint for WebVoyager.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F. Additional Results on WebArena</head><p>For completeness, we have also provided additional experiment results of different models from Table <ref type="table" target="#tab_1">2</ref> in the original task split of WebArena <ref type="bibr">(Zhou et al., 2024a)</ref>. As shwon in the comparison results presented in Table <ref type="table">4</ref>, even SOTA proprietary VLM agents like Claude 3 Sonnet struggle with the tasks in WebArena with a success rate of only 14.6% with set-of-marks observations and chain-ofthought prompting. After performing SFT using the demonstrations generated by Claude 3 Sonnet, LLaVa-7B SFT can only achieve 1.4% and 5.8% success rate on PostMill and OneStopMarket. By manually inspecting the roll-out trajectories generated by LLaVa-SFT, we found that around half of the successful trajectories on those two websites are false positives from the WebArena evaluator. In these trajectories, the agent simply guessed the answer to be "no" or "N/A" where the ground truth happens to be that the task is not executable. As a result, the actual success rate on those two websites is lower than 2%, leaving very sparse reward signals for RL to make meaningful improvements. We therefore rewrote the tasks on PostMill and OneStopMarket to be easier and report the performances of PAE in Table 4: Success rate comparisons across different domains from WebArena. Success and failure are detected with ground-truth verification functions. All tasks from OpenStreetMap are kept unchanged from WebArena task splits.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G. Limitations</head><p>Despite the progress of PAE for open-source VLM agents, there are still some limitations due to practical constraints. First of all, due to the limitations in fundamental capabilities of open-source base VLM models, our models trained with PAE are still inferior to state-of-the-art proprietary models in realistic web navigations, where advanced reasoning and planning capabilities are required. Moreover, because of the hallucination issues of open-source VLMs, we found them unreliable to serve as the autonomous evaluators and had to rely on advanced proprietary VLMs for judging the success and providing rewards. Finally, because of the dynamic nature of the real websites that we are using, some of our results may not be produced exactly, although a significant improvement from PAE should still be observed.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>H. Hyperparameters</head><p>We include the hyperparameters that we have used in Table <ref type="table" target="#tab_3">5</ref>. As shown in the table, the only hyperparameters that PAE have on top of standard supervised fine-tuning are number of trajectories to collect in each global iteration in Algorithm 1, number of proposed tasks from the task proposer before RL training, and the number of seen screenshots for the evaluator. In our experiments, we found that PAE is relatively not sensitive to the choices of these hyperparameters, showing the robustness of PAE . Table 6: Hyperparameters for PAE for WebVoyager and WebArena Easy experiments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I. More Qualitative Examples</head><p>In this section, we present additional qualitative examples of agent trajectories while performing tasks to further demonstrate the effectiveness of our PAE . We will also release the full dataset for further analysis.</p><p>Full trajectories of examples in Section 6. Here, we provide the complete trajectories for the examples discussed in the qualitative comparisons in Section 6, as shown in Figures <ref type="figure" target="#fig_21">22</ref><ref type="figure" target="#fig_22">23</ref><ref type="figure" target="#fig_23">24</ref><ref type="figure" target="#fig_24">25</ref>. We detail the agent's thoughts and actions at each time step throughout the entire trajectory.</p><p>Some representative successful trajectories. We also showcase representative successful trajectories generated by the LLaVa-7B PAE model to highlight the strengths of our method. In Figure <ref type="figure" target="#fig_25">26</ref>, the task is "Show the most played games on Steam, and tell me the number of players currently in-game."</p><p>In Figure <ref type="figure" target="#fig_26">27</ref>, the task is "Find out the starting price for the most recent model of the iMac on the Apple website." In Figure <ref type="figure" target="#fig_27">28</ref>, the task is "Look up the use of modal verbs in the grammar section for expressing possibility (e.g., 'might', 'could', 'may') and find examples of their usage in sentences on the Cambridge Dictionary." Finally, in Figure <ref type="figure" target="#fig_28">29</ref>, the task is "Search for plumbers available now but not open 24 hours in Orlando, FL."</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Task Proposer Prompt for WebVoyager</head><p>{"web_name": "Apple", "id": "Apple-40", "ques": "Find the pricing and specifications for the latest Mac Studio model, including the available CPU and GPU options.", "web": "<ref type="url" target="https://www.apple.com/">https://www.apple.com/</ref>"}</p><p>We are training a model to navigate the web. We need your help to generate instructions. With the examples provided above, please give 25 more example tasks for the model to learn from in the domain of {web_name}. You should imagine tasks that are likely proposed by a most likely user of this website. A few demos of users navigating through the web are provided above.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>YOU SHOULD MAKE USE OF THE DEMOS PROVIDES TO GENERATE TASKS, SO THAT YOUR TASKS ARE REALISTIC AND RELEVANT TO THE WEBSITE.</head><p>Please follow the corresponding guidelines:</p><p>1)First output your thoughts first on how you should come up with diverse tasks that examine various capabilities on the particular website, and how these tasks reflect the need of the potential user.</p><p>Then you should say 'Output:' and then followed by the outputs STRUCTURED IN JSONL FORMAT. You should not say anything else in the response. 2)PLEASE MAKE SURE TO HAVE 25 examples in the response!!! 3)Your proposed tasks should be DIVERSE AND COVER A WIDE RANGE OF DIFFERENT POSSIBILI-TIES AND DIFFICULTY in the domain of {web_name}. Remember, your job is to propose tasks that will help the model learn to navigate the web to deal with various real world requests. 4)Your task should be objective and unambiguous. The carry-out of the task should NOT BE DEPEN-DENT on the user's personal information such as the CURRENT TIME OR LOCATION. 5)You should express your tasks in as diverse expressions as possible to help the model learn to understand different ways of expressing the same task. 6)Your tasks should be able to be evaluated OBJECTIVELY. That is, by looking at the last three screenshots and the answer provided by an agent, it should be possible to tell without ambiguity whether the task was completed successfully or not. 7)Your tasks should require a minimum completion steps from 3 to 7 steps, your tasks should have a diverse coverage in difficulty as measured by the minimum completion step. I.E. You should propose not only tasks that may take more than 4 steps to complete but also tasks that can be completed within 3 steps. 8)Humans should have a 100% success rate in completing the task.</p><p>9)Your tasks should be able to be completed without having to sign in to the website. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Task Proposer Prompt for WebArena Map</head><p>{"web_name": "map", "id": "map-2", "ques": "Tell me the full address of all international airports that are within a driving distance of 50 km to University of California, Berkeley"} {"web_name": "map", "id": "map-10", "ques": "I will arrive San Francisco Airport soon. Provide the name of a Hilton hotel in the vicinity, if available. Then, tell me the the shortest walking distance to a supermarket from the hotel."} {"web_name": "map", "id": "map-17", "ques": "Check if the ikea in pittsburgh can be reached in one hour by car from hobart street"}</p><p>We are training a model to navigate the web. We need your help to generate instructions. With the examples provided above, please give 25 more example tasks for the model to learn from in the domain of OpenStreetMap. You should imagine who is the most likely user for the website and propose tasks that are likely to be proposed by this user. Please follow the corresponding guidelines:</p><p>1)First output your thoughts first on how you should come up with diverse tasks that examine various capabilities on the particular website, and how these tasks reflect the need of the potential user.</p><p>Then you should say 'Output:' and then followed by the outputs STRUCTURED IN JSONL FORMAT. You should not say anything else in the response. 2)PLEASE MAKE SURE TO HAVE 25 examples in the response!!! 3)Your proposed tasks should be DIVERSE AND COVER A WIDE RANGE OF DIFFERENT POSSIBILI-TIES AND DIFFICULTY in the domain of OpenStreetMap. Remember, your job is to propose tasks that will help the model learn to navigate the web to deal with various real world requests. 4)Your task should be objective and unambiguous. The carry-out of the task should NOT BE DEPENDENT on the user's personal information such as the CURRENT TIME OR LOCATION. 5)You should express your tasks in as diverse expressions as possible to help the model learn to understand different ways of expressing the same task. 6)Your tasks should be able to be evaluated OBJECTIVELY. That is, by looking at the last three screenshots and the answer provided by an agent, it should be possible to tell without ambiguity whether the task was completed successfully or not. 7)Your tasks should require a minimum completion steps from 3 to 7 steps, your tasks should have a diverse coverage in difficulty as measured by the minimum completion step. I.E. You should propose not only tasks that may take more than 4 steps to complete but also tasks that can be completed within 3 steps. 8)Humans should have a 100% success rate in completing the task.</p><p>9)Your tasks should be able to be completed without having to sign in to the website. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Task Proposer Prompt for WebArena Reddit and OneStopMarket</head><p>{"web_name": "Apple", "id": "Apple-40", "ques": "Find the pricing and specifications for the latest Mac Studio model, including the available CPU and GPU options.", "web": "<ref type="url" target="https://www.apple.com/">https://www.apple.com/</ref>"}</p><p>We are training a model to navigate the web. We need your help to generate instructions. With the examples provided above, please give 25 more example tasks for the model to learn from in the domain of {web_name}.</p><p>You should provide tasks in the DOMAIN OF {web_name}.</p><p>Please follow the corresponding guidelines: 1)First answer how many screenshots are provided and describe in detail the functions of the website that you see from each of the screenshot.</p><p>Then output your thoughts first. Then you should say 'Output:' and then followed by the outputs STRUCTURED IN JSONL FORMAT. You should not say anything else in the response. 2)PLEASE MAKE SURE TO HAVE 25 examples in the response!!! 4)Your task should start from the home page of the website instead of the shown screenshots. 5)Your task does not need to be the same as real users would do, but it should examine diverse capabilities of the agent to do web navigartion. 6)Your tasks should examine the VERY BASIC functions of the website and should not require complicated web page operations. They can be completed within 5 steps.  Zero-Shot VLM Agent Prompt for WebVoyager (1/2) Imagine you are a robot browsing the web, just like humans. Now you need to complete a task. In each iteration, you will receive an Observation that includes a screenshot of a webpage and some texts. This screenshot will feature Numerical Labels placed in the TOP LEFT corner of each Web Element. Carefully analyze the visual information to identify the Numerical Label corresponding to the Web Element that requires interaction, then follow the guidelines and choose one of the following actions: 1. Click a Web Element. 2. Delete existing content in a textbox and then type content. 3. Scroll up or down. Multiple scrolls are allowed to browse the webpage. Pay attention!! The default scroll is the whole window. If the scroll widget is located in a certain area of the webpage, then you have to specify a Web Element in that area. I would hover the mouse there and then scroll. 4. Wait. Typically used to wait for unfinished webpage processes, with a duration of 5 seconds. 5. Go back, returning to the previous webpage. 6. Google, directly jump to the Google search page. When you can't find information in some websites, try starting over with Google. 7. Answer. This action should only be chosen when all questions in the task have been solved. Correspondingly, Action should STRICTLY follow the format: -Click [Numerical_Label] -Type [Numerical_Label]; [Content] -Scroll [Numerical_Label or WINDOW]; [up or down] -Wait -GoBack -Google -ANSWER; [content] Key Guidelines You MUST follow: * Action guidelines * 1) To input text, NO need to click textbox first, directly type content. After typing, the system automatically hits 'ENTER' key. Sometimes you should click the search button to apply search filters. Try to use simple language when searching. 2) You must Distinguish between textbox and search button, don't type content into the button! If no textbox is found, you may need to click the search button first before the textbox is displayed. 3) Execute only one action per iteration. 4) STRICTLY Avoid repeating the same action if the webpage remains unchanged. You may have selected the wrong web element or numerical label. Continuous use of the Wait is also NOT allowed. 5) When a complex Task involves multiple questions or steps, select "ANSWER" only at the very end, after addressing all of these questions (steps). Flexibly combine your own abilities with the information in the web page. Double check the formatting requirements in the task when ANSWER. * Web Browsing Guidelines * 1) Don't interact with useless web elements like Login, Sign-in, donation that appear in Webpages. Pay attention to Key Web Elements like search textbox and menu. 2) Vsit video websites like YouTube is allowed BUT you can't play videos. Clicking to download PDF is allowed and will be analyzed by the Assistant API. 3) Focus on the numerical labels in the TOP LEFT corner of each rectangle (element). Ensure you don't mix them up with other numbers (e.g. Calendar) on the page. 4) Focus on the date in task, you must look for results that match the date. It may be necessary to find the correct year, month and day at calendar. 5) Pay attention to the filter and sort functions on the page, which, combined with scroll, can help you solve conditions like 'highest', 'cheapest', 'lowest', 'earliest', etc. Try your best to find the answer that best fits the task. Your reply should strictly follow the format: Thought: {Your brief thoughts (briefly summarize the info that will help ANSWER)} Action: {One Action format you choose} Then the User will provide: Observation: {A labeled screenshot Given by User} Zero-Shot VLM Agent Prompt for WebArena (2/2) Imagine you are a robot browsing the web, just like humans. Now you need to complete a task. In each iteration, you will receive an Observation that includes a screenshot of a webpage, some texts and the accessibility tree of the webpage. This screenshot will feature Numerical Labels placed in the TOP LEFT corner of each Web Element. The accessbility tree contains information about the web elements and their properties. The numrical labels in the screenshot correspond to the web elements in the accessibility tree. Carefully analyze the visual information to identify the Numerical Label corresponding to the Web Element that requires interaction, then follow the guidelines and choose one of the following actions: 1. Click a Web Element. 2. Delete existing content in a textbox and then type content. 3. Scroll up or down. Multiple scrolls are allowed to browse the webpage. Pay attention!! The default scroll is the whole window. If the scroll widget is located in a certain area of the webpage, then you have to specify a Web Element in that area. I would hover the mouse there and then scroll. 4. Wait. Typically used to wait for unfinished webpage processes, with a duration of 5 seconds. 5. Go back, returning to the previous webpage. 6. Answer. This action should only be chosen when all questions in the task have been solved. Correspondingly, Action should STRICTLY follow the format: -Click [Numerical_Label] -Type [Numerical_Label]; [Content] -Scroll [Numerical_Label or WINDOW]; [up or down] -Wait -GoBack -ANSWER; [content] Key Guidelines You MUST follow: * Action guidelines * 1) To input text, NO need to click textbox first, directly type content. After typing, the system automatically hits 'ENTER' key. Sometimes you should click the search button to apply search filters. Try to use simple language when searching. 2) You must Distinguish between textbox and search button, don't type content into the button! If no textbox is found, you may need to click the search button first before the textbox is displayed.</p><p>3) Execute only one action per iteration. 4) STRICTLY Avoid repeating the same action if the webpage remains unchanged. You may have selected the wrong web element or numerical label. Continuous use of the Wait is also NOT allowed. 5) When a complex Task involves multiple questions or steps, select "ANSWER" only at the very end, after addressing all of these questions (steps). Flexibly combine your own abilities with the information in the web page. Double check the formatting requirements in the task when ANSWER. 6) If you can't find the answer using the given website because there is no such information on the website after some attempts, you should report "N/A" as the answer to represent that the task is impossible to solve with the given website. You may have 15 steps to try to solve the task. <ref type="formula">7</ref>) Only provide answer based on the information from the image, make sure the answer is consistent with the image, don't hallucinate any information that is not based on image.</p><p>* Web Browsing Guidelines * 1) Focus on the numerical labels in the TOP LEFT corner of each rectangle (element). Ensure you don't mix them up with other numbers (e.g. Calendar) on the page.</p><p>2) Pay attention to the filter and sort functions on the page, which, combined with scroll, can help you solve conditions like 'highest', 'cheapest', 'lowest', 'earliest', etc. Try your best to find the answer that best fits the task.</p><p>Figure <ref type="figure" target="#fig_8">18</ref>: The prompt used for all zero-shot VLM agents for WebArena websites, including Claude-Sonnet-3, Claude-Sonnet-3.4, Qwen2-VL, InternVL-2.5-XComposer, LLaVa-1.6-7B, and LLaVa-1.6-34B. To be continued in Figure <ref type="figure" target="#fig_20">19</ref>.</p><p>Zero-Shot VLM Agent Prompt for WebArena * OpenStreetMap Usage Guidelines * 1) When you need to search the address of a location, you can just type the location in the 'search' bar. You don't need to use the directions button to get the address. The directions button is only used when you need to find the distance/walk/drive time between two locations. 2) When you are trying to search for a location, you may get no results. This is because the OpenStreetMap does not support approximate search. You may try to search some alternative keywords or try to find the location by yourself. Note that openstreet map does not support search phrase like 'Cafe near CMU", you should try to find it by yourself. 3) When you need to find the distance/walk/drive time between two locations, you should FIRST CLICK ON THE DIRECTIONS BUTTON (drawn as two arrows), to the right of the 'Go' Button and usually labeled as [10] or [11]. AND ONLY INPUTTING THE TWO LOCATIONS AFTER CLICKING ON THE DIRECTIONS BUTTON WHEN THE DIRECTIONS SEARCH BARS ARE SHOWN. 4) When you are trying to type some locations in the directions search bar, sometimes you may receive an alert of 'couldn't locate' followed by the location you typed. This means the location you typed is not found in the map. Do not immeadiately try something else. You need to quit the direction and find the precise name of this location by searching it in the map first. 5) When you search the walk/drive/bike time, make sure that you are USING THE RIGHT MODE OF TRANSPORTATION. The default mode is usually set to 'Drive'. 6) When you need to get the DD of some location, you need to click the location shown in the search result in the left part of the screen. The DD will be shown then starting with 'Location:'. 7) When you need to answer the zip code of some location, you should directly answer the 5-digit zip code. The answer shoule be "15232" instead of "The zip code of the location is 15232". Note that the zipcode will be displayed in the search result, you don't need to click the location to the information page to find the zip code. 8) When you need to answer the phone of some location, please omit the part of the country code. The answer should be "4122683259" instead of "+1 412 268 3259". * Reddit Usage Guidelines * 1) You are already in the reddit website, though you may not see the 'reddit' in any part of the screenshot. You do not need to further navigate to the reddit website. 2) When you want to find a subreddit, you need to first navigate to Forums to see the list of subreddits. Under forums, you will see only a subset of subreddits. To get the full list of subreddits, you need to navigate to the Alphabetical option. To know you can see the full list of subreddits, you will see 'All Forums' in the observation. Often you will not find a focused subreddit that exactly matches your query. In that case, go ahead with the closest relevant subreddit. To know that you have reached a subreddit successfully, you will see '/f/subreddit_name' in the observation. 3) When you want to post forum in reddit, remember to fill up all the content, then click the button 'Create forum'. The button maybe located below out of the screenshot, you need to scroll down to find it. 4) When you want to ask or post something in a subreddit, you need to first find that subreddit and then finish the work. 5) forums and subreddits are the same thing. Your reply should strictly follow the format: Thought: Your brief thoughts (briefly summarize the info that will help ANSWER) Action: One Action format you choose Then the User will provide: Observation: A labeled screenshot Given by User Remember only execute one action in each step. For example, 'Action: Type [8]; CMU, Type [9] Pittsburgh' is not allowed. You should execute the action 'Type [8]; CMU' first, then 'Type [9] Pittsburgh' in the next step.</p><p>Remember to always make your answer simple and clear. For example, if you want to report the zip code of some location, always say "ANSWER; 06516" instead of "The zip code of the location is 06516".         </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: An overview of Proposer-Agent-Evaluator showing the main components of our autonomous skill discovery framework, that endows the agent with autonomously discovered skills for future human requests.</figDesc><graphic coords="1,85.89,487.00,423.47,197.84" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: An illustration of the observation space and action space of our vision-based web navigation environment.The observation space is augmented with set-of-marks that label each interactable element with a unique number. At each step, the web agent first chooses an element to interact with by referring to its number and then choose the action type to perform on this element (e.g., click, type, and etc.).</figDesc><graphic coords="5,129.86,96.42,182.61,137.12" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Correlation and confusion matrix analysis of different models in Webvoyager. (a) Correlation between human evaluations and our autonomous evaluator across various models at the system level. (b) Confusion matrix of the overall correlation between human evaluations and our autonomous evaluator at the instance level. Both results show strong correlation between our autonomous evaluator and human evaluations.</figDesc><graphic coords="11,65.55,92.84,310.55,107.81" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>( 3 )</head><label>3</label><figDesc>Visual hallucinations refer to the cases where the agent generates responses with made-up information that are not supported by the screenshot. For example, the agent may claim that it has found a product that the task asked for while remaining at the homepage of google search, or the agent may produce a wrong answer while being on the right page. (4) Timeouts refer to the cases where the agent is on the right track to solving the tasks, but couldn't complete the task within maximum number of steps. (5) Technical Issues are not the fault of the agent but caused by environment problems such as websites out of service and connection issues. (6) Others include other less often error types such as the task itself is impossible.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Failure mode analysis for different models in WebVoyager environment.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Online sample complexity comparisons on different websites in WebArena Easy between PAE using different contexts. Note that PAE with different contexts for task proposers uses different training tasks. Learning curves are smoothed with exponential running averages.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Qualitative comparison between LLaVa-7B PAE and LLaVa-7B SFT on the same tasks. LLaVa-7B PAE model successfully completed two tasks using learned skills from the RL training.</figDesc><graphic coords="13,85.89,85.03,423.50,471.92" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><figDesc>to obtain the initial observation 𝑠 0 9:for each environment step 𝑡 do 10: Sample 𝑎 𝑡 ∼ 𝜋(•|𝑠 𝑡 , 𝑐), 𝑠 𝑡+1 ∼ 𝒯 (•|𝑠 𝑡 , 𝑎 𝑡 , 𝑐).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 8 :</head><label>8</label><figDesc>Figure 8: Extra full trajectories of fail trajectory 1, with error type Low-level Operational error, executed by model LLaVa-7B SFT. The task is 'Find the Easy Vegetarian Spinach Lasagna recipe on Allrecipes and tell me what the latest review says'.</figDesc><graphic coords="21,62.36,85.04,470.52,661.01" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 9 :</head><label>9</label><figDesc>Figure 9: Extra full trajectories of fail trajectory 2, with error type Planning or Reasoning error, executed by model LLaVa-7B PAE. The task is 'Give 12 lbs of 4-cyanoindole, converted to molar and indicate the percentage of C, H, N'.</figDesc><graphic coords="22,62.36,85.04,470.54,263.10" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 10 :</head><label>10</label><figDesc>Figure 10: Extra full trajectories of fail trajectory 3, with error type Visual Hallucination, executed by model LLaVa-7B SFT. The task is 'Find out the trade-in value for an iPhone 13 Pro Max in good condition on the Apple website'.</figDesc><graphic coords="23,62.36,204.44,470.54,397.15" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Figure 11 :</head><label>11</label><figDesc>Figure 11: Extra full trajectories of fail trajectory 4, with error type Timeouts, executed by model Claude 3.5 Sonnet. The task is 'Go to the Plus section of Cambridge Dictionary, find Image quizzes and do an easy quiz about Animals and tell me your final score'.</figDesc><graphic coords="24,62.36,85.03,470.55,659.22" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>Figure 12 :</head><label>12</label><figDesc>Figure 12: Extra full trajectories of fail trajectory 5, with error type Technical issues, executed by model LLaVa-7B PAE. The task is 'Identify a course on Coursera that provides an introduction to Psychology, list the instructor's name, the institution offering it, and how many hours it will approximately take to complete'.</figDesc><graphic coords="25,62.36,205.04,470.52,395.95" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><figDesc>2. Result Response: This is a textual response obtained after the execution of the web task. It serves as textual result in response to the instruction. 3. Result Screenshots: This is a visual representation of the screen showing the result or intermediate state of performing a web task. It serves as visual proof of the actions taken in response to the instruction.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_14"><figDesc>E.g. if the response claims the distance between two places, the screenshot should show the direction. YOU SHOULD EXPECT THAT THERE IS A HIGH CHANCE THAT THE AGENT WILL MAKE UP AN ANSWER NOT VERIFIED BY THE SCREENSHOT. -Whether the agent completes EXACTLY what the task asks for. E.g. if the task asks to find a specific place, the agent should not find a similar place. In your responses: You should first provide thoughts EXPLICITLY VERIFY ALL THREE CRITERIONS and then provide a definitive verdict on whether the task has been successfully accomplished, either as 'SUCCESS' or 'NOT SUCCESS'.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_15"><head>Figure 14 :</head><label>14</label><figDesc>Figure 14: Prompts used by Claude-Sonnet-3 for proposing tasks in WebVoyager experiments. For PAE + User Demos, we use the same prompt with additional user demos appended to the message.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_16"><head>Figure 15 :</head><label>15</label><figDesc>Figure15: Prompts used by Claude-Sonnet-3 for proposing WebArena Tasks for Map. For PAE + User Demos, we use the same prompt with additional user demos appended to the message. For this domain only, we provide three hand-written in-domain examples to set the right difficulty for the task proposer. Such in-domain examples are not needed for all other domains including Reddit and OneStopMarket, and other real-world WebVoyager websites.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_17"><figDesc>7)THIS DOMAIN IS A SELF-HOSTED STATIC DOMAIN AND DIFFERENT FROM POPULAR WEBSITES, DO NOT ASSUME ANY INFORMATION NOT PROVIDED IN THE SCREENSHOTS. 8)Your tasks should examine the capability of the web agent to find some information on the website, navigating to some specific web pages. Do not propose tasks that involve making actual modifications to the websites. 9)Your tasks should result in the agent landing in a single groundtruth web page or finding a single grounth truth answer. The landed webpage can be some specific categories, a drafted post, some search results, or even the homepage of the website. When the task is to to find some information, specify exactly what information the agent should find such as the price, the number of comments, the title, etc. It can also be information about the current account.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_18"><head>Figure 16 :</head><label>16</label><figDesc>Figure16: Prompts used by Claude-Sonnet-3 for proposing WebArena Tasks for Reddit and OneStopMarket. For PAE + User Demos, we use the same prompt with additional user demos appended to the message.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_19"><head>Figure 17 :</head><label>17</label><figDesc>Figure17: The prompt used for all zero-shot VLM agents for WebVoyager websites, including Claude-Sonnet-3, Claude-Sonnet-3.4, Qwen2-VL, InternVL-2.5-XComposer, LLaVa-1.6-7B, and LLaVa-1.6-34B.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_20"><head>Figure 19 :</head><label>19</label><figDesc>Figure19: The prompt used for all zero-shot VLM agents for WebArena websites, including Claude-Sonnet-3, Claude-Sonnet-3.4, Qwen2-VL, InternVL-2.5-XComposer, LLaVa-1.6-7B, and LLaVa-1.6-34B. Continued from Figure18.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_21"><head>Figure 22 :</head><label>22</label><figDesc>Figure 22: Full trajectories of success trajectory 1 in Figure 7 with task 'Find the most recently updated machine learning model on Huggingface which focuses on Error Correction' executed by model LLaVa-7B PAE.</figDesc><graphic coords="37,62.36,277.73,470.53,262.52" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_22"><head>Figure 23 :</head><label>23</label><figDesc>Figure 23: Full trajectories of fail trajectory 1 in Figure 7 with task 'Find the most recently updated machine learning model on Huggingface which focuses on Error Correction' executed by model LLaVa-7B SFT.</figDesc><graphic coords="38,62.36,85.06,470.50,659.38" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_23"><head>Figure 24 :</head><label>24</label><figDesc>Figure 24: Full trajectories of success trajectory 2 in Figure 7 with task 'Find the Security topic in GitHub Resources and answer the role of GitHub Advanced Security' executed by model LLaVa-7B PAE.</figDesc><graphic coords="39,62.36,85.02,470.55,660.40" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_24"><head>Figure 25 :</head><label>25</label><figDesc>Figure 25: Full trajectories of fail trajectory 2 in Figure 7 with task 'Find the Security topic in GitHub Resources and answer the role of GitHub Advanced Security' executed by model LLaVa-7B SFT.</figDesc><graphic coords="40,62.36,85.03,470.55,659.22" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_25"><head>Figure 26 :</head><label>26</label><figDesc>Figure 26: Extra full trajectories of successful trajectory 1 with task 'Show most played games in Steam. And tell me the number of players in In game at this time' executed by model LLaVa-7B PAE.</figDesc><graphic coords="41,62.36,107.56,470.50,263.27" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_26"><head>Figure 27 :</head><label>27</label><figDesc>Figure 27: Extra full trajectories of successful trajectory 2 with task 'Find out the starting price for the most recent model of the iMac on the Apple website' executed by model LLaVa-7B PAE.</figDesc><graphic coords="41,62.36,447.72,470.55,262.71" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_27"><head>Figure 28 :</head><label>28</label><figDesc>Figure 28: Extra full trajectories of successful trajectory 3 with task 'Look up the use of modal verbs in grammar section for expressing possibility (e.g., 'might', 'could', 'may') and find examples of their usage in sentences on the Cambridge Dictionary' executed by model LLaVa-7B PAE.</figDesc><graphic coords="42,62.36,139.34,470.54,527.35" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_28"><head>Figure 29 :</head><label>29</label><figDesc>Figure 29: Extra full trajectories of successful trajectory 4 with task 'Search for plumbers available now but not open 24 hours in Orlando, FL' executed by model LLaVa-7B PAE.</figDesc><graphic coords="43,62.36,211.26,470.50,395.47" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>contains a set of 643 tasks spanning 15 websites in the real world such as ESPN and Arxiv. As tasks in Google Flights and Booking domain are no longer feasible due to Success</figDesc><table><row><cell></cell><cell></cell><cell>Allrecipes</cell><cell>Amazon</cell><cell>Apple</cell><cell>ArXiv</cell><cell>GitHub</cell><cell>ESPN</cell><cell>Coursera</cell></row><row><cell>Proprietary</cell><cell>Claude 3.5 Sonnet Claude 3 Sonnet</cell><cell>50.0 15.9</cell><cell>68.3 46.3</cell><cell>60.4 51.1</cell><cell>46.5 39.5</cell><cell>58.5 41.4</cell><cell>27.3 11.3</cell><cell>78.6 45.2</cell></row><row><cell></cell><cell>Qwen2VL-7B</cell><cell>0.0</cell><cell>0.0</cell><cell>2.3</cell><cell>2.3</cell><cell>0.0</cell><cell>0.0</cell><cell>2.3</cell></row><row><cell></cell><cell>Qwen2VL-72B</cell><cell>0.0</cell><cell>29.0</cell><cell>28.1</cell><cell>18.2</cell><cell>9.7</cell><cell>5.9</cell><cell>48.5</cell></row><row><cell>Open-source</cell><cell>InternVL2.5-8B</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>0</cell></row><row><cell></cell><cell>LLaVa-7B</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>0</cell></row><row><cell></cell><cell>LLaVa-34B</cell><cell>0</cell><cell>0</cell><cell>2.3</cell><cell>0</cell><cell>2.4</cell><cell>0</cell><cell>0</cell></row><row><cell></cell><cell>LLaVa-7B SFT</cell><cell>4.5</cell><cell>39.0</cell><cell>18.6</cell><cell>16.3</cell><cell>4.9</cell><cell>5.1</cell><cell>16.7</cell></row><row><cell></cell><cell>LLaVa-7B PAE</cell><cell>14.3</cell><cell>37.5</cell><cell>17.5</cell><cell>19.0</cell><cell>14.6</cell><cell>0.0</cell><cell>33.3</cell></row><row><cell>Ours</cell><cell>LLaVa-7B PAE (Qwen7B)</cell><cell>26.5</cell><cell>45.2</cell><cell>16.7</cell><cell>18.2</cell><cell>15.6</cell><cell>0.0</cell><cell>37.5</cell></row><row><cell></cell><cell>LLaVa-34B SFT</cell><cell>6.8</cell><cell>26.8</cell><cell>23.3</cell><cell>16.3</cell><cell>4.9</cell><cell>8.6</cell><cell>26.8</cell></row><row><cell></cell><cell>LLaVa-34B PAE</cell><cell>22.7</cell><cell>53.7</cell><cell>38.5</cell><cell>25.6</cell><cell>14.6</cell><cell>13.6</cell><cell>42.9</cell></row><row><cell></cell><cell></cell><cell cols="7">Cambridge Dictionary BBC News Google Map Google Search HuggingFace Wolfram Alpha Average</cell></row><row><cell>Proprietary</cell><cell>Claude 3.5 Sonnet Claude 3 Sonnet</cell><cell>86.0 79.1</cell><cell>36.6 40.5</cell><cell>58.5 41.5</cell><cell>30.2 41.9</cell><cell>44.2 37.2</cell><cell>66.7 61.9</cell><cell>50.5 42.4</cell></row><row><cell></cell><cell>Qwen2VL-7B</cell><cell>2.3</cell><cell>0.0</cell><cell>0.0</cell><cell>4.7</cell><cell>0.0</cell><cell>4.8</cell><cell>1.4</cell></row><row><cell></cell><cell>Qwen2VL-72B</cell><cell>60.6</cell><cell>12.5</cell><cell>16.1</cell><cell>21.2</cell><cell>9.1</cell><cell>36.4</cell><cell>22.6</cell></row><row><cell>Open-source</cell><cell>InternVL2.5-8B</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>2.3</cell><cell>0</cell><cell>0.2</cell></row><row><cell></cell><cell>LLaVa-7B</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>0</cell></row><row><cell></cell><cell>LLaVa-34B</cell><cell>0</cell><cell>2.3</cell><cell>0</cell><cell>2.3</cell><cell>2.3</cell><cell>0</cell><cell>0.9</cell></row><row><cell></cell><cell>LLaVa-7B SFT</cell><cell>41.9</cell><cell>7.1</cell><cell>19.5</cell><cell>9.3</cell><cell>0</cell><cell>11.9</cell><cell>14.9</cell></row><row><cell></cell><cell>LLaVa-7B PAE</cell><cell>52.4</cell><cell>18.6</cell><cell>22.5</cell><cell>23.3</cell><cell>19.0</cell><cell>24.4</cell><cell>22.3</cell></row><row><cell>Ours</cell><cell>LLaVa-7B PAE (Qwen7B)</cell><cell>62.5</cell><cell>12.5</cell><cell>12.9</cell><cell>3.0</cell><cell>6.0</cell><cell>36.4</cell><cell>21.7</cell></row><row><cell></cell><cell>LLaVa-34B SFT</cell><cell>67.4</cell><cell>16.7</cell><cell>12.2</cell><cell>23.3</cell><cell>20.9</cell><cell>38.1</cell><cell>22.2</cell></row><row><cell></cell><cell>LLaVa-34B PAE</cell><cell>74.4</cell><cell>39.0</cell><cell>22.0</cell><cell>18.6</cell><cell>25.6</cell><cell>42.9</cell><cell>33.0</cell></row></table><note><p>rate comparisons on WebVoyager. The results are automatically annotated by Claude Sonnet 3 and human alignment is reported in Figure</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Success rate comparisons on WebArena Easy.Success and failure are detected with ground-truth verification functions. For PAE , a running average of the evaluation results at each iteration is reported. The final "Average" column is a weighted average by the number of tasks on different websites.</figDesc><table><row><cell></cell><cell></cell><cell cols="4">OpenStreetMap PostMill OneStopMarket Average</cell></row><row><cell>Proprietary</cell><cell>Claude 3.5 Sonnet Claude 3 Sonnet</cell><cell>38.3 24.3</cell><cell>70.0 55.8</cell><cell>53.0 41.7</cell><cell>50.1 36.0</cell></row><row><cell></cell><cell>Qwen2VL-7B</cell><cell>0.7</cell><cell>10.2</cell><cell>20.2</cell><cell>7.5</cell></row><row><cell></cell><cell>Qwen2VL-72B</cell><cell>16.0</cell><cell>32.8</cell><cell>32.7</cell><cell>23.9</cell></row><row><cell>Open-source</cell><cell>InternVL2.5-8B LLaVa-7B</cell><cell>1.8 0.0</cell><cell>0.5 0.0</cell><cell>6.0 0.0</cell><cell>2.5 0.0</cell></row><row><cell></cell><cell>LLaVa-34B</cell><cell>0.9</cell><cell>0.0</cell><cell>0.0</cell><cell>0.5</cell></row><row><cell></cell><cell>LLaVa-7B SFT</cell><cell>15.2</cell><cell>16.8</cell><cell>25.4</cell><cell>18.0</cell></row><row><cell></cell><cell>LLaVa-7B PAE</cell><cell>19.5</cell><cell>21.1</cell><cell>42.3</cell><cell>24.6</cell></row><row><cell>Ours</cell><cell>LLaVa-7B PAE (Qwen72B)</cell><cell>17.9</cell><cell>30.6</cell><cell>39.2</cell><cell>26.0</cell></row><row><cell></cell><cell>LLaVa-7B PAE (Qwen7B)</cell><cell>20.2</cell><cell>25.0</cell><cell>28.6</cell><cell>23.1</cell></row><row><cell></cell><cell>LLaVa-7B PAE (User Demos)</cell><cell>21.7</cell><cell>21.5</cell><cell>42.1</cell><cell>25.7</cell></row></table><note><p>for SOTA open-source VLMs. All models are prompted similar to<ref type="bibr" target="#b15">He et al. (2024)</ref> </p><p>using set-of-marks augmented screenshot observations and including chain-ofthought in the action outputs. The prompts are included in Appendix C. As SOTA open-source models struggle to achieve non-trivial performance in the challenging web navigation benchmarks except the largest Qwen2VL-72B, we include another baseline LLaVa-SFT that fine-tunes LLaVa with Claude 3 Sonnet<ref type="bibr" target="#b1">(Anthropic, 2024)</ref> </p><p>agent trajectories on self-generated tasks on 85 real-world websites not included in WebVoyager and WebArena. More details in the data generation for SFT can be found in Appendix E. To investigate the impact of the capability of task proposer and evaluator model on the effectiveness of PAE, we include two additional baselines LLaVa-34B PAE (Qwen7B) and LLaVa-34B PAE (Qwen72B) where we use Qwen2VL-7B/Qwen2VL-72B as both task proposers and evaluators. Finally, to study the effects of different contexts for our task proposer, we compare the performance of two variants from PAE as discussed in Section 4.2. LLaVa-34B PAE and LLaVa-7B PAE uses only the name of the website as the context, while LLaVa-7B-PAE (User Demos) uses 10 additional screenshots per website from human collected user demos.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 2 .</head><label>2</label><figDesc>OpenStreetMap PostMill OneStopMarket Average</figDesc><table><row><cell cols="2">Proprietary Claude 3 Sonnet</cell><cell>24.3</cell><cell>10.6</cell><cell>11.2</cell><cell>14.6</cell></row><row><cell></cell><cell>Qwen2VL-7B</cell><cell>0.7</cell><cell>0.0</cell><cell>1.3</cell><cell>0.7</cell></row><row><cell>Open-source</cell><cell>InternVL2.5-8B</cell><cell>2.6</cell><cell>0.2</cell><cell>3.3</cell><cell>2.3</cell></row><row><cell></cell><cell>LLaVa-7B</cell><cell>0.0</cell><cell>0.0</cell><cell>0.0</cell><cell>0.0</cell></row><row><cell>Ours</cell><cell>LLaVa-7B SFT</cell><cell>15.2</cell><cell>1.4</cell><cell>5.8</cell><cell>7.2</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 5 :</head><label>5</label><figDesc>Hyperparameters for All Experiments</figDesc><table><row><cell>Environment</cell><cell>Hyperparameter</cell><cell>Considered</cell><cell>Chosen</cell></row><row><cell></cell><cell>learning rate</cell><cell>{2e-5, 5e-5, 2e-4}</cell><cell>2e-5</cell></row><row><cell></cell><cell>rollout trajectories</cell><cell>{512, 1024, 2048, 4096}</cell><cell>4096</cell></row><row><cell></cell><cell>rollout temperature</cell><cell>{0.4, 1.0, 2.0}</cell><cell>1.0</cell></row><row><cell></cell><cell>maximum gradient norm</cell><cell>{0.01}</cell><cell>0.01</cell></row><row><cell>WebVoyager</cell><cell>actor updates epochs per iteration</cell><cell>{1, 2, 4, 8, 20}</cell><cell>4</cell></row><row><cell></cell><cell>batch size</cell><cell>{8}</cell><cell>8</cell></row><row><cell></cell><cell>gradient accumulation size</cell><cell>{16, 32}</cell><cell>32</cell></row><row><cell></cell><cell>number of proposed tasks</cell><cell cols="2">{10000, 50000, 100000} 100000</cell></row><row><cell></cell><cell>number of seen screenshots for evaluator</cell><cell>{1, 3}</cell><cell>3</cell></row><row><cell></cell><cell>learning rate</cell><cell>{2e-5, 5e-5, 2e-4}</cell><cell>2e-5</cell></row><row><cell></cell><cell>rollout trajectories</cell><cell>{512, 1024, 2048, 4096}</cell><cell>2048</cell></row><row><cell></cell><cell>rollout temperature</cell><cell>{0.4, 1.0, 2.0}</cell><cell>1.0</cell></row><row><cell>WebArena Easy</cell><cell>maximum gradient norm actor updates epochs per iteration batch size</cell><cell>{0.01} {1, 2, 4, 8, 20} {8}</cell><cell>0.01 2 8</cell></row><row><cell></cell><cell>gradient accumulation size</cell><cell>{16, 32}</cell><cell>32</cell></row><row><cell></cell><cell>number of proposed tasks</cell><cell cols="2">{10000, 30000, 100000} 30000</cell></row><row><cell></cell><cell>number of seen screenshots for evaluator</cell><cell>{1, 3}</cell><cell>3</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Variational option discovery algorithms</title>
+		<author>
+			<persName><forename type="first">Joshua</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harrison</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1807.10299" />
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">The claude 3 model family: Opus, sonnet, haiku</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://www-cdn.anthropic.com/de" />
+		<imprint>
+			<date type="published" when="2024">2024. 8ba9b01c9ab7cbabf5c33b80b7bbc618857627/Model_ Card_Claude_3.pdf</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Digirl: Training in-the-wild device-control agents with autonomous reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mert</forename><surname>Cemri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alane</forename><surname>Suhr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aviral</forename><surname>Kumar</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2406.11896" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Tom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ariel</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Herbert-Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rewon</forename><surname>Henighan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Child</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">M</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Ziegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clemens</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Winter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mateusz</forename><surname>Sigler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Litwin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Chess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Berner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Amodei</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2005.14165" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Explore, discover and learn: Unsupervised discovery of state-covering skills</title>
+		<author>
+			<persName><forename type="first">Víctor</forename><surname>Campos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Trott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Socher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Giro I Nieto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jordi</forename><surname>Torres</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2002.03647" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Fireact: Toward language agent fine-tuning</title>
+		<author>
+			<persName><forename type="first">Baian</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ehsan</forename><surname>Shareghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nigel</forename><surname>Collier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2310.05915" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Language as a cognitive tool to imagine goals in curiosity-driven exploration</title>
+		<author>
+			<persName><forename type="first">Cédric</forename><surname>Colas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tristan</forename><surname>Karch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Lair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean-Michel</forename><surname>Dussoux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clément</forename><surname>Moulin-Frier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Ford Dominey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre-Yves</forename><surname>Oudeyer</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2002.09253" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Cédric</forename><surname>Colas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laetitia</forename><surname>Teodorescu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre-Yves</forename><surname>Oudeyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingdi</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc-Alexandre</forename><surname>Côté</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2305.12487" />
+		<title level="m">Augmenting autotelic agents with large language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyuan</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><surname>Stevens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boshi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Su</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2306.06070" />
+	</analytic>
+	<monogr>
+		<title level="m">Towards a generalist agent for the web</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Guiding pretraining in reinforcement learning with large language models</title>
+		<author>
+			<persName><forename type="first">Yuqing</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivia</forename><surname>Watkins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cédric</forename><surname>Colas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Trevor</forename><surname>Darrell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Andreas</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2302.06692" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Diversity is all you need: Learning skills without a reward function</title>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Eysenbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Ibarz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1802.06070" />
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Omni-epic: Open-endedness via models of human notions of interestingness with environments programmed in code</title>
+		<author>
+			<persName><forename type="first">Maxence</forename><surname>Faldor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jenny</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Cully</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Clune</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2405.15568" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Multimodal web navigation with instruction-finetuned foundation models</title>
+		<author>
+			<persName><forename type="first">Hiroki</forename><surname>Furuta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuang-Huei</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Nachum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutaka</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Faust</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shixiang</forename><surname>Shane Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izzeddin</forename><surname>Gur</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2305.11854" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><surname>Geminiteam</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gemini</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2312.11805" />
+		<title level="m">A family of highly capable multimodal models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">A real-world webagent with planning, long context understanding</title>
+		<author>
+			<persName><forename type="first">Izzeddin</forename><surname>Gur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hiroki</forename><surname>Furuta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Austin</forename><forename type="middle">V</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mustafa</forename><surname>Safdari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutaka</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Douglas</forename><surname>Eck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Faust</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note>and program synthesis</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hongliang</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenlin</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaixin</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenzhong</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Webvoyager</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2401.13919" />
+		<title level="m">Building an end-to-end web agent with large multimodal models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Zero-shot goal-directed dialogue via rl on imagined conversations</title>
+		<author>
+			<persName><forename type="first">Joey</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anca</forename><surname>Dragan</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2311.05584" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Cogagent: A visual language model for gui agents</title>
+		<author>
+			<persName><forename type="first">Wenyi</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weihan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingsong</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiazheng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenmeng</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junhui</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juanzi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiao</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Tang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2312.08914" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Agentgen: Enhancing planning abilities for large language model based agent via environment and task generation</title>
+		<author>
+			<persName><forename type="first">Mengkang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Can</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingfeng</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianguang</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingwei</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ping</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saravan</forename><surname>Rajmohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongmei</forename><surname>Zhang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2408.00764" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Swe-bench: Can language models resolve real-world github issues?</title>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2310.06770" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Yu Koh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lawrence</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vikram</forename><surname>Duvvur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><forename type="middle">Chong</forename><surname>Lim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Po-Yu</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruslan</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Visualwebarena</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2401.13649" />
+		<title level="m">Evaluating multimodal agents on realistic visual web tasks</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Unsupervised reinforcement learning with contrastive intrinsic control</title>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Laskin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xue Bin</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denis</forename><surname>Yarats</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aravind</forename><surname>Rajeswaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<ptr target="https://proceedings.neurips.cc/paper_files/paper/2022/file/debf" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Koyejo</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Mohamed</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Agarwal</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">D</forename><surname>Belgrave</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Cho</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Oh</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="34478" to="34491" />
+		</imprint>
+	</monogr>
+	<note>dbdc401f9052dbe15702837-Paper-Conference.pdf</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Showui: One vision-language-action model for gui visual agent</title>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Qinghong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linjie</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Difei</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiwei</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zechen</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weixian</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lijuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><forename type="middle">Zheng</forename><surname>Shou</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2411.17465" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong Jae</forename><surname>Lee</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2304.08485" />
+		<title level="m">Visual instruction tuning, 2023a</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanhan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sheng</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong Jae</forename><surname>Lee</surname></persName>
+		</author>
+		<ptr target="https://llava-vl.github.io/blog/2024-01-30-llava-next/" />
+		<title level="m">Llavanext: Improved reasoning, ocr, and world knowledge</title>
+		<imprint>
+			<date type="published" when="2024-01">January 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanchen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanyu</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanyu</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hangliang</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiwen</forename><surname>Men</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kejuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shudan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aohan</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengxiao</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenhui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sheng</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianjun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minlie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiao</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Agentbench</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2308.03688" />
+		<title level="m">Evaluating llms as agents, 2023b</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">The llama 3 herd of models</title>
+		<ptr target="https://arxiv.org/abs/2303.08774" />
+	</analytic>
+	<monogr>
+		<title level="m">OpenAI. Gpt-4 technical report</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note>Llama3Team</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Autonomous evaluation and refinement of digital agents</title>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Tomlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alane</forename><surname>Suhr</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2404.06474" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Iterative reasoning preference optimization</title>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Yuanzhe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pang</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhe</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyunghyun</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">He</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sainbayar</forename><surname>Sukhbaatar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2404" />
+		<imprint>
+			<date type="published" when="2024">2024. 19733</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Lipschitz-constrained unsupervised skill discovery</title>
+		<author>
+			<persName><forename type="first">Seohong</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jongwook</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaekyeom</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honglak</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gunhee</forename><surname>Kim</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2202.00914" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Controllability-aware unsupervised skill discovery</title>
+		<author>
+			<persName><forename type="first">Seohong</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kimin</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Youngwoon</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2302.05103" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Metra: Scalable unsupervised rl with metric-aware abstraction</title>
+		<author>
+			<persName><forename type="first">Seohong</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleh</forename><surname>Rybkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2310.08887" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Agent q: Advanced reasoning and learning for autonomous ai agents</title>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Putta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edmund</forename><surname>Mills</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sumeet</forename><surname>Motwani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Divyansh</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rafael</forename><surname>Rafailov</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2408.07199" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Webrl: Training llm web agents via self-evolving online curriculum reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Zehan</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iat</forename><surname>Long Iong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanyu</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueqiao</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenyi</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyue</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiadai</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuntian</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianjie</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiao</forename><surname>Dong</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2411.02337" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Dynamics-aware unsupervised discovery of skills</title>
+		<author>
+			<persName><forename type="first">Archit</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shixiang</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vikash</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Hausman</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1907.01657" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Offline rl for natural language generation with implicit language q learning</title>
+		<author>
+			<persName><forename type="first">Charlie</forename><surname>Snell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Kostrikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengjiao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2206.11871" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Voyager: An open-ended embodied agent with large language models</title>
+		<author>
+			<persName><forename type="first">Guanzhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqi</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Mandlekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaowei</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuke</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linxi</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anima</forename><surname>Anandkumar</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2305.16291" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Distrl: An asynchronous distributed reinforcement learning framework for on-device control agents</title>
+		<author>
+			<persName><forename type="first">Taiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianye</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Shao</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2410.14803" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Self-taught evaluators</title>
+		<author>
+			<persName><forename type="first">Tianlu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilia</forename><surname>Kulikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olga</forename><surname>Golovneva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ping</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhe</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">Yuanzhe</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maryam</forename><surname>Fazel-Zarandi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xian</forename><surname>Li</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2408.02666" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Cogvlm: Visual expert for pretrained language models</title>
+		<author>
+			<persName><forename type="first">Weihan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingsong</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenmeng</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenyi</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junhui</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuoyi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xixuan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiazheng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juanzi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiao</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Tang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2311.03079" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Self-instruct: Aligning language models with self-generated instructions</title>
+		<author>
+			<persName><forename type="first">Yizhong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yeganeh</forename><surname>Kordi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swaroop</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alisa</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Khashabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2212.10560" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Meta-rewarding language models: Self-improving alignment with llm-as-a-meta-judge</title>
+		<author>
+			<persName><forename type="first">Tianhao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhe</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olga</forename><surname>Golovneva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuandong</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiantao</forename><surname>Jiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sainbayar</forename><surname>Sukhbaatar</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2407.19594" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Osworld: Benchmarking multimodal agents for openended tasks in real computer environments</title>
+		<author>
+			<persName><forename type="first">Tianbao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danyang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jixuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaochuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siheng</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruisheng</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Toh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhoujun</forename><surname>Hua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongchan</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangyu</forename><surname>Shin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yitao</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvio</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2404.07972" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">Agenttrek: Agent trajectory synthesis via guiding replay with web tutorials</title>
+		<author>
+			<persName><forename type="first">Yiheng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dunjie</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhennan</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junli</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zekun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Yu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2412.09605" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Aguvis: Unified pure vision agents for autonomous gui interaction</title>
+		<author>
+			<persName><forename type="first">Yiheng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zekun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junli</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dunjie</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianbao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amrita</forename><surname>Saha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Doyen</forename><surname>Sahoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2412.04454" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baosong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengpeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanting</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialong</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianhong</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianwei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianxin</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianxin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingren</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinze</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinzheng</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keming</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keqin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingfeng</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Na</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ru</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Men</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruize</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runji</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sinan</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenbin</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohuan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingzhang</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xipin</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuancheng</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuejing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfei</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqiong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenru</forename><surname>Zhang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2407.10671" />
+		<imprint/>
+	</monogr>
+	<note>Zhifang Guo, and Zhihao Fan. Qwen2 technical report, 2024a</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kilian</forename><surname>Lieret</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2405.15793" />
+		<title level="m">Swe-agent: Agent-computer interfaces enable automated software engineering, 2024b</title>
+		<imprint>
+			<publisher>Karthik Narasimhan, and Ofir Press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">Self-rewarding language models</title>
+		<author>
+			<persName><forename type="first">Weizhe</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">Yuanzhe</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyunghyun</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xian</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sainbayar</forename><surname>Sukhbaatar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2401.10020" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<title level="m" type="main">Agenttuning: Enabling generalized agent abilities for llms</title>
+		<author>
+			<persName><forename type="first">Aohan</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingdao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiao</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Tang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2310.12823" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<title level="m" type="main">Fine-tuning large vision-language models as decision-making agents via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Yuexiang</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zipeng</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengbang</forename><surname>Tong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alane</forename><surname>Suhr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saining</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Lecun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2405.10292" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<title level="m" type="main">Appagent: Multimodal agents as smartphone users</title>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yucheng</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zebiao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gang</forename><surname>Yu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2312.13771" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title level="m" type="main">Omni: Open-endedness via models of human notions of interestingness</title>
+		<author>
+			<persName><forename type="first">Jenny</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joel</forename><surname>Lehman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenneth</forename><surname>Stanley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Clune</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2306.01711" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<title level="m" type="main">Bootstrap your own skills: Learning to solve new tasks with large language model guidance</title>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Pertsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minsuk</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shao-Hua</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">J</forename><surname>Lim</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2310.10021" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<title level="m" type="main">Internlm-xcomposer-2.5: A versatile large vision language model supporting long-contextual input and output</title>
+		<author>
+			<persName><forename type="first">Pan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyi</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhang</forename><surname>Zang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhang</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qipeng</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haodong</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linke</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Songyang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenwei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yining</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyue</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingwen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhai</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Conghui</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingcheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jifeng</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dahua</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaqi</forename><surname>Wang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2407.03320" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<title level="m" type="main">You only look at screens: Multimodal chain-of-action agents</title>
+		<author>
+			<persName><forename type="first">Zhuosheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aston</forename><surname>Zhang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2309.11436" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<title level="m" type="main">Gpt-4v(ision) is a generalist web agent, if grounded</title>
+		<author>
+			<persName><forename type="first">Boyuan</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyu</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jihyung</forename><surname>Kil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Su</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2401.01614" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<title level="m" type="main">Webarena: A realistic web environment for building autonomous agents</title>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuhui</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abishek</forename><surname>Sridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianyi</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyue</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2307.13854" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<monogr>
+		<title level="m" type="main">Archer: Training language model agents via hierarchical multi-turn rl</title>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrea</forename><surname>Zanette</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aviral</forename><surname>Kumar</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2402.19446" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<analytic>
+		<title level="a" type="main">Autonomous improvement of instruction following skills via foundation models</title>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Atreya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abraham</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Homer</forename><surname>Walke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oier</forename><surname>Mees</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<ptr target="https://www.khanacademy.org" />
+	</analytic>
+	<monogr>
+		<title level="m">Allrecipes: Simply Recipes</title>
+		<meeting><address><addrLine>Best Buy</addrLine></address></meeting>
+		<imprint>
+			<publisher>CBS Sports</publisher>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note>Out-of-distribution Websites of WebVoyager for Apple: Samsung</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<analytic>
+		<title level="a" type="main">These websites were also used for testing the zeroshot generalization of PAE to out-of-distribution websites in Section 5. List continued in Figure 21. Out-of-distribution Websites of WebVoyager for SFT (2/2) Cambridge Dictionary</title>
+		<ptr target="https://www.desmos.com" />
+	</analytic>
+	<monogr>
+		<title level="m">Oxford Learner&apos;s Dictionaries</title>
+		<meeting><address><addrLine>Merriam-Webster; Bing Maps; Bing</addrLine></address></meeting>
+		<imprint>
+			<publisher>Google Scholar</publisher>
+		</imprint>
+	</monogr>
+	<note>Figure 20: A list of 85 websites that we used to collect demonstration trajectories with Claude 3 Sonnet. In total 11220 trajectories were collected with different tasks Google Maps: Apple Maps</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<monogr>
+		<title level="m" type="main">Figure 21: A list of 85 websites that we used to collect demonstration trajectories with Claude 3 Sonnet. In total 11220 trajectories were collected with different tasks. These websites were also used for testing the zeroshot generalization of PAE to out-of-distribution websites in Section ?</title>
+		<imprint/>
+	</monogr>
+	<note>List continued from Figure 21</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

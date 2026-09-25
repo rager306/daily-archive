@@ -1,0 +1,1230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Chain-of-Tools: Utilizing Massive Unseen Tools in the CoT Reasoning of Frozen Language Models</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-03-21">21 Mar 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Mengsong</forename><surname>Wu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Soochow University</orgName>
+								<address>
+									<addrLine>Shizi Street 1</addrLine>
+									<postCode>215006</postCode>
+									<settlement>Suzhou</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Tong</forename><surname>Zhu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Soochow University</orgName>
+								<address>
+									<addrLine>Shizi Street 1</addrLine>
+									<postCode>215006</postCode>
+									<settlement>Suzhou</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Han</forename><surname>Han</surname></persName>
+							<email>hhan@stu.suda.edu.cn</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Soochow University</orgName>
+								<address>
+									<addrLine>Shizi Street 1</addrLine>
+									<postCode>215006</postCode>
+									<settlement>Suzhou</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xiang</forename><surname>Zhang</surname></persName>
+							<email>xzhangxzhang23@stu.suda.edu.cn</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Soochow University</orgName>
+								<address>
+									<addrLine>Shizi Street 1</addrLine>
+									<postCode>215006</postCode>
+									<settlement>Suzhou</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Wenbiao</forename><surname>Shao</surname></persName>
+							<email>wbshao@stu.suda.edu.cn</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Soochow University</orgName>
+								<address>
+									<addrLine>Shizi Street 1</addrLine>
+									<postCode>215006</postCode>
+									<settlement>Suzhou</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Wenliang</forename><surname>Chen</surname></persName>
+							<email>wlchen@suda.edu.cn</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Soochow University</orgName>
+								<address>
+									<addrLine>Shizi Street 1</addrLine>
+									<postCode>215006</postCode>
+									<settlement>Suzhou</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Chain-of-Tools: Utilizing Massive Unseen Tools in the CoT Reasoning of Frozen Language Models</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-03-21">21 Mar 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">3B0E9C63B1C3849241C265FB02BA3E98</idno>
+					<idno type="arXiv">arXiv:2503.16779v1[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:59+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Tool learning can further broaden the usage scenarios of large language models (LLMs). However most of the existing methods either need to finetune that the model can only use tools seen in the training data, or add tool demonstrations into the prompt with lower efficiency. In this paper, we present a new Tool Learning method Chain-of-Tools. It makes full use of the powerful semantic representation capability of frozen LLMs to finish tool calling in CoT reasoning with a huge and flexible tool pool which may contain unseen tools. Especially, to validate the effectiveness of our approach in the massive unseen tool scenario, we construct a new dataset SimpleToolQuestions. We conduct experiments on two numerical reasoning benchmarks (GSM8K-XL and FuncQA) and two knowledge-based question answering benchmarks (KAMEL and Simple-ToolQuestions). Experimental results show that our approach performs better than the baseline. We also identify dimensions of the model output that are critical in tool selection, enhancing the model interpretability. Our code and data are available at: <ref type="url" target="https://github.com/fairyshine/Chain-of-Tools">https://github.com/  fairyshine/Chain-of-Tools</ref> .</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>The development of autonomous agent systems <ref type="bibr" target="#b22">(Wang et al., 2024;</ref><ref type="bibr" target="#b25">Xi et al., 2023)</ref>, propelled by real-world applications <ref type="bibr">(Achiam et al., 2023)</ref> of Large Language Models (LLMs), has become a popular focus in both academic and industry communities. Benefit from LLM's emergent ability <ref type="bibr">(Wei et al., 2022a;</ref><ref type="bibr">Zhao et al., 2023)</ref> to think questions comprehensively and integratedly, LLM agent may give brilliant step-by-step solutions during multiple-turn chat with users. Despite LLM is expert in logical reasoning and breaking down problems, it can't accomplish a lot of specific tasks like calculating math formulas or drawing paintings. In order to extend the application scenarios, equip-ping LLM agent with external tools is a reasonable solution. That's what the Tool Learning <ref type="bibr">(Qin et al., 2023a)</ref> task investigates: how to make LLMs better utilize tools in the process of reasoning? There are two kinds of typical methods for Tool Learning. (1) Fine-tuning based methods like API-Bank <ref type="bibr" target="#b13">(Li et al., 2023)</ref> and ToolLLM <ref type="bibr">(Qin et al., 2023b)</ref> can efficiently and precisely call tools which have been seen during training, while the general capabilities of LLMs such as emergent ability and Chain of Thought (CoT) might be influenced by fine-tuning <ref type="bibr">(Wei et al., 2022b)</ref>. ToolkenGPT <ref type="bibr" target="#b7">(Hao et al., 2024)</ref> introduces a method which only fine-tunes extra tool-token embeddings without hurting the original model, but it still can't use unseen tools. (2) In-context learning (ICL) based methods like HuggingGPT <ref type="bibr" target="#b21">(Shen et al., 2024)</ref> and AgentBench <ref type="bibr" target="#b15">(Liu et al., 2023)</ref> are flexible to call unseen tools with ICL prompt, while it is less efficient in reasoning when given massive tools. The above methods in Table <ref type="table">1</ref> have shown a certain success in utilizing tools in the LLM agents. However, we argue that the LLM agent should be capable of efficiently managing a large amount of tools and fully utilizing unseen ones during the CoT reasoning, as many new tools may emerge daily in real-world application scenarios.</p><p>Tool Learning Paradigms Frozen LMs Plugable Massive Tools Unseen Tools Ability to Use Extensive Data Fine-tuning ✘ ✘ ✘ ✘ ✔ In-Context Learning ✔ ✔ ✘ ✔ ✘ ToolkenGPT ✔ ✔ ✔ ✘ ✔ CoTools(Ours) ✔ ✔ ✔ ✔ ✔ Table 1: Comparision of the mainstream Tool Learning paradigms. "Plugable" means that tools can be flexibly loaded. "Ability to use extensive data" means that training data can be used to improve the performance of the method. (The table is partially referenced from Table 1 in the paper of ToolkenGPT.)</p><p>In this paper, we introduce Chain-of-Tools (CoTools), a brand new fine-tuning based Tool Learning method. We follow the way of fine-tuning based method since it is much more efficient to call tools which is critical for practical applications. The remaining problem is how to effectively utilize unseen tools in the process of CoT reasoning without hurting the model's capability. In order to address this problem, we design the ideal Tool Learning procedure shown in Figure <ref type="figure" target="#fig_0">1</ref>. CoTools fully utilizes the token semantic representation, which is often called as the hidden states generated by LLMs, as input to judge where to call tools and select which tools to call (e.g. "Weather" tool in Figure <ref type="figure" target="#fig_0">1</ref>) then the tool calling result is added in the answer (e.g. "sunny" in Figure <ref type="figure" target="#fig_0">1</ref>). First, the user query is prompted with ICL and CoT before being inputted into the LLM. Then CoTools judges whether to call a tool with the hidden state of new answer token when the LLM is generating every answer token. If tool calling is needed, CoTools calculates query vectors and tool vectors respectively with corresponding hidden states given for tool selection. The tool vectors of unseen tools can also be computed from their description for flexible retrieval. What's more, since the LLM is frozen, its CoT reasoning ability remains unaffected.</p><p>Contributions of this paper are listed as following:</p><p>• The new Tool Learning method CoTools can utilize massive unseen tools efficiently in the process of CoT reasoning with the frozen LLM. It fully explores the generation capability and the semantic representation capability of the LLM for better Tool Learning procedure. Unseen tools can be easily equipped for tool selection with their detailed descriptions without introducing external retriever.</p><p>• We construct the dataset SimpleToolQuestions (STQuestions) including 1836 tools to evaluate the tool selection performance of each method. Compared with former benchmarks, it focuses on evaluating in the massive unseen tool scenario.</p><p>• For detailed evaluation, we conduct experiments on four benchmarks: GSM8K-XL, FuncQA, KAMEL and STQuestions. Experimental results show that CoTools performs better than baseline in both numerical reasoning and knowledge-based question answering. Moreover, we discover the key dimensions of the hidden states for tool selection, which may enhance the interpretability of the model.</p><p>2 Related Work</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Tool Learning</head><p>Tool Learning <ref type="bibr">(Qin et al., 2023a)</ref> enables foundation models to leverage specialized external tools.</p><p>LLMs then can accomplish much more complex tasks in realistic scenarios.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Fine-Tuning based Tool Learning</head><p>Most of these researches construct relevant tool datasets to fine-tune LLMs. Toolformer <ref type="bibr" target="#b20">(Schick et al., 2024)</ref> explores how to generate tool learning data with raw dataset given. API-Bank <ref type="bibr" target="#b13">(Li et al., 2023)</ref> builds the comprehensive tool learning benchmark with tools in many fields. GeneGPT <ref type="bibr" target="#b9">(Jin et al., 2024)</ref> uses NCBI web APIs as tools to validate the model's ability to call tools under a specific field. Gorilla <ref type="bibr" target="#b16">(Patil et al., 2023)</ref> takes online models from platforms like HuggingFace as tools to extend the usage scenarios of tool calls.</p><p>ToolLLM <ref type="bibr">(Qin et al., 2023b)</ref> generates dataset Tool-Bench with massive real world tools and also propose a multi-step tool learning inference method DFSDT. API-BLEND <ref type="bibr" target="#b2">(Basu et al., 2024)</ref> aggregates the various types of datasets available with elaborate analysis. ToolkenGPT <ref type="bibr" target="#b7">(Hao et al., 2024)</ref> doesn't adapt model weights but add many special tokens in the vocabulary. One special token represents one external tool. The corresponding tool is called when the model generates the special token. ToolkenGPT just need to train the token embedding which is efficient. CoTools does not train the foundation model but post-processing modules for the hidden states output by the model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>In-Context Learning based Tool Learning</head><p>In-context learning <ref type="bibr" target="#b3">(Brown et al., 2020)</ref> is one of the most prominent capabilities of the LLMs. With the help of ICL, the model performance in the few-shot scenario of many tasks has improved dramatically. ICL has become a basic trick in the wide usage of LLMs. There is no exception in the Tool Learning task. TaskMatrix.AI <ref type="bibr" target="#b14">(Liang et al., 2023)</ref> proposes the multimodal conversational system to equip the foundation model with rich crossmodal tools from the API platform. Huggingface models are also treated as tools in the paper of HuggingGPT <ref type="bibr" target="#b21">(Shen et al., 2024)</ref>. ToolDoc <ref type="bibr" target="#b8">(Hsieh et al., 2023)</ref> provides tool documentions as an alernative to tool demonstraions which are added in ICL prompt. AgentBench <ref type="bibr" target="#b15">(Liu et al., 2023)</ref> is a comprehensive agent benchmark for both commercial and open-sourced LLMs. ToolTalk <ref type="bibr" target="#b6">(Farn and Shin, 2023)</ref> evaluates GPT-3.5 and GPT-4 <ref type="bibr">(Achiam et al., 2023)</ref> with OpenAI API, which emphasizes tools that affect the external world such as sending emails. TaskWeaver <ref type="bibr" target="#b17">(Qiao et al., 2023)</ref> asks the model to call tools in the format of generating python code. Tools in it are python functions which can be executed. ChatCoT <ref type="bibr" target="#b8">(Chen et al., 2023)</ref> generates iterative tool-augmented reasoning according to the given problem. CoTools does not use the ICL prompt for tool selection, thereby enhancing efficiency in massive tool scenarios. It uses the ICL prompt to fill in tool parameters with tool calling demonstrations given.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Chain of Thought</head><p>Prompt learning is developing rapidly with the rise of LLMs. Chain of Thought is firstly proposed in <ref type="bibr">Wei et al. (2022b)</ref>. It encourages the model to generate thought about the question that leads to a better answer. Zero-shot-CoT <ref type="bibr" target="#b12">(Kojima et al., 2022)</ref> finds it work that add the phrase "Let's think step by step." in prompt. The phrase is now widespreadly used in the prompt engineering of LLMs. There are also attempts to combine Zero-shot-CoT and Tool Learning together like ChatCoT and ToolkenGPT. It's helpful to improve tool selection and invocation by models for complex problems. Subsequent attempts can be made to utilize improved versions of CoT such as Tree of Thoughts <ref type="bibr" target="#b26">(Yao et al., 2024)</ref> to complete Tool Learning task.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Methodology</head><p>In this section, we introduce Chain-of-Tools, a novel fine-tuning based Tool Learning method. The core idea of CoTools is to leverage the semantic representation capabilities of frozen foundation models for determining where to call tools and which tools to call. The foundation model M is usually an auto-regressive language model that would generate output token-by-token. Given the input token list of length n [x 1 , x 2 , . . . , x n ] (x ∈ V, V is the vocabulary of M) which is tokenized from the input text, the model M can generate the hidden state of the last token, which is called h n (h n ∈ R d , d is the dim of the hidden states):</p><formula xml:id="formula_0">h n = M(x n ; x 1 , . . . , x n-1 )<label>(1)</label></formula><p>Then we can get the next token x n+1 caculated by the language model head H LM of M:</p><formula xml:id="formula_1">x n+1 = H LM (h n )<label>(2)</label></formula><p>Instead of just being used to generate the next token as usual, the hidden state h n plays an important role in our method. The main structure of CoTools contains 3 parts: Tool Judge, Tool Retriever and Tool Calling like in Figure <ref type="figure">2</ref>. The Tool Judge determines whether or not to invoke a tool during the CoT reasoning process. The Tool Retriever selects the most suitable tool based on the query and the answer fragment that has been generated. The Tool Calling fills in parameters of the selected tool with ICL prompt, executes it and gets the return value.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Tool Judge: Whether Calling Tools</head><p>The Tool Judge J is used for determining whether to call a tool at the specific position of answer. It is calculated with the input hidden states h:</p><formula xml:id="formula_2">J (h) = W J down ((σW J gate (h)) ⊗ W J up (h)) (<label>3</label></formula><formula xml:id="formula_3">)</formula><p>Tool DataBase Tool Pool Ⅰ. Tool Judge Task Prompt Answer Query NO YES Query Vector Tool Vectors Retrieval Prompt Query Answer Fragment … Similarity … MAX Score Foundation Model Tool Execution Add in Answer # LM Head Query Encoder Foundation Model Tool Encoder Foundation Model Generate Next Token # Calling Prompt Query Answer Fragment Tool Doc Demo Foundation Model Tool Judge Tool Prompt Tool Name Tool Description CoT Reasoning Tool Selection Ⅱ. Tool Retriever Ⅲ. Tool Calling Management • Add Tools • Remove Tools • Execute Tools Judge Encoder up weighting norm down gate gate up σ × down σ × + Foundation Model Tool Encoder Query Encoder Tool Judge Tool Retriever (a) (b) (c) Figure 3: Composition and structure of the model. The parameters of the foundation model are frozen. We only train the tool judge, the query encoder and the tool encoder.</p><p>where W J gate , W J up ∈ R d×D , W J down ∈ R D×1 are parameters to be optimized. (D is the hyperparameter for the intermediate size). σ represents the activation function and ⊗ represents multiplication of corresponding positions.</p><p>The initial input token list is tokenized from the query with ICL and CoT prompt. CoTools judges whether to call a tool whenever a new answer token is to be generated. Suppose the current token list is [x 1 , x 2 , . . . , x t ]. We calculate the hidden state h t of the last token x t with Equation 1. It is used to calculate the Score J :</p><formula xml:id="formula_4">Score J = J (h t ) ∈ [0, 1]<label>(4)</label></formula><p>If Score J is larger than threshold θ (typically set to 0.5), we attempt to call a tool here. Otherwise, the model outputs the next token x t+1 with Equation 2. We train J as the sequence labeling task. The objective function is the binary cross entropy loss:</p><formula xml:id="formula_5">L Judge = L BCE (Score J , Label) (<label>5</label></formula><formula xml:id="formula_6">)</formula><p>where Label ∈ {0, 1}.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Tool Retriever: Find Needed Tools</head><p>The Tool Retriever consists of the Query Encoder E Q and the Tool Encoder E T . Both of them are used to calculate the vectors for retrieval. The Query Encoder E Q takes the hidden state of a token as input.</p><p>In order to keep as much information as possible in the original hidden states, we use residual connection which is really important for the final result. E Q ′ can thus be seen as an offset optimization of the original hidden states used for retrieval:</p><formula xml:id="formula_7">E Q ′ (h) = W Q down ((σW Q gate (h)) ⊗ W Q up (h)) E Q (h) = norm(W dim ⊗ (h + E Q ′ (h)))<label>(6)</label></formula><p>where W Q gate , W Q up ∈ R d×D , W Q down ∈ R D×d and W dim ∈ R d are parameters to be optimized. ⊗ represents multiplication of corresponding positions. norm represents tensor normalization.</p><p>When CoTools decides to call a tool in the process of reasoning, it tokenizes the query and answer fragment in retrieval prompt ending with the special END token x end (e.g. "&lt;/s&gt;" in LLaMA2) to get [x 1 , x 2 , . . . , x Lq , x end ]. The model M then calculates the hidden states of x end which is used for calculating the query vector V Q :</p><formula xml:id="formula_8">V Q = E Q (M(x end ; x 1 , . . . , x Lq ))<label>(7)</label></formula><p>Suppose the external tool pool is T. For any tool T ∈ T, we compute the tool vector V T in a similar way as we compute the query vector V Q :</p><formula xml:id="formula_9">E T ′ (h) = W T down ((σW T gate (h)) ⊗ W T up (h)) E T (h) = norm(W dim ⊗ (h + E T ′ (h))) V T = E T (M(x end ; x 1 , . . . , x Lt ))<label>(8)</label></formula><p>where W T gate , W T up ∈ R d×D , W T down ∈ R D×d are parameters to be optimized. E Q and E T share the same parameter W dim since W dim is used to identify which dimensions of the hidden state play a role in the process of tool retrieval.</p><p>We dot multiply the query vecotor V Q and the tool vector V T to calculate the similarity score for the corresponding tool T . The tool T *</p><p>Q with the highest score is what we needed here.</p><formula xml:id="formula_10">Score Q,T = V Q • V T (<label>9</label></formula><formula xml:id="formula_11">)</formula><formula xml:id="formula_12">T * Q = argmax T Score Q,T<label>(10)</label></formula><p>The Tool Retriever is trained with the constrastive learning method in batch as other retrievers do <ref type="bibr" target="#b11">(Karpukhin et al., 2020)</ref>. The tool search during training is limited to the tools involved in the single data batch, rather than the entire tool pool during evaluation. The objective function is the cross entropy loss:</p><formula xml:id="formula_13">L Retriever = L CE (Score Q,T Batch , Label) (11)</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Tool Calling: Use Retrieved Tools</head><p>After finding the needed tool, the foundation model generates the parameters of it with ICL prompting. The tool calling format should be emphasized in the prompt so that we can extract parameters value properly with regex expression from the model output. Then the tool is executed and the result is added in answer.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiment</head><p>In this section, we apply CoTools to two distinct Tool Learning application scenarios in English: calculating arithmetic questions and finding relevant knowledge in the Knowledge Base. For the former, we use the numerical reasoning datasets GSM8K-XL and FuncQA which are created in ToolkenGPT <ref type="bibr" target="#b7">(Hao et al., 2024)</ref>. For the later, we select the Knowledge-Based Question Answering (KBQA) datasets KAMEL <ref type="bibr" target="#b10">(Kalo and Fichtel, 2022)</ref> and Sim-pleQuestionsv2 <ref type="bibr" target="#b25">(Weston et al., 2015)</ref>. To make the SimpleQuestionsv2 better suited for evaluation, we rewrite it using ChatGPT then get the new dataset SimpleToolQuestions (STQuestions). Number of tools in these datasets is shown in Table <ref type="table">2</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Dataset</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Tool Amount</head><p>GSM8K-XL 4 FuncQA 13 KAMEL 234 SimpleToolQuestions 1,836</p><p>Table 2: Number of tools for several datasets. Dataset SimpleToolQuestions has 999 seen tools and 837 unseen tools (only in the test set).</p><p>Experiments on these benchmarks show that Co-Tools outperforms baseline across the board. Our method allows for more accurate tool selection even when the tool scale is very large. Also it demonstrates generalization performance on unseen tools. Besides, we find key dimensions of using hidden states for vector retrieval that help enhance the interpretability of the model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Experiment Setting</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.1">Numerical Reasoning</head><p>To evaluate tool learning paradigms on the numerical reasoning task, we use the two datasets created by ToolkenGPT <ref type="bibr" target="#b7">(Hao et al., 2024)</ref>: (1) GSM8K-XL: It's an enhanced version of the existing GSM8K <ref type="bibr" target="#b5">(Cobbe et al., 2021)</ref> dataset with 4 basic arithmetic operations (+ -×÷) as tools.</p><p>(2) FuncQA: It's an synthetic dataset with 13 arithemetic tools, with both one-hop and multihops questions.</p><p>Because the same arithmetic problem can often be solved in many different procedures, we focus on the correctness of the final result rather than on the specific tool calling process in the evaluation. The evaluation metric is just like in ToolkenGPT. We use the Round Accuracy metric for GSM8K-XL and FuncQA One-Hop test sets. The float numbers are rounded to two decimals. The Approx Accuracy metric is used for the FuncQA Multi-Hop test set. It allows for errors of 0.1% accuracy in multi-step calculations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.2">Knowledge-Based Question Answering</head><p>For evaluating whether tool learning paradigms can choose proper relevant tools on the KBQA task, we use an existing dataset KAMEL and construct a new dataset SimpleToolQuestions with a much larger amount of tools.</p><p>(1) KAMEL <ref type="bibr" target="#b10">(Kalo and Fichtel, 2022</ref>): It's an QA dataset built with the knowledge in KB Wikidata. It has 234 relations which are viewed as tools. We use the post-processing version of the paper ToolkenGPT <ref type="bibr" target="#b7">(Hao et al., 2024)</ref> with a gold training set KAMEL(sup) and a synthetic training set KAMEL(syn) generated by ChatGPT.</p><p>(2) SimpleToolQuestions (STQuestions): we construct it based on the KBQA dataset Simple-Questionsv2 <ref type="bibr" target="#b25">(Weston et al., 2015)</ref>. One case in the raw dataset contains a question and a triplet (head entity, relationship, tail entity). The raw data needs models to find the head entity in the question. Then the knowledge subgraph about the head entity is founded in the KB Freebase. Relationship is searched in a small scope. But if we add all relations into the tool pool, it's not proper to retrieve tools in the whole with short questions. There are many similar tools thus it is impossible to judge. In order to make this dataset more applicable for tool learning evaluation, we rewrite the original question using ChatGPT. The new questions provide a more detailed description of the needed relationship. The dataset has 1836 tools with description from many different domains. 999 of them appear in the training set and 837 unseen tools are only in the test set. We also generates tool description for each tool like the format of KAMEL. It can be used to assess the accuracy of selection against seen and unseen tools in the large tool scale scenario, and whether the model favors tools of certain domains.</p><p>For KBQA benchmarks, we are more concerned about the accuracy of tool selection. We want to evaluate whether the model is able to understand the semantic information of the questions and select the relevant tools, espcially when the tool pool is pretty large or the tools are unseen.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Main Result</head><p>Here is the main evaluation section of the paper. We compare our method CoTools with baselines like 0-shot ChatGPT and ToolkenGPT.</p><p>For the numerical reasoning task, the performances of different methods on the GSM8K-XL and FuncQA datasets are shown in Table 4: Main results on KBQA Benchmarks. The eval metric is the accuracy of tool selection. Because of the large number of tools, we do not evaluate the Prompting method which is inefficient and hard to guarantee results. LLaMA refers to LLaMA2-7B-Chat.</p><p>For KBQA benchmarks, the tool selection results of different methods are listed in Table <ref type="table">4</ref>. For cases with large amounts of gold training data such as KAMEL(sup), both methods perform well. With synthetic training sets KAMEL(syn) created by ChatGPT, CoTools does much better though it is still a long way from being usable. CoTools does better in low-quality training data scenarios, perhaps because of the contrastive learning training approach. Similarly CoTools performs better in massive tool (999 seen tools in the STQuestions dataset) scenarios. For 837 unseen tools in the STQuestions dataset, CoTools can use the detailed description of tools for better retrieval while ToolkenGPT only can use tools that have been trained. More details about unseen tools are further investigated in Section 4.3.3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Analysis 4.3.1 Data Synthesis</head><p>The quality of dataset used for fine-tuning is very important <ref type="bibr" target="#b28">(Zhou et al., 2024)</ref>, so we want to investigate the effect of dataset generated by human and the LLM. We use two versions of KAMEL training set for comparative validation. (1) KAMEL(sup) is sampled from raw KAMEL training set. It simulates the real-world scenario with sufficient indomain training data. (2) KAMEL(syn) is synthesized by ChatGPT. For the situation where massive new tools are added to the tool pool, it is costly for human annotators to annotate sufficient data. It is common today to use LLMs to assist in generating data for model tuning.</p><p>30 60 100 234 100 99 98 97 96 95 94 93 92 91 90 ToolkenGPT CoTools CoTools top5 With KAMEL(sup), both methods perform pretty well in Figure <ref type="figure" target="#fig_2">4</ref>. This demonstrates that the tool selection subtask can already be well solved by existing methods when high quality training data are sufficient. CoTools remains nearly 100% correct with the TOP 5 tools selected so it would land well in real-world scenarios. For the synthetic training set KAMEL(syn), Figure <ref type="figure" target="#fig_3">5</ref> shows that CoTools is stronger than ToolkenGPT by more than 20%. Since the foundation model is frozen and the training data is limited, contrastive learning methods used in CoTools might be particularly effective. It can better teach the agent to distinguish between tools, even though the data quality is poor.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.2">The number of tools</head><p>In this part, we try to explore the upper limit of the amount of loading tools supported by each method. The benchmark STQuestions contains 999 tools which appear in the training set. The evaluation results on it are shown in Figure <ref type="figure" target="#fig_4">6</ref> below. As the number of tools reaches a thousand scale, CoTools still outperforms the baseline by more than 10%. With the number of tools increases, the probability of similar tools appearing is much higher. Benefit from the strong language understandng capabilty of LLMs, the tool learning method CoTools which better uses the LLM's own ability does better in this situation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.3">Unseen Tools</head><p>It is meaningful to evaluate the generalizability of the fine-tuned model especially in tool learning. It's inconvenient to adapt the model weight whenever some new tools are added. As mentioned in Section 4.1.2, total 837 tools in the dataset STQuestions do not appear in the training set. We use these unseen tools as out-of-domain distributions to examine the generalization ability of the model.</p><p>The main results on unseen tools have been listed in Table <ref type="table">4</ref>. CoTools has a top1 accuracy of 10.41% and a top5 accuracy of 33.68%. ToolkenGPT has a top1 accuracy of 0.0%. We count the wrong cases in the results as in Figure <ref type="figure" target="#fig_5">7</ref>. It's easy to see from the figure that ToolkenGPT has a clear preference for a small group of tools however CoTools does not. In other words, CoTools focuses more on how to distinguish and identify tools during training instead of remembering them. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.4">Key Dimension in Hidden States</head><p>In this section, we would like to explore which dimensions of hidden states play a key role when retrieving tools. During experiments we find a robust model probing <ref type="bibr" target="#b1">(Alain and Bengio, 2016)</ref> method For LLM outputs. It may help to enhance model interpretability. As mentioned in Section 3.2, the Query Encoder E Q and the Tool Encoder E T share the same W dim weight (W dim ∈ R d , with all-ones initialization). We individually set its learning rate to 0.001, 0.01 and 0.1 for training respectively, and other hyperparameters are kept constant. The raw W dim weights after training are partially displayed in Figure <ref type="figure" target="#fig_6">8</ref>. <ref type="table" target="#tab_0">1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63</ref>  It's obvious in Figure <ref type="figure" target="#fig_6">8</ref> that parameters change more drastically with larger learning rates. At a learning rate setting of 0.1, many of the parameters change from the initial 1 to 0. In addition a similar trend can be vaguely observed for the three folds.</p><p>In order to better analyze the commonality of the parameters at different learning rates, we normalize them using Equation 12. The similar trend of the three folds can be clearly found in Figure <ref type="figure">9</ref>. We view dimensions with the common upper value of 3 W dim weights as the key dimensions. The subscales corresponding to the key dimensions play an important role in tool selection.</p><formula xml:id="formula_14">Ŵdim = W dim -W dim σ W dim (<label>12</label></formula><p>) 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 4 3.5 3 2.5 2 1.5 1 0.5 0 -0.5 -1 -1.5 -2 -2.5 lr=0.001 lr=0.01 lr=0.1 Figure 9: Normalized W dim weight segment (only the first 64 dimensions) by equation 12.</p><p>Taking this a step further, we observe the data distribution of raw W dim weights. The values of 4096 dimensions after the descending order are shown in Figure <ref type="figure" target="#fig_7">10</ref>. As the learning rate increases, the key dimensions become more and more centralized. At a learning rate of 0.01, 1561 of the 4096 dimensions are weighted more than the initial 1. We use only these dimensions for tool retrieval. The TOP1 accuracy has decreased by only 1.4% from the original 93.8%, while the TOP5 accuracy remains unchanged. This provides some evidence that the dimensions of the hidden state of LLM are divided in representing semantic information. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>In this paper, we present a novel CoT tool learning method CoTools which is based on frozen LLMs. CoTools incorporates tool invocation into the process of generating answers to the model while maintaining the original generalized ability of the foundation model. It leverages the powerful semantic representation capability of the foundation model to determine whether to call a tool and what tool to call. Experiments on Benchmarks of numerical reasoning and KBQA tasks show that our method performs well in different scenarios. In particular, its tool selection capability is much improved compared to the baseline. In addition, we roughly explore the role that different hidden states dimensions of model output play in the tool selection process, which helps to enhance model interpretability. We believe that our ideal Tool Learning agent framework based on frozen LLMs with its practical realization method CoTools can be useful in real-world applications and even drive further development of Tool Learning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitations</head><p>Research on LLM Tool Learning is still on its early stage. Although the open source community already has a number of Tool Learning datasets, a large proportion of them are too simple or of low quality. As a whole, our research is thus limited. One limitation is that we do not conduct experiments for tools containing multiple return values. In this situation, we need to select the return value that should be added to the answer. Our solution is to train a similar Return Value Encoder E R like E Q in Section 3.2. Unfortunately it cannot not be evaluated at the moment because of the lack of relevant CoT Tool Learning datasets with this kind of tools. For the selection of return values for this type of tools, a temporary alternative to the prompting scheme is currently available.</p><p>Another possible limitation is that we do not attempt the complete Tool Learning process on a large-scale real-world toolset. A Tool Learning dataset with large-scale realizable tools still does not exist. The dataset ToolBench <ref type="bibr">(Qin et al., 2023b)</ref> comes closest to this goal. However the format of its gold data is too cumbersome and not well filtered.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: The ideal tool calling procedure.Take the input query "What's the weather like at my destination tomorrow?" as an example.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :Figure 3 :</head><label>23</label><figDesc>Figure2: Overview of the method CoTools. Just like the example in Figure1, CoTools judges whether to call a tool whenever a new answer token is to be generated. The answer Fragment means the answer text that has been generated by the foundation model.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure4: Performances of the methods with foundation model fine-tuned by KAMEL(sup). The X-axis represents the number of tools in the tool pool. The Y-axis represents the tool selection accuracy.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5 :</head><label>5</label><figDesc>Figure5: Performances of the methods with foundation model fine-tuned by KAMEL(syn). The rest of the settings are the same as in Figure4.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Tool selection result with massive tools. The X-axis represents the number of tools in the tool pool. The Y-axis represents the tool selection accuracy.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 7 :</head><label>7</label><figDesc>Figure7: Error analysis for instances with unseen tools. We count the number of instances where the unseen tool should have been called but the seen tool is called instead. The X-axis represents the 999 seen tools. The Y-axis represents the number of times the seen tool is incorrectly called. (It is recommended to view the colorprinted version.)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 8 :</head><label>8</label><figDesc>Figure 8: Raw W dim weight segment (only the first 64 dimensions). The weights are initialized with all ones.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 10 :</head><label>10</label><figDesc>Figure 10: Sorted raw W dim weight. It's trained with the dataset KAMEL.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 3 .</head><label>3</label><figDesc>On</figDesc><table><row><cell>Method</cell><cell>GSM8K-XL</cell><cell cols="2">FuncQA One-Hop Multi-Hops</cell></row><row><cell>0-shot ChatGPT</cell><cell>0.17</cell><cell>0.55</cell><cell>0.09</cell></row><row><cell>0-shot Prompting LLaMA</cell><cell>0.04</cell><cell>0.05</cell><cell>0.00</cell></row><row><cell>CoT Prompting LLaMA</cell><cell>0.00</cell><cell>0.00</cell><cell>0.00</cell></row><row><cell>ToolkenGPT LLaMA</cell><cell>0.18</cell><cell>0.48</cell><cell>0.06</cell></row><row><cell>CoTools(ours) LLaMA</cell><cell>0.19</cell><cell>0.53</cell><cell>0.07</cell></row><row><cell>0-shot Prompting Mistral</cell><cell>0.14</cell><cell>0.17</cell><cell>0.04</cell></row><row><cell>CoT Prompting Mistral</cell><cell>0.10</cell><cell>0.20</cell><cell>0.06</cell></row><row><cell>CoTools(ours) Mistral</cell><cell>0.42</cell><cell>0.63</cell><cell>0.07</cell></row><row><cell cols="4">Table 3: Main results on Numerical Reasoning Bench-</cell></row><row><cell cols="4">marks. Round Acc metric (round float numbers to two</cell></row><row><cell cols="4">decimals) for GSM8K-XL and FuncQA One-Hop. Ap-</cell></row><row><cell cols="4">prox Acc metric (allow 0.1% error) for FuncQA Multi-</cell></row><row><cell cols="4">Hops. LLaMA refers to LLaMA2-7B-Chat. Mistral</cell></row><row><cell cols="4">refers to Mistral-7B-Instruct-v0.2. Every result is from</cell></row><row><cell>a single run.</cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="4">the GSM8K-XL dataset, CoTools and ToolkenGPT</cell></row><row><cell cols="4">based on LLaMA2-7B are comparable with Chat-</cell></row><row><cell cols="4">GPT in effect. On the FuncQA dataset, CoTools</cell></row><row><cell cols="4">is a little bit better than ToolkenGPT in one-hop</cell></row><row><cell cols="4">questions with the foundation model LLaMA2-7B</cell></row><row><cell cols="4">while makes even in multi-hops questions. The</cell></row><row><cell cols="4">performance of CoTools is very dependent on the</cell></row><row><cell cols="4">foundation model's own ability. It enhances the</cell></row><row><cell cols="4">performance of foundation models across all abil-</cell></row><row><cell cols="4">ity levels compared to baseline methods, making</cell></row><row><cell cols="2">the strong even stronger.</cell><cell></cell><cell></cell></row><row><cell>Method (%)</cell><cell cols="3">KAMEL SUP SYN Seen Unseen STQuestions</cell></row><row><cell>ToolkenGPT LLaMA</cell><cell cols="2">93.4 20.6 23.8</cell><cell>0.0</cell></row><row><cell cols="3">CoTools(Ours) LLaMA 93.8 43.6 35.1</cell><cell>10.4</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Hyper Parameter</head><p>Hyper parameters for fine-tuning is shown in Table 5. When fine-tuning the Tool Retriever with GSM8K-XL, we adjust the batch size because of the CUDA Out Of Memory Error reported. Back propagation frequency in fine-tuning Tool Retriever with FuncQA is also adapted since it only has 611 pieces of data.</p><p>Module Epoch Learning Rate Batch Size Accumulation Step Judge 3 1e-5 8 16 Retriever 10 1e-4 16 12 Retriever(GSM8K-XL) 10 1e-4 12 16 Retriever(FuncQA) 10 1e-4 8 6 Table 5: Hyper parameters used in fine-tuning with foundation models LLaMA2-7B-Chat and Mistral-7B-Instruct-v0.2.</p><p>For learning rate of W dim , we generally set it to 0.01. In fact, W dim has little effect on the finetuning effect and can be removed by adjusting "tensor_weighting" to "false" in the settings of our source code. It is mainly used to explore the semantic information contained in hidden states.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Dataset</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1 Dataset Split</head><p>The specific details of the 4 datasets are shown in Table <ref type="table">6</ref>. Further additional explanation of the details of the dataset is provided below: The test set of dataset FuncQA contains 60 single-hop problems and 68 multi-hop problems. The training set of KAMEL contains 19,000 artificially constructed</p><p>Dataset Tool Train Dev Test GSM8K-XL 4 5,054 1,000 568 FuncQA 13 611 39 60 68 KAMEL 234 19,000 8,095 1,000 500 STQuestions 999 837 10,483 1,707 1,707 1,066</p><p>Table 6: Detailed information of 4 datasets, including the number of tools for each dataset and the distribution of data across the training, development, and test sets.</p><p>gold standard data (sup) and 8,095 ChatGPT synthesized data (syn). They are separated for training. The dataset STQuestions contains 999 seen tools and 837 unseen tools. Its test set is also divided into 1,707 questions for seen tools and 1,066 questions for unseen tools.</p><p>B.2 Dataset License GSM8K-XL: MIT License. FuncQA: Apache License 2.0. KAMEL: The Creative Commons Attribution-Noncommercial 4.0 International License. STQuestions: Creative Commons Attribution 3.0 License.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Prompt</head><p>To ensure experimental fairness, we all use the prompt provided in the dataset or baseline for inference. The other Prompts utilized are shown below. Tool Prompt : tool name: [Tool Name], tool description: [Tool Description] Retrieval Prompt of the dataset GSM8K-XL: [Query] Let's think step by step.[Answer Fragment] Retrieval Prompt of the dataset FuncQA: Q: [Query] A: [Answer Fragment] Retrieval Prompt of the dataset KAMEL and STQuestions: Question: [Question] Answer: The answer is</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Computational Resource</head><p>For LLaMA2-7B-Chat, the computing resources we use are 2 × NVIDIA V100 32G. Training the Tool Retriever with the GSM8K-XL dataset (5,054 cases) takes approximately 2 hours per epoch.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E Safeguarding Statement</head><p>In this paper, we focus on the application of Tool Learning to solve numerical reasoning and knowledge retrieval tasks. We do not believe it poses any political, ethical or legal risk. In the future, we will also explore how LLMs can be better integrated with Tool Learning to serve human society.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Adler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lama</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilge</forename><surname>Akkaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florencia</forename><surname>Leoni Aleman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Janko</forename><surname>Altenschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Altman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.08774</idno>
+		<title level="m">Shyamal Anadkat, et al. 2023. Gpt-4 technical report</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Understanding intermediate layers using linear classifier probes</title>
+		<author>
+			<persName><forename type="first">Guillaume</forename><surname>Alain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1610.01644</idno>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">Kinjal</forename><surname>Basu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ibrahim</forename><surname>Abdelaziz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Subhajit</forename><surname>Chaudhury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soham</forename><surname>Dan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Crouse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Asim</forename><surname>Munawar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sadhana</forename><surname>Kumaravel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vinod</forename><surname>Muthusamy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pavan</forename><surname>Kapanipathi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luis</forename><forename type="middle">A</forename><surname>Lastras</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.15491</idno>
+		<title level="m">Api-blend: A comprehensive corpora for training and benchmarking api llms</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Chat-CoT: Tool-augmented chain-of-thought reasoning on chat-based large language models</title>
+		<author>
+			<persName><forename type="first">Zhipeng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beichen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji-Rong</forename><surname>Wen</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.findings-emnlp.985</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: EMNLP 2023</title>
+		<meeting><address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="14777" to="14790" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.14168</idno>
+		<title level="m">Training verifiers to solve math word problems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Farn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Shin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.10775</idno>
+		<title level="m">Tooltalk: Evaluating tool-usage in a conversational setting</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Toolkengpt: Augmenting frozen language models with massive tools via tool embeddings. Advances in neural information processing systems</title>
+		<author>
+			<persName><forename type="first">Shibo</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiting</forename><surname>Hu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page">36</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Tool documentation enables zero-shot tool-usage with large language models</title>
+		<author>
+			<persName><forename type="first">Cheng-Yu</forename><surname>Hsieh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Si-An</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chun-Liang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasuhisa</forename><surname>Fujii</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Ratner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen-Yu</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ranjay</forename><surname>Krishna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomas</forename><surname>Pfister</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.00675</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Genegpt: Augmenting large language models with domain tools for improved access to biomedical information</title>
+		<author>
+			<persName><forename type="first">Qiao</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyong</forename><surname>Lu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Bioinformatics</title>
+		<imprint>
+			<biblScope unit="volume">40</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page">75</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Kamel: Knowledge analysis with multitoken entities in language models</title>
+		<author>
+			<persName><forename type="first">Jan-Christoph</forename><surname>Kalo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leandra</forename><surname>Fichtel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Conference on Automated Knowledge Base Construction</title>
+		<meeting>the Conference on Automated Knowledge Base Construction</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Dense passage retrieval for opendomain question answering</title>
+		<author>
+			<persName><forename type="first">Vladimir</forename><surname>Karpukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barlas</forename><surname>Oguz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sewon</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ledell</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Edunov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danqi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2020.emnlp-main.550</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP)</title>
+		<meeting>the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP)</meeting>
+		<imprint>
+			<publisher>Online. Association for Computational Linguistics</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="6769" to="6781" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Large language models are zero-shot reasoners</title>
+		<author>
+			<persName><forename type="first">Takeshi</forename><surname>Kojima</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shane</forename><surname>Shixiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Machel</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutaka</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusuke</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Iwasawa</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="22199" to="22213" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">API-bank: A comprehensive benchmark for tool-augmented LLMs</title>
+		<author>
+			<persName><forename type="first">Minghao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingxiu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feifan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hangyu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haiyang</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhoujun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongbin</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.emnlp-main.187</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2023 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="3102" to="3116" />
+		</imprint>
+	</monogr>
+	<note>Association for Computational Linguistics</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yaobo</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenfei</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ting</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenshan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoguang</forename><surname>Mao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.16434</idno>
+		<title level="m">Taskmatrix. ai: Completing tasks by connecting foundation models with millions of apis</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanchen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanyu</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanyu</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hangliang</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiwen</forename><surname>Men</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kejuan</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.03688</idno>
+		<title level="m">Agentbench: Evaluating llms as agents</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tianjun</forename><surname>Shishir G Patil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gonzalez</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.15334</idno>
+		<title level="m">Gorilla: Large language model connected with massive apis</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liqun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shilin</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaoyun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangkai</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jue</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.17541</idno>
+		<title level="m">Taskweaver: A code-first agent framework</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengding</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ganqu</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheni</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaojun</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Han</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.08354</idno>
+		<title level="m">a. Tool learning with foundation models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shihao</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yining</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kunlun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lan</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaxi</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.16789</idno>
+		<title level="m">Xin Cong, Xiangru Tang, Bill Qian, et al. 2023b. Toolllm: Facilitating large language models to master 16000+ real-world apis</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Toolformer: Language models can teach themselves to use tools</title>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberta</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicola</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Scialom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page">36</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Hugginggpt: Solving ai tasks with chatgpt and its friends in hugging face</title>
+		<author>
+			<persName><forename type="first">Yongliang</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaitao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongsheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiming</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yueting</forename><surname>Zhuang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="page">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">A survey on large language model based autonomous agents</title>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueyang</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingsen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiakai</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Lin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Frontiers of Computer Science</title>
+		<imprint>
+			<biblScope unit="volume">18</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="1" to="26" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishi</forename><surname>Bommasani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Raffel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barret</forename><surname>Zoph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Borgeaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dani</forename><surname>Yogatama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donald</forename><surname>Metzler</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2206.07682</idno>
+		<title level="m">Emergent abilities of large language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">2022b. Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24824" to="24837" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Towards ai-complete question answering: A set of prerequisite toy tasks</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Bordes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sumit</forename><surname>Chopra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><forename type="middle">M</forename><surname>Rush</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bart</forename><surname>Van Merriënboer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armand</forename><surname>Joulin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomas Mikolov ; Zhiheng</forename><surname>Xi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenxiang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiwen</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyang</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junzhe</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Senjie</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Enyu</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1502.05698</idno>
+		<idno>arXiv:2309.07864</idno>
+	</analytic>
+	<monogr>
+		<title level="m">The rise and potential of large language model based agents: A survey</title>
+		<imprint>
+			<date type="published" when="2015">2015. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Tree of thoughts: Deliberate problem solving with large language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="page">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Wayne Xin Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaolei</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yupeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingqian</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beichen</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zican</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Dong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.18223</idno>
+		<title level="m">A survey of large language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Lima: Less is more for alignment</title>
+		<author>
+			<persName><forename type="first">Chunting</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Puxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Srinivasan</forename><surname>Iyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiao</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuning</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhe</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Avia</forename><surname>Efrat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ping</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lili</forename><surname>Yu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page">36</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

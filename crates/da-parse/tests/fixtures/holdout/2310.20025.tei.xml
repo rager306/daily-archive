@@ -1,0 +1,1697 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">GOPlan: Goal-conditioned Offline Reinforcement Learning by Planning with Learned Models</title>
+				<funder ref="#_RCbV9DF">
+					<orgName type="full">unknown</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-05-16">16 May 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Mianchu</forename><surname>Wang</surname></persName>
+							<email>mianchu.wang@warwick.ac.uk</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Warwick</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Science and Technology</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Rui</forename><surname>Yang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Warwick</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hong</forename><surname>Kong</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">Tsinghua University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xi</forename><surname>Chen</surname></persName>
+							<email>pcchenxi@tsinghua.edu.cn</email>
+							<affiliation key="aff2">
+								<orgName type="institution">Tsinghua University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hao</forename><surname>Sun</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">Tsinghua University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Meng</forename><surname>Fang</surname></persName>
+							<email>meng.fang@liverpool.ac.uk</email>
+							<affiliation key="aff4">
+								<orgName type="institution">University of Liverpool</orgName>
+							</affiliation>
+							<affiliation key="aff3">
+								<orgName type="institution">University of Cambridge</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Giovanni</forename><surname>Montana</surname></persName>
+							<email>g.montana@warwick.ac.uk</email>
+							<affiliation key="aff5">
+								<orgName type="institution">University of Warwick</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">GOPlan: Goal-conditioned Offline Reinforcement Learning by Planning with Learned Models</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-05-16">16 May 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">F58B684AA8AB61B13641DB64BC715305</idno>
+					<idno type="arXiv">arXiv:2310.20025v3[cs.LG]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:35+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Offline Goal-Conditioned RL (GCRL) offers a feasible paradigm for learning general-purpose policies from diverse and multi-task offline datasets. Despite notable recent progress, the predominant offline GCRL methods, mainly model-free, face constraints in handling limited data and generalizing to unseen goals. In this work, we propose Goal-conditioned Offline Planning (GOPlan), a novel model-based framework that contains two key phases: (1) pretraining a prior policy capable of capturing multi-modal action distribution within the multi-goal dataset; (2) employing the reanalysis method with planning to generate imagined trajectories for funetuning policies. Specifically, we base the prior policy on an advantageweighted conditioned generative adversarial network, which facilitates distinct mode separation, mitigating the pitfalls of out-of-distribution (OOD) actions. For further policy optimization, the reanalysis method generates high-quality imaginary data by planning with learned models for both intra-trajectory and inter-trajectory goals. With thorough experimental evaluations, we demonstrate that GOPlan achieves state-of-the-art performance on various offline multi-goal navigation and manipulation tasks. Moreover, our results highlight the superior ability of GOPlan to handle small data budgets and generalize to OOD goals.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Offline reinforcement learning (RL) <ref type="bibr" target="#b13">(Fujimoto et al., 2019;</ref><ref type="bibr" target="#b21">Kumar et al., 2020;</ref><ref type="bibr" target="#b23">Levine et al., 2020;</ref><ref type="bibr" target="#b18">Janner et al., 2021)</ref> enables learning policies from offline dataset without online interactions with the environment, offering an efficient and safe approach for real-world applications, e.g., robotics, autonomous driving, and healthcare <ref type="bibr" target="#b23">(Levine et al., 2020)</ref>. Developing a general-purpose policy capable of multiple skills is particularly appealing for RL. Offline goal-conditioned RL (GCRL) <ref type="bibr" target="#b5">(Chebotar et al., 2021;</ref><ref type="bibr">Yang et al., 2022b)</ref> offers such a way to learn multiple skills from diverse and multi-goal datasets. So far, prior works in this Figure <ref type="figure">1</ref>: The two-stage framework of GOPlan: pretraining a prior policy and a group of dynamics models, and finetuning policy with imagined trajectories generated by the reanalysis method. direction <ref type="bibr" target="#b5">(Chebotar et al., 2021;</ref><ref type="bibr">Yang et al., 2022b;</ref><ref type="bibr">Ma et al., 2022;</ref><ref type="bibr" target="#b27">Mezghani et al., 2022)</ref> mainly focus on avoiding out-of-distribution (OOD) actions and learning to reach all in-dataset goals. Despite recent progress, efficiently mastering diverse skills with limited data and achieving OOD goal generalization remain significant challenging.</p><p>Model-based RL <ref type="bibr" target="#b37">(Schrittwieser et al., 2020;</ref><ref type="bibr" target="#b16">Hafner et al., 2020;</ref><ref type="bibr" target="#b28">Moerland et al., 2023)</ref> is a natural choice to overcome these two challenges for offline GCRL, as it enables efficient learning from limited data <ref type="bibr" target="#b9">(Deisenroth &amp; Rasmussen, 2011;</ref><ref type="bibr" target="#b2">Argenson &amp; Dulac-Arnold, 2021;</ref><ref type="bibr" target="#b38">Schrittwieser et al., 2021)</ref> and enjoys better generalization <ref type="bibr" target="#b41">(van Steenkiste et al., 2019;</ref><ref type="bibr" target="#b52">Yu et al., 2020;</ref><ref type="bibr" target="#b22">Lee et al., 2020)</ref>. The advantages of model-based RL in addressing the aforementioned challenges emanate from its ability to utilize more direct supervision information rather than relying solely on scalar rewards. Additionally, world models used in model-based RL are trained using supervised learning, which is more stable and reliable than bootstrapping <ref type="bibr" target="#b52">(Yu et al., 2020)</ref>. A recent notable model-based method, reanalyse <ref type="bibr" target="#b37">(Schrittwieser et al., 2020;</ref><ref type="bibr">2021)</ref>, employs modelbased value estimation and planning to generate improved value and policy target for given states, showing advantageous performance for both online and offline RL and holding the potential for handling the limited data and OOD generalization challenges. However, it should be noted that reanalysis is primarily designed for single-task RL and cannot be directly applied for offline GCRL. This is in part due to the challenges presented by multi-goal datasets, which contain trajectories collected for heterogeneous goals. For effective long-term planning in offline GCRL, accurately modeling action modes in these datasets while avoiding OOD actions is crucial. In addition, the question of what goal to plan for, must be addressed in reanalysis for offline GCRL, which is not a concern for single-task RL.</p><p>To this end, we introduce Goal-conditioned Offline Planning (GOPlan), a novel model-based algorithm designed for offline GCRL. A diagram of GOPlan is shown in Figure <ref type="figure">1</ref>. GOPlan consists of two main stages, a pretraining stage and a reanalysis stage. During the pretraining stage, GOPlan trains a policy using advantage-weighted Conditioned Generative Adversarial Network (CGAN) to capture the multi-modal action distribution in the heterogeneous multi-goals dataset. The pretrained policy exhibits notable mode separation to avoid OOD actions and is improved towards high-reward actions, making it suitable for offline planning. A group of dynamics models is also learned during this stage and will be used for planning and uncertainty quantification. During the reanalysis stage, GOPlan finetunes the policy with imagined trajectories for further policy optimization. Specifically, GOPlan generates a reanalysis buffer by planning using the policy and learned models for both intra-trajectory and inter-trajectory goals. Given a state in a trajectory, intra-trajectory goals are along the same trajectory as the state, and inter-trajectory goals lie in different trajectories. We quantify the uncertainty of the planned trajectories based on the disagreement of the models <ref type="bibr" target="#b32">(Pathak et al., 2019;</ref><ref type="bibr" target="#b52">Yu et al., 2020)</ref> to avoid going excessively outside the dynamics model's support. The imagined data with small uncertainty can be high-quality demonstrations that can enhance the agent's ability to achieve both in-dataset and out-of-dataset goals. By iteratively planning to generate better data and finetune the policy with advantage-weighted CGAN, the reanalysis stage significantly improves the policy's performance while also reducing the requirement for a large offline dataset. Furthermore, GOPlan can leverage the generalization of dynamics models to plan for OOD goals, which is a particularly promising feature for offline GCRL.</p><p>In the experiments, we evaluate GOPlan across multiple multi-goal navigation and manipulation tasks, and demonstrate that GOPlan outperforms prior state-of-the-art (SOTA) offline GCRL algorithms. Moreover, we extend the evaluation to the small data budget and the OOD goal settings, in which GOPlan exhibits superior performance compared to other algorithms by a substantial margin. To summarize, our main contributions are three folds:</p><p>1. We propose GOPlan, a novel model-based offline GCRL algorithm that can address challenging settings with limited data and OOD goals.</p><p>2. GOPlan consists of two stages, pretraining a prior policy via advantage-weighted CGAN and finetuning the policy with high-quality imagined trajectories generated by planning.</p><p>3. Experiments validate GOPlan's efficacy in benchmarks as well as two challenging settings.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related Work</head><p>Offline RL. Addressing OOD actions for offline RL is essential to ensure safe policies during deployment. Several works propose to avoid OOD actions by enforcing constraints on the policy <ref type="bibr" target="#b45">(Wang et al., 2018;</ref><ref type="bibr" target="#b46">Wu et al., 2019;</ref><ref type="bibr" target="#b30">Nair et al., 2021)</ref> or penalizing the Q values of OOD state-action pairs <ref type="bibr" target="#b21">(Kumar et al., 2020;</ref><ref type="bibr">An et al., 2021;</ref><ref type="bibr" target="#b3">Bai et al., 2022;</ref><ref type="bibr">Yang et al., 2022a;</ref><ref type="bibr">Sun et al., 2022)</ref>. However, these methods generally use a uni-modal Gaussian policy, which cannot capture the multi-modal action distribution of the heterogeneous offline dataset. To address the multi-modality issue, PLAS <ref type="bibr" target="#b54">(Zhou et al., 2020)</ref> decodes variables sampled from a variational auto-encoder (VAE) latent space, while LAPO <ref type="bibr" target="#b7">(Chen et al., 2022)</ref> leverages advantageweighted latent space to further optimize the policy. A recent work <ref type="bibr">(Yang et al., 2022c</ref>) demonstrates GAN's ability to capture multiple action modes. Based on GAN, DASCO <ref type="bibr" target="#b42">(Vuong et al., 2022)</ref> proposes a dualgenerator algorithm to maximize the expected return. Distinctively, we propose to capture the multi-modal distribution in multi-goal dataset via advantage-weighted CGAN.</p><p>Offline GCRL. In offline GCRL, agents learn goal-conditioned policies from a static dataset. One direction for offline GCRL is through goal-conditioned supervised learning (GCSL), which directly performs imitation learning on the relabelled data <ref type="bibr" target="#b14">(Ghosh et al., 2021;</ref><ref type="bibr" target="#b10">Emmons et al., 2022)</ref>. When the data is suboptimal or noisy, weighted GCSL <ref type="bibr">(Yang et al., 2022b;</ref><ref type="bibr" target="#b43">Wang et al., 2024;</ref><ref type="bibr" target="#b50">Yang et al., 2023)</ref> with multiple weighting criteria is a more powerful solution. Other directions include optimizing the state occupancy on the targeted goal distribution <ref type="bibr">(Ma et al., 2022)</ref> and contrastive RL <ref type="bibr" target="#b11">(Eysenbach et al., 2022)</ref>. Additionally, <ref type="bibr" target="#b27">Mezghani et al. (2022)</ref> design a self-supervised dense reward learning method to solve offline GCRL with long-term planning. Different from prior works, our work alleviates the multi-modality problem raised from the multi-goal dataset via advantage-weighted CGAN, and efficiently utilizes dynamics models for reanalysis and policy improvement.</p><p>Model-based RL. The ability to reach any in-dataset goals requires an agent to grasp the invariance underlying different tasks. The invariance can be represented by the dynamics of the environment that can facilitate RL <ref type="bibr" target="#b37">(Schrittwieser et al., 2020;</ref><ref type="bibr" target="#b16">Hafner et al., 2020;</ref><ref type="bibr" target="#b29">Nagabandi et al., 2020;</ref><ref type="bibr" target="#b17">Hansen et al., 2022;</ref><ref type="bibr" target="#b35">Rigter et al., 2022)</ref> and GCRL <ref type="bibr" target="#b4">(Charlesworth &amp; Montana, 2020;</ref><ref type="bibr" target="#b47">Yang et al., 2021)</ref>. In the offline setting, an ensemble of dynamics models is used to construct a pessimistic MDP <ref type="bibr" target="#b20">(Kidambi et al., 2020;</ref><ref type="bibr" target="#b52">Yu et al., 2020)</ref>; Reanalysis <ref type="bibr" target="#b38">(Schrittwieser et al., 2021)</ref> uses Monte-Carlo tree search <ref type="bibr" target="#b8">(Coulom, 2007)</ref> with learned model to generate new training targets for a given state. These dynamics models could be deterministic models <ref type="bibr" target="#b47">(Yang et al., 2021)</ref>, Gaussian models <ref type="bibr" target="#b29">(Nagabandi et al., 2020)</ref>, or recurrent models with latent space <ref type="bibr" target="#b15">(Hafner et al., 2019;</ref><ref type="bibr">2020)</ref>. GOPlan chooses the deterministic models due to its simplicity, and with the recurrent models it can be extended to high-dimensional state space. Imagined trajectories during offline planning may contain high uncertainty, resulting in inferior performance. MOPP <ref type="bibr" target="#b53">(Zhan et al., 2022)</ref> measures the uncertainty by the disagreement of the dynamics models and prunes uncertain trajectories. However, prior model-based offline RL works are not designed for the multi-goal setting. Instead, we perform model-based planning for both intra-trajectory and inter-trajectory goals, iteratively finetuning the GAN-based policy with high-quality and low-uncertainty imaginary data.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Preliminaries</head><p>Goal-conditioned RL. Goal-conditioned RL is generally formulated as Goal-Conditioned Markov Decision Processes (GCMDP), denoted by a tuple &lt; S, A, G, P, γ, r &gt; where S, A, and G are the state, action and goal spaces, respectively. P (s t+1 | s t , a t ) is the transition dynamics, r is the reward function, and γ is the discount factor. An agent learns a goal-conditioned policy π : S × G → A to maximize the expected discounted cumulative return:</p><formula xml:id="formula_0">J(π) = E g∼Pg,s0∼P0(s0), at∼π(•|st,g), st+1∼P (•|st,at) T t=0 γ t r(s t , a t , g) ,<label>(1)</label></formula><p>where P g and P 0 (s 0 ) are the distribution of the goals and initial states, and T corresponds to the length of an episode. The expected value of a state-goal pair is defined as:</p><formula xml:id="formula_1">V π (s, g) = E π T t=0 γ t r t | s 0 = s .</formula><p>A sparse reward is non-zero only when the goal is reached, i.e., r(s, a, g) = 1[∥ϕ(s) -g∥ 2 2 ≤ ϵ], where ϕ : S → G is the state-to-goal mapping <ref type="bibr" target="#b1">(Andrychowicz et al., 2017)</ref> and ϵ is a threshold. This sparse reward function is accessible to the agent during the learning process. For offline GCRL, the agent can only learn from an offline dataset B without interacting with the environment.</p><p>Reanalysis. MuZero Reanalyse <ref type="bibr" target="#b37">(Schrittwieser et al., 2020;</ref><ref type="bibr">2021)</ref> introduces reanalysis to perform iterative model-based value and policy improvement for states in the dataset, resulting in an ongoing cycle of refinement through updated predictions and improved generated training data. Specifically, MuZero Reanalyse updates its parameters θ for K-step model rollouts via supervised learning:</p><formula xml:id="formula_2">l t (θ) = K k=0 l p (π t+k , p k t ) + K k=0 l v (z t+k , v k t ) + K k=0 l r (u t+k , r k t ),<label>(2)</label></formula><p>where p k t , v k t , r k t are action, value, and reward predictions generated by the model θ. Their training targets π t+k , z t+k are generated via search tree, and u t+k is the true reward. In continuous control settings, the loss functions l p (•, •), l v (•, •), l r (•, •) are mean square error (MSE) between the inputs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Methodology</head><p>This section introduces the two-stage GOPlan algorithm, specially designed for offline GCRL. During the pretraining stage, we implement an advantage-weighted CGAN to establish a proficient prior policy for capturing multi-modal action distribution in offline datasets, which is suitable for subsequent model-based planning. In the reanalysis stage, we enhance the performance of the agent by enabling planning with learned models and multiple goals, resulting in a significant policy improvement. The overall framework is depicted in Figure <ref type="figure">1</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Learning Priors from Offline Data</head><p>Learning Prior Policy. The initial step involves learning a policy that can generate in-distribution and high-reward actions from multi-goal offline data. Due to the nature of collecting data for multiple heterogeneous goals, these datasets can be highly multi-modal <ref type="bibr" target="#b25">(Lynch et al., 2020;</ref><ref type="bibr">Yang et al., 2022b)</ref>, meaning that a state can have multiple valid action labels. The potential conflict between these actions poses a significant learning challenge. Unlike prior works using Gaussian <ref type="bibr">(Yang et al., 2022b;</ref><ref type="bibr">Ma et al., 2022)</ref>, conditional Variational Auto-encoder (CVAE) <ref type="bibr" target="#b54">(Zhou et al., 2020;</ref><ref type="bibr" target="#b7">Chen et al., 2022)</ref> and Conditioned Generative Adversarial Network (CGAN) <ref type="bibr">(Yang et al., 2022c)</ref>, we employ Weighted CGAN as the prior policy. In Figure 2, we compare six different models : Gaussian, Weighted Gaussian, CVAE, Weighted CVAE, CGAN, and Weighted CGAN on a multi-modal dataset with imbalanced rewards, where high rewards have less frequency, as illustrated in Figure <ref type="figure" target="#fig_0">2(a-2</ref>). The weighting scheme for Weight CVAE and Weighted CGAN is based on advantage re-weighting <ref type="bibr">(Yang et al., 2022b)</ref> and we directly use rewards as weights in this example.</p><p>In Figure <ref type="figure" target="#fig_0">2</ref>, Weighted CGAN outperforms other models by exhibiting a more distinct mode separation. As a result, the policy generates fewer OOD actions by reducing the number of interpolations between modes. In contrast, other models all suffer from interpolating between modes. Even though VAE models perform better than Gaussian models, they are still prone to interpolation due to the regularization of the Euclidean norm on the Jacobian of the VAE decoder <ref type="bibr" target="#b36">(Salmona et al., 2022)</ref>. Furthermore, without employing advantageweighting, both the CVAE and CGAN models mainly capture the denser regions of the action distribution, but fail to consider their importance relative to the rewards associated with each mode.</p><p>Based on the empirical results, the utilization of the advantage-weighted CGAN model for modeling the prior policy from multi-modal offline data demonstrates notable advantages for offline GCRL. In this framework, the discriminator is responsible for distinguishing high-quality actions in the offline dataset from those generated by the policy, while the generative policy is designed to generate actions that outsmart the discriminator in an adversarial process. This mechanism encourages the policy to produce actions that closely resemble high-quality actions from the offline dataset. In Section 4.3, we will elaborate on the specific definition of the advantage-weighted CGAN model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Learning Dynamics Models.</head><p>We also train a group of N dynamic models {M ψi } N i=1 from the offline data to predict the residual between current states and next states. Each model M ψi minimizes the following loss:</p><formula xml:id="formula_3">L(ψ i ) = E (st,at,st+1)∼B ||M ψi (s t , a t ) -(s t+1 -s t )|| 2 2 . (<label>3</label></formula><formula xml:id="formula_4">)</formula><p>Then the predicted next state is s t+1 = s t + M ψi (s t , a t ). As the dynamics models are trained through supervised learning, making them more stable and better equipped with generalization abilities compared to bootstrapping <ref type="bibr" target="#b52">(Yu et al., 2020)</ref>. In the subsequent section, we will illustrate how the learned models can be utilized to enhance the training efficiency and generalization ability of offline GCRL. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Learning by Planning with Learned Models</head><p>Based on the learned prior policy and dynamics models, we reanalyse and finetune the policy in this learning procedure. As the dynamics information encapsulated in the offline dataset remains invariant across different goals, we utilize this property to equip our policy with the capacity to achieve a broad spectrum of goals by reanalysing the current policy for both intra-trajectory and inter-trajectory goals. The reanalysis procedure is shown in Figure <ref type="figure" target="#fig_1">3</ref>, where we apply model-based planning method to generate trajectories for selected goals and save potential trajectories that can help improve the policy and have small uncertainty. By integrating this imagined data to update the policy, we repeat the aforementioned process to iteratively improve the policy.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Model-based Planning.</head><p>We first introduce our planning method that serves intra-trajectory and intertrajectory reanalysis. Our planner is similar to prior model-predictive approaches <ref type="bibr" target="#b29">(Nagabandi et al., 2020;</ref><ref type="bibr" target="#b2">Argenson &amp; Dulac-Arnold, 2021;</ref><ref type="bibr" target="#b4">Charlesworth &amp; Montana, 2020;</ref><ref type="bibr" target="#b38">Schrittwieser et al., 2021)</ref>, where the planner employs a model to simulate multiple imaginary trajectories, assigns scores to the initial actions, and generates actions based on these scores. Following prior work <ref type="bibr" target="#b4">(Charlesworth &amp; Montana, 2020)</ref>, given the current state s t and the selected goal g, our planner firstly samples C initial actions {a c t } C c=1 from the prior generative policy π and predicts C next states {s c t+1 } C c=1 based on a randomly selected dynamics model M ψi . To score each initial action, the planner duplicates every next state H times and generates H imagined trajectories of K steps with the policy and a randomly chosen dynamics model at each step. For each initial action a c t , the planner averages and normalizes all cumulative returns commencing from that initial action as R(a c t ), where the reward for every generated step is computed by the sparse reward function. Finally, the planner's output action for s t , g is a t = C c=1 e κR(a c t</p><formula xml:id="formula_5">) a c t C c=1 e κ</formula><p>, where κ is a hyper-parameter tuning the exponentially weights for actions. It is worth noting that advantage-weighted CGAN effectively provides diverse in-dataset actions with higher rewards, enabling efficient and safe action planning for offline GCRL. The planning algorithm is outlined in Algorithm 2 provided in Appendix A.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Intra-trajectory and Inter-trajectory Reanalysis.</head><p>Offline goal-conditioned planning involves the challenges of choosing planning goals and selecting appropriate imaginary data for policy training. In this paper, we present a novel approach that provides solutions to these challenges by incorporating intra-trajectory and inter-trajectory reanalysis, as illustrated in Figure <ref type="figure" target="#fig_1">3</ref>. Specifically, our approach includes designed mechanisms for assigning goals and selecting generated trajectory to be stored in a reanalysis buffer B re for subsequent policy improvement.</p><p>Since the primary objective of offline GCRL is to reach all in-dataset goals, utilizing all the states in the dataset as goals appears to be a natural choice. These goals can be classified into two categories: intratrajectory goals, which are along the same trajectory as the starting state, and inter-trajectory goals, which lie in different trajectories. The division criterion is determined by the existence of a path between the state and the goal. Intra-trajectory goals refer to those that already have a path that links the state to them and hence, they can be reached with high probability because the successful demonstration has been provided. In contrast, inter-trajectory goals may not have a valid path to be reached from the given state. Therefore, different criterion is needed for the two situations.</p><p>The main idea of the two types of reanalysis is to store improved trajectories than the dataset and remove invalid trajectories with large uncertainty. The criterion of removing unrealistic imagined trajectories with large uncertainty is shared by both intra-trajectory and inter-trajectory reanalysis, because imitating these trajectories can lead the policy excessively outside the support of the dynamics model. To achieve this, we measure the the uncertainty of a trajectory by accessing the disagreement of a group of learned dynamics models. Specifically, given a trajectory τ = {s 0 , a 0 , s 1 , a 1 , ..., s H }, the uncertainty is defined as the maximal disagreement on the transition within the trajectory:</p><formula xml:id="formula_6">U (τ ) = max 0≤k≤H 1 N N i=1 ||M ψi (s k , a k ) -sk+1 || 2 2 , (<label>4</label></formula><formula xml:id="formula_7">)</formula><p>where M ψi is the i-th model and sk+1 is the mean prediction over N models: sk+1 = 1 N N i=1 M ψi (s k , a k ). Intra-trajectory reanalysis. randomly samples a trajectory τ and two states s t , s t+k ∈ τ , where k &gt; 0. After that, the model-based planning approach mentioned earlier is then employed to generate an action at each step from s t with the aim of reaching ϕ(s t+k ), transiting according to the mean prediction of M ψi , i ∈ [1, N ]. There are mainly three cases: (a-1) if the planner reaches ϕ(s t+k ) with fewer than k steps and the uncertainty of the imagined trajectory is less than a threshold value u, the generated virtual trajectory τ is stored into a reanalysis buffer B re . In cases where the (a-2) policy fails to reach ϕ(s t+k ) within k steps or (a-3) the generated virtual trajectory has larger uncertainty than u, the original trajectory τ t:t+k is included in B re because we can enhance learning the original successful demonstrations during fine-tuning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Inter-trajectory reanalysis.</head><p>involves randomly selecting a state s t in a trajectory τ 1 and another state s g in a different trajectory τ 2 , followed by model-based planning from s t to reach ϕ(s g ). There are also three cases: (b-1) if the planner successfully reaches ϕ(s g ) with an uncertainty less than u, we include the generated virtual trajectory τ into the reanalysis buffer B re . (b-2) Moreover, in situations where the policy fails to attain the intended goal state ϕ(s g ) but the associated trajectory exhibits low levels of uncertainty, the virtually achieved goals along the generate trajectory are labeled as the intended goal for the trajectory. This approach enables the utilization of failed virtual trajectories to enhance the diversity of the reanalysis buffer B re . (b-3) Additionally, if the imagined trajectory has high uncertainty, we do not save such invalid trajectory.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Policy Optimization</head><p>In GOPlan, the policy is updated during both the pretraining stage and the finetuning stage. We train the policy π via advantage-weighted CGAN, which can be formulated as the following objective:</p><formula xml:id="formula_8">max D min π E (st,at,g)∼B [w(s t , a t , g) log D(s t , a t , g)] +E (st,g)∼B,a ′ ∼π [log(1 -D(s t , a ′ , g))] (5)</formula><p>Here, D is the discriminator weighted by w. w(s, a, g) = exp(A(s, a, g)+N (s, g)) is the exponential advantage weight, where N (s, g) serves as a normalizing factor to ensure that a∈A w(s, a, g)π b (a | s, g) = 1. π b is the behavior policy underlying the relabeled offline dataset B. The advantage function can be estimated by a learned value function V θv : A(s t , a t , g) = r(s t , a t , g) + γV θv (s t+1 , g) -V θv (s t , g). The value function V θv (s t , g) is updated to minimize the TD loss:</p><formula xml:id="formula_9">L(θ v ) = E (st,rt,st+1,g)∼B (V θv (s t , g) -y t ) 2 , (<label>6</label></formula><formula xml:id="formula_10">)</formula><p>where the target y t = r t + γV θ - v (s t+1 , g) and the target network V θ - v is slowly updated to improve training stability.</p><p>To optimize the minmax objective in Eq.equation 5, we train a discriminator D and a generative policy π separately. The discriminator D, with parameter θ d , learns to minimize the following loss function:</p><formula xml:id="formula_11">L(θ d ) = -E (st,at,g)∼B [w(s t , a t , g) log D θ d (s t , a t , g)] -E (st,g)∼B,z∼P (z), a ′ ∼π θπ (st,g,z) [log(1 -D θ d (s t , a ′ , g))] ,<label>(7)</label></formula><p>where P (z) constitutes random noise that follows a diagonal Gaussian distribution. The discriminator's output is passed through a sigmoid function, thereby constraining the output to lie within (0, 1). To deceive the discriminator, the policy network π, with parameter θ π , is trained to minimize the following loss function:</p><formula xml:id="formula_12">L(θ π ) = E (st,at,g)∼B,z∼P (z), a ′ ∼π θπ (st,g,z) [log(1 -D θ d (s t , a ′ , g))] .<label>(8)</label></formula><p>Through this training process, the policy network is capable of producing actions that closely resemble highquality actions in the dataset and can enjoy policy improvement similar to prior advantage-weighted works <ref type="bibr" target="#b45">(Wang et al., 2018;</ref><ref type="bibr" target="#b33">Peng et al., 2019)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Overall Algorithm</head><p>In the pretraining stage, we train the dynamics models M ψi , i ∈ [1, N ], the discriminator D θ d , the value function V θv and the policy π θπ until convergence. In the subsequent reanalysis stage, we generate new trajectories through intra-trajectory and inter-trajectory reanalysis, save them into the reanalysis buffer, and then employ the reanalysis buffer to finetune the value function, the discriminator, and the policy. The process of reanalysis and fine-tuning is repeated over I iterations to improve the policy performance. Algorithm 1 outlines the details of the two main stages of the overall algorithm.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Experiments</head><p>We conduct a comprehensive evaluation of GOPlan across a collection of continuous control tasks <ref type="bibr" target="#b34">(Plappert et al., 2018;</ref><ref type="bibr">Yang et al., 2022b)</ref> with multiple goals and sparse rewards. In addition, we also assess the efficacy of GOPlan in settings with limited data budgets and OOD goal generalization.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Environments and Datasets.</head><p>To conduct benchmark experiments, we utilize offline datasets from <ref type="bibr">(Yang et al., 2022b)</ref>. The dataset contains 1 × 10 5 transitions for low-dimensional tasks and 2 × 10 6 for four highdimensional tasks (FetchPush, FetchPick, FetchSlide and HandReach). Furthermore, to demonstrate the ability to handle small data budgets, we also integrate an additional group of small and extra small datasets, referred to with a suffix "-s" and "-es", containing only 10% and 1% of the number of transitions. To assess GOPlan's ability to generalize to OOD goals, we leverage four task groups from <ref type="bibr" target="#b50">(Yang et al., 2023)</ref>: FetchPush Left-Right, FetchPush Near-Far, FetchPick Left-Right, and FetchPick Low-High, each consisting of a dataset and multiple tasks. For instance, the dataset of FetchPush Left-Right contains trajectories where both the initial object and achieved goals are on the right side of the table. As such, the independent identically distributed (IID) task assesses agents handling object and goals on the right side (i.e., Right2Right), while the other tasks in the group assess OOD goals or starting positions, such as Right2Left, Left2Right, and Left2Left. For further information regarding the environments and datasets used in our evaluation, we refer readers to Appendix B.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Algorithm 1 Goal-conditioned Offline Planning (GOPlan).</head><p>Initialise: N dynamics models {ψ i } N i=1 , a discriminator θ d , a policy θ π , a goal-conditioned value function θ v ; an offline dataset B and a reanalysis buffer B re ; the state-to-goal mapping ϕ. 1: # Pre-train 2: while not converges do</p><p>3: Update {ψ i } N i=1 using B. 4: Update θ v using B. ▷ Eq. 6 5: Update θ d using B. ▷ Eq. 7 6: Update θ π using B. ▷ Eq. 8 7: end while 8: 9: # Finetune 10: for i = 1, ..., I do 11: for j = 1, ..., I intra do 12: τ = Intra_traj() 13: B re = B re ∪ τ 14: end for 15: for j = 1, ..., I inter do 16: τ = Inter_traj() 17: B re = B re ∪ τ 18: end for 19: Finetune θ v using B re . ▷ Eq. 6 20: Finetune θ d using B re . ▷ Eq. 7 21: Finetune θ π using B re . ▷ Eq. 8 22: end for def Intra_traj(): 1: (s t , s t+1 , ..., s t+K , g) ∼ B, ŝt = s t 2: for k = 0, ..., K do 3: a t+k = Plan(ŝ t+k , ϕ(s t+K )) 4: ŝt+k+1 = M ψ i,i∼{1,...,N } (ŝ t+k , a t+k ) 5: if U (ŝ t+k , a t+k ) &gt; u then 6: return {s t , s t+1 , ..., s t+K , g}. 7: end if 8: if ŝt+k+1 achieves ϕ(s t+K ) then 9: return {s t , ŝt+1 , ..., ŝt+k+1 , ϕ(s t+K )}. 10: end if 11: end for 12: return {s t , s t+1 , ..., s t+K , g}. def Inter_traj(): 13: s 0 ∼ B, s g ∼ B, ŝ0 = s 0 14: for t = 0, ..., T do 15:</p><formula xml:id="formula_13">a t = Plan(ŝ t , ϕ(s g )) 16: ŝt+1 = M ψ i,i∼{1,...,N } (ŝ t , a t ) 17: if U (ŝ t , a t ) &gt; u then 18: return {∅} 19: end if 20: if ŝt+1 achieves ϕ(s g ) then 21: return {s 0 , ŝ1 , ..., ŝt+1 , ϕ(s g )} 22:</formula><p>end if 23: end for 24: return {s 0 , ŝ1 , ..., ŝT , ϕ(ŝ T )} Experimental Setup. We compare GOPlan against SOTA offline GCRL algorithms, WGCSL <ref type="bibr">(Yang et al., 2022b)</ref>, contrastive RL (CRL) <ref type="bibr" target="#b11">(Eysenbach et al., 2022)</ref>, actionable models (AM) <ref type="bibr" target="#b5">(Chebotar et al., 2021)</ref>, GCSL <ref type="bibr" target="#b14">(Ghosh et al., 2021)</ref>, and modified offline RL methods, such as TD3-BC (g-TD3-BC) <ref type="bibr" target="#b12">(Fujimoto &amp; Gu, 2021)</ref>, exponential advantage weighting (GEAW) <ref type="bibr" target="#b45">(Wang et al., 2018)</ref>, Trajectory Transformer (TT) <ref type="bibr" target="#b18">(Janner et al., 2021)</ref>, Decision Transformer (DT) <ref type="bibr" target="#b6">(Chen et al., 2021)</ref>. We denote a variant approach of GOPlan as GOPlan2, which employs testing-time model-based planning with candidate actions from the GOPlan policy. The testing-time planning method aligns with the model-based planning approach described in Section 4.2. For all experiments, we report the average returns with standard deviation across 5 different random seeds. Implementation details are provided in Appendix C.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Benchmarks and Small Dataset Results</head><p>Table <ref type="table">1</ref> demonstrates the performance of GOPlan and baselines in the benchmark tasks. As shown in the table, GOPlan shows improved performance over current SOTA model-free algorithms, achieving the highest average return on 8 out 10 tasks. Notably, unlike prior online model-based GCRL approaches <ref type="bibr" target="#b4">(Charlesworth &amp; Montana, 2020;</ref><ref type="bibr" target="#b47">Yang et al., 2021)</ref> that fail to handle high dimensional tasks like HandReach, GOPlan works well for these tasks. This perhaps can be attributed to the fact that GOPlan incorporates both the strengths of model-free advantage-weighted policy optimization and model-based reanalysis techniques.</p><p>Apart from the benchmark results, we conduct experiments under a small data setting that only has 1 10 th of the dataset used for benchmark experiments, and we observe that GOPlan surpasses other baselines by a significant margin. Specifically, GOPlan delivers an average improvement of 23% compared to the bestperforming baseline CRL, and 38% compared to WGCSL. It is noteworthy that GOPlan alone achieves an average return over 10 on the challenging HandReach-s task, while other baselines fail on the HandReach-s task with small data budget and high-dimensional states.</p><p>Table 1: Average return with standard deviation on the offline goal-conditioned benchmark and the small dataset setting.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Task</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>GOPlan</head><formula xml:id="formula_14">GOPlan GOPlan BC BC BC GCSL GCSL GCSL WGCSL WGCSL WGCSL GEAW GEAW GEAW AM AM AM CRL CRL CRL g-TD3-BC g-TD3-BC g-TD3-BC g-TT g-TT g-TT g-DT g-DT g-</formula><p>DT PointReach 46.09 46.09 46.09 ±0.1 39.36 ±0.4 39.27 ±0.4 44.40 ±0.1 42.95 ±0.1 43.56 ±0.6 44.53 ±0.2 43.69 ±0.2 45.39 ±0.5 45.85 ±0.5 PointRooms 43.57 43.57 43.57 ±1.8 33.17 ±0.5 33.05 ±0.5 36.15 ±0.8 36.02 ±0.5 33.45 ±1.9 40.12 ±1.0 42.32 ±0.8 42.46 ±0.8 43.20 ±1.2 Reacher 40.67 40.67 40.67 ±0.3 35.72 ±0.3 36.42 ±0.3 40.57 ±0.2 38.89 ±0.1 37.48 ±4.1 37.79 ±0.2 37.39 ±0.3 38.79 ±0.3 38.65 ±0.4 SawyerReach 40.43 ±0.3 32.91 ±0.3 33.65 ±0.3 40.12 ±0.2 37.42 ±0.3 40.91 ±0.2 36.73 ±0.3 30.96 ±1.7 40.25 ±0.3 41.10 41.10 41.10 ±0.3 SawyerDoor 44.42 44.42 44.42 ±0.3 35.03 ±0.2 35.67 ±0.1 42.81 ±0.2 40.03 ±0.1 42.49 ±0.5 38.58 ±0.4 35.90 ±0.5 44.32 ±0.4 44.23 ±0.3 FetchReach 47.33 47.33 47.33 ±0.2 42.03 ±0.2 41.72 ±0.3 46.33 ±0.0 45.01 ±0.1 46.50 ±0.1 46.10 ±0.1 45.51 ±0.3 47.15 ±0.1 47.03 ±0.2 FetchPush 39.15 39.15 39.15 ±0.6 31.56 ±0.6 28.56 ±0.9 39.11 ±0.1 37.42 ±0.2 30.49 ±2.1 36.52 ±0.6 30.83 ±0.6 38.90 ±0.8 38.63 ±0.7 FetchPick 37.01 37.01 37.01 ±1.1 31.75 ±1.2 25.22 ±0.8 34.37 ±0.5 34.56 ±0.5 34.07 ±0.6 35.77 ±0.2 36.51 ±0.5 36.65 ±0.8 35.24 ±1.0 FetchSlide 10.08 ±0.8 0.84 ±0.3 3.05 ±0.6 10.73 10.73 10.73 ±1.0 4.55 ±1.7 6.92 ±1.2 9.91 ±0.2 5.88 ±0.6 9.61 ±1.0 8.20 ±1.7 HandReach 28.28 28.28 28.28 ±5.3 0.06 ±0.1 0.57 ±0.6 26.73 ±1.2 0.81 ±1.5 0.02 ±0.0 6.46 ±2.0 5.21 ±1.6 24.12 ±1.4 22.80 ±1.5 Average Average Average 37.70 37.70 37.70 28.24 27.71 36.13 31.76 31.58 33.25 31.42 36.76 36.49 FetchPush-s 37.31 37.31 37.31 ±0.5 25.54 ±1.0 26.30 ±0.7 32.35 ±0.9 33.68 ±1.9 32.93 ±0.6 31.72 ±1.5 30.92 ±0.6 37.02 ±1.1 37.10 ±0.9 FetchPick-s 32.85 32.85 32.85 ±0.3 23.05 ±1.0 23.71 ±1.4 29.12 ±0.2 30.92 ±0.5 25.56 ±3.5 32.27 ±0.8 29.06 ±4.0 32.53 ±1.5 31.23 ±1.2 FetchSlide-s 5.04 5.04 5.04 ±0.4 0.31 ±0.1 0.98 ±0.4 0.22 ±0.1 0.30 ±0.1 1.97 ±2.7 4.74 ±0.6 0.16 ±0.2 2.39 ±1.1 1.60 ±1.4 HandReach-s 10.11 10.11 10.11 ±1.4 0.16 ±0.1 0.13 ±0.1 0.12 ±0.1 0.03 ±0.0 0.08 ±0.1 0.45 ±0.3 1.6 ±2.3 4.22 ±0.6 5.69 ±1.2 FetchPush-es 18.91 18.91 18.91 ±1.2 10.57 ±1.9 5.96 ±2.1 13.25 ±2.8 10.35 ±2.3 11.28 1.6 16.13 ±1.8 6.27 ±0.9 15.76 ±1.2 16.56 ±1.4 FetchPick-es 14.19 14.19 14.19 ±0.9 4.16 ±2.0 1.67 ±0.8 6.49 ±1.7 3.17 ±0.3 4.16 1.3 13.12 ±0.8 5.96 ±2.2 12.28 ±1.4 11.82 ±1.4 Average Average Average 19.73 19.73 19.73 10.63 9.79 13.59 13.07 12.66 16.40 12.33 17.37 17.33 </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Generalization to OOD Goals</head><p>We also conducted experiments on the four OOD generalization task groups in Figure <ref type="figure" target="#fig_2">4</ref>. The results demonstrate that GOPlan outperforms other baselines. Specifically, by planning actions for OOD goals, GOPlan2 showcases significant improved performance, outperforming WGCSL by nearly 20% on average and enjoying less variance across IID and OOD tasks than recent SOTA method GOAT <ref type="bibr" target="#b50">(Yang et al., 2023)</ref> for OOD goal generalization. The full results of this experiment can be found in Appendix D.1. The results obtained from our experiments provide empirical evidence in support of the effectiveness of using dynamics models for enhancing generalization towards achieving OOD goals.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Robustness to Noise</head><p>In this experimental setup, we investigated the robustness of various algorithms in modified FetchReach environments, which are subjected to different levels of Gaussian action noise applied to the policy action outputs. The datasets for these environments were obtained from <ref type="bibr">Ma et al. (2022)</ref>. As shown in Figure <ref type="figure" target="#fig_3">5</ref>, GOPlan exhibits robust performance in this setup even under a noise level of 1.5. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.4">Finetuning with Different Models</head><p>In offline GCRL, the reward function is always accessible for the agent, so we do not need to learn a reward model. However, it is feasible to learn a world model, including the transitions and the rewards. We design two variants: GOPlan with reward models, in which we do not use the environment-defined reward function, and instead train a reward model using the offline dataset with a binary cross entropy loss to predict the sparse reward; GOPlan with RSSM, in which we replace the environment-defined reward function and our learned transition models with the RSSM world model used in Dreamer <ref type="bibr" target="#b15">(Hafner et al., 2019;</ref><ref type="bibr">2020)</ref>. Since the inference of the RSSM model consists of a stochastic latent code, we directly indicate the uncertainty by its standard deviation. In Figure <ref type="figure" target="#fig_0">2</ref>, we evaluate the two variants with GOPlan in FetchPush, FetchPick and SawyerDoor. We found that GOPlan with reward models shows a similar performance as the vanilla GOPlan. However, GOPlan with RSSM shows slight performance decline.</p><p>FetchPush FetchPick SawyerDoor GOPlan 39.15 ±0.6 37.01 ±1.1 44.42 ±0.3 GOPlan with reward models 38.75 ±0.5 37.10 ±1.0 44.32 ±0.3 GOPlan with RSSM 38.20 ±0.4 36.40 ±0.8 43.20 ±0.5</p><p>Table <ref type="table">2</ref>: Comparsions between GOPlan, GOPlan with learned reward models, and GOPlan with RSSM.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.5">Ablations</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>This section investigates the impact of different components on the performance of GOPlan.</head><p>Different prior policy for planning. Initially, we compare different models as the prior policy for planning. We denote planning with model "X" as "X-plan", and advantage-weighted CGAN as "ACGAN".</p><p>Based on the results in Table <ref type="table" target="#tab_0">3</ref>, GOPlan2 and ACGAN-plan exhibit superior performance over Gaussian and VAE models, owing to the performant OOD action avoidance capabilities, which are advantageous for long-term planning. Furthermore, policies that incorporate advantage weighting, including ACGAN, Weighted CVAE, and Weighted Gaussian, have shown superior performance compared to their unweighted counterparts. This underscores the efficacy of the advantage-weighted policy approach and its potential for application in planning scenarios.</p><p>Ablation on the two stages of GOPlan. Next, we compare the performance of three different variants of GOPlan to assess the significance of the pretraining and finetuning stages in GOPlan.</p><p>The variants include: (1) ACGAN (i.e., GOPlan without finetuning), (2) CGAN with w(s, a, g) = 1 in Eq.equation 7, (3) ACGAN-plan with model-based planning with action candidates from ACGAN. Results presented in Figures 6 (a)(b) demonstrate that ACGAN consistently outperforms CGAN in terms of average return. Furthermore, ACGAN-plan is stable and efficient, but it imposes excessive computation for online interaction  (30 Hz on GTX 3090). After finetuning ACGAN with our reanalysis methods, GOPlan achieves comparable performance as ACGAN-plan, and offers faster interaction (500 Hz).  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Ensemble sizes and uncertainty truncation.</head><p>We investigates the influence of different ensemble sizes of the dynamics models on the performance of GOPlan. We use 1, 2, 5, 10 dynamics models in the finetuning stage to generate data for reanalysis. The results, presented in Figure <ref type="figure" target="#fig_6">7</ref>, demonstrate the robustness of GOPlan to varying ensemble sizes, with all ensemble sizes exceeding the performance of a single dynamics model. This observation underscores the significance of uncertainty qualification through ensembles for GOPlan's performance. Notably, when only one model is employed, the inability to estimate uncertainty for truncating trajectories with high uncertainty leads to a degradation in performance. Furthermore, in the FetchPush task, where the variance in performance is relatively small, the average performance exhibits a stable improvement as the number of models increases.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusions and Discussions</head><p>This paper proposes GOPlan, a novel model-based offline GCRL algorithm designed to effectively learn general goal-reaching policies from diverse and multi-goal offline datasets. GOPlan comprises two components: pretraining a prior policy using an advantage-weighted CGAN and finetuning the policy with reanalysis. The advantage-weighted CGAN exhibits distinct mode separation and enhances the action distribution based on advantage values, thereby mitigating the OOD action issue and promoting long-term planning for offline GCRL. In addition, the reanalysis method generates high-performing and low-uncertainty imaginary samples by planning with learned models towards both intra-trajectory and inter-trajectory goals. Experimental results demonstrate that GOPlan achieves SOTA performance on offline GCRL benchmark tasks. Importantly, GOPlan yields greater improvements for challenging settings with limited data and OOD goal generalization, highlighting its potential advantages for practical scenarios.</p><p>Despite its promising features, GOPlan could be enhanced to efficiently learn from human demonstrations, which exhibit more diverse patterns than our testing benchmarks <ref type="bibr" target="#b39">(Shafiullah et al., 2022;</ref><ref type="bibr" target="#b24">Lynch et al., 2019)</ref>. Future research directions also include extending GOPlan to high-dimensional setting, which may require planning with advanced world models as proposed in <ref type="bibr" target="#b18">(Janner et al., 2021;</ref><ref type="bibr" target="#b44">Wang et al., 2023;</ref><ref type="bibr" target="#b19">Janner et al., 2022)</ref>, as well as planning in latent spaces as studied in <ref type="bibr" target="#b15">(Hafner et al., 2019;</ref><ref type="bibr" target="#b31">Nguyen et al., 2021)</ref>. In addition, researchers should consider its potential ethical issues when applying the technique to real-world applications, such as the misuse of technology and the safety in scenarios where mistakes could be hazardous.</p><p>Published in Transactions on Machine Learning Research (05/2024) Algorithm 2 Model-based Planning. Initialise: N dynamics models {M i } N i=1 , policy π; current state s 0 , goal g, reward function r. 1: for c = 1, ..., C do 2: z ∼ N (0, 1) 3: a c 0 = π(s 0 , g, z) ▷ Sample C initial actions {a c 0 } C c=1 . 4: i ∼ Uniform(1, . . . , N ) 5: ŝc 1 = M i (s 0 , a c 0 ) ▷ Predict C next states {ŝ c 1 } C c=1 . 6: for h = 1, ..., H do 7: ŝc h,1 = ŝc 1 ▷ Duplicate every next state H times. 8:</p><p>for k = 1, ..., K do 9: z ∼ N (0, 1) 10: </p><formula xml:id="formula_15">a c h,k = π(ŝ c h,k , g, z) 11: i ∼ Uniform(1, . . . , M ) 12: ŝc h,k+1 = M i (ŝ c h,k , a c h,k ) ▷ Generate H trajectories of K steps.</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Environments and Datasets</head><p>We use a set of manipulation and navigation environments to evaluate the algorithm, including PointReach, PointRooms, Reacher, SawyerReach, SawyerDoor, FetchReach, FetchPush, FetchPick, FetchSlide and Han-dReach. The environments are illustrated in Figure <ref type="figure" target="#fig_8">9</ref>. All of the environments have continuous state space, action space and goal space. The details of the environments can be found in Appendix F in <ref type="bibr">(Yang et al., 2022b)</ref>. The offline datasets are collected by a pre-trained policy using DDPG and hindsight relabelling <ref type="bibr" target="#b1">(Andrychowicz et al., 2017)</ref>, where the actions from the policy are perturbed by adding Gaussian noise with zero mean and 0.2 standard deviation to increase the diversity and multi-modality of the dataset <ref type="bibr">(Yang et al., 2022b)</ref>.</p><p>We also introduce four groups of tasks for evaluating OOD generalization ability <ref type="bibr" target="#b50">(Yang et al., 2023)</ref>. There are four task groups: FetchPush Left-Right, FetchPush Near-Far, FetchPick Left-Right, FetchPick Low-High. We illustrate FetchPush Left-Right and FetchPick Low-High in Figure <ref type="figure" target="#fig_7">8</ref>. In the data collection, we only store the trajectories whose achieved goals are all in the IID (independent identically distributed) region. The IID region is defined by each task group, shown in Table <ref type="table">5</ref>. The dataset division standard refers to the location requirements of initial states and desired goals for IID tasks (e.g., Right2Right). For OOD tasks, at least one of the initial state or the desired goal does not satisfy the IID requirement (e.g., Right2Left, Left2Right, Left2Left). We collect relatively smaller datasets of 5000 trajectories. Once we train a policy on the offline dataset, we evaluate the policy both on the IID tasks and the OOD tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Implementation Details</head><p>To implement GOPlan, we train a fully implicit policy, denoted as π(a t | s t , g, z), with z representing a 64-dimensional diagonal Gaussian noise. All associated models, including the value function and dynamics models, utilize 3-layer multi-layer perceptrons with 512 units in each layer. Furthermore, the policy network incorporates batch normalization, while the discriminator network employs leaky ReLU activation function.</p><p>We use Adam optimizer with a learning rate of 1 × 10 -4 . During the fine-tuning phase, we gather J intra = 2000 and J inter = 2000 trajectories for intra-trajectory reanalysis and inter-trajectory reanalysis, respectively. After each collection, the prior policy is finetuned with 500 gradient steps. This process is performed a total of I = 10 times. In order to show the difference in the ablation study, we use J intra = 200 and J inter = 200 there. Table <ref type="table">4</ref> gives a list and description of them, as well as their default values.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: An example about modeling the multi-modal behavior policy while maximizing average rewards. The x-axis represents the state, and the y-axis represents the multi-modal action. (a-1) shows the action distribution of the offline dataset. (a-2) shows the corresponding reward distribution. (b-1) and (b-2) illustrate the action distributions generated by Gaussian and Weighted Gaussian. (c-1) and (c-2) illustrate action distributions from CVAE and Weighted CVAE. (d-1) and (d-2) illustrate action distributions from CGAN and Weighted CGAN.</figDesc><graphic coords="5,185.50,182.38,124.60,93.53" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Illustration of intra-trajectory and inter-trajectory reanalysis. There are six scenarios: (a-1) the imagined trajectory is valid and better than the original trajectory; (a-2) the imagined trajectory fails to reach the goal within the same number of steps as the original trajectory; (b-1) a valid imagined trajectory connects the state to an inter-trajectory goal; (b-2) a valid imagined trajectory that does not achieve the desired goal; (a-3) (b-3) invalid imagined trajectories with large uncertainty.</figDesc><graphic coords="6,83.70,81.86,444.59,219.07" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Average performance on OOD generalization tasks over 5 random seeds. The error bars depict the upper and lower bounds of the returns within each task group.</figDesc><graphic coords="10,165.60,334.85,280.80,134.95" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Stochastic environment evaluation.</figDesc><graphic coords="11,200.70,81.86,210.59,132.39" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Ablation studies of GOPlan. The static lines in (a) and (b) are the convergent performance of GOPlan, i.e., ACGAN after finetuning.</figDesc><graphic coords="12,76.37,82.61,112.32,85.78" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><figDesc>Inter-trajectory and intra-trajectory reanalysis. During finetuning, both inter-trajectory and intratrajectory reanalysis techniques are used in GOPlan. To assess the effectiveness of each approach, we compare the individual impacts and examine their joint influence on performance, as illustrated in Figures 6 (c)(d). Specifically, GOPlan generates 50% trajectories for each reanalysis, while "inter-trajectory"(or "intratrajectory") performs 100% inter-trajectory (or intra-trajectory) reanalysis. Our findings are threefold: (1) inter-trajectory reanalysis can introduce a distribution shift that initially decreases performance, while intratrajectory reanalysis has no such effect. (2) Both intra and inter-trajectory reanalysis lead to considerable improvement over the pretrained policy after sufficient finetuning steps. (3) The two reanalysis methods can work synergistically to yield the best performance.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Ablation studies of GOPlan on different ensemble sizes.</figDesc><graphic coords="12,200.70,539.74,210.60,125.71" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 8 :</head><label>8</label><figDesc>Figure 8: Goal-conditioned tasks for OOD generalization. (a) Push Left-Right, (b) Pick Low-High.</figDesc><graphic coords="17,163.94,381.66,140.40,126.07" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 9 :</head><label>9</label><figDesc>Figure 9: Goal-conditioned tasks. (a) PointReach, (b) PointRooms, (c) Reacher, (d) SawyerReach, (e) SawyerDoor, (f) FetchReach, (g) FetchPush, (h) FetchPick, (i) FetchSlide, and (j) HandReach.</figDesc><graphic coords="18,112.15,175.16,74.87,74.87" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><graphic coords="2,95.40,81.86,421.19,147.02" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 3 :</head><label>3</label><figDesc>Comparison of different prior policies for planning.</figDesc><table><row><cell>Algorithm</cell><cell cols="3">FetchPick FetchPush SawyerDoor</cell></row><row><cell>GOPlan2</cell><cell>38.20 38.20 38.20 ±0.8</cell><cell>39.75 39.75 39.75 ±0.8</cell><cell>45.13 45.13 45.13 ±0.3</cell></row><row><cell>ACGAN-plan</cell><cell>37.01 37.01 37.01 ±1.1</cell><cell>38.42 ±0.9</cell><cell>44.42 44.42 44.42 ±0.3</cell></row><row><cell>CGAN-plan</cell><cell>33.95 ±2.3</cell><cell>36.51 ±2.6</cell><cell>42.04 ±1.0</cell></row><row><cell>weighted CVAE-plan</cell><cell>35.02 ±0.9</cell><cell>39.11 39.11 39.11 ±0.9</cell><cell>42.88 ±0.7</cell></row><row><cell>CVAE-plan</cell><cell>30.32 ±1.2</cell><cell>34.36 ±1.1</cell><cell>39.73 ±0.7</cell></row><row><cell cols="2">weighted Gaussian-plan 36.41 ±0.6</cell><cell>38.62 ±0.9</cell><cell>43.71 ±0.8</cell></row><row><cell>Gaussian-plan</cell><cell>29.95 ±1.0</cell><cell>30.97 ±1.5</cell><cell>36.61 ±0.5</cell></row></table></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgements</head><p>We would like to thank <rs type="person">Yue Jin</rs>, the editors and the reviewers for their comments to improve the paper. We also express our gratitude to <rs type="person">Tristan Tomilin</rs> for his contribution through his presentation on this paper at the Goal-conditioned RL workshop at NeurIPS 2023. GM acknowledges support from <rs type="grantName">UKRI Turing AI Acceleration Fellowship</rs> (<rs type="grantNumber">EPSRC EP/V024868/1</rs>).</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_RCbV9DF">
+					<idno type="grant-number">EPSRC EP/V024868/1</idno>
+					<orgName type="grant-name">UKRI Turing AI Acceleration Fellowship</orgName>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Model-based Planning</head><p>In GOPlan's intra-trajectory and inter-trajectory reanalysis, GOPlan invokes a function named Plan, which is a model-based planning method, that employs a model to simulate multiple imaginary trajectories, assigns scores to the initial actions, and generates the final action based on these scores. A variety of the modelbased planning methods could be used here, such as model-predictive control (MPC) <ref type="bibr" target="#b29">(Nagabandi et al., 2020)</ref> and Monte-Carlo tree search (MCTS) <ref type="bibr" target="#b38">(Schrittwieser et al., 2021)</ref>. In our implementation, we use a similar planning algorithm as PlanGAN <ref type="bibr" target="#b4">(Charlesworth &amp; Montana, 2020)</ref>, as demonstrated in Algorithm 2. Our planning method can be refined by including a value function that estimates the return at horizon T <ref type="bibr" target="#b2">(Argenson &amp; Dulac-Arnold, 2021)</ref>, which we leave for future work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Additional Experiments</head><p>In this section, we provide more experiments to study our proposed algorithm.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.1 OOD Generalization Tasks</head><p>In the main paper, we present the statistical results of experiments conducted on four OOD generalization task groups (see Figure <ref type="figure">4</ref>): FetchPush Left-Right, FetchPush Near-Far, FetchPick Left-Right, and FetchPick Low-High. The complete set of results for this experiment is shown in Table <ref type="table" target="#tab_3">6</ref>. Among these tasks, GOPlan with online planning (GOPlan2) demonstrates the highest performance in both IID and OOD tasks. In most of the task groups, GOPlan is comparable with the recent SOTA algorithm GOAT <ref type="bibr" target="#b50">(Yang et al., 2023)</ref>, while it outperforms previous approaches. These results validate the effectiveness of incorporating dynamics models to enhance generalization for OOD goals. </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 4 :</head><label>4</label><figDesc>Hyper-parameters.</figDesc><table><row><cell>Symbol</cell><cell>Description</cell><cell>Default Value</cell></row><row><cell>γ</cell><cell>discount factor</cell><cell>0.98</cell></row><row><cell>β</cell><cell>coefficient in the exponential advantage weight</cell><cell>60</cell></row><row><cell>N</cell><cell>Number of dynamics models</cell><cell>3</cell></row><row><cell></cell><cell>ACGAN noise dimension</cell><cell>64</cell></row><row><cell></cell><cell>Range of the exponential weight</cell><cell>[0, 10]</cell></row><row><cell></cell><cell>Batch size</cell><cell>512</cell></row><row><cell>I</cell><cell>Finetuning episodes</cell><cell>10</cell></row><row><cell>I intra</cell><cell># collected Intra-trajectories each episode</cell><cell>1000</cell></row><row><cell>I inter</cell><cell># collected Inter-trajectories each episode</cell><cell>1000</cell></row><row><cell>u</cell><cell>Uncertainty threshold</cell><cell>0.1</cell></row><row><cell></cell><cell>Finetuning updates every episode</cell><cell>1000</cell></row><row><cell></cell><cell>Pretraining updates</cell><cell>5 × 10 5</cell></row><row><cell></cell><cell>Size of reanalysis buffer</cell><cell>2 × 10 6</cell></row><row><cell>κ</cell><cell>Exponential weight</cell><cell>2</cell></row><row><cell>K</cell><cell>Planning horizon</cell><cell>20</cell></row><row><cell>C</cell><cell>Number of initial actions</cell><cell>20</cell></row><row><cell>H</cell><cell>Copies of initial actions</cell><cell>10</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 5 :</head><label>5</label><figDesc>Information about 4 Task Groups and Datasets.</figDesc><table><row><cell cols="2">Datasets (Task Group) IID region</cell><cell>IID task</cell><cell>OOD task</cell><cell>Dataset Division Standard</cell></row><row><cell></cell><cell></cell><cell></cell><cell>Right2Left,</cell><cell></cell></row><row><cell>Push Left-Right</cell><cell>Right</cell><cell>Right2Right</cell><cell>Left2Right,</cell><cell>the object's y coordinate value &gt; the initial position</cell></row><row><cell></cell><cell></cell><cell></cell><cell>Left2Left.</cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell>Near2Far,</cell><cell></cell></row><row><cell>Push Near-Far</cell><cell>Near</cell><cell>Near2Near</cell><cell>Far2Near,</cell><cell>the L 2 distance between the object and the initial position ≤ 0.15</cell></row><row><cell></cell><cell></cell><cell></cell><cell>Far2Far.</cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell>Right2Left,</cell><cell></cell></row><row><cell>Pick Left-Right</cell><cell>Right</cell><cell>Right2Right</cell><cell>Left2Right,</cell><cell>the object's y coordinate value &gt; the initial position</cell></row><row><cell></cell><cell></cell><cell></cell><cell>Left2Left.</cell><cell></cell></row><row><cell>Pick Low-High</cell><cell>Low</cell><cell>Low2Low</cell><cell>Low2High.</cell><cell>the object's z coordinate value &lt; 0.6</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 6 :</head><label>6</label><figDesc>Average returns with standard deviations on the OOD benchmark. The results of GOAT are taken from the original paper<ref type="bibr" target="#b50">(Yang et al., 2023)</ref>.</figDesc><table><row><cell>Task Group</cell><cell>Task</cell><cell>GOPlan GOPlan2 GOAT</cell><cell>GCSL</cell><cell>WGCSL</cell><cell>AM</cell><cell>g-TD3-BC</cell></row><row><cell>FetchPush Left-Right</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Uncertainty-based offline reinforcement learning with diversified q-ensemble</title>
+		<author>
+			<persName><forename type="first">Seungyong</forename><surname>Gaon An</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jang-Hyun</forename><surname>Moon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyun</forename><forename type="middle">Oh</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Song</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Hindsight experience replay</title>
+		<author>
+			<persName><forename type="first">Marcin</forename><surname>Andrychowicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Filip</forename><surname>Wolski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Schneider</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rachel</forename><surname>Fong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Welinder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bob</forename><surname>Mcgrew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Tobin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wojciech</forename><surname>Zaremba</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Model-based offline planning</title>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Argenson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Dulac-Arnold</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Pessimistic bootstrapping for uncertainty-driven offline reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Chenjia</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingxiao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuoran</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi-Hong</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Animesh</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoran</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">PlanGAN: Model-based planning with sparse rewards and multiple goals</title>
+		<author>
+			<persName><forename type="first">Henry</forename><surname>Charlesworth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Giovanni</forename><surname>Montana</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Actionable models: Unsupervised offline reinforcement learning of robotic skills</title>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitry</forename><surname>Kalashnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Varley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Irpan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Eysenbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><forename type="middle">C</forename><surname>Julian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Decision transformer: Reinforcement learning via sequence modeling</title>
+		<author>
+			<persName><forename type="first">Lili</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aravind</forename><surname>Rajeswaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kimin</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Grover</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Laskin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aravind</forename><surname>Srinivas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">LAPO: Latent-variable advantage-weighted policy optimization for offline reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Ghadirzadeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhe</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianhao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><forename type="middle">Yuan</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenzhe</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Bin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongjie</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Efficient selectivity and backup operators in monte-carlo tree search</title>
+		<author>
+			<persName><forename type="first">Rémi</forename><surname>Coulom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">H. Jaap van den Herik</title>
+		<editor>
+			<persName><forename type="first">Paolo</forename><surname>Ciancarini</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">H</forename><forename type="middle">H L M</forename><surname>Jeroen</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">)</forename><surname>Donkers</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Berlin, Heidelberg; Berlin Heidelberg</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2007">2007</date>
+			<biblScope unit="page" from="72" to="83" />
+		</imprint>
+	</monogr>
+	<note>Computers and Games</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">PILCO: A model-based and data-efficient approach to policy search</title>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Deisenroth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carl</forename><forename type="middle">E</forename><surname>Rasmussen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">RvS: What is essential for offline RL via supervised learning</title>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Emmons</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Eysenbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Kostrikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Contrastive learning as goal-conditioned reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Eysenbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianjun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruslan</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">A minimalist approach to offline reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Fujimoto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shixiang</forename><surname>Gu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Off-policy deep reinforcement learning without exploration</title>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Fujimoto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Meger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Doina</forename><surname>Precup</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Learning to reach goals via iterated supervised learning</title>
+		<author>
+			<persName><forename type="first">Dibya</forename><surname>Ghosh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Reddy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Justin</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Coline</forename><surname>Manon Devin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Eysenbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Learning latent dynamics for planning from pixels</title>
+		<author>
+			<persName><forename type="first">Danijar</forename><surname>Hafner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ian</forename><surname>Fischer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruben</forename><surname>Villegas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Ha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honglak</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Davidson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Dream to control: Learning behaviors by latent imagination</title>
+		<author>
+			<persName><forename type="first">Danijar</forename><surname>Hafner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Ba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Norouzi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Temporal difference learning for model predictive control</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Nicklas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Hansen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaolong</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Offline reinforcement learning as one big sequence modeling problem</title>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Janner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiyang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Planning with diffusion for flexible behavior synthesis</title>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Janner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">MOReL: Model-based offline reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Rahul</forename><surname>Kidambi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aravind</forename><surname>Rajeswaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Praneeth</forename><surname>Netrapalli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thorsten</forename><surname>Joachims</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Conservative Q-learning for offline reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Aviral</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aurick</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Tucker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Context-aware dynamics model for generalization in model-based reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Kimin</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Younggyo</forename><surname>Seo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Seunghyun</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honglak</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinwoo</forename><surname>Shin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Offline reinforcement learning: Tutorial, review, and perspectives on open problems</title>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aviral</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Tucker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Justin</forename><surname>Fu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Learning latent plans from play</title>
+		<author>
+			<persName><forename type="first">Corey</forename><surname>Lynch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohi</forename><surname>Khansari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vikash</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Sermanet</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Learning latent plans from play</title>
+		<author>
+			<persName><forename type="first">Corey</forename><surname>Lynch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohi</forename><surname>Khansari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vikash</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Sermanet</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Annual Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Offline goal-conditioned reinforcement learning via f-advantage regression</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Yecheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dinesh</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Osbert</forename><surname>Jayaraman</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bastani</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Learning goal-conditioned policies offline with self-supervised reward shaping</title>
+		<author>
+			<persName><forename type="first">Lina</forename><surname>Mezghani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sainbayar</forename><surname>Sukhbaatar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Bojanowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alessandro</forename><surname>Lazaric</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karteek</forename><surname>Alahari</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Annual Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Model-based reinforcement learning: A survey</title>
+		<author>
+			<persName><forename type="first">Joost</forename><surname>Thomas M Moerland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aske</forename><surname>Broekens</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Plaat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Catholijn</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Jonker</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Foundations and Trends® in Machine Learning</title>
+		<imprint>
+			<biblScope unit="volume">16</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="118" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Deep dynamics models for learning dexterous manipulation</title>
+		<author>
+			<persName><forename type="first">Anusha</forename><surname>Nagabandi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kurt</forename><surname>Konolige</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vikash</forename><surname>Kumar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Annual Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">AWAC: Accelerating online reinforcement learning with offline datasets</title>
+		<author>
+			<persName><forename type="first">Ashvin</forename><surname>Nair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Murtaza</forename><surname>Dalal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Temporal predictive coding for model-based planning in latent space</title>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Tung D Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tuan</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hung</forename><surname>Pham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefano</forename><surname>Bui</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ermon</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Self-supervised exploration via disagreement</title>
+		<author>
+			<persName><forename type="first">Deepak</forename><surname>Pathak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dhiraj</forename><surname>Gandhi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Gupta</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Advantage-weighted regression: Simple and scalable off-policy reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Xue Bin</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aviral</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Grace</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Multigoal reinforcement learning: Challenging robotics environments and request for research</title>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcin</forename><surname>Andrychowicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bob</forename><surname>Mcgrew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Glenn</forename><surname>Powell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Schneider</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Tobin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maciek</forename><surname>Chociej</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Welinder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vikash</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wojciech</forename><surname>Zaremba</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">RAMBO-RL: Robust adversarial model-based offline reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Rigter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bruno</forename><surname>Lacerda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Hawes</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Can push-forward generative models fit multimodal distributions?</title>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Salmona</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julie</forename><surname>Valentin De Bortoli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Agnès</forename><surname>Delon</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Desolneux</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Mastering atari, go, chess and shogi by planning with a learned model</title>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Hubert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karen</forename><surname>Simonyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurent</forename><surname>Sifre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Schmitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Guez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Lockhart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Demis</forename><surname>Hassabis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thore</forename><surname>Graepel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="volume">588</biblScope>
+			<biblScope unit="issue">7839</biblScope>
+			<biblScope unit="page" from="604" to="609" />
+			<date type="published" when="2020-12">December 2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Online and offline reinforcement learning by planning with a learned model</title>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><forename type="middle">K</forename><surname>Hubert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amol</forename><surname>Mandhane</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammadamin</forename><surname>Barekatain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Behavior transformers: Cloning k modes with one stone</title>
+		<author>
+			<persName><forename type="first">Nur</forename><surname>Muhammad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mahi</forename><surname>Shafiullah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Zichen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ariuntuya</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lerrel</forename><surname>Altanzaya</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Pinto</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Exploit reward shifting in value-based deep-rl: Optimistic curiosity-based exploration and conservative exploitation via linear reward shaping</title>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Hao Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoteng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bolei</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="37719" to="37734" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note>Published in Transactions on Machine Learning Research (05/2024</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">A perspective on objects and systematic generalization in model-based RL</title>
+		<author>
+			<persName><forename type="first">Klaus</forename><surname>Sjoerd Van Steenkiste</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jürgen</forename><surname>Greff</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Schmidhuber</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Dual generator offline reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Quan</forename><surname>Vuong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aviral</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Chebotar</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Goal-conditioned offline reinforcement learning through state space partitioning</title>
+		<author>
+			<persName><forename type="first">Mianchu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Giovanni</forename><surname>Montana</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Machine Learning</title>
+		<imprint>
+			<date type="published" when="2024-02">Feb 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Entropy: Environment transformer and offline policy optimization</title>
+		<author>
+			<persName><forename type="first">Pengqin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meixin</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaojie</forename><surname>Shen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Exponentially weighted imitation learning for batched historical data</title>
+		<author>
+			<persName><forename type="first">Qing</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiechao</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<title level="m" type="main">Behavior regularized offline reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Tucker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Nachum</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">MHER: Model-based hindsight experience replay</title>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meng</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yali</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feng</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiu</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Deep RL Workshop NeurIPS 2021</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">RORL: Robust offline reinforcement learning via conservative smoothing</title>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenjia</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoteng</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoran</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongjie</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Han</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="23851" to="23866" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Rethinking goal-conditioned supervised learning and its connection to offline RL</title>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenzhe</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meng</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yali</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongjie</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">What is essential for unseen goal generalization of offline goal-conditioned RL</title>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoteng</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongjie</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title level="m" type="main">A behavior regularized implicit policy for offline reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Shentao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhendong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huangjie</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihao</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingyuan</forename><surname>Zhou</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">MOPO: Model-based offline policy optimization</title>
+		<author>
+			<persName><forename type="first">Tianhe</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Garrett</forename><surname>Thomas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lantao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefano</forename><surname>Ermon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><forename type="middle">Y</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tengyu</forename><surname>Ma</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Model-based offline planning with trajectory pruning</title>
+		<author>
+			<persName><forename type="first">Xianyuan</forename><surname>Zhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyu</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Xu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Joint Conference on Artificial Intelligence</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<title level="m" type="main">PLAS: Latent action space for offline reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Wenxuan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sujay</forename><surname>Bajracharya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Held</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note>Right2Left Left2Right Left2Left</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<analytic>
+		<title/>
+	</analytic>
+	<monogr>
+		<title level="j">FetchPick Left-Right Left</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+	<note>Right Left2Left Right2Left</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

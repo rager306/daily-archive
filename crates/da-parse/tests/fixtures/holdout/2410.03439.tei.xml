@@ -1,0 +1,2543 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">TOOLGEN: UNIFIED TOOL RETRIEVAL AND CALLING VIA GENERATION</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-03-29">29 Mar 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Renxi</forename><surname>Wang</surname></persName>
+							<email>renxi.wang@mbzuai.ac.ae</email>
+							<affiliation key="aff0">
+								<address>
+									<country>LibrAI</country>
+								</address>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution">Zayed University of Artificial Intelligence</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xudong</forename><surname>Han</surname></persName>
+							<email>xudong.han@mbzuai.ac.ae</email>
+							<affiliation key="aff0">
+								<address>
+									<country>LibrAI</country>
+								</address>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution">Zayed University of Artificial Intelligence</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Lei</forename><surname>Ji</surname></persName>
+							<email>leiji@microsoft.com</email>
+							<affiliation key="aff2">
+								<orgName type="institution">Microsoft</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Shu</forename><surname>Wang</surname></persName>
+							<affiliation key="aff3">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Los Angeles</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Timothy</forename><surname>Baldwin</surname></persName>
+							<email>timothy.baldwin@mbzuai.ac.ae</email>
+							<affiliation key="aff0">
+								<address>
+									<country>LibrAI</country>
+								</address>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution">Zayed University of Artificial Intelligence</orgName>
+							</affiliation>
+							<affiliation key="aff4">
+								<orgName type="institution">The University of Melbourne</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Haonan</forename><surname>Li</surname></persName>
+							<email>haonan.li@mbzuai.ac.ae</email>
+							<affiliation key="aff0">
+								<address>
+									<country>LibrAI</country>
+								</address>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution">Zayed University of Artificial Intelligence</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">TOOLGEN: UNIFIED TOOL RETRIEVAL AND CALLING VIA GENERATION</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-03-29">29 Mar 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">F82D3C8A2604578ED01F5C161B1AB9BF</idno>
+					<idno type="arXiv">arXiv:2410.03439v3[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:47+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>As large language models (LLMs) advance, their inability to autonomously execute tasks by directly interacting with external tools remains a critical limitation. Traditional methods rely on inputting tool descriptions as context, which is constrained by context length and requires separate, often inefficient, retrieval mechanisms. We introduce ToolGen, a paradigm shift that integrates tool knowledge directly into the LLM's parameters by representing each tool as a unique token. This enables the LLM to generate tool calls and arguments as part of its next token prediction capabilities, seamlessly blending tool invocation with language generation. Our framework allows the LLM to access and utilize a vast amount of tools with no additional retrieval step, significantly enhancing both performance and scalability. Experimental results with over 47,000 tools show that ToolGen not only achieves superior results in both tool retrieval and autonomous task completion but also sets the stage for a new era of AI agents that can adapt to tools across diverse domains. By fundamentally transforming tool retrieval into a generative process, ToolGen paves the way for more versatile, efficient, and autonomous AI systems. ToolGen enables end-to-end tool learning and opens opportunities for integration with other advanced techniques such as chain-of-thought and reinforcement learning, thereby expanding the practical capabilities of LLMs 1 .</p><p>Moreover, LLMs and their tokenizers are pretrained primarily on natural language data <ref type="bibr" target="#b3">(Brown et al., 2020;</ref><ref type="bibr" target="#b42">Touvron et al., 2023)</ref>, leaving them with limited intrinsic knowledge of tool-related functionalities. This gap in knowledge results in suboptimal performance, especially when the LLM must rely on retrieved tool descriptions for decision-making.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="26" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>Large language models (LLMs) have demonstrated impressive capabilities as interactive systems, adept at processing external inputs, executing actions, and autonomously completing tasks <ref type="bibr" target="#b13">(Gravitas, 2023;</ref><ref type="bibr" target="#b30">Qin et al., 2023;</ref><ref type="bibr">Yao et al., 2023;</ref><ref type="bibr" target="#b37">Shinn et al., 2023;</ref><ref type="bibr">Wu et al., 2024a;</ref><ref type="bibr" target="#b22">Liu et al., 2024;</ref><ref type="bibr">Wang et al., 2024b;</ref><ref type="bibr">c)</ref>. Among the various methods enabling LLMs to interact with the world, tool calling via APIs has emerged as one of the most common and effective approaches. However, as the number of tools grows into the tens of thousands, existing methods for tool retrieval and execution struggle to scale efficiently.</p><p>A common approach in real-world scenarios is to combine tool retrieval with tool execution, where a retrieval model first narrows down the relevant tools before passing them to the LLM for final selection and execution <ref type="bibr" target="#b30">(Qin et al., 2023;</ref><ref type="bibr" target="#b28">Patil et al., 2023)</ref>. While this combined method addresses the challenge of handling vast numbers of tools, it has notable limitations: retrieval models often rely on small encoders that fail to fully capture the semantics of complex tools and queries, and separating retrieval from execution introduces inefficiencies and potential misalignment between stages of task completion.</p><p>&lt;token Game_Search&gt; Game_Search { "q": "popular video games" } I need to call " " to search popular video games. { "q": "popular video games" } 2. Similarity Search Generate 1. Embed I want some popular video games. I want some popular video games in China. In this study, we introduce ToolGen, a novel framework that integrates real-world tool knowledge directly into the LLM's parameters and transforms tool retrieval and execution into a unified generation task. Specifically, ToolGen expands the LLM's vocabulary with tool-specific virtual tokens and trains the model to generate these tokens within a conversational context, allowing the LLM to leverage its pre-existing knowledge more effectively for both retrieving and calling tools.</p><p>Specifically, each tool is represented as a unique virtual token within the LLM's vocabulary. Building upon a pretrained LLM, ToolGen's training process consists of three stages: tool memorization, retrieval training, and agent training. In the tool memorization stage, the model associates each virtual tool token with its documentation. During retrieval training, the model learns to generate relevant tool tokens based on user queries. Finally, in end-to-end agent-tuning, the model is trained to act as an autonomous agent, generating plans and tools, and determining the appropriate parameters to complete tasks. By calling tools and receiving feedback from external environments, the model can handle user queries efficiently and integratively. Figure <ref type="figure" target="#fig_0">1</ref> shows comparison between ToolGen and traditional paradigms.</p><p>We demonstrate ToolGen's superiority in two scenarios: a tool retrieval task, where the model retrieves the correct tool for a given query, and an LLM-based agent task, where the model completes complex tasks involving real-world API calls. Leveraging a dataset of 47,000 real-world tools, Tool-Gen achieves performance comparable to the leading tool retrieval methods, but with significantly lower cost and greater efficiency. Additionally, it surpasses traditional tool learning paradigms, highlighting its potential for advancing more effective tool usage systems.</p><p>ToolGen represents a paradigm shift in tool interaction by merging retrieval and generation into a single, cohesive model. This innovation sets the stage for a new generation of AI agents capable of adapting to a vast array of tools across diverse domains. Additionally, ToolGen opens new opportunities for integrating advanced techniques like chain-of-thought reasoning and reinforcement learning with the ability to use tools in a unified generation way, expanding the capabilities of LLMs in real-world applications.</p><p>In summary, our contributions are:</p><p>• A novel framework, ToolGen, that integrates tool retrieval and execution into the LLM's generative process using virtual tokens.</p><p>• A three-stage training process that enables efficient and scalable tool retrieval and API calling within ToolGen.</p><p>• Experimental validation demonstrates that ToolGen achieves comparable performance to current best tool retrieval methods with significantly less cost and higher efficiency and surpasses traditional tool learning paradigms across large-scale tool repositories.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">RELATED WORK</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">TOOL RETRIEVAL</head><p>Tool retrieval is essential for LLM agents in real-world task execution, where tools are usually represented by their documentation. Traditional methods like sparse (e.g., BM25 <ref type="bibr" target="#b33">(Robertson et al., 2009)</ref>) and dense retrieval (e.g., DPR <ref type="bibr" target="#b17">(Karpukhin et al., 2020)</ref>, ANCE <ref type="bibr" target="#b51">(Xiong et al., 2021)</ref>) rely on large document indices and external modules, leading to inefficiencies and difficulty in optimizing in an end-to-end agent framework. Some work has explored alternative methods. For example, <ref type="bibr">Chen et al. (2024b)</ref> rewrite queries and extract their intent, targeting unsupervised retrieval settings, though the results are not comparable to supervised approaches. <ref type="bibr" target="#b52">Xu et al. (2024)</ref> propose a method that iteratively refines queries based on tool feedback, improving retrieval accuracy but increasing latency.</p><p>Recently, generative retrieval has emerged as a promising new paradigm, wherein models directly generate relevant document identifiers rather than relying on traditional retrieval mechanisms <ref type="bibr" target="#b46">(Wang et al., 2022;</ref><ref type="bibr">Sun et al., 2023b;</ref><ref type="bibr">Kishore et al., 2023b;</ref><ref type="bibr">Mehta et al., 2023b;</ref><ref type="bibr">Chen et al., 2023c)</ref>. Motivated by this, ToolGen represents each tool as a unique token, allowing tool retrieval and calling to be framed as a generation task. Beyond simplifying retrieval, this design integrates smoothly with other LLM and LLM-based agent features like chain-of-thought reasoning <ref type="bibr" target="#b47">(Wei et al., 2023)</ref> and ReAct <ref type="bibr">(Yao et al., 2023)</ref>. By consolidating retrieval and task execution into a single LLM agent, it reduces latency and computational overhead, leading to more efficient and effective task completion.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">LLM-AGENTS WITH TOOL CALLING</head><p>LLMs have shown strong potential in mastering tools for various tasks. However, most existing works focus on a limited set of actions <ref type="bibr">(Chen et al., 2023a;</ref><ref type="bibr" target="#b55">Zeng et al., 2023;</ref><ref type="bibr">Yin et al., 2024;</ref><ref type="bibr">Wang et al., 2024a)</ref>. For instance, Toolformer <ref type="bibr" target="#b35">(Schick et al., 2023)</ref> fine-tunes GPT-J to handle just five tools, such as calculators. While effective for narrow tasks, this approach struggles in real-world scenarios with vast action spaces. ToolBench <ref type="bibr" target="#b30">(Qin et al., 2023)</ref> expands the scope by introducing over 16,000 tools, highlighting the challenge of tool selection in complex environments.</p><p>To perform tool selection, current methods often use a retriever-generator pipeline, where relevant tools are retrieved and then utilized by the LLM <ref type="bibr" target="#b28">(Patil et al., 2023;</ref><ref type="bibr" target="#b30">Qin et al., 2023)</ref>. In addition, TPTU <ref type="bibr">(Ruan et al.)</ref> proposes a structured framework for LLM agents and evaluates their task planning and tool usage abilities. Furthermore, TPTU-v2 <ref type="bibr">(Kong et al.;</ref><ref type="bibr" target="#b41">2024)</ref> builds an LLM Finetuner to enhance agent performance with curated datasets and a demo selector to select relevant demonstrations. They set a flexible and superior paradigm compared to traditional retrieval-based paradigm. However, pipelined approaches face two major issues: error propagation from the retrieval step and the inability of LLMs to fully understand and use tools via simple prompting.</p><p>To mitigate these issues, researchers have tried representing actions as tokens, converting action prediction into a generative task. For example, RT2 <ref type="bibr" target="#b1">(Brohan et al., 2023)</ref> generates tokens representing robot actions, and Self-RAG <ref type="bibr" target="#b0">(Asai et al., 2023)</ref> uses special tokens to decide when to retrieve documents. ToolkenGPT <ref type="bibr" target="#b15">(Hao et al., 2023)</ref> introduces tool-specific tokens to trigger tool usage, a concept closest to our approach.</p><p>Our approach differs from ToolkenGPT in several ways. First, we focus on real-world tools that require flexible parameters for complex tasks (e.g., YouTube channel search), while ToolkenGPT is limited to simpler tools with fewer inputs (e.g., math functions with two numbers). Additionally, ToolkenGPT relies on few-shot prompting, whereas ToolGen incorporates tool knowledge directly into the LLM through full-parameter fine-tuning, enabling the model to retrieve and execute tasks autonomously. Finally, our experiments involve a much larger tool set-47,000 tools compared to ToolkenGPT's 13-300. Detailed comparison and other related work can be found in Section A.</p><formula xml:id="formula_0">Numeric 0 0 0 0 0 0 0 0 0 1 Hierarchical 0 1 0 1 0 1 0 0 0 0 0 1 0 1 1 1 Semantic Atomic</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Tool Virtualization</head><p>Tools Tokens Tokenizer Add Embedding</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Expand Vocabulary</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Tool Memorization</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Tool Description</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LLM</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Tool Tokens</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Retrieval Training</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Query</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ToolGen Retriever</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Tool Tokens</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Pipeline Training</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Trajetories</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ToolGen Agent</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Instruction Finetune</head><p>Search games by a text query.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LLM</head><p>Could you recommend some movies?</p><formula xml:id="formula_1">0 0 0 0 2 0 1 0 0 0 0 3 &lt;token Top_Movies&gt;</formula><p>&lt;token Game_Search&gt; &lt;token Get_Weather&gt; &lt;token Game_Hall_of_Fame&gt; Get _ Weather &lt;token Game_Search&gt; &lt;token Top_Movies&gt; Tools Indexing I want some popular video games. ToolGen: First, I need to use ' ' to search video games. User: Generate the action. ToolGen: Document: {name: ...} Obversation: Here are some popular video games ... &lt;token Game_Search&gt; &lt;token Game_Search&gt; Game_Search Get_Weather ... ...</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LLM</head><p>Game _ Hall _ of _ Fame Game _ Search Top _ Movies Game_Hall_of_Fame Top_Movies Figure <ref type="figure">2</ref>: An illustration of ToolGen framework. In tool virtualization, tools are mapped into virtual tokens. In the following three-stage training, ToolGen first memorizes tools by predicting tool tokens based on their documentations. Then it learns to retrieve tools by predicting tool tokens from queries. Finally, pipeline data, i.e., trajectories, are used to finetune the retriever model from the last stage, resulting in the ToolGen Agent model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">TOOLGEN</head><p>In this section, we first introduce the notations used throughout the paper. Then we detail the specific methods of ToolGen, including tool virtualization, tool memorization, retrieval training, and end-toend agent tuning, as illustrated in Figure <ref type="figure">2</ref>. Lastly, we describe our inference approach.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">PRELIMINARIES</head><p>Given a user query q, tool learning aims to resolve q using tools from a large tool set D = {d 1 , d 2 , . . . , d N }, where |D| = N is a large number, making it impractical to include all tools in D in the LLM context. Therefore, current research typically uses a retriever R to retrieve k relevant tools from D, denoted as D k,R = {d r1 , d r2 , . . . , d r k } = R(q, k, D), where |D k,R | ≪ N . The final prompt is then the concatenation of q and D k,R , denoted as P rompt = [q, D k,R ]. To complete a task (query), an LLM-based agent usually adopts a four-stage paradigm <ref type="bibr" target="#b31">(Qu et al., 2024)</ref> iteratively: generates a plan p i , selects a tool d si , determines tool parameters c i , and collects feedback from the tool(s) f i . We denote these steps for the i-th iteration as p i , d si , c i , f i . The model continues iterating through these steps until the task is completed, at which point the final answer a is generated. The entire trajectory can be represented as T raj = [P rompt, (p 1 , d s1 , c 1 , f 1 ), . . . , (p t , d st , c t , f t ), a] = [q, R(q, D), (p 1 , d s1 , c 1 , f 1 ), . . . , (p t , d st , c t , f t ), a]. This iterative approach allows the model to dynamically adjust and refine its actions at each step based on the feedback received, improving its performance in completing complex tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">TOOL VIRTUALIZATION</head><p>In ToolGen, we virtualize tools by mapping each tool to a unique new token through a method we call atomic indexing. In this approach, each tool is assigned a unique token by expanding the LLM's vocabulary. The embedding for each tool token is initialized as the average embedding of its corresponding tool name, ensuring a semantically meaningful starting point for each tool.</p><p>Formally, the token set is defined as T = Index(d) | ∀d ∈ D, where Index is the function mapping tools to tokens. We demonstrate that atomic indexing is more efficient and can mitigate hallucination compared to other indexing methods, such as semantic and numeric mappings, discussed in Section 4. <ref type="formula">3 and 5.4.   3.3 TOOL MEMORIZATION</ref>After assigning tokens to tools, the LLM still lacks any knowledge of the tools. To address this, we inject tool information by fine-tuning it with tool descriptions as inputs and their corresponding tokens as outputs, which we call tool memorization. We use the following loss function:</p><formula xml:id="formula_2">L tool = d∈D -log p θ (Index(d)|d doc )</formula><p>where θ denotes the LLM parameters, and d doc represents the tool description. This step equips the LLM with basic knowledge of the tools and their associated actions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">RETRIEVAL TRAINING</head><p>We then train the LLMs to link the hidden space of virtual tool token (and its documentation), to the user query space, so that LLM can generate correct tool based on a user's query. To achieve this, we fine-tune the LLM with user queries as inputs and corresponding tool tokens as outputs:</p><formula xml:id="formula_3">L retrieval = q∈Q d∈Dq -log p θ ′ (Index(d)|q)</formula><p>where θ ′ represents the LLM parameters after tool memorization, Q is the set of user queries, and D q is the set of tools relevant to each query. This results in the ToolGen Retriever, which can generate the appropriate tool token given a user query.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.5">END-TO-END AGENT-TUNING</head><p>After retrieval training, the LLM is capable of generating tool tokens from queries. In the final stage, we fine-tune the model with agent task completion trajectories. We adopt a similar inference strategy as Agent-Flan <ref type="bibr">(Chen et al., 2024c)</ref>, in instead of generating Thought, Action, and Arguments together as ReAct. Our pipeline follows an iterative process, where the LLM first generates a Thought, and the corresponding Action token. This token is used to fetch the tool documentation, which the LLM uses to generate the necessary arguments. The process continues iteratively until the model generates a "finish" token or the maximum number of turns is reached. The generated trajectory is represented as T raj = [q, (p 1 , Index(d s1 ), c 1 , f 1 ), . . . , (p t , Index(d st ), c t , f t ), a]. In this structure, relevant tools are no longer required.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.6">INFERENCE</head><p>During inference, the LLM may generate action tokens outside the predefined tool token set. To prevent this, we designed a constrained beam search generation that restricts the output tokens to the tool token set. We applied this constrained beam search for both tool retrieval, where the model selects tools based on queries, and the end-to-end agent system, significantly reducing hallucination during the action generation step. A detailed analysis can be found in Section 5.4. The implementation details can be found in Appendix E.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">TOOL RETRIEVAL EVALUATION</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">EXPERIMENTAL SETUP</head><p>We use pretrained Llama-3-8B <ref type="bibr" target="#b12">(Dubey et al., 2024)</ref> as our foundation model, with a vocabulary size of 128,256. Using the atomic indexing approach, we expand the vocabulary by an additional 46,985 tokens following the tool virtualization process, resulting in a final vocabulary size of 175,241. We fine-tune the model using the Llama-3 chat template with a cosine learning rate scheduler, applying a 3% warm-up steps. The maximum learning is 4 × 10 -5 . All models are trained using Deepspeed ZeRO 3 <ref type="bibr" target="#b32">(Rajbhandari et al., 2020</ref>) across 4×A100 GPUs. We train 8 epochs for tool memorization and 1 epoch for retrieval training.</p><p>Dataset Our experiments are based on ToolBench, a real-world tool benchmark containing more 16k tool collections, each containing several APIs, resulting in a total of 47k unique APIs. Each API is documented with a dictionary, containing the name, description, and parameters for calling the API. A real example is shown in Appendix C. We take each API as an action and map it to a token. Our retrieval and end-to-end agent-tuning data are converted from the original data in ToolBench. Details can be found in Appendix K. Although each tool may consist of multiple APIs, for simplicity, we refer to each API as a tool in this paper.</p><p>We follow the data split of <ref type="bibr" target="#b30">Qin et al. (2023)</ref>, where 200k (query, relevant API) pairs are divided into three categories: I1 (single-tool queries), I2 (intra-category multi-tool queries), and I3 (intracollection multi-tool instructions), containing 87,413, 84,815, and 25,251 instances, respectively.</p><p>Baselines We compare ToolGen with the following baselines:</p><p>• BM25: A classical unsupervised retrieval method based on TF-IDF, which retrieves documents based on term similarity with the query.</p><p>• Long-Context LLMs: We concatenate tools into a long prompt to gpt-4o, and prompt it to choose from the pool. Limit by context length, we cannot input all 47k tools, so we use 2k tools with ground truth tools included.</p><p>• Embedding Similarity (EmbSim): Sentence embeddings generated using OpenAI's sentence embedding model; specifically text-embedding-3-large in our experiences.</p><p>• Re-Invoke <ref type="bibr">(Chen et al., 2024b)</ref>: An unsupervised retrieval method with query rewriting and document expansion.</p><p>• IterFeedback <ref type="bibr" target="#b52">(Xu et al., 2024)</ref>: BERT-based retriever with gpt-3.5-turbo-0125 as a feedback model with iterative feedback for up to 10 rounds.</p><p>• ToolRetriever <ref type="bibr" target="#b30">(Qin et al., 2023)</ref>: A BERT-based retriever trained via contrastive learning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Settings</head><p>We conduct experiments under two settings. In the first, In-Domain Retrieval, the retrieval search space is restricted to tools within the same domain. For example, when evaluating queries from domain I1, the search is limited to I1 tools. This aligns with ToolBench settings. The second, Multi-Domain Retrieval, is more complex, with the search space expanded to include tools from all three domains. In this case, models are trained on combined data, increasing both the search space and task complexity. Unlike ToolBench, this multi-domain setting reflects real-world scenarios where retrieval tasks may involve overlapping or mixed domains. This setup evaluates the model's ability to generalize across domains and handle more diverse, complex retrieval cases.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Metrics</head><p>We evaluate retrieval performance using Normalized Discounted Cumulative Gain (NDCG) <ref type="bibr" target="#b16">(Järvelin &amp; Kekäläinen, 2002)</ref>, a widely used metric in ranking tasks, including tool retrieval. NDCG accounts for both the relevance and ranking position of retrieved tools.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">RESULTS</head><p>Table <ref type="table">1</ref> presents the tool retrieval results. As expected, all trained models significantly outperform the untrained baselines (BM25, EmbSim, and Re-Invoke) across all metrics, demonstrating the benefit of training on tool retrieval data.</p><p>Our proposed ToolGen model consistently achieves the best performance across both settings. In the In-Domain setting, ToolGen delivers highly competitive results, achieving comparable performance to the IterFeedback system, which uses multiple models and a feedback mechanism. ToolGen, as a single model, outperforms ToolRetriever by a significant margin in all metrics and even surpasses IterFeedback in several cases, such as NDCG@5 for domain I1 and NDCG@1,@3,@5 for I2.</p><p>In the Multi-Domain setting, where the search space is larger and performance generally drops, ToolGen remains robust, outperforming ToolRetriever and maintaining superiority over other baselines. This demonstrates that ToolGen, despite being a single model, is capable of competing with Table <ref type="table">1</ref>: Tool retrieval evaluation across two settings: (1) In-Domain, where models are trained and evaluated within the same domain; and (2) Multi-Domain, where models are trained on all domains and evaluated with the full set of tools across all domains. BM25, EmbSim, and Re-Invoke are unsupervised baselines without training. IterFeedback is retrieval system with multiple models and feedback mechanism. ToolRetriever is trained using contrastive learning, while ToolGen is trained with next-token prediction. Results marked with * were not implemented by us and are copied from their original paper, and hence only in the In-Domain setting. For ToolGen in the In-Domain setting, we allow the generation space to include all tokens, which is a more challenging scenario compared to other models. Best results in each category are bolded. <ref type="table" target="#tab_2">NDCG1 NDCG3 NDCG5 NDCG1 NDCG3 NDCG5 NDCG1 NDCG3</ref> NDCG5 In-Domain BM25 29.46 31.12 33.27 24.13 25.29 27.65 32.00 25.88 29.78 Long-Context LLM* 32.22 42.87 52.14 25.39 33.91 46.07 25.11 32.57 44.03 EmbSim 63.67 61.03 65.37 49.11 42.27 46.56 53.00 46.40 52.73 Re-Invoke* 69.47 -61.10 54.56 -53.79 59.65 -59.55 IterFeedback* 90.70 90.95 92.47 89.01 85.46 87.10 91.74 87.94 90.20 ToolRetriever 80.50 79.55 84.39 71.18 64.81 70.35 70.00 60.44 64.70 ToolGen 89.17 90.85 92.67 91.45 88.79 91.13 87.00 85.59 90.16 Multi-Domain BM25 22.77 22.64 25.61 18.29 20.74 22.18 10.00 10.08 12.33 EmbSim 54.00 50.82 55.86 40.84 36.67 39.55 18.00 17.77 20.70 ToolRetriever 72.31 70.30 74.99 64.54 57.91 63.61 52.00 39.89 42.92 ToolGen 87.67 88.84 91.54 83.46 86.24 88.84 79.00 79.80 84.79</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Model I1 I2 I3</head><p>complex retrieval systems like IterFeedback, showcasing its ability to handle complex real-world retrieval tasks where domain boundaries are less defined.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">INDEXING METHOD COMPARISON</head><p>While ToolGen uses atomic indexing for tool virtualization, we explore several alternative generative retrieval approaches. In this section, we compare it with the following three methods:</p><p>• Numeric: Map each tool to a unique number. The resulting token is purely numeric, offering no inherent semantic information, but providing a distinct identifier for each tool.</p><p>• Hierarchical: This method clusters tools into non-overlapping groups and recursively partitions these clusters, forming a hierarchical structure. The index from the root to the leaf in this tree-like structure represents each tool, similarly to Brown clustering techniques.</p><p>• Semantic: In this approach, each tool is mapped to its name, using the semantic content of the tool names to guide the LLM. The tool's name provides a meaningful representation directly related to its function. The implementation details are described in Appendix D.</p><p>First, we conducted an analysis of the number of subtokens required to represent each tool for the different methods, as shown in Figure <ref type="figure" target="#fig_1">3</ref>. Atomic indexing ensures each tool to be a single token, while numeric indexing encodes tools into N tokens for tools numbered in (10 N -1 , 10 N ]. In contrast, both semantic indexing and hierarchical indexing produce a variable number of subtokens, with semantic indexing having more outliers with significantly longer sequences. The figure highlights the superiority of atomic indexing, where each tool is represented by a single token, whereas other methods require multiple tokens. This efficiency allows ToolGen to reduce the number of generation tokens and inference time in both the retrieval and agent scenarios. Table <ref type="table">3</ref>: Ablation study for tool retrieval. We assess the impact of removing retrieval training, tool memorization, and constrained beam search on ToolGen's performance, respectively. <ref type="table" target="#tab_2">NDCG1 NDCG3 NDCG5 NDCG1 NDCG3 NDCG5 NDCG1 NDCG3</ref> NDCG5 ToolGen 87.67 88.84 91.54 83.46 86.24 88.84 79.00 79.80 84.79 -memorization 84.00 86.77 89.35 82.21 83.20 86.78 77.00 77.71 84.37 -retrieval training 10.17 12.31 13.89 5.52 7.01 7.81 3.00 4.00 4.43 -constraining 87.67 88.79 91.45 83.46 86.24 88.83 79.00 79.93 84.92</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Model I1 I2 I3</head><p>Next, we examined the effectiveness of different indexing methods. As shown in Table <ref type="table" target="#tab_0">2</ref>, semantic indexing demonstrates the best retrieval performance across various metrics and scenarios, while atomic indexing closely follows in many cases. We attribute this to the fact that semantic indexing aligns better with the pretraining data of LLMs. However, this advantage diminishes as the training data and type increase. For example, in Section 5.3, we show that atomic indexing achieves better end-to-end results. We also show that combining constrained beam search with semantic indexing will cause biased tool usage, which is detailed in Section E.2.</p><p>Taking all these factors into account, we choose atomic indexing for ToolGen tool virtualization.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">ABLATION</head><p>We perform an ablation study to assess the impact of different training stages of ToolGen, as shown in Table <ref type="table">3</ref>. The results indicate that retrieval training is the crucial factor for tool retrieval performance, as it directly aligns with the retrieval task where inputs are queries and outputs are tool tokens. Removing tool memorization leads to a minor performance drop although it plays a role in improving generalization, which we will discuss further in Appendix J. Similarly, constrained beam search, while not a major contributor to retrieval task, helps prevent hallucinations, making it useful for end-to-end agent tasks, see Section 5.4.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">END-TO-END EVALUATION</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">EXPERIMENTAL SETUP</head><p>We make several modifications to the trajectory data from ToolBench to fit it into ToolGen framework. For example, as ToolGen does not require explicit selection of related tools as input, we remove this information in the system prompt. Further details are provided in Appendix K. Following this, we fine-tune the retrieval model using the reformatted data, resulting in an end-to-end ToolGen agent.</p><p>Baselines GPT-3.5: We use gpt-3.5-turbo-0613 as one of our baselines. The implementation is the same as used in StableToolBench <ref type="bibr" target="#b14">(Guo et al., 2024)</ref>, where the tool calling capability of GPT-3.5 is used to form a tool agent. ToolLlama-2: Qin et al. (2023) introduced ToolLlama-2 by fine-tuning Llama-2 <ref type="bibr" target="#b42">(Touvron et al., 2023)</ref> model on ToolBench data. ToolLlama-3: To ensure a fair comparison, we fine-tuned Llama-3, the same base model used in ToolGen, on the ToolBench dataset, creating the ToolLlama-3 baseline. In the rest of this paper, we refer to ToolLlama-3 as ToolLlama to distinguish it from ToolLlama-2.  <ref type="formula">2023</ref>), we define ground truth tools for a query as those selected by ChatGPT. For ToolLlama, we directly input the ground truth tools in the prompt, consistent with its training data format. For ToolGen, which is not trained on data with pre-selected tools, we add a prefix during the planning phase: I am using the following tools: [tool tokens], where [tool tokens] are virtual tokens corresponding to the ground-truth tools. w/ Retriever In the end-to-end experiments, we use a retrieval-based setting.</p><p>For baselines, we use the tools retrieved by ToolRetriever as the relevant tools. In contrast, ToolGen generates tool tokens directly, so no retriever is used.</p><p>All models are finetuned using a cosine scheduler with maximum learning rate set to 4 × 10 -5 . Context length is truncated to 6,144. The total batch size is set to 512. We further use Flash-Attention <ref type="bibr">(Dao et al., 2022;</ref><ref type="bibr">Dao, 2024)</ref> and Deepspeed ZeRO 3 <ref type="bibr" target="#b32">(Rajbhandari et al., 2020)</ref> to save memory.</p><p>ToolGen and ToolLlama follow different paradigms to complete tasks. ToolLlama generates Thought, Action, and Parameters in a single round, while ToolGen separates these steps. For Tool-Gen, we set a maximum of 16 turns, which allows for 5 rounds of actions and 1 final round for providing the answer. We compare this to ToolLlama, which operates with a 6-turn limit.</p><p>Additionally, we introduce a retry mechanism for all models to prevent early termination, the details are introduced in Section G. Specifically, if a model generates a response containing give up or I'm sorry, we prompt the model to regenerate the response with a higher temperature.</p><p>Metrics For end-to-end evaluation, we use StableToolBench <ref type="bibr" target="#b14">(Guo et al., 2024)</ref>, a stabilized tool evaluation benchmark that selects solvable queries from ToolBench and uses GPT-4 (OpenAI, 2024) to simulate outputs for failed tools. We employ two metrics to assess performance: Solvable Pass Rate (SoPR), which is the percentage of queries successfully solved, and Solvable Win Rate (SoWR), which indicates the percentage of answers outperforming those generated by a reference model (GPT-3.5 in this study). Additionally, we provide micro-average scores for each category.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">RESULTS</head><p>Table <ref type="table" target="#tab_1">4</ref> presents the end-to-end evaluation performance of various models in two settings: using Ground Truth Tools (G.T.) and a Retriever (R.). In the G.T. setting, ToolGen achieves the best average SoPR score of 54.19, outperforming GPT-3.5 and ToolLlama, with SoWR also highest for ToolGen at 49.70. In the Retriever setting, ToolGen maintains its lead with an average SoPR of 53.28 and SoWR of 51.51. ToolLlama shows competitive performance, surpassing ToolGen on some individual instances. An ablation study of end-to-end ToolGen is provided in Appendix K. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">INDEXING METHOD COMPARISON</head><p>Similar to indexing method comparison for retrieval task (Section 4.3), Table <ref type="table" target="#tab_2">5</ref> presents a comparison of different indexing methods for the end-to-end agent task. In this setting, constrained decoding is removed, allowing the agent to freely generate Thought, Action, and Parameters. From the results, we observe that the Atomic method achieves the best performance among the four indexing methods. We attribute this to the higher hallucination rates in the other methods, as discussed in Section 5.4. We evaluate model hallucination in tool generation within an end-to-end agent scenario. To do this, we input a query in the format the models were trained on. Specifically, for ToolGen, we input a query directly and prompt the model to respond using the ToolGen agent paradigm (i.e., sequentially generating Thought, Tool, and Parameters). We tested Actions decoding without the beam search constraints described in Section 3.6. For ToolLlama and GPT-3.5, we input the query along with 5 ground truth tools. In all settings, we report the proportion of generated tools that do not exist in the dataset out of all tool generation actions. Figure <ref type="figure" target="#fig_2">4</ref> shows the hallucination rates of nonexistent tools for different models. From the figure, we observe that, despite being provided with only five ground truth tools, ToolLlama and GPT-3.5 may still generate nonexistent tool names. In contrast, ToolGen, with constrained decoding, does not hallucinate at all due to its design.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">CONCLUSIONS</head><p>In this paper, we introduced ToolGen, a framework that unifies tool retrieval and execution in large language models (LLMs) by embedding tool-specific virtual tokens into the model's vocabulary, transforming tool interaction into a generative task. By incorporating a three-stage training process, ToolGen equips LLMs with the ability to efficiently retrieve and execute tools in real-world scenarios. This unified approach sets a new benchmark for scalable and efficient AI agents capable of handling vast tool repositories. Looking ahead, ToolGen opens doors for integrating advanced techniques like chain-of-thought reasoning, reinforcement learning, and ReAct, further enhancing the autonomy and versatility of LLMs in real-world applications.</p><p>A MORE RELATED WORK Previous work include Toolformer and ToolkenGPT, already employed vocabulary expansion for tool learning. The main difference between our work and the others is: previous studies primarily demonstrate that through SFT (in Toolformer) or adding new tool tokens with pre-computed embeddings (in ToolKenGPT), LLMs can learn to use a very small number of tools. However, in real-world tool-calling (agent) scenarios, previous methods require listing available tools in the prompt, which greatly limits their practical use. Examples can be seen in Figure <ref type="figure">5</ref>.</p><p>Other studies, such as ToolPlanner <ref type="bibr">(Wu et al., 2024b)</ref> and AutoACT <ref type="bibr" target="#b29">(Qiao et al., 2024)</ref>, have used reinforcement learning or developed multi-agent systems to enhance tool learning or task completion <ref type="bibr" target="#b29">(Qiao et al., 2024;</ref><ref type="bibr" target="#b23">Liu et al., 2023;</ref><ref type="bibr" target="#b36">Shen et al., 2024;</ref><ref type="bibr">Chen et al., 2024a)</ref>. We do not compare our model with these approaches for two reasons: (1) Most of these works rely on feedback mechanisms, either through Reflection <ref type="bibr" target="#b37">(Shinn et al., 2023)</ref> or a reward model, which is similar to ToolBench's evaluation design, where an LLM serves as an evaluator without access to ground truth answers. However, this is not the focus of our study, and our end-to-end experiment does not rely on such feedback mechanisms. (2) Our method is not in conflict with these approaches; instead, they can be integrated. Exploring this integration is left for future work.</p><p>ToolkenGPT Example 1: Answer the following questions with &lt;add&gt;, &lt;subtract&gt;, &lt;multiply&gt;, &lt;divide&gt;, &lt;power&gt;, &lt;sqrt&gt;, &lt;log&gt;, &lt;lcm&gt;, &lt;gcd&gt;, &lt;ln&gt;, &lt;choose&gt;, &lt;remainder&gt;, and &lt;permutate&gt;: Question: A coin is tossed 8 times, what is the probability of getting exactly 7 heads? Example 2: I am a household robot and I can take actions from '[FIND]', '[SIT]', '[SWITCHON]', '[TURNTO]', '[LOOKAT]', '[TYPE]', '[WALK]', '[LIE]', '[GRAB]', '[READ]', '[WATCH]', '[POINTAT]', '[TOUCH]', '[SWITCHOFF]', '[OPEN]', '[PUSH]', '[PUTOBJBACK]', '[CLOSE]', '[DRINK]', ...</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Toolformer</head><p>Your task is to complete a given piece of text by using a Machine Translation API. You can do so by writing "[MT(text)]" where text is the text to be translated into English.</p><p>Here are some examples: Input: He has published one book: O homem suprimido ("The Supressed Man") Output: He has published one book: O homem suprimido [MT(O homem suprimido)] ("The Supressed Man")</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ToolGen</head><p>Example 4 (ours, the same example is provided in the paper appendix) You are an AutoGPT, capable of utilizing numerous tools and functions to complete the given task. 1.First, I will provide you with the task description, and your task will commence. 2.At each step, you need to determine the next course of action by generating an action. ... (no specific tool or API mentioned in instruction) Could you please fetch the addresses for the postcode 'PL11DN'? I would like to know the number of items found, the district, ward, county, country, and geocode details (eastings, northings, latitude, and longitude).</p><p>Figure <ref type="figure">5</ref>: Real examples from ToolkenGPT, Toolformer, and ToolGen (ours). Both ToolkenGPT and Toolformer describe tools available in the prompt, while ToolGen does not require tools been mentioned in its prompt.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B TOOL EXTENSION AND MAINTENANCE</head><p>In ToolGen and other generative retrieval systems, tools or documents are embedded into the model's parameters. Therefore, how to add and maintenance new tools/documents become challenging. For ToolGen, it not only generates the proper tool, but also fetches the documentation for that tool. If there are minor changes that the tool usage scenarios keep the same (e.g. small parameter changes), it can still generate the tool and rely on the fetched documentation to do further tasks.</p><p>For vast changes that the usage scenarios are different or adding totally new tools, we admit that ToolGen is not able to utilize these tools. However, this inefficiency exists and is persistent for generative retrieval systems Despite that ToolGen is inefficient of adopting to new tools, its unified design lead to unique advantages such as easy integration with Chain-of-Thought <ref type="bibr" target="#b47">(Wei et al., 2023)</ref>, Reinforcement Learning with Human Feedback <ref type="bibr" target="#b27">(Ouyang et al., 2022)</ref>, and inference time scaling <ref type="bibr" target="#b2">(Brown et al., 2024;</ref><ref type="bibr" target="#b38">Snell et al., 2024;</ref><ref type="bibr">Wu et al.)</ref>. We leave the problem of maintaining and adding tools to future work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C REAL TOOL EXAMPLE</head><p>Figure 6 shows a real tool example. Each tool is a collection of several APIs. In our experiments, the following fields are used: "tool name" is the name of the tool. "tool description" describes tool related information such as the functionality of the tool. In each API, "name" is the name of the API. "description" describes API related information. "method" is the http method for calling the API. "required parameters" are parameters that must be filled when calling the API. Optionally, "optional parameters" can be set for extra parameters.</p><p>{ "tool_name":"YouTube Hub", "tool_description":"Fetch all details about single video likes, views, title, thumbnail etc.", "home_url":"<ref type="url" target="https://rapidapi.com/itsrohitofficial-XBPdXttOUQ/api/youtube-hub/">https://rapidapi.com/itsrohitofficial-XBPdXttOUQ/api/youtube-hub/</ref>", "host":"youtube-hub.p.rapidapi.com", "api_list":[ { "name":"Get Video Details", "url":"<ref type="url" target="https://youtube-hub.p.rapidapi.com/">https://youtube-hub.p.rapidapi.com/</ref>", "description":"Fetch all basic information about video", "method":"GET", "required_parameters":[ { "name":"id", "type":"STRING", "description":"", "default":"fD6SzYIRr4c" } ], "optional_parameters":[], } ] } Figure 6: A real tool example. The tool contains one API. We have removed unnecessary fields for simplicity.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D TOOL VIRTUALIZATION IMPLEMENTATION</head><p>ToolGen adopts a single and unique token to represent a tool, which shows its superiority for tool retrieval and tool calling. We also introduced other methods to index a tool, including semantic, numeric, and hierarchical. The following is a detailed implementation of how we implement each indexing.</p><p>Atomic indexing is the method we use in ToolGen. Compared to other methods, it takes a single token as a tool and does not hallucinate to nonexistent tools. We use &lt;&lt;tool name&amp;&amp;api name&gt;&gt; to combine the tool name and api name to form a single token. For example, for the example in Appendix C, the resulting token is &lt;&lt;Youtube Hub&amp;&amp;Get Video Details&gt;&gt;.</p><p>Semantic indexing maps each tool to the name used in ToolBench, which is also a combination between tool name and API name. However, the name can be tokenized into multiple tokens so that the model can perceive its semantic meanings. For the example in Appendix C, the resulted mapping is get video details for youtube hub.</p><p>Numeric indexing maps each tool to a unique number. We first get a list of all tools, with a length about 47,000. For all tools, we use a five digit number separated by space to represent the tool. If the example in Appendix C is the 128th element in the list, we use 0 0 0 1 2 8 to represent the tool. Since Llama-3 tokenizer encodes each number separately, numeric indexing will lead to tool tokens with same number of sub-tokens.</p><p>Hierarchical also maps each tool into a number. Different from Numeric indexing, we inject structure information into the tool representation by iterative clustering. During each iteration, we cluster tools into ten clusters, where each cluster is assigned a number from 0 to 9. For each cluster, we repeat this clustering process until there is only one tool in the cluster. These steps form a clustering tree. We take the number from root to the leaf as the representation to the tool in that leaf. The example in Appendix C may be assigned a number longer than five digits, such as 0 1 2 2 3 3 3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E CONSTRAINED BEAM SEARCH E.1 IMPLEMENTATION</head><p>During retrieval and completing end-to-end agent tasks, we use constrained beam search to limit the generated actions to be valid tool tokens. The detailed steps are shown in Algorithm 1. The basic idea is to limit the searching space during beam search step. To achieve this, we need to first build a disjunctive trie, where each node represents a tool token id. Children of the node are all feasible ids following the current id. Using this tree, we can determine all possible next token ids based on current searched ids. During beam search step, we mask out all other unfeasible tokens' logits, forcing possible ids to be sampled or searched.</p><p>For retrieval, this can be directly applied during generation. For end-to-end agent tasks, since we have decomposed a inference step into three conversational turns, we can easily detect when Tool-Gen needs to generate an action, therefore apply the constraint. Figure <ref type="figure" target="#fig_5">7</ref> shows an end-to-end inference example of ToolGen, where there is no relevant tools for ToolGen to choose. It can generate the tool token directly and complete the task.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.2 BIAS ANALYSIS</head><p>For semantic indexing, the prevalent constrained beam search introduces bias toward tools with more subtokens after tokenization. Traditionally, beam search retrieves the top-k decoding sequences at each step, and the sequence probability is computed by multiplying the probabilities of each token (given previous tokens) in the sequence and then averaging by the token count. Consider the following example with two tools:</p><p>• ToolA: get music from us → <ref type="bibr">[get, music, from, usa]</ref> System: You are an AutoGPT, capable of utilizing numerous tools and functions to complete the given task. 1.First, I will provide you with the task description, and your task will commence. 2.At each step, you need to determine the next course of action by generating an action token. 3.Following the token, you will receive the documentation of the action corresponding to the token. You need to generate the input of the action, transitioning you to a new state. Subsequently, you will make decisions about the next steps, and repeat this process. 4.After several iterations of generating actions and inputs, you will ultimately complete the task and provide your final answer. ... ... : I recently visited Viva City and I was impressed by the menu. I would like to know more about the menu items at venue 5a76c927bb5d660001e09731. Can you provide me with the menu category, price, availability, rules, items in set, and other relevant details? Please use the language 'zh-hans' for the menu details.</p><p>: I need to call the "&lt;&lt;Viva City Documentation&amp;&amp;MenuDetails&gt;&gt;" function to retrieve the menu details for venue 5a76c927bb5d660001e09731. The reason for calling this function is to provide the user with the menu category, price, availability, rules, items in set, and other relevant details. The function is called with the arguments "lang" set to "zh-hans" and "is_id" set to "5a76c927bb5d660001e09731" to ensure that the menu details are provided in the desired language and for the specific venue.</p><p>: Generate the action.</p><p>: &lt;&lt;Viva City Documentation&amp;&amp;MenuDetails&gt;&gt; : Please give the input. Here is the documentation: {'name': '&lt;&lt;Viva City Documentation&amp;&amp;VenueDetails&gt;&gt;', 'description': 'Get venue details using KV (need resync to get latest data) and filter dynamic multi language data based on query params.', 'required': [{'name': 'id', 'type': 'STRING', 'description': '', 'default': '56c467cb7b0d464811a42017'}, {'name': 'lang', 'type': 'STRING', 'description': '', 'default': 'zh-hans'}], 'optional': []} : {\n "is_id": "5a76c927bb5d660001e09731",\n "lang": "zh-hans"\n} : {'error': '', 'response': {'menu_id': '5a76c927bb5d660001e09731', 'language': 'zh-hans', 'menu_details': {'sections': [{'section_name': '开胃菜', 'items': [{'item_name': '春卷', 'description': '脆皮春卷，搭配特制酱汁', 'price': 12.99}, {'item_name': '鸡肉串', 'description': '香辣鸡肉串，外焦里嫩', 'price': 15.99}]}, {'section_name': '主菜', 'items': [{'item_name': '宫保鸡丁', 'description': '经典川菜，麻辣鲜香', 'price': 18.99}, {'item_name': '清蒸鲈鱼', 'description': '清新淡雅，营养健康', 'price': 22.99}]}], 'special_notes': '本菜单提供纯素选项，请告知服务员。'}} : &lt;&lt;Finish&gt;&gt; : Please give the input. Here is the documentation: {'required': [], 'optional': [{'name': 'give_answer', 'description': 'Output the answer', 'type': 'string'}, {'name': 'give_up_and_restart', 'description': 'Unable to handle the task from this step', 'type': 'string'}]} : {"return_type": "give_answer", "final_answer" Then user gives the task query. ToolGen generates the Thought, we then use user role to hint the model to generate the action. After generating the action, we use user again to give the tool documentation. The model will generate tool inputs based on this documentation. encoding, hallucination and bias do not exist even with constrained decoding (not beam search) because each tool is represented by a single token, ensuring unbiased and deterministic decoding.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F INTEGRATE INSTRUCTION-FOLLOWING DATA</head><p>To ensure the model's general ability is not lost after tool-specific task training, we incorporated general instruction-following data OpenHermes-2.5 into each training stage of ToolGen. <ref type="foot" target="#foot_0">2</ref> We used a 50:50 ratio of our tool data and instruction-following data, resulting in a model called ToolGen-Instruct, indicating its capability to follow general instructions.</p><p>We evaluate the models general ability using 6 widely used LLM evaluation benchmarks, including ARC-easy, ARC-challenge, Commonsense QA, Hellaswag, Winograde, and GSM8K, all with 3shot in-context examples. Results are shown in Table <ref type="table" target="#tab_3">6</ref>. To check ToolGen-Instruct's tool learning results, we conduct the end-to-end evaluation, see Table <ref type="table" target="#tab_4">7</ref>. Surprisingly, we find that its average performance improved by 3-5 percentage points compared to ToolGen. We did a manual comparison and found that ToolGen-Instruct performs better on final output summarization and provides more positive responses to the user after tool calling. From this observation, we conclude that general-purpose training can help ToolGen provide more helpful responses. We leave further exploration to future work. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G RETRY MECHANISM</head><p>For reproducibility, we have adopted several techniques such as fixing random seeds and setting temperatures to zero for decoding. However, we find this results in some problems for the whole task inference. Models tend to give up early while not trying enough for possible tools. And they are likely to say sorry when giving the final answer, which affects the end-to-end evaluation. Since our goal is to evaluate the tool usage capability, we want to mitigate this negative impact that is more related to summary ability. We use a retry mechanism, which simply regenerates the turn when models try to give up or say sorry.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>J GENERALIZATION</head><p>In our three-stage training process, the data in the tool memorization stage encompasses all tools. However, the training data in the second and third stages has limited tool coverage. This reflects a practical scenario where we may have access to the names and documents of more tools, but less coverage of the use cases of these tools in iterative training data.</p><p>We measure the model's generalization, in this case, refers to the ability to correctly retrieve or use tools that were not included in the training data for stage 2 or 3. We believe that stage 1 plays a crucial role in achieving this, as without it, the retrieval or tool-using capabilities learned in later stages may not generalize to these unseen tools.</p><p>First, for ToolGen Agent, we measure the performance on queries requiring tools that the model hasn't been trained on. Table <ref type="table" target="#tab_5">9</ref> shows the end-to-end evaluation of models on unseen tools. ToolGen Agent underperforms ToolLlama, indicating a weaker generalization capability in completing tasks.</p><p>Tool Memorization for Generalization It can been seen in Table <ref type="table">8</ref> that tool memorization stage plays a role in generalization, which is validated by the drop on performance of unseen tools after removing this stage. However, this drop is relatively small. We noticed that the retrieval training dataset contains approximately 500k samples, and the end-to-end training consists of 183k samples -significantly more than the total number of tools (47k). This could result in most tools being seen during other training stages, which may affect the investigation of how memorization contributes to generalization.</p><p>To validate how the memorization stage influences the generalization abilities of ToolGen, we first train ToolGen on a domain of retrieval data, and testing on another domain. Table <ref type="table" target="#tab_6">10</ref> shows the tool retrieval results of ToolGen, which is trained on I1 domain retrieval data and test on I2 and I3 domain. The table demonstrates that tool memorization also plays an important role, without which will lead to a poor generalization in tool retrieval.</p><p>We then train ToolGen on fewer retrieval data, and test its end-to-end performance on unseen tools. Table <ref type="table" target="#tab_7">11</ref> shows the results of ToolGen on unseen tools with volume of 10%, 50%, and 100% retrieval data. As the volume of retrieval data decreases, the importance of tool memorization increases.  Our ToolGen data are adapted and converted from ToolBench data. Specifically, we adopt the tool documentations as the data for tool memorization training, where the input is tool document and the output is the corresponding tokens.</p><p>For retrieval training, we use the data in ToolBench that are annotated for tool retrieval, where a query was annotated with several relevant tools. We take the query as input, and convert relevant tools into virtual tokens. These tokens are then used as outputs for retrieval training.</p><p>For end-to-end agent-tuning, we use the interaction trajectories as the sources and make the following conversions: (1) Each trajectory contains available tools in system prompt for solving the query. When completing the task, ToolLlama relies on the retrieved tools in system prompt to solve the task, while ToolGen can generate tools directly. Therefore, we remove the tools in system prompt.</p><p>(2) We replace all tool names in the trajectory to corresponding virtual tool tokens. (3) In original trajectories, agent model generates Thought, Action, Action Input sequentially (also referred ReAct). We decompose the whole ReAct into three conversational turns. During the first turn, the agent model generates a Thought, and we use a user to prompt the model to generate an action.</p><p>In second turn, the model generates the action, which are virtual tool tokens. We then fetch the document corresponding to those tokens, so the model knows which parameters to specify. In third turn, the model generates parameters for the tool.</p><p>The number of samples in each dataset is shown in Table <ref type="table" target="#tab_0">12</ref>. Samples of tool memorization and retrieval training are shown in Figure <ref type="figure">9</ref>. A sample of end-to-end agent-tuning is shown in Figure <ref type="figure" target="#fig_0">10</ref>.</p><p>Table <ref type="table" target="#tab_0">12</ref>: Dataset statistics for the three-stage training. For tool memorization, there are some repeated tools, resulting the number of samples slightly larger than the tools we used.</p><p>Dataset Tool Memorization Retrieval Training End-to-End Agent-Tuning I1 I2 I3 All #num 49,936 194,086 222,783 72,833 489,702 183,336 Tool Memorization User: Tool Name: Thai Drivers License OCR. Tool Description: Extract the information on a Thai driver's license and return text results such as driver's license number and personal information. Api Name: Driver's License Api Description: Extract the information on a Thai driver's license and return text results such as driver's license number and personal information. Assistant: &lt;&lt;Thai Drivers License OCRDriver's License&gt;&gt; Retrieval Training User: My friends and I are organizing a hackathon on 'web development' and 'mobile app development'. We need some inspiration and guidance. Can you fetch the top stories on these topics from Medium.com? Assistant: &lt;&lt;Medium&amp;&amp;/search/topics&gt;&gt; End-to-End Agent-Tuning You are an AutoGPT, capable of utilizing numerous tools and functions to complete the given task. 1.First, I will provide you with the task description, and your task will commence. 2.At each step, you need to determine the next course of action by generating an action token. 3.Following the token, you will receive the documentation of the action corresponding to the token. You need to generate the input of the action, transitioning you to a new state. Subsequently, you will make decisions about the next steps, and repeat this process. 4.After several iterations of generating actions and inputs, you will ultimately complete the task and provide your final answer. Remember: 1.The state changes are irreversible, and you cannot return to a previous state. 2.Keep your actions concise, limiting them to best suits the current query. 3.You can make multiple attempts. If you plan to try different conditions continuously, perform one condition per try. 4.If you believe you have gathered enough information, generate the action "&lt;&lt;Finish&gt;&gt; with argument give_answer" to provide your answer for the task. 5.If you feel unable to handle the task from this step, generate the action "&lt;&lt;Finish&gt;&gt; with argument give_up_and_restart". Let's Begin! Task description: You should use actions to help handle the real time user querys. Remember: 1.ALWAYS generate "&lt;&lt;Finish&gt;&gt;" at the end of the task. And the final answer should contain enough information to show to the user. If you can't handle the task, or you find that actions always fail(the function is not valid now), use action &lt;&lt;Finish&gt;&gt; with give_up_and_restart. 2.Only generate actions and inputs. System: Could you please fetch the addresses for the postcode 'PL11DN'? I would like to know the number of items found, the district, ward, county, country, and geocode details (eastings, northings, latitude, and longitude). Begin!</p><p>User:</p><p>Based on the user's query, they want to fetch addresses for the postcode 'PL11DN' and retrieve specific details like the number of items found, district, ward, county, country, and geocode details. The current API call is for the function 'find_by_postcode' with the argument 'postcode' set to 'PL11DN'. This API is useful because it can provide addresses based on a given UK postcode. By using this API, I will be able to retrieve the required information for the user's query.</p><p>Assistant:</p><p>Figure <ref type="figure">9</ref>: Datasets examples for tool memorization and retrieval training. We use user role to represent inputs and assistant role to represent outputs.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Comparison between previous retrieval-based methods and our ToolGen. Previous methods use a retriever to retrieve relevant tools based on similarity matching, which are further put into prompts for LLMs to select. ToolGen can retrieve tools by generating tool tokens directly. ToolGen can also complete the task without relying on any external retriever.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 :</head><label>3</label><figDesc>Figure3: The distribution of the number of subtokens per tool varies across different indexing methods.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure4: The hallucination rates of generating nonexistent tools across different models are shown. ToolGen does not generate any nonexistent tools when using constrained decoding. However, without this constraint, ToolGen generates 7% non-tool tokens during the Action generation stage with atomic indexing, and even more with semantic indexing. For ToolLlama and GPT-3.5, despite being provided with five ground truth tools in the prompt, hallucinations still occur. Without any tools specified in the prompt, ToolLlama generates over 50% nonexistent tool names.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><figDesc>Sun et al. (2023a); Chen et al. (2023b); Mehta et al. (2023a). Current methods to adapt these changes include continual training and constrained optimization(Mehta  et al., 2023a; Kishore et al., 2023a), which we believe could also be applied to ToolGen to alleviate the above challenges.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>:</head><figDesc>The menu details for venue 5a76c927bb5d660001e09731 are as follows:\n-Menu category: Chinese cuisine\n-Price: \n -Item 1: 12.99 RMB\n -Item 2: 15.99 RMB\n -Item 3: 18.99 RMB\n -Item 4: 22.99 RMB\n-Availability: \n -Item 1: Available\n -Item 2: Available\n -Item 3: Available\n -Item 4: Available\n-Rules: \n -Item 1: No specific rules mentioned\n -Item 2: No specific rules mentioned\n -Item 3: No specific rules mentioned\n -Item 4: No specific rules mentioned\n-Items in set: \n -Item 1: Set of 2\n -Item 2: Set of 2\n -Item 3: Set of 2\n -Item 4: Set of 2\n-Other relevant details: \n -Special notes: The menu is subject to change and the prices are subject to change. Please check with the venue for the most up-to-date information.\n\nPlease let me know if there's anything else I can assist you with! : Generate the action.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 7 :</head><label>7</label><figDesc>Figure7: An inference example of ToolGen. A system prompt is given first with no relevant tools. Then user gives the task query. ToolGen generates the Thought, we then use user role to hint the model to generate the action. After generating the action, we use user again to give the tool documentation. The model will generate tool inputs based on this documentation.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 2 :</head><label>2</label><figDesc>Retrieval evaluation for different indexing methods in Multi-Domain setting. Best results are bolded and second best results are underlined.</figDesc><table><row><cell>Model</cell><cell cols="9">I1 NDCG1 NDCG3 NDCG5 NDCG1 NDCG3 NDCG5 NDCG1 NDCG3 NDCG5 I2 I3</cell></row><row><cell>Numetric</cell><cell>83.17</cell><cell>84.99</cell><cell>88.73</cell><cell>79.20</cell><cell>79.23</cell><cell>83.88</cell><cell>71.00</cell><cell>74.81</cell><cell>82.95</cell></row><row><cell>Hierarchical</cell><cell>85.67</cell><cell>87.38</cell><cell>90.26</cell><cell>82.22</cell><cell>82.70</cell><cell>86.63</cell><cell>78.50</cell><cell>79.47</cell><cell>84.15</cell></row><row><cell>Semantic</cell><cell>89.17</cell><cell>91.29</cell><cell>93.29</cell><cell>83.71</cell><cell>84.51</cell><cell>88.22</cell><cell>82.00</cell><cell>78.86</cell><cell>85.43</cell></row><row><cell>Atomic</cell><cell>87.67</cell><cell>88.84</cell><cell>91.54</cell><cell>83.46</cell><cell>86.24</cell><cell>88.84</cell><cell>79.00</cell><cell>79.80</cell><cell>84.79</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 4 :</head><label>4</label><figDesc>End-to-end evaluation performance on unseen instructions under two settings. For R. setting, GPT3.5 and ToolLlama use ToolRetriever, while ToolGen does not use external retriever. For all results, SoPR and SoWR are evaluated three time and reported with mean values.</figDesc><table><row><cell>Model</cell><cell>I1</cell><cell>I2</cell><cell>SoPR</cell><cell>I3</cell><cell>Avg.</cell><cell>I1</cell><cell cols="2">SoWR I2 I3</cell><cell>Avg</cell></row><row><cell></cell><cell></cell><cell></cell><cell cols="5">w/ Ground Truth Tools (G.T.)</cell><cell></cell></row><row><cell>GPT-3.5</cell><cell cols="5">56.60 47.80 54.64 50.91</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell cols="10">ToolLlama-2 53.37 41.98 46.45 48.43 47.27 59.43 27.87 47.58</cell></row><row><cell>ToolLlama</cell><cell cols="9">55.93 48.27 52.19 52.78 50.31 53.77 31.15 47.88</cell></row><row><cell>ToolGen</cell><cell cols="9">61.35 49.53 43.17 54.19 51.53 57.55 31.15 49.70</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">w/ Retriever (R.)</cell><cell></cell><cell></cell></row><row><cell>GPT-3.5</cell><cell cols="9">51.43 41.19 34.43 45.00 53.37 53.77 37.70 50.60</cell></row><row><cell cols="10">ToolLlama-2 56.13 49.21 34.70 49.95 50.92 53.77 21.31 46.36</cell></row><row><cell>ToolLlama</cell><cell cols="9">54.60 49.96 51.37 51.55 49.08 61.32 31.15 49.70</cell></row><row><cell>ToolGen</cell><cell cols="9">56.13 52.20 47.54 53.28 50.92 62.26 34.42 51.51</cell></row></table><note><p>Settings w/ Ground Truth Tools (G.T.) FollowingQin et al. (</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 5 :</head><label>5</label><figDesc>End-to-end evaluation for different indexing methods.</figDesc><table><row><cell>Indexing</cell><cell>I1</cell><cell>I2</cell><cell>SoPR</cell><cell>I3</cell><cell>Avg.</cell><cell>I1</cell><cell>SoWR I2 I3</cell><cell>Avg</cell></row><row><cell>Numeric</cell><cell cols="8">34.76 29.87 46.99 35.45 25.77 33.02 29.51 28.79</cell></row><row><cell cols="9">Hierarchical 50.20 45.60 32.79 45.50 38.04 43.40 29.51 38.18</cell></row><row><cell>Semantic</cell><cell cols="8">58.79 45.28 44.81 51.87 49.69 57.55 26.23 47.88</cell></row><row><cell>Atomic</cell><cell cols="8">58.08 56.13 44.81 55.00 47.85 57.55 29.51 47.58</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 6 :</head><label>6</label><figDesc>3-shot evaluation results across different NLP benchmark tasks, including ARC Challenge, ARC Easy, Commonsense QA, Hellaswag, Winograde, and GSM8K. The average performance (AVG.) is calculated as the mean across all tasks.From the table, we can see that ToolGen's general capability is limited. The original Llama 3 got an average score of 63.76, while ToolGen obtained almost random results with a score of 26.94, showing a significant gap. However, ToolGen-Instruct shows significant improvement, resulting in a 67.4 average score.</figDesc><table><row><cell>Method</cell><cell cols="7">ARC-C ARC-E CSQA Hellaswag Winograde GSM8K AVG.</cell></row><row><cell>Llama-3</cell><cell>50.34</cell><cell>80.09</cell><cell>69.37</cell><cell>60.13</cell><cell>73.32</cell><cell>49.28</cell><cell>63.76</cell></row><row><cell>Llama-3-Inst</cell><cell>57.16</cell><cell>85.31</cell><cell>78.05</cell><cell>58.69</cell><cell>76.24</cell><cell>74.45</cell><cell>71.65</cell></row><row><cell>ToolGen</cell><cell>20.14</cell><cell>33.88</cell><cell>19.66</cell><cell>31.61</cell><cell>54.62</cell><cell>1.74</cell><cell>26.94</cell></row><row><cell>ToolGen-Inst</cell><cell>51.62</cell><cell>82.49</cell><cell>78.79</cell><cell>56.33</cell><cell>73.16</cell><cell>62.02</cell><cell>67.40</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 7 :</head><label>7</label><figDesc>End-to-end agent evaluation of ToolGen and ToolGen-Instruct</figDesc><table><row><cell>Method</cell><cell></cell><cell>SoPR</cell><cell></cell><cell></cell><cell></cell><cell cols="2">SoWR</cell><cell></cell></row><row><cell></cell><cell cols="8">I1 Inst. I2 Inst. I3 Inst. AVG. I1 Inst. I2 Inst. I3 Inst. AVG.</cell></row><row><cell>ToolGen</cell><cell>56.13</cell><cell>52.20</cell><cell>47.54</cell><cell>53.28</cell><cell>50.92</cell><cell>62.26</cell><cell>34.42</cell><cell>51.54</cell></row><row><cell>ToolGen-Inst</cell><cell>63.09</cell><cell>55.03</cell><cell>54.10</cell><cell>58.84</cell><cell>51.53</cell><cell>60.38</cell><cell>50.81</cell><cell>54.24</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 9 :</head><label>9</label><figDesc>Generalization results of ToolGen. We test and compare the performance of ToolGen with other models on queries require unseen tools during training.</figDesc><table><row><cell>Model</cell><cell>Setting</cell><cell cols="3">SoPR I1-Tool. I1-Cat. I2 Cat.</cell><cell>Avg.</cell><cell cols="3">SoWR I1-Tool I1-Cat. I2 Cat.</cell><cell>Avg</cell></row><row><cell>GPT-3.5</cell><cell>GT.</cell><cell>58.90</cell><cell>60.70</cell><cell>54.60</cell><cell>58.07</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell cols="2">ToolLlama GT.</cell><cell>57.38</cell><cell>58.61</cell><cell>56.85</cell><cell>57.68</cell><cell>43.04</cell><cell>50.31</cell><cell>54.84</cell><cell>49.04</cell></row><row><cell>ToolGen</cell><cell>GT.</cell><cell>52.32</cell><cell>40.46</cell><cell>39.65</cell><cell>47.67</cell><cell>39.24</cell><cell>38.56</cell><cell>40.32</cell><cell>39.30</cell></row><row><cell>GPT-3.5</cell><cell>Retrieval</cell><cell>57.59</cell><cell>53.05</cell><cell>46.51</cell><cell>52.78</cell><cell>46.20</cell><cell>54.25</cell><cell>54.81</cell><cell>51.58</cell></row><row><cell cols="2">ToolLlama Retrieval</cell><cell>57.70</cell><cell>61.76</cell><cell>45.43</cell><cell>54.96</cell><cell>48.73</cell><cell>50.98</cell><cell>44.35</cell><cell>48.30</cell></row><row><cell>ToolGen</cell><cell></cell><cell>56.54</cell><cell>49.46</cell><cell>51.96</cell><cell>52.66</cell><cell>40.51</cell><cell>39.87</cell><cell>37.90</cell><cell>39.53</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 10 :</head><label>10</label><figDesc>Retrieval results of ToolGen trained on I1 domain and tested on I2 and I3 domain.</figDesc><table><row><cell>Setting</cell><cell></cell><cell>I2</cell><cell></cell><cell></cell><cell>I3</cell><cell></cell></row><row><cell></cell><cell cols="6">NDCG1 NDCG3 NDCG5 NDCG1 NDCG3 NDCG5</cell></row><row><cell>w/o memorization</cell><cell>11.28</cell><cell>16.72</cell><cell>19.37</cell><cell>12.00</cell><cell>15.07</cell><cell>18.15</cell></row><row><cell>w/ memorization</cell><cell>40.86</cell><cell>50.37</cell><cell>55.38</cell><cell>33.00</cell><cell>40.98</cell><cell>49.97</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_7"><head>Table 11 :</head><label>11</label><figDesc>End-to-end performance of ToolGen on unseen tools trained with 10%, 50%, and 100% retrieval data respectively.</figDesc><table><row><cell>Setting</cell><cell></cell><cell>SoPR</cell><cell></cell><cell></cell><cell>SoWR</cell><cell></cell></row><row><cell></cell><cell>10%</cell><cell>50%</cell><cell>100%</cell><cell>10%</cell><cell>50%</cell><cell>100%</cell></row><row><cell>w/o memorization</cell><cell>36.60</cell><cell>48.67</cell><cell>51.70</cell><cell>26.68</cell><cell>37.32</cell><cell>39.32</cell></row><row><cell>w/ memorization</cell><cell cols="6">40.99(+4.38) 49.07(+0.40) 52.66(+0.96) 34.23(+7.55) 37.60(+0.28) 39.53(+0.21)</cell></row><row><cell cols="4">K ADAPT TOOLBENCH DATA TO TOOLGEN</cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_0"><p>https://huggingface.co/datasets/teknium/OpenHermes-2.5</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Algorithm 1 Constrained Beam Search</p><p>1: 1. Build Disjunctive Trie 2: Input: Set of tool token ids {Ids 1 , Ids 2 , . . . , Ids n } 3: Initialize Root ← {} 4: for each sequence Ids in the set do 5: Level ← Root 6: for each token id in Ids do 7: if id / ∈ Level then 8: Level[id] ← {} 9: end if 10: Level ← Level[id] 11: end for 12: end for 13: Trie ← Root 14: 2. Constrained Beam Search 15: Inputs: Initial InputIds; Beam width k; Language model LM 16: Output: Searched Beams 17: Initialize Beams ← [(InputIds, root of T)] 18: while Beams is not empty do 19: Initialize NewBeams ← [ ] 20: beam scores ← [ ] 21: for each (beam, node) in Beams do 22:</p><p>if beam ends with eos token id then 23:</p><p>Output beam and remove beam from beams  After tokenization, the first three tokens are identical. For the fourth token, suppose usa has a probability of 0.7, and spain has a probability of 0.3. However, after spain, ToolB has a long tail of tokens with no alternatives, resulting in all subsequent tokens having a probability of 1.</p><p>How should the best tool for decoding be determined in this scenario? Using the traditional method, ToolB's sequence probability increases as its unique number of tokens grows with each time step. This results in that tools with more unique tokens will have a higher probability to be retrieved.</p><p>As shown above, semantic tool name encoding tends to produce many long-name tools, and hence such bias becomes severe. However, there is no common solution to this type of bias. Note that this problem also exists in constrained natural language decoding. Still, because language candidates are typically very large, and constraints are usually associated with ban list of tokens or words, this issue is not usually considered.</p><p>Based on the above observations, we made the hallucination comparison in paper, with a setting of non constrained beam search (to avoid length bias) for other encoding methods. For atomic</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>H TOOLGEN FOR DIFFERENT SIZES OF LLMS</head><p>We also investigate how ToolGen's performance changes as the sizes of base models change. Llama-3 series of models are not suitable as we can only use the 8B model and the 70B is too large for us. Therefore, we select Qwen2.5 <ref type="bibr" target="#b41">(Team, 2024)</ref> with sizes of 1.5B, 3B, 7B, and 14B. As shown in Figure <ref type="figure" target="#fig_8">8</ref>, models with larger sizes achieve better performance in tool retrieval and agent tasks.</p><p>When the model size reaches 7B, the performance tends to plateau. And scaling it to 14B does not necessarily improve performance. While for generalization, larger models do not show better generalization capability.</p><p>1.5B 3B 7B 14B 82 84 86 88 90 Tool Retrieval NDCG@1 NDCG@5 1.5B 3B 7B 14B 46 48 50 52 54 56 58 End-to-End Evaluation SoPR SoWR 1.5B 3B 7B 14B 38 40 42 44 46 48 50 52</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Generalization Evaluation</head><p>SoPR SoWR </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I ABLATION</head><p>Table <ref type="table" target="#tab_10">8</ref> shows the ablation results for end-to-end evaluation. For unseen instructions, ToolGen Agent shows a slightly better performance without tool memorization or retrieval training. However, for unseen tools, training without the first two stages causes a drop in both SoPR and SoWR. This demonstrates that the first two stage training plays a role in generalization capability of ToolGen, and retrieval training is more significant compared to tool memorization. User: &lt;&lt;Finish&gt;&gt; Assistant:</p><p>Please give the input. Here is the documentation: {'required': [], 'optional': [{'name': 'give_answer', 'description': 'Output the answer', 'type': 'string'}, {'name': 'give_up_and_restart', 'description': 'Unable to handle the task from this step', 'type': 'string'}]} User: { "return_type": "give_answer", "final_answer": "The number of items found: 37\nDistrict: Plymouth\nWard: St Peter and the Waterfront\nCounty: Devon\nCountry: England\nGeocode details:\n-Eastings: 248025\n-Northings: 0054420\n-Latitude: 50.370001\n-Longitude: -4.138397" } Assistant:</p><p>Figure <ref type="figure">10</ref>: An example for end-to-end agent-tuning.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><figDesc>← Top k token ids and their groups from beam scores 32:for each id, group in zip(TopIds, Groups) do 33: NewBeam ← beams[group] +[id]    </figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><figDesc>get music from spain black singer... (a long-tail name) → [get, music, from, spain, black, singer, ...]</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 8 :</head><label>8</label><figDesc>Performance and generalization of ToolGen with different sizes of LLMs as the base model. For tool retrieval, the performance is calculated as the average score of I1, I2, and I3 domains. For end-to-end and generalization evaluation, it is based on the average score of unseen instructions and tools respectively.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_10"><head>Table 8 :</head><label>8</label><figDesc>Ablation results for ToolGen end-to-end evaluation. Here Inst. represents unseen queries (instructions) and Tool. and Cat. mean unseen tools during training.</figDesc><table><row><cell>Model</cell><cell></cell><cell>SoPR</cell><cell></cell><cell cols="2">SoWR</cell></row><row><cell></cell><cell cols="5">I1-Inst. I2-Inst. I3-Inst. Avg. I1-Inst. I2-Inst. I3-Inst. Avg.</cell></row><row><cell>ToolGen</cell><cell>54.60</cell><cell>52.36</cell><cell>43.44 51.82 50.31</cell><cell>54.72</cell><cell>26.23 47.28</cell></row><row><cell>w/o retrieval training</cell><cell>56.95</cell><cell>46.70</cell><cell>50.27 52.42 49.69</cell><cell>50.94</cell><cell>34.43 47.27</cell></row><row><cell>w/o memorization</cell><cell>56.03</cell><cell>47.96</cell><cell>57.38 53.69 49.08</cell><cell>59.43</cell><cell>34.43 49.70</cell></row><row><cell></cell><cell cols="5">I1-Tool. I1-Cat. I2 Cat. Avg. I1-Tool I1-Cat. I2 Cat. Avg.</cell></row><row><cell>ToolGen</cell><cell>56.54</cell><cell>49.46</cell><cell>51.96 52.66 40.51</cell><cell>39.87</cell><cell>37.90 39.53</cell></row><row><cell>w/o retrieval training</cell><cell>49.47</cell><cell>40.31</cell><cell>37.90 42.84 36.71</cell><cell>30.07</cell><cell>36.29 34.18</cell></row><row><cell>w/o memorization</cell><cell>58.86</cell><cell>46.19</cell><cell>49.87 51.70 37.34</cell><cell>38.56</cell><cell>42.74 39.32</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Self-rag: Learning to retrieve, generate, and critique through self-reflection</title>
+		<author>
+			<persName><forename type="first">Akari</forename><surname>Asai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeqiu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Avirup</forename><surname>Sil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2310.11511" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Rt-2: Vision-language-action models transfer web knowledge to robotic control</title>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Justice</forename><surname>Carbajal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Krzysztof</forename><surname>Choromanski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianli</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Driess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Avinava</forename><surname>Dubey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuyuan</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Montse</forename><surname>Gonzalez Arenas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keerthana</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kehang</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Herzog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jasmine</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Irpan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikhil</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Julian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitry</forename><surname>Kalashnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Kuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Isabel</forename><surname>Leal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lisa</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tsang-Wei Edward</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Pertsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kanishka</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Krista</forename><surname>Reymann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Ryoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Grecia</forename><surname>Salazar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pannag</forename><surname>Sanketi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Sermanet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaspiar</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anikait</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Radu</forename><surname>Soricut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huong</forename><surname>Tran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Vanhoucke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quan</forename><surname>Vuong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ayzaan</forename><surname>Wahid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Welker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Wohlhart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialin</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sichun</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhe</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brianna</forename><surname>Zitkovich</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2307.15818" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Large language monkeys: Scaling inference compute with repeated sampling</title>
+		<author>
+			<persName><forename type="first">Bradley</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jordan</forename><surname>Juravsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Ehrlich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronald</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Azalia</forename><surname>Ré</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mirhoseini</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.21787</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Tom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ariel</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Herbert-Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rewon</forename><surname>Henighan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Child</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">M</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Ziegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clemens</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Winter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mateusz</forename><surname>Sigler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Litwin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Chess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Berner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Amodei</surname></persName>
+		</author>
+		<ptr target="https://proceedings.neurips.cc/paper/2020/hash/1457" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 33: Annual Conference on Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">Hugo</forename><surname>Larochelle</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Marc'aurelio</forename><surname>Ranzato</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Raia</forename><surname>Hadsell</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Maria-Florina</forename><surname>Balcan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Hsuan-Tien</forename><surname>Lin</surname></persName>
+		</editor>
+		<meeting><address><addrLine>NeurIPS</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2020-12-06">2020. 2020. December 6-12, 2020. 2020</date>
+		</imprint>
+	</monogr>
+	<note>c0d6bfcb4967418bfb8ac142f64a-Abstract.html</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Baian</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ehsan</forename><surname>Shareghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nigel</forename><surname>Collier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.05915</idno>
+		<title level="m">Fireact: Toward language agent fine-tuning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Continual learning for generative retrieval over dynamic corpora</title>
+		<author>
+			<persName><forename type="first">Jiangui</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruqing</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiafeng</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>De Rijke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixing</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueqi</forename><surname>Cheng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 32nd ACM International Conference on Information and Knowledge Management</title>
+		<meeting>the 32nd ACM International Conference on Information and Knowledge Management</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="306" to="315" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Continual Learning for Generative Retrieval over Dynamic Corpora</title>
+		<author>
+			<persName><forename type="first">Jiangui</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruqing</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiafeng</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>De Rijke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixing</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueqi</forename><surname>Cheng</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3583780.3614821</idno>
+		<ptr target="https://dl.acm.org/doi/10.1145/3583780.3614821" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 32nd ACM International Conference on Information and Knowledge Management, CIKM &apos;23</title>
+		<meeting>the 32nd ACM International Conference on Information and Knowledge Management, CIKM &apos;23<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="306" to="315" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Smurfs: Leveraging multiple proficiency agents with context-efficiency for tool planning</title>
+		<author>
+			<persName><forename type="first">Junzhi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juhao</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benyou</forename><surname>Wang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2405.05955" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yanfei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinsung</forename><surname>Yoon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Devendra</forename><surname>Singh Sachan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingze</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Cohen-Addad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammadhossein</forename><surname>Bateni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen-Yu</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomas</forename><surname>Pfister</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.01875</idno>
+		<title level="m">Re-invoke: Tool invocation rewriting for zero-shot tool retrieval</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Agent-flan: Designing data and methods of effective agent tuning for large language models</title>
+		<author>
+			<persName><forename type="first">Zehui</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuikun</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiuchen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenwei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiangning</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dahua</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feng</forename><surname>Zhao</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2403.12881" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">FlashAttention-2: Faster attention with better parallelism and work partitioning</title>
+		<author>
+			<persName><forename type="first">Tri</forename><surname>Dao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations (ICLR)</title>
+		<imprint>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">FlashAttention: Fast and memory-efficient exact attention with IO-awareness</title>
+		<author>
+			<persName><forename type="first">Tri</forename><surname>Dao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">Y</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefano</forename><surname>Ermon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Atri</forename><surname>Rudra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Ré</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems (NeurIPS)</title>
+		<imprint>
+			<biblScope unit="page">2022</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">Abhimanyu</forename><surname>Dubey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Jauhri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Pandey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Kadian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmad</forename><surname>Al-Dahle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aiesha</forename><surname>Letman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akhil</forename><surname>Mathur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Schelten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amy</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Angela</forename><surname>Fan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.21783</idno>
+		<title level="m">The llama 3 herd of models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Gravitas</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Autogpt</surname></persName>
+		</author>
+		<ptr target="https://github.com/Significant-Gravitas/AutoGPT" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhicheng</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sijie</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shihao</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Stabletoolbench</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2403.07714" />
+		<title level="m">Towards Stable Large-Scale Benchmarking on Tool Learning of Large Language Models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Toolkengpt: Augmenting frozen language models with massive tools via tool embeddings</title>
+		<author>
+			<persName><forename type="first">Shibo</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiting</forename><surname>Hu</surname></persName>
+		</author>
+		<ptr target="http://papers.nips.cc/paper_files/paper/2023/hash/8fd" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 36: Annual Conference on Neural Information Processing Systems 2023, NeurIPS 2023</title>
+		<editor>
+			<persName><forename type="first">Alice</forename><surname>Oh</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Tristan</forename><surname>Naumann</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Amir</forename><surname>Globerson</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Kate</forename><surname>Saenko</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Moritz</forename><surname>Hardt</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</editor>
+		<meeting><address><addrLine>New Orleans, LA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023">December 10 -16, 2023, 2023</date>
+		</imprint>
+	</monogr>
+	<note>a81c882cd45f64958da6284f4a3f-Abstract-Conference.html</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Cumulated gain-based evaluation of ir techniques</title>
+		<author>
+			<persName><forename type="first">Kalervo</forename><surname>Järvelin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaana</forename><surname>Kekäläinen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Information Systems (TOIS)</title>
+		<imprint>
+			<biblScope unit="volume">20</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="422" to="446" />
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Dense passage retrieval for open-domain question answering</title>
+		<author>
+			<persName><forename type="first">Vladimir</forename><surname>Karpukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barlas</forename><surname>Oguz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sewon</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ledell</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Edunov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danqi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2020.emnlp-main.550</idno>
+		<ptr target="https://aclanthology.org/2020.emnlp-main.550" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing</title>
+		<editor>
+			<persName><forename type="first">Bonnie</forename><surname>Webber</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Trevor</forename><surname>Cohn</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Yulan</forename><surname>He</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</editor>
+		<meeting>the 2020 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="6769" to="6781" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Incdsi: incrementally updatable document retrieval</title>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Varsha Kishore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Justin</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoav</forename><surname>Lovelace</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kilian</forename><forename type="middle">Q</forename><surname>Artzi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Weinberger</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="17122" to="17134" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Incdsi: Incrementally updatable document retrieval</title>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Varsha Kishore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Justin</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoav</forename><surname>Lovelace</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kilian</forename><forename type="middle">Q</forename><surname>Artzi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Weinberger</surname></persName>
+		</author>
+		<ptr target="https://proceedings.mlr.press/v202/kishore23a.html" />
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning, ICML 2023</title>
+		<editor>
+			<persName><forename type="first">Andreas</forename><surname>Krause</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Emma</forename><surname>Brunskill</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Kyunghyun</forename><surname>Cho</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Barbara</forename><surname>Engelhardt</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sivan</forename><surname>Sabato</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Jonathan</forename><surname>Scarlett</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Honolulu, Hawaii, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023-07">July 2023. 2023</date>
+			<biblScope unit="volume">202</biblScope>
+			<biblScope unit="page" from="17122" to="17134" />
+		</imprint>
+	</monogr>
+	<note>PMLR</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Tptu-v2: Boosting task planning and tool usage of large language model-based agents in real</title>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Kong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingqing</forename><surname>Ruan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianpeng</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hangyu</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyue</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingyu</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueqian</forename><surname>Wang</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note>world systems</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Tptu-v2: Boosting task planning and tool usage of large language model-based agents in real-world industry systems</title>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Kong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingqing</forename><surname>Ruan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianpeng</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shi</forename><surname>Shiwei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Du</forename><surname>Qing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoru</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hangyu</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyue</forename><surname>Li</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Agentbench: Evaluating llms as agents</title>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanchen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanyu</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanyu</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hangliang</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiwen</forename><surname>Men</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kejuan</forename><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhiwei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiran</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianguo</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shelby</forename><surname>Heinecke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rithesh</forename><surname>Murthy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihao</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juan</forename><forename type="middle">Carlos</forename><surname>Niebles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Devansh</forename><surname>Arpit</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.05960</idno>
+		<title level="m">Benchmarking and orchestrating llm-augmented autonomous agents</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Dsi++: Updating transformer memory with new documents</title>
+		<author>
+			<persName><forename type="first">Sanket</forename><surname>Vaibhav Mehta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jai</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mostafa</forename><surname>Dehghani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinfeng</forename><surname>Vinh Q Tran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emma</forename><surname>Najork</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donald</forename><surname>Strubell</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Metzler</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2023 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="8198" to="8213" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">DSI++: Updating transformer memory with new documents</title>
+		<author>
+			<persName><forename type="first">Sanket</forename><surname>Vaibhav Mehta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jai</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mostafa</forename><surname>Dehghani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Vinh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinfeng</forename><surname>Tran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emma</forename><surname>Najork</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donald</forename><surname>Strubell</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Metzler</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.emnlp-main.510</idno>
+		<ptr target="https://aclanthology.org/2023.emnlp-main.510" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing</title>
+		<editor>
+			<persName><forename type="first">Houda</forename><surname>Bouamor</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Juan</forename><surname>Pino</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Kalika</forename><surname>Bali</surname></persName>
+		</editor>
+		<meeting>the 2023 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="8198" to="8213" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<ptr target="https://arxiv.org/abs/2303.08774" />
+		<title level="m">OpenAI. Gpt-4 technical report</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Training language models to follow instructions with human feedback</title>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carroll</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katarina</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="27730" to="27744" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><forename type="first">G</forename><surname>Shishir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianjun</forename><surname>Patil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gonzalez</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2305.15334" />
+		<title level="m">Gorilla: Large language model connected with massive apis</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Autoact: Automatic agent learning from scratch for qa via selfplanning</title>
+		<author>
+			<persName><forename type="first">Shuofei</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ningyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runnan</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujie</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wangchunshu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eleanor</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengfei</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huajun</forename><surname>Chen</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2401.05268" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shihao</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yining</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kunlun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lan</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaxi</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sihan</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lauren</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runchu</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruobing</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Gerstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dahai</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Toolllm</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2307.16789" />
+		<title level="m">Facilitating Large Language Models to Master 16000+ Real-world APIs</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">Changle</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sunhao</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaochi</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hengyi</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuaiqiang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawei</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji-Rong</forename><surname>Wen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.17935</idno>
+		<title level="m">Tool learning with large language models: A survey</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Zero: Memory optimizations toward training trillion parameter models</title>
+		<author>
+			<persName><forename type="first">Samyam</forename><surname>Rajbhandari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Rasley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olatunji</forename><surname>Ruwase</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiong</forename><surname>He</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1910.02054" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">The probabilistic relevance framework: Bm25 and beyond</title>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Robertson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Zaragoza</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Foundations and Trends® in Information Retrieval</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="333" to="389" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Tptu: Task planning and tool usage of large language model-based ai agents</title>
+		<author>
+			<persName><forename type="first">Jingqing</forename><surname>Ruan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiwei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianpeng</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hangyu</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyue</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingyu</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Zhao</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Toolformer: Language models can teach themselves to use tools</title>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberta</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicola</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Scialom</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2302.04761" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Small llms are weak tool learners: A multi-llm agent</title>
+		<author>
+			<persName><forename type="first">Weizhou</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenliang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongzhan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojun</forename><surname>Quan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hehong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2401.07324" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Reflexion: language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 37th International Conference on Neural Information Processing Systems</title>
+		<meeting>the 37th International Conference on Neural Information Processing Systems</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="8634" to="8652" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Scaling llm test-time compute optimally can be more effective than scaling model parameters</title>
+		<author>
+			<persName><forename type="first">Charlie</forename><surname>Snell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaehoon</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kelvin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aviral</forename><surname>Kumar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.03314</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Learning to tokenize for generative retrieval</title>
+		<author>
+			<persName><forename type="first">Weiwei</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingyong</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuaiqiang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haichao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengjie</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhumin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawei</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>De Rijke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaochun</forename><surname>Ren</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2304.04171" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Learning to tokenize for generative retrieval</title>
+		<author>
+			<persName><forename type="first">Weiwei</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingyong</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuaiqiang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haichao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengjie</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhumin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawei</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>De Rijke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaochun</forename><surname>Ren</surname></persName>
+		</author>
+		<ptr target="http://papers.nips.cc/paper_files/paper/2023/hash/91228" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 36: Annual Conference on Neural Information Processing Systems 2023, NeurIPS 2023</title>
+		<editor>
+			<persName><forename type="first">Alice</forename><surname>Oh</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Tristan</forename><surname>Naumann</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Amir</forename><surname>Globerson</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Kate</forename><surname>Saenko</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Moritz</forename><surname>Hardt</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</editor>
+		<meeting><address><addrLine>New Orleans, LA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023">December 10 -16, 2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note>b942a4528cdae031c1b68b127e8-Abstract-Conference.html</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Qwen2.5: A party of foundation models</title>
+		<author>
+			<persName><forename type="first">Qwen</forename><surname>Team</surname></persName>
+		</author>
+		<ptr target="https://qwenlm.github.io/blog/qwen2.5/" />
+		<imprint>
+			<date type="published" when="2024-09">September 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Llama: Open and efficient foundation language models</title>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thibaut</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gautier</forename><surname>Izacard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Martinet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marie-Anne</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothée</forename><surname>Lacroix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baptiste</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Faisal</forename><surname>Azhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aurelien</forename><surname>Rodriguez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armand</forename><surname>Joulin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edouard</forename><surname>Grave</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guillaume</forename><surname>Lample</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2302.13971" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">Learning from failure: Integrating negative examples when fine-tuning large language models as agents</title>
+		<author>
+			<persName><forename type="first">Renxi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haonan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xudong</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><surname>Baldwin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.11651</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Llm3: Large language model-based task and motion planning with motion failure reasoning</title>
+		<author>
+			<persName><forename type="first">Shu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muzhi</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyuan</forename><surname>Jiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><forename type="middle">Nian</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Song-Chun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hangxin</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/IROS58592.2024.10801328</idno>
+	</analytic>
+	<monogr>
+		<title level="m">2024 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="12086" to="12092" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Explore the reasoning capability of llms in the chess testbed</title>
+		<author>
+			<persName><forename type="first">Shu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Renxi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenxiao</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haokun</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><forename type="middle">Nian</forename><surname>Wu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2411.06655" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">A neural corpus indexer for document retrieval</title>
+		<author>
+			<persName><forename type="first">Yujing</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingyan</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haonan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziming</forename><surname>Miao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shibin</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqing</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengmin</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guoshuai</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xing</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiwei</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mao</forename><surname>Yang</surname></persName>
+		</author>
+		<ptr target="http://papers.nips.cc/paper_files/paper/2022/hash/a46156" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 35: Annual Conference on Neural Information Processing Systems 2022, NeurIPS 2022</title>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Sanmi Koyejo</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Mohamed</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Danielle</forename><surname>Agarwal</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Belgrave</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Cho</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Oh</surname></persName>
+		</editor>
+		<meeting><address><addrLine>New Orleans, LA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2022-12-09">November 28 -December 9, 2022. 2022</date>
+		</imprint>
+	</monogr>
+	<note>bd3579c3b268108ea6aca71d13-Abstract-Conference.html</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2201.11903" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Autogen: Enabling next-gen llm applications via multi-agent conversation framework</title>
+		<author>
+			<persName><forename type="first">Qingyun</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gagan</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jieyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiran</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beibin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erkang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaokun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiale</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmed</forename><surname>Hassan Awadallah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryen</forename><forename type="middle">W</forename><surname>White</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Doug</forename><surname>Burger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">COLM</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<title level="m" type="main">ToolPlanner: A Tool Augmented LLM for Multi Granularity Instructions with Path Planning and Feedback</title>
+		<author>
+			<persName><forename type="first">Qinzhuo</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Luan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Wang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2409.14826" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Inference scaling laws: An empirical analysis of compute-optimal inference for llm problem-solving</title>
+		<author>
+			<persName><forename type="first">Yangzhen</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqing</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanda</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Welleck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The 4th Workshop on Mathematical Reasoning and AI at NeurIPS&apos;24</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<analytic>
+		<title level="a" type="main">Approximate nearest neighbor negative contrastive learning for dense text retrieval</title>
+		<author>
+			<persName><forename type="first">Lee</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyan</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ye</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kwok-Fung</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><forename type="middle">N</forename><surname>Bennett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junaid</forename><surname>Ahmed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arnold</forename><surname>Overwijk</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=zeFrfgyZln" />
+	</analytic>
+	<monogr>
+		<title level="m">9th International Conference on Learning Representations, ICLR 2021, Virtual Event</title>
+		<meeting><address><addrLine>Austria</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2021">May 3-7, 2021</date>
+		</imprint>
+	</monogr>
+	<note>OpenReview.net, 2021</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<title level="m" type="main">Enhancing tool retrieval with iterative feedback from large language models</title>
+		<author>
+			<persName><forename type="first">Qiancheng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongqi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heming</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjie</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.17465</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<analytic>
+		<title level="a" type="main">ReAct: Synergizing reasoning and acting in language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations (ICLR)</title>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Agent lumos: Unified and modular training for open-source language agents</title>
+		<author>
+			<persName><forename type="first">Faeze</forename><surname>Da Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhilasha</forename><surname>Brahman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Khyathi</forename><surname>Ravichander</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Chandu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Yuchen</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.acl-long.670</idno>
+		<ptr target="https://aclanthology.org/2024.acl-long.670" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">Lun-Wei</forename><surname>Ku</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Andre</forename><surname>Martins</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Vivek</forename><surname>Srikumar</surname></persName>
+		</editor>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics<address><addrLine>Bangkok, Thailand</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024-08">August 2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="12380" to="12403" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<analytic>
+		<title level="a" type="main">Retrieval Training User: My friends and I are organizing a hackathon on &apos;web development&apos; and &apos;mobile app development&apos;. We need some inspiration and guidance</title>
+		<author>
+			<persName><forename type="first">Aohan</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingdao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiao</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Tang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Can you fetch the top stories on these topics from Medium.com? Assistant: &lt;&lt;Medium&amp;&amp;/search/topics&gt;&gt; End-to-End Agent-Tuning You</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>Agenttuning: Enabling generalized agent abilities for llms are an AutoGPT, capable of utilizing numerous tools and functions to complete the given task</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<title level="m" type="main">First, I will provide you with the task description, and your task will commence</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<monogr>
+		<title level="m" type="main">At each step, you need to determine the next course of action by generating an action token</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<monogr>
+		<title level="m" type="main">Following the token, you will receive the documentation of the action corresponding to the token. You need to generate the input of the action, transitioning you to a new state</title>
+		<imprint/>
+	</monogr>
+	<note>Subsequently, you will make decisions about the next steps, and repeat this process</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<monogr>
+		<title level="m" type="main">After several iterations of generating actions and inputs, you will ultimately complete the task and provide your final answer. Remember: 1.The state changes are irreversible, and you cannot return to a previous state</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<monogr>
+		<title level="m" type="main">Keep your actions concise, limiting them to best suits the current query</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<monogr>
+		<title level="m" type="main">You can make multiple attempts. If you plan to try different conditions continuously, perform one condition per try</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<monogr>
+		<title level="m" type="main">If you believe you have gathered enough information, generate the action &quot;&lt;&lt;Finish&gt;&gt; with argument give_answer</title>
+		<imprint/>
+	</monogr>
+	<note>to provide your answer for the task</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<monogr>
+		<title level="m" type="main">If you feel unable to handle the task from this step, generate the action &quot;&lt;&lt;Finish&gt;&gt; with argument give_up_and_restart</title>
+		<imprint/>
+	</monogr>
+	<note>Let&apos;s Begin! Task description: You should use actions to help handle the real time user querys</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<monogr>
+		<title level="m" type="main">And the final answer should contain enough information to show to the user. If you can&apos;t handle the task, or you find that actions always fail(the function is not valid now), use action &lt;&lt;Finish&gt;&gt; with give_up_and_restart</title>
+		<imprint/>
+	</monogr>
+	<note>ALWAYS generate &quot;&lt;&lt;Finish&gt;&gt;&quot; at the end of the task</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<monogr>
+		<title level="m" type="main">Only generate actions and inputs. System: Could you please fetch the addresses for the postcode &apos;PL11DN&apos;? I would like to know the number of items found, the district</title>
+		<imprint/>
+	</monogr>
+	<note>ward, county, country, and geocode details (eastings, northings, latitude, and longitude</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b66">
+	<monogr>
+		<title level="m" type="main">Based on the user&apos;s query, they want to fetch addresses for the postcode &apos;PL11DN&apos; and retrieve specific details like the number of items found, district, ward, county, country, and geocode details. The current API call is for the function &apos;find_by_postcode&apos; with the argument &apos;postcode&apos; set to &apos;PL11DN&apos;. This API is useful because it can provide addresses based on a given UK postcode. By using this API</title>
+		<author>
+			<persName><forename type="first">!</forename><surname>Begin</surname></persName>
+		</author>
+		<author>
+			<persName><surname>User</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note>I will be able to retrieve the required information for the user&apos;s query. Assistant: Generate the action</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b67">
+	<analytic>
+		<title level="a" type="main">Here is the documentation: {&apos;name&apos;: &apos;&lt;&lt;Find By PostCode&amp;&amp;Find By PostCode&gt;&gt;&apos;, &apos;description&apos;: &apos;&quot;Find By PostCode&quot; API get addresses for the given UK PostCode. This API provides a JSON interface to search UK addresses for a postcode.&apos;, &apos;required&apos;: [{&apos;name&apos;: &apos;postcode&apos;, &apos;type&apos;: &apos;string&apos;, &apos;description&apos;: &apos;&apos;, &apos;default&apos;: &apos;PL11DN&apos;}], &apos;optional&apos;: []} User: { &quot;postcode&quot;: &quot;PL11DN&quot; } Assistant: {&quot;error&quot;: &quot;&quot;, &quot;response&quot;: &quot;{&apos;status&apos;: 200, &apos;message&apos;: &apos;Success&apos;, &apos;noOfItems&apos;: 37, &apos;result&apos;: {&apos;postcode&apos;: &apos;PL1 1DN&apos;, &apos;district&apos;: &apos;Plymouth&apos;, &apos;ward&apos;: &apos;St Peter and the Waterfront&apos;, &apos;county&apos;: &apos;Devon&apos;, &apos;country&apos;: &apos;England&apos;, &apos;geocode&apos;: {&apos;eastings&apos;: &apos;248025&apos;, &apos;northings&apos;: &apos;0054420&apos;, &apos;lattitude&apos;: &apos;50.370001&apos;, &apos;longitude&apos;: &apos;-4.138397&apos;}, &apos;addresses&apos;: [{&apos;po_box&apos;: &apos;&apos;, &apos;line_2&apos;: &apos;&apos;, &apos;postcode_type&apos;: &apos;S&apos;, &apos;line_3&apos;: &apos;&apos;, &apos;su_organisation_indicator&apos;: &apos; &apos;, &apos;building_number&apos;: &apos;5&apos;, &apos;udprn&apos;: &apos;18911184&apos;, &apos;thoroughfare&apos;: &apos;St. Andrews Cross&apos;, &apos;line_1&apos;: &apos;5 St. Andrews Cross&apos;, &apos;postcode_outcode&apos;: &apos;PL1&apos;, &apos;postcode_compact&apos;: &apos;PL11DN&apos;, &apos;dependant_thoroughfare&apos;: &apos;&apos;, &apos;premise&apos;: &apos;5&apos;, &apos;post_town&apos;: &apos;PLYMOUTH&apos;, &apos;building_name&apos;: &apos;&apos;, &apos;organisation_name&apos;: &apos;&apos;, &apos;postcode&apos;: &apos;PL1 1DN&apos;, &apos;department_name&apos;: &apos;&apos;, &apos;postcode_incode&apos;: &apos;1DN</title>
+	</analytic>
+	<monogr>
+		<title level="m">By PostCode&amp;&amp;Find By PostCode&gt;&gt; Assistant: Please give the input</title>
+		<meeting><address><addrLine>St. Andrews Cross, PLYMOUTH</addrLine></address></meeting>
+		<imprint/>
+	</monogr>
+	<note>PL1 1DN delivery_point_suffix&apos;: &apos;4T&apos;}, {&apos;po_box&apos;: &apos;&apos;, &apos;line_2&apos;: &apos;2 St. Andrews Cross</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

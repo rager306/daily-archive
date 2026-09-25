@@ -1,0 +1,1685 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">RoCo: Dialectic Multi-Robot Collaboration with Large Language Models</title>
+				<funder ref="#_Hg3merQ #_7bS2ubZ #_ucpnUUa">
+					<orgName type="full">National Science Foundation</orgName>
+					<orgName type="abbreviated">NSF</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2023-07-10">10 Jul 2023</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Zhao</forename><surname>Mandi</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Columbia University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Shreeya</forename><surname>Jain</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Columbia University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Shuran</forename><surname>Song</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">Columbia University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">RoCo: Dialectic Multi-Robot Collaboration with Large Language Models</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2023-07-10">10 Jul 2023</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">8054CFA210DBFCB91D86134D540F60BF</idno>
+					<idno type="arXiv">arXiv:2307.04738v1[cs.RO]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:31+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>We propose a novel approach to multi-robot collaboration that harnesses the power of pre-trained large language models (LLMs) for both high-level communication and low-level path planning. Robots are equipped with LLMs to discuss and collectively reason task strategies. They then generate sub-task plans and task space waypoint paths, which are used by a multi-arm motion planner to accelerate trajectory planning. We also provide feedback from the environment, such as collision checking, and prompt the LLM agents to improve their plan and waypoints in-context. For evaluation, we introduce RoCoBench, a 6-task benchmark covering a wide range of multi-robot collaboration scenarios, accompanied by a text-only dataset for agent representation and reasoning. We experimentally demonstrate the effectiveness of our approach -it achieves high success rates across all tasks in RoCoBench and adapts to variations in task semantics. Our dialog setup offers high interpretability and flexibility -in real world experiments, we show RoCo easily incorporates human-in-the-loop, where a user can communicate and collaborate with a robot agent to complete tasks together. See project website <ref type="url" target="https://project-roco.github.io/">project-roco.github.io</ref> for videos and code. Sort Cubes Pack Grocery Move Rope Arrange Cabinet Sweep Floor Make Sandwich Sequential Coordination Concurrent Execution Workspace Overlap Figure 1: We propose RoCo, a unified approach for multi-robot collaboration that leverages LLMs for both</p><p>high-level task coordination and low-level motion planning. We demonstrate its utility on RoCoBench, a benchmark we introduce that includes a diverse set of challenges in collaboration task scenarios.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Multi-robot systems are intriguing for their promise of enhancing task productivity, but are faced with various challenges. For robots to effectively split and allocate the work, it requires high-level understanding of a task, and consideration of each robot's capabilities such as reach range or payload. Another challenge lies in low-level motion planning: as the configuration space grows with the number of robots, finding collision-free motion plans becomes exponentially difficult. Finally, traditional multi-robot systems typically require task-specific engineering, hence compromise generalization: with much of the task structures pre-defined, these systems are incapable of adapting to new scenarios or variations in a task.</p><p>We propose RoCo, a zero-shot multi-robot collaboration method to address the above challenges. Our approach includes three key components: • Dialogue-style task-coordination: To facilitate information exchange and task reasoning, we let robots 'talk' among themselves by delegating each robot to an LLM agent in a dialog, which allows robots to discuss the task in natural language, with high interpretability for supervision.</p><p>• Feedback-improved Sub-task Plan Generated by LLMs: The multi-agent dialog ends with a sub-task plan for each agent (e.g. pick up object). We provide a set of environment validations and feedback (e.g. IK failures or collision) to the LLM agents until a valid plan is proposed.</p><p>• LLM-informed Motion-Planning in Joint Space: From the validated sub-task plan, we extract goal configurations in the robots' joint space, and use a centralized RRT-sampler to plan motion trajectories. We explore a less-studied capability of LLM: 3D spatial reasoning. Given the start, goal, and obstacle locations in task space, we show LLMs can generate waypoint paths that incorporate high-level task semantics and environmental constraints, and significantly reduce the motion planner's sample complexity. We next introduce RoCoBench, a benchmark with 6 multi-robot manipulation tasks. We experimentally demonstrate the effectiveness of RoCo on the benchmark tasks: by leveraging the commonsense knowledge captured by large language models (LLMs), RoCo is flexible in handling a variety of collaboration scenarios without any task-specific training.</p><p>In summary, we propose a novel approach to multi-robot collaboration, supported by two technical contributions: 1) An LLM-based multi-robot framework (RoCo) that is flexible in handling a large variety of tasks with improved task-level coordination and action-level motion planning; 2) A new benchmark (RoCoBench) for multi-robot manipulation to systematically evaluate these capabilities. It includes a suite of tasks that are designed to examine the flexibility and generality of the algorithm in handling different task semantics (e.g., sequential or concurrent), different levels of workspace overlaps, and varying agent capabilities (e.g., reach range and end-effector types) and embodiments (e.g., 6DoF UR5, 7DoF Franka, 20DoF Humanoid).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Preliminaries</head><p>Task Assumption. We consider a cooperative multi-agent task environment with N robots, a finite time horizon T , full observation space O. Each agent n has observation space Ω n ⊂ O. Agents may have asymmetric observation spaces and capabilities, which stresses the need for communication. We manually define description functions f that translate task semantics and observations at a timestep t into natural language prompts: l n t = f n (o t ), o t ∈ Ω n . We also define parsing functions that map LLM outputs (e.g. text string "PICK object") to the corresponding sub-task, which can be described by one or more gripper goal configurations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Multi-arm Path Planning.</head><p>Given a sub-task, we use centralized motion planning that finds trajectories for all robots to reach their goal configurations. Let X ∈ R d denote the joint configuration space of all N robot arms and X ob be the obstacle region in the configuration space, then collisionfree space X f ree = X \X ob . Given an initial condition x init ∈ X f ree , a goal region X goal ∈ X f ree , the motion planner finds an optimal σ * : [0, 1] → X that satisfies: σ * (0) = x init , σ * (1) ∈ x goal . This resulting σ * is used by the robots' arm joint controllers to execute in open-loop.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Multi-Robot Collaboration with LLMs</head><p>We present RoCo, a novel method for multi-robot collaboration that leverages LLMs for robot communication and motion planning. The three key components in our method are demonstrated in Fig. <ref type="figure" target="#fig_1">2</ref> and described below:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Multi-Agent Dialog via LLMs</head><p>We assume multi-agent task environments with asymmetric observation space and skill capabilities, which means agents can't coordinate meaningfully without first communicating with each other. We leverage pre-trained LLMs to facilitate this communication. Specifically, before each environment interaction, we set up one round of dialog where each robot is delegated an LLM-generated agent, §3.3 §3.2</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Task Context</head><p>You are Alice, pack grocery with Bob …</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Current Obs.</head><p>Apple: &lt;coord&gt; Your gripper: &lt;coord&gt;...</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>§3.1</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I am Alice, I have picked up banana. I can [proposal]</head><p>There should be no collisions. Let's proceed: [Alice]</p><p>[Bob]</p><p>[Alice]</p><p>[Collision]: at step … [IK]: … EXECUTE Alice PLACE banana bin_front_left PATH [(-0.25, 0.39, 0.49), ...] Bob PLACE apple bin_front_right PATH [(-0.74, 0.40, 0.54), ...]</p><p>Task Context You are Alice, pack grocery with Bob … Current Obs. Apple: &lt;coord&gt; Your gripper: &lt;coord&gt;... History == Round 0 == [Chat] … [Actions] … == Round 1 == … You are Bob… response: I am Bob, I have the bread… Let's [proposal] You are Bob … Note: explicitly Label section, Make clear what is the input and output Alice's LLM You are Alice, pack grocery with Bob… [Task Context] -Previously … [History] -You can … [Capability] -Respond … [Dialog Instruction] -You see … [Env. Observation] Your response: Bob's LLM [in what form give an example ?] Sounds good, let's proceed: [plan summary] … Alice [subtask] [task space waypoint] Bob [subtask] [task space waypoint] Alice [joint space trajectory] Bob [joint space trajectory] with an LLM that 'talks' on its behalf, enabling a discussion of task strategy. 2) LLM-Generated Sub-task Plan: the dialog ends with a proposal of sub-task plan, including optionally a path of task space waypoints, and environment feedback on invalid plans are provided for the agents to improve. 3) Multi-arm motion planning: A validated sub-task plan then produces goal configurations for the robot arms, which are used by a centralized multi-arm motion planner that outputs trajectories for each robot.</p><p>which receives information that is unique to this robot and must respond strictly according to its role (e.g. "I am Alice, I can reach ...").</p><p>For each agent's LLM prompt, we use a shared overall structure but with agent-specific content, varied with each robot's individual status. The prompt is composed of the following key components:</p><p>1. Task Context: describes overall objective of the task. 2. Round History: past dialog and executed actions from previous rounds. 3. Agent Capability: the agent's available skills and constraints. 4. Communication Instruction: how to respond to other agents and properly format outputs. 5. Current Observation: unique to each agent's status, plus previous responses in the current dialog. 6. Plan Feedback: (optional) reasons why a previous sub-task plan failed.</p><p>We use the following communication protocol to move the dialog forward: each agent is asked (instructions are given in Communication Instruction part of the prompt) to end their response by deciding between two options: 1) indicate others to proceed the discussion; 2) summarize everyone's actions and make a final action proposal; this is allowed only if each agent has responded at least once in the current dialog round. This protocol is designed to allow the agents to freely discuss, while guaranteeing one sub-task plan will be proposed within a finite number of exchanges. Once a round of dialog ends, the last speaking agent summarizes a 'subtask plan', where each agent gets one sub-task (e.g. pick up object) and optionally a path of 3D waypoints in the task space. This sub-task plan is first passed through a set of validations before going into execution. If any of the checks fail, the feedback is appended to each agent's prompt and another round of dialog begins. The validations are conducted in the following order, and each one assumes the previous check has passed (e.g. a plan must be parsed before checking for task and agent constraints):</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">LLM-Generated Sub-task Plan</head><p>1. Text Parsing ensures the plan follows desired format and contains all required keywords 2. Task Constraints checks whether each action complies with the task and agent constraints 3. IK checks whether each robot arm's target pose is feasible via inverse kinematics 4. Collision Checking checks if the IK-solved arm join configurations cause collision 5. Valid Waypoints optionally, if a task requires path planning, each intermediate waypoint must be IK-solvable and collision-free, and all steps should be evenly spaced</p><p>The agents are allowed to re-plan until reaching a maximum number of attempts, after which the current round ends without any execution and the next round begins. The episode is considered failed if the task is not completed within a finite number of rounds.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">LLM-informed Motion Planning in Joint Space</head><p>Once a sub-task plan passes all validations, we combine it with IK to produce a goal configuration jointly over all robot arms, and optionally, each step of the task space waypoint paths produces an intermediate goal configuration. The goal configuration(s) are passed to an RRT-based multi-arm motion planner that jointly plans across all robot arms, and outputs motion trajectories for each robot to execute in the environment, then the task moves on to the next round.</p><p>Toy Example: 3D Spatial Reasoning Capability in LLMs. As a motivating example, we ask an LLM (GPT-4) to plan multi-agent paths in a 3D grid. We randomly sample 3 agents' (start, goal) coordinates and a set of obstacles, and prompt GPT-4 to plan collision-free paths. Given feedback on failed plans, allowing up to 5 attempts, GPT-4 obtains 86.7% success rate over 30 runs, using on average 2.73 attempts. See Fig. <ref type="figure" target="#fig_2">3</ref> for an example output. See Appendix 13 for further details and results. While this capability is encouraging, we found it to also be limited as the grid size and number of obstacles increase.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Benchmark</head><p>RoCoBench is a suite of 6 multi-robot collaboration tasks in a tabletop manipulation setting. The tasks involve common-sense objects that are semantically easy to understand for LLMs, and span a repertoire of collaboration scenarios that require different robot communication and coordination behaviors. See Appendix 10 for detailed documentation on the benchmark. We remark three key properties that define each task, summarized in Table <ref type="table" target="#tab_0">1</ref>:</p><p>1. Task decomposition: whether a task can be decomposed into sub-parts that can be completed in parallel or in certain order. Three tasks in RoCoBench have a sequential nature (e.g. Make Sandwich task requires food items to be stacked in correct order), while the other three tasks can be executed in parallel (e.g. objects in Pack Grocery task can be put into bin in any order). 2. Observation space: how much of the task and environment information each robot agent receives.</p><p>Three tasks provide shared observation of the task workspace, while the other three have a more asymmetric setup and robots must inquire each other to exchange knowledge. 3. Workspace overlap: proximity between operating robots; we rank each task from low, medium or high, where higher overlap calls for more careful low-level coordination (e.g. Move Rope task requires manipulating the same object together). Overview. We design a series of experiments using RoCoBench to validate our approach. In Section 5.1, we evaluate the task performance of RoCo compared to an oracle LLM-planner that does not use dialog, and ablate on different components of the dialog prompting in RoCo. Section 5.2 shows empirically the benefits of LLM-proposed 3D waypoints in multi-arm motion planning. Section 5.3 contains qualitative results that demonstrate the flexibility and adaptability of RoCo. Additional experiment results, such as failure analysis, are provided in Appendix 12.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Main Results on RoCoBench Experiment Setup.</head><p>We use GPT-4 <ref type="bibr" target="#b0">[1]</ref> for all our main results. In addition to our method 'Dialog', we set up an oracle LLM-planner 'Central Plan', which is given full environment observation, information on all robots' capabilities and the same plan feedback, and prompts an LLM to plan actions for all robots at once. We also evaluate two ablations on the prompt components of RoCo: first removes dialog and action history from past rounds, i.e. 'Dialog w/o History'. Second removes environment feedback, i.e. 'Dialog w/o Feedback', where a failed action plan is discarded and agents are prompted to continue discussion without detailed failure reasons. To offset the lack of re-plan rounds, each episode is given twice the budget of episode length.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Evaluation Metric.</head><p>Provided with a finite number of rounds per episode and a maximum number of re-plan attempts per round, we evaluate the task performance on three metrics: 1) task success rate within the finite rounds; 2) number of environment steps the agents took to succeed an episode, which measures the efficiency of the robots' strategy; 3) average number of re-plan attempts at each round before an environment action is executed -this reflects the agents' ability to understand and use environment feedback to improve their plans. Overall, a method is considered better if the task success rate is higher, it takes fewer environment steps, and requires fewer number of re-plans.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Results.</head><p>The evaluation results are reported in Table <ref type="table" target="#tab_1">2</ref>. We remark that, despite receiving less information, dialog agents sometimes achieve comparable performance to the oracle planner. Particularly in Sort Cubes task, agents are able to find a strategy to help each other through dialog, but the oracle makes mistakes in trying to satisfy all agents' constraints at once. While removing history information or plan feedback rounds does not negatively impact performance on some tasks, full prompt that includes both achieves the best overall results. Lastly, on Pack Gocery task, the oracle planner shows better capability in waypoint planning, displaying better capability at incorporating feedback and improve on individual coordinate steps.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Effect of LLM-proposed 3D Waypoints</head><p>We demonstrate the utility of LLM-proposed task space waypoints. We use two tasks that were designed to have high workspace overlap, i.e. Pack Grocery and Move Rope, which require both picking and placing to complete the task. For comparison, we define a hard-coded waypoint path that performs top-down pick or place, i.e. always hovers over a gripper atop a certain height before picking an object, and moves an object up to a height above the table before moving and placing. We single-out one-step pick or place snapshots, and run multi-arm motion planning using the compared waypoints, under a maximum of 300 second planning time budget. As shown in Fig. <ref type="figure" target="#fig_3">4</ref>, LLM-proposed waypoints show no clear benefits for picking sub-tasks, but significantly accelerate planning for placing, where collisions are more likely to happen between the arms and the desktop objects.</p><p>Task: Pack Grocery Task: Move Rope </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Zero-shot Adaptation to Task Variations</head><p>Leveraging the zero-and few-shot ability of LLMs, RoCo demonstrates strong adaptation ability to varying task semantics, which traditionally would require modification or re-programming of a system, e.g. fine-tuning a learning-based policy. We showcase 3 main variation categories, all using Make Sandwich task in RoCoBench.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Object Initialization:</head><p>The locations of the food items are randomized, and we show the dialog agents' reasoning is robust to this variation.</p><p>2. Task Goal: The agents must stack food items in the correct order given in the sandwich recipe, and are able to coordinate sub-task strategies accordingly.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Robot Capability:</head><p>The agents are able to exchange information on items that are within their respective reach and coordinate their plans accordingly. We report number of successes and average number of steps in sucessful runs.</p><p>We validate RoCo in a real world setup, where a robot arm collaborates with a human to complete a sorting blocks task (Fig. <ref type="figure">6</ref>). We run RoCo with the modification that only the robot agent is controlled by GPT-4, and it discusses with a human user that interacts with part of the task workspace. For perception, we use a pre-trained object detection model, OWL-ViT <ref type="bibr" target="#b1">[2]</ref>, to generate scene description from top-down RGB-D camera images. The task constrains the human to only move blocks from cups to the table, then the robot only picks blocks from table into wooden bin. We evaluate 2 main variation categories: 1) object initialization, i.e. initial block locations are randomized for each run (Fig. <ref type="figure">6</ref>.1); 2) task order specification, where the agents are asked to follow a fixed order to move the blocks (Fig. <ref type="figure">6</ref>.2). We also evaluate two types of human behaviors: first is an oracle human that corrects mistakes in the OWL-ViT-guided scene descriptions and the robot's responses; second is an imperfect human that provides no feedback to those errors.</p><p>We evaluate 10 runs for each setup, see Table <ref type="table" target="#tab_2">3</ref> for results. We report task success rate within the finite rounds, and number of steps the agents took to succeed an episode. We remark that task performance is primarily bottle-necked by incorrect object detection from OWL-ViT, which leads to either an incorrect object being picked up and resulting in failure or no object being picked up and resulting in higher steps. See Appendix 12.2 for further details on the real world experiments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Multi-Agent Representation and Reasoning Dataset</head><p>In addition to our main experimental results, we curate a text-based dataset, RoCoBench-Text, to evaluate an LLM's agent representation and task reasoning ability. This dataset aligns LLM with desirable capabilities in multi-agent collaboration, without requiring robotic environment interaction. It builds on data from our evaluation on RoCoBench, and contains a series of additional questions that are more open-ended and go beyond simply finding the next best action plan.</p><p>a) Initial b) Human moves block d) Goal c) Robot moves block</p><p>1. Object Initialization No order specified in the prompt [Robot Bob]: I will pick the blue triangular block from the table and place it in wooden bin. [Human Alice]: Sounds good, Bob. [...], I will wait in this round. "place green cube first in wooden bin […]" Variation #2 2. Task Order Specification "place green cube first into wooden bin […]" Alice, can you move green cube from red cup to table? Sure, Bob. I will pick green cube and place it [...]. "move blocks in any order" I will pick blue block from table and place it in wooden bin. [...], I will wait this round. [Robot Bob] [Human Alice] Workspace Setup Variation 1 wooden bin green cup red block green cube blue cup purple cup yellow cube Variation 2 wooden bin yellow cup blue block strawberry toy green cup purple cup red block Variation 4 wooden bin red cup green cube strawberry toy purple cup yellow cup blue block Alice, I see green cube on the table. I will now place it in the wooden bin. [...] Sounds good. You can now move the green cube Alice, can you move the strawberry toy and red block from their respective cups to the table? I will [...] Sure, I will pick the strawberry toy and place it [...] B1 wooden bin blue block yellow cup strawberry toy green cup purple cup A1 red block wooden bin pear toy blue block yellow cup red cup green cube Variation 3 "follow the order blue, yellow, red [...]" Alice, now that blue and yellow blocks are in wooden bin, can you move red block to the table? Sure, Bob. I will pick red block and place it [...].</p><p>Alice, I will now pick up red block from the table and place it in wooden bin. We have successfully completed the task.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C1</head><p>Figure <ref type="figure">6</ref>: Real world experiments: collaborative block sorting between a robot and a human, with varying task semantics. We test two variation categories: 1) object initialization, i.e. the object locations are randomized for each episode 2) task order specification, i.e. agents must follow the specified order to move blocks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.1">Dataset Overview</head><p>This dataset contains yes/no, multiple-choice or short question-answering questions, spanning a range of different reasoning abilities (see Appendix 14 for more details): Self-knowledge evaluates how well the agent establishes its identity under a given task context, divided into two categories: 1) understanding an agent's own capability (e.g. which objects/area are not reachable); 2) memory retrieval, i.e. inferring information from past dialog and actions.</p><p>Communication Skills evaluates an agent's ability to effectively exchange information and drive a discussion into an agreeable plan. The questions ask an LLM to 1) choose appropriate response to other agents' questions; 2) choose appropriate inquiries to other agents. Adaptation evaluates adaptation to unexpected situations that were not specified in context. We use a subset of RoCoBench tasks to design unexpected occurrences, either regarding task state (e.g. a missing object) or a response from another agent, and ask an LLM agent to choose the best response. See below for an example question: two agents make a sandwich together; one agent is informed of a broken gripper and must infer that the sandwich can actually be completed without any item from its side of the table.</p><p>You are a robot Chad collaborating with Dave ...[task context] Your gripper is not working. What should you say to Dave? Select exactly one option from below. A: Sorry Dave, we can't complete the task anymore, my gripper is broke. B: Let's stop. The recipe needs ham but Dave can't reach my side and my gripper is not functioning. C: Dave, go ahead and finish the sandwich without me, there isn't anything we need on my side anyway.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.2">Evaluation Results</head><p>Setup. All questions are designed to have only one correct answer, hence we measure the average accuracy in each category. We evaluate GPT-4 (OpenAI), GPT-3.5-turbo (OpenAI), and Claude-v1 (Anthropic <ref type="bibr" target="#b2">[3]</ref>). For GPT-4, we use two models marked with different time-stamps, i.e. 03/14/2023 and 06/13/2023. Results are summarized in Table <ref type="table" target="#tab_3">4</ref>: we observe that, with small performance variations between the two versions, GPT-4 leads the performance across all categories. We remark that there is still a considerable gap from fully accurate, and hope this dataset will be useful for improving and evaluating language models in future work. Qualitative Results. We observe GPT-4 is better at following the instruction to formulate output, whereas GPT-3.5-turbo is more prone to confident and elongated wrong answers. See below for an example response from an agent capability question (the prompt is redacted for readability). </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Limitation</head><p>Oracle state information in simulation. RoCo assumes perception (e.g., object detection, pose estimation and collision-checking) is accurate. This assumption makes our method prone to failure in cases where perfect perception is not available: this is reflected in our real-world experiments, where the pre-trained object detection produces errors that can cause planning mistakes.</p><p>Open-loop execution. The motion trajectories from our planner are executed by robots in an openloop fashion and lead to potential errors. Due to the layer of abstraction in scene and action descriptions, LLMs can't recognize or find means to handle such execution-level errors.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LLM-query Efficiency.</head><p>We rely on querying pre-trained LLMs for generating every single response in an agent's dialog, which can be cost expensive and dependant on the LLM's reaction time.</p><p>Response delay from LLM querying is not desirable for tasks that are dynamic or speed sensitive.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8">Related Work</head><p>LLMs for Robotics. An initial line of prior work uses LLMs to select skill primitives and complete robotic tasks, such as SayCan <ref type="bibr" target="#b3">[4]</ref>, Inner Monologue <ref type="bibr" target="#b4">[5]</ref>, which, similarly to ours, uses environment feedback to in-context improve planning. Later work leverages the code-generation abilities of LLMs to generate robot policies in code format, such as CaP <ref type="bibr" target="#b5">[6]</ref>, ProgGPT <ref type="bibr" target="#b6">[7]</ref> and Demo2Code <ref type="bibr" target="#b7">[8]</ref>; or longer programs for robot execution such as TidyBot <ref type="bibr" target="#b8">[9]</ref> and Instruct2Act <ref type="bibr" target="#b9">[10]</ref>. Related to our use of motion-planner, prior work such as Text2Motion <ref type="bibr" target="#b10">[11]</ref>, AutoTAMP <ref type="bibr" target="#b11">[12]</ref> and LLM-GROP <ref type="bibr" target="#b12">[13,</ref><ref type="bibr" target="#b13">14]</ref> studies combining LLMs with traditional Task and Motion Planning (TAMP). Other work explores using LLMs to facilitate human-robot collaboration <ref type="bibr" target="#b14">[15]</ref>, to design rewards for reinforcement learning (RL) <ref type="bibr" target="#b15">[16]</ref>, and for real-time motion-planning control in robotic tasks <ref type="bibr" target="#b16">[17]</ref>. While prior work uses single-robot setups and single-thread LLM planning, we consider multi-robot settings that can achieve more complex tasks, and use dialog prompting for task reasoning and coordination.</p><p>Multi-modal Pre-training for Robotics. LLMs' lack of perception ability bottlenecks its combination with robotic applications. One solution is to pre-train new models with both vision, language and large-scale robot data: the multi-modal pre-trained PALM-E <ref type="bibr" target="#b17">[18]</ref> achieves both perception and task planning with a single model; Interactive Language <ref type="bibr" target="#b18">[19]</ref> and DIAL <ref type="bibr" target="#b19">[20]</ref> builds a large dataset of language-annotated robot trajectories for training generalizable imitation policies. Another solution is to introduce other pre-trained models, mainly vision-language models (VLMs) such as CLIP <ref type="bibr" target="#b20">[21]</ref>). In works such as Socratic Models <ref type="bibr" target="#b21">[22]</ref>, Matcha <ref type="bibr" target="#b22">[23]</ref>, and Kwon et al. <ref type="bibr" target="#b23">[24]</ref>, LLMs are used to repeatedly query and synthesize information from other models to improve reasoning about the environment. While most use zero-shot LLMs and VLMs, works such as CogLoop <ref type="bibr" target="#b24">[25]</ref> also explores fine-tuning adaptation layers to better bridge different frozen models. Our work takes advantage of simulation to extract perceptual information, and our real world experiments follow prior work <ref type="bibr" target="#b25">[26,</ref><ref type="bibr" target="#b6">7,</ref><ref type="bibr" target="#b8">9]</ref> in using pre-trained object detection models <ref type="bibr" target="#b1">[2]</ref> to generate scene description.</p><p>Dialogue, Debate, and Role-play LLMs. Outside of robotics, LLMs have been shown to possess the capability of representing agentic intentions <ref type="bibr" target="#b26">[27]</ref> and behaviors, which enables multi-agent interactions in simulated environments such as text-based games <ref type="bibr" target="#b27">[28,</ref><ref type="bibr" target="#b28">29]</ref> and social sandbox <ref type="bibr" target="#b29">[30,</ref><ref type="bibr" target="#b30">31,</ref><ref type="bibr" target="#b31">32]</ref>.</p><p>Recent work also shows a dialog or debate style prompting can improve LLMs' performance on human alignment <ref type="bibr" target="#b32">[33]</ref> and a broad range of goal-oriented tasks <ref type="bibr" target="#b33">[34,</ref><ref type="bibr" target="#b34">35,</ref><ref type="bibr" target="#b35">36]</ref>. While prior work focuses more on understanding LLM behaviors or improve solution to a single question, our setup requires planning separate actions for each agent, thus adding to the complexity of discussion and the difficulty in achieving consensus.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Multi-Robot Collaboration and Motion Planning.</head><p>Research on multi-robot manipulation has a long line of history <ref type="bibr" target="#b36">[37]</ref>. A first cluster of work studies the low-level problem of finding collisionfree motion trajectories. Sampling-based methods are a popular approach <ref type="bibr" target="#b37">[38]</ref>, where various algorithmic improvements have been proposed <ref type="bibr" target="#b38">[39]</ref>. Recent work also explored learning-based methods <ref type="bibr" target="#b39">[40]</ref> as alternative. While our tasks are mainly set in static scenes, much work has also studied more challenging scenarios that require more complex low-level control, such as involving dynamic objects <ref type="bibr" target="#b40">[41]</ref> or closed-chain kinematics <ref type="bibr" target="#b41">[42,</ref><ref type="bibr" target="#b42">43]</ref>. A second cluster of work focuses more on high-level planning to allocate and coordinate sub-tasks, which our work is more relevant to. While most prior work tailor their systems to a small set of tasks, such as furniture assembly <ref type="bibr" target="#b43">[44]</ref>, we highlight the generality of our approach to the variety of tasks it enables in few-shot fashion.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="9">Conclusion</head><p>We present RoCo, a new framework for multi-robot collaboration that leverages large language models (LLMs) for robot coordination and planning. We introduce RoCoBench, a 6-task benchmark for multi-robot manipulation to be open-sourced to the broader research community. We empirically demonstrate the generality of our approach and many desirable properties such as few-shot adaptation to varying task semantics, while identifying limitations and room for improvement. Our work falls in line with recent literature that explores harnessing the power of LLMs for robotic applications, and points to many exciting opportunities for future research in this direction.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="10">RoCoBench 10.1 Overview</head><p>RoCoBench is built with MuJoCo <ref type="bibr" target="#b44">[45]</ref> physics engine. The authors would like to thank the various related open-source efforts that greatly assisted the development of RoCoBench tasks: DMControl <ref type="bibr" target="#b45">[46]</ref>, Menagerie <ref type="bibr" target="#b46">[47]</ref>, and MuJoCo object assets from Dasari et al. <ref type="bibr" target="#b47">[48]</ref>. The sections below provide a detailed documentation for each of the 6 simulated collaboration tasks.</p><p>10.2 Task: Sweep Floor Task Description. 2 Robots bring a dustpan and a broom to opposite sides of each cube to sweep it up, then the robot holding dustpan dumps cubes into a trash bin. Agent Capability. Two robots stand on opposite sides of the table: 1. UR5E with robotiq gripper ('Alice'): holds a dustpan 2. Franka Panda ('Bob'): holds a broom Observation Space. 1) cube locations: a. on table; b. inside dustpan; c. inside trash bin; 2) robot status: 3D gripper locations Available Robot Skills. 1) MOVE [target]: target can only be a cube; 2) SWEEP [target]: moves the groom so it pushes the target into dustpan; 3) WAIT; 4) DUMP: dump dustpan over the top of trash bin. 10.3 Task: Make Sandwich Figure 8: Make Sandwich task Task Description. 2 Robots make a sandwich together, each having access to a different set of ingredients. They must select the required items and take turns to stack them in the correct order. Agent Capability. Two robots stand on opposite sides of the table: 1. UR5E with suction gripper ('Chad'): can only reach right side 2. Humanoid robot with suction gripper ('Dave'): can only reach left side Observation Space 1) the robot's own gripper state (either empty or holding an object); 2) food items on the robot's own side of the table and on the cutting board. Available Robot Skills. 1) PICK [object]; 2) PUT [object] on [target]; WAIT 10.4 Task: Sort Cubes Task Description. 3 Robots sort 3 cubes onto their corresponding panels. The robots must stay within their respective reach range, and help each other to move a cube closer. Agent Capability. Three robots each responsible for one area on the table 1. UR5E with robotiq gripper ('Alice'): must put blue square on panel2, can only reach: panel1, panel2, panel3. 2. Franka Panda ('Bob'): must put pink polygon on panel4, can only reach: panel3, panel4, panel5. 3. UR5E with suction gripper ('Chad'): must put yellow trapezoid on panel6, can only reach: panel5, panel6, panel7. Observation Space 1) the robot's own goal, 2) locations of each cube.  Task Description. 2 Robots pack a set of grocery items from the table into a bin. The objects are in close proximity and robots must coordinate their paths to avoid collision. Agent Capability. Two robots on opposite sides of table 1. UR5E with robotiq gripper ('Alice'): can pick and place any object on the table 2. Franka Panda ('Bob'): can pick and place any object on the table Observation Space 1) robots' gripper locations, 2) locations of each object, 3) locations of all slots in the bin. Available Robot Skills. (must include task-space waypoints) 1) PICK [object] PATH [path]; 2) PLACE [object] [target] PATH [path] 10.6 Task: Move Rope Figure 11: Move Rope task Task Description. 2 robots lift a rope together over a wall and place it into a groove. They must coordinate their grippers to avoid collision. Agent Capability. Two robots on opposite sides of table 1. UR5E with robotiq gripper ('Alice'): can pick and place any end of the rope within its reach 2. Franka Panda ('Bob'): can pick and place any end of the rope within its reach Observation Space 1) robots' gripper locations, 2) locations of rope's front and end back ends; 3) locations of corners of the obstacle wall; 4) locations of left and right ends of the groove slot. Available Robot Skills. (must include task-space waypoints) 1) PICK [object] PATH [path]; 2) PLACE [object] [target] PATH [path] 10.7 Task: Arrange Cabinet Task Description. 3 robots, two of them each hold one side of the cabinet door open, while the third robot takes the cups out and place them onto the correct coasters. Agent Capability. Three robots, one on left side of the table, two on right side of table 1. UR5E with robotiq gripper ('Alice'): stands on left side, can only reach left cabinet door 2. Franka Panda ('Bob'): : stands on right side, can only reach right cabinet door 3. UR5E with suction gripper ('Chad'):: stands on right side, can reach right cabinet door and cups and mugs inside the cabinet.</p><p>Observation Space 1) locations cabinet door handles; 2) each robot's reachable objects, unaware of other robot's reach range.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="11">Details on LLM Prompting</head><p>We use a separate query call for every agent's individual response in a dialog, see the text box below for a redacted example of an agent's prompt:</p><p>You are robot [agent name], collaborating with [other agent(s)] to [task context]. You can [agent capability]. Previously: [round history] At current round: [current observation] Discuss with [other agent(s)] to coordinate and complete the task together.[communication instruction]. Never forget you are [agent name]! Respond very concisely by [response format] Previous chat: [dialog from previous re-plan rounds] This proposed plan failed: [plan feedback] Current chat: [dialog from current round] Your response is: I am Alice, ... Algorithm 1 Multi-agent dialog for collaboration Require: agent u 1 , ..., u N , task horizon T ; Require: max number of re-plans K, max number of dialog per round M , Require: history buffer H; feedback buffer F t ← 0 o t ← env.reset() H.empty() while t &lt; T do F .empty() while len(F )&lt; K do dialog, plan ← PromptDialogs(H, F, o t , u n ) plan-valid, feedback ← GiveFeedback(plan) if plan-valid then final-plan ← parsed-plan break end if F .append(feedback) end while if plan-valid then σ t ← MotionPlanner(o t , final-plan) o t+1 , r t+1 ← env.step(σ t ) if r t+1 &gt; 0 then break end if end if H.append(dialog) t ← t + 1 end while 12 Additional Experiment Results</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="12.1">Failure Analysis on RoCoBench</head><p>We provide example failure scenarios observed in the agent dialog and environment interaction.</p><p>Factual Errors in Dialog. We observe that when one LLM-generated agent makes a mistake, it could sometimes cause subsequent dialog to build on the wrong reasoning. See an example below: one agent (Alice) wrongfully decided the task is complete, and other agents repeat this wrong claim and choose to wait for multiple rounds while the task is, in fact, not finished. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Errors in Motion Trajectory Execution</head><p>Due to the open-loop nature of the execution, small errors in a motion trajectory could lead to unexpected errors, e.g. knocking of an object by accident.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="12.2">Real World Experiment Setup</head><p>The robot agent is a 6DoF UR5E arm with suction gripper, and dialog is enabled by querying a GPT-4 model to respond as agent 'Bob', who is discussing with a human collaborator 'Alice'. The human user provides text input to engage in the dialog, and arranges cubes on the same tabletop. For perception, we use top-down RGB-D image from an Azure Kinect sensor.</p><p>See the text below for an example of the robot's prompt:</p><p>==== System Prompt ==== [Action Options] 1) PICK &lt;obj&gt; PLACE &lt;target&gt;: robot Bob must decide which block to PICK and where to PLACE. To complete the task, Bob must PLACE all blocks in the wooden bin. 2) WAIT: robot Bob can choose to do nothing, and wait for human Alice to move blocks from inside cups to the table. [Action Output Instruction] First output 'EXECUTE ', then give exactly one ACTION for the robot. Example#1: 'EXECUTE NAME Bob ACTION PICK green cube PLACE wooden bin ' Example#2: 'EXECUTE NAME Bob ACTION WAIT ' You are a robot called Bob, and you are collaborating with human Alice to move blocks from inside cups to a wooden bin. You cannot pick blocks when they are inside cups, but can pick blocks when they are on the table. Alice must help you by moving blocks from inside cups to the table. You must WAIT for Alice to move blocks from inside cups to the table, then you can PICK blocks from the table and PLACE them in the wooden bin. [mention task order specification] Talk with Alice to coordinate and decide what to do. At the current round: [object descriptions from observation] Think step-by-step about the task and Alice's response. Improve your plans if given [Environment Feedback]. Propose exactly one action for yourself at the current round, select from [Action Options]. End your response by either: 1) output PROCEED, if the plans require further discussion; 2) If everyone has made proposals and got approved, output the final plan, must strictly follow [Action Output Instruction]! ==== User Prompt ==== You are Bob, your response is: response from GPT-4: EXECUTE NAME Bob ACTION ... We use the chatCompletion mode in GPT-4. At each evaluation run, we randomly sample a new set of obstacles and agents' start-goal locations. Each run is given up to 5 attempts: using the same system prompt, which describes the task and output instructions, and a user prompt, which describes the current grid layout. If a first attempt fails, the feedback from previous plans are appended to the user prompt at later attempts, until reaching the max number of attempts. See below for the prompts and GPT-4's response (some coordinate tuples are omitted (marked as "omitted") due to limited space). </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="13.2">Full Experiment Results</head><p>We run 30 evaluation runs, each with a randomly sampled grid layout. See the left plot in Figure <ref type="figure" target="#fig_11">13</ref> for evaluation results. We make the following observations: first, the planning success rate varies moderately with the temperature parameter of GPT-4, which controls how deterministic its output generation is. A moderate temperature around 0.6, i.e. partially deterministic, shows the best success rate, and notably is able to 1-shot succeed the most times. Next, we observe the model's ability to read from the feedback of a previous plan, and eventually succeed after a few more attempts. We also provide a visualization of an example output from one of the runs, where the path from first attempt has collision, and the model is able to correct this plan.  You are a robot Chad, collaborating with Dave to make a [vegetarian sandwich]. Food items must be stacked following this order: bread slice1, tomato, cheese, cucumber, bread slice2, where bread slice1 must be PUT on cutting board. You must stay on right side of the table! This means you can only PICK food from right side, and Dave can only PICK from the other side. Only one robot can PUT at a time, so you must coordinate with Dave. At the current round: You can see these food items are on your reachable side: bread slice1: on cutting board cheese: atop tomato tomato: atop bread slice1 cucumber: atop cheese ham: on your side beef patty: on your side Your gripper is empty You are Chad. Your gripper is not working right now. What should you say to Dave? Select exactly one option from below. You must first output a single option number (e.g. A), then give a very short, one-line reason for why you choose it. Options: A: Sorry Dave, we can't complete the task anymore, my gripper is broke. B: Let's stop. The recipe needs ham but Dave can't reach my side and my gripper is not functioning. C: Dave, go ahead and finish the sandwich without me, there isn't anything we need on my side anyway.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><figDesc>EXECUTE Alice PLACE banana bin_front_left PATH [(-0.25, 0.39, 0.49), ...] Bob PLACE apple bin_front_right PATH [(-0.74, 0.40, 0.54), ...] History == Round 0 == [Chat] … [Actions] … == Round 1 == … Robot Dialog I have successfully picked up the banana. I will now try to place it in the front slot. My initial PATH is …… I have the apple in my gripper. I will attempt to place it in the right slot.My initial PATH is ……There should be no collisions.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: RoCo consists of three main components: 1) Multi-agent dialog via LLMs: each robot is equipped</figDesc><graphic coords="3,401.76,210.03,109.43,94.33" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Spatial reasoning by LLM. GPT-4 plans 3D collision-free paths for three agents.</figDesc><graphic coords="3,419.60,477.04,79.18,70.76" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: We demonstrate the utility of LLM-proposed waypoints by comparing with two alternatives: a linear waypoint path that interpolates between start and goal; 'Hard-code', a predefined waypoint path that always performs top-down pick or place.</figDesc><graphic coords="5,150.71,716.24,138.20,86.37" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Sweep Floor task</figDesc><graphic coords="13,385.20,174.52,118.79,94.20" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 9 :</head><label>9</label><figDesc>Figure 9: Sort Cubes task</figDesc><graphic coords="13,385.20,521.83,118.78,105.81" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 10 :</head><label>10</label><figDesc>Figure 10: Pack Grocery task</figDesc><graphic coords="14,385.20,57.63,118.80,107.66" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 12 :</head><label>12</label><figDesc>Figure 12: Arrange Cabinet task</figDesc><graphic coords="14,385.20,447.56,118.80,112.84" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>[</head><figDesc>Alice]: [...] we have successfully completed our task. [...], let's wait for further instructions. [Bob]: I agree that we have successfully completed our task. Great teamwork, everyone! Let's wait [...] [Chad]: I concur that we have accomplished our goal. Excellent teamwork! Let's wait [...].</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>13</head><figDesc>Toy Example on LLM for 3D Path Planning13.1 Experiment Setup</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>====</head><figDesc>System Prompt ==== Plan paths for agents to navigate a 3D grid to reach their respective goals and avoid collision. You are given: 1) a list of obstacle coordinates (x, y, z): locations of the obstacle grid cells, agents must avoid them. 2) a list of [([name], [init], [goal]) tuples], [init] and [goal] are 3D coordinates of the initial position and goal position of agent named [name]. 3) a previous plan, if any, and why it failed. Analyze this information and re-plan a collision-free path. How to plan a path: 1) Make sure each path does not touch any obstacle, ... [planning instructions] [instruction on output format] ==== User Prompt ==== At the current step: Grid size: 10 x 10 x 10 Obstacles:(4, 9, 6) (0, 2, 0)... [list of all obstacle 3D locations] Agent Alice init: (7, 6, 2) goal: (5, 3, 2) Agent Bob init: (9, 9, 5) goal: (7, 1, 4) Agent Chad init: (1, 0, 0) goal: (9, 3, 6) Agent Dave init: (9, 1, 1) goal: (7, 1, 0) Feedback: this previous plan failed: [past plan, omitted] Some steps in this plan are not exactly 1 step away from each other: Bob: (7, 4, 5), (7, 1, 5); Use this information to try again, update this plan so it has collision-free, strictly one-step-apart paths. Feedback: this previous plan failed: ...[another feedback, same format as above] Your reasoning and plan is: response from GPT-4: PLAN NAME Alice PATH [(7, 6, 2), (6, 6, 2), ...[omitted] ] NAME Bob PATH [(9, 9, 5), (8, 9, 5), ...[omitted] ] NAME Chad PATH [(1, 0, 0), (2, 0, 0), ...omitted ] NAME Dave PATH [(9, 1, 1), (8, 1, 1), (7, 1, 1), (7, 1, 0)]</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Figure 13 :</head><label>13</label><figDesc>Figure13: Top right: planning success rate over 30 evaluation runs on a size 5 3 3D grid. The LLM (GPT-4)'s performance shows variation with the temperature parameter. Top left: an example output on a size 5 3 grid. GPT-4 is able to improve the previous plan based on feedback on collided steps, which is appended to the prompt in 3D coordinate format. Bottom: we repeat the same experiments and show example outputs on a more challenging, size 10 3 grid, where the planning success rate is lower, and the model requires more re-planning attempts before reaching a successful plan.</figDesc><graphic coords="18,415.97,325.09,128.24,131.64" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>14</head><figDesc>Multi-Agent Representation andReasoningDataset14.1 Task: Self-Knowledge Question-Answering 14.1.1 Agent Capability 57 total questions. Sim. Task: sequential transport -Context (system prompt): 7 panels on the table, ordered left to right: panel1,...,panel7. They form a straight assembly line, panel1 is closed to panel2 and farthest from panel7. You are robot Alice in front of panel2. You are collaborating with Bob, Chad to sort cubes into their target panels. The task is NOT done until all three cubes are sorted. At current round: blue square is on panel5 pink polygon is on panel1 yellow trapezoid is on panel3 Your goal is to place blue square on panel2, but you can only reach panel1, panel2, panel3: this means you can only pick cubes from these panels, and can only place cubes on these panels. Never forget you are Alice! Never forget you can only reach panel1, panel2, panel3! -Question (user prompt): You are Alice. List all panels that are out of your reach. Think step-by-step. Answer with a list of panel numbers, e.g. [1, 2] means you can't reach panel 1 and 2. -Solution: panels [4,5,6,7] 14.1.2 Memory Retrieval 44 total questions. Task: Make Sandwich, Sweep Floor 14.5 Challenge: Adaptation to Unexpected Scenarios 31 questions. Multiple choice (A, B, C).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Overview of the key properties designed</figDesc><table><row><cell>5 Experiments</cell><cell>Sweep</cell><cell>Pack</cell><cell>Move</cell><cell>Arrange</cell><cell>Make</cell><cell>Sort</cell></row><row><cell></cell><cell>Floor</cell><cell>Grocery</cell><cell>Rope</cell><cell>Cabinet</cell><cell>Sandwich</cell><cell>Cubes</cell></row><row><cell>Task</cell><cell cols="4">Parallel Parallel Parallel Seq</cell><cell>Seq</cell><cell>Seq</cell></row><row><cell cols="7">Observation Asym. Shared Shared Asym. Asym. Shared</cell></row><row><cell cols="2">Workspace Med</cell><cell>Med</cell><cell>High</cell><cell>High</cell><cell>Low</cell><cell>Low</cell></row></table><note><p>in RoCoBench tasks. Task Decomposition (1st row): whether sub-tasks can be completed in parallel or sequentially; Observation space (2nd row): whether all agents receive the same information of task status; Workspace Overlap (3rd row): proximity between robots during execution.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Evaluation results on RoCoBench. We report averaged success rates ↑ over 20 runs per task, the average number of steps in successful runs ↓ , and average number of re-plan attempts used across all runs ↓ .</figDesc><table><row><cell></cell><cell></cell><cell>Pack</cell><cell>Arrange</cell><cell>Sweep</cell><cell>Make</cell><cell>Sort</cell><cell>Move</cell></row><row><cell></cell><cell></cell><cell>Grocery</cell><cell>Cabinet</cell><cell>Floor</cell><cell>Sandwich</cell><cell>Cubes</cell><cell>Rope</cell></row><row><cell>Central Plan</cell><cell>Success</cell><cell cols="6">0.82 ± 0.06 0.90 ± 0.07 1.00 ± 0.00 0.96 ± 0.04 0.70 ± 0.10 0.50 ± 0.11</cell></row><row><cell>(oracle)</cell><cell>step, replan</cell><cell>11.1, 3.9</cell><cell>4.0, 2.7</cell><cell>8.4, 2.0</cell><cell>8.8, 1.2</cell><cell>8.6, 2.6</cell><cell>2.3, 3.9</cell></row><row><cell>Dialog w/o</cell><cell>Success</cell><cell cols="6">0.48 ± 0.11 1.00 ± 0.00 0.00 ± 0.00 0.33 ± 0.12 0.73 ± 0.11 0.65 ± 0.11</cell></row><row><cell>History</cell><cell>step, replan</cell><cell>9.2, 3.1</cell><cell>4.2, 1.4</cell><cell>N/A, 1.0</cell><cell>9.6, 1.8</cell><cell>5.8, 1.4</cell><cell>3.7, 3.1</cell></row><row><cell>Dialog w/o</cell><cell>Success</cell><cell cols="6">0.35 ± 0.10 0.70 ± 0.10 0.95 ± 0.05 0.35 ± 0.11 0.53 ± 0.13 0.45 ± 0.11</cell></row><row><cell>Feedback</cell><cell>step, replan</cell><cell>18.0, 1.0</cell><cell>5.9, 1.0</cell><cell>7.6, 1.0</cell><cell>12.6, 1.0</cell><cell>4.9, 1.0</cell><cell>3.4, 1.0</cell></row><row><cell>Dialog</cell><cell>Success</cell><cell cols="6">0.44 ± 0.06 0.75 ± 0.10 0.95 ± 0.05 0.80 ± 0.08 0.93 ± 0.06 0.65 ± 0.11</cell></row><row><cell>(ours)</cell><cell>step, replan</cell><cell>9.9, 3.5</cell><cell>4.7, 2.0</cell><cell>7.1, 1.0</cell><cell>10.2, 1.7</cell><cell>4.9, 1.3</cell><cell>2.5, 3.1</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Real world experiment results.</figDesc><table><row><cell>Since ham is already on tomato, I will pick up cheese</cell><cell>Please complete the sandwich. I will wait</cell></row><row><cell>Sounds good. I will wait this round</cell><cell>Understood. I will put bread slice on the cucumber</cell></row></table><note><p>Bob, let's start with the blue_cube since it's the closest to me […] What do you think? Alice, I'm actually closer to the green_cube […]I'll MOVE to the green_cube[…] Are you fine with this plan? […] Alright, Bob, let's start with green_cube since you're closer to it. […] Bob, let's sweep up the red_cube first since it's closest to me. I'll [...]. Does that sound good? Yes, Alice, that sounds good. Let's both MOVE to the red_cube for this round. EXECUTE [...]</p><p>Figure 5: RoCo demonstrates strong adaptation ability to variations in task semantics. We use Make Sandwich</p><p>task in RoCoBench to showcase three variation categories: 1) object initialization, i.e. randomized food items' locations on the table; 2) task goals, i.e. robots must change behavior according to different sandwich recipes; 3) agent capability, e.g. agents can only pick food items that are within their reach range.</p><p>5.4 Real-world Experiments: Human-Robot Collaboration</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 :</head><label>4</label><figDesc>Evaluation results on the multi-agent LLM reasoning dataset. We measure the question-answering accuracy on each test category and compare performance of four different models.</figDesc><table><row><cell></cell><cell cols="2">Self-knowledge</cell><cell cols="2">Communication</cell><cell>Adaptation</cell></row><row><cell></cell><cell>Capability</cell><cell>Memory</cell><cell>Inquiry</cell><cell>Respond</cell></row><row><cell>GPT-4-0314</cell><cell cols="4">0.67 ± 0.06 0.84 ± 0.06 0.79 ± 0.06 0.83 ± 0.04 0.68 ± 0.08</cell></row><row><cell>GPT-4-0613</cell><cell cols="4">0.68 ± 0.06 0.91 ± 0.04 0.57 ± 0.08 0.86 ± 0.03 0.71 ± 0.08</cell></row><row><cell cols="5">GPT-3.5-turbo 0.68 ± 0.06 0.59 ± 0.07 0.48 ± 0.08 0.30 ± 0.05 0.58 ± 0.09</cell></row><row><cell>Claude-v1</cell><cell cols="4">0.37 ± 0.06 0.70 ± 0.07 0.55 ± 0.08 0.60 ± 0.05 0.65 ± 0.09</cell></row></table><note><p>You are robot Chad .. [cube-on-panel locations...]. You can reach: [panels] Which cube(s) can you reach? [...] Answer with a list of cube names, answer None if you can't reach any. Solution: None GPT-4: None Claude-v1: yellow trapezoid GPT-3.5-turbo: At the current round, I can reach the yellow trapezoid cube on panel3.</p></note></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_0"><p>Available Robot Skills. 1) PICK [object]; 2) OPEN [one side of door handle]; 3) WAIT; 3) PLACE [object] [target]</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgments</head><p>This work was supported in part by <rs type="funder">NSF</rs> Award #<rs type="grantNumber">2143601</rs>, #<rs type="grantNumber">2037101</rs>, and #<rs type="grantNumber">2132519</rs>. We would like to thank <rs type="institution">Google</rs> for the UR5 robot hardware. The views and conclusions contained herein are those of the authors and should not be interpreted as necessarily representing the official policies, either expressed or implied, of the sponsors. The authors would like to thank <rs type="person">Zeyi Liu</rs>, <rs type="person">Zhenjia Xu</rs>, <rs type="person">Huy Ha</rs>, <rs type="person">Cheng Chi</rs>, <rs type="person">Samir Gadre</rs>, <rs type="person">Mengda Xu</rs>, and <rs type="person">Dominik Bauer</rs> for their fruitful discussions throughout the project and for providing helpful feedback on initial drafts of the manuscript.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_Hg3merQ">
+					<idno type="grant-number">2143601</idno>
+				</org>
+				<org type="funding" xml:id="_7bS2ubZ">
+					<idno type="grant-number">2037101</idno>
+				</org>
+				<org type="funding" xml:id="_ucpnUUa">
+					<idno type="grant-number">2132519</idno>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title/>
+		<idno>ArXiv, abs/2303.08774</idno>
+	</analytic>
+	<monogr>
+		<title level="j">OpenAI. Gpt-4 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Simple open-vocabulary object detection with vision transformers</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Minderer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gritsenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Neumann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Weissenborn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dosovitskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mahendran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Arnab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Dehghani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kipf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Houlsby</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Introducing claude</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Llc</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/index/introducing-claude" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Cortes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Herzog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ibarz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Irpan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Ruano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Jeffrey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Jesmonth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">J</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Julian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kalashnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Kuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K.-H</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Luu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Parada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Pastor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Quiambao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Rettinghouse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Reyes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sermanet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Sievers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Toshev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Vanhoucke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeng</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note>Do as i can, not as i say: Grounding language in robotic affordances</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Inner monologue: Embodied reasoning through planning with language models</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">R</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Mordatch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sermanet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Jackson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Luu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ichter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Code as policis: Language model programs for embodied control</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2209.07753</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Progprompt: Generating situated robot task plans using large language models</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Blukis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mousavian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tremblay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fox</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Thomason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Garg</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2209.11302</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Demo2code: From summarizing demonstrations to synthesizing code via extended chain-of-thought</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Gonzalez-Pumariega</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Choudhury</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.16744</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Antonova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lepert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bohg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Rusinkiewicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Funkhouser</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.05658</idno>
+		<title level="m">Tidybot: Personalized robot assistance with large language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Instruct2act: Mapping multi-modality instructions to robotic actions with large language model</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.11176</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Agia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Migimatsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Pavone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bohg</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.12153</idno>
+		<title level="m">Text2motion: From natural language instructions to feasible plans</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Arkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Roy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Fan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.06531</idno>
+		<title level="m">Autotamp: Autoregressive task and motion planning with llms as translators and checkers</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Task and motion planning with large language models for object rearrangement</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Paxton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.06247</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Visually grounded task and motion planning for mobile manipulation</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2022 International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="1925" to="1931" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Karamcheti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Palleti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shivakumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Sadigh</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2301.02555</idno>
+		<title level="m">no, to the right&quot;online language corrections for robotic manipulation via shared autonomy</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kwon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">M</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Bullard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Sadigh</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.00001</idno>
+		<title level="m">Reward design with language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Language to rewards for robotic skill synthesis</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Gileadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kirmani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K.-H</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">G</forename><surname>Arenas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H.-T</forename><forename type="middle">L</forename><surname>Chiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Erez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Hasenclever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Humplik</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.08647</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">D</forename><surname>Driess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">S</forename><surname>Sajjadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lynch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Wahid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Vuong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.03378</idno>
+		<title level="m">Palm-e: An embodied multimodal language model</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lynch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Wahid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Betker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Baruch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Armstrong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Florence</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.06407</idno>
+		<title level="m">Interactive language: Talking to robots in real time</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Robotic skill acquisition via instruction augmentation with vision-language models</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sermanet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Wahid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tompson</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.11736</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Learning transferable visual models from natural language supervision</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">W</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hallacy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Goh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Clark</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on machine learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="8748" to="8763" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Socratic models: Composing zero-shot multimodal reasoning with language</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Attarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Choromanski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Welker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Tombari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Purohit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ryoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Sindhwani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Vanhoucke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Florence</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Chat with the environment: Interactive multimodal perception using large language models</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Weber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">B</forename><surname>Hafez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wermter</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.08268</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kwon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Myers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Karamcheti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dragan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Sadigh</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.08651</idno>
+		<title level="m">Toward grounded social reasoning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Alphablock: Embodied finetuning for vision-language reasoning in robot manipulation</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Fu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2209.07753</idno>
+		<title level="m">Code as policies: Language model programs for embodied control</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Andreas</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.01681</idno>
+		<title level="m">Language models as agent models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Dialogue games for benchmarking language understanding: Motivation, taxonomy, strategy</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Schlangen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">clembench: Using game play to evaluate chat-optimized language models as conversational agents</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Chalamalasetti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Götze</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hakimov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Madureira</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sadler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Schlangen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">S</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">C</forename><surname>O'brien</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">J</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R</forename><surname>Morris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">S</forename><surname>Bernstein</surname></persName>
+		</author>
+		<title level="m">Generative agents: Interactive simulacra of human behavior</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Camel: Communicative agents for &quot;mind&quot; exploration of large scale language model society</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">A A K</forename><surname>Hammoud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Itani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Khizbullin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ghanem</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2303.17760</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Training socially aligned language models in simulated human society</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">M</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Vosoughi</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Ai safety via debate</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Irving</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Christiano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Amodei</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">V</forename><surname>Nair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Schumacher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Tso</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kannan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.17071</idno>
+		<title level="m">Dera: Enhancing large language model completions with dialog-enabled resolving agents</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Encouraging divergent thinking in large language models through multi-agent debate</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Jiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Shi</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2305.19118</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Improving factuality and reasoning in language models through multiagent debate</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Torralba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Mordatch</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">On multi-arm manipulation planning</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Koga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-C</forename><surname>Latombe</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 1994 IEEE International Conference on Robotics and Automation</title>
+		<meeting>the 1994 IEEE International Conference on Robotics and Automation</meeting>
+		<imprint>
+			<date type="published" when="1994">1994</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="945" to="952" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Sampling-based algorithms for optimal motion planning</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Karaman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Frazzoli</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Planning representations and algorithms for prehensile multi-arm manipulation</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dobson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">E</forename><surname>Bekris</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2015 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="6381" to="6386" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Learning a decentralized multi-arm motion planner</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Song</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robotic Learning (CoRL)</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Coordinated multi-arm motion planning: Reaching for moving objects in the face of uncertainty</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">S M</forename><surname>Salehian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Figueroa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Billard</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Robotics: Science and Systems</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Randomized path planning for linkages with closed kinematic chains. Robotics and Automation</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yakey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lavalle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Kavraki</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/70.976030</idno>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on</title>
+		<imprint>
+			<biblScope unit="volume">17</biblScope>
+			<biblScope unit="page">2002</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Closed-chain manipulation of large objects by multi-arm robotic systems</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Xian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Lertkultanon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q.-C</forename><surname>Pham</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Robotics and Automation Letters</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="1832" to="1839" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Multi-robot grasp planning for sequential assembly operations</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Dogar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Spielberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Rus</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ICRA.2015.7138999</idno>
+	</analytic>
+	<monogr>
+		<title level="m">2015 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="193" to="200" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Mujoco: A physics engine for model-based control</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Todorov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Erez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tassa</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/IROS.2012.6386109</idno>
+	</analytic>
+	<monogr>
+		<title level="m">2012 IEEE/RSJ International Conference on Intelligent Robots and Systems</title>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="5026" to="5033" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">S</forename><surname>Tunyasuvunakool</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Muldal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Doron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bohez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Merel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Erez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Heess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tassa</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">dm control: Software and tasks for continuous control. Software Impacts</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="page">100022</biblScope>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<title level="m" type="main">MuJoCo Menagerie: A collection of high-quality simulation models for MuJoCo</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">M</forename><surname>Contributors</surname></persName>
+		</author>
+		<ptr target="http://github.com/deepmind/mujocomenagerie" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">Learning dexterous manipulation from exemplar object trajectories and pre-grasps</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Dasari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Kumar</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<title level="m" type="main">-Current Round You are a robot Chad, collaborating with Dave to make a vegetarian sandwich</title>
+		<imprint/>
+	</monogr>
+	<note>Round#1: .... ......] You can see these food items are on your reachable side: ..</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<title level="m" type="main">Based on your [Chat History] with Dave and [Executed Action] from previous rounds in [History], what food items were initially on Dave&apos;s side of the table? Only list items that Dave explicitly told you about and Dave actually picked up. Don&apos;t list items that you are unsure about</title>
+		<imprint/>
+	</monogr>
+	<note>You are Chad Output the item names as a list. Think step-by-step</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<title level="m" type="main">Inquiry 41 multiple-choice questions, using Arrange Cabinet task. -Context (system prompt): You are Bob, collaborating with Alice, Chad to pick a mug and a cup out of cabinet, and place them on correct coasters. Both left and right cabinet doors should be OPENed and held open, while anything inside can be PICKed. You must coordinate to complete the task. At current round: left door is closed, right door is closed, mug is inside cabinet; cup is inside cabinet; Alice&apos;s gripper is holding nothing, Your gripper is holding nothing, Chad&apos;s gripper is holding nothing, Never forget you are Bob! Never forget you can only reach right door handle! -Question (user prompt): You are thinking about picking right door handle</title>
+		<idno>Solution: bread slice1 14.2 Challenge: Effective Communication 14.3</idno>
+		<imprint/>
+	</monogr>
+	<note>Who and what should you ask to confirm this action? Think step-by-step, then choose exactly one option from below</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title level="m" type="main">They form a straight assembly line, panel1 is closed to panel2 and farthest from panel7. You are robot Alice in front of panel2. You are collaborating with Bob, Chad to sort cubes into their target panels. The task is NOT done until all three cubes are sorted. At current round: blue square is on panel5 pink polygon is on panel3 yellow trapezoid is on panel3 Your goal is to place blue square on panel2, but you can only reach panel1, panel2, panel3: this means you can only pick cubes from these panels, and can only place cubes on these panels. You can help others by moving other cubes that are within your reachable panels. Never forget you are Alice! Never forget you can only reach panel1, panel2, panel3! You are Alice. Chad needs to put yellow trapezoid on panel6, and asked you for help. How should you respond? Think step-by-step</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+		</imprint>
+	</monogr>
+	<note>tell others about this plan because you are free and right door handle is within your reach Alice and Chad can reach right door handle because it&apos;s not within your reach. [C] ask if Alice and Chad can help, because you can reach right door handle, but you are busy and they are free. [D] all three of you are busy, so it&apos;s better to wait until later. -Solution: [A] 14.4 Responsiveness 96 questions. Binary YES or NO 7 panels on the table, ordered left to right: panel1 If you can help, your answer must start with YES and propose a plan to help. If you can&apos;t help, must answer NO</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

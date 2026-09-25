@@ -1,0 +1,1459 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Tool-integrated Reinforcement Learning for Repo Deep Search</title>
+				<funder ref="#_WjZsVCB">
+					<orgName type="full">National Key Research and Development Program of China</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-08-06">6 Aug 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Zexiong</forename><surname>Ma</surname></persName>
+							<email>mazexiong@stu.</email>
+						</author>
+						<author>
+							<persName><forename type="first">Chao</forename><surname>Peng</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Qunhong</forename><surname>Zeng</surname></persName>
+							<email>qunhongzeng@bit.edu.cn</email>
+							<affiliation key="aff1">
+								<orgName type="institution">Beijing Institute of Technology</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Pengfei</forename><surname>Gao</surname></persName>
+							<email>gaopengfei.se@bytedance.com</email>
+						</author>
+						<author>
+							<persName><forename type="first">Yanzhen</forename><surname>Zou</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Bing</forename><surname>Xie</surname></persName>
+							<email>xiebing@pku.edu.cn</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Peking University</orgName>
+								<address>
+									<addrLine>♣ ByteDance</addrLine>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Tool-integrated Reinforcement Learning for Repo Deep Search</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-08-06">6 Aug 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">1E83810865CBECA9ED0C927BA736D151</idno>
+					<idno type="arXiv">arXiv:2508.03012v2[cs.SE]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:11+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Issue localization, the process of identifying code locations that need modification to resolve software issues, is a critical yet challenging task in software development. The semantic gap between natural language issue descriptions and faulty code requires complex multi-hop reasoning through code dependencies. Existing LLM-based agents attempt to address this by integrating repository retrieval tools. However, this transforms issue localization into a demanding task we call Repo Deep Search, which requires the LLM to effectively utilize various repository retrieval tools throughout a multi-step reasoning and navigation process. To tackle this challenge, we present ToolTrain, a two-stage tool-integrated training framework combining rejection-sampled supervised fine-tuning and tool-integrated reinforcement learning to enhance LLMs' ability to use retrieval tools for issue localization. Experimental results show that ToolTrain-trained models achieve state-of-the-art performance, with our 32B model even surpassing Claude-3.7 on function-level localization. The results also show that improved localization performance translates to better end-to-end issue resolution performance. This further demonstrates that training for issue localization is a viable and effective strategy for improving automated software development.</p><p>We shape our tools, and thereafter our tools shape us.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>-Marshall McLuhan</head><p>* Work done during the internship at ByteDance.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Issue localization is the process of identifying the exact locations in source code that need to be modified to resolve a software issue <ref type="bibr" target="#b34">(Yang et al., 2024)</ref>. Given an issue description (e.g., a bug report in natural language), developers must navigate through the entire repository to locate the specific files, functions, or code segments that require changes <ref type="bibr" target="#b30">(Wen et al., 2016)</ref>. Issue localization is a time-consuming and labor-intensive task, particularly for complex, large-scale repositories <ref type="bibr" target="#b39">(Zhu et al., 2022;</ref><ref type="bibr" target="#b36">Youm et al., 2017)</ref>. This has motivated growing research into automated approaches, and with LLMs' remarkable success in software engineering tasks such as code generation <ref type="bibr" target="#b10">(Jiang et al., 2024;</ref><ref type="bibr" target="#b2">Austin et al., 2021;</ref><ref type="bibr" target="#b17">Li et al., 2022)</ref> and test synthesis <ref type="bibr">(Wang et al., 2024b;</ref><ref type="bibr" target="#b6">Fakhoury et al., 2024)</ref>, LLM-based issue localization has emerged as a natural and promising direction.</p><p>LLM-based agents <ref type="bibr" target="#b4">(Chen et al., 2025;</ref><ref type="bibr" target="#b34">Yang et al., 2024)</ref> allow LLMs to use various tools (e.g., searching specific function by keyword, listing functions that call a certain function) to dynamically explore repositories. However, this approach places higher demands on LLMs: beyond multi-step reasoning, they require sophisticated tool-calling abilities to explore code effectively rather than walking aimlessly through the repository. We refer to this complex, sequential navigation and discovery task as Repo Deep Search. Current LLMs often struggle with these high-demand requirements, making incorrect tool calls or failing to maintain coherent reasoning chains throughout the exploration process. Inspired by recent advancements in information retrieval where Reinforcement Learning (RL) agents are trained for multi-step Deep Search <ref type="bibr">(dee, 2025;</ref><ref type="bibr">Jin et al., 2025)</ref>, we investigate whether this paradigm can be extended to Repo Deep Search. Specifically, we explore using RL to enhance an LLM's autonomous navigation within a code repository, aiming to significantly improve its performance on what we define as Repo Deep Search for issue localization.</p><p>In this paper, we propose ToolTrain, a tool-integrated training framework to enable LLMs to perform more effective multi-hop reasoning with tool call during issue localization. Firstly, we implement RepoSearcher, a lightweight and LLM-friendly issue localization agent. RepoSearcher includes simple and easy-to-use retrieval tools that allow LLMs to retrieve function or class definitions by name. To help the LLMs better leverage these tools for multi-hop reasoning, we construct a set of labeled issue localization training data from open-source repositories and train the LLMs in two stages: (1) Rejection-sampled supervised fine-tuning (SFT), where the LLM generates tool-use trajectories, and only those leading to correct answers are used for fine-tuning. This stage serves as a warm-up to help the LLM learn the task format and how to call the retrieval tool. (2) Toolintegrated reinforcement learning (RL), where the LLM learns through trial and error by exploring different tool-use strategies. We employ rule-based reward signals that evaluate whether the LLM's exploration successfully locates the correct code elements. This direct feedback teaches the model which tool-calling patterns lead to successful localization and which lead to dead ends. Through this iterative process, the LLM learns to make more strategic tool calls at each step, avoiding redundant explorations and focusing on promising code paths. This two-stage training enables the LLMs to master multi-hop reasoning with retrieval tools, yielding more precise issue localization.</p><p>We applied ToolTrain to train LLMs and compared RepoSearcher with ToolTrain-model against multiple issue localization frameworks <ref type="bibr" target="#b11">(Jiang et al., 2025;</ref><ref type="bibr" target="#b32">Xia et al., 2025;</ref><ref type="bibr" target="#b4">Chen et al., 2025;</ref><ref type="bibr" target="#b37">Yu et al., 2025)</ref>. The results demonstrate that our method achieves state-of-the-art (SOTA) performance on the issue localization task among same-size LLMs, and on some function-level localization tasks, it even surpasses leading LLMs like Cluade-3.7. We also experimentally validated that more accurate issue localization results lead to better issue resolution performance. Furthermore, through a detailed analysis of the ToolTrain process, we found that reinforcement learning (RL) effectively enhances the LLM's tool-calling and reasoning abilities. This enables the model to explore the repository with greater efficiency and precision, allowing it to accurately localize the faulty position. In summary, this paper makes the following main contributions:</p><p>• We design RepoSearcher, a lightweight issue localization agent, to streamline the training of issue localization agents.</p><p>• We propose ToolTrain, a two-stage tool-integrated training approach, to enhance the reasoning capabilities of LLMs during the tool-calling process.</p><p>• We use ToolTrain to train open-source LLMs and validate the effectiveness of RepoSearcher with ToolTrain-model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Background and Motivation</head><p>In this section, we first introduce issue localization task and issue localization agent. Then we present two LLM post-training techniques: rejection-sampled supervised fine-tuning and rule-based reinforcement learning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Issue Localization</head><p>Issue localization <ref type="bibr" target="#b4">(Chen et al., 2025)</ref> refers to the task of identifying faulty file or code snippets in a repository based on natural language issue descriptions (e.g., bug reports). Issue localization is a critical step in the automated issue resolution pipeline, as accurate localization can significantly reduce the time and effort developers spend understanding and fixing problems. However, issue localization poses several challenges. On one hand, there is often a significant semantic gap between the issue description and the actual faulty code. The issue typically describes user-facing symptoms, while the root cause may lie deep in the underlying implementation <ref type="bibr">(Li et al., 2021c)</ref>. On the other hand, modern software systems are large and structurally complex, making exhaustive code search both inefficient and impractical.</p><p>To address these challenges, recent studies have explored LLM-based issue localization agents <ref type="bibr" target="#b4">(Chen et al., 2025;</ref><ref type="bibr" target="#b11">Jiang et al., 2025;</ref><ref type="bibr" target="#b37">Yu et al., 2025)</ref>, which allow LLMs to interact with code retrieval tools and perform multi-turn information gathering and reasoning, enabling more precise issue localization. The core idea behind these approaches is to empower LLMs with the ability to actively issue retrieval commands, dynamically query relevant parts of the repository based on context, and progressively narrow down the search space. However, existing LLMs are generally not trained specifically for tool-augmented reasoning, which limits their efficiency in using tools for issue localization. This problem is particularly pronounced when the issue descriptions are incomplete or ambiguous, the model often struggles to accurately understand the problem and make successful tool calls. Therefore, a key research challenge is to enhance the tool call accuracy of LLMs and their ability to reason over retrieved information during issue localization.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">LLM Post-Training</head><p>LLM post-training refers to the further training LLMs with (question, answer) training data after the pretraining phase. Post-Training aims to enhance the model's performance in specific tasks or usage scenarios. In this section, we will introduce two mainstream LLM post-training techniques: rejection sampled supervised fine-tuning and rule-based reinforcement learning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2.1">Rejection-Sampled Supervised Fine-tuning</head><p>Rejection-sampled supervised fine-tuning (SFT) <ref type="bibr">(Pan et al.)</ref> is a post-training approach that improves LLM's performance with a three-stage pipeline: sampling, filtering, and fine-tuning. First, the LLMs generate multiple candidate responses for a given question. Next, a filtering mechanism evaluates these responses against a ground-truth answer, selecting only the high-quality responses. Finally, this curated set of question-answer pairs is used as the dataset for supervised fine-tuning. In agent-based settings, an agent is used to generate multiple tool call trajectories. High-quality trajectories are selected for fine-tuning based on whether the final result matches the ground-truth answer. This approach could improve the model's ability to call tools and complete tasks effectively. However, a key limitation of SFT is that it only leverages successful (i.e., high-quality) trajectories during training, while ignoring the negative supervision signals embedded in failed trajectories. This onesided training paradigm can lead the model to "memorize" superficial patterns from a small number of successful examples <ref type="bibr" target="#b5">(Chu et al., 2025)</ref>, rather than truly learning the reasoning logic behind effective tool use. As a result, the fine-tuned model may suffer from limited generalization, especially when faced with out-of-distribution tasks, complex reasoning paths, or novel tool combinations <ref type="bibr" target="#b24">(Schick et al., 2023)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2.2">Rule-based Reinforcement Learning</head><p>Rule-based reinforcement learning (RL) (Guo et al., 2025) involves a three-stage process: sampling, scoring, and training. Initially, the LLM samples a set of responses to a prompt. These responses are then evaluated against a ground-truth answer to produce a reward score. This score is subsequently used as the supervision signal to fine-tune the model via reinforcement learning. Rule-based reinforcement learning evaluates the quality of reasoning processes solely based on the correctness of the final answer, using reinforcement learning to encourage reasoning paths that lead to correct answers while discouraging those that produce incorrect ones. This approach has proven effective in enhancing LLMs' reasoning abilities in complex tasks <ref type="bibr" target="#b20">(Ma et al., 2025)</ref>. Both OpenAI-o1 <ref type="bibr" target="#b9">(Jaech et al., 2024)</ref> and DeepSeek-R1 (Guo et al., 2025) have employed RL to improve LLMs' reasoning capabilities. In agent-oriented scenarios, rule-based reinforcement learning enables the agent to sample multiple reasoning trajectories (including tool invocations) and optimizes the entire trajectory through reinforcement learning based on scoring results. Several existing works have explored RL to improve LLM-based agents, such as OpenAI's Deep Research (dee, 2025) and Operator (ope, 2025), Issue Fault Files LLM Think Tool Call exit Search Context Repository Fault Functions Repo Search LLM Anthropic's Claude Code (cla, 2025c), and open-source efforts like Search-R1 (Jin et al., 2025).</p><p>Compared to fine-tuning methods that only utilize high-quality trajectories, RL not only improves the model's ability to generate correct trajectories by reinforcing high-scoring paths, but also reduces the likelihood of low-quality outputs by penalizing incorrect trajectories through low scores. By leveraging both positive and negative samples, RL makes more efficient use of the LLM's sampling outputs, significantly enhancing the model's generalization capabilities <ref type="bibr" target="#b33">(Xie et al., 2025;</ref><ref type="bibr" target="#b5">Chu et al., 2025)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">Motivation</head><p>Issue localization is a critical task in software engineering that requires LLM-based agents to make complex reasoning, and calling various search tools to navigate repositories. However, current LLMs exhibit poor performance on this task due to the lack of tool-integrated training. Their ability to reason throughout the tool-calling process remains a significant bottleneck. To address this gap, we explore how to effectively enhance the tool-calling capabilities of LLMs through post-training. A straightforward approach is rejection-sampled supervised fine-tuning (SFT), which can directly and simply improve an LLM's performance on issue localization. However, we contend that excessive fine-tuning risks compromising the model's generalization capabilities, potentially harming the broad reasoning skills that make LLMs powerful in the first place. On the other hand, Rule-based Reinforcement Learning (RL) holds great potential for enhancing an agent's capabilities in issue localization. However, a major challenge lies in constructing suitable training data for an issue localization agent. Specifically, ensuring the reliability of ground-truth answers is a difficult and underexplored problem. In this paper, we aim to tackle these challenges head-on. First, we will investigate methods for constructing high-quality training data specifically designed for the issue localization task. Second, we will explore how SFT and RL can be effectively combined. Our goal is to develop a hybrid training methodology that leverages the strengths of both approaches to significantly enhance the issue localization capabilities of LLM-based agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Approach</head><p>In this section, we will introduce our approach, which consists of three components. (1) Issue Localization Agent: We designed RepoSearcher, which contains a set of simple yet efficient tools for the issue localization task to reduce the difficulty for LLMs in acquiring repository context. (2) Training Data Construction: We constructed training data for issue localization based on (issue, pull request) data from open-source communities. (3) Tool-integrated Training: We propose ToolTrain, leverages our constructed data to perform tool-integrated training for LLMs. This training process enables the models to efficiently use tools for reasoning, further improves their accuracy in issue localization.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Issue Localization Agent</head><p>An LLM-based agent capable of excelling at issue localization and amenable to tool-integrated training should be designed with the following characteristics: (1) Well-Defined and Usable Tools: The tools must be clearly defined, simple to use, and enable the LLM to accurately retrieve content from the target repository. (2) Concise Trajectories: The localization should not require an excessive</p><p>Table 1: Repository search tools for RepoSearcher.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>API name</head><p>Description Output GetRepoStructure ( ) Get the repository file structure. The repository file structure. GetImportOfFile (file)</p><p>Get the imports of given file.</p><p>The imports of file. SearchClass (file, class)</p><p>Search for the content of class in the file.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Code content of the searched class. SearchFunction (file, function)</head><p>Search for the content of function in the file.</p><p>Code content of the searched function. SearchClassMethod (file, class, method) Search for the content of method in the class of file. Code content of the searched method. Exit ( ) Exit if LLM have found all the information needed.</p><p>number of tool calls. This is critical to prevent the generation of overly long trajectories, which cannot be fully utilized as complete samples for training the LLM.</p><p>As shown in Table <ref type="table">1</ref>, we designed a set of simple and easy-to-use search tools for retrieving repository content. This suite includes six tools: GetRepoStructure, GetImportOfFile, SearchClass, SearchFunction, SearchClassMethod, and Exit. The GetRepoStructure and GetImportOfFile tools are designed to quickly and accurately provide the repository's structural information and dependencies. This helps the LLM understand the overall repository architecture and perform coarse-grained localization. On the other hand, SearchClass, SearchFunction, and SearchClassMethod provide the model with specific code snippets from the repository. This allows the LLM to inspect the content of specific functions and perform fine-grained localization. Once the LLM determines that it has gathered sufficient information, it invokes the Exit tool to conclude the search process.</p><p>As shown in Figure <ref type="figure" target="#fig_0">1</ref>, we propose RepoSearcher, a lightweight issue localization agent. Initially, RepoSearcher generates a preliminary thought based on the input issue description and invokes a retrieval tool to fetch content from the repository. Based on the retrieved results, it proceeds with the next cycle of reasoning and tool invocation. Through multiple rounds of tool calls, RepoSearcher navigates across different functions within the project to gather relevant information. Once the LLM determines that all necessary information has been collected, it calls the Exit tool and provides the final issue localization result based on the accumulated context.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Training Data Construction</head><p>In this paper, we construct training data for the issue localization task based on (issue, pull request) pairs from high-quality projects on GitHub. We select 600 high-quality repositories from GitHub according to the following criteria: (1) at least 1,000 issues; (2) at least 1,000 pull requests;</p><p>(3) at least 100 stars; (4) inclusion of an appropriate license. To prevent data leakage, we excluded repositories and issues that appeared in SWE-Bench-Verified (our evaluation dataset, see Section 4.1 for details).</p><p>From these repositories, we construct issue localization training data by pairing resolved issues with their corresponding pull requests. To ensure data quality, we apply several filtering criteria: First, we discard issues with fewer than 100 characters to ensure sufficient descriptive content. Second, we filter out pull requests that only contain documentation updates, configuration changes, or other non-code modifications, focusing on modifications to the actual source code. Through this selection process, we constructed around 28k high-quality localization examples. For each example, we form the question q from the issue description and use the source code files and functions modified in the corresponding pull request as the ground-truth answer A q (excluding any non-source code elements). By leveraging authentic, high-quality, and successfully resolved issues as the foundation of our training data, we ensure both the relevance and reliability of our dataset, which in turn drives the effectiveness and stability of our training pipeline.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Tool-integrated Training</head><p>We propose ToolTrain, a two-stage tool-integrated training framework, to enhance the LLM's ability to reason and interact with external tools effectively. It contains two training stages: (1) Rejection-sampled supervised fine-tuning (SFT). We fine-tune the LLM exclusively on high-quality trajectories selected via rejection sampling. This process equips the model with a foundational understanding of task formats, tool invocation methods, and core reasoning strategies.</p><p>(2) Rule-based reinforcement learning (RL), we score the trajectories sampled by the LLM to increase the probability of it generating correct trajectories while simultaneously discouraging it from producing incorrect ones. This further improves the LLM's multi-hop reasoning capabilities during the tool-calling process.</p><p>Think 1 Tool 1 Context 1 Think k Tool k Context k … Exit Answer Ground-truth Answer SFT Hit? Yes No Issue LLM Think 1 Tool 1 Context 1 Think k Tool k Context k … Exit Answer Think 1 Tool 1 Context 1 Think k Tool k Context k … Exit Answer Think 1 Tool 1 Context 1 Think k Tool k Context k … Exit Answer </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.1">Rejection-Sampled Supervised Fine-Tuning</head><p>We use RepoSearcher to sample agent trajectories for issue localization task, and then select highquality trajectories to fine-tune the LLM. More specifically, given the task description of issue, LLM invokes search tools to retrieve relevant context and generates a localization result. We then filter out low-quality trajectories that completely fail to hit the ground-truth answer, and use the remaining high-quality trajectories to fine-tune LLM. The main goal of this stage is to warm up LLM for tool use, enabling it to understand the task format of project retrieval, how to use the tools, and the basic reasoning strategies for issue localization.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.2">Tool-integrated Reinforcement Learning</head><p>Although SFT can quickly teach LLM the strategy for issue localization, the fine-tuned LLM may simply "memorize" the correct reasoning paths, leading to poor generalization when faced with new issues. We employ tool-integrated reinforcement learning to robustly enhance the LLM's reasoning capabilities during tool interaction. More specifically, the LLM samples tool-use trajectories during the issue localization process, and each trajectory's predicted answer is scored based on its alignment with the ground-truth answer. These scores serve as a reward signal, guiding the model's update through reinforcement learning. By incentivizing high-quality trajectories and penalizing low-quality ones, this RL framework not only polishes the accuracy of tool interactions but also teaches the model to avoid erroneous or illogical tool calls. Consequently, it simultaneously enhances both the reliability and efficiency of the entire tool-use process.</p><p>We utilize nDCG@k (Normalized Discounted Cumulative Gain at rank k) <ref type="bibr" target="#b28">(Wang et al., 2013)</ref> to measure trajectory quality, as it holistically assesses both the recall of correct functions and their ranking position. In the issue localization training process, the Agent is expected to output a ranked list of functions that are potentially related to a given issue. We are not only concerned with whether the Agent can cover all correct target functions, but also with whether it can rank these functions as high as possible in the list. This is crucial because, in practical scenarios, downstream systems (e.g., automated program repair agents <ref type="bibr">(Wang et al., 2024a;</ref><ref type="bibr" target="#b34">Yang et al., 2024;</ref><ref type="bibr" target="#b3">Chen et al., 2024)</ref>) typically prioritize only the top-ranked candidate functions. If the correct functions are ranked too low, they may be ignored by repair agents. Therefore, we use nDCG@k as the reward function to evaluate the ranking quality of the predicted list relative to the ground-truth set. nDCG@k is calculated by Equation <ref type="formula" target="#formula_0">1</ref>, it assigns different gains based on the positions of correctly predicted functions in the output list, functions ranked higher contribute more to the final score. By incorporating nDCG@k as a reward signal in the reinforcement learning process, we effectively encourage the Agent not only to "find the correct functions" but also to "rank the correct functions higher," which aligns more closely with the practical requirements of real-world issue localization scenarios.</p><formula xml:id="formula_0">nDCG@k(q) = DCG@k(q) IDCG@k(q) (<label>1</label></formula><formula xml:id="formula_1">) DCG@k(q) = k i=1 I(L q [i] ∈ A q ) log 2 (i + 1) (2) IDCG@k(q) = min(k,|Aq|) i=1 1 log 2 (i + 1)<label>(3)</label></formula><p>where L q [i] is the item at rank i in the predicted list for query q, A q is the set of ground-truth relevant items for query q, I(•) is the indicator function that returns 1 if the condition holds, and 0 otherwise.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experimental Setup</head><p>In this section, we will introduce our experimental setup, including: benchmark, evaluation metrics, baselines and implementation details.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Benchmark</head><p>In this paper, we construct our evaluation dataset based on SWE-Bench-Verified<ref type="foot" target="#foot_0">foot_0</ref> . SWE-Bench-Verified is a benchmark designed to evaluate the issue resolution capabilities of LLM-based Agents, built from real issues collected from GitHub. To ensure accurate and reliable evaluation of LLMbased Agents on issue resolution, OpenAI invited 93 professional software developers to analyze and manually verify 2,000 real issues from GitHub. Based on this effort, a curated set of 500 verifiably solvable issues was constructed to form the SWE-Bench-Verified dataset. It has been adopted by leading large language model providers (e.g., OpenAI (gpt, 2023), Qwen <ref type="bibr" target="#b8">(Hui et al., 2024)</ref>, and Anthropic (cla, 2025b)) to assess the performance of cutting-edge models in automatic software development tasks. In this paper, we use the functions and files modified by the golden patches in SWE-Bench-Verified as the ground-truth answers for the issue localization task, to evaluate the performance of our RepoSearcher with ToolTrain-model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Metrics</head><p>To systematically evaluate the effectiveness of RepoSearcher with ToolTrain-model, we conducted a multi-dimensional evaluation using multiple metrics: Recall@k, MAP, MRR, nDCG@k and %Resolved. See Appendix E for detailed description of metrics.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Baselines</head><p>To evaluate the effectiveness of RepoSearcher with the ToolTrain-model on issue localization, we conduct comparisons against multiple issue localization frameworks across various models.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.1">Frameworks</head><p>We selected four state-of-the-art issue localization frameworks with different design philosophies as baselines: Agentless(Xia et al., 2025), CrcaLoca <ref type="bibr" target="#b37">(Yu et al., 2025)</ref>, CoSIL <ref type="bibr" target="#b11">(Jiang et al., 2025)</ref>, LocAgent <ref type="bibr" target="#b4">(Chen et al., 2025)</ref>. See Appendix D for detailed description of baseline frameworks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.2">Models</head><p>We applied ToolTrain to the Qwen2.5-Coder-7B-Instruct (hereafter Qwen-7B) and Qwen2.5-Coder-32B-Instruct (hereafter Qwen-32B) models <ref type="bibr" target="#b8">(Hui et al., 2024)</ref> and compared them against several baselines. For frameworks without their own fine-tuned versions (Agentless, Orcaloca, and CoSIL), we used the off-the-shelf Qwen-7B and Qwen-32B models. For LocAgent, we used its specialized CL-7B and CL-32B models. Our evaluation also included a comparison between our ToolTrain-models and state-of-the-art proprietary models like GPT-4o and Claude-3.7-Sonnet(cla, 2025a).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Implementation Details</head><p>Among 28k issue localization examples, 10k examples were used to sample RepoSearcher trajectories with Claude-3.7-Sonnet (cla, 2025a). Low-quality trajectories were filtered based on ground-truth data, resulting in 5k high-quality trajectories for SFT. The remaining 18k examples were used for RL training. We use verl <ref type="bibr" target="#b25">(Sheng et al., 2025)</ref> for training in both the SFT and RL stages. In the SFT stage, we set the train_batch_size to 128 and train for 3 epochs on the 5k training examples. For the RL stage, we adopt the SGLang<ref type="foot" target="#foot_1">foot_1</ref> inference framework to accelerate the sampling process and set the temperature to 1.0 to encourage response diversity. We set train_batch_size to 128, with max_prompt_length set to 12k and max_response_length to 20k, and train for one epoch on 18k examples.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Results and Analysis</head><p>In this section, we will present the experimental results for the three research questions, and experimental analysis.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Effectiveness Setup</head><p>To evaluate the performance of RepoSearcher with the ToolTrain-model on the issue localization task, we compared it with four different issue localization frameworks (Agentless, Orcaloca, CoSIL, and LocAgent) using different models (Qwen-7B, Qwen-32B, and Claude-3.7-Sonnet). We conducted a multi-dimensional assessment of the various methods in terms of file localization and function localization, including multiple evaluation metrics: recall@1, recall@3, recall@5, MAP, MRR, and nDCG@5.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>As shown in</head><p>Table 2, RepoSearcher with ToolTrain-model achieves state-of-the-art (SOTA) performance among same-size models and even surpasses leading commercial models on some function-level metrics. Although the RepoSearcher underperformed other agent frameworks when file recall@1 file recall@3 file recall@5 file MAP file MRR file nDCG@5 func recall@1 func recall@3 func recall@5 func MAP func MRR func nDCG@5 20 40 60 80 Performance 38.33 53.23 57.73 46.36 49.20 49.95 18.12 24.54 25.82 21.60 24.91 23.53 51.98 67.94 73.18 61.35 64.21 65.08 33.13 46.40 50.21 41.42 47.74 45.59 57.09 74.07 79.31 67.21 69.83 71.01 37.73 49.46 52.28 45.01 51.81 48.83 59.78 77.89 83.11 70.43 73.46 74.44 43.59 57.32 62.38 53.28 60.44 57.91 Model Qwen-7B RL-7B SFT-7B ToolTrain-7B (a) Training strategy ablation on 7B models. file recall@1 file recall@3 file recall@5 file MAP file MRR file nDCG@5 func recall@1 func recall@3 func recall@5 func MAP func MRR func nDCG@5 30 40 50 60 70 80 90 Performance 58.79 76.33 81.03 68.77 71.72 72.67 32.38 44.35 48.19 39.45 45.89 43.50 61.16 77.43 81.96 70.37 72.95 73.72 35.78 49.54 55.69 44.80 50.94 49.48 65.41 83.70 87.11 75.86 78.87 79.55 44.11 57.75 61.04 52.98 60.63 57.50 68.03 85.31 88.59 78.20 80.86 81.60 49.94 64.26 68.55 59.87 67.35 64.64 Model Qwen-32B RL-32B SFT-32B ToolTrain-32B (b) Training strategy ablation on 32B models. using the original Qwen models due to its simpler agent design, after applying ToolTrain, it achieves SOTA performance among same-size models. For example, RepoSearcher with ToolTrain-32B achieves 68.55 at function-level Recall@5. Furthermore, RepoSearcher with ToolTrain-model also demonstrates superior performance compared to CL-7B and CL-32B, which were trained specifically for the LocAgent. This demonstrates that ToolTrain can effectively enhance the issue localization capability of LLMs and offers advantages over previous training approaches.</p><p>On function-level localization, RepoSearcher with ToolTrain-7B even outperforms other frameworks that use 32B models. This indicates that training with ToolTrain effectively enhances an LLM's toolcalling capabilities, allowing a model with a smaller parameter count to achieve better performance than a much larger one. It is also noteworthy that RepoSearcher with ToolTrain-32B achieves performance on issue localization comparable to Claude-3.7-Sonnet. It even surpasses the commercial model on several fine-grained, function-level metrics (e.g., 68.55 v.s. 66.38 on function-level Recall@5). This detailed level of accuracy is potentially more impactful for downstream issue resolution tasks. This suggests that RepoSearcher with ToolTrain-model has the potential to serve as a lightweight alternative to proprietary models like Claude (cla, 2025a).</p><p>To validate the generalization ability of the ToolTrain-model, we also evaluated its performance on the CoSIL benchmark. As shown in Table <ref type="table" target="#tab_0">2</ref>, the ToolTrain-model achieves better performance on CoSIL compared to the original Qwen-model (e.g., 50.87 v.s. 30.47 on function-level Recall@5). This indicates that the ToolTrain-model, trained on RepoSearcher, can successfully generalize its issue localization capabilities to other agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Training Strategy Ablation</head><p>Setup To evaluate the effectiveness of ToolTrain, we compared it with two other training strategies:</p><p>(1) SFT: Directly performing Supervised Fine-Tuning on the LLM using the trajectories sampled in the first stage of ToolTrain. (2) RL: Directly applying tool-integrated reinforcement learning to the LLM without any prior SFT. We applied these three training strategies to both 7B and 32B models.</p><p>We then evaluated the issue localization performance of the different models on the RepoSearcher framework.</p><p>Results As shown in Figure <ref type="figure" target="#fig_2">3</ref>, ToolTrain model outperforms both SFT and RL models of the same parameter size in issue localization. Although training an LLM with either RL or SFT alone effectively improves issue localization performance, ToolTrain's combination of the two further boosts the LLM's performance across all issue localization metrics. For example, the base 7B model's file-level recall@5 is 57.73. This increases to 73.18 for RL-7B and 79.31 for SFT-7B, while ToolTrain-7B pushes it even further to 83.11.</p><p>Figure <ref type="figure" target="#fig_2">3</ref> also indicates that standalone SFT yields a greater improvement than standalone RL. This can be attributed to the learning dynamics of each method. The RL process requires the model to first discover how to properly invoke tools through extensive exploration, leaving less capacity to refine its reasoning policies. SFT, on the other hand, explicitly provides examples of both correct tool usage and effective reasoning strategies, allowing the model to learn more efficiently. Consequently, standalone SFT delivers a larger improvement in issue localization.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Influence on issue resolution</head><p>Setup To evaluate the impact of different issue localization results on the final issue resolution performance, we use the localization results from various methods on SWE-Bench-Verified as input.</p><p>We then use the patch generation script of agentless to generate patches. For localization methods employing 7B models, we use Qwen-7B as the patch generation model, and for those using 32B models, we use Qwen-32B. Following the standard evaluation method of SWE-Bench-Verified, a patch is considered to have successfully resolved the corresponding issue if it passes all unit tests.</p><p>Based on this, we assess the impact of different localization methods on issue resolution using the issue resolution rate (%Resolved).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>As shown in</head><p>Table 3, more precise issue localization leads to better issue resolution results. RepoSearcher with ToolTrain-32B achieves a function-level localization recall@5 of 68.55, and when using Qwen-32B as the patch generation model, it attains an issue resolution rate of 31.60, the best among all methods. Similarly, RepoSearcher with ToolTrain-7B achieves a function-level localization recall@5 of 62.38, and with Qwen-7B as the patch generation model, its issue resolution rate is 14.00, marking the best performance among the 7B models. The table also reveals that despite the comparable localization results between RepoSearcher with ToolTrain-32B and RepoSearcher with ToolTrain-7B, the use of different patch generation models results in a significant disparity in their resolution outcomes (14.00 vs. 31.60). This indicates that the capability of the patch generation model is also crucial for issue resolution. Therefore, future work should focus on further enhancing the patch generation capabilities of models.</p><p>6 Related Work</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.1">Fault Localization</head><p>Fault localization refers to locating a faulty code snippet within a repository based on a failed test <ref type="bibr" target="#b23">(Raselimo &amp; Fischer, 2019;</ref><ref type="bibr" target="#b1">Abreu et al., 2009;</ref><ref type="bibr" target="#b22">Qin et al., 2025;</ref><ref type="bibr" target="#b31">Wen et al., 2019)</ref> or an issue description <ref type="bibr" target="#b12">(Jimenez et al., 2024)</ref>. DeepFL <ref type="bibr" target="#b15">(Li et al., 2019)</ref> utilizes multiple fault-diagnosis dimensions, and combines them with a deep neural network to localize faulty code. DeepRL4FL <ref type="bibr">(Li et al., 2021a)</ref> works by encoding the test coverage matrix into a feature matrix. It then integrates this with inter-statement data dependencies and static representations of the code, using a Convolutional Neural Network (CNN) <ref type="bibr">(Li et al., 2021b)</ref> to automatically identify and locate buggy code statements or methods.</p><p>With the advancement of large language models in language understanding and reasoning, an increasing number of studies have started focusing on fault localization based on issue description. These range from lightweight pipelines to autonomous agents. Agentless <ref type="bibr" target="#b32">(Xia et al., 2025)</ref> represents the pipeline approach, using a hierarchical strategy that combines LLMs and retrievers to progressively narrow down from files to fine-grained code locations. In parallel, agent-based systems have gained traction. A key strategy is representing code as a graph to guide the agent. LocAgent <ref type="bibr" target="#b4">(Chen et al., 2025)</ref> preprocesses the repository into a comprehensive static graph to enable efficient multi-hop reasoning. In contrast, CoSIL <ref type="bibr" target="#b11">(Jiang et al., 2025)</ref> dynamically constructs module call graphs during its search, enabling iterative exploration. Another line of research, exemplified by OrcaLoca <ref type="bibr" target="#b37">Yu et al. (2025)</ref>, focuses on enhancing the agent's internal mechanics through priority-based action scheduling, action decomposition, and distance-aware context pruning to boost accuracy. In this paper, we introduce RepoSearcher, a lightweight issue localization agent. Its lightweight design enables the rapid sampling of numerous trajectories, allowing us to efficiently train an LLM specifically tailored for the agent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.2">Agentic Training</head><p>Although Large Language Models (LLMs) have achieved near-human performance in many general domains, their performance in issue resolution as agents still lags significantly behind that of humans due to a lack of agent-specific training. Many works have attempted to post-train LLMs for agentoriented tasks to enhance their ability to use tools, reason, and complete tasks. The most critical challenge in this process is ensuring the quality of the training data. To address this, SWE-Gym <ref type="bibr">(Pan et al.)</ref> constructs an environment of real Python repositories, executable environments, and unit tests. It filters for high-quality agent trajectories based on the outcomes of unit test executions and uses these trajectories to supervised fine-tune the LLM, thereby enhancing its agent capabilities. Similarly, SEAlign <ref type="bibr" target="#b38">(Zhang et al., 2025)</ref> proposes an alignment training framework for software engineering agents. It gathers high-quality engineering process trajectories, employs Monte Carlo Tree Search (MCTS) <ref type="bibr">( Świechowski et al., 2023)</ref> for fine-grained scoring during multi-step decision-making, and combines this with preference optimization on key actions to supervise the fine-tuning of the LLM. LocAgent <ref type="bibr" target="#b4">(Chen et al., 2025)</ref> also constructs the ground truth for issue localization based on functions modified by golden patches from GitHub. This is used to filter out low-quality trajectories sampled by LocAgent to ensure the quality of the training data. While the training data in prior work was mostly built upon existing issues, SWE-smith <ref type="bibr" target="#b35">(Yang et al., 2025)</ref> first establishes an execution environment from any Python repository and then generates a large number of task instances that break existing tests. This allows for the efficient synthesis of a dataset with hundreds of thousands of tasks, each with execution-based validation. While previous work has primarily used SFT to train LLMs <ref type="bibr" target="#b4">(Chen et al., 2025;</ref><ref type="bibr" target="#b35">Yang et al., 2025)</ref>, in this paper, we explore how to organically combine SFT and RL to further enhance the LLM's issue localization capabilities. To the best of our knowledge, we are the first work to organically combine SFT and RL for training an issue localization agent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Conclusion</head><p>In this paper, we improve the issue localization performance of LLMs by introducing ToolTrain, a tool-integrated training approach to enhance their tool-use and reasoning. Our framework first utilizes supervised fine-tuning to warm up the model with our lightweight agent, RepoSearcher, and then employs tool-integrated reinforcement learning to teach the model how to effectively navigate code repositories using various tools. We apply ToolTrain to open-source models, and evaluate them on issue localization tasks. The experiment results show that ToolTrain trained model achieve state-ofthe-art performance among same-size models, and even surpassing leading models like Claude-3.7 on specific tasks. The code is available at <ref type="url" target="https://github.com/Mizersy/RepoDeepSearch">https://github.com/Mizersy/RepoDeepSearch</ref> ToolTrain framework in cultivating the deep and flexible reasoning, which is necessary to navigate complex codebases and overcome challenging localization tasks.</p><p>Issue: Saving parent object after setting on child leads to data loss for parents with non -numeric primary key. Example Code: class Product(models.Model): sku = models.CharField(primary_key=True, max_length=50) class Order(models.Model): product = models.ForeignKey(Product, on_delete=models.CASCADE)</p><p>Think: ForeignKey is directly related to the bug.</p><p>Tool: SearchClassMethod(related.py, ForeignKey, __init__)</p><p>Think: Foreign key assignment logic is handled by ForeignKeyDeferredAttribute.__set___ Tool: SearchClassMethod(related_descriptors.py, ForeignKeyDeferredAttribute, __set__)</p><p>Think: The foreign key assignment logic for many-to-one relationships is handled by ForwardManyToOneDescriptor.__set___ Tool: SearchClassMethod(related_descriptors.py, ForwardManyToOneDescriptor, __set__)</p><p>Think: The set of foreign key field won't happen when the parent object's primary key is updated. Let's check Model.save since it's saving the parent object.</p><p>Tool: SearchClassMethod(base.py, Model, save) Think: Model.save doesn't seem to be directly related to the bug. Let's check _prepare_related_fields_for_save since it's called by save method.</p><p>Tool: SearchClassMethod(base.py, Model, _prepare_related_fields_for_save)</p><p>Think: If the foreign key field is already set (even if it's set to an empty string), this code doesn't update it when the parent's primary key is updated. _prepare_related_fields_for_save is the bug method.</p><p>with transaction.atomic(): order = Order() order.product.save() order.save() assert Order.objects.filter(product_id=\"\").exists() # Succeeds, but shouldn't assert Order.objects.filter(product=order.product).exists() # Fails</p><p>(2) ToolTrain-32B Trajectory Think: Let's first look at the ForeignKey field implementation to understand how it handles assignment of related objects.</p><p>Tool: SearchClass(related.py, ForeignKey)</p><p>Think: ForeignKeyDeferredAttribute is referenced in ForeignKey, it ikely handles the assignment of related objects to foreign key fields Tool: SearchClass(related_descriptors.py, ForeignKeyDeferredAttribute, __set__) Think: ForwardManyToOneDescriptor class, which is likely responsible for handling the assignment of related objects to foreign key fields Tool: SearchClass(related_descriptors.py, ForwardManyToOneDescriptor) Think: ForwardManyToOneDescriptor.__set__ handles setting a related object to a foreign key field. The issue might be related to how the primary key value is retrieved from the related object. Look ForeignKey. get_local_related_value to understand how these values are retrieved.</p><p>Tool: SearchClassMethod(related.py, ForeignKey, get_local_related_value)</p><p>Think: get_local_related_value doesn't exist in ForeignKey, we should check </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Threats to Validity</head><p>A limitation of our evaluation lies in the construction of the ground truth. For the issue localization task, we define the ground truth as the files and functions modified by the provided "golden patch." However, the solution to a given issue is not always unique, meaning other code locations could potentially serve as an equally valid fix. Consequently, our evaluation methodology may not credit these alternative, correct solutions. Nevertheless, we maintain that using the golden patch as a benchmark is an effective means of evaluating and comparing different methods. The primary goal of our task is to identify suspicious files and functions. A model that successfully pinpoints a location known to be correct (i.e., the one in the golden patch) is demonstrably more effective than one that does not. Therefore, this approach provides a consistent and practical standard for assessing the performance of issue localization frameworks.</p><p>The evaluation was conducted on Python repositories, and the performance on other languages remains to be validated. This is mainly because the evaluation set was constructed based on SWE-Bench-Verified, which is focused on the Python language. In our future work, we plan to apply RepoSearcher and ToolTrain to more languages. This will allow us to further verify the effectiveness of our method and contribute to the advancement of automated issue localization.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Details of Baseline Frameworks</head><p>Agentless Agentless (Xia et al., 2025) is a pipeline-based issue resolution framework. In the localization stage, it adopts a hierarchical localization strategy: it first identifies suspicious files in the repository using LLMs, then narrows down to relevant classes or functions, and finally pinpoints fine-grained edit locations by LLMs for precise issue localization.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: RepoSearcher framework. Through multiple rounds of tool calls, RepoSearcher navigates across different functions within to gather relevant information. Once LLMs determine that all necessary information is collected, it calls the Exit tool and provides the final localization results.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Tool-integrated training framework. It consists of two stages: (1) rejection-sampled supervised fine-tuning (SFT) and (2) rule-based reinforcement learning (RL).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Training strategy ablation.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><figDesc>Figure5: Case study.5   </figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 2 :</head><label>2</label><figDesc>Issue localization results on SWE-Bench-Verified. Blue background indicates the results of ToolTrain-model; bold numbers denote the best performance among same-size models, while underlined numbers indicate the best performance across all models.</figDesc><table><row><cell>Framework</cell><cell>Model</cell><cell></cell><cell></cell><cell>File-level</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">Function-level</cell><cell></cell></row><row><cell></cell><cell></cell><cell cols="10">Recall@1 Recall@3 Recall@5 MAP MRR nDCG@5 Recall@1 Recall@3 Recall@5 MAP MRR nDCG@5</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">Proprietary Models</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Agentless</cell><cell>GPT-4o</cell><cell>62.28</cell><cell>79.41</cell><cell>85.01</cell><cell>73.02 75.72</cell><cell>76.83</cell><cell>28.50</cell><cell>43.56</cell><cell>46.55</cell><cell>37.17 43.32</cell><cell>41.45</cell></row><row><cell>Agentless</cell><cell>Claude-3.7-Sonnet</cell><cell>66.84</cell><cell>82.48</cell><cell>86.76</cell><cell>76.47 79.76</cell><cell>79.97</cell><cell>36.09</cell><cell>51.21</cell><cell>53.83</cell><cell>45.12 52.54</cell><cell>49.49</cell></row><row><cell>CoSIL</cell><cell>Claude-3.7-Sonnet</cell><cell>70.69</cell><cell>86.07</cell><cell>89.13</cell><cell>79.73 82.87</cell><cell>82.96</cell><cell>50.01</cell><cell>61.56</cell><cell>66.38</cell><cell>58.43 67.28</cell><cell>63.17</cell></row><row><cell>LocAgent</cell><cell>Claude-3.7-Sonnet</cell><cell>68.58</cell><cell>84.36</cell><cell>88.53</cell><cell>77.64 79.57</cell><cell>79.95</cell><cell>41.75</cell><cell>53.67</cell><cell>60.59</cell><cell>47.25 51.36</cell><cell>51.85</cell></row><row><cell cols="2">RepoSearcher Claude-3.7-Sonnet</cell><cell>69.48</cell><cell>87.09</cell><cell>89.24</cell><cell>79.39 82.31</cell><cell>82.73</cell><cell>48.55</cell><cell>61.57</cell><cell>66.08</cell><cell>57.76 65.94</cell><cell>62.53</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="3">Open-source 7B Models</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Agentless</cell><cell>Qwen-7B</cell><cell>47.81</cell><cell>61.59</cell><cell>63.76</cell><cell>55.09 57.85</cell><cell>58.01</cell><cell>19.73</cell><cell>24.12</cell><cell>25.10</cell><cell>22.29 27.16</cell><cell>24.23</cell></row><row><cell>OrcaLoca</cell><cell>Qwen-7B</cell><cell>47.69</cell><cell>50.29</cell><cell>50.29</cell><cell>49.09 52.40</cell><cell>50.14</cell><cell>16.44</cell><cell>27.23</cell><cell>28.57</cell><cell>22.51 26.41</cell><cell>25.27</cell></row><row><cell>LocAgent</cell><cell>Qwen-7B</cell><cell>46.78</cell><cell>58.98</cell><cell>60.40</cell><cell>53.11 56.20</cell><cell>55.76</cell><cell>10.91</cell><cell>16.72</cell><cell>17.72</cell><cell>13.93 16.50</cell><cell>15.59</cell></row><row><cell>LocAgent</cell><cell>CL-7B</cell><cell>56.11</cell><cell>72.11</cell><cell>75.18</cell><cell>65.68 68.61</cell><cell>68.87</cell><cell>24.82</cell><cell>30.29</cell><cell>34.12</cell><cell>27.81 33.56</cell><cell>32.99</cell></row><row><cell>CoSIL</cell><cell>Qwen-7B</cell><cell>51.11</cell><cell>65.28</cell><cell>69.93</cell><cell>59.43 62.74</cell><cell>62.95</cell><cell>23.37</cell><cell>29.48</cell><cell>30.47</cell><cell>26.95 32.44</cell><cell>29.27</cell></row><row><cell>CoSIL</cell><cell>ToolTrain-7B</cell><cell>53.13</cell><cell>67.35</cell><cell>72.09</cell><cell>61.54 64.33</cell><cell>64.95</cell><cell>34.86</cell><cell>46.01</cell><cell>50.87</cell><cell>42.49 48.44</cell><cell>46.50</cell></row><row><cell>RepoSearcher</cell><cell>Qwen-7B</cell><cell>38.33</cell><cell>53.23</cell><cell>57.73</cell><cell>46.36 49.20</cell><cell>49.95</cell><cell>18.12</cell><cell>24.54</cell><cell>25.82</cell><cell>21.60 24.91</cell><cell>23.53</cell></row><row><cell>RepoSearcher</cell><cell>ToolTrain-7B</cell><cell>59.78</cell><cell>77.89</cell><cell>83.11</cell><cell>70.43 73.46</cell><cell>74.44</cell><cell>43.59</cell><cell>57.32</cell><cell>62.38</cell><cell>53.28 60.44</cell><cell>57.91</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="3">Open-source 32B Models</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Agentless</cell><cell>Qwen-32B</cell><cell>58.56</cell><cell>74.67</cell><cell>79.50</cell><cell>68.03 71.14</cell><cell>71.75</cell><cell>26.30</cell><cell>38.85</cell><cell>40.70</cell><cell>33.32 39.44</cell><cell>37.03</cell></row><row><cell>OrcaLoca</cell><cell>Qwen-32B</cell><cell>56.78</cell><cell>61.21</cell><cell>61.21</cell><cell>59.16 63.43</cell><cell>60.63</cell><cell>19.94</cell><cell>38.91</cell><cell>40.94</cell><cell>30.20 35.57</cell><cell>34.69</cell></row><row><cell>LocAgent</cell><cell>Qwen-32B</cell><cell>64.15</cell><cell>77.12</cell><cell>78.02</cell><cell>71.44 74.13</cell><cell>73.79</cell><cell>20.97</cell><cell>40.00</cell><cell>45.34</cell><cell>31.61 36.47</cell><cell>36.61</cell></row><row><cell>LocAgent</cell><cell>CL-32B</cell><cell>67.99</cell><cell>84.29</cell><cell>87.66</cell><cell>73.04 76.09</cell><cell>75.31</cell><cell>39.41</cell><cell>52.49</cell><cell>59.69</cell><cell>46.07 50.22</cell><cell>50.80</cell></row><row><cell>CoSIL</cell><cell>Qwen-32B</cell><cell>59.34</cell><cell>78.73</cell><cell>82.68</cell><cell>69.88 73.02</cell><cell>73.92</cell><cell>38.62</cell><cell>50.27</cell><cell>54.41</cell><cell>45.96 53.94</cell><cell>50.34</cell></row><row><cell>CoSIL</cell><cell>ToolTrain-32B</cell><cell>65.61</cell><cell>83.81</cell><cell>88.07</cell><cell>76.87 79.54</cell><cell>80.68</cell><cell>47.42</cell><cell>60.85</cell><cell>64.22</cell><cell>56.29 64.53</cell><cell>60.80</cell></row><row><cell>RepoSearcher</cell><cell>Qwen-32B</cell><cell>58.79</cell><cell>76.33</cell><cell>81.03</cell><cell>68.77 71.72</cell><cell>72.67</cell><cell>32.38</cell><cell>44.35</cell><cell>48.19</cell><cell>39.45 45.89</cell><cell>43.50</cell></row><row><cell>RepoSearcher</cell><cell>ToolTrain-32B</cell><cell>68.03</cell><cell>85.31</cell><cell>88.59</cell><cell>78.20 80.86</cell><cell>81.60</cell><cell>49.94</cell><cell>64.26</cell><cell>68.55</cell><cell>59.87 67.35</cell><cell>64.64</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 3 :</head><label>3</label><figDesc>Issue resolution performance of different issue localization frameworks.</figDesc><table><row><cell>Framework</cell><cell>Loc Model</cell><cell cols="3">Patch Model Func Recall@5 %Resolved</cell></row><row><cell>Agentless</cell><cell>Qwen-7B</cell><cell>Qwen-7B</cell><cell>25.10</cell><cell>7.60</cell></row><row><cell>CoSIL</cell><cell>Qwen-7B</cell><cell>Qwen-7B</cell><cell>30.47</cell><cell>10.80</cell></row><row><cell cols="2">RepoSearcher ToolTrain-7B</cell><cell>Qwen-7B</cell><cell>62.38</cell><cell>14.00</cell></row><row><cell>Agentless</cell><cell>Qwen-32B</cell><cell>Qwen-32B</cell><cell>40.70</cell><cell>25.80</cell></row><row><cell>CoSIL</cell><cell>Qwen-32B</cell><cell>Qwen-32B</cell><cell>54.41</cell><cell>26.40</cell></row><row><cell cols="2">RepoSearcher ToolTrain-32B</cell><cell>Qwen-32B</cell><cell>68.55</cell><cell>31.60</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_0"><p>https://openai.com/index/introducing-swe-bench-verified/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_1"><p>https://github.com/sgl-project/sglang</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_2"><p>Due to space limitations, the issue content and think content have been simplified. The original issue content can be found at: https://code.djangoproject.com/ticket/32332</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgments</head><p>This work is supported by <rs type="funder">National Key Research and Development Program of China</rs> (Grant No. <rs type="grantNumber">2023YFB4503803</rs>).</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_WjZsVCB">
+					<idno type="grant-number">2023YFB4503803</idno>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Appendix A Tool Call Analysis</head><p>Tool-integrated reinforcement learning can effectively improve the tool call success rate of LLMs. We analyzed the progression of the LLM's tool call success rate during the reinforcement learning (RL) training process on 7B model. A tool call is deemed successful when it invokes an existing tool with valid parameters (such as filenames and function names that are present in the repository) and successfully retrieves a result from it. As shown in Figure <ref type="figure" target="#fig_5">4</ref>, the LLM's tool call success rate exhibits a steady increase throughout the training, eventually stabilizing at over 95%. This indicates that in tool-integrated reinforcement learning, even when the reward is calculated solely based on the correctness of the final localization result, the model's proficiency in tool calling can be effectively enhanced. A plausible explanation is that during the RL process, the LLM learns to call tools with greater efficiency and accuracy in order to more effectively acquire the necessary issue-related project context.</p><p>50 100 150 200 Training Step 0.65 0.70 0.75 0.80 0.85 0.90 0.95 1.00 Tool Call Success Rate </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Case study</head><p>The case in Figure <ref type="figure">5</ref> demonstrates that ToolTrain can effectively enhance the tool-calling and reasoning abilities of LLMs in the issue localization process.</p><p>For the issue presented in Figure <ref type="figure">5</ref>(1), we conducted a detailed analysis of the reasoning and toolcalling performance of ToolTrain-32B and Qwen-32B during the issue localization process. As shown in Figure <ref type="figure">5</ref>(2), ToolTrain-32B demonstrates the ability to reason and call tools accurately during localization. It first identifies that the "ForeignKey" field is directly related to the bug and progressively traces the issue to key methods such as ForeignKeyDeferredAttribute.__set__ and ForwardManyToOneDescriptor.__set__. Upon realizing that the functions along this path are not the root cause of the bug, it precisely pivots its search direction, ultimately locating the Model._-prepare_related_fields_for_save function in base.py. Throughout this process, ToolTrain-32B not only shows a strong ability to comprehend the problem but also exhibits excellent inter-module dependency analysis skills. It proactively inspects methods related to primary key updates and foreign key assignments, reasonably utilizes search tools to uncover the evidence path, and ultimately succeeds in locating the bug's source. In contrast, Qwen-32B, as shown in Figure <ref type="figure">5</ref>(3), exhibits significant shortcomings. Although it also identified ForeignKey-related classes and methods in the initial stage, its search scope remained confined to a few explicitly mentioned fields and classes. It failed to break out of this initial path to perform broader reasoning about the code structure, ultimately leading it to incorrectly pinpoint ForeignObject.get_local_related_value and causing the task to fail. Furthermore, Qwen-32B made an incorrect tool call by attempting to retrieve a non-existent method ForeignKey.get_local_related_value. Ultimately, this example validates the effectiveness of our OrcaLoca Orcaloca <ref type="bibr" target="#b37">(Yu et al., 2025)</ref> is an agent-based issue localization framework that integrates priority-based LLM-guided action scheduling, action decomposition with relevance scoring, and distance-aware context pruning to enhance the agent's issue localization accuracy.</p><p>CoSIL CoSIL <ref type="bibr" target="#b11">(Jiang et al., 2025)</ref> is a function-level software issue localization Agent that utilizes LLMs to dynamically construct module call graphs during the repository search process, iteratively explores relevant contexts, and employs context pruning to effectively narrow the search space.</p><p>LocAgent LocAgent <ref type="bibr" target="#b4">(Chen et al., 2025)</ref> is an issue localization agent that transforms repositories into directed heterogeneous graphs, capturing structures like files, classes, and functions, along with their dependencies such as imports and invocations. This representation allows LLM agents to perform efficient multi-hop reasoning, precisely identifying relevant code from natural language descriptions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E Details of Metrics</head><p>Recall@k Recall@k measures the proportion of ground-truth answers that are included in the top-k localization results. Previous study have shown that 73.58% of developers only examine the top-5 localization results <ref type="bibr" target="#b14">(Kochhar et al., 2016)</ref>. Therefore, following previous work <ref type="bibr" target="#b11">(Jiang et al., 2025)</ref>, we set the maximum value of k to 5 and evaluate the performance at Recall@1, Recall@3, and Recall@5.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>MAP MAP (Mean Average Precision) evaluates the overall ranking quality by averaging the</head><p>Average Precision (AP) across all issues. For each issue, AP measures the average of the precision values at the ranks where relevant (ground-truth) items occur. This metric reflects both the presence and the ranking of relevant results, and is calculated as Equation <ref type="formula" target="#formula_3">5</ref>. Then, MAP is computed as Equation <ref type="formula" target="#formula_2">4</ref>.</p><formula xml:id="formula_2">MAP = 1 |Q| q∈Q AP(q),<label>(4)</label></formula><formula xml:id="formula_3">AP(q) = 1 |A q | |Lq| k=1 Precision@k • I[L q [k] ∈ A q ],<label>(5)</label></formula><p>where Q is the set of all queries. For a query q ∈ Q, let A q be the set of ground-truth relevant items. AP(q) refers to the Average Precision for query q, L q refers to the predicted ranked list for query q, Precision@k is the precision at rank k, I[L q [k] ∈ A q ] is an indicator function that is 1 if the item at rank k is relevant, and 0 otherwise.</p><p>MRR MRR (Mean Reciprocal Rank) evaluates how early the ground-truth item appears in the ranked list. It is the average of the reciprocal ranks of the ground-truth results across all queries. The higher the MRR, the better the system is at placing the correct result near the top.</p><formula xml:id="formula_4">MRR = 1 |Q| q∈Q 1 rank q ,<label>(6)</label></formula><p>where rank q is the rank position of the ground-truth result for query q.</p><p>nDCG@k The nDCG@k (Normalized Discounted Cumulative Gain at rank k) score is computed as the mean nDCG@k(q) over all queries:</p><formula xml:id="formula_5">nDCG@k = 1 |Q| q∈Q nDCG@k(q).<label>(7)</label></formula><p>%Resolved The %Resolved is used to evaluate the accuracy of generated patch in RQ3. %resolved calculates the proportion of generated patches that pass all unit tests.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 4 :</head><label>4</label><figDesc>Tool call success rate during RL training.</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<ptr target="https://openai.com/index/introducing-operator/" />
+		<title level="m">Claude code: Deep coding at terminal velocity</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note>Introducing deep research</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Spectrum-based multiple fault localization</title>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Abreu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Zoeteweij</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arjan Jc</forename><surname>Van Gemund</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2009 IEEE/ACM International Conference on Automated Software Engineering</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="88" to="99" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Program synthesis with large language models</title>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Augustus</forename><surname>Odena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carrie</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2108.07732</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoxin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muhan</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daoguang</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian-Gang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anton</forename><surname>Cheshkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guoliang</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Artem</forename><surname>Aliev</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.01304</idno>
+		<title level="m">Issue resolving with multi-agent and task graphs</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Locagent: Graph-guided llm agents for code localization</title>
+		<author>
+			<persName><forename type="first">Zhaoling</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gangda</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiwei</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Viktor</forename><surname>Prasanna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arman</forename><surname>Cohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.09089</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tianzhe</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuexiang</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jihan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengbang</forename><surname>Tong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saining</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ma</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.17161</idno>
+		<title level="m">Sft memorizes, rl generalizes: A comparative study of foundation model post-training</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Llm-based test-driven interactive code generation: User study and empirical evaluation</title>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Fakhoury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aaditya</forename><surname>Naik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Georgios</forename><surname>Sakkas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saikat</forename><surname>Chakraborty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuvendu</forename><forename type="middle">K</forename><surname>Lahiri</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Software Engineering</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Daya Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoyu</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shirong</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.12948</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiajun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keming</forename><surname>Lu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.12186</idno>
+		<title level="m">Qwen2. 5-coder technical report</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Jaech</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Kalai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Lerer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Richardson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmed</forename><surname>El-Kishky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aiden</forename><surname>Low</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Helyar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksander</forename><surname>Madry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Beutel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Carney</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.16720</idno>
+		<title level="m">Openai o1 system card</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">A survey on large language models for code generation</title>
+		<author>
+			<persName><forename type="first">Juyong</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiasi</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sungju</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sunghun</forename><surname>Kim</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.00515</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Cosil: Software issue localization via llm-driven code repository graph searching</title>
+		<author>
+			<persName><forename type="first">Zhonghao</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoxue</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meng</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongxin</forename><surname>Liu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2503.22424" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">SWE-bench: Can language models resolve real-world github issues?</title>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Karthik R Narasimhan</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=VTF8yNQM66" />
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Search-r1: Training llms to reason and leverage search engines with reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Bowen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hansi</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenrui</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinsung</forename><surname>Yoon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sercan</forename><surname>Arik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hamed</forename><surname>Zamani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Han</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.09516</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Practitioners&apos; expectations on automated fault localization</title>
+		<author>
+			<persName><forename type="first">Pavneet</forename><surname>Singh Kochhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanping</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 25th international symposium on software testing and analysis</title>
+		<meeting>the 25th international symposium on software testing and analysis</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="165" to="176" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Deepfl: Integrating multiple fault diagnosis dimensions for deep fault localization</title>
+		<author>
+			<persName><forename type="first">Xia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 28th ACM SIGSOFT international symposium on software testing and analysis</title>
+		<meeting>the 28th ACM SIGSOFT international symposium on software testing and analysis</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="169" to="180" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Fault localization with code coverage representation learning</title>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaohua</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tien</forename><surname>Nguyen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2021 IEEE/ACM 43rd International Conference on Software Engineering (ICSE)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<biblScope unit="page">2021</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Competition-level code generation with alphacode</title>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyoung</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nate</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rémi</forename><surname>Leblond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Eccles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Keeling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Gimeno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Agustin</forename><surname>Dal Lago</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Science</title>
+		<imprint>
+			<biblScope unit="volume">378</biblScope>
+			<biblScope unit="issue">6624</biblScope>
+			<biblScope unit="page" from="1092" to="1097" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">A survey of convolutional neural networks: analysis, applications, and prospects</title>
+		<author>
+			<persName><forename type="first">Zewen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjie</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shouheng</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE transactions on neural networks and learning systems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="6999" to="7019" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Practical root cause localization for microservice systems via trace analysis</title>
+		<author>
+			<persName><forename type="first">Zeyan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Jiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nengwen</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhijun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuwei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanjun</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leiqin</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zikai</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">th International Symposium on Quality of Service (IWQOS)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="volume">29</biblScope>
+			<biblScope unit="page" from="1" to="10" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Sorft: Issue resolving with subtask-oriented reinforced fine-tuning</title>
+		<author>
+			<persName><forename type="first">Zexiong</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangxin</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanzhen</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Xie</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.20127</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Training software engineering agents and verifiers with swe-gym</title>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Navdeep</forename><surname>Jaitly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alane</forename><surname>Suhr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhe</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Forty-second International Conference on Machine Learning</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">S oap fl: A standard operating procedure for llm-based method-level fault localization</title>
+		<author>
+			<persName><forename type="first">Yihao</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shangwen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiling</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinhao</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaixin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoling</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoguang</forename><surname>Mao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Software Engineering</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Spectrum-based fault localization for context-free grammars</title>
+		<author>
+			<persName><forename type="first">Moeketsi</forename><surname>Raselimo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bernd</forename><surname>Fischer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 12th ACM SIGPLAN International Conference on Software Language Engineering</title>
+		<meeting>the 12th ACM SIGPLAN International Conference on Software Language Engineering</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="15" to="28" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Toolformer: Language models can teach themselves to use tools</title>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberta</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicola</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Scialom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="68539" to="68551" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Hybridflow: A flexible and efficient rlhf framework</title>
+		<author>
+			<persName><forename type="first">Guangming</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilingfeng</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xibin</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ru</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanghua</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haibin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuan</forename><surname>Wu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Twentieth European Conference on Computer Systems</title>
+		<meeting>the Twentieth European Conference on Computer Systems</meeting>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="1279" to="1297" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Monte carlo tree search: A review of recent modifications and applications</title>
+		<author>
+			<persName><forename type="first">Maciej</forename><surname>Świechowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Konrad</forename><surname>Godlewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bartosz</forename><surname>Sawicki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacek</forename><surname>Mańdziuk</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artificial Intelligence Review</title>
+		<imprint>
+			<biblScope unit="volume">56</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="2497" to="2562" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Opendevin: An open platform for ai software developers as generalist agents</title>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boxuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchen</forename><surname>Zhuge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yueqi</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaskirat</forename><surname>Singh</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.16741</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">A theoretical analysis of ndcg type ranking measures</title>
+		<author>
+			<persName><forename type="first">Yining</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liwei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Di</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tie-Yan</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on learning theory</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="25" to="54" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Hits: High-coverage llm-based unit test generation via method slicing</title>
+		<author>
+			<persName><forename type="first">Zejun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaibo</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 39th IEEE/ACM International Conference on Automated Software Engineering</title>
+		<meeting>the 39th IEEE/ACM International Conference on Automated Software Engineering</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="1258" to="1268" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Locus: Locating bugs from software changes</title>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rongxin</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shing-Chi</forename><surname>Cheung</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 31st IEEE/ACM International Conference on Automated Software Engineering</title>
+		<meeting>the 31st IEEE/ACM International Conference on Automated Software Engineering</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="262" to="273" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Historical spectrum based fault localization</title>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongqiang</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rongxin</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shi</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shing-Chi</forename><surname>Cheung</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Software Engineering</title>
+		<imprint>
+			<biblScope unit="volume">47</biblScope>
+			<biblScope unit="issue">11</biblScope>
+			<biblScope unit="page" from="2348" to="2368" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Demystifying llm-based software engineering agents</title>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinlin</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soren</forename><surname>Dunn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3715754</idno>
+		<ptr target="https://doi.org/10.1145/3715754" />
+	</analytic>
+	<monogr>
+		<title level="j">Proc. ACM Softw. Eng</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<date type="published" when="2025-06">June 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Logic-rl: Unleashing llm reasoning with rule-based reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Tian</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zitian</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingnan</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoming</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqian</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joey</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhirong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Luo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.14768</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kilian</forename><surname>Lieret</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.15793</idno>
+		<title level="m">Swe-agent: Agent-computer interfaces enable automated software engineering</title>
+		<imprint>
+			<publisher>Karthik Narasimhan, and Ofir Press</publisher>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kilian</forename><surname>Leret</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kabir</forename><surname>Khandpur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanzhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ludwig</forename><surname>Schmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diyi</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.21798</idno>
+		<title level="m">Swe-smith: Scaling data for software engineering agents</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Improved bug localization based on code change histories and bug reports</title>
+		<author>
+			<persName><forename type="first">Klaus</forename><surname>Changsun Youm</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">June</forename><surname>Ahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eunseok</forename><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Information and Software Technology</title>
+		<imprint>
+			<biblScope unit="volume">82</biblScope>
+			<biblScope unit="page" from="177" to="192" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Orcaloca: An llm agent framework for software issue localization</title>
+		<author>
+			<persName><forename type="first">Zhongming</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hejia</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujie</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanxian</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matrix</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ke</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jishen</forename><surname>Zhao</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2502.00350" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">Kechi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huangzhao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinliang</forename><surname>You</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfei</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.18455</idno>
+		<title level="m">Sealign: Alignment training for software engineering agent</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Enhancing bug localization with bug report decomposition and code hierarchical network</title>
+		<author>
+			<persName><forename type="first">Ziye</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanghang</forename><surname>Tong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yun</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Knowledge-Based Systems</title>
+		<imprint>
+			<biblScope unit="volume">248</biblScope>
+			<biblScope unit="page">108741</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

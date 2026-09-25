@@ -1,0 +1,1433 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">An In-Context Learning Agent for Formal Theorem-Proving</title>
+				<funder>
+					<orgName type="full">Ashar Aziz Foundation</orgName>
+				</funder>
+				<funder ref="#_Bf9FVNS #_9p9arQP #_UUmhUJ9">
+					<orgName type="full">National Science Foundation</orgName>
+					<orgName type="abbreviated">NSF</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-08-08">8 Aug 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Amitayush</forename><surname>Thakur</surname></persName>
+							<email>amitayush@utexas.edu</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">The University of Texas at Austin</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">George</forename><surname>Tsoukalas</surname></persName>
+							<email>george.tsoukalas@utexas.edu</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">The University of Texas at Austin</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yeming</forename><surname>Wen</surname></persName>
+							<email>ywen@utexas.edu</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">The University of Texas at Austin</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jimmy</forename><surname>Xin</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">The University of Texas at Austin</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Swarat</forename><surname>Chaudhuri</surname></persName>
+							<email>swarat@cs.utexas.edu</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">The University of Texas at Austin</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">An In-Context Learning Agent for Formal Theorem-Proving</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-08-08">8 Aug 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">0BBC206DD9E44F629EF54047A54E67AE</idno>
+					<idno type="arXiv">arXiv:2310.04353v5[cs.LG]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:33+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>We present an in-context learning agent for formal theorem-proving in environments like Lean and Coq. Current state-of-the-art models for the problem are finetuned on environment-specific proof data. By contrast, our approach, called COPRA, repeatedly asks a high-capacity, general-purpose large language model (GPT-4) to propose tactic applications from within a stateful backtracking search. Proposed tactics are executed in the underlying proof environment. Feedback from the execution is used to build the prompt for the next model query, along with selected information from the search history and lemmas retrieved from an external database. We evaluate our implementation of COPRA on the miniF2F benchmark for Lean and a set of Coq tasks from the CompCert project. On these benchmarks, COPRA significantly outperforms few-shot invocations of GPT-4. It also compares favorably against finetuning-based approaches, outperforming REPROVER, a state-of-the-art finetuned approach for Lean, in terms of the pass@1 metric. Our code and data are available at <ref type="url" target="https://github.com/trishullab/copra">https://github.com/trishullab/copra</ref>.</p><p>* For brevity, we refer to GPT-4-turbo as GPT-4 in the rest of this paper.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="26" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="27" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>The ability of large language models (LLMs) to learn in-context <ref type="bibr" target="#b3">(Brown et al., 2020)</ref> is among the most remarkable recent findings in machine learning. Since its introduction, in-context learning has proven fruitful in a broad range of domains, from text and code generation <ref type="bibr">(OpenAI, 2023b)</ref> to image generation <ref type="bibr" target="#b25">(Ramesh et al., 2021)</ref> to game-playing <ref type="bibr">(Wang et al., 2023a)</ref>. In many tasks, it is now best practice to prompt a general-purpose, black-box LLM rather than finetune smaller-scale models.</p><p>In this paper, we investigate the value of in-context learning in the discovery of formal proofs written in frameworks like <ref type="bibr">Lean (de Moura et al., 2015)</ref> and Coq <ref type="bibr" target="#b11">(Huet et al., 1997)</ref>. Such frameworks allow proof goals to be iteratively simplified using tactics such as variable substitution and induction. A proof is a sequence of tactics that iteratively "discharges" a given goal.</p><p>Automatic theorem-proving is a longstanding challenge in computer science <ref type="bibr" target="#b18">(Newell et al., 1957)</ref>. Traditional approaches to the problem were based on discrete search and had difficulty scaling to complex proofs <ref type="bibr" target="#b4">(Bundy, 1988;</ref><ref type="bibr" target="#b0">Andrews &amp; Brown, 2006;</ref><ref type="bibr" target="#b2">Blanchette et al., 2011)</ref>. More recent work has used neural models -most notably, autoregressive language models <ref type="bibr" target="#b23">(Polu &amp; Sutskever, 2020;</ref><ref type="bibr" target="#b8">Han et al., 2021;</ref><ref type="bibr" target="#b37">Yang et al., 2023)</ref> -that generate a proof tactic by tactic.</p><p>The current crop of such models is either trained from scratch or fine-tuned on formal proofs written in a specific proof framework. By contrast, our method uses a highly capable, general-purpose, black-box LLM (GPT-4-turbo (OpenAI, 2023a) * ) that can learn in context. We show that few-shot prompting of GPT-4 is not effective at proof generation. However, one can achieve far better performance with an in-context learning agent <ref type="bibr" target="#b38">(Yao et al., 2022;</ref><ref type="bibr">Wang et al., 2023a;</ref><ref type="bibr" target="#b30">Shinn et al., 2023)</ref> that repeatedly invokes GPT-4 from within a higherlevel backtracking search and uses retrieved knowledge and rich feedback from the proof environment. Without any framework-specific training, our agent achieves performance comparable to -and by some measures better than -state-of-the-art finetuned approaches. Figure <ref type="figure" target="#fig_0">1</ref> gives an overview of our agent, called COPRA. † The agent takes as input a formal statement of a theorem and optional naturallanguage hints about how to prove the theorem. At each time step, it prompts the LLM to select the next tactic to apply. LLM-selected tactics are "executed" in the underlying proof assistant. If the tactic fails, COPRA records this information and uses it to avoid future failures.</p><p>Additionally, the agent uses lemmas and definitions retrieved from an external database to simplify proofs. Finally, we use a symbolic procedure <ref type="bibr" target="#b27">(Sanchez-Stern et al., 2020)</ref> to only apply LLM-selected tactics when they simplify the current proof goals (ruling out, among other things, cyclic tactic sequences).</p><p>Our use of a general-purpose LLM makes it easy to integrate our approach with different proof environments. Our current implementation of COPRA allows for proof generation in both Lean and Coq. To our knowledge, this implementation is the first proof generation system with this capability.</p><p>We evaluate COPRA using the miniF2F <ref type="bibr" target="#b42">(Zheng et al., 2021)</ref> benchmark for competition-level mathematical reasoning in Lean, as well as a set of Coq proof tasks <ref type="bibr" target="#b27">(Sanchez-Stern et al., 2020</ref>) from the CompCert <ref type="bibr" target="#b16">(Leroy, 2009)</ref> project on verified compilation. In both settings, COPRA outperforms few-shot calls to GPT-4. On miniF2F, COPRA outperforms REPROVER, a state-of-the-art finetuned approach for Lean theorem-proving, in terms of the established pass@1 metric. Using a refinement of the pass@1 metric, we show that COPRA can converge to correct proofs with fewer model queries than REPROVER as well as PROVERBOT9001, a state-of-the-art approach for Coq. Finally, we show that a GPT-4-scale model is critical for this setting; an instantiation of COPRA with GPT-3.5 is less effective.</p><p>To summarize our contributions, we offer: (i) a new approach to formal theorem-proving, called COPRA, that combines in-context learning with search, knowledge retrieval, and the use of rich feedback from the underlying proof environment; (ii) a systematic study of the effectiveness of the GPT-4-based instantiation of COPRA, compared to few-shot GPT-4 invocations, ablations based on GPT-3.5, and state-of-the-art finetuned baselines; (iii) an implementation of COPRA, which is the first open-source theorem-proving system to be integrated with both the Lean and Coq proof environments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Problem Formulation</head><p>A (tactic-based) theorem-prover starts with a set of unmet proof obligations and applies a sequence of proof tactics to progressively eliminate these obligations. Each obligation o is a pair (g, h), where g is a goal and h is a hypothesis. The goal g consists of the propositions that need to be proved in order to meet o; the hypothesis h is the set of assumptions that can be made in the proof of g. The prover seeks to reduce the obligation set to the empty set.</p><p>(a) theorem mod_arith_2 (x : N) : x % 2 = 0 → (x * x) % 2 = 0 := begin intro h, rw mul_mod, rw h, rw zero_mul, refl, end (b) x: N h: x % 2 = 0 ⊢ x * x % 2 = 0 (c)</p><p>begin intro h, have h1 : x = 2 * (x / 2) := (nat. mul_div_cancel ' h).symm, rw h1, rw nat. mul_div_assoc _ (show 2 | 2, from dvd_refl _), rw [mul_assoc, nat. mul_mod_right ], end   <ref type="bibr" target="#b6">(de Moura et al., 2015)</ref>, of a basic theorem about modular arithmetic (the proof is automatically generated using COPRA). The first step of the proof is the intro tactic, which changes a goal P → Q to a hypothesis P and a goal Q. The next few steps use the rw (rewrite) tactic, which applies substitutions to goals and hypotheses. The last step is an application of the refl (reflexivity) tactic, which asserts definitional equivalences.</p><p>In code generation settings, LLMs like GPT-4 can often generate complex programs from one-shot queries. However, one-shot queries to GPT-4 often fail at even relatively simple formal proof tasks. By contrast, we follow a classic view of theorem-proving as a discrete search problem <ref type="bibr" target="#b4">(Bundy, 1988)</ref>. Specifically, we offer an agent that searches the state space of the underlying proof environment and discovers sequences of tactic applications that constitute proofs. The main differences from classical symbolic approaches are that the search is LLM-guided, history-dependent, and can use natural-language insights provided by the user or the environment. Now we formalize our problem statement. Abstractly, let a proof environment consist of:</p><p>• A set of states O. Here, a state is either a set O = {o 1 , . . . , o k } of obligations o i , or of the form (O, w), where O is a set of obligations and w is a textual error message. States of the latter form are error states, and the set of such states is denoted by Err.</p><p>• A set of initial states, each consisting of a single obligation (g in , h in ) extracted from a user-provided theorem.</p><p>• A unique goal state QED is the empty obligation set.</p><p>• A finite set of proof tactics.</p><p>• A transition function T(O, a), which determines the result of applying a tactic a to a state O. If a can be successfully applied at state O, then T(O, a) is the new set of obligations resulting from the application. If a is a "bad" tactic, then T(O, a) is an error state (O, w e ), where w e is some feedback that explains the error. Error states (O, w) satisfy the property that T((O, w), a) = (O, w) for all a.</p><p>• A set of global contexts, each of which is a natural-language string that describes the theorem to be proven and insights <ref type="bibr">(Jiang et al., 2022b)</ref> about how to prove it. The theorem-proving agent can take a global context as an optional input and may use it to accelerate search.</p><p>Let us lift the transition function T to tactic sequences by defining:</p><formula xml:id="formula_0">T(O, α) = T(O, a 1 ) if n = 1 T(T(O, ⟨a 1 , . . . , a n-1 ⟩), a n ) otherwise.</formula><p>The theorem-proving problem is now defined as follows: Problem 1 (Theorem-proving). Given an initial state O in and an optional global context χ, find a tactic sequence α (a proof ) such that T(O in , α) = QED.</p><p>In practice, we aim for proofs to be as short as possible.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">The COPRA Agent</head><p>The COPRA agent solves the theorem-proving problem via a GPT-4-directed depth-first search over tactic sequences. Figure <ref type="figure">3</ref> shows pseudocode for the agent. At any given point, the algorithm maintains a stack of environment states and a "failure dictionary" Bad that maps states to sets of tactics that are known to be "unproductive" at the state.</p><p>At each search step, it pushes the current state on the stack and retrieves external lemmas and definitions relevant to the state. After this, it serializes the stack, Bad(O), the retrieved information, and the optional global context into a prompt and feeds it to the LLM. The LLM's output is parsed into a tactic and executed in the environment.</p><p>One outcome of the tactic could be that the agent arrives at QED or makes some progress in the proof. A second possibility is that the new state is an error. A third possibility is that the tactic is not incorrect but does not represent progress in the proof. We detect this scenario using a symbolic progress check as described below. The agent terminates successfully after reaching QED and rejects the new state in the second and third cases. Otherwise, it recursively continues the proof from the new state. After issuing a few queries to the LLM, the agent backtracks.</p><p>Progress Checks. Following Sanchez-Stern et al. (2020), we define a partial order ⊒ over states that indicates when a state is "at least as hard" as another. Formally, for states O 1 and O 2 with O 1 / ∈ Err and</p><formula xml:id="formula_1">O 2 / ∈ Err, O 1 ⊒ O 2 iff ∀o i = (g i , h i ) ∈ O 2 . ∃o k = (g k , h k ) ∈ O 1 . g k = g i ∧ (h k ⊆ h i ). Intuitively, O 1 ⊒ O 2 if for every obligation in O 2 ,</formula><p>there is a stronger obligation in O 1 . While comparing the difficulty of arbitrary proof states is not well-defined, our definition helps us eliminate some straightforward cases. Particularly, these cases include those proof states whose goals match exactly and one set of hypotheses contains the other. COPRA(O, χ) 1 PUSH(st, O) 2 ρ ← RETRIEVE(O) 3 for j ← 1 to t 4 do p ← PROMPTIFY(st, Bad(O), ρ, χ) 5 a ∼ PARSETACTIC(LLM(p)) 6 O ′ ← T(O, a) 7 if O ′ = QED 8 then terminate successfully 9 else if O ′ ∈ Err or ∃O ′′ ∈ st. O ′ ⊒ O ′′ 10 then add a to Bad(O) 11 else COPRA(O ′ , χ) 12 POP(st)</p><p>Figure <ref type="figure">3</ref>: The search procedure in COPRA. T is the environment's transition function; st is a stack, initialized to be empty. Bad(O) is a set of tactics, initialized to ∅, that are known to be bad at O. LLM is an LLM, PROMPTIFY generates a prompt, PARSETACTIC parses the output of the LLM into a tactic (repeatedly querying the LLM in case there are formatting errors in its output), and RETRIEVE gathers relevant lemmas and definitions from an external source. The overall procedure is called with a state O in and an optional global context χ.</p><p>As shown in Figure <ref type="figure">3</ref>, the COPRA procedure uses the ⊒ relation to only take actions that lead to progress in the proof. Using our progress check, CO-PRA avoids cyclic tactic sequences that would cause nontermination.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Prompt Serialization.</head><p>The routines PROMPTIFY and PARSETACTIC together constitute the prompt serialization protocol and are critical to the success of the policy. Now we elaborate on these procedures.</p><p>PROMPTIFY carefully places the different pieces of information relevant to the proof in the prompt. It also includes logic for trimming this information to fit the most relevant parts in the LLM's context window. Every prompt has two parts: the "system prompt" (see more details in Appendix A.3) and the "agent prompt."</p><p>The agent prompts are synthetically generated using a context-free grammar and contain information about the state stack (including the current proof state), the execution feedback for the previous action, and the set of actions we know to avoid at the current proof state.</p><p>The system prompt describes the rules of engagement for the LLM. It contains a grammar (distinct from the one for agent prompts) that we expect the LLMs to follow when it proposes a course of action. The grammar carefully incorporates cases when the response is incomplete because of the LLM's token limits. We parse partial responses to extract the next tactic using the PARSETACTIC routine. PARSETACTIC also identifies any formatting errors in the LLM's responses, possibly communicating with the LLM multiple times until these errors are resolved.</p><p>Figure <ref type="figure" target="#fig_4">4</ref> illustrates a typical "conversation" between the LLM and COPRA's search algorithm via the prompt serialization protocol. Note, in particular, the prompt's use of the current goals, the stack, and error feedback for the last executed tactic.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Evaluation</head><p>Benchmarks. We primarily evaluate COPRA on the Lean proof environment using miniF2Ftest <ref type="bibr" target="#b42">(Zheng et al., 2021)</ref> benchmark. This benchmark comprises 244 formalizations of mathematics problems from (i) the MATH dataset <ref type="bibr" target="#b9">(Hendrycks et al., 2021)</ref>, (ii) high school mathematics competitions, (iii) hand-designed problems mirroring the difficulty of (ii). Broadly, these problems fall under three categories: number theory, algebra, and induction.</p><p>To evaluate COPRA's ability to work with multiple proof frameworks, we perform a secondary set of experiments on the Coq platform. Our benchmark here consists of a set of a theorems drawn from the CompCert compiler verification project <ref type="bibr" target="#b16">(Leroy, 2009)</ref>. The dataset was originally evaluated on the PROVERBOT9001 system <ref type="bibr" target="#b27">(Sanchez-Stern et al., 2020)</ref>. Due to budgetary constraints, our evaluation for CompCert uses 118 of the 501 theorems used in the original evaluation of PROVERBOT9001. For fairness, we include all 98 theorems proved by PROVERBOT9001 in our system. The remaining theorems are randomly sampled.</p><p>Implementing COPRA. Our implementation of COPRA is LLM-agnostic, and functions as long as the underlying language model is capable of producing responses which parse according to the output grammar. We instantiate the LLM to be GPT-4-turbo as a middleground between quality and affordability. Because of the substantial cost of GPT-4 queries, we cap the number of queries that COPRA can make at 60 for the majority of our experiments.</p><p>In both Lean and Coq, we instantiate the retrieval mechanism to be a BM25 search. For our Lean experiments, our retrieval database is mathlib (mathlib Community, 2020), a mathematics library developed by the Lean community. Unlike miniF2F, our CompCertbased evaluation set is accompanied by a training set. Since COPRA relies on a black-box LLM, we do not perform any training with the train set, but do use it as the retrieval database for our Coq experiments. Inspired by DSP <ref type="bibr">(Jiang et al., 2022b)</ref>, we measure the efficacy of including the naturallanguage (informal) proof of the theorem at each search step in our Learn experiments. We use the informal theorem statements in miniF2F-test to generate informal proofs of theorems using few-shot prompting of the underlying LLM. The prompt has several examples, fixed over all invocations, of informal proof generation given the informal theorem statement. These informal proofs are included as part of the global context. Unlike miniF2F, which consists of competition problems originally specified in natural language, our Com-pCert evaluation set comes from software verification tasks that lack informal specifications. Hence, we do not run experiments with informal statements and proofs for Coq.</p><p>Initially, we run COPRA without access to the retrieval database. By design, COPRA may backtrack out of its proof search before the cap of 60 queries has been met. With the remaining attempts on problems yet to be solved, COPRA is restarted to operate with retrieved information, and then additionally with informal proofs. This implementation affords lesser expenses, as appending retrieved lemmas and informal proofs yields longer prompts, which incur higher costs. More details are discussed in Appendix A.1.1.</p><p>Baselines. We perform a comparison with the few-shot invocation of GPT-4 in both the miniF2F-test and CompCert domains. The "system prompt" in the few-shot approach differs from that of COPRA, containing instructions to generate the entire proof in one response, rather than going step-by-step. For both COPRA and the few-shot baseline, the prompt contains several proof examples which clarify the required format of the LLM response. The proof examples, fixed across all test cases, contain samples broadly in the same categories as, but distinct from, those problems in the evaluation set.</p><p>For our fine-tuned baselines, a challenge is that, to our knowledge, no existing theoremproving system targets both Lean and Coq. Furthermore, all open-source theorem proving systems have targeted a single proof environment. As a result, we had to choose different baselines for the Lean (miniF2F) and Coq (CompCert) domains.</p><p>Our fine-tuned baseline for miniF2F-test is REPROVER, a state-of-the-art retrievalaugmented open-source system that is part of the LeanDojo project <ref type="bibr" target="#b37">(Yang et al., 2023)</ref>. We also compare against LLEMMA-7b and LLEMMA-34b <ref type="bibr" target="#b1">(Azerbayev et al., 2023)</ref>. In the CompCert task, we compare with PROVERBOT9001 <ref type="bibr" target="#b27">(Sanchez-Stern et al., 2020)</ref>, which, while not LLM-based, is the best public model for Coq.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Ablations.</head><p>We consider ablations of COPRA which use GPT-3.5 and CodeLlama <ref type="bibr" target="#b26">(Roziere et al., 2023)</ref> as the underlying model. We also measure the effectiveness of backtracking in COPRA's proof search. Additionally, we ablate for retrieved information and informal proofs as part of the global context during search.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Metric.</head><p>The standard metric for evaluating theorem-provers is pass@k <ref type="bibr" target="#b15">(Lample et al., 2022)</ref>. In this metric, a prover is given a budget of k proof attempts; the method is considered successful if one of these attempts leads to success. We consider a refinement of this metric called pass@k-with-n-queries. Here, we measure the number of correct proofs that a prover can generate given k attempts, each with a budget of n queries from the LLM or neural model. We enforce that a single query includes exactly one action (a sequence of tactics) to be used in the search. We want this metric to be correlated with the number of correct proofs that the prover produces within a specified wall-clock time budget; however, the cost of an inference query on an LLM is proportional to the number of responses generated per query. To maintain the correlation between the number of inference queries and wall-clock time, we restrict each inference on the LLM to a single response (see Appendix A.1.2 for more details).</p><p>Evaluation on miniF2F-test Approach pass@k -with-n-queries k × n (Timeout) % proved Few-Shot (CodeLlama) 1 × 1 (600) 0.0% Few-Shot (GPT 3.5) 1 × 1 (600) 2.8% COPRA (CodeLlama) 1 × 500 (600) 5.73% COPRA (GPT-3.5) 1 × 60 (600) 9.02% Few-Shot 1 × 1 (600) 13.52% Few-Shot (T = 0.7) 60 ‡ × 1 (600) 15.98% REPROVER (-Retrieval) 1 × 1076 (600) 22.13% COPRA (-Backtracking) 1 × 60 (600) 24.59% REPROVER 1 × 3751 (600) 25.00% LLEMMA-34b 1 × 3200 (600) 25.82% LLEMMA-7b 1 × 3200 (600) 26.23% COPRA 1 × 60 (600) 26.63% COPRA (+ Retrieval) 1 × 60 (600) 29.09% COPRA (+ Retrieval + Informal) 1 × 60 (600) 29.92% COPRA (+ Retrieval + Informal) 1 × 100 (1200) 30.74% Table 1: Aggregate statistics for COPRA and the baselines on miniF2F dataset. Note the various ablations of COPRA with and without retrieval or informal proofs. The timeout is a wall-clock time budget in seconds allocated across all attempts. Unless otherwise specified, (i) COPRA uses GPT-4 as the LLM (ii) the temperature (T) is set to 0.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>COPRA vs. Few-Shot LLM Queries.</head><p>Statistics for the two approaches, as well as a comparison with the fewshot GPT-3.5 and GPT-4 baselines, appear in Table <ref type="table">1</ref>. As we see, CO-PRA offers a significant advantage over the few-shot approaches. For example, COPRA solves more than twice as many problems as the fewshot GPT-4 baseline, which indicates that the state information positively assists the search. Furthermore, we find that running the few-shot baseline with 60 ‡ attempts (provided a nonzero temperature), exhibits considerably worse performance compared to COPRA. This indicates that COPRA makes more efficient use of queries to GPT-4 than the baseline, even when queries return a single tactic (as part of a stateful search), as opposed to a full proof. We include further details in Appendix A.1.1.</p><p>COPRA is capable of improving the performance of GPT-3.5, CodeLlama over its few-shot counterpart. We note that the use of GPT-4 seems essential, as weaker models like GPT-3.5 or CodeLlama have a reduced ability to generate responses following the specified output format.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Comparison with Finetuned Approaches on miniF2F.</head><p>Figure <ref type="figure" target="#fig_5">5</ref> shows our comparison results for the miniF2F domain. With a purely in-context learning approach, CO-PRA outperforms REPROVER, proving within just 60 queries theorems that REPROVER could not solve after a thousand queries. This is remarkable given that REPROVER was finetuned on a curated proof-step dataset derived from Lean's mathlib library. For fairness, we ran REPROVER multiple times with 16, 32, and 64 (default) as the maximum number of queries per proof-step. We obtained the highest success rates for REPROVER with 64 queries per proof-step. We find that COPRA without retrieval outperforms REPROVER.</p><p>Our pass@1 performance surpasses those of the best open-source approaches for miniF2Ftest on Lean. COPRA proves 29.09% of theorems in miniF2F-test theorems, which exceeds that of LLEMMA-7b &amp; LLEMMA-34b, <ref type="bibr" target="#b1">(Azerbayev et al., 2023)</ref> and REPROVER <ref type="bibr" target="#b37">(Yang et al., 2023)</ref>. It is important to note that these methods involve training on curated proof data, while COPRA relies only on in-context learning.</p><p>We also establish a correlation between the number of queries needed for a proof and wallclock time in Figure <ref type="figure" target="#fig_6">6</ref> and Table <ref type="table">3</ref> (more details are discussed in Appendix A.1.3). Although the average time per query is higher for COPRA, COPRA still finds proofs almost 3x faster than REPROVER. This can explained by the fact that our search is more effective as it uses 16x fewer queries than REPROVER (see Table <ref type="table" target="#tab_0">2</ref>). The average time per query includes the time taken to execute the generated proof step by the interactive theorem prover. Hence, a more effective model can be slow in generating responses while still proving faster compared to a model with quicker inference, by avoiding the waste of execution time on bad proof-steps. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Qualitative Analysis of Proofs.</head><p>We performed an analysis of the different categories of miniF2F problems solved by COPRA and REPROVER. Figure <ref type="figure" target="#fig_8">8</ref> and Figure <ref type="figure" target="#fig_9">9</ref> (in Appendix A.2) show that COPRA proves more theorems in most of the categories and takes fewer steps consistently across all categories of problems in miniF2F as compared to REPROVER. Additionally, we find that certain kinds of problems, for example, International Mathematics Olympiad (IMO) problems and theorems that require induction, are difficult for both approaches.</p><p>From our qualitative analysis, there are certain kinds of problems where our languageagent approach seems especially helpful. For instance, Figure <ref type="figure">7</ref> shows a problem in the 'numbertheory' category that REPROVER could not solve. More examples of interesting proofs that COPRA found appear in the Appendix A.2 in Figure <ref type="figure" target="#fig_0">10</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Effectiveness of Backtracking, Informal Proofs, and Retrieval.</head><p>We show the ablation for the backtracking feature of COPRA in Table <ref type="table">1</ref>. We find that backtracking is useful when proofs are longer or more complex, as COPRA is more likely to make mistakes which require amending. We include additional examples in Figure <ref type="figure" target="#fig_3">12</ref> (in Appendix A.2). From Table <ref type="table">1</ref>, we see that retrieval helps in proving more problems. Retrieval reduces the tendency of the model to hallucinate the lemma names and provides the model with existing lemma definitions it otherwise may not have known. We include a proof generated by COPRA that uses a retrieved lemma in Figure <ref type="figure">7</ref>.</p><p>We experiment with adding model-generated informal proofs as global context in COPRA's proof search. As evidenced in Table <ref type="table">1</ref>, COPRA is able to outperform PACT <ref type="bibr" target="#b8">(Han et al., 2021)</ref> and the state-of-the-art (29.6%) expert iteration method <ref type="bibr" target="#b24">(Polu et al., 2022)</ref> in a pass@1 search through the incorporation of informal proofs. Furthermore, increasing the maximum query count to 100 enables a further increase in COPRA's performance to 30.74%. An example of a proof found when incorporating informal proofs is shown in Figure <ref type="figure" target="#fig_10">15</ref> (see Appendix A.5).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Test-Set Memorization Concerns.</head><p>Given that the pretraining corpus of GPT-4 is not publicly available, it is imperative to assess for the possibility of test-set leakage in our experiments. We perform an analysis of those proofs checked into the open-source miniF2F repository compared to those proofs COPRA discovers.</p><p>We categorize those proofs available in miniF2F according to the number of tactics required and the complexity of the tactic arguments. These results can be found in detail in Appendix A.1.4. As seen in Table <ref type="table" target="#tab_1">4</ref>, we find that COPRA reproduces none of the "long" proofs in miniF2F-test repository. Setting aside those cases where the proof consists of a single tactic, approximately 91.93% of the proofs generated by COPRA either bear no overlap to proofs in miniF2F, or no proof has been checked in. We provide examples of proofs generated by our approach compared to those included in miniF2F in Figure <ref type="figure" target="#fig_0">11</ref>. (n m : N+) : (gcd n m) * (lcm n m) = n * m" which led to the proof while REPROVER failed to prove this theorem. It is important to note that just retrieving the correct lemma is not sufficient, but knowing how to use it correctly is equally important. The Figure <ref type="figure" target="#fig_8">18</ref> shows how COPRA utilizes the capabilities of LLM to correctly use the retrieved lemma in the proof.</p><p>Coq Experiments COPRA can prove a significant portion of the theorems in our Coq evaluation set. As shown in Figure <ref type="figure" target="#fig_11">16</ref> (in Appendix A.5), COPRA slightly outperforms PROVERBOT9001 when both methods are afforded the same number of queries. COPRA with retrieval is capable of proving 57 of 118 theorems within our cap of 60 queries. Furthermore, COPRA exceeds the fewshot baselines utilizing GPT-4 and GPT-3.5, which could prove 36 and 10 theorems, respectively, on our CompCertbased evaluation set. Some example Coq proofs generated by COPRA are shown in Appendix A.5 in Figure <ref type="figure" target="#fig_0">17</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Related Work Neural Theorem-Proving.</head><p>There is a sizeable literature on search-based theorem-proving techniques based on supervised learning. Neural models are trained to predict a proof step given a context and the proof state, then employed to guide a search algorithm (e.g. best-first or depth-limited search) to synthesize the complete proof.</p><p>Early methods of this sort <ref type="bibr" target="#b36">(Yang &amp; Deng, 2019;</ref><ref type="bibr" target="#b27">Sanchez-Stern et al., 2020;</ref><ref type="bibr" target="#b10">Huang et al., 2019)</ref> used small-scale neural networks as proof step predictors. Subsequent methods, starting with GPT-f <ref type="bibr" target="#b23">(Polu &amp; Sutskever, 2020)</ref>, have used language models trained on proof data.</p><p>PACT <ref type="bibr" target="#b8">(Han et al., 2021)</ref> enhanced the training of such models with a set of self-supervised auxiliary tasks. <ref type="bibr" target="#b15">Lample et al. (2022)</ref> introduced HyperTree Proof Search, which uses a language model trained on proofs to guide an online MCTS-inspired, search algorithm.</p><p>Among results from the very recent past, REPROVER trains a retrieval-augmented transformer for proof generation in Lean. LLEMMA performs continued pretraining of the CodeLlama 7B &amp; 34B on a math-focused corpus. Baldur <ref type="bibr" target="#b7">(First et al., 2023)</ref> generates the whole proof in one-shot using an LLM and then performs a single repair step by passing error feedback through an LLM finetuned on (incorrect proof, error message, correct proof) tuples. AlphaGeometry <ref type="bibr" target="#b32">(Trinh et al., 2024)</ref> integrates a transformer model trained on synthetic geometry data with a symbolic deduction engine to prove olympiad geometry problems. In contrast to these approaches, COPRA is entirely based on in-context learning.</p><p>We evaluated COPRA in the Lean and Coq environments. However, significant attention has been applied to theorem proving with LLMs in the interactive theorem prover Isabelle <ref type="bibr" target="#b22">(Paulson, 1994)</ref>. Theorem-proving systems for Lean and Isabelle are not directly comparable due to the substantial differences in automation provided by each language. Isabelle is equipped with Sledgehammer <ref type="bibr" target="#b21">(Paulson &amp; Blanchette, 2015)</ref>, a powerful automated reasoning tool that calls external automated theorem provers such as E <ref type="bibr" target="#b29">(Schulz, 2002)</ref> and Z3 <ref type="bibr" target="#b5">(De Moura &amp; Bjørner, 2008)</ref> to prove goals. Thor <ref type="bibr">(Jiang et al., 2022a)</ref> augmented the PISA dataset <ref type="bibr" target="#b12">(Jiang et al., 2021)</ref> to include successful Sledgehammer invocations, and trained a language model to additionally predict hammer applications. Integrating these ideas with the COPRA approach is an interesting subject of future work.</p><p>The idea of using informal hints to guide proofs was first developed in DSP <ref type="bibr">(Jiang et al., 2022b)</ref>, which used an LLM to translate informal proofs to formal sketches that were then completed with Isabelle's automated reasoning tactics. <ref type="bibr" target="#b40">Zhao et al. (2023)</ref> improved on DSP by rewriting the informal proofs to exhibit a more formal structure and employs a diffusion model to predict the optimal ordering of the few-shot examples. LEGOProver <ref type="bibr">(Wang et al., 2023b)</ref> augmented DSP with a skill library that grows throughout proof search. Lyra <ref type="bibr" target="#b41">(Zheng et al., 2023)</ref> iterated on DSP by utilizing error feedback several times to modify the formal sketch, using automated reasoning tools to amend incorrect proofs of intermediate hypotheses. DSP, LEGOProver, and Lyra heavily rely on Isabelle's hammer capabilities (which are not present in other ITPs like Lean) and informal proofs for formal proof generation (see Appendix A.1.5 for details). Moreover, the requirement for informal proofs in these approaches prohibits their application in the software verification domain, where the notion of informal proof is not well-defined. However, we propose a domainagnostic stateful search approach within an in-context learning agent which iteratively uses execution feedback from the ITP with optional use of external signals like retrieval and informal proofs.</p><p>In-Context Learning Agents. Several distinct in-context learning agent architectures have been proposed recently <ref type="bibr">(Significant-Gravitas, 2023;</ref><ref type="bibr" target="#b38">Yao et al., 2022;</ref><ref type="bibr" target="#b30">Shinn et al., 2023;</ref><ref type="bibr">Wang et al., 2023a)</ref>. These models combine an LLM's capability to use tools <ref type="bibr" target="#b28">Schick et al. (2023)</ref>, decompose a task into subtasks <ref type="bibr" target="#b35">(Wei et al., 2022;</ref><ref type="bibr" target="#b39">Yao et al., 2023)</ref>, and self-reflect <ref type="bibr" target="#b30">(Shinn et al., 2023)</ref>. However, COPRA is the first in-context learning agent for theorem-proving.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>We have presented COPRA, the first in-context-learning approach to theorem-proving in frameworks like Lean and Coq. The approach departs from prior LLM-based theoremproving techniques by performing a history-dependent backtracking search by utilizing in-context learning, the use of execution feedback from the underlying proof environment, and retrieval from an external database. We have empirically demonstrated that COPRA significantly outperforms few-shot LLM invocations at proof generation and also compares favorably to finetuned approaches.</p><p>As for future work, we gave GPT-4 a budget of at most 60 queries per problem for cost reasons. Whether the learning dynamics would drastically change with a much larger inference budget remains to be seen. Also, it is unclear whether a GPT-4-scale model is truly essential for our task. We have shown that the cheaper GPT-3.5 agent is not competitive against our GPT-4 agent; however, it is possible that a Llama-scale model that is explicitly finetuned on interactions between the model and the environment would have done better. While data on such interactions is not readily available, a fascinating possibility is to generate such data synthetically using the search mechanism of COPRA.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Reproducibility Statement</head><p>We are releasing all the code needed to run COPRA as supplementary material. The code contains all "system prompts" described in Section Appendix A.3 and Appendix A.4, along with any other relevant data needed to run COPRA. However, to use our code, one must use their own OpenAI API keys. An issue with reproducibility in our setting is that the specific models served via the GPT-4 and GPT-3.5 APIs may change over time. In our experiments, we set the "temperature" parameter to zero to ensure the LLM outputs are as deterministic as possible.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Appendix</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 Evaluation Details</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1.1 COPRA Implementation Setup Details</head><p>We introduce a common proof environment for COPRA, which can also be used by any other approach for theorem-proving. The proof environment has a uniform interface that makes COPRA work seamlessly for both Lean and Coq. It also supports the use of retrieval from external lemma repositories and the use of informal proofs when available (as in the case of miniF2F). In the future, we plan to extend COPRA to support more proof languages.</p><p>COPRA provides support for various LLMs other than the GPT-series, including opensourced LLMs like Llama 2 <ref type="bibr" target="#b31">(Touvron et al., 2023)</ref> and Code Llama <ref type="bibr" target="#b26">(Roziere et al., 2023)</ref>. For most of our experiments, all the theorems are searched within a timeout of 600 seconds (10 minutes) and with a maximum of 60 LLM inference calls (whichever exhausts first). To make it comparable across various LLMs, only one response is generated per inference. All these responses are generated with the temperature set to zero, which ensures that the responses generated are more deterministic, focused, and comparable. In one of our ablations with few-shot GPT-4, we use set the temperature to 0.7 and run more than 1 attempt. The number of attempts for few-shot GPT-4 matches the number of queries COPRA takes to either successfully prove or fail to prove a certain theorem. This comparison is not completely fair for COPRA because individual queries focus on a single proof step and cannot see the original goal, yet measures a useful experiment which indicates the benefits of COPRA's stateful search under a fixed budget of API calls to GPT-4.</p><p>We use GPT-3.5, GPT-4 (OpenAI, 2023b), and CodeLLama <ref type="bibr" target="#b26">(Roziere et al., 2023)</ref> to test the capabilities of COPRA. We find that it is best to use COPRA's different capabilities in an ensemble to enhance its performance while also minimizing cost. Therefore, we first try to find the proof without retrieval, then with retrieval, and finally with informal proofs (if available) only when we fail with retrieval. The informal proofs are used more like informal sketches for the formal proof and are generated in a separate few-shot invocation of the LLM. Thereafter, COPRA simply adds the informal proofs to its prompt which guides the search. To ensure fairness in comparison, we make sure that the number of guidance steps is capped at 60 and the 10-minute timeout is spread across all these ensemble executions. The use of a failure dictionary (see Section 3) enables fast failure (see Table <ref type="table">3</ref>) which helps in using more strategies along with COPRA within the 60 queries cap and 10-minute timeout. From Table <ref type="table" target="#tab_0">2</ref>, it is clear that despite the significant overlap between the different ablations, the ensemble covers more cases than just using one strategy with COPRA. While extra lemmas are often useful, the addition of extra information from retrieval may also be misleading because the retriever can find lemmas that are not relevant to proving the goal, so the best performance is acquired by using the different capabilities in the manner we describe. Similarly, the use of informal proofs as a sketch for formal proofs can potentially increase the number of steps needed in a formal proof, decreasing the search efficacy. For example, an informal proof can suggest the use of multiple rewrites for performing some algebraic manipulation which can be easily handled with powerful tactics like linarith in Lean. Table <ref type="table">5</ref> shows the number of tokens used in our prompts for different datasets.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1.2 Metric: pass@k-with-n-queries</head><p>We consider the metric pass@k-with-n-queries to assess the speed of the proposed approach and the effectiveness of the LLM or neural network to guide the proof search. It is a reasonable metric because it does a more even-handed trade-off in accounting for the time taken to complete a proof and at the same time ignores very low-level hardware details.</p><p>Different approaches need a different amount of guidance from a neural model to find the right proof. For example, approaches like Baldur <ref type="bibr" target="#b7">(First et al., 2023)</ref>, DSP <ref type="bibr">(Jiang et al., 2022b)</ref>, etc., generate the whole proof all at once. On the other hand, GPT-f (Polu &amp; Sutskever, 2020), PACT <ref type="bibr" target="#b8">(Han et al., 2021)</ref>, REPROVER <ref type="bibr" target="#b37">(Yang et al., 2023)</ref>, Proverbot <ref type="bibr" target="#b27">(Sanchez-Stern et al., 2020)</ref>, and COPRA generate proofs in a step-by-step fashion. We argue that pass@k-with-n- Table 3: Average time taken by our approach (COPRA) and REPROVER on miniF2F dataset.</p><p>We split the values according to the success of the proof search on that problem. We also report values per query.</p><p>queries is a fairer metric to compare these different types of approaches because it correlates with the effectiveness of the proof-finding algorithm in an implementation-agnostic way. Since the exact time might not always be a good reflection of the effectiveness because of hardware differences, network throttling, etc., it makes sense to not compare directly on metrics like pass@k-minutes or pass@k-seconds. Not only these metrics will be brittle and very sensitive to the size, hardware, and other implementation details of the model, but not every search implementation will be based on a timeout. For example, PROVERBOT9001 does not use timeout-based search (and hence we don't compare on the basis of time with PROVERBOT9001).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1.3 pass@k-with-n-queries versus wall-clock time</head><p>We show that pass@k-with-n-queries, correlates well with wall-clock time for finding proofs by using the metric pass@k-seconds. pass@k-seconds measures the number of proofs that an approach can find in less than k seconds. The plot in Figure <ref type="figure" target="#fig_6">6</ref> shows that pass@k-seconds follows the same trend as pass@k-with-n-queries as shown in Figure <ref type="figure" target="#fig_5">5</ref>.</p><p>We can use the comparison of COPRA with REPROVER <ref type="bibr" target="#b37">(Yang et al., 2023)</ref> on the miniF2F dataset to explain the correlation between finding proofs fast and pass@k-with-n-queries.</p><p>From Table <ref type="table">3</ref>, we know that on average the time taken per guidance (which includes time taken to execute the proof steps on ITP as well) is around 0.52 seconds for REPROVER and 13.48 seconds for COPRA. Given that REPROVER's guidance LLM is small, we can assume that REPROVER does not take any time (zero time) to query its LLM and spends most of the 0.52 seconds running the proof steps on ITP. Now, we can reasonably estimate GPT-4 average response time to be approximately 13 seconds from Table <ref type="table">3</ref>. However, we see that the number of guidance used by REPROVER (from Table <ref type="table" target="#tab_0">2</ref>) is about 16x higher on success. Interestingly, this also shows up in the wall clock time, which is around 3x higher for REPROVER on success, so there is a tradeoff between the two, but the number of queries dominates when the guidance model is of low quality. Hence, given a high-quality guidance model, we can empirically argue that asymptotically the search will converge to a proof faster (assuming a proof is achievable with the guidance model).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1.4 Data Leakage in GPT-4</head><p>A key risk with closed-source pretrained models like GPT-4 is data leakage, i.e., overlaps between the evaluation set and the pretraining set. Naturally, we cannot be certain that COPRA does not benefit from such leakage. However, there are several reasons to believe that data leakage is not a significant contributor to our results.</p><p>First, we note that COPRA significantly outperforms few-shot invocations of GPT-4. If the results on COPRA were significantly tainted by data leakage, we would have expected better performance from few-shot GPT-4.</p><p>Second, it is highly unlikely that GPT-4 has been trained on proof-state and tactic pair generated by hooking up the Lean ITP. Not all the formal proofs of the miniF2F test dataset are available online (only 80 proofs are available in Lean). Furthermore, if one were to manually annotate (proof state, tactic) pairs, one would need ground truth tactics to annotate with, the majority of which do not appear in miniF2F-test. Given that GPT-4 is a generalpurpose LLM, it is highly unlikely that while training GPT-4 the miniF2F dataset was first manually annotated, and then proof-state and tactic pair information was collected by hooking up the Lean ITP.</p><p>Also, in our agent interactions, we limit ourselves only to the goal at that point. There is no mention of the original theorem anywhere (except for the very first proof-state), so the chances that GPT-4 can correlate any intermediate state with the original theorem are slim, unless it has learned a model of Lean's kernel, which is highly unlikely. It is also improbable that GPT-4 has seen the proof-state in the same format that we use, let alone using the execution feedback which has not been used in any known previous works for Lean.</p><p>One could hypothesize that some of the few-shot GPT-4 proofs might be influenced by potential training on the miniF2F dataset. However, this does not seem to be true because we see that most of the proofs we generated were either not mentioned in the miniF2F test dataset or completely different from the manually written proofs in the miniF2F test dataset (including the first step mismatch). Table <ref type="table" target="#tab_1">4</ref> shows the detailed analysis of proofs generated by COPRA and the proofs mentioned in miniF2F test dataset for Lean. From the Table <ref type="table" target="#tab_1">4</ref>, it is clear that most of the proofs generated by COPRA are different from the proofs mentioned in the miniF2F. The ones that are exactly the same are simple single-tactic proofs that just use exactly one of the linarith, nlinarith, or norm num tactics without any arguments. If we set aside these straightforward simple cases, then about 91.93% of the proofs generated by COPRA are either different from the proofs mentioned in the miniF2F or do not have a proof mentioned in the miniF2F dataset. Out of all proofs generated by COPRA about 25.33% proofs are for theorems that have no proofs mentioned in the miniF2F test dataset as compared to 22.95% for REPROVER. Some of the proofs generated by our approach as compared to proofs mentioned in the miniF2F test dataset are shown in Figure <ref type="figure" target="#fig_0">11</ref>.</p><p>Finally, the ability of agent interactions to enhance the basic LLM approach seems to transcend OpenAI's LLMs. We ran COPRA on the recently released CodeLlama. From Table <ref type="table" target="#tab_0">2</ref>, COPRA improved CodeLlama's capabilities to prove theorems by about 5% on miniF2F dataset. This indicates that the in-context learning capabilities that we build are transferable and LLM-agnostic.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1.5 Comparison with methods using Isabelle and informal proofs</head><p>An interactive theorem prover (ITP) is a software tool to assist with the development of formal proofs by human-machine collaboration. This involves a sort of interactive proof editor, or other interfaces, with which a human can guide the search for proofs. A formal proof written in an interactive theorem prover can be verified automatically by computers, whereas an informal proof is written in natural language can only be verified by a human. Generally, formal proofs are much more rigorous and pedantic than informal proofs. So informal proof can be loosely considered as a proof sketch based on which one can write rigorous machine-checkable formal proofs.</p><p>Note that the accuracy numbers of DSP-like approaches <ref type="bibr">(Jiang et al., 2022b;</ref><ref type="bibr" target="#b40">Zhao et al., 2023;</ref><ref type="bibr" target="#b42">Zheng et al., 2021)</ref> are not directly comparable to ours because they use a differ-  <ref type="table">1</ref> for details about various ablations.</p><p>ent proof language. These approaches use Isabelle, which, unlike Lean, allows the use of powerful automatic reasoning tools like Sledgehammer. Methods following the DSP pipeline use informal proofs for formal proof synthesis. While this strategy works well on mathematics-competition benchmarks like miniF2F, it is less applicable to domains such as software verification, where there is often no informal specification, as well as domains that use customized, domain-specific formalizations. Furthermore, having access to informal proofs (human-written or LLM-generated) shifts the problem of synthesizing the formal proof towards an autoformalization problem, as the LLM is likely to have seen correct natural language proofs of miniF2F problems in its training. Additionally, unlike DSP-like approaches which tend to use pass@100 or pass@200, we only use pass@1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Example Proofs Generated for miniF2F</head><p>Figure <ref type="figure" target="#fig_0">10</ref> shows some other interesting proofs generated by our approach on miniF2F dataset. Figure <ref type="figure" target="#fig_8">8</ref> and Figure <ref type="figure" target="#fig_9">9</ref> shows the breakdown of theorems proved in various categories by COPRA versus REPROVER. Figure <ref type="figure" target="#fig_0">10</ref> shows some interesting miniF2F proofs as done by COPRA. Figure <ref type="figure" target="#fig_0">11</ref> shows the comparison of proofs mentioned in the miniF2F repository versus the proofs discovered by COPRA. Figure <ref type="figure" target="#fig_3">12</ref> shows the proofs which were only possible because of our backtracking feature.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3 System Prompts For miniF2F</head><p>Parts of the 'system prompt' used by COPRA for theorem proving in Lean are shown in Fig. <ref type="figure" target="#fig_0">13</ref>.  (a) theorem mathd_numbertheory_100 (n : N) (h 0 : 0 &lt; n) (h 1 : nat.gcd n 40 = 10) (h 2 : nat.lcm n 40 = 280) : n = 70 := begin have h 3 : n * 40 = 10 * 280 := by rw ←[nat. gcd_mul_lcm n 40, h 1 , h 2 ], exact (nat. eq_of_mul_eq_mul_right (by norm_num : 0 &lt; 40) h 3 ), end (b)</p><p>theorem mathd_numbertheory_447 : ∑ k in finset.filter (˘x, |3x) (finset.Icc 1 49), (k % 10) = 78 := begin norm_num [finset. sum_filter, finset.Icc ], ring, end (c) theorem mathd_algebra_158 (a : N) (h 0 : even a) (h 1 : ↑∑ k in finset. range 8, (2 * k + 1) -↑∑ k in finset. range 5, (a + 2 * k) = (4:Z)) : a = 8 := begin simp only [finset. sum_range_succ, finset.sum_range_zero, add_zero, finset. sum_const, finset. card_range, nsmul_eq_mul, finset. sum_add_distrib, finset.mul_sum, finset.sum_mul] at h 1 , norm_num at h 1 , linarith, end (d) theorem mathd_numbertheory_341 (a b c : N) (h 0 : a ≤ 9 ∧ b ≤ 9 ∧ c ≤ 9) (h 1 : nat.digits 10 ((5ˆ100) % 1000) = [c, b,a]) : a + b + c = 13 := begin norm_num at h 1 , cases h 1 , linarith, end</p><p>(e) theorem amc12b_2002_p7 (a b c :</p><formula xml:id="formula_2">N) (h 0 : 0 &lt; a ∧ 0 &lt; b ∧ 0 &lt; c) (h 1 : b = a + 1) (h 2 : c = b + 1) (h 3 : a * b * c = 8 * (a + b + c)) : aˆ2 + (bˆ2 + cˆ2) = 77 := begin rw [h 1 , h 2 ] at h 3 , ring_nf at h 3 , rw [h 1 , h 2 ], ring_nf, simp [h 1 , h 2 ] at *, ring_nf at *, nlinarith, end</formula><p>Figure <ref type="figure" target="#fig_0">10</ref>: Some other interesting proofs generated for miniF2F by COPRA. The length of the proofs generated shows that interaction with the environment helps in fixing the errors encountered while writing long proofs. These long sequences of rewrites are not easy to synthesize without knowing the exact execution feedback from the environment which often contains the hint to fix the rewrites.</p><p>(a.1) theorem mathd_numbertheory_3 : (∑ x in finset.range 10, ((x + 1)ˆ2)) % 10 = 5 := begin dec_trivial!, end (b.1) theorem mathd_algebra_209 (σ : equiv R R) (h 0 : σ.2 2 = 10) (h 1 : σ.2 10 = 1) (h 2 : σ.2 1 = 2) : σ.1 (σ.1 10) = 1 := begin rw ←[ h 0 , ← h 2 ], simp, end (c.1) theorem mathd_numbertheory_229 : (5ˆ30) % 7 = 1 := begin have five_to_thirty_is_one : (5ˆ30 : zmod 7) = 1 := begin have five_to_the_six_is_one : (5ˆ6 : zmod 7) = 1, by dec_trivial, have break_power : (5ˆ30 : zmod 7) = (5ˆ6)ˆ5, by norm_num, rw break_power, rw five_to_the_six_is_one, norm_num, end, change 5ˆ30 ≡ 1 [MOD 7], rw ←zmod.eq_iff_modeq_nat, exact_mod_cast five_to_thirty_is_one, end (a.2) theorem mathd_numbertheory_3 : (∑ x in finset.range 10, ((x + 1)ˆ2)) % 10 = 5 := begin simp only [finset.sum_range_succ, finset.sum_range_zero, add_zero, pow_two], norm_num, end (b.2) theorem mathd_algebra_209 (σ: equiv R R) (h 0 : σ.2 2 = 10) (h 1 : σ.2 10 = 1) (h 2 : σ.2 1 = 2) : σ.1 (σ.1 10) = 1 := begin apply_fun œ.inv_fun at h 1 , rw equiv.inv_fun_as_coe at h 1 , rw ←h 0 at h 1 , rw ←h 2 at h 1 , rw ←h 0 , rw equiv.inv_fun_as_coe at h 0 , apply_fun œ at h 1 , rw equiv.inv_fun_as_coe at h 1 , rw ←h 2 , rw equiv.inv_fun_as_coe at h 2 , simp [equiv.symm_apply_apply], end (c.2) theorem mathd_numbertheory_229 : (5ˆ30) % 7 = 1 := begin norm_num, end</p><p>Figure 11: Some proofs found by COPRA as compared to the proofs mentioned in the miniF2F test dataset. It is interesting to see that the proofs generated by COPRA are different from the proofs mentioned in the repository. This is especially true when the proofs are longer. It is also worth noting that occasionally COPRA can find very simple proofs for longer proofs mentioned in miniF2F test dataset. (a.1), (b.1), and (c.1) show the proofs as mentioned in the miniF2F dataset, while (a.2), (b.2), and (c.2) show the corresponding proofs generated by COPRA.</p><p>(a) theorem mathd_algebra_158 (a : N) (h 0 : even a) (h 1 : ↑∑ k in finset. range 8, (2 * k + 1) -↑∑ k in finset. range 5, (a + 2 * k) = (4:Z)) : a = 8 := begin simp only [finset. sum_range_succ, finset. sum_range_zero, add_zero, finset. sum_const, finset. card_range, nsmul_eq_mul, finset. sum_add_distrib, finset.mul_sum, finset.sum_mul] at h 1 , norm_num at h 1 , linarith, end (b) theorem mathd_algebra_44 (s t : R) (h 0 : s = 9 -2 * t) (h 1 : t = 3 * s + 1) : s = 1 ∧ t = 4 := begin split, rw h 1 at h 0 , rw h 0 , linarith, rw h 0 at h 1 , rw h 1 at h 0 , linarith, end (c) theorem aime_1990_p4 (x : R) (h 0 : 0 &lt; x) (h 1 : xˆ2 -10 * x -29 ̸ = 0) (h 2 : xˆ2 -10 * x -45 ̸ = 0) (h 3 : xˆ2 -10 * x -69 ̸ = 0) (h 4 : 1 / (xˆ2 -10 * x -29) + 1 / (xˆ2 -10 * x -45) -2 / (xˆ2 -10 * x -69) = 0) : x = 13 := begin ring_nf at h 4 , have h 5 : (x ˆ2 -10 * x -29) * (x ˆ 2 -10 * x -45) * (x ˆ2 -10 * x -69) ̸ = 0 := mul_ne_zero ( mul_ne_zero h 1 h 2 ) h 3 , field_simp [h 5 ] at h 4 , ring_nf at h 4 , nlinarith, end (d) theorem amc12b_2002_p7 (a b c : N) (h 0 : 0 &lt; a ∧ 0 &lt; b ∧ 0 &lt; c) (h 1 : b = a + 1) (h 2 : c = b + 1) (h 3 : a * b * c = 8 * (a + b + c)) : aˆ2 + (bˆ2 + cˆ2) = 77 := begin rw [h 1 , h 2 ] at h 3 , ring_nf at h 3 , rw [h 1 , h 2 ], ring_nf, simp [h 1 , h 2 ] at *, ring_nf at *, nlinarith, end (e) theorem mathd_algebra_113 (x : R) : xˆ2 -14 * x + 3 ≥ 7ˆ2 -14 * 7 + 3 := begin apply le_of_sub_nonneg, ring_nf, have : (x -14) * x + 49 = (x -7) ˆ2, by ring, rw this, apply pow_two_nonneg, end Figure 12: Some interesting proofs generated for miniF2F dataset which were generated because of COPRA's backtracking capabilities. You are a proficient formal theorem-proving agent in Lean 3. You are tasked with predicting the next proof step given the current proof state, which is described in the following format: ↩→ ↩→ 1. All the goals are described under the `[GOALS]`keyword. Each goal following `[GOALS]`is described under the keyword `[GOAL] i`, where `i`is a positive integer. For example, `[GOAL] 1`, `[GOAL] 2`, etc. ↩→ ↩→ 2. Within each `[GOAL] i`keyword, the goal is described as a human-readable serialized version of the proof state as shown while running the `lean`command. Each goal may be accompanied by hypotheses, which are described under the keyword `[HYPOTHESES] i`. Each hypothesis following `[HYPOTHESES] i`starts with the prefix `[HYPOTHESIS]`. Apart from goals and hypotheses, the OPTIONAL keywords `[DEFINITIONS] i`and `[THEOREMS] i`may appear, which respectively describe the relevant definitions of symbols and terms used in that goal and some potentially useful theorems or lemmas which might help in proving the goal. Each definition within `[DEFINITIONS]`starts with the prefix `[DEFINITION]`. Similarly, each theorem/lemma within `[THEOREMS]`starts with the prefix `[THEOREM]`. If you choose to use a theorem described in `[THEOREMS] i`, be SURE that it applies and is useful for proving the goal. ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ 3. The `[STEPS]`keyword is used to describe the proof-steps which were used to obtain the current proof state from the original theorem. Each proof step starts with the prefix `[STEP]`and is a valid Lean tactic. For example, `[STEPS][STEP]rw h 1 at h 2 ,[STEP]{linarith},`. ↩→ ↩→ ↩→ 4. Sometimes the `[INCORRECT STEPS]`keyword will appear, which describes proof-steps which should NOT be generated. For example, `[INCORRECT STEPS][STEP]apply h 1 ,[STEP]rw ←h 1 `. **DO NOT** generate these `[INCORRECT STEPS]`again, as they are failed proof steps which have already been tried. Re-generating such proof steps will cause backtracking and early termination of your proof search. ↩→ ↩→ ↩→ ↩→ ↩→ 5. There is also an optional `[LAST STEP]`keyword which describes the proof-step generated last time. If the proof-step was incorrect, then it is also followed by an error message from Lean 3 environment described with the `[ERROR MESSAGE]`keyword. For example, `[LAST STEP]linarith,\n[ERROR MESSAGE]linarith failed to find a contradiction\nstate:\nx y : R,\nh 1 : x = 3 -2 * y,\nh 2 : 2 * x -y = 1\n⊢ false`. You can use the error message as guidance in predicting a correct proof-step. Do not generate tactics which you believe will result in the same error. If the proof-step was correct then it is followed by the keyword `[SUCCESS]`. For example, `[LAST STEP]linarith,[SUCCESS]`. Do NOT generate the last proof-step again if it was NOT successful, this will also cause early termination of your proof search. ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ 6. Sometimes there can be errors in the format of the generated response. This is reported using the keyword `[ERROR]`followed by the error message. For example, `[ERROR]\nInvalid response:\n'Great! The proof is complete.', \nStopping Reason: 'stop'.\n Please respond only in the format specified.[END]`. This means that the response generated by you was not in the specified format. ↩→ ↩→ ↩→ ↩→ ↩→ Start your response with `[RUN TACTIC]`followed by the tactic which will help in proving the current proof state, and then `[END]`. For example, `[RUN TACTIC] induction c, [END]`. Do NOT finish the proof in one shot ending with `end`, which signifies the end of a Lean 3 proof. Generate exactly ONE proof-step. Multiple proof steps are more error prone, because you will not get a chance to see intermediate proof state descriptions............. ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ Figure 13: Parts of "system prompt" used by COPRA for Lean. You are a proficient formal theorem-proving agent in Coq. You are tasked with predicting the next proof step given the current proof state, which is described in the following format: ↩→ ↩→ 1. All the goals are described under the `[GOALS]`keyword. Each goal following `[GOALS]`is described under the keyword `[GOAL] i`, where `i`is a positive integer. For example, `[GOAL] 1`, `[GOAL] 2`, etc. ↩→ ↩→ 2. Within each `[GOAL] i`keyword, the goal is described as a human-readable serialized version of the proof state as shown while running the `lean`command. Each goal may be accompanied by hypotheses, which are described under the keyword `[HYPOTHESES] i`. Each hypothesis following `[HYPOTHESES] i`starts with the prefix `[HYPOTHESIS]`. Apart from goals and hypotheses, the OPTIONAL keywords `[DEFINITIONS] i`and `[THEOREMS] i`may appear, which respectively describe the relevant definitions of symbols and terms used in that goal and some potentially useful theorems or lemmas which might help in proving the goal. Each definition within `[DEFINITIONS]`starts with the prefix `[DEFINITION]`. Similarly, each theorem/lemma within `[THEOREMS]`starts with the prefix `[THEOREM]`. If you choose to use a theorem described in `[THEOREMS] i`, be SURE that it applies and is useful for proving the goal. ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ 3. The `[STEPS]`keyword is used to describe the proof-steps which were used to obtain the current proof state from the original theorem. Each proof step starts with the prefix `[STEP]`, and is a valid Coq tactic ending with a `.`. For example, `[STEPS][STEP]intros a.[STEP]induction a.` ↩→ ↩→ ↩→ 4. Sometimes the `[INCORRECT STEPS]`keyword will appear, which describes proof-steps which should NOT be generated. For example, `[INCORRECT STEPS][STEP]apply mul_assoc.[STEP]rewrite &lt;-H.`. **DO NOT** generate these `[INCORRECT STEPS]`again, as they are failed proof steps which have already been tried. Re-generating such proof steps will cause backtracking and early termination of your proof search. ↩→ ↩→ ↩→ ↩→ ↩→ 5. There is also an optional `[LAST STEP]`keyword which describes the proof-step generated last time. If the proof-step was incorrect, then it is also followed by an error message from Coq environment described with the `[ERROR MESSAGE]`keyword. For example, `[LAST STEP]reflexivity.[ERROR MESSAGE]Error: In environment\nn : nat\nUnable to unify "n" with "n + 0".`. You can use the error message as guidance in predicting a correct proof-step. Do not generate tactics which you believe will result in the same error. If the proof-step was correct then it is followed by the keyword `[SUCCESS]`. For example, `[LAST STEP]reflexivity.[SUCCESS]`. Do NOT generate the last proof-step again if it was NOT successful, this will also cause early termination of your proof search. ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ 6. Sometimes there can be errors in the format of the generated response. This is reported using the keyword `[ERROR]`followed by the error message. For example, `[ERROR]\nInvalid response:\n'Great! The proof is complete.', \nStopping Reason: 'stop'.\n Please respond only in the format specified.[END]`. This means that the response generated by you was not in the specified format. ↩→ ↩→ ↩→ ↩→ ↩→ Start your response with `[RUN TACTIC]`, followed by the tactic which will help in proving the current proof state, and then `[END]`. For example, `[RUN TACTIC]destruct c.[END]`. Do NOT finish the proof in one shot ending with `Qed`, which signifies the end of a Coq proof. Generate exactly ONE proof-step. Multiple proof steps are more error prone, because you will not get a chance to see intermediate proof state descriptions. In particular, do not generate tactics which could be split into smaller tactics as you will not be able to view the intermediate proof states during these rewrites. The tactic `admit`is NOT a valid proof step, do NOT generate it. ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ Ensure that the proof step you generate is (1) valid (2) helpful ..... Figure 14: Parts of "system prompt" used by COPRA for Coq. theorem mathd_algebra_107 (x y : R) (h 0 : xˆ2 + 8 * x + yˆ2 -6 * y = 0) : (x + 4)ˆ2 + (y-3)ˆ2 = 5ˆ2 := begin have h 1 : (x + 4) ˆ2 = x ˆ2 + 8 * x + 16 := by ring, have h 2 : (y -3) ˆ2 = y ˆ2 -6 * y + 9 := by ring, rw [h 1 , h 2 ], ring_nf, linarith, end  `[GOALS]` `[GOAL] 1` n = 70 `# The goal we want to prove (or proof state)` `[HYPOTHESES] 1 # Assumptions about the goal` `[HYPOTHESIS]`n : N `[HYPOTHESIS]`h 0 : 0 &lt; n `[HYPOTHESIS]`h 1 : n.gcd 40 = 10 `[HYPOTHESIS]`h 2 : n.lcm 40 = 280 `[THEOREMS] 1 # The retrieved lemmas from BM25 which can help prove goal` `[THEOREM]`pnat.gcd_mul_lcm : (n m : N+) : (gcd n m) * (lcm n m) = n * m `[THEOREM]`tactic.is_prime_helper : (n : N) (h 1 : 1 &lt; n) (h 2 : nat.min_fac n = n) : nat.prime n ↩→ `[THEOREM]`pnat.lcm_coe : (n m : N+) .... `[INCORRECT STEPS] # Previous mistakes on the given proof state` `# Each mistake is listed with the 'STEP' keyword.` `[STEP]`apply nat.eq_of_mul_eq_mul_left (by norm_num : 0 &lt; 40), rw ←pnat.gcd_mul_lcm, repeat { rw pnat.gcd_coe }, repeat { rw pnat.lcm_coe }, norm_num, .... .... .... `[STEP]`have h 3 : n * 40 = nat.gcd n 40 * nat.lcm n 40, from pnat.gcd_mul_lcm (〈n, h 0 〉) 〈40, dec_trivial〉, ↩→ `[STEP]`rw nat.gcd_mul_lcm, `[STEP]`rw pnat.gcd_mul_lcm at h 1 , `[LAST STEP]`# Last prediction have h 3 : n * 40 = 10 * 280, from pnat.gcd_mul_lcm (subtype.mk n h 0 ) (subtype.mk 40 dec_trivial), ↩→ linarith, `[ERROR MESSAGE] # Error message on the last step` Got error in 'have h 3 : n * 40 = 10 * 2...': error: invalid type ascription, term has type pnat.gcd 〈n, h 0 〉 〈40, _〉 * pnat.lcm 〈n, h 0 〉 〈40, _〉 = 〈n, h 0 〉 * 〈40, _〉 ... `[END]` `- <ref type="figure">--------------------------------------------------------------------------`</ref> `# Prediction by GPT-4` `[RUN TACTIC]` have h 3 : n * 40 = 10 * 280, by rw [←nat.gcd_mul_lcm n 40, h 1 , h 2 ], linarith, `[END]` Figure <ref type="figure" target="#fig_8">18</ref>: We can see from this example that to be able to capitalize the well-retrieved lemmas, the models need to learn how to use those lemmas as well. In our case, BM25 does a very good job of retrieving the best lemmas, however, GPT-4 could not use it correctly in the first couple of tries. It was only because of our novel stateful backtracking approach that we could capture the previous mistakes along with the last error message all in the same prompt which dissuaded the GPT-4 from making repeated mistakes and getting to the right prediction. It is also important to note that we could not solve this problem without retrieval, but once we know the list of relevant lemmas, knowing how to use them becomes extremely important. Given this example, it should not be surprising that even when other retrieval methods like DPR perform better than BM25, COPRA has an edge because it can act as per the rich feedback it gets from the environment. Another interesting idea one can try is to let COPRA create a search query to control the retrieved lemma, which can make a simple BM25 search more effective than DPR.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Overview of COPRA. COPRA takes as input a formal theorem statement and performs a stateful proof search through an in-context learning agent. At each step of search, the agent has access to the search history, error feedback from the proof environment, and relevant lemmas retrieved from a database, which are formatted according to a prompt serialization protocol.</figDesc><graphic coords="2,266.40,125.13,237.60,143.81" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: (a) A Lean theorem and a correct proof found by COPRA. (b) Proof state after the first tactic. (c) An incorrect proof generated by GPT-4.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 2 -</head><label>2</label><figDesc>Figure2-(a) shows a formal proof, in the Lean language<ref type="bibr" target="#b6">(de Moura et al., 2015)</ref>, of a basic theorem about modular arithmetic (the proof is automatically generated using COPRA). The first step of the proof is the intro tactic, which changes a goal P → Q to a hypothesis P and a goal Q. The next few steps use the rw (rewrite) tactic, which applies substitutions to goals and hypotheses. The last step is an application of the refl (reflexivity) tactic, which asserts definitional equivalences.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 2 -</head><label>2</label><figDesc>Figure 2-(c) shows a GPT-4-generated incorrect Lean proof of our example theorem.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: A "conversation" between the LLM and the search algorithm in COPRA. Query #1, Query #2, . . . represent queries made as the proof search progresses. The column labeled Query #i depicts the prompt at time step i and the corresponding LLM response. The LLM response is parsed into a tactic and executed, with the error feedback incorporated into the next prompt.</figDesc><graphic coords="5,112.40,45.86,387.20,267.60" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: COPRA vs. REPROVER on the miniF2F benchmark.</figDesc><graphic coords="8,325.80,117.94,176.40,182.20" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 6 :</head><label>6</label><figDesc>Figure6: COPRA vs. REPROVER on the miniF2F benchmark on the pass@nseconds metric.</figDesc><graphic coords="8,325.80,409.84,176.40,182.20" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><figDesc>Figure7: A theorem that requires retrieval. CO-PRA used BM25 to find the lemma "gcd mul lcm : (n m : N+) : (gcd n m) * (lcm n m) = n * m" which led to the proof while REPROVER failed to prove this theorem. It is important to note that just retrieving the correct lemma is not sufficient, but knowing how to use it correctly is equally important. The Figure18shows how COPRA utilizes the capabilities of LLM to correctly use the retrieved lemma in the proof.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 8 :</head><label>8</label><figDesc>Figure8: Breakdown of theorems proved in various categories by COPRA (GPT-4 + retrieval + informal proof): Problems solved in different categories in miniF2F test dataset. Notice that 'IMO' and 'Induction' problems are hard for both approaches. COPRA does more problems than REPROVER in most of the categories.</figDesc><graphic coords="18,187.20,99.09,237.60,240.98" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 9 :</head><label>9</label><figDesc>Figure9: Breakdown of theorems proved in various categories by COPRA (GPT-4 + retrieval + informal proof): Number of queries needed in different categories in miniF2F test dataset. Notice that COPRA takes very less queries to solve the problems in each category.</figDesc><graphic coords="18,187.20,436.29,237.60,233.51" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 15 :</head><label>15</label><figDesc>Figure 15: An interesting proof generated by COPRA while using informal proofs hints generated via GPT-4.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Figure 16 :</head><label>16</label><figDesc>Figure 16: COPRA vs. PROVERBOT9001 on the CompCert benchmark.</figDesc><graphic coords="25,205.20,438.71,201.60,208.22" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 2 :</head><label>2</label><figDesc>Aggregate effectiveness statistics for COPRA and the baselines on miniF2F dataset. We can see the various ablations of COPRA with and without retrieval.</figDesc><table><row><cell cols="4">Evaluation on miniF2F-test</cell><cell></cell><cell></cell></row><row><cell>Approach</cell><cell cols="6">Avg. Query in Total Avg. Query on Failure Avg. Query on Pass</cell></row><row><cell>REPROVER (-Retrieval)</cell><cell></cell><cell>350.7</cell><cell></cell><cell>427.24</cell><cell></cell><cell>81.6</cell></row><row><cell>REPROVER</cell><cell></cell><cell>1015.32</cell><cell></cell><cell>1312.89</cell><cell></cell><cell>122.62</cell></row><row><cell>COPRA</cell><cell></cell><cell>21.73</cell><cell></cell><cell>28.23</cell><cell></cell><cell>3.83</cell></row><row><cell>COPRA (+ Retrieval)</cell><cell></cell><cell>37.88</cell><cell></cell><cell>50.90</cell><cell></cell><cell>7.38</cell></row><row><cell>Approach</cell><cell></cell><cell></cell><cell cols="3">Avg. Time In Seconds</cell></row><row><cell></cell><cell></cell><cell></cell><cell>Per Proof</cell><cell></cell><cell cols="2">Per Query</cell></row><row><cell></cell><cell></cell><cell cols="3">On Pass On Fail All</cell><cell cols="2">On Pass On Fail All</cell></row><row><cell cols="2">ReProver (on CPU -retrieval)</cell><cell>279.19</cell><cell>618.97</cell><cell cols="2">543.78 3.42</cell><cell>1.45</cell><cell>1.55</cell></row><row><cell cols="2">ReProver (on GPU -retrieval)</cell><cell>267.94</cell><cell>601.35</cell><cell cols="2">520.74 2.06</cell><cell>0.44</cell><cell>0.48</cell></row><row><cell cols="3">ReProver (on GPU + retrieval) 301.20</cell><cell>605.29</cell><cell cols="2">529.27 2.46</cell><cell>0.46</cell><cell>0.52</cell></row><row><cell>COPRA (GPT-3.5)</cell><cell></cell><cell>39.13</cell><cell>134.26</cell><cell cols="2">122.21 15.97</cell><cell>9.43</cell><cell>9.53</cell></row><row><cell>COPRA (GPT-4)</cell><cell></cell><cell>67.45</cell><cell>370.71</cell><cell cols="2">289.92 17.61</cell><cell>13.09</cell><cell>13.34</cell></row><row><cell cols="2">COPRA (GPT-4 + retrieval)</cell><cell>117.85</cell><cell>678.51</cell><cell cols="2">510.78 15.97</cell><cell>13.33</cell><cell>13.48</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 4 :</head><label>4</label><figDesc>Analysis of proof generated by COPRA (GPT-4 + Retrieval + Informal) on miniF2F test dataset for Lean. See Table</figDesc><table><row><cell></cell><cell></cell><cell></cell><cell cols="2">Proofs</cell><cell></cell><cell></cell><cell>Proofs</cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell cols="2">found in</cell><cell></cell><cell></cell><cell>NOT in</cell><cell>Total</cell></row><row><cell></cell><cell></cell><cell></cell><cell cols="2">miniF2F-test</cell><cell></cell><cell></cell><cell>miniF2F</cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>Longer</cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell></cell><cell>Single-Tactic Simple Proofs</cell><cell></cell><cell>Two-Tactic Proofs</cell><cell>OR Complex</cell><cell>Total</cell><cell></cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>Proofs</cell><cell></cell><cell></cell><cell></cell></row><row><cell>Tactics Used --Proof Count</cell><cell>linarith</cell><cell>norm num</cell><cell>nlinarith</cell><cell>two tactics</cell><cell>&gt; 2 tactics multi-args OR 1 tactic</cell><cell></cell><cell>sorry</cell><cell></cell></row><row><cell>Proof Count</cell><cell>11</cell><cell>12</cell><cell>2</cell><cell>16</cell><cell>39</cell><cell>80</cell><cell>164</cell><cell>244</cell></row><row><cell>Exact</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Match COPRA</cell><cell>7</cell><cell>10</cell><cell>0</cell><cell>5</cell><cell>0</cell><cell>22</cell><cell>0</cell><cell>22</cell></row><row><cell>Count</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>1 st Tactic</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Match COPRA</cell><cell>7</cell><cell>10</cell><cell>0</cell><cell>8</cell><cell>4</cell><cell>29</cell><cell>0</cell><cell>29</cell></row><row><cell>Count</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Distinct COPRA Count</cell><cell>4</cell><cell>2</cell><cell>2</cell><cell>9</cell><cell>17</cell><cell>34</cell><cell>19</cell><cell>53 / 75 70.67%</cell></row><row><cell>Distinct</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>COPRA Count ex</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>9</cell><cell>17</cell><cell>34</cell><cell>19</cell><cell>53 / 58 91.37%</cell></row><row><cell>Single-Tactic</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>All</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>COPRA</cell><cell>11</cell><cell>12</cell><cell>2</cell><cell>14</cell><cell>17</cell><cell>56</cell><cell>19</cell><cell>75</cell></row><row><cell>Count</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_0"><p>† COPRA is an acronym for "In-context Prover Agent".</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_1"><p>‡ To ensure fairness we matched the number of attempts for Few-Shot (GPT-4) baseline with the number of queries COPRA took to pass or fail for each theorem.</p></note>
+		</body>
+		<back>
+
+			<div type="funding">
+<div><p>Funding Acknowledgements. This work was partially supported by <rs type="funder">NSF</rs> awards <rs type="grantNumber">CCF-1918651</rs>, <rs type="grantNumber">CCF-2403211</rs>, and <rs type="grantNumber">CCF-2212559</rs>, and a gift from the <rs type="funder">Ashar Aziz Foundation</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_Bf9FVNS">
+					<idno type="grant-number">CCF-1918651</idno>
+				</org>
+				<org type="funding" xml:id="_9p9arQP">
+					<idno type="grant-number">CCF-2403211</idno>
+				</org>
+				<org type="funding" xml:id="_UUmhUJ9">
+					<idno type="grant-number">CCF-2212559</idno>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Prompt Token Statistics for different settings Setting Min. Token Count Max. Token Count Avg. Token Count miniF2F 33 1828 322.61 miniF2F (+ Retrieval) 181 4355 824.21 miniF2F (+ Retrieval + Informal) 192 4355 955.20 CompCert (+ Retrieval) 292 116574 3219.79</p><p>Table 5: Aggregate prompt token statistics for COPRA on miniF2F and CompCert dataset.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.4 System Prompts For CompCert</head><p>Parts of the 'system prompt' used by COPRA for theorem proving in Coq are shown in Fig. <ref type="figure">14</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.5 Example Proofs generated For CompCert</head><p>Figure <ref type="figure">16</ref> shows the number of proofs done by COPRA versus PROVERBOT9001 varying with the number of queries on CompCert benchmark. Figure <ref type="figure">17</ref> shows some interesting proofs generated by our approach on the CompCert dataset.</p><p>(a) gss :</p><formula xml:id="formula_3">forall l v m, (set l v m) l = match l with R r =&gt; ↩→ v | S</formula><p>sl ofs ty =&gt; Val.load_result (chunk_of_type ty) v end. ↩→ ↩→ Proof. intros l v m. destruct l as [r | s o t]. unfold set. destruct (Loc.eq (R r) (R r)); [reflexivity | contradiction]. ↩→ ↩→ unfold set. destruct (Loc.eq (S s o t) (S s o t)); [reflexivity | contradiction]. ↩→ ↩→ ↩→ Qed. (b) eq : forall (p q: loc), {p = q} + {p &lt;&gt; q}. ↩→ Proof. decide equality. apply mreg_eq. -decide equality. -decide equality. apply Pos.eq_dec. decide equality. -decide equality. Qed. (c) disjoint_cons_right : ↩→ forall a l1 l2, disjoint l1 (a :: l2) -&gt; disjoint l1 l2. ↩→ ↩→ Proof. intros a l1 l2 H. ↩→ unfold disjoint. ↩→ intros x1 x2 H1 H2. ↩→ apply H. assumption. right. assumption. Qed. (d) eq_int_type : forall (x y: int_type), {x=y} + {x&lt;&gt;y}. ↩→ ↩→ ↩→ Proof. decide equality. ↩→ Qed. (e) set_locals_lessdef : forall e1 e2, env_lessdef e1 e2 -&gt; forall il, env_lessdef (set_locals il e1) (set_locals il e2). ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ Proof. intros e1 e2 H. induction il as [| a il']. ↩→ apply H. intros. apply set_var_lessdef. ↩→ apply IHil'. apply Val.lessdef_refl.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>↩→</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Qed.</head><p>Figure <ref type="figure">17</ref>: Some other interesting proofs generated for CompCert by COPRA. We can see that these proofs are long, and often use 'apply' tactic which shows that COPRA can effectively use the retrieved information to discharge given proof states.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">A hybrid automatic-interactive system for developing proofs</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">B</forename><surname>Andrews</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">E</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tps</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Applied Logic</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="367" to="395" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Azerbayev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Schoelkopf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Paster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">D</forename><surname>Santos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mcaleer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">Q</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Biderman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Welleck</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Llemma</surname></persName>
+		</author>
+		<title level="m">An open language model for mathematics</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Automatic proof and disproof in isabelle/hol</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">C</forename><surname>Blanchette</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bulwahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Nipkow</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Frontiers of Combining Systems: 8th International Symposium, FroCoS 2011, Saarbr ücken</title>
+		<title level="s">Proceedings</title>
+		<meeting><address><addrLine>Germany</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2011">October 5-7, 2011. 2011</date>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="page" from="12" to="27" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Askell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">The use of explicit plans to guide inductive proofs</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bundy</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1988">May 23-26, 1988 Proceedings 9. 1988</date>
+			<publisher>Springer</publisher>
+			<biblScope unit="page" from="111" to="120" />
+			<pubPlace>Argonne, Illinois, USA</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Z3: an efficient smt solver</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>De Moura</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Bjørner</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Theory and Practice of Software, 14th International Conference on Tools and Algorithms for the Construction and Analysis of Systems, TACAS&apos;08/ETAPS&apos;08</title>
+		<meeting>the Theory and Practice of Software, 14th International Conference on Tools and Algorithms for the Construction and Analysis of Systems, TACAS&apos;08/ETAPS&apos;08<address><addrLine>Berlin, Heidelberg</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer-Verlag</publisher>
+			<date type="published" when="2008">2008</date>
+			<biblScope unit="page" from="337" to="340" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">The Lean theorem prover (system description)</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>De Moura</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Avigad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Van Doorn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Raumer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proceedings</title>
+		<imprint>
+			<biblScope unit="volume">25</biblScope>
+			<biblScope unit="page" from="378" to="388" />
+			<date type="published" when="2015">August 1-7, 2015. 2015</date>
+			<publisher>Springer</publisher>
+			<pubPlace>Berlin, Germany</pubPlace>
+		</imprint>
+	</monogr>
+	<note>In Automated Deduction-CADE-25: 25th International Conference on Automated Deduction</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Baldur: whole-proof generation and repair with large language models</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>First</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">N</forename><surname>Rabe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Ringer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Brun</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.04910</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Proof artifact co-training for theorem proving with language models</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Rute</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">W</forename><surname>Ayers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Polu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2102.06203</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Measuring mathematical problem solving with the math dataset</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Gamepad: A learning environment for theorem proving</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Sutskever</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">The coq proof assistant a tutorial</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Huet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Kahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Paulin-Mohring</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Rapport Technique</title>
+		<imprint>
+			<biblScope unit="volume">178</biblScope>
+			<date type="published" when="1997">1997</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Language models of isabelle proofs</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">Q</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lisa</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">6th Conference on Artificial Intelligence and Theorem Proving</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="378" to="392" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Wielding hammers to integrate language models and automated theorem provers</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">Q</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Tworkowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Czechowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Odrzyg Óźdź</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Miłoś</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Jamnik</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Thor</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="8360" to="8373" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Draft, sketch, and prove: Guiding formal theorem provers with informal proofs</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">Q</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Welleck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">P</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Jamnik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lacroix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Lample</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.12283</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Hypertree proof search for neural theorem proving</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Lample</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lacroix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-A</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Rodriguez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hayat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Ebner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Martinet</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="26337" to="26349" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Formal verification of a realistic compiler</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Leroy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Communications of the ACM</title>
+		<imprint>
+			<biblScope unit="volume">52</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<biblScope unit="page" from="107" to="115" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">The lean mathematical library</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Mathlib Community</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3372885.3373824</idno>
+		<ptr target="http://dx.doi.org/10.1145/3372885.3373824" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 9th ACM SIGPLAN International Conference on Certified Programs and Proofs, POPL &apos;20. ACM</title>
+		<meeting>the 9th ACM SIGPLAN International Conference on Certified Programs and Proofs, POPL &apos;20. ACM</meeting>
+		<imprint>
+			<date type="published" when="2020-01">January 2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Empirical explorations of the logic theory machine: a case study in heuristic</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Newell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">C</forename><surname>Shaw</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">A</forename><surname>Simon</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Papers presented at the February 26-28, 1957, western joint computer conference: Techniques for reliability</title>
+		<imprint>
+			<date type="published" when="1957">1957</date>
+			<biblScope unit="page" from="218" to="230" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">GPT-4 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+		<respStmt>
+			<orgName>OpenAI</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">GPT-4 and GPT-4 turbo</title>
+		<ptr target="https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+		<respStmt>
+			<orgName>OpenAI</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Three years of experience with sledgehammer, a practical link between automatic and interactive theorem provers</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Paulson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Blanchette</surname></persName>
+		</author>
+		<idno type="DOI">10.29007/tnfd</idno>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">A generic theorem prover</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">C</forename><surname>Paulson</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Isabelle</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1994">1994</date>
+			<publisher>Springer</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Generative language modeling for automated theorem proving</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Polu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Sutskever</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2009.03393</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Polu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Baksys</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Babuschkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Sutskever</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2202.01344</idno>
+		<title level="m">Formal mathematics statement curriculum learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Zero-shot text-to-image generation</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Pavlov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Goh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Sutskever</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="8821" to="8831" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Code llama: Open foundation models for code</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Roziere</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gehring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Gloeckle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sootla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Gat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">E</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Adi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Remez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Rapin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.12950</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Generating correctness proofs with neural networks</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sanchez-Stern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Alhessi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Saul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lerner</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 4th ACM SIGPLAN International Workshop on Machine Learning and Programming Languages</title>
+		<meeting>the 4th ACM SIGPLAN International Workshop on Machine Learning and Programming Languages</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="1" to="10" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Scialom</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Toolformer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.04761</idno>
+		<title level="m">Language models can teach themselves to use tools</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">E -a brainiac theorem prover</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Schulz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">AI Commun</title>
+		<idno type="ISSN">0921-7126</idno>
+		<imprint>
+			<biblScope unit="volume">15</biblScope>
+			<biblScope unit="issue">2,3</biblScope>
+			<biblScope unit="page" from="111" to="126" />
+			<date type="published" when="2002-08">aug 2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Reflexion: Language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Labash</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.11366</idno>
+		<ptr target="https://github.com/Significant-Gravitas/Auto-GPT" />
+	</analytic>
+	<monogr>
+		<title level="j">Significant-Gravitas. Autogpt</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">H</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Izacard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Martinet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-A</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lacroix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Azhar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.13971</idno>
+		<title level="m">Open and efficient foundation language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Solving olympiad geometry without human demonstrations</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">H</forename><surname>Trinh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Luong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="volume">625</biblScope>
+			<biblScope unit="issue">7995</biblScope>
+			<biblScope unit="page" from="476" to="482" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">G</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mandlekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Anandkumar</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Voyager</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.16291</idno>
+		<title level="m">An open-ended embodied agent with large language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Xin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lego-Prover</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note>Neural theorem proving with growing libraries. 2023b</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24824" to="24837" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Learning to prove theorems via interacting with proof assistants</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Deng</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="6984" to="6994" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<author>
+			<persName><forename type="first">K</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">M</forename><surname>Swope</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Chalamala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Godil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Prenger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Anandkumar</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Leandojo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.15626</idno>
+		<title level="m">Theorem proving with retrieval-augmented language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>React</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03629</idno>
+		<title level="m">Synergizing reasoning and acting in language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Tree of thoughts: Deliberate problem solving with large language models</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">L</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.10601</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Decomposing the enigma: Subgoal-based demonstration learning for formal theorem proving</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Kong</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Xin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lyra</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.15806</idno>
+		<title level="m">Orchestrating dual correction in automated theorem proving</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Polu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2109.00110</idno>
+		<title level="m">Minif2f: a cross-system benchmark for formal olympiadlevel mathematics</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,3006 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">TATTOO: TOOL-GROUNDED THINKING PRM FOR TEST-TIME SCALING IN TABULAR REASONING</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-10-07">7 Oct 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Jiaru</forename><surname>Zou</surname></persName>
+							<email>jiaruz2@illinois.edu</email>
+						</author>
+						<author>
+							<persName><forename type="first">Soumya</forename><surname>Roy</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Vinay</forename><surname>Kumar Verma</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Ziyi</forename><surname>Wang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Purdue University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">David</forename><surname>Wipf</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Pan</forename><surname>Lu</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Stanford University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Sumit</forename><surname>Negi</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">James</forename><surname>Zou</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Stanford University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jingrui</forename><surname>He</surname></persName>
+						</author>
+						<author>
+							<persName><surname>Uiuc</surname></persName>
+						</author>
+						<title level="a" type="main">TATTOO: TOOL-GROUNDED THINKING PRM FOR TEST-TIME SCALING IN TABULAR REASONING</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-10-07">7 Oct 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">C8252D237BCC9EBD7308A51D48E513CE</idno>
+					<idno type="arXiv">arXiv:2510.06217v1[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:14+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Process Reward Models (PRMs) have recently emerged as a powerful framework for enhancing the reasoning capabilities of large reasoning models (LRMs), particularly in the context of test-time scaling (TTS). However, their potential for supervising LRMs on tabular reasoning domains remains underexplored. Through detailed empirical analyses, we identify that existing PRMs, though widely adopted for supervising text-only reasoning steps, struggle with table-specific operations such as sub-table retrieval and schema interaction, leading to critical performance bottlenecks. To address this limitation, we propose TATTOO, a novel table-grounded PRM framework that (i) reasons explicitly over tabular reasoning steps and (ii) integrates tool-based verification to provide precise reward supervision. Concretely, we first design a scalable data curation pipeline that constructs over 60k high-quality step-level annotations by integrating table verification rationales with tool-based executions. Building on the collected data, we train TATTOO with a dual-stage paradigm: cold-start supervised fine-tuning to capture tool-use reasoning patterns, followed by reinforcement learning with tool-grounded reward shaping to align our model with table-based verification. We provide a comprehensive evaluation of the policy improvement induced by our newly designed PRM. Across 5 challenging tabular reasoning benchmarks covering numerical reasoning, fact-checking, and data analysis, TATTOO improves downstream policy LRMs by 30.9% at inference, surpasses strong PRM baselines such as Qwen-2.5-Math-PRM-72B with only 8B parameters, and demonstrates strong generalizability across diverse TTS strategies.</p><p>How can we provide reliable step-level supervision to advanced LRMs in tabular reasoning?</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>Tabular reasoning has become a fundamental capability for emerging large reasoning models (LRMs) across various real-world applications, including numerical analysis <ref type="bibr" target="#b0">(Akhtar et al., 2023;</ref><ref type="bibr" target="#b55">Sui et al., 2024)</ref>, fact-checking <ref type="bibr" target="#b4">(Chen et al., 2019;</ref><ref type="bibr" target="#b37">Parikh et al., 2020)</ref>, and question answering <ref type="bibr" target="#b58">(Vakulenko and Savenkov, 2017;</ref><ref type="bibr">Li et al., 2023a)</ref>. Unlike free-form text, tables encode information in rows and columns with an implicit relational semi-structure. Effective reasoning over tables therefore requires both accurate interpretation of tabular content and step-by-step logical inference to produce precise answers <ref type="bibr">(Wang et al., 2024c;</ref><ref type="bibr">Zhang et al., 2025a)</ref>. To support such multi-step reasoning, recent studies such as Table-R1 series <ref type="bibr">(Wu et al., 2025b;</ref><ref type="bibr">Yang et al., 2025b;</ref><ref type="bibr" target="#b22">Jin et al., 2025)</ref> have incorporated reinforcement learning (RL) techniques <ref type="bibr" target="#b45">(Schulman et al., 2017;</ref><ref type="bibr" target="#b48">Shao et al., 2024)</ref> to better align LRMs with the demands of complex table understanding and reasoning.</p><p>On the other hand, process reward models (PRMs) <ref type="bibr" target="#b47">(Setlur et al., 2024;</ref><ref type="bibr">Wang et al., 2024b;</ref><ref type="bibr" target="#b65">Yang et al., 2024)</ref> have been developed to provide step-level supervision over model reasoning trajectories during test-time scaling (TTS), offering fine-grained verification that enhances LRMs' performance at inference. However, despite growing computational budgets and increasing emphasis on advancing LRMs' tabular reasoning abilities <ref type="bibr" target="#b70">(Ye et al., 2025;</ref><ref type="bibr" target="#b35">Muennighoff et al., 2025)</ref>, a corresponding steplevel PRM to supervise the reasoning quality of these models in table domains is equally important but remains notably absent. This gap motivates our study of a fundamental question:</p><p>To investigate this question, we first revisit several general-domain advanced PRMs and evaluate their effectiveness in supervising table-involved reasoning steps generated by LRMs. Our analysis reveals that existing PRMs struggle to reliably verify two critical types of tabular CoT steps: ① Table Retrieval, where PRMs fail to supervise whether LRMs extract the correct sub-region of the input table relevant to the query; and ② Schema Interaction, where PRMs cannot detect attention collapse <ref type="bibr" target="#b10">(Dong et al., 2021)</ref>, as LRMs often overlook long-range table dependencies due to inherent locality bias. Beyond challenges arising from the tabular input modality, we also observe that current PRMs frequently introduce supervision errors within their own evaluation process, stemming from inaccurate table lookups or failed operations on tables. These shortcomings amplify bias and noise during TTS, ultimately creating persistent performance bottlenecks.</p><p>Motivated by our preliminary analyses, we propose TATTOO, a new Table Thinking PRM with Tool integration abilities to provide more reliable and precise supervision for tabular reasoning. Distinct from prior PRMs that provide weak supervision over table-specific operations, TATTOO provides steplevel supervision tailored to different input steps, applying both table-grounded rewards for tabular operation steps and inner-reasoning rewards for text-based reasoning steps. In addition, TATTOO can leverage several external tools to interact with table contents, execute code-based operations, and incorporate the results back into the step-by-step verification process. To build TATTOO, we first design a scalable data curation pipeline that yields over 60k high-quality supervision instances by integrating expert verification rationales with tool-based executions. We then train our PRM under a dual-stage paradigm: supervised fine-tuning to capture step-level tool-use reasoning patterns, followed by reinforcement learning with a newly designed reward shaping scheme to encourage effective tool manipulation and faithful reasoning for accurate verification. Finally, we provide theoretical intuition on the policy improvement induced by incorporating TATTOO during inference.</p><p>To demonstrate the effectiveness of TATTOO, we conduct extensive experiments on five challenging tabular reasoning benchmarks, covering table-based question answering, numerical reasoning, factchecking, and data analysis. Across all benchmarks, incorporating 8B-size TATTOO improves downstream policy models by 30.9%. In addition, TATTOO consistently outperforms strong PRM baselines such as Qwen-2.5-Math-PRM-72B <ref type="bibr">(Zhang et al., 2025b)</ref> and GenPRM-32B <ref type="bibr" target="#b78">(Zhao et al., 2025)</ref> with up to 9x parameter efficiency. In-depth analyses further demonstrate that incorporating our dual-stage training paradigm yields a 10.2% improvement over standard PRM training, and TATTOO exhibits strong generalizability across diverse TTS strategies, including Beam Search and DVTS.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">PRELIMINARY</head><p>Table Understanding with LRMs. We denote T = (H, R) as a semi-structured table, where H is the set of column headers defining the schema-level semantics, and R is the set of rows, with each row composed of cell entries aligned with H. Given a table T and an associated natural language query q, we define a reasoning model as a conditional generation policy π(τ | T, q), where τ = {a 1 , . . . , a L }. Here, τ denotes the reasoning model's generated reasoning trajectory, including both intermediate reasoning steps {a i } L-1 i=1 and the final answer a L . In our problem setup, the intermediate reasoning steps consist of both model inner-thinking reasoning traces and tool-integrated programs that operate directly on the table to retrieve or compute intermediate results. The final answer can take different formats depending on the query type, including textual or numerical values, boolean outputs (e.g., True/False), or executable programs (e.g., Python, SQL).</p><p>Reward Modeling for Tabular Reasoning. Given a table T , a query q, and a candidate response τ generated by a policy LRM, a standard step-level verifier (i.e., PRM) parameterized by θ computes a scoring function R θ (•) that assigns step-level rewards r i evaluating the correctness of each step a i ∈ τ . The trajectory-level reward r τ for each response τ is then obtained by aggregating these step-level rewards. Formally, we have:</p><formula xml:id="formula_0">r i = R θ (a i | T, q, τ &lt;i ), with r τ = A(r 1 , r 2 , • • • , r L ),<label>(1)</label></formula><p>where A(•) denotes an aggregation function such as MEAN and SUM <ref type="bibr" target="#b31">(Liu et al., 2025)</ref>. The rewards provided by the PRM R θ can be further leveraged by a test-time compute strategy ϕ (e.g., Best-of-N <ref type="bibr" target="#b3">(Brown et al., 2024)</ref>, Beam Search <ref type="bibr" target="#b51">(Snell et al., 2024)</ref>) to guide resampling, refinement, and candidate selection among the responses generated by the policy model. Table Retrieval Schema Interaction Inner-thinking Others </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">WHY TABLE REASONING REQUIRES VERIFIERS BEYOND CURRENT PRMS?</head><p>We begin by revisiting existing general-domain PRM methods to assess their effectiveness in supervising LRMs on tabular reasoning tasks and to identify potential performance bottlenecks. To this end, we conduct a pilot study guided by two key questions:</p><p>RQ1 -Beyond free-form text inputs, can common general-domain PRMs combined with TTS strategies also enhance the performance of LRMs on tabular reasoning tasks? RQ2 -When step-level reward supervision is crucial for tabular reasoning performance, how can PRMs effectively supervise and guide the quality of each reasoning step generated by LRMs?</p><p>For brevity, we defer detailed experimental setups to Appendix E. To investigate RQ1, we evaluate various step-level verification methods, including two advanced PRMs (Qwen2.5-Math-PRM-72B <ref type="bibr">(Zhang et al., 2025b)</ref> and Skywork-PRM-7B <ref type="bibr">(He et al., 2024a)</ref>), majority voting <ref type="bibr" target="#b31">(Liu et al., 2025)</ref>, and LLM-as-a-judge <ref type="bibr" target="#b79">(Zheng et al., 2023)</ref> with the Best-of-N TTS strategy. We choose DeepSeek-R1-Distill-Qwen-14B <ref type="bibr" target="#b15">(Guo et al., 2025)</ref> as the common LRM and evaluate on TableBench <ref type="bibr" target="#b63">(Wu et al., 2024)</ref>, which includes three fundamental table tasks (Fact Checking, Numerical Reasoning, and Data Analysis). As shown in Figure <ref type="figure" target="#fig_0">1</ref>, we observe that for small values of N , incorporating step-level verifiers into Best-of-N generally improves LRM's performance over single-shot generation, with PRMs providing the largest gains. However, once the number surpasses a threshold (N ≥ 8), accuracy across all three table tasks converges to a bottleneck. For example, the performance of Qwen2.5-Math-PRM-72B on fact-checking is 79.19%, 79.82%, and 79.84% for N = {8, 16, 32}, indicating that further increases in N yield negligible gains, even though with PRM incorporation.</p><p>Observation 1 (Limitation on TTS): Existing PRMs yield modest improvements on tabular reasoning, but their efficacy quickly saturates, failing to fully exploit additional test-time compute.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Error Analysis.</head><p>Building on the observation, we further investigate the underlying causes of the performance bottleneck by conducting an error analysis on LRM's generation and PRM's supervision processes. Specifically, we sample 500 erroneous Best-of-N responses (N= 32) selected by the PRM from LRM outputs, and ask human experts to classify them into 13 well-defined tabular error types (see Appendix B). We then connect these errors with 4 reasoning-step categories reflecting the typical flow of LRMs' reasoning process: (i) Table Retrieval &lt;think&gt; Step 1: I need to figure out the average prominence of mountain peaks in the Democratic Republic of the Congo that have an elevation of at least 3000 meters. Step 2: First, I'll review the provided table. My main focus is on the 'country' and 'elevation (m)' columns. (Wrong Step) . . . &lt;/think&gt; Final Answer is \boxed{2306.65} The model initially retrieves the wrong part of the table (columns 'Country' and 'Elevation (m)'), which leads to errors in all subsequent reasoning steps. PRM → {correct} ✗ Fail to detect the error Schema Interaction &lt;think&gt; Step 1: Let me start by looking at the table provided . . . The retrieved columns are . . . Step 4: I'll go through each row and note down the episodes: Episode 1: Rating -5.1, Episode 2: Rating -5.2 . . . (Wrong Step) Step 5: Adding the rating together is 5.1 + 5.2 + . . . &lt;/think&gt; Final Answer is: \boxed{11.52} The model identifies the correct column for the answer, but fails to extract all elements, omitting the last cell. This omission leads to incorrect reasoning in all subsequent steps. PRM → {correct} ✗ Fail to detect the error Inner-thinking &lt;think&gt; Step 1: Based on the table contents, I need to count podiums per season. 2008: (1 + 1 + 1)/3 = 1, 2009: 6, 2010: 0, 2011: (2 + 0)/2 = 1 . . . Step 4: Then I will average across seasons. Final average is (1 + 6 + 0 + 1)/4 = 2 (Wrong Step) &lt;/think&gt; Final Answer is: \boxed{2}</p><p>The model incorrectly does the calculation by averaging the season-level means, giving each season equal weight, instead of averaging across all team-seasons.</p><p>PRM → {incorrect} ✓ Detect the error</p><p>Table Retrieval Step Schema Interaction Step With Table Prefix Accuracy (%) Number of Solutions (N) 73% 66% 27% 34% % of instances out of 500 Figure 3: Left: PRM's rewards on 500 reasoning steps with the real-retrieved/randomly-replaced sub-table. Middle: Layer-wise average attention mass vs. relative step distance in tabular reasoning. Attention concentrates on nearby steps, with sharp decay as distance increases. Right: Best-of-N results on DeepSeek-R1-Distill-Qwen-14B for numerical reasoning with/without the table prefix.</p><p>72B on both variants. The nearly identical distributions between real and random sub-tables indicate that current PRMs fail to distinguish retrieval correctness, suggesting that they are unable to assess whether the LRMs' retrieved portion of the table corresponds to the query.</p><p>Takeaway 1 (Table <ref type="table">Retrieval</ref>): Existing PRMs are insensitive to table retrieval correctness in the reasoning steps and fail to recognize whether the retrieved content corresponds to the query.</p><p>For Schema Interaction Steps, we found in prior experiments that in the logic flow of LRMs' trajectories, table retrieval steps typically occur at the beginning, as the model must first extract relevant information from the table to answer the query. In contrast, schema interaction steps frequently occur far sentences from the beginning table retrieval steps, since LRMs tend to perform intermediate reasoning before revisiting their retrieved contents when needed. Figure <ref type="figure">3</ref> (middle) illustrates the attention distribution of the LRM between the schema interaction step (step 8) and the table retrieval step (step 0). Due to the auto-regressive nature of LRMs, the schema interaction step attends primarily to nearby steps while assigning little attention to the earlier retrieval step. This inherent locality bias causes the model to frequently misinterpret or discard previously retrieved contents, even when the retrieval step has already extracted the correct information. Moreover, current PRMs fail to supervise such misinterpretations, as their evaluations are highly localized to the current step rather than capturing dependencies on distant prior steps <ref type="bibr">(Zou et al., 2025b;</ref><ref type="bibr">Feng et al., 2025c)</ref>.</p><p>Takeaway 2 (Schema Interaction): Schema interaction steps under-attend to distant table retrieval contents due to locality bias. PRMs miss these failures since they can't look ahead and capture long-range dependencies among distant steps.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Table Prefix is the Key.</head><p>To explore potential solutions to the limitation above, we begin with a simple input modification for PRMs: prepending the retrieved table contents as a prefix to each schema interaction step. This grants PRMs direct access to the retrieval context, alleviating the need for long-range dependencies. We evaluate this modification and report the results in Figure <ref type="figure">3</ref> (right). Incorporating the table prefix indeed improves PRM supervision and leads to stronger downstream LRM performance. However, directly applying the prefix remains challenging, as current PRMs cannot automatically identify schema interaction steps, and the table prefixes obtained from LRMs are not guaranteed to be correct without proper supervision.</p><p>Motivation for TATTOO. Our analyses above highlight the need for a principled step-level verifier capable of providing robust supervision over both table-grounded operations and models' inner reasoning. Motivated by this, we propose a new process reward model specifically designed to support LRMs in tabular reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">BUILDING A TABLE-GROUNDED STEP VERIFIER</head><p>We introduce TATTOO, a generative PRM that provides reward supervision over both table operations and model inner thinking steps. Our method builds on two key components: (i) a large-scale data curation pipeline that synthesizes reasoning and tool usage for PRM training, and (ii) a dual-stage training paradigm that learns step-level verification with tool use optimization.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">TABLE-AWARE AND TOOL-INTEGRATED SUPERVISION</head><p>Table-Aware Reward. To align with the LRM's reasoning process on table tasks, we separate the supervision of table operations from model's inner reasoning part and decompose TATTOO's step-level reward (Eq. 1) into two components: r i = r i,rea , if a i ∈ inner-thinking, r i,tab , if a i ∈ table retrieval or schema interaction, and r</p><formula xml:id="formula_1">τ = 1 L L i=1 r i ,<label>(2)</label></formula><p>where r i,rea captures the correctness of the model inner-reasoning process, r i,tab reflects the accuracy of table-grounded operations, and r τ denotes the trajectory-level reward.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Tool Integration in Verification.</head><p>A major limitation of current PRMs is their inability to supervise table-involved reasoning steps (as shown in Section 3). Meanwhile, recent studies <ref type="bibr">(Feng et al., 2025a;</ref><ref type="bibr">Qian et al., 2025)</ref> have shown that LLM agents can autonomously use tools to interact with external environments and iteratively refine their reasoning. In a similar spirit to address current PRM's limitation, we incorporate several external table-oriented tools into TATTOO's verification process to enable more reliable step supervision. We next describe how we curate a training set with tool-augmented, table-aware rewards and use it to train TATTOO.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">TATTOO DATA CURATION PIPLINE</head><p>We design a large-scale data curation pipeline that simulates real-world scenarios of PRM tool use and step verification at scale. As illustrated in Figure <ref type="figure" target="#fig_2">4</ref>, there are three main stages:</p><p>1 Reasoning Trajectory Generation. We begin by collecting trajectory responses from expert LRMs (e.g., <ref type="bibr">DeepSeek-R1 (Guo et al., 2025)</ref> and Claude-Opus-4.1 <ref type="bibr" target="#b1">(Anthropic, 2025)</ref>) on table-based questions drawn from diverse benchmarks, including TableInstruct <ref type="bibr" target="#b63">(Wu et al., 2024)</ref>, HybridQA <ref type="bibr" target="#b5">(Chen et al., 2020)</ref>, ToTTo <ref type="bibr" target="#b37">(Parikh et al., 2020)</ref>, and WikiTQ <ref type="bibr">(Pasupat and Liang, 2015b)</ref>. We generate multiple responses per query and apply dual verification with human annotators and expert LLMs to filter out low-quality data, yielding a high-quality trajectory pool T pool for subsequent labeling.</p><p>2 Verification Synthesis &amp; Reward Assignment. We next provide step-level verification rationales and reward labels for each candidate response in T pool . (i) For table retrieval steps, we extract the sub-table in each step and use LLM-as-a-judge to assess its relevance to the query, assigning table reward r i,tab ∈ {-1, 1} based on retrieval correctness. (ii) For schema interaction steps, we prepend the accurate sub-table as a table prefix to each collected verification rationale (according to our table-prefix analysis in Section 3) and assign r i,tab ∈ {-1, 1} based on the correctness of the specific</p><p>𝑟𝑟𝑖𝑖,tab = 1 𝑟𝑟𝑖𝑖,tab = -1 … … 1. Reasoning Trajectory Generation Inner-thinking Step</p><p>Table Retrieval Step Schema Interaction Step Interpretation Computation Grouping … Retrieve Collected Expert LLM's Responses 𝓣𝓣𝐩𝐩𝐩𝐩𝐩𝐩𝐩𝐩</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Verification Synthesis &amp; Reward Assignment 3. Tool Use Synthesis</head><p>Table Retrieval Schema Interaction Inner-thinking table reward 𝑟𝑟𝑖𝑖,tab = 1 𝑟𝑟𝑖𝑖,tab = -1 table prefix extract Inner-reasoning reward Overall Verification Rationales from Stage 2 … … Input: Table + Query sourced from TableInstrct, HybridQA, ToTTo, etc… Tool Integration Computation tools Table lookup tools … … Tool-augmented Verification Step 1 Step 2 Step 3 Step 8 Step n Step 1 Step 2 Step 3 Step 8 Step n Step 1 Step 2 Step 3 Step 8 Step n 𝑟𝑟𝑖𝑖,rea = 1 𝑟𝑟𝑖𝑖,rea = -1 LRM's Reasoning Steps Collected Verification Rationales Original Input Table LRM's Retrieved Sub-Table LRM table reward judge judge judge labeled data labeled data labeled data TATTOO DATA CURATION TATTOO DUAL-STAGE TRAINING Supervised fine-tuning RL-based Policy Optimization • Label-Matching • Confidence Collaboration • Tool-Grounding • Identify &amp; Evaluate sub-table retrieval • Automatically add table-prefix • Learn Tool-Use Pattern 𝜽𝜽 𝒊𝒊𝒊𝒊𝒊𝒊𝒊𝒊 𝜽𝜽 𝑺𝑺𝑺𝑺𝑺𝑺 𝜽𝜽 𝑺𝑺𝑻𝑻𝑺𝑺𝑺𝑺𝑻𝑻𝑻𝑻 table-based operations or reasoning. (iii) For inner-thinking steps, which involve no table contents, we apply LLM-as-a-judge and follow established labeling strategies (Zhao et al., 2025; Khalifa et al., 2025) to assign r i,rea ∈ {-1, 1} based on reasoning quality. 3 Tool Use Synthesis. To train TATTOO to leverage tools for more accurate verification, we further augment the collected verification rationales with tool invocations, execution results, and feedback at the step level. Specifically, inside the rationale contents, we replace manual reasoning for table lookups or calculations with the corresponding tool call and its execution output. We primarily employ two types of table tools: (i) Computation tools: code snippets (e.g., Python, SQL) for arithmetic and aggregation over table inputs; (ii) Table Lookup tools: DataFrame APIs (e.g., Polars) or Lookup Utilities (e.g., CSV/Excel readers) for retrieving specific rows, columns, or cells during verification.</p><p>Finally, we construct over 60k high-quality training instances with complete verification rationales and step-level rewards. This dataset is then used to train TATTOO to integrate tool use with reasoning for robust step supervision. We leave additional data curation details in Appendix C.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">TOOL-GROUNDED DUAL-STAGE TRAINING</head><p>With the training data recipe in place, we train TATTOO via a dual-stage paradigm: supervised fine-tuning to capture tool-integrated verification patterns, followed by RL-based policy optimization with a newly designed reward shaping scheme to further refine our PRM's step-level rationales and ensure accurate verification.</p><p>Table-Aware Verification with Tools via SFT. We first finetune our PRM R θ on the curated dataset (Section 4.2). Specifically, given a training instance (T, q, τ ) consisting of a table T , a query q, and an LRM-generated trajectory τ = (a 1 , . . . , a L ), we train the PRM to output, for each step a i ∈ τ , a verification rationale v i together with its corresponding step-level reward r i . By formulating PRM training as language modeling, R θ is optimized auto-regressively to (i) identify accurate sub-table regions, (ii) learn to dynamically incorporate the retrieved table prefix into each schema interaction step, and (iii) generate verification rationales with tool-integration patterns.</p><p>Tool-Grounded Reward Shaping in RL. Prior generative PRM approaches <ref type="bibr" target="#b31">(Liu et al., 2025;</ref><ref type="bibr" target="#b24">Khalifa et al., 2025;</ref><ref type="bibr" target="#b78">Zhao et al., 2025)</ref> typically conclude PRM training after the SFT stage. In contrast, we draw inspiration from recent advances in agentic RL <ref type="bibr" target="#b20">(Jaech et al., 2024;</ref><ref type="bibr" target="#b15">Guo et al., 2025)</ref> and further apply policy optimization to more tightly align the PRM's verification process with effective tool utilization. Specifically, we optimize R θ with a modified GRPO <ref type="bibr" target="#b48">(Shao et al., 2024)</ref> by providing dense, tool-grounded supervision signals during policy optimization. During RL rollouts of each training instance (T, q, τ ), we replace the original rule-based GRPO supervision signal with a denser per-step reward signal s i , defined as:</p><formula xml:id="formula_2">s i = 1{r i = r i } label-matching -λ cal -log R θ (r i | T, q, τ ) confidence calibration + λ tool • support(v i ) tool-grounding ,<label>(3)</label></formula><p>where ri is the PRM's predicted step-reward and r i is the ground-truth step-reward for the input step a i ∈ τ ; vi denotes the verification rationale generated by the PRM at step i, and support(v i ) ∈ {0, 1} measures whether the rationale correctly incorporates tool outputs; and λ cal , λ tool are tunable coefficients. Besides enforcing correctness with the label-matching term, the confidence calibration term stabilizes training by encouraging higher probability on the ground-truth label, and the toolgrounding term encourages rationales that effectively incorporate tool outputs. We then aggregate the per-step signals s i into a trajectory-level training reward, normalize it within each sampled group to compute group-relative advantages, and update the PRM R θ under the GRPO objective.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">INFERENCE-TIME POLICY IMPROVEMENT -AN INTUITIVE VIEW</head><p>To intuitively elucidate the role of TATTOO and its table-aware rewards on LRM's tabular reasoning process (Eq. 2), we provide a theoretical analysis on the policy improvement induced by TATTOO.</p><p>Recall that the goal of our PRM is to improve the generated trajectory τ sampled from a policy LRM π, i.e., τ ∼ π(• | T, q). By combining the input table and query, we represent (T, q, a 1 , . . . , a i-1 ) as the current state s i . At step i, the policy LRM π samples an action a i ∼ π(• | s i ). We define the Q-value of policy π as the expected future success, measured by the final answer a L correctness, i.e.,</p><formula xml:id="formula_3">Q π (s i , a i ) = Q π (T, q, a 1 , . . . , a i-1 ), a i = E ai+1,...,a L ∼π(•|si) [1 a L is correct ] .<label>(4)</label></formula><p>The value of policy π at state s i is defined as the expectation of Q-values under π's next action distribution:</p><formula xml:id="formula_4">V π (s i ) = E ai∼π(•|si) [Q π (s i , a i )].</formula><p>We now analyze the policy improvement afforded by TATTOO's table-aware reward r i supervision under one step of a natural policy gradient updating.</p><p>Theorem 4.1 (Policy Improvement (Lower Bound)). Given the current policy π, after one natural policy gradient update step guided by the PRM reward r i defined in Eq.2, we obtain the revised policy π ′ (a i | s i ) ∝ exp(Q π (s i , a i ) + r i (s i , a i )). The resulting expected policy improvement over the state distribution ρ then satisfies:</p><formula xml:id="formula_5">Es i ∼ρ V π ′ (si) -V π (si) ≳ Es i ∼ρVara i ∼π(•|s i ) [ri,tab(si, ai)]</formula><p>distinguishability from table reward r i,tab</p><formula xml:id="formula_6">+ Es i ∼ρVara i ∼π(•|s i ) [ri,rea(si, ai)]</formula><p>distinguishability from inner-reasoning reward r i,rea</p><formula xml:id="formula_7">+ Es i ∼ρEa i ∼π(•|s i ) [ri,tab(si, ai)A π (si, ai)]</formula><p>alignment between r i,tab and A π</p><formula xml:id="formula_8">+ Es i ∼ρEa i ∼π(•|s i ) [ri,rea(si, ai)A π (si, ai)]</formula><p>alignment between r i,rea and A π ,</p><p>where</p><formula xml:id="formula_10">A π (s i , a i ) = Q π (s i , a i ) -V π (s i ) denotes the advantage of policy π.</formula><p>Theorem 4.1 (proof in Appendix D) explains that our decomposable reward design r i enables each component to additively contribute to policy improvement, provided that the reward components are each individually aligned with the policy advantage function. In this way, the table-aware rewards provided by TATTOO help ensure targeted supervision on both inner reasoning and table-involved operations generated by LRMs. Below, we further empirically evaluate the effectiveness of TATTOO across various downstream tabular reasoning tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">EMPIRICAL EVALUATIONS</head><p>Baselines and Models. We compare TATTOO against various types of step-level verification methods, including advanced PRMs, majority voting <ref type="bibr" target="#b31">(Liu et al., 2025)</ref>, and LLM-as-a-judge <ref type="bibr" target="#b79">(Zheng et al., 2023)</ref>. The setups for these baselines are aligned with our preliminary analyses in Section 3. For PRM approaches, we include both discriminative (Qwen-PRM series <ref type="bibr">(Zhang et al., 2025b)</ref>, Math-Shepherd-PRM <ref type="bibr">(Wang et al., 2024b)</ref>, and Skywork-PRM <ref type="bibr">(He et al., 2024a)</ref>) and generative (ThinkPRM <ref type="bibr" target="#b24">(Khalifa et al., 2025)</ref> and GenPRM <ref type="bibr" target="#b78">(Zhao et al., 2025)</ref>). Regarding the policy reasoning models, we evaluate our proposed method on DeepSeek-R1-Distill-Qwen-14B <ref type="bibr" target="#b15">(Guo et al., 2025)</ref>. Further details on the baselines and policy models setups are provided in Appendix E.1.  <ref type="bibr" target="#b3">Brown et al., 2024)</ref>, Beam Search <ref type="bibr" target="#b51">(Snell et al., 2024)</ref>, and Diverse Verifier Tree Search (DVTS) <ref type="bibr" target="#b2">(Beeching et al., 2024)</ref>. Additional implementation details on training setup and configurations of TATTOO are provided in Appendix E.3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">MAIN RESULTS</head><p>Table 2 reports the Best-of-N performance of incorporating TATTOO on the DeepSeek-R1-Distill-Qwen-14B model across five tabular reasoning tasks. Notably, TATTOO consistently outperforms strong baselines such as GenPRM-32B and Qwen2.5-Math-PRM-72B despite using only 8B parameters. On TB-DA, TATTOO achieves the largest accruacy performance across each level of N, rising from 27.7% at N=4 to 34.3% at N=32. Moreover, while existing PRMs often suffer from performance bottlenecks beyond a certain response threshold (as observed in Section 3), TATTOO continues to scale effectively, yielding consistent gains as the response group size increases. For example, on TB-NR, Qwen2.5-Math-PRM-72B saturates after N=16 (74.9% → 75.3%), whereas TATTOO continues to improve from 74.2% at N=8 to 78.1% at N=32. These results demonstrate that TATTOO provides stronger reward supervision on LRMs' reasoning trajectories, therefore yielding better performance improvement compared with other step-verification baselines.</p><p>Figure <ref type="figure">5</ref>: Performance of TATTOO on two additional TTS strategies, Beam Search and Diverse Verifier Tree Search (DVTS). We report the average accuracy across all 5 tabular reasoning tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Generalizability on Other TTS Strategies.</head><p>Beyond best-of-N , we also evaluate TATTOO under two additional TTS strategies (Beam Search and DVTS) and compare with the strongest PRM baselines. Figure <ref type="figure">5</ref> reports the average performance across the five tabular reasoning tasks. Under each TTS These results highlight the strong generalizability of TATTOO across diverse TTS strategies.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">IN-DEPTH ANALYSES ON TATTOO</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Mastery of RL with Bootstrapping from SFT.</head><p>To examine the respective roles of SFT and RL in TATTOO's dual-stage training paradigm, we compare against a variant TATTOO (SFT only), which is trained solely on the first SFT stage. As shown in Table <ref type="table" target="#tab_2">3</ref>, under the Best-of-N evaluation, the second-stage RL policy optimization consistently improves performance over the SFT-only initialization. Specifically, we observe that the average accuracy across all three tasks improves from 72.3% (SFT only) to 78.5% after RL training, yielding a total gain of 10.2%. This demonstrates that bootstrapping from SFT provides a solid initialization, while RL optimization further enhances our PRM's reasoning and tool-use effectiveness during the verification process. Reward Shaping during RL Training. Next, we analyze the effectiveness of each supervised component in our per-step reward signal s i design (Eq. 3), with the ablation results reported in Table <ref type="table" target="#tab_2">3</ref>. Removing the toolgrounding term yields the largest drop (e.g., ↓4.0% on TB-DA at N=32), highlighting its critical role in encouraging effective tool use during RL training. In addition, excluding confidence calibration reduces performance by 1.6% on average, showing its complementary effect in stabilizing reward signals. We also compare TATTOO with the original rule-based group-relative reward from GRPO, which yields only marginal improvement over SFT. Finally, Figure <ref type="figure" target="#fig_3">6</ref> visualizes the training dynamics of TATTOO and other variants during RL optimization.</p><p>Additional Experiments. Additional experiments on TATTOO including ablations on the training coefficients and case studies are provided in Appendix F.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">RELATED WORKS</head><p>Reasoning over tables poses a unique challenge for LLMs, requiring them to bridge natural language understanding with structured reasoning over rows, columns, and cell values <ref type="bibr" target="#b21">(Jin et al., 2022;</ref><ref type="bibr">Zhang et al., 2025a)</ref>. Recent works <ref type="bibr" target="#b56">(Tang et al., 2020;</ref><ref type="bibr" target="#b19">Iida et al., 2021;</ref><ref type="bibr" target="#b8">Deng et al., 2022)</ref> have investigated tabular reasoning on several downstream tasks, including table QA <ref type="bibr">(Pasupat and Liang, 2015b;</ref><ref type="bibr" target="#b5">Chen et al., 2020)</ref>, table fact verification <ref type="bibr" target="#b4">(Chen et al., 2019;</ref><ref type="bibr" target="#b37">Parikh et al., 2020</ref>), text-to-SQL <ref type="bibr" target="#b34">(Mohammadjafari et al., 2024)</ref>, etc. Early-stage tabular reasoning methods, such as TAPAS <ref type="bibr" target="#b18">(Herzig et al., 2020)</ref> and TaBERT <ref type="bibr" target="#b71">(Yin et al., 2020)</ref>, encode table data into transformer-based encoder representations. Later methods leverage the capabilities of LLMs to apply either prompt engineering <ref type="bibr" target="#b54">(Sui et al., 2023;</ref><ref type="bibr">Wang et al., 2024c)</ref> or supervised fine-tuning techniques <ref type="bibr" target="#b53">(Su et al., 2024;</ref><ref type="bibr" target="#b74">Zhang et al., 2023)</ref> for enhanced tabular reasoning. More recent works, including the Table-R1 series <ref type="bibr">(Wu et al., 2025b;</ref><ref type="bibr">Yang et al., 2025b;</ref><ref type="bibr" target="#b22">Jin et al., 2025)</ref> and Reasoning-Table <ref type="bibr" target="#b25">(Lei et al., 2025)</ref>, leverage RL to acquire higher-quality reasoning paths during reasoning over tables.</p><p>While these recent advances have focused on improving the generation ability of models on tables, how to provide robust and verifiable reward supervision for the lengthy and complex output trajectories generated by the table-specific reasoning models remains largely unexplored <ref type="bibr">(Zhang et al., 2024b)</ref>.</p><p>This essential yet overlooked gap motivates us to develop the first tool-use and thinking PRM, which is specifically designed for enhancing test time scaling on tabular reasoning tasks. We leave additional related works on Process Reward Models and Tool Integration with RL in Appendix A.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">CONCLUSION</head><p>We introduced TATTOO, a novel tool-augmented thinking PRM tailored for tabular reasoning. By diagnosing why existing verifiers fail on table retrieval and schema interaction, we built a scalable pipeline with expert rationales,</p><p>table prefixes, and tool-augmented verification, and trained our model via SFT followed by RL with reward shaping. TATTOO achieves comparable performance across five table benchmarks, surpassing strong PRMs with up to 9× parameter efficiency and generalizing across multiple TTS strategies. Our results underscore the importance of table-grounded reward supervision and point toward future directions in reward modeling for structured reasoning tasks.</p><p>TABLE OF CONTENTS A Additional Related Work 17 B Detailed Error Analysis 18 C TATTOO Data Curation Pipline 19 D Proof of Theorem 4.1 20 E Experimental Setups 22 E.1 Policy Model Configurations . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 22 E.2 Downstream Datasets . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 22 E.3 TATTOO Training Details . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 23 F Additoinal Experiments 23 F.1 Ablation Study on TATTOO . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 23 F.2 Performance Gain of TATTOO with Increasing Number of Responses . . . . . . . 23 F.3 Case Study . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 24 G Limitations and Broader Impacts 24 B DETAILED ERROR ANALYSIS In Section 3, we perform a fine-grained error analysis on 500 erroneous responses sampled after Best-of-N selection with Qwen2.5-Math-PRM-72B, to better understand the limitations of LRMs and PRMs. Each response is inspected and categorized by human experts into 13 predefined error types, covering both reasoning and table-specific mistakes. Figure <ref type="figure" target="#fig_4">7</ref> illustrates the overall error distribution.</p><p>Error Type Distribution. The most frequent errors are unit mismatch (15.0%), row mis-selection (14.8%), and miscalculation (11.2%). Other common issues include column mis-selection (10.4%), partial aggregation (9.6%), and missing or incomplete context (7.6%). Less frequent but still notable categories include output format errors, incorrect grouping, double counting, misinterpretation, and contradictory steps. A small portion of errors is grouped under others and logical errors. This diverse distribution highlights that model failures are not restricted to arithmetic slips but extend to schema understanding and structural reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Mapping to Reasoning-Step Categories.</head><p>To reveal deeper patterns, we align the 13 error types with four reasoning-step categories reflecting the typical flow of LRMs:</p><p>• Table <ref type="table">Retrieval</ref> Step: Includes row/column mis-selection, unit mismatch, and partial aggregation. These account for 47.7% of total errors, indicating difficulty in locating and extracting the correct table region.</p><p>• Schema Interaction Step: Covers miscalculation, grouping mistakes, double counting, and misinterpretation of table semantics. This represents 34.3% of errors, reflecting challenges in reasoning over structured contents once retrieved.</p><p>• Inner-Thinking Step: Logical errors or contradictory reasoning steps independent of table contents. These contribute 12.0% of total errors, suggesting LRMs remain relatively competent in pure logical chains compared to table-centric operations.</p><p>• Others: Errors arising from context omission or improper output formatting.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Key Findings.</head><p>The analysis reveals that most model weaknesses lie in table-related operations, including table retrieval and schema interaction, rather than general logical reasoning. PRMs, when supervising such steps, face greater challenges since they must not only validate the correctness of reasoning but also verify alignment between the retrieved sub-table and the query.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C TATTOO DATA CURATION PIPLINE</head><p>We design a large-scale data curation pipeline that simulates real-world scenarios of PRM tool use and step verification at scale. As illustrated in Figure <ref type="figure" target="#fig_2">4</ref>, there are three main stages:</p><p>Reasoning Trajectory Generation. We begin by collecting trajectory responses from expert LRMs (e.g., <ref type="bibr">DeepSeek-R1 (Guo et al., 2025)</ref> and Claude-Opus-4.1 <ref type="bibr" target="#b1">(Anthropic, 2025)</ref>) on table-based questions drawn from diverse benchmarks, including TableInstruct <ref type="bibr" target="#b63">(Wu et al., 2024)</ref>, HybridQA <ref type="bibr" target="#b5">(Chen et al., 2020)</ref>, ToTTo <ref type="bibr" target="#b37">(Parikh et al., 2020)</ref>, and WikiTQ <ref type="bibr">(Pasupat and Liang, 2015b)</ref>.</p><p>We generate multiple model responses per query, capturing both correct and incorrect reasoning patterns. We then adopt a dual-verification procedure <ref type="bibr">(Feng et al., 2025a)</ref>, where both human annotators and expert LLMs are employed to examine and filter out low-quality or incomplete CoT data. Through this, we receive a high-quality set of LRMs' output responses T pool for subsequent data labeling.</p><p>Verification Synthesis &amp; Reward Assignment. Our next step is to provide step-level verification rationales and assign PRM step-reward labels for each candidate response in T pool . To this end, we first identify the table retrieval and schema interaction steps within each response in T pool :</p><p>• Table <ref type="table">retrieval</ref> steps -We first extract the retrieved sub-table from each step. Then we apply LLMas-a-judge to evaluate whether retrieved contents are accurate and provide complete rationales for the judgment. We assign step-level table reward r i,tab ∈ {-1, 1} (in Eq. 1) as the meaning of {incorrect, correct} based on the correctness of the retrieval. This reward supervision explicitly trains PRMs to recognize if the retrieved sub-table aligns with the input query, addressing the limitation in Takeaway 1.</p><p>• Schema interaction steps -We collect the sub-table retrieved from the preceding table retrieval step and use it as a table prefix. If the retrieval is incorrect, we manually replace it with the correct sub-table corresponding to the query. We then prepend this table prefix to the verification rationale generated by LLM-as-a-judge. Finally, we assign the PRM's step-level table reward r i,tab ∈ {-1, 1} as the meaning of {incorrect, correct} based on the correctness of the schema interaction. By explicitly attaching the retrieved sub-table to each schema interaction step, we mitigate the dependencies issue noted in Takeaway 2.</p><p>• Other steps without table operations involved -We directly query an expert LLM (DeepSeek-R1) to generate verification rationales. We assign the PRM's step-level reasoning reward r i,rea ∈ {-1, 1} as the meaning of {incorrect, correct} based on the correctness of the reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Tool Use Synthesis.</head><p>To help PRMs learn to leverage tools for more accurate verification, we augment the collected verification rationales by incorporating tool invocation, execution, and feedback into the verification steps. Specifically, whenever the model's inner reasoning involves a calculation or table lookup operation, we replace it with the corresponding tool call and its execution result. We primarily employ two types of tools:</p><p>• Computation tools -Applying Python or SQL code snippets for arithmetic or aggregation operations. E.g., if a step verifies the sum of a table column, we replace the model's manual calculation with a code snippet that executes the summation and returns the result.</p><p>• Table lookup tools -Locating and extracting specific rows, columns, or cells from the table. E.g., if a step requires referencing a sub-table cell value during the verification, we replace the model's self-extraction with an explicit lookup tool call that retrieves the corresponding entry.</p><p>By integrating verification processes with code snippets and real-time interpreter feedback, we construct roughly 60k data for TATTOO's verification reasoning and tool usage.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D PROOF OF THEOREM 4.1</head><p>Notational conventions. We use s i for a state, a i for an action, π for the current policy, and π ′ for the updated policy. The advantage is defined as</p><formula xml:id="formula_11">A π (s i , a i ) = Q π (s i , a i ) -V π (s i ).<label>(6)</label></formula><p>The PRM signal at a step is the overall process reward, defined in Eq.2. For a fixed s i , we write E π [•] ≡ E ai∼π(•|si) [•], Var π [•] ≡ Var ai∼π(•|si) [•], and Cov π (r i,rea (s i , a i ), r i,rea (s i , a i )) ≡ Cov ai∼π(•|si) (r i,rea (s i , a i ), r i,rea (s i , a i )) Expectations over states use the subscript explicitly, e.g., E si∼ρ [•]. We use d π ′ ρ</p><p>for the state distribution induced by the policy π ′ starting from the initial distribution ρ. Finally, X ≳ Y means there exists a universal constant c &gt; 0, independent of (π, π ′ , s i ), such that X ≥ c Y .</p><p>We start the proof by introducing two standard lemmas that will be used repeatedly; both are well-known results in the RL literature, and we omit their proofs here for brevity. Lemma D.1 (Performance Difference Lemma (PDL)). For any pair of policies π and π ′ defined over the same Markov decision process with initial state distribution ρ, the following identity holds:</p><formula xml:id="formula_12">E si∼ρ V π ′ (s i ) -V π (s i ) = E si∼d π ′ ρ E ai∼π ′ (•|si) A π (s i , a i ) .</formula><p>See proof of Lemma 6.1 in <ref type="bibr" target="#b23">(Kakade and Langford, 2002)</ref>.</p><formula xml:id="formula_13">Lemma D.2 (Natural policy gradient (NPG) update form). Fix a step size γ &gt; 0. If the NPG update is guided by the signal A π (s i , a i ) + r i (s i , a i ), then π ′ (a i | s i ) ∝ π(a i | s i ) exp γ A π (s i , a i ) + r i (s i , a i ) , Z π (s i ) ≜ ai π(a i | s i ) exp γ A π (s i , a i ) + r i (s i , a i ) , so that π ′ (a i | s i ) π(a i | s i ) = exp γ A π (s i , a i ) + r i (s i , a i ) Z π (s i ) .<label>(7)</label></formula><p>See proof of Lemma F.2 in <ref type="bibr" target="#b47">(Setlur et al., 2024)</ref>. Next, we restate Theorem 4.1 in the following proposition. Proposition D.3 (Full-strength policy improvement lower bound). Let π ′ be the NPG update in Lemma D.2. We can have:</p><formula xml:id="formula_14">E si∼ρ V π ′ (s i ) -V π (s i ) ≳ E si∼ρ Var π r i,rea (s i , a i ) distinguishability (reasoning reward) + Var π r i,tab (s i , a i ) distinguishability (table reward)</formula><p>+2 Cov π r i,rea (s i , a i ), r i,tab (s i , a i ) alignment between ri,rea and ri,tab</p><formula xml:id="formula_15">+ E π r i,tab (s i , a i ) A π (s i , a i ) alignment of ri,tab with A π + E π r i,rea (s i , a i ) A π (s i , a i ) alignment of ri,rea with A π .<label>(8)</label></formula><p>Proof of Proposition D.3. We now combine the performance difference lemma with the NPG update to derive a variance-alignment lower bound, while first retaining the covariance term between the reward components. By Lemma D.1, we have</p><formula xml:id="formula_16">E si∼ρ V π ′ (s i ) -V π (s i ) = E si∼d π ′ ρ E ai∼π ′ (•|si) A π (s i , a i ) . (<label>9</label></formula><formula xml:id="formula_17">)</formula><p>Exponential tilting and a log-partition bound. Let us define the log-partition at state s i by</p><formula xml:id="formula_18">log Z π (s i ) = log E ai∼π(•|si) exp γ A π (s i , a i ) + r i (s i , a i ) .</formula><p>From Lemma D.2, we have</p><formula xml:id="formula_19">A π (s i , a i ) = 1 γ log π ′ (a i | s i ) π(a i | s i ) -r i (s i , a i ) + 1 γ log Z π (s i ).</formula><p>Averaging over</p><formula xml:id="formula_20">a i ∼ π ′ (• | s i ), using E π ′ [log π ′ π ] ≥ 0, Jensen's inequality on log Z π (s i ) and E π [A π (s i , a i )] = 0 gives E ai∼π ′ (•|si) [A π (s i , a i )] ≥ -E ai∼π ′ (•|si) [r i (s i , a i )] + E ai∼π(•|si) [r i (s i , a i )].<label>(10)</label></formula><p>Plugging this into equation 9 yields the basic inner-product lower bound</p><formula xml:id="formula_21">E si∼ρ V π ′ (s i ) -V π (s i ) ≥ E si∼d π ′ ρ ⟨π ′ (• | s i ) -π(• | s i ), r i (s i , •)⟩ .<label>(11)</label></formula><p>Using first-order expansion of the exponential tilt implies</p><formula xml:id="formula_22">⟨π ′ (• | s i ) -π(• | s i ), r i (s i , •)⟩ ≳ Var π r i (s i , a i ) + E π r i (s i , a i ) A π (s i , a i ) ,<label>(12)</label></formula><p>Combining equation 11 and equation 12, and weakening d π ′ ρ to ρ (componentwise monotonicity) gives</p><formula xml:id="formula_23">E si∼ρ V π ′ (s i ) -V π (s i ) ≳ E si∼ρ Var π r i (s i , a i ) + E π r i (s i , a i ) A π (s i , a i ) .<label>(13)</label></formula><p>Variance decomposition with covariance. Next, using r i = r i,rea + r i,tab , we have</p><formula xml:id="formula_24">Var π r i (s i , a i ) = Var π r i,rea (s i , a i ) + Var π r i,tab (s i , a i ) + 2 Cov π r i,rea (s i , a i ), r i,tab (s i , a i ) .<label>(14)</label></formula><p>Substituting into equation 13 complete our proof of Proposition D.3 (equation 8). Covariance elimination under our reward design. By construction in our setup (see Section 4.2), for each state-action pair (s i , a i ), the two components of the PRM signal, i.e., table reward and reasoning reward, are mutually exclusive. Formally, we have r i,tab (s i , a i ) ∈ {-1, 0, 1}, r i,rea (s i , a i ) ∈ {-1, 0, 1}, and r i,tab (s i , a i ) r i,rea (s i , a i ) = 0. Policy-gradient updates are invariant to adding any per-state baseline, so we may center each component without loss, i.e., ri,rea (s i , a i ) = r i,rea (s i , a i )-E π r i,rea (s i , a i ) , ri,tab (s i , a i ) = r i,tab (s i , a i )-E π r i,tab (s i , a i ) . Mutual exclusivity yields E π ri,rea (s i , a i ) ri,tab (s i , a i ) = 0, hence Cov π ri,rea , ri,tab = 0 and Var π ri (s i , a i ) = Var π ri,rea (s i , a i ) + Var π ri,tab (s i , a i ) , ri ≜ ri,rea + ri,tab . Plugging these centered quantities into the bounds of Proposition D.3 (which is NPG-invariant under per-state centering) gives exactly Theorem 4.1's inequality: Beam Search. Given beam width N and branching factor M , the model generates N initial steps. The verifier then selects the top N/M continuations, and the model expands each with M new candidates. This process repeats until termination, enabling guided exploration of high-quality reasoning paths.</p><formula xml:id="formula_25">E si∼ρ V π ′ (s i ) -V π (s i ) ≳ E si∼ρ Var π r i,rea (s i , a i ) + Var π r i,tab (s i , a i ) + E π r i,tab (s i , a i ) A π (s i , a i ) + E π r i,rea (s i , a i ) A π (s i , a i ) ,<label>(15)</label></formula><p>Diverse Verifier Tree Search (DVTS). DVTS is a variant of beam search where the search process is divided into multiple subtrees. Each subtree is explored independently using verifier-guided expansions, with candidates selected at every step based on PRM scores.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Majority Voting.</head><p>After generating multiple responses, the final answer is determined by simple majority over identical outputs, regardless of intermediate step scores. This method provides a baseline aggregation mechanism.</p><p>LLM-as-a-Judge. Instead of relying solely on PRMs, a separate LLM is prompted to compare and evaluate candidate responses directly, selecting the most plausible or logically consistent output.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.2 DOWNSTREAM DATASETS</head><p>TableBench <ref type="bibr" target="#b63">(Wu et al., 2024)</ref>. TableBench is a comprehensive benchmark specifically designed to evaluate the reasoning abilities of LLMs over tabular data. It consists of 3,681 unique tables drawn from diverse domains such as finance, sports, politics, and science, with each table containing on average 16.7 rows and 6.7 columns. The dataset emphasizes numerical reasoning, with over 65% of table cells containing numerical values. TableBench questions are organized into four major categories: fact-checking, numerical reasoning, data analysis, further divided into 18 subcategories, yielding a total of 886 carefully annotated samples. Each question typically requires 6.3 reasoning steps, making the dataset significantly more complex than prior TableQA corpora.</p><p>WikiTableQuestions (WTQ) <ref type="bibr">(Pasupat and Liang, 2015b)</ref>. The WikiTableQuestions dataset introduces question answering over semi-structured HTML tables, aiming to test both compositional reasoning and domain generalization. It comprises 22,033 natural language questions paired with 2,108 Wikipedia tables, where the training and test tables are disjoint to ensure generalization to unseen schemas. The tables are semi-structured and heterogeneous, often containing multi-part cell values (e.g., "Beijing, China") that require normalization into multiple semantic types such as numbers or dates. Questions range from simple lookups to highly compositional queries involving comparison, aggregation, arithmetic, and superlatives. Each table contains at least 8 rows and 5 columns, and the question collection was conducted with quality control through multiple annotators.</p><p>MMQA <ref type="bibr">(Wu et al., 2025a</ref>) MMQA is a large-scale benchmark for evaluating LLMs on multi-table and multi-hop question answering. The benchmark includes a total of 3,312 relational tables across 138 domains, where each instance consists of two or three interlinked tables. The dataset features 5,000 multi-table samples, annotated with natural language questions, SQL queries, gold answers, and explicit primary/foreign key relations. To ensure annotation quality, foreign and primary keys were labeled by human experts with inter-annotator agreement exceeding 80%. MMQA questions span four main categories, including numerical, list, count, and select, with an average length of 77-85 tokens, reflecting their compositional complexity. We train TATTOO using the off-the-shelf Qwen-3-8B model <ref type="bibr">(Yang et al., 2025a)</ref> on our curated 60k dataset. For supervised fine-tuning, we adopt the LLaMA-Factory framework <ref type="bibr" target="#b80">(Zheng et al., 2024)</ref>. The training setup uses a learning rate of 1 × 10 -5 , a weight decay of 1 × 10 -4 , a maximum sequence length of 20,000, and is run for 3 epochs. For the RL training stage, we adopt the VeRL framework <ref type="bibr" target="#b50">(Sheng et al., 2024)</ref> to further optimize the SFT checkpoint via policy optimization. The model is trained with a batch size of 32, generating 8 samples per question as the group size, and is run for 3 epochs. During inference, we use the OpenR framework <ref type="bibr">(Wang et al., 2024a)</ref> to deploy our trained TATTOO-8B, which serves as a verifier to guide the downstream LRM under different test-time scaling strategies.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F ADDITOINAL EXPERIMENTS F.1 ABLATION STUDY ON TATTOO</head><p>Ablations on λ cal and λ tool . In Eq. 3, we use λ cal and λ tool as tunable coefficients to balance the contributions of the corresponding reward terms in GRPO. To examine their influence, we separately train our verifier model (initialized from the same SFT checkpoint) by varying λ cal ∈ {0.3, 0.5, 0.8, 1.0} and λ tool ∈ {0.1, 0.5, 1.0, 1.5} during RL, and then evaluate on TableBench with N = 32. As shown in Table <ref type="table" target="#tab_3">4</ref> and 5, performance improves as λ cal increases, peaking at 0.8-1.0. For λ tool , accuracy rises steadily and is strongest around 1.0-1.3. These results empirically confirm the effectiveness of confidence calibration and tool-grounding in enhancing TTS. Figure <ref type="figure">8</ref> presents the best-of-N performance on TB-NR. We observe that baseline PRMs such as Qwen2.5-Math-PRM-72B and GenPRM-32B quickly saturate beyond N =16, achieving only marginal improvements at larger N . Skywork-PRM-7B shows even weaker scalability, plateauing below 71%. In contrast, TATTOO continues to improve steadily as N increases, reaching 78.3% at N =32, the highest among all models despite having significantly fewer parameters (8B). These results highlight the scalability advantage of TATTOO, demonstrating its ability to leverage larger response pools more effectively than existing PRMs.</p><p>In addition, we observe that the performance gap widens as N grows: at N =2, the difference between TATTOO and GenPRM-32B is less than 1%, whereas by N =32 the gap exceeds 6%. This suggests that TATTOO is not only competitive at small-scale selection but also excels under test-time scaling, where robust discrimination among diverse reasoning trajectories becomes increasingly important. This trend highlights the robustness of our tool-augmented PRM in supervising multiple reasoning candidates.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F.3 CASE STUDY</head><p>As shown in Figure <ref type="figure">9</ref>, we present a case study on TATTOO illustrating the difference between the verification processes at the two training stages on a specific instance in Figure <ref type="figure">9</ref> (Appendix F.3). When facing the same step (Step 3), the SFT-stage relies on inner text reasoning to verify the calculation, but introduces numerical errors that lead to incorrect justification of the step's correctness. In contrast, the RL-stage learns to leverage the computation tool with concise Python code, ensuring accurate calculations and thereby providing more reliable reward supervision on the policy model's responses. In addition, we randomly sample 500 trajectories from both stages of TATTOO on the same set of inputs and observe a 26.3% improvement in the tool-integration ratio after RL training, indicating our model learns to utilize tools better for step-level verification during RL rollouts.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G LIMITATIONS AND BROADER IMPACTS</head><p>While reinforcement learning with reward shaping enhances our PRM's ability to capture finegrained tabular reasoning signals, it introduces more computational overhead. Compared to SFT-only training, the RL stage requires additional rollouts, reward evaluations, and optimization steps, which can increase training cost and resource demands. This overhead may hinder reproducibility and accessibility in low-resource environments, motivating future work on more efficient reward objectives and lightweight reward modeling strategies. In addition, our current framework is limited to text-table reasoning, and extending it to multimodal settings (e.g., integrating charts or image-based tables) remains an important direction for future work.</p><p>From a broader perspective, this work highlights the potential for process reward models to enhance structured reasoning in domains such as fact-checking, scientific analysis, and decision support. At the same time, reliance on automated verification carries risks: if tools or training data contain errors, these may be amplified rather than corrected. We encourage future research to explore mechanisms for auditing verifier reliability, reducing the energy footprint of RL training, and ensuring equitable performance across diverse application domains.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Best-of-N performance of DeepSeek-R1-Distill-Qwen-14B across 3 table tasks on TableBench with different types of step verifiers.</figDesc><graphic coords="3,116.97,83.87,91.48,91.54" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Error Distribution over 4 step categories across 500 incorrect cases after Best-of-N selection.</figDesc><graphic coords="3,298.22,85.84,89.23,89.40" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure4: Overview of TATTOO framework. We first curate 60k high-quality instances by collecting expert verification rationales with tool integration (Section 4.2). We then train our PRM through a dual-stage training paradigm to achieve tool-grounded step-by-step reward supervision (Section 4.3).</figDesc><graphic coords="6,473.26,0.00,595.64,470.09" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Training dynamics of TATTOO and ablated variants. We report the training reward across 280 training steps.</figDesc><graphic coords="9,341.64,417.61,162.36,107.75" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 7 :</head><label>7</label><figDesc>Figure7: Error distribution over 500 incorrect LRM responses after Best-of-N. The errors are grouped into 13 predefined types, with the majority arising from table retrieval and schema interaction.</figDesc><graphic coords="18,147.60,114.69,316.80,182.81" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><figDesc>which completes the proof of Theorem 4.1. □ Remark D.4. (i) Proposition D.3 is strictly more general; Theorem 4.1 follows as a corollary under mutual exclusivity plus per-state centering (baseline invariance). (ii) Mutual exclusivity alone yields E π [r i,rea r i,tab ] = 0, but per-state centering is what ensures Cov π (r i,rea , r i,tab ) = 0. (iii) The alignment term necessarily uses the composite signal r i because the NPG step is guided by A π + r i . E EXPERIMENTAL SETUPS E.1 POLICY MODEL CONFIGURATIONS In our experiments, we adopt an LRM DeepSeek-R1-Distill-Qwen-14B (Guo et al., 2025) as the downstream policy model. During inference, we configure the model with a temperature of 0.7, a maximum generation length of 16,384 tokens, and top-p sampling with p = 0.95. We evaluate the LRM on several inference-time scaling strategies: Best-of-N (BoN). The policy model generates N candidate responses independently. A verifier (PRM) scores each response, and the final output is selected based on a voting or scoring method.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>F. 2</head><label>2</label><figDesc>Figure 8: Performance of TATTOO and baseline PRMs on TB-NR under Best-of-N test time scaling strategy.</figDesc><graphic coords="23,357.28,493.70,142.96,121.12" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Table Retrieval Steps, locating relevant rows/columns regarding the input query; (ii) Schema Interaction Steps, reasoning over the retrieved table contents, (iii) Inner-thinking Steps, models' inner reasoning independent of table contents, and (iv) Others, initial setup or final output steps that are irrelevant to core reasoning process. Figure2presents the error distribution across 4 reasoning step categories. We find that most errors arise in Table Retrieval (47.7%) and Schema Interaction (34.3%), implying that PRMs perform reasonably well on independent reasoning but fall short when reasoning steps involve table-specific operations. For better demonstration, we provide representative examples for each category in Table1.Representative error cases in 3 different reasoning step categories. Each example highlights the erroneous model step in red, the corresponding error description, and the PRM's (mis)judgment reward, illustrating where existing PRMs fail to detect mistakes.</figDesc><table><row><cell>Why do PRMs fail on table-involved reasoning steps? Next, we take a closer look at why PRMs</cell></row><row><cell>lose their supervisory effectiveness when reasoning steps involve table operations. For Table Retrieval</cell></row><row><cell>Steps, we conduct a contrastive experiment focusing particularly on the table contents retrieved by</cell></row><row><cell>LRMs within their responses. We randomly sampled 500 responses and constructed two variants by (i)</cell></row><row><cell>retaining the original LRM-retrieved sub-table, and (ii) replacing it with a randomly selected sub-table</cell></row><row><cell>region from the original input table. Figure 3 (left) shows the output rewards of Qwen2.5-Math-PRM-</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Main results of TATTOO on 5 different tabular reasoning tasks. We report the best-of-N (with N = {4, 8, 16, 32}) performance using DeepSeek-R1-Distill-Qwen-14B as the policy model and compare against various step verifiers. The best and second-best results are highlighted. TATTOO consistently achieves state-of-the-art TTS performance with significantly fewer parameters.We evaluate on four representative and challenging benchmarks spanning diverse tabular reasoning tasks, including (i) TableBench (TB)<ref type="bibr" target="#b63">(Wu et al., 2024)</ref>, a complex tabular reasoning benchmark with 886 questions covering tasks of numerical reasoning (NR), fact checking (FC), and data analysis (DA). (ii) WTQ(Pasupat and Liang, 2015b), a benchmark for complex question answering over Wikipedia tables. (iii) MMQA(Wu et al., 2025a), a multi-table understanding benchmark covering table retrieval, multi-hop &amp; multi-table QA and text-to-SQL generation. We leave the additional dataset descriptions in Appendix E.2.</figDesc><table><row><cell>Verifer (Best-of-N)</cell><cell>Params</cell><cell></cell><cell cols="2">TB-NR</cell><cell></cell><cell cols="2">TB-FC</cell><cell></cell><cell cols="2">TB-DA</cell><cell></cell><cell cols="2">WTQ</cell><cell></cell><cell>MMQA</cell></row><row><cell></cell><cell></cell><cell>4</cell><cell>8</cell><cell>16 32</cell><cell>4</cell><cell>8</cell><cell>16 32</cell><cell>4</cell><cell>8</cell><cell>16 32</cell><cell>4</cell><cell>8</cell><cell>16 32</cell><cell>4</cell><cell>8</cell><cell>16 32</cell></row><row><cell>Majority Vote</cell><cell>-</cell><cell cols="14">65.5 65.9 66.8 66.5 76.2 77.3 77.3 77.4 23.5 24.5 26.0 26.1 64.7 65.3 67.3 67.0 18.4 19.4 20.4 20.1</cell></row><row><cell>LLM-as-a-judge</cell><cell>-</cell><cell cols="14">66.7 66.9 67.1 66.9 77.2 78.3 78.4 78.6 23.5 27.4 28.0 28.4 65.2 66.4 68.1 68.1 19.6 21.3 22.5 22.7</cell></row><row><cell>Skywork-PRM-7B</cell><cell>7B</cell><cell cols="14">66.1 69.5 70.3 70.1 76.8 78.4 78.6 78.3 24.1 27.5 28.9 29.1 65.9 67.5 68.4 68.6 21.4 24.6 25.1 25.3</cell></row><row><cell>Math-Shepherd-PRM-7B</cell><cell>7B</cell><cell cols="14">67.2 70.6 71.5 71.8 76.2 76.9 76.8 77.1 22.7 24.8 26.4 25.9 66.8 68.7 69.6 69.3 22.0 25.2 25.9 26.1</cell></row><row><cell>Qwen2.5-Math-PRM-7B</cell><cell>7B</cell><cell cols="14">66.9 70.1 71.7 72.5 75.4 77.2 77.9 77.4 23.2 25.4 26.3 26.6 65.2 68.5 69.6 69.7 23.5 25.2 27.1 27.3</cell></row><row><cell>ThinkPRM</cell><cell cols="15">14B 69.2 70.7 73.5 73.8 75.8 75.4 76.3 76.9 21.6 22.7 23.1 22.8 64.3 66.1 65.7 65.9 22.4 22.7 23.6 23.0</cell></row><row><cell>GenPRM</cell><cell cols="15">32B 71.5 73.5 73.7 74.2 76.3 78.5 79.2 79.4 25.3 27.9 30.2 30.7 69.8 72.5 73.3 73.1 23.8 25.4 26.2 26.4</cell></row><row><cell cols="16">Qwen2.5-Math-PRM-72B 72B 70.4 73.8 74.9 75.3 77.8 79.2 79.8 79.8 25.5 31.5 32.0 32.4 69.2 71.8 73.0 72.6 24.4 26.8 28.7 28.6</cell></row><row><cell>TATTOO</cell><cell>8B</cell><cell cols="14">71.2 74.2 76.4 78.1 77.4 79.6 81.2 82.0 27.7 31.9 33.6 34.3 69.8 72.3 73.5 74.9 25.1 27.2 29.1 30.5</cell></row><row><cell>Datasets.</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table><note><p>Implementation Details. We train TATTOO on the off-the-shelf Qwen-3-8B model(Yang et al.,  2025a)  </p><p>using our 60k curated training instances (Section 4.2). All training and inference experiments are conducted on 8×A100-80G GPUs. To evaluate TATTOO under different TTS strategies, we adopt three representative methods, including Best-of-N (</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>In-depth analysis of TATTOO on three table datasets. We evaluate the contributions of SFT and RL training stages, and assess the impact of reward shaping components during RL optimization.</figDesc><table><row><cell>Training Variants</cell><cell></cell><cell cols="2">TB-NR</cell><cell></cell><cell cols="2">TB-FC</cell><cell></cell><cell cols="2">TB-DA</cell></row><row><cell></cell><cell>4</cell><cell>8</cell><cell>16 32</cell><cell>4</cell><cell>8</cell><cell>16 32</cell><cell>4</cell><cell>8</cell><cell>16 32</cell></row><row><cell>TATTOO (SFT only)</cell><cell cols="9">67.9 69.1 72.0 73.7 71.5 73.0 74.6 75.2 23.3 25.6 26.2 26.4</cell></row><row><cell>TATTOO</cell><cell cols="9">71.2 74.2 76.4 78.1 77.4 79.6 81.2 82.0 27.7 31.9 33.6 34.3</cell></row><row><cell>w/o tool-grounding</cell><cell cols="9">68.5 71.1 72.7 74.6 73.2 75.6 75.5 76.3 26.2 28.1 28.7 30.3</cell></row><row><cell cols="10">w/o confidence caliboration 71.1 73.7 74.3 76.2 76.4 76.7 78.4 80.5 27.4 29.5 31.3 33.2</cell></row><row><cell>rule-based (GRPO)</cell><cell cols="9">67.0 68.4 70.4 73.1 71.6 74.0 74.9 75.8 25.5 27.4 28.0 28.6</cell></row><row><cell cols="10">strategy, TATTOO consistently yields steady improvements as the number of responses N increases,</cell></row><row><cell cols="10">whereas other baseline PRMs often plateau. For example, in beam search, TATTOO improves from</cell></row><row><cell cols="10">45.0% to 54.8%, while GenPRM saturates around 51% and Skywork-PRM remains below 46%.</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 :</head><label>4</label><figDesc>Ablation on confidence calibration λ cal .</figDesc><table><row><cell cols="4">N=32 TB-NR TB-FC TB-DA</cell></row><row><cell>0.3</cell><cell>76.8</cell><cell>80.9</cell><cell>33.1</cell></row><row><cell>0.5</cell><cell>77.3</cell><cell>81.3</cell><cell>33.6</cell></row><row><cell>0.8</cell><cell>78.1</cell><cell>82.0</cell><cell>34.3</cell></row><row><cell>1.0</cell><cell>78.5</cell><cell>81.4</cell><cell>33.8</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 5 :</head><label>5</label><figDesc>Ablation on tool-grounding λ tool .</figDesc><table><row><cell cols="4">N=32 TB-NR TB-FC TB-DA</cell></row><row><cell>0.1</cell><cell>75.2</cell><cell>76.3</cell><cell>30.8</cell></row><row><cell>0.5</cell><cell>75.9</cell><cell>76.9</cell><cell>32.2</cell></row><row><cell>1.0</cell><cell>78.1</cell><cell>82.0</cell><cell>34.3</cell></row><row><cell>1.3</cell><cell>77.5</cell><cell>81.2</cell><cell>34.6</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Appendix</head><p>A ADDITIONAL RELATED WORK</p><p>Table Question Answering. The evolution of Table Question Answering (Table QA) research <ref type="bibr" target="#b21">(Jin et al., 2022)</ref> has been propelled by the creation of sophisticated evaluation resources that facilitate semantic parsing capabilities <ref type="bibr" target="#b67">(Yang et al., 2020;</ref><ref type="bibr">Li et al., 2023b;</ref><ref type="bibr">2024)</ref>. Foundational works, including WTQ <ref type="bibr">(Pasupat and Liang, 2015a)</ref> and TabFact <ref type="bibr" target="#b4">(Chen et al., 2019)</ref>, established initial evaluation paradigms through Wikipedia-derived HTML table QA pairs. Structured supervision has also been explored in alternative benchmarks such as WikiSQL <ref type="bibr" target="#b82">(Zhong et al., 2017)</ref> and Spider <ref type="bibr" target="#b72">(Yu et al., 2018)</ref>, where logical expressions serve as explicit annotations to encourage systematic reasoning. More recent studies, such as MultiTableQA <ref type="bibr" target="#b63">(Wu et al., 2024;</ref><ref type="bibr">Zou et al., 2025a)</ref>, MT-RAIG <ref type="bibr" target="#b46">(Seo et al., 2025)</ref>, and MMQA <ref type="bibr">(Wu et al., 2025a)</ref> has shifted towards multi-hop reasoning.</p><p>PRMs for Test-time Scaling. Process Reward Models (PRMs) <ref type="bibr" target="#b30">(Lightman et al., 2024;</ref><ref type="bibr" target="#b57">Uesato et al., 2022;</ref><ref type="bibr">Zhang et al., 2024a)</ref> deliver fine-grained, step-level feedback to guide model reasoning, assigning intermediate rewards to individual reasoning steps rather than only judging final answers <ref type="bibr" target="#b14">(Guan et al., 2025;</ref><ref type="bibr" target="#b41">Chen et al., 2025)</ref>. Prominent PRMs, including Math-Shepherd <ref type="bibr">(Wang et al., 2024b)</ref>, Skywork-PRM <ref type="bibr">(He et al., 2024a)</ref>, and the Qwen2.5-Math-PRM family <ref type="bibr">(Zhang et al., 2025b)</ref>, are trained using a mix of human annotations and synthesized supervision to score model-generated solution steps across domains such as math (Maxwell-Jia, 2024), scientific reasoning <ref type="bibr" target="#b43">(Rein et al., 2023)</ref>, and programming <ref type="bibr">(He et al., 2024b)</ref>; more recently, Think-PRM proposes a generative verifier to produce long-chain CoT evaluations <ref type="bibr" target="#b24">(Khalifa et al., 2025)</ref>. PRMs have been incorporated into training-time optimization as reward signals via step-verified online RL and verifier-guided selftraining <ref type="bibr" target="#b27">(Li and Li, 2024;</ref><ref type="bibr" target="#b14">Guan et al., 2025;</ref><ref type="bibr" target="#b7">Cui et al., 2025)</ref>, and into inference-time scaling by coupling step-level scoring with search/decoding strategies <ref type="bibr" target="#b78">(Zhao et al., 2025;</ref><ref type="bibr" target="#b24">Khalifa et al., 2025)</ref>, including beam search, reward-guided tree search, and Best-of-N sampling.</p><p>Discriminative vs. Generative PRM. In general, PRMs can be categorized as discriminative and generative evaluators <ref type="bibr" target="#b81">(Zhong et al., 2025)</ref>. A discriminative PRM treats verification as classification, directly predicting the correctness of each reasoning step with a scalar score. It is typically trained on step-level labels using cross-entropy loss, making it heavily reliant on step-level reward annotations. A generative PRM instead frames verification as conditional generation. It is trained with the standard language modeling objective to first generate rationales and then verify each step's correctness via a judgment token (e.g., <ref type="bibr">[correct, incorrect]</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Tool Integration with LLMs.</head><p>Recent research has explored augmenting LLMs with external tools to extend their reasoning and problem-solving abilities <ref type="bibr" target="#b49">(Shen, 2024;</ref><ref type="bibr" target="#b42">Qu et al., 2025)</ref>. Early approaches rely on predefined APIs or plugins <ref type="bibr" target="#b44">(Schick et al., 2023;</ref><ref type="bibr" target="#b36">Paranjape et al., 2023;</ref><ref type="bibr" target="#b69">Yao et al., 2023)</ref>, enabling models to call external functions during inference. Additional methods <ref type="bibr" target="#b52">(Song et al., 2023;</ref><ref type="bibr" target="#b40">Patil et al., 2024;</ref><ref type="bibr" target="#b32">Lu et al., 2025)</ref> emphasize training LLMs to select, invoke, and compose tools dynamically. More recent frameworks, such as ReTool <ref type="bibr">(Feng et al., 2025b)</ref> and ToolRL (Qian et al., 2025), extend tool learning with RL-based policy optimization <ref type="bibr" target="#b45">(Schulman et al., 2017;</ref><ref type="bibr" target="#b48">Shao et al., 2024;</ref><ref type="bibr" target="#b9">Dong et al., 2025)</ref>, enabling reward-driven tool integration where LLMs iteratively refine their tool-use strategies. While prior work integrates tools into LLMs to improve model generation capabilities, integrating tools in the reward modeling process for reliable verification has remained underexplored, with existing PRMs still functioning primarily as text-only verifiers. Our work bridges this gap by proposing a tool-augmented PRM that leverages external tool executions for more reliable and precise reward supervision, enabling stronger verification of reasoning trajectories.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Case Study on TATTOO (i) Before RL Training</head><p>Okay, I need to verify step by step for the provided answer and determine if each step is correct or not.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[Step 0 Evaluation]</head><p>For step 0, let me first check whether it retrieves the correct information from the input table . . . . . .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[Step 3 Evaluation]</head><p>Looking at step 3 and the table data provided, I need to verify whether the summarization calculation on the column "capacity in persons / hour" is correct. Let me add each part together: 350 + 500 + 970 + 10000 + 2000 + 2800 + 650 + 650 + 1000 + 1000 + 720 + 820 + 1000 = 16,920 (wrong PRM calculation) Since the provided step 3 gives a final calculation result of 22,460, which is not equal to 16,920.</p><p>Step 3 is incorrect due to the wrong summarization on the overall carrying capacity. The step is \boxed{-1(incorrect)} (✗ Wrong Step Reward) (ii) After RL Training Alright, I am given a complete table, a question, and a corresponding answer. I need to check the correctness of each step of the answer. Let me verify step by step: [Step 0 Evaluation] I start by checking if Step 0 pulls the proper information from the table ... ... [Step 3 Evaluation] To verify Step 3, I need to check the summarization (sum) over the "capacity in persons / hour" column. I will write Python code to verify this using the input table. Code Sandbox table = { "columns": ["name or route", "capacity in persons / hour"], "data": [ ["betten betten village", 350], ["betten village bettmeralp", 500], # ... ["trainerlift", 820], ["lager 1", 1000], # ... ], } capacity_index = table["columns"].index("capacity in persons / hour") total_capacity = sum(row[capacity_index] for row in table["data"]) </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><figDesc>print("Total capacity in persons/hour: ", total_capacity) Code Interpreter Total capacity in persons/hour: 22460 Since the computed total of 22,460 aligns with the result in step 3, this step is correct. The step is \boxed{1(correct)} (✓ Correct Step Reward)Figure9: Case study on TATTOO before and after RL training. Applying RL training enhances our PRM's dynamic utilization of tool calls, which in turn provides more reliable supervision over the input reasoning trajectories of LRMs.</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Exploring the numerical reasoning capabilities of language models: A comprehensive analysis on tabular data</title>
+		<author>
+			<persName><forename type="first">Mubashara</forename><surname>Akhtar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhilash</forename><surname>Shankarampeta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vivek</forename><surname>Gupta</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.02216</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>Arpit Patil, Oana Cocarascu, and Elena Simperl</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Claude opus 4 and claude sonnet 4 system card</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<publisher>Anthropic</publisher>
+		</imprint>
+	</monogr>
+	<note type="report_type">Technical report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Scaling test-time compute with open models</title>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Beeching</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lewis</forename><surname>Tunstall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sasha</forename><surname>Rush</surname></persName>
+		</author>
+		<ptr target="https://huggingface.co/spaces/HuggingFaceH4/blogpost-scaling-test-time-compute" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Large language monkeys: Scaling inference compute with repeated sampling</title>
+		<author>
+			<persName><forename type="first">Bradley</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jordan</forename><surname>Juravsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Ehrlich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronald</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Ré</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Azalia</forename><surname>Mirhoseini</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2407.21787" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Wenhu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongmin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianshu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunkai</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiyou</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:1909.02164</idno>
+		<title level="m">Tabfact: A large-scale dataset for table-based fact verification</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Wenhu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanwen</forename><surname>Zha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhan</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2004.07347</idno>
+		<title level="m">Hybridqa: A dataset of multi-hop question answering over tabular and textual data</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xiusi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaotang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziqi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongru</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denghui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanghang</forename><surname>Tong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2505.02387" />
+		<title level="m">Rm-r1: Reward modeling as reasoning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ganqu</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lifan</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zefan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanbin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wendi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bingxiang</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qixin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.01456</idno>
+		<title level="m">Process reinforcement through implicit rewards</title>
+		<meeting>ess reinforcement through implicit rewards</meeting>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Turl: Table understanding through representation learning</title>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alyssa</forename><surname>Lees</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">You</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cong</forename><surname>Yu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM SIGMOD Record</title>
+		<imprint>
+			<biblScope unit="volume">51</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="33" to="40" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Guanting</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hangyu</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Licheng</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongyuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongxia</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiazhen</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huiyang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fuzheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.19849</idno>
+		<title level="m">Agentic reinforced policy optimization</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Attention is not all you need: Pure attention loses rank doubly exponentially with depth</title>
+		<author>
+			<persName><forename type="first">Yihe</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean-Baptiste</forename><surname>Cordonnier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Loukas</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on machine learning</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="2793" to="2803" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Retool: Reinforcement learning for strategic tool use in llms</title>
+		<author>
+			<persName><forename type="first">Jiazhan</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijue</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingwei</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baoquan</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengquan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinxin</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanjun</forename><surname>Zhong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.11536</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Retool: Reinforcement learning for strategic tool use in llms</title>
+		<author>
+			<persName><forename type="first">Jiazhan</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijue</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingwei</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baoquan</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengquan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinxin</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanjun</forename><surname>Zhong</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2504.11536" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Is prm necessary? problem-solving rl implicitly induces prm capability in llms</title>
+		<author>
+			<persName><forename type="first">Zhangying</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qianglong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongqian</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siqi</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuangmu</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Duyu</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengcai</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhirui</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.11227</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">rstar-math: Small llms can master math reasoning with self-evolved deep thinking</title>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><forename type="middle">Lyna</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Shang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Youran</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mao</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.04519</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Daya Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoyu</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shirong</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.12948</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jujie</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianwen</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiacai</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaojie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yimeng</forename><surname>Gan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiwen</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><forename type="middle">Yuhao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaokun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongcong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fuxiang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiacheng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>An</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yahui</forename><surname>Zhou</surname></persName>
+		</author>
+		<ptr target="https://huggingface.co/Skywork" />
+		<title level="m">Skywork-o1 open series</title>
+		<imprint>
+			<date type="published" when="2024-11">November 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">CoCoST: Automatic complex code generation with online searching and correctness testing</title>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaru</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yun</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengyu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shi</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zejian</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongmei</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.emnlp-main.1082</idno>
+		<ptr target="https://aclanthology.org/2024.emnlp-main.1082/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing</title>
+		<editor>
+			<persName><forename type="first">Yaser</forename><surname>Al-Onaizan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Mohit</forename><surname>Bansal</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Yun-Nung</forename><surname>Chen</surname></persName>
+		</editor>
+		<meeting>the 2024 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Miami, Florida, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024-11">November 2024</date>
+			<biblScope unit="page" from="19433" to="19451" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Herzig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paweł Krzysztof</forename><surname>Nowak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Müller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francesco</forename><surname>Piccinno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eisenschlos</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:2004.02349</idno>
+		<title level="m">Tapas: Weakly supervised table parsing via pre-training</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hiroshi</forename><surname>Iida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dung</forename><surname>Thai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Varun</forename><surname>Manjunatha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Iyyer</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tabbie</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2105.02584</idno>
+		<title level="m">Pretrained representations of tabular data</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Jaech</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Kalai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Lerer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Richardson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmed</forename><surname>El-Kishky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aiden</forename><surname>Low</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Helyar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksander</forename><surname>Madry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Beutel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Carney</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.16720</idno>
+		<title level="m">Openai o1 system card</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">A survey on table question answering: recent advances</title>
+		<author>
+			<persName><forename type="first">Nengzheng</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joanna</forename><surname>Siebert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongfang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingcai</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">China Conference on Knowledge Graph and Semantic Computing</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="174" to="186" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Table-r1: Self-supervised and reinforcement learning for program-based table reasoning in small language models</title>
+		<author>
+			<persName><forename type="first">Rihui</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheyu</forename><surname>Xin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xing</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zuoyi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guilin</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongrui</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinbang</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tongtong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gholamreza</forename><surname>Haffari</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2506.06137</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Approximately optimal approximate reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Sham</forename><surname>Kakade</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Langford</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the nineteenth international conference on machine learning</title>
+		<meeting>the nineteenth international conference on machine learning</meeting>
+		<imprint>
+			<date type="published" when="2002">2002</date>
+			<biblScope unit="page" from="267" to="274" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Muhammad</forename><surname>Khalifa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lajanugen</forename><surname>Logeswaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaekyeom</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moontae</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honglak</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2504.16828" />
+		<title level="m">Process reward models that think</title>
+		<meeting>ess reward models that think</meeting>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Fangyu</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinxiang</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tinghong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shizhu</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kang</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2506.01710</idno>
+		<title level="m">Reasoning-table: Exploring reinforcement learning for table reasoning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yeye</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dror</forename><surname>Yashar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiwei</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Song</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haidong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danielle</forename><surname>Rifinski Fainman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongmei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Surajit</forename><surname>Chaudhuri</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.09263</idno>
+		<title level="m">Table-gpt: Table-tuned gpt for diverse table tasks</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Wendi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.11287</idno>
+		<title level="m">Process reward model with q-value rankings</title>
+		<meeting>ess reward model with q-value rankings</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Towards real-world writing assistance: A chinese character checking benchmark with faked and misspelled characters</title>
+		<author>
+			<persName><forename type="first">Yinghui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zishan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoshen</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haojing</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangning</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongli</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hai-Tao</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Shen</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2311.11268</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2311.11268" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">When llms meet cunning questions: A fallacy understanding benchmark for large language models</title>
+		<author>
+			<persName><forename type="first">Yinghui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhen</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shirong</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangning</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hai-Tao</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuming</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philip</forename><forename type="middle">S</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2402.11100</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2402.11100" />
+		<imprint>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Let&apos;s verify step by step</title>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Hunter Lightman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harrison</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teddy</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cobbe</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=v8L0pN6EOi" />
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Can 1b llm surpass 405b llm? rethinking compute-optimal test-time scaling</title>
+		<author>
+			<persName><forename type="first">Runze</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junqi</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiyan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Biqing</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanli</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.06703</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Octotools: An agentic framework with extensible tools for complex reasoning</title>
+		<author>
+			<persName><forename type="first">Pan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rahul</forename><surname>Thapa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><surname>Boen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Zou</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2502.11271" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">Maxwell-Jia</forename></persName>
+		</author>
+		<ptr target="https://huggingface.co/datasets/Maxwell-Jia/AIME_2024" />
+		<title level="m">AIME 2024 dataset</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="2025" to="2025" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">From natural language to sql: Review of llm-based text-to-sql systems</title>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Mohammadjafari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anthony</forename><forename type="middle">S</forename><surname>Maida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raju</forename><surname>Gottumukkala</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.01066</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Emmanuel Candès, and Tatsunori Hashimoto. s1: Simple test-time scaling</title>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zitong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weijia</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lisa</forename><surname>Xiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Liang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2501.19393" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Automatic multi-step reasoning and tool-use for large language models</title>
+		<author>
+			<persName><forename type="first">Bhargavi</forename><surname>Paranjape</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Lundberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sameer</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marco</forename><surname>Tulio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ribeiro</forename></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2303.09014" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<pubPlace>Art</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Totto: A controlled table-to-text generation dataset</title>
+		<author>
+			<persName><forename type="first">Ankur</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Gehrmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manaal</forename><surname>Faruqui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bhuwan</forename><surname>Dhingra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diyi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dipanjan</forename><surname>Das</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP 2020</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="1173" to="1186" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Compositional semantic parsing on semi-structured tables</title>
+		<author>
+			<persName><forename type="first">Panupong</forename><surname>Pasupat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<idno type="DOI">10.3115/v1/P15-1142</idno>
+		<ptr target="https://aclanthology.org/P15-1142/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 53rd Annual Meeting of the Association for Computational Linguistics and the 7th International Joint Conference on Natural Language Processing</title>
+		<editor>
+			<persName><forename type="first">Chengqing</forename><surname>Zong</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Michael</forename><surname>Strube</surname></persName>
+		</editor>
+		<meeting>the 53rd Annual Meeting of the Association for Computational Linguistics and the 7th International Joint Conference on Natural Language Processing<address><addrLine>Beijing, China</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2015-07">July 2015</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="1470" to="1480" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Compositional semantic parsing on semi-structured tables</title>
+		<author>
+			<persName><forename type="first">Panupong</forename><surname>Pasupat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 53rd Annual Meeting of the Association for Computational Linguistics and the 7th International Joint Conference on Natural Language Processing of the Asian Federation of Natural Language Processing</title>
+		<meeting>the 53rd Annual Meeting of the Association for Computational Linguistics and the 7th International Joint Conference on Natural Language Processing of the Asian Federation of Natural Language Processing<address><addrLine>Beijing, China</addrLine></address></meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2015-07-26">2015. July 26-31, 2015. 2015</date>
+			<biblScope unit="volume">1</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Gorilla: Large language model connected with massive apis</title>
+		<author>
+			<persName><forename type="first">Tianjun</forename><surname>Shishir G Patil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gonzalez</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="126544" to="126565" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Toolrl: Reward is all tool learning needs</title>
+		<author>
+			<persName><forename type="first">Emre</forename><surname>Cheng Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Can Acikgoz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongru</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiusi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dilek</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gokhan</forename><surname>Hakkani-Tür</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Tur</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ji</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2504.13958" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Tool learning with large language models: a survey</title>
+		<author>
+			<persName><forename type="first">Changle</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sunhao</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaochi</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hengyi</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuaiqiang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawei</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji-Rong</forename><surname>Wen</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s11704-024-40678-2</idno>
+		<ptr target="http://dx.doi.org/10.1007/s11704-024-40678-2" />
+	</analytic>
+	<monogr>
+		<title level="j">Frontiers of Computer Science</title>
+		<idno type="ISSN">2095-2236</idno>
+		<imprint>
+			<biblScope unit="volume">19</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<date type="published" when="2025-01">January 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">Gpqa: A graduate-level google-proof q&amp;a benchmark</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Rein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Betty</forename><forename type="middle">Li</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Asa</forename><forename type="middle">Cooper</forename><surname>Stickland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jackson</forename><surname>Petty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">Yuanzhe</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julien</forename><surname>Dirani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Michael</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><forename type="middle">R</forename><surname>Bowman</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2311.12022" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Toolformer: Language models can teach themselves to use tools</title>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Dessi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberta</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicola</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Scialom</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=Yacmpz84TH" />
+	</analytic>
+	<monogr>
+		<title level="m">Thirty-seventh Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Filip</forename><surname>Wolski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleg</forename><surname>Klimov</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1707.06347</idno>
+		<title level="m">Proximal policy optimization algorithms</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<title level="m" type="main">Mt-raig: Novel benchmark and evaluation framework for retrieval-augmented insight generation over multiple tables</title>
+		<author>
+			<persName><forename type="first">Kwangwook</forename><surname>Seo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donguk</forename><surname>Kwon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongha</forename><surname>Lee</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.11735</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">Rewarding progress: Scaling automated process verifiers for llm reasoning</title>
+		<author>
+			<persName><forename type="first">Amrith</forename><surname>Setlur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chirag</forename><surname>Nagpal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Fisch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyang</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Eisenstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alekh</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Berant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aviral</forename><surname>Kumar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.08146</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<title level="m" type="main">Deepseekmath: Pushing the limits of mathematical reasoning in open language models</title>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2402.03300" />
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhuocheng</forename><surname>Shen</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2409.18807" />
+		<title level="m">Llm with tools: A survey</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<author>
+			<persName><forename type="first">Guangming</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilingfeng</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xibin</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ru</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanghua</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haibin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuan</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.19256</idno>
+		<title level="m">Hybridflow: A flexible and efficient rlhf framework</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title level="m" type="main">Scaling llm test-time compute optimally can be more effective than scaling model parameters</title>
+		<author>
+			<persName><forename type="first">Charlie</forename><surname>Snell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaehoon</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kelvin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aviral</forename><surname>Kumar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.03314</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weimin</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawei</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingbo</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hailiang</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ke</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rong</forename><surname>Yao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.06624</idno>
+		<title level="m">Connecting large language models with real-world restful apis</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aofeng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aowen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ga</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guangcheng</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haobo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haokai</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoze</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2411.02059</idno>
+		<title level="m">A large multimodal model with tabular data integration</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<title level="m" type="main">Tap4llm: Table provider on sampling, augmenting, and packing semi-structured data for large language model reasoning</title>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Sui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaru</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengyu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shi</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongmei</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.09039</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<analytic>
+		<title level="a" type="main">Table meets llm: Can large language models understand structured table data? a benchmark and empirical study</title>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Sui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengyu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingjie</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shi</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongmei</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 17th ACM International Conference on Web Search and Data Mining</title>
+		<meeting>the 17th ACM International Conference on Web Search and Data Mining</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="645" to="654" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<title level="m" type="main">Rpt: relational pre-trained transformer is almost all you need towards democratizing data preparation</title>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ju</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangyi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianhong</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyong</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guoliang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Madden</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mourad</forename><surname>Ouzzani</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2012.02469</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<monogr>
+		<title level="m" type="main">Solving math word problems with process-and outcome-based feedback</title>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Uesato</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nate</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ramana</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francis</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Siegel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lisa</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonia</forename><surname>Creswell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Irving</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Irina</forename><surname>Higgins</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2211.14275" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<monogr>
+		<author>
+			<persName><forename type="first">Svitlana</forename><surname>Vakulenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vadim</forename><surname>Savenkov</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1705.06504</idno>
+		<title level="m">Tableqa: Question answering on tabular data</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<monogr>
+		<title level="m" type="main">Openr: An open source framework for advanced reasoning with large language models</title>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meng</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyu</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muning</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiachen</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anjie</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziqin</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lionel</forename><forename type="middle">M</forename><surname>Ni</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.09671</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<monogr>
+		<title level="m" type="main">Math-shepherd: Verify and reinforce llms step-by-step without human annotations</title>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">X</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Damai</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deli</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhifang</forename><surname>Sui</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2312.08935" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<monogr>
+		<title level="m" type="main">Chain-of-table: Evolving tables in the reasoning chain for table understanding</title>
+		<author>
+			<persName><forename type="first">Zilong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chun-Liang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Martin Eisenschlos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Perot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zifeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lesly</forename><surname>Miculicich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasuhisa</forename><surname>Fujii</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingbo</forename><surname>Shang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen-Yu</forename><surname>Lee</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.04398</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<analytic>
+		<title level="a" type="main">Evaluating llms with multi-table multi-hop complex questions</title>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linyi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuliang</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manabu</forename><surname>Okumura</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mmqa</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<monogr>
+		<title level="m" type="main">Tablebench: A comprehensive and complex benchmark for table question answering</title>
+		<author>
+			<persName><forename type="first">Xianjie</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linzheng</forename><surname>Chai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinrun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Di</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daixin</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianfu</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianzhen</forename><surname>Sun</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.09174</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<monogr>
+		<title level="m" type="main">Table-r1: Region-based reinforcement learning for table understanding</title>
+		<author>
+			<persName><forename type="first">Zhenhe</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianjie</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changzai</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuangyong</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongxiang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhoujun</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.12415</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<monogr>
+		<title level="m" type="main">Qwen2.5-math technical report: Toward mathematical expert model via self-improvement</title>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beichen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bofei</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengpeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianhong</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingren</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.12122</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b66">
+	<monogr>
+		<title level="m" type="main">Qwen3 technical report</title>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anfeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baosong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beichen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenxu</forename><surname>Lv</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2505.09388" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b67">
+	<analytic>
+		<title level="a" type="main">Improving neural machine translation with soft template prediction</title>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuming</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongdong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhoujun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2020.acl-main.531</idno>
+		<ptr target="https://doi.org/10.18653/v1/2020.acl-main.531" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics, ACL 2020</title>
+		<editor>
+			<persName><forename type="first">Dan</forename><surname>Jurafsky</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Joyce</forename><surname>Chai</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Natalie</forename><surname>Schluter</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Joel</forename><forename type="middle">R</forename><surname>Tetreault</surname></persName>
+		</editor>
+		<meeting>the 58th Annual Meeting of the Association for Computational Linguistics, ACL 2020<address><addrLine>Online</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2020">July 5-10, 2020. 2020</date>
+			<biblScope unit="page" from="5979" to="5989" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b68">
+	<monogr>
+		<title level="m" type="main">Table-r1: Inference-time scaling for table reasoning</title>
+		<author>
+			<persName><forename type="first">Zheyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lyuhao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arman</forename><surname>Cohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Zhao</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2505.23621" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b69">
+	<monogr>
+		<title level="m" type="main">React: Synergizing reasoning and acting in language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2210.03629" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b70">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yixin</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Chern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijie</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Limo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.03387</idno>
+		<title level="m">Less is more for reasoning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b71">
+	<monogr>
+		<author>
+			<persName><forename type="first">Pengcheng</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Riedel</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tabert</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2005.08314</idno>
+		<title level="m">Pretraining for joint understanding of textual and tabular data</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b72">
+	<analytic>
+		<title level="a" type="main">Spider: A large-scale human-labeled dataset for complex and cross-domain semantic parsing and text-to-sql task</title>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michihiro</forename><surname>Yasunaga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongxu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zifan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Irene</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingning</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanelle</forename><surname>Roman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP 2018</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="3911" to="3921" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b73">
+	<monogr>
+		<title level="m" type="main">Rest-mcts*: Llm self-training via process reward guided tree search</title>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sining</forename><surname>Zhoubian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziniu</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yisong</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiao</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Tang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.03816</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b74">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tianshu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tablellama</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.09206</idno>
+		<title level="m">Towards open large generalist models for tables</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b75">
+	<monogr>
+		<title level="m" type="main">A survey of table reasoning with large language models</title>
+		<author>
+			<persName><forename type="first">Xuanliang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dingzirui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Longxu</forename><surname>Dou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingfu</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanxiang</forename><surname>Che</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2402.08259" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b76">
+	<analytic>
+		<title level="a" type="main">A survey of table reasoning with large language models</title>
+		<author>
+			<persName><forename type="first">Xuanliang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dingzirui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Longxu</forename><surname>Dou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingfu</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanxiang</forename><surname>Che</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Frontiers of Computer Science</title>
+		<imprint>
+			<biblScope unit="volume">19</biblScope>
+			<biblScope unit="issue">9</biblScope>
+			<date type="published" when="2025">199348. 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b77">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhenru</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chujie</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangzhen</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beichen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runji</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingren</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.07301</idno>
+		<title level="m">The lessons of developing process reward models in mathematical reasoning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b78">
+	<monogr>
+		<title level="m" type="main">Scaling test-time compute of process reward models via generative reasoning</title>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runze</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiyan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhimu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junqi</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiafei</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhouyi</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Biqing</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Genprm</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2504.00891" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b79">
+	<analytic>
+		<title level="a" type="main">Judging llm-as-a-judge with mt-bench and chatbot arena</title>
+		<author>
+			<persName><forename type="first">Lianmin</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Lin</forename><surname>Chiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhanghao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonghao</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuohan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dacheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Xing</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="46595" to="46623" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b80">
+	<analytic>
+		<title level="a" type="main">Unified efficient fine-tuning of 100+ language models</title>
+		<author>
+			<persName><forename type="first">Yaowei</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junhao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanhan</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheyan</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhangchi</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongqiang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Llamafactory</surname></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/2403.13372" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics<address><addrLine>Bangkok, Thailand</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">3</biblScope>
+		</imprint>
+	</monogr>
+	<note>System Demonstrations)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b81">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jialun</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanzeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Songyang</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hua</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yicheng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinjie</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Zou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.12328</idno>
+		<title level="m">A comprehensive survey of reward models: Taxonomy, applications, challenges, and future</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b82">
+	<monogr>
+		<title level="m" type="main">Seq2sql: Generating structured queries from natural language using reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Socher</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<publisher>CoRR</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b83">
+	<monogr>
+		<title level="m" type="main">Gtr: Graph-table-rag for cross-table question answering</title>
+		<author>
+			<persName><forename type="first">Jiaru</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongqi</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sirui</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinrui</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yada</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingrui</forename><surname>He</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2504.01346" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b84">
+	<monogr>
+		<title level="m" type="main">Reasonfluxprm: Trajectory-aware prms for long chain-of-thought reasoning in llms</title>
+		<author>
+			<persName><forename type="first">Jiaru</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ling</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingwen</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahao</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ke</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingrui</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengdi</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2506.18896</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

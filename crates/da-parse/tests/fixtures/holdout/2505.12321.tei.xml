@@ -1,0 +1,823 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">BeliefNest: A Joint Action Simulator for Embodied Agents with Theory of Mind</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-05-18">18 May 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Rikunari</forename><surname>Sagara</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Shizuoka</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Koichiro</forename><surname>Terao</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Okayama Prefectural University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Naoto</forename><surname>Iwahashi</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Okayama Prefectural University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">BeliefNest: A Joint Action Simulator for Embodied Agents with Theory of Mind</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-05-18">18 May 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">BBA5AB445DFFAE8FA6B6EEBF8A16A4B4</idno>
+					<idno type="arXiv">arXiv:2505.12321v1[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:04+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>This paper introduces an open-source simulator, BeliefNest, designed to enable embodied agents to perform collaborative tasks by leveraging Theory of Mind. BeliefNest dynamically and hierarchically constructs simulators within a Minecraft environment, allowing agents to explicitly represent nested belief states about themselves and others. This enables agent control in open-domain tasks that require Theory of Mind reasoning. The simulator provides a prompt generation mechanism based on each belief state, facilitating the design and evaluation of methods for agent control utilizing large language models (LLMs). We demonstrate through experiments that agents can infer others' beliefs and predict their belief-based actions in false-belief tasks.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Figure <ref type="figure">1</ref>: Overview of BeliefNest. The nested belief structure derived from Theory of Mind is implemented using multiple physical simulators. Each agent can perform mental simulations within its own simulator, considering the beliefs of others, to generate action plans that reflect these beliefs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Theory of Mind is a fundamental cognitive ability that underpins human social behavior, enabling individuals to infer the beliefs, intentions, and knowledge of others. In this paper, we propose BeliefNest, an open-source simulator designed to support research on collaborative behavior in embodied agents endowed with Theory of Mind capabilities. Recent advances in embodied agents powered by large language models (LLMs) have shown promising progress. However, there is still no platform that can explicitly represent nested belief states and integrate them with action generation mechanisms. BeliefNest addresses this gap by providing a flexible simulation framework that incorporates both hierarchical belief structures and prompt generation support.</p><p>BeliefNest offers the following features:</p><p>• Explicit representation of nested belief states, as studied in Theory of Mind, using hierarchical simulators (see Section 3)</p><p>• Support for prompt generation based on each belief state, enabling the design and evaluation of methods for agent control with LLMs (see Section 5)</p><p>• Integration with the Minecraft environment, which is widely used in LLM agent research <ref type="bibr" target="#b0">[1]</ref><ref type="bibr" target="#b1">[2]</ref><ref type="bibr" target="#b2">[3]</ref><ref type="bibr" target="#b3">[4]</ref>, and support for open-domain tasks</p><p>In this paper, we describe the design and functionality of BeliefNest and demonstrate its effectiveness through experiments on false-belief tasks. The source code is available at <ref type="url" target="https://github.com/sagara-r/BeliefNest">https://github.com/sagara-r/BeliefNest</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related Work</head><p>Theoretical frameworks involving hierarchical belief structures, such as "X thinks that Y thinks that ...", have been widely discussed in dialogue and planning research that leverages Theory of Mind <ref type="bibr" target="#b4">[5,</ref><ref type="bibr" target="#b5">6]</ref>. In addition, numerous studies have aimed to explicitly model such nested beliefs to enhance the efficiency of dialogue and planning systems <ref type="bibr" target="#b6">[7]</ref><ref type="bibr" target="#b7">[8]</ref><ref type="bibr" target="#b8">[9]</ref>. More recently, growing attention has been given to evaluating the extent to which LLMs can perform Theory of Mind reasoning <ref type="bibr" target="#b9">[10]</ref><ref type="bibr" target="#b10">[11]</ref><ref type="bibr" target="#b11">[12]</ref><ref type="bibr" target="#b12">[13]</ref><ref type="bibr" target="#b13">[14]</ref><ref type="bibr" target="#b14">[15]</ref>, as well as to developing methods for improving ToM capabilities in LLMs <ref type="bibr" target="#b15">[16]</ref><ref type="bibr" target="#b16">[17]</ref><ref type="bibr" target="#b17">[18]</ref><ref type="bibr" target="#b18">[19]</ref><ref type="bibr" target="#b19">[20]</ref><ref type="bibr" target="#b20">[21]</ref>. Further, several works <ref type="bibr" target="#b18">[19,</ref><ref type="bibr" target="#b21">22,</ref><ref type="bibr" target="#b22">23]</ref> have addressed tasks that require distinguishing between different perspectives, an aspect central to Theory of Mind. In particular, Yeh et al. <ref type="bibr" target="#b22">[23]</ref> highlight the limitations of LLMs in distinguishing belief states grounded in differing perspectives. The BeliefNest simulator proposed in this study aims to support Theory of Mind-based reasoning by systematically organizing belief state information to be fed into LLMs, thereby addressing these limitations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Nested Structure of the Simulator</head><p>Figure <ref type="figure" target="#fig_0">2</ref> illustrates the overall architecture of BeliefNest. The system consists of a "real-world simulator," which represents the actual environment, and multiple "belief simulators" that hierarchically represent the belief structures of agents. All of these simulators are instantiated within the Minecraft world, each occupying a distinct and isolated region of the environment. Each agent possesses a dedicated belief simulator that represents its own beliefs and can dynamically construct additional layers as needed. This allows for the explicit representation of nested belief states such as "myself in the mind of another" or "someone else in the mind of another." Belief simulators can be dynamically added or removed depending on the context. In this paper, we refer to simulators in which an agent is physically present as shallower-level simulators, and to those that reflect the beliefs held by that agent as deeper-level simulators.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Observation and Belief Updating</head><p>Each belief simulator reflects the belief state based on observations made by agents in shallower-level simulators. However, when an agent engages in planning or hypothesis testing, it must temporarily suspend belief updates based on shallower-level simulators and instead generate its own timeline within the belief simulator to perform inference. Here, a "timeline" refers to a sequence of observations and actions recorded over time. The ability to generate such internal timelines corresponds to mental simulation, which is essential for planning. To support this functionality, we define two operational modes for simulators:</p><p>1. Control mode: The agent performs actions and generates a virtual timeline.</p><p>2. Follow mode: The simulator passively updates its state by sequentially reflecting belief information from the shallower-level simulator. Each simulator can switch modes independently. The pseudocode of the asynchronous belief updating process for each simulator is shown in Algorithm 1. Below, we describe the main processes performed in each mode. In control mode, agents act within the simulator, and environment and agent information at each time step is recorded. The simulator performs the following C-processes, which are specific to control mode: C-1: State acquisition The current state s, representing the state of the environment and the agents, is obtained as objective information. Since state transitions are managed internally by the Minecraft environment, BeliefNest does not track them directly; thus, this step retrieves the current state as needed.</p><p>In follow mode, the simulator receives and reflects belief states sent from the shallower-level simulator. The simulator performs the following F-processes, which are specific to follow mode: F-1: Receiving belief state from shallower-level simulator Belief information sent via step (Common-3) in the shallower-level simulator is received and adopted as the current state.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F-2: Reflecting state in the simulator environment</head><p>The received state is used to update the environment and agent configurations within the simulator.</p><p>In addition, as common processing, the following steps are performed for each agent i ∈ A, where A denotes the set of agents in the simulator.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Common-1: Observation based on perspective</head><p>Subjective observations o i are obtained via the observation function O i , which captures visible elements in the environment and other agents from the agent's viewpoint.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Common-2: Belief updating</head><p>The belief state b i is updated using observation o i . Environmental and agentrelated information is updated for observable elements, while unobserved elements remain unchanged.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Common-3: Propagation to deeper-level simulators</head><p>The updated belief state is sent to the belief simulators associated with each agent.</p><p>As an example, when the real-world simulator is in control mode and all belief simulators are in follow mode, agent actions in the real-world simulator propagate belief updates to each belief simulator, and the resulting changes are reflected in their internal environments. Subsequently, if a particular belief simulator switches to control mode, belief updates from the real world are no longer applied to it. The agent's actions within that simulator become a hypothetical simulation, exerting no influence on the real world.</p><p>Algorithm 1 Asynchronous belief update process on each simulator As control primitives, a set of functions is provided to enable agent actions. These include, for example, movement, block breaking, item crafting, and taking from or storing items into chests. These capabilities are implemented using the Mineflayer library. We build upon and modify the action primitives introduced in Voyager <ref type="bibr" target="#b0">[1]</ref> to better fit our objectives.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Timeline Management</head><p>Each simulator implements a mechanism for managing timeline branches, which represent divergent temporal progressions. Each branch can be assigned a unique identifier, and users can switch to any existing branch at any time. When a branch is selected, the simulator reverts to the latest state recorded in that branch, allowing the timeline to proceed from that point onward. If it is necessary to return to a specific point in the past, a branch can be created at that time in advance, enabling later restoration to that state.</p><p>By leveraging the branching mechanism, users can freely design and evaluate control strategies in which agents hypothetically explore multiple action plans based on others' beliefs before selecting one for actual execution. The specific procedures, such as how trials are conducted or how prompts are structured, are left to the user, while BeliefNest provides a flexible simulation framework to support such exploratory processes. The Sally-Anne task <ref type="bibr" target="#b23">[24]</ref> is a well-known example of a first-order false-belief task, widely used to assess whether an individual can infer beliefs that differ from their own. In this experiment, we evaluate whether a particular agent (hereafter referred to as the observer) can infer the beliefs and belief-based actions of other agents. Notably, the observer is not an external third party but an in-world agent embedded within the environment. Through the belief simulator constructed by BeliefNest, the observer is expected to correctly infer Sally's belief and the actions derived from it.</p><p>Figure <ref type="figure" target="#fig_3">3</ref> shows the experimental setup, which includes three players (Sally, Anne, and the observer) and two boxes. In this task, subtle differences in the spatial configuration of agents can lead to varying visibility conditions and thus to multiple plausible interpretations. We define the following three conditions to capture these variations:</p><p>• Condition 1 (standard setup): Sally places a diamond into the left box and then moves behind a wall.</p><p>Anne subsequently transfers the diamond to the right box, and Sally does not observe this action. The observer witnesses the entire sequence.</p><p>• Condition 2: Unlike Condition 1, Sally moves to a location where she can observe Anne's action. The observer sees the entire sequence as well.</p><p>• Condition 3: As in Condition 2, Sally moves to a position where she can see Anne's action, but the observer cannot see where Sally moved, and therefore does not know that Sally observed the action.</p><p>A first-order false-belief task measures whether an agent can infer another agent's first-order belief. In this setting, the observer constructs a belief about Sally's belief, which corresponds to a second-order belief from the observer's perspective. This experiment evaluates whether the second-order belief simulator is constructed correctly, thereby enabling the observer to infer Sally's belief. Furthermore, based on the constructed belief state, the Sally agent within the belief simulator is given the task "Get a diamond from a chest." We then evaluate whether the generated action is consistent with the inferred belief state, using GPT-4o <ref type="bibr" target="#b24">[25]</ref> to generate actions based on prompts informed by belief states.  In the simulator representing the observer's first-order belief (i.e., the observer's own belief), the diamond was moved to the right box in all conditions. In contrast, the second-order belief simulator (i.e., the observer's belief about Sally's belief) produced different results depending on the condition. The inferred beliefs and actions were as follows:</p><p>• Condition 1: Reflecting the fact that Sally did not observe Anne's action, it was inferred that she believed the diamond was still in the left box. Consequently, it was predicted that Sally would open the left box.</p><p>• Condition 2: Since the observer recognized that Sally had observed Anne's action, the second-order belief also inferred that Sally believed the diamond was in the right box. Therefore, it was predicted that Sally would open the right box.</p><p>• Condition 3: Although Sally actually saw Anne's action, the observer could not confirm this. As a result, in the second-order belief, it was inferred that Sally believed the diamond remained in the left box, and thus would open the left box.</p><p>These results demonstrate that BeliefNest is capable of accurately constructing others' beliefs that differ from an agent's own, based on subtle differences in spatial configuration. Moreover, it enables appropriate inference of belief-based actions in accordance with those constructed beliefs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8">Example 2: Ice Cream Van Task</head><p>The Ice Cream Van Task <ref type="bibr" target="#b25">[26]</ref> is a second-order false-belief task that involves a two-level belief hierarchy (e.g., X believes that Y believes that Z), and is used to evaluate whether an agent can correctly handle deeper belief structures. In this experiment, we examine whether the observer can infer "what John thinks Mary believes."</p><p>Figure <ref type="figure" target="#fig_4">4</ref> illustrates the experimental setup, which includes four players: John, Mary, the ice cream seller, and the observer. The scenario unfolds as follows:</p><p>1. The ice cream seller tells both John and Mary at location A that he will stay there today.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Mary returns home.</head><p>3. The ice cream seller then tells John that he is going to location B, and leaves location A.</p><p>4. On the way, the ice cream seller unexpectedly encounters Mary and tells her as well that he is going to location B.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">John returns home.</head><p>The observer witnesses the entire sequence. The goal is to determine whether the observer can accurately infer John's second-order belief by verifying whether the third-order belief simulator (i.e., observer's belief about John's belief about Mary's belief) is correctly constructed.</p><p>Based on the resulting belief state, the Mary agent within the belief simulator is given the task "Go to the ice cream seller. The experiment then evaluates whether the generated action is appropriate with respect to the inferred belief. In the observer's third-order belief simulator, Mary was inferred to go to location B. This inference is based on the observer's recognition that John was unaware of Mary's reunion with the ice cream seller in Step 4. This result aligns with the expected reasoning for this task, demonstrating that BeliefNest can accurately represent complex belief structures and generate plausible belief-based behavior.</p><p>In this paper, we introduced BeliefNest, an open-source simulator designed to support research on collaborative behavior by equipping embodied agents with Theory of Mind capabilities. Through experiments, we demonstrated that agents using BeliefNest can correctly infer others' beliefs and predict their actions in false-belief tasks. While this study focused on false-belief scenarios to validate the core functionalities of BeliefNest, the simulator is applicable to a broader range of research on joint action. We expect that BeliefNest will serve as a valuable foundation for advancing studies on collaboration in dialogue systems and robotics.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Overall structure of BeliefNest. The simulators form a nested hierarchy that corresponds to the nested structure of beliefs. Let Z be a finite sequence of agent identifiers that represents a path of belief nesting. In the simulator representing state s Z , agent i constructs a new simulator whose state s Z||i reflects its belief b Z i . Here, the operator || denotes sequence concatenation: Z||i is the sequence obtained by appending agent i to the end of Z. In the real world, agent 1 can see the red and green blocks, while agent 2 can see the blue and green blocks. Agent 1 is unaware of the blue block, and agent 2 is unaware of the red block. Therefore, agent 1 believes that agent 2 can see only the green block. These belief-dependent perceptions are explicitly represented within each simulator. All agents are assumed to have prior knowledge of the floor, the white outer walls, and the black inner wall.</figDesc><graphic coords="3,170.08,83.34,255.13,222.13" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>1 : 2 : while true do 3 : 5 : 7 : 9 :</head><label>123579</label><figDesc>Initialization: b i ∀i ∈ A if mode = "control" then 4: s ← get state() . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . (C-1) else if mode = "follow" then 6: s ← await receive belief() . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . (F-1) apply to simulator(s) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . (F-2) for all i ∈ A do 10:o i ← O i (s) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . (Common-1) 11: b i ← update belief(b i , o i ) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . (Common-2)12: send belief(i, b i ) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . (Common-3) 13: end for 14: end while 5 Agent Control Based on Belief Agents within any simulator can be controlled via JavaScript programs. Since the state of each belief simulator reflects the beliefs of the agents in the corresponding shallower-level simulator, it is possible to generate JavaScript programs using LLMs based on the simulator's state, enabling agents to take actions grounded in their beliefs. To support program generation by LLMs, BeliefNest provides functionality for prompt generation based on the state of each simulator. When a prompt template written in Jinja2 format (see Appendix A.1 for an example) is provided, BeliefNest automatically inserts a string representation of the simulator's state into the specified locations within the template to generate the final prompt. Users are free to employ any prompt template or LLM of their choice, making it possible to design and evaluate various methods for agent control utilizing LLMs.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><figDesc>(a) Condition 1. (b) Condition 2. The observer can see Sally. (c) Condition 3. The observer cannot see Sally.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Experimental setup for the Sally-Anne task. Sally's position in the figure represents her location after placing the diamond in the box.</figDesc><graphic coords="5,59.97,439.12,144.57,97.73" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Experimental setup for the Ice Cream Van Task.</figDesc><graphic coords="6,198.43,477.38,198.42,190.27" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><graphic coords="1,99.21,328.20,396.85,255.62" type="bitmap" /></figure>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Appendix A Prompt Generation Support by BeliefNest</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 Example of a Prompt Template</head><p>As an example, when the following template is provided to BeliefNest, placeholders such as $$LAST_CODE$$ and {{ branch | chatlog }} are replaced with string representations of the simulator state. Elements like chat_log are Jinja2 filters, which users may also customize or extend as needed. The variable branch stores a string that identifies the target simulator and branch (see Section 6). It is also possible to include information from multiple simulators and branches within a single prompt. Chest: (-2, -51, -4): {'diamond': 1} (2, -51, -4): {} Inventory: No data Other players: { "anne": { "position": "Cannot be seen", "helditem": "iron_chestplate", "inventory": "No data" } } Blocks seen so far: chest visibilities:{ "(-2, -51, -4)": { "Me": { "seen_before": true, "visible_now": false } }, "(2, -51, -4)": { "Me": { "seen_before": true, "visible_now": false } } } lever visibilities: Not observed &lt;History of player visibilities and actions&gt; [My(sally's) perspective] time;action;agent_name;description 69;depositItemIntoChest;sally;chest:(-2, -51, -4) &amp; items:{'diamond': 1} Task: Get a diamond from a chest.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><figDesc>Code from the last round: $$LAST_CODE$$ Error from the last round: $$LAST_ERROR$$ &lt;Information&gt; Thought: {{ branch | thought }} Chat log: {{ branch | chat_log }} Position: {{ branch | position }} Chest: {{ branch | chests }} Inventory: {{ branch | inventory }} Other players: {{ branch | other_players }} Blocks seen so far: {{ branch | blocks(["chest"]) }} &lt;History of player visibilities and actions&gt; [My(sally's) perspective] {{ branch | events_and_visibilities }} Task: {{ task }}A.2 Example of a Generated PromptCode from the last round: No code was executed Error from the last round:</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Voyager: An open-ended embodied agent with large language models</title>
+		<author>
+			<persName><forename type="first">Guanzhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqi</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Mandlekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaowei</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuke</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linxi</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anima</forename><surname>Anandkumar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.16291</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Mitigating generative agent social dilemmas</title>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Yocum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J K</forename><surname>Phillip</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mehul</forename><surname>Christoffersen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Justin</forename><surname>Damani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dylan</forename><surname>Svegliato</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stuart</forename><surname>Hadfield-Menell</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Russell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS 2023 Foundation Models for Decision Making Workshop</title>
+		<imprint>
+			<date type="published" when="2023-11">November 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Project sid: Many-agent simulations toward AI civilization</title>
+		<author>
+			<persName><surname>Altera</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Al</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2411.00114</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">ROCKET-2: Steering visuomotor policy via crossview goal alignment</title>
+		<author>
+			<persName><forename type="first">Shaofei</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhancun</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anji</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yitao</forename><surname>Liang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.02505</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Requirements for belief models in cooperative dialogue</title>
+		<author>
+			<persName><forename type="first">Jean</forename><surname>Jasper A Taylor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Carletta</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mellish</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">User Model. User-adapt Interact</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="23" to="68" />
+			<date type="published" when="1996-03">March 1996</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Planning with theory of mind</title>
+		<author>
+			<persName><forename type="first">Rebecca</forename><surname>Mark K Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fiery</forename><surname>Saxe</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cushman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Trends in Cognitive Sciences</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Efficient dialogue using a probabilistic nested user model</title>
+		<author>
+			<persName><forename type="first">Bryan</forename><surname>Mceleney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O'</forename><surname>Gregory</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hare</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Fourth IJCAI Workshop on Knowledge and Reasoning in Practical Dialogue Systems</title>
+		<meeting>the Fourth IJCAI Workshop on Knowledge and Reasoning in Practical Dialogue Systems</meeting>
+		<imprint>
+			<date type="published" when="2005-08">August 2005</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Muise</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vaishak</forename><surname>Belle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paolo</forename><surname>Felli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sheila</forename><surname>Mcilraith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adrian</forename><forename type="middle">R</forename><surname>Pearce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liz</forename><surname>Sonenberg</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.02480</idno>
+		<title level="m">Efficient multi-agent epistemic planning: Teaching planners about nested belief</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Lucian</forename><surname>Philip R Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maayan</forename><surname>Galescu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Shvo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.09646</idno>
+		<title level="m">An explainable collaborative dialogue system using a theory of mind</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Neural theory-of-mind? on the limits of social intelligence in large LMs</title>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Sap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Ronan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Bras</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of EMNLP 2022</title>
+		<meeting>EMNLP 2022</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="3762" to="3780" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Large language models fail on trivial alterations to theory-of-mind tasks</title>
+		<author>
+			<persName><forename type="first">Tomer</forename><surname>Ullman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.08399</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">OpenToM: A comprehensive benchmark for evaluating theory-of-mind reasoning capabilities of large language models</title>
+		<author>
+			<persName><forename type="first">Hainiu</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runcong</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lixing</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinhua</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yulan</forename><surname>He</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.06044</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">Winnie</forename><surname>Street</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Oliver Siy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoff</forename><surname>Keeling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adrien</forename><surname>Baranes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Barnett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Mckibben</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tatenda</forename><surname>Kanyere</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alison</forename><surname>Lentz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Blaise</forename><surname>Aguera Y Arcas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robin I M</forename><surname>Dunbar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.18870</idno>
+		<title level="m">LLMs achieve adult human performance on higher-order theory of mind tasks</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Evaluating large language models in theory of mind tasks</title>
+		<author>
+			<persName><forename type="first">Michal</forename><surname>Kosinski</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proceedings of the National Academy of Sciences</title>
+		<imprint>
+			<biblScope unit="volume">121</biblScope>
+			<biblScope unit="issue">45</biblScope>
+			<biblScope unit="page">2405460121</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Testing theory of mind in large language models and humans</title>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">A</forename><surname>James</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dalila</forename><surname>Strachan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Giulia</forename><surname>Albergo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oriana</forename><surname>Borghini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eugenio</forename><surname>Pansardi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurabh</forename><surname>Scaliti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Krati</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alessandro</forename><surname>Saxena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefano</forename><surname>Rufo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guido</forename><surname>Panzeri</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Manzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">A</forename><surname>Michael</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cristina</forename><surname>Graziano</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Becchio</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature Human Behaviour</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">MindDial: Belief dynamics tracking with theory-of-mind modeling for situated neural dialogue generation</title>
+		<author>
+			<persName><forename type="first">Shuwen</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingdian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hengli</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Song-Chun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilong</forename><surname>Zheng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.15253</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Building cooperative embodied agents modularly with large language models</title>
+		<author>
+			<persName><forename type="first">Hongxin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weihua</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaming</forename><surname>Shan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qinhong</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianmin</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuang</forename><surname>Gan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.02485</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Theory of mind as intrinsic motivation for multi-agent reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Ini</forename><surname>Oguntola</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><surname>Campbell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Stepputtis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katia</forename><surname>Sycara</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.01158</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Think twice: Perspective-taking improves large language models&apos; theory-of-mind capabilities</title>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Wilf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sihyun</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><forename type="middle">Pu</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis-Philippe</forename><surname>Morency</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of ACL 2024</title>
+		<meeting>ACL 2024</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="8292" to="8308" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">GOMA: Proactive embodied cooperative communication via goal-oriented mental alignment</title>
+		<author>
+			<persName><forename type="first">Lance</forename><surname>Ying</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kunal</forename><surname>Jha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shivam</forename><surname>Aarya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonio</forename><surname>Torralba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianmin</forename><surname>Shu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.11075</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhining</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuanyang</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mung</forename><surname>Yao Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianmin</forename><surname>Shu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.15676</idno>
+		<title level="m">AutoToM: Automated bayesian inverse planning and model discovery for open-ended theory of mind</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">Wufei</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu-Cheng</forename><surname>Chou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingrui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Celso</forename><surname>De Melo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jieneng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianwen</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Yuille</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Spatialreasoner</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.20024</idno>
+		<title level="m">Towards explicit and generalizable 3D spatial reasoning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chun-Hsiao</forename><surname>Yeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengbang</forename><surname>Tong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ta-Ying</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoyu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianzhe</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuexiang</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yubei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shenghua</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Ma</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.15280</idno>
+		<title level="m">Seeing from another perspective: Evaluating multi-view understanding in MLLMs</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Does the autistic child have a &quot;theory of mind</title>
+		<author>
+			<persName><forename type="first">A M</forename><surname>Baron-Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Leslie</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Frith</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Cognition</title>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="37" to="46" />
+			<date type="published" when="1985-10">October 1985</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">GPT-4o system card</title>
+		<idno type="arXiv">arXiv:2410.21276</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+		<respStmt>
+			<orgName>OpenAI</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">attribution of second-order beliefs by 5-to 10-year-old children</title>
+		<author>
+			<persName><forename type="first">Josef</forename><surname>Perner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heinz</forename><surname>Wimmer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Exp. Child Psychol</title>
+		<imprint>
+			<biblScope unit="volume">39</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="437" to="471" />
+			<date type="published" when="1985-06">June 1985</date>
+		</imprint>
+	</monogr>
+	<note>John thinks that Mary thinks that</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

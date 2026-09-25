@@ -1,0 +1,1798 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Tina: Tiny Reasoning Models via LoRA</title>
+				<funder>
+					<orgName type="full">Center for Advanced Research Computing</orgName>
+					<orgName type="abbreviated">CARC</orgName>
+				</funder>
+				<funder ref="#_93SESJk">
+					<orgName type="full">National Science Foundation Graduate Research Fellowship Program</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-04-22">22 Apr 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Shangshang</forename><surname>Wang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Southern California</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Julian</forename><surname>Asilis</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Southern California</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ömer</forename><forename type="middle">Faruk</forename><surname>Akgül</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Southern California</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Enes</forename><forename type="middle">Burak</forename><surname>Bilgin</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Southern California</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ollie</forename><surname>Liu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Southern California</orgName>
+							</affiliation>
+						</author>
+						<author role="corresp">
+							<persName><forename type="first">Willie</forename><surname>Neiswanger</surname></persName>
+							<email>neiswang@usc.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Southern California</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Shangshangwang</forename><forename type="middle">Github</forename><surname>Io;</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Southern California</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Tina: Tiny Reasoning Models via LoRA</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-04-22">22 Apr 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">32BB1A1CE6B9A7E813D46B9700D06CE6</idno>
+					<idno type="arXiv">arXiv:2504.15777v1[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:02+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>How cost-effectively can strong reasoning abilities be achieved in language models? Driven by this fundamental question, we present Tina, a family of tiny reasoning models achieved with high cost-efficiency. Notably, Tina demonstrates that substantial reasoning performance can be developed using only minimal resources, by applying parameter-efficient updates during reinforcement learning (RL), using low-rank adaptation (LoRA), to an already tiny 1.5B parameter base model. This minimalist approach produces models that achieve reasoning performance which is competitive with, and sometimes surpasses, SOTA RL reasoning models built upon the same base model. Crucially, this is achieved at a tiny fraction of the computational post-training cost employed by existing SOTA models. In fact, the best Tina model achieves a &gt;20% reasoning performance increase and 43.33% Pass@1 accuracy on AIME24, at only $9 USD post-training and evaluation cost (i.e., an estimated 260x cost reduction). Our work reveals the surprising effectiveness of efficient RL reasoning via LoRA. We validate this across multiple open-source reasoning datasets and various ablation settings starting with a single, fixed set of hyperparameters. Furthermore, we hypothesize that this effectiveness and efficiency stem from LoRA rapidly adapting the model to the structural format of reasoning rewarded by RL, while largely preserving the base model's underlying knowledge. In service of accessibility and open research, we fully open-source all code, training logs, and model weights &amp; checkpoints.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="26" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="27" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="28" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="29" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="30" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="31" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="32" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="33" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="34" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>Language models (LMs) demonstrate increasing proficiency across a variety of tasks, but achieving robust, multi-step reasoning remains a frontier challenge <ref type="bibr">(Wang and</ref><ref type="bibr">Neiswanger, 2025, Xu et al., 2025)</ref>. Notably, such reasoning abilities are crucial for applications demanding complex problem-solving, from scientific discovery to intricate planning. Enhancing complex reasoning via supervised fine-tuning (SFT) is a welladopted technique, often utilizing a distillation process <ref type="bibr" target="#b27">(Min et al., 2024</ref><ref type="bibr">, Huang et al., 2024</ref>) by which the model learns to mimic reasoning traces (e.g., step-by-step thinking) generated by more advanced models such as o1 <ref type="bibr" target="#b30">(OpenAI, 2024)</ref>. This approach, while effective, relies upon the quality and availability of such expert demonstrations, which can be costly to obtain. Furthermore, it can run the risk of instilling a shallow form of imitation in the learning model, rather than fostering dynamic exploration of reasoning paths. In contrast, reinforcement learning (RL) enables models to learn directly and flexibly from verifiable reward signals derived from curated data <ref type="bibr" target="#b6">(DeepSeek-AI, 2025</ref><ref type="bibr" target="#b18">, Lambert et al., 2025)</ref>. In doing so, RL can lead the model to explore a greater variety of logical paths and possibly discover more robust solutions. However, RL pipelines are often complex and notoriously resource-intensive, typically involving substantial compute. This raises a fundamental question anchoring our research:  <ref type="table" target="#tab_2">10</ref>. Reasoning performance denotes the average score across AIME24/25, AMC23, MATH500, GPQA, and Minerva, as described in Section 3. The calculation of each comparative metric is detailed in Appendix A.</p><p>Our pursuit of this question necessitates a deliberate move towards minimalism. Rather than utilizing models with tens of billions of parameters (such as Qwen-7B/32B, QwQ-32B-preview, and their variants <ref type="bibr" target="#b27">(Min et al., 2024</ref><ref type="bibr" target="#b29">, NovaSky Team, 2025</ref><ref type="bibr" target="#b42">, Zeng et al., 2025</ref><ref type="bibr" target="#b28">, Muennighoff et al., 2025</ref><ref type="bibr" target="#b4">, Cui et al., 2025</ref><ref type="bibr">, Lyu et al., 2025</ref><ref type="bibr">, OpenThoughts Team, 2025</ref><ref type="bibr">, Hu et al., 2025</ref>)), we instead direct our attention to tiny models. In particular, we use the 1.5B parameter model, DeepSeek-R1-Distill-Qwen-1.5B <ref type="bibr" target="#b6">(DeepSeek-AI, 2025)</ref>. Our choice of this base model aligns with common practices in recent research (RUCAIBox <ref type="bibr" target="#b35">STILL Team, 2025</ref><ref type="bibr" target="#b23">, Luo et al., 2025</ref><ref type="bibr">, Dang and Ngo, 2025)</ref>: we begin with a foundation that, owing to its specific lineage (DeepSeek/Qwen) and distillation process, likely possesses stronger initial reasoning aptitude compared to a generic pre-trained model of equivalent size. This strategic starting point allows us to more-rigorously evaluate the incremental reasoning enhancements imparted by RL, thereby isolating and measuring the effectiveness of the technique itself over a competent baseline. More importantly, selecting such an architecture dramatically lowers the computational and financial threshold for experimentation. Complementing the choice of a compact base model, we further amplify efficiency during the RL phase and integrate parameter-efficient post-training by employing low-rank adaptation (LoRA) <ref type="bibr" target="#b13">(Hu et al., 2021)</ref>. Notably, LoRA enables the modification of a model's behavior by training only an exceptionally small number of new parameters. This dovetails with our central motivation: achieving reasoning capabilities through the most economical means possible.</p><p>Integrating the previous two components-a "tiny" model architecture and a "tiny" post-training via LoRAbased RL-we release the Tina (Tiny Reasoning Models via LoRA) family of models, which attain substantial reasoning performance at strikingly low cost. In total, we summarize our contributions as follows:</p><p>• Surprising Effectiveness of Efficient RL Reasoning. We show that our Tina models achieve performance competitive with, and in some cases even superior to, SOTA baseline models built on the same base model with full-parameter training, as shown in Figure <ref type="figure" target="#fig_0">1</ref> and in more detail in Table <ref type="table">3</ref>. In particular, the best Tina model achieves a &gt;20% performance increase and 43.33% Pass@1 accuracy on AIME24.</p><p>• Rapid Reasoning Format Adaptation Hypothesis. Based on our observations in post-training Tina, we hypothesize that LoRA's effectiveness and efficiency stem from rapidly adapting the reasoning format under RL while preserving base model knowledge-a likely more compute-efficient process than the deep knowledge integration of full-parameter training. Partial support comes from studies showing tiny LMs can reason effectively <ref type="bibr" target="#b16">(Hugging Face, 2025</ref><ref type="bibr" target="#b6">, DeepSeek-AI, 2025)</ref>, while large LMs can store broader world knowledge <ref type="bibr" target="#b1">(Allen-Zhu and Li, 2025)</ref>. This distinction suggests reasoning capabilities can be significantly enhanced by focusing on adapting the output format itself, consistent with our hypothesis about LoRA. To test this, we exclusively train LoRA parameters in RL settings, focusing on leveraging this format adaptation mechanism. • Democratizing RL Reasoning. We provide a reproducible and highly cost-effective approach, enabling wider participation in the exploration of RL techniques without requiring extensive computational resources. Notably, the cost of reproducing the best Tina checkpoint stands at only $9, and of reproducing all our experiments and everything presented in this paper from scratch at $526. Furthermore, in line with our goal of promoting accessible research, we release all code, training logs, evaluation scripts, and all Tina checkpoints.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Related Work</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1.">Open-Source Reasoning Replicas</head><p>As shown in Figure <ref type="figure" target="#fig_1">2</ref>, following the release of o1-preview (OpenAI, 2024), a number of open-source models have emerged to replicate or exceed its reasoning capabilities. STILL <ref type="bibr" target="#b27">(Min et al., 2024)</ref> introduced a minimal yet high-quality training recipe designed to elicit reasoning with modest compute, demonstrating that imitation learning from curated traces remains competitive. Sky-T1 (NovaSky Team, 2025) further explored scaling using open instruction-tuned checkpoints, while SimpleRL <ref type="bibr" target="#b42">(Zeng et al., 2025)</ref> highlighted the potential of lightweight RL without requiring large-scale reward models. PRIME <ref type="bibr" target="#b4">(Cui et al., 2025)</ref> and DeepScaleR <ref type="bibr" target="#b23">(Luo et al., 2025)</ref> introduced process supervision and scaling experiments to isolate how reasoning quality evolves with model size and context length. s1 <ref type="bibr" target="#b28">(Muennighoff et al., 2025)</ref> showed that even strong base models such as Qwen2.5-32B-Instruct benefit from fine-tuning on only 1k high-quality and long chain-of-thought data, which is curated to elicit reasoning capabilities. L1 <ref type="bibr" target="#b0">(Aggarwal and Welleck, 2025)</ref> combined prompt engineering with data curation for RL, resulting in models that can efficiently and adaptively control their response length. Meanwhile, OREAL <ref type="bibr" target="#b25">(Lyu et al., 2025)</ref> and OpenThinker (OpenThoughts Team, 2025) investigated self-correction and latent structure emergence through unsupervised and hybrid paradigms. The release of Open Reasoner Zero <ref type="bibr" target="#b14">(Hu et al., 2025)</ref> and Open-RS <ref type="bibr">(Dang and Ngo, 2025)</ref> further emphasized efficient RL-based strategies for reasoning with small models, completing a landscape of public alternatives for interpretability and reproducibility.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2.">RL with Verifiable Rewards</head><p>Reasoning tasks are well-suited to RL paradigms, as the correctness or quality of the final output often provides verifiable reward signals (e.g., the validity of a logical deduction). Such signal can effectively guide the model towards learning more robust reasoning strategies. Consequently, various RL approaches have been explored within this domain. Certain methods introduce auxiliary reward models or critics to assess reasoning quality, such as ReFT <ref type="bibr" target="#b24">(Luong et al., 2024)</ref> and REFINER <ref type="bibr" target="#b31">(Paul et al., 2024)</ref>. Other techniques employ explicit rule-based verification for self-correction <ref type="bibr" target="#b40">(Wu et al., 2024)</ref>. Some leverage self-play dynamics and exploration, such as mutual reasoning <ref type="bibr" target="#b32">(Qi et al., 2024)</ref>, or utilize inference-aware fine-tuning that optimizes performance under different sampling strategies <ref type="bibr" target="#b2">(Chow et al., 2024)</ref>. Notably, Group Relative Policy Optimization (GRPO) has been proposed as a variant of Proximal Policy Optimization (PPO) which removes the need for a separate value network by using a group-based baseline for advantage estimation, improving training efficiency and leading to better reward alignment <ref type="bibr" target="#b36">(Shao et al., 2024)</ref>, as demonstrated by DeepSeek-R1 (DeepSeek-AI, 2025). Subsequently, Dr.GRPO <ref type="bibr" target="#b22">(Liu et al., 2025)</ref> introduced a subtle modification of GRPO addressing its bias to produce long responses. For completeness, we provide the standard formulation of GRPO in Appendix B.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3.">Low-Rank Adaptation</head><p>While most existing open models that enable reasoning rely on the more expensive full-parameter training <ref type="bibr" target="#b27">(Min et al., 2024</ref><ref type="bibr" target="#b29">, NovaSky Team, 2025</ref><ref type="bibr" target="#b42">, Zeng et al., 2025</ref><ref type="bibr" target="#b28">, Muennighoff et al., 2025</ref><ref type="bibr" target="#b0">, Aggarwal and Welleck, 2025</ref><ref type="bibr" target="#b4">, Cui et al., 2025</ref><ref type="bibr" target="#b23">, Luo et al., 2025</ref><ref type="bibr">, Lyu et al., 2025</ref><ref type="bibr">, OpenThoughts Team, 2025</ref><ref type="bibr">, Hu et al., 2025</ref><ref type="bibr">, Dang and Ngo, 2025)</ref>, we investigate the use of LoRA for parameter-efficient post-training of reasoning models <ref type="bibr" target="#b13">(Hu et al., 2021)</ref>. Our goal is to assess whether updating only a small fraction of parameters can still yield strong reasoning capabilities <ref type="bibr" target="#b11">(Han et al., 2024)</ref>. In addition to its computational efficiency, LoRA provides modularity: by training only a low-rank decomposition of the parameter updates, it becomes possible to toggle reasoning behavior without maintaining multiple full model copies. For completeness, we provide the standard formulation of LoRA in Appendix B.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Tina: Tiny Reasoning Models via LoRA</head><p>Tina is our family of models created by post-training the DeepSeek-R1-Distill-Qwen-1.5B base model using LoRA during RL (employing a GRPO-style algorithm). The "Tiny" designation encapsulates a deliberate focus on minimalism and efficiency across the entire framework. This encompasses not only the tiny base model architecture and the tiny parameter updates enabled by LoRA, but also extends to a tiny overall resource footprint. This minimized footprint is achieved through an efficient training pipeline leveraging accessible open-source datasets and codebase (detailed in Section 3.1), and requires only minimal hardware and budget resources (described in Section 3.2).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.">Training Pipeline: Baselines &amp; Datasets</head><p>To facilitate meaningful comparisons and enable precise ablations, we post-train our Tina models via RL using the datasets and setups from publicly available reasoning models. All Tina and baseline models adopt</p><p>DeepSeek-R1-Distill-Qwen-1.5B as their base model checkpoint with default open-source weights.</p><p>• STILL-3-1.5B-preview (RUCAIBox STILL Team, 2025) is a slow-thinking reasoning model developed through iterative RL on a curated dataset of 33k reasoning traces. The data originates from mathematics competitions and includes problems from MATH <ref type="bibr" target="#b12">(Hendrycks et al., 2021</ref><ref type="bibr">, Lightman et al., 2023)</ref>, <ref type="bibr">NuminaMathCoT (LI et al., 2024)</ref>, and AIME (1983-2023) (Art of Problem Solving, 2024).</p><p>Tina-STILL-3-1.5B-preview uses the same dataset and reward pipeline.</p><p>• DeepScaleR-1.5B-Preview <ref type="bibr" target="#b23">(Luo et al., 2025)</ref> focuses on long-context mathematical reasoning via RL, and is trained over approximately 40k problem-answer pairs drawn from the AIME (Art of Problem Solving, 2024), AMC (Art of Problem Solving, 2023), OMNI-MATH <ref type="bibr">(Gao et al., 2024a)</ref>, and STILL (RUCAIBox STILL Team, 2025) datasets. Tina-DeepScaleR-1.5B-Preview uses this dataset and mirrors the reward design.</p><p>• Open-RS1/2/3 <ref type="bibr">(Dang and Ngo, 2025)</ref> are three models from the Open-RS project exploring reasoning performance in 1.5B models trained via RL. All Open-RS models are trained on small, high-quality datasets further curated from the s1 <ref type="bibr" target="#b28">(Muennighoff et al., 2025)</ref> (i.e., Open-S1) and DeepScaleR <ref type="bibr" target="#b23">(Luo et al., 2025)</ref> (i.e., Open-DeepScaleR) datasets. The Tina models (Tina-Open-RS1/2/3) replicate these setups, using identical data splits and reward scaffolding. 3.2. Training Setup: Infrastructure &amp; Budget Training Codebase. Our implementation builds upon OpenR1,<ref type="foot" target="#foot_0">foot_0</ref> a fully open reproduction of DeepSeek-R1 (DeepSeek-AI, 2025) which combines the Accelerate (Gugger et al., 2022) and Trl (von Werra et al., 2020) libraries and the DeepSpeed ZeRO optimization <ref type="bibr" target="#b33">(Rajbhandari et al., 2019)</ref>. It aims to transparently replicate and extend RL methods used for improving reasoning in language models, particularly focusing on aligning model behavior with reasoning-oriented objectives via verifiable reward signals. Our methodology inherits its scaffolding, training utilities, and reward interfaces.</p><p>Training Hyperparameters. We initiated parameter selection by replicating key parameters from OpenR1 (Hugging Face, 2025) and OpenRS <ref type="bibr">(Dang and Ngo, 2025)</ref>. For all experiments presented in this paper, we deliberately adopted the default or recommended hyperparameter configurations provided in their works. These settings were kept largely fixed across different runs (Table <ref type="table">5</ref>). For the main Tina results (Section 4.2), only reward function parameters were adjusted per task, and for ablation studies (Section 4.3), only the specific factor under investigation (e.g., learning rate, LoRA rank/alpha, RL algorithm) was varied (Table <ref type="table">6</ref>). This approach intentionally circumvents costly hyperparameter search procedures for our specific setup, ensuring negligible tuning overhead and focusing on the efficacy of the core LoRA-based RL methodology.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Training Hardware.</head><p>A key element of our low-cost approach was minimizing the hardware footprint. While distributed RL training algorithms like GRPO often benefit from using three or more GPUs (e.g., dedicating one GPU to an inference engine such as vLLM for faster sample generation), we deliberately targeted a minimal setup using only two NVIDIA L40S GPUs. <ref type="foot" target="#foot_1">2</ref> To enable this, we co-located the RL training process and the vLLM on the same two GPUs by constraining vLLM's GPU memory usage. The training itself utilized data parallelism across both GPUs. While running inference and training concurrently on two GPUs might result in a longer wall-clock training time compared to a setup with dedicated inference GPUs, it significantly reduces the hardware requirement.</p><p>Training Budget. The NVIDIA L40S GPUs we use are accessible via commercial cloud platforms at an approximate rate of $1 USD per GPU hour, including 300 GB storage, based on pricing observed at the time of writing (Cudo Compute). The RL training process for our LoRA models proved highly efficient, with a E xp er imen tal Tas k Tr a in i ng Cos t Est . E val uat ion Co s t Es t . Total Co s t Est. Baseline: Model Re-Evaluation -$6 $6 Main: Tina-STILL-3-1.5B-preview $59 $7 $66 Main: Tina-DeepScaleR-1.5B-Preview $84 $10 $94 Main: Tina-Open-RS1 $40 $11 $51 Main: Tina-Open-RS2 $15 $17 $32 Main: Tina-Open-RS3 $15 $17 $32 Ablation: OpenThoughts Dataset $84 $10 $94 Ablation: OpenR1 Dataset $59 $7 $66 Ablation: LIMR Dataset $4 $4 $8 Ablation: DrGRPO Algorithm $15 $17 $32 Ablation: Learning Rate $7 $8 $15 Ablation: LoRA Rank/Alpha $14 $16 $30 Total: All Tasks $396 $130 $526 Total: Main Tasks $213 $62 $275 Total: Best Ckpt. in Each Main Task $80 $5 $85 Total: All Ckpt. in Best-Performance Task $14 $17 $31 Total: Best Ckpt. in Best-Performance Task $8 $1 $9 Table 1: Computational cost breakdown. Costs for all experimental tasks in this paper, measured in USD. The row "Best Ckpt. in Each Main Task" denotes the cost of reproducing the best checkpoint in each of Table 7, 8, 9, 10, 11. The row "All Ckpt. in Best-Performance Task" denotes the cost of reproducing all checkpoints in Table 10. "Best Ckpt. in Best-Performance Task" denotes the cost of reproducing the best checkpoint in Table 10, i.e., the checkpoint at step 450.</p><p>single RL step typically completing within one minute on this hardware. Evaluating a model checkpoint across our entire suite of six reasoning benchmarks required approximately 1 L40S GPU hours on average. To ensure cost control, we initially established a conservative maximum budget of $100 USD for each complete experimental run, encompassing all stages from training to evaluation and miscellaneous tasks. As detailed in Table <ref type="table">1</ref>, our actual expenditures were significantly below this ceiling. Our calculation is based on the full Tina model evaluation performance in Appendix D. We believe this low cost makes our setup an accessible testbed for the research community.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Surprising Effectiveness of Efficient RL Reasoning via LoRA</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.">Experiments Stage I: Baseline Model Re-Evaluation</head><p>Before presenting Tina's performance, it is crucial to establish fair and reliable comparisons against existing SOTA reasoning models. We note that performance scores reported in the literature for relevant models often stem from evaluations using disparate frameworks (e.g., verl <ref type="bibr" target="#b37">(Sheng et al., 2025)</ref>, lighteval <ref type="bibr" target="#b7">(Fourrier et al., 2023)</ref>, lm-eval-harness <ref type="bibr">(Gao et al., 2024b)</ref>) and inconsistent inference settings (such as different generation hyperparameters or varying numbers of GPUs). These variations can significantly influence reported metrics, creating potential inconsistencies and hindering reliable comparisons between models.</p><p>To mitigate these confounding factors, we performed a comprehensive re-evaluation of key baseline models using a single, consistent methodology throughout this paper. All baseline evaluations reported herein utilize the lighteval framework integrated with the vLLM <ref type="bibr">(Kwon et al., 2023)</ref> inference engine for efficient</p><p>Bas eli ne Model A I ME 2 4 AIM E 2 5 AM C2 3 MAT H5 00 G PQA M i n e rva Avg . DeepSeek-R1-Distilled-Qwen-1.5B 23.33 16.67 62.50 82.60 31.82 30.15 41.18 STILL-3-1.5B-preview 26.67 26.67 67.50 86.40 34.34 27.57 44.86 DeepScaleR-1.5B-Preview 36.67 26.67 77.50 87.80 31.82 31.99 48.74 Open-RS1 26.67 20.00 72.50 83.60 35.35 28.68 44.47 Open-RS2 26.67 13.33 62.50 85.40 34.85 26.84 41.60 Open-RS3 43.33 20.00 67.50 83.00 33.84 28.68 46.06</p><p>Table 2: Baseline model re-evaluation. Performance evaluation of baseline models on six reasoning tasks.</p><p>generation. For comparability with prior work such as OpenR1, we maintained a fixed hardware configuration (two L40S GPUs) and applied a standardized set of vLLM inference parameters across all evaluated baseline models. All scores are zero-shot pass@1 performance. The exact command structure employed for these evaluations is provided in Appendix C.2 for transparency and reproducibility. The results stemming from this consistent re-evaluation protocol are presented in Table <ref type="table">2</ref>.</p><p>Particularly, we evaluate the reasoning capabilities of our Tina models and the baselines across a diverse suite of six challenging benchmarks, primarily focused on mathematical and scientific reasoning:</p><p>• AIME24/25 (Art of Problem Solving, 2024) contains 30 high-school-level math problems in algebra, geometry, number theory, and combinatorics from the 2024/2025 American Invitational Mathematics Examination. Each problem demands precise multi-step reasoning.</p><p>• AMC23 (Art of Problem Solving, 2023) includes 40 problems from the 2023 American Mathematics Competition, offering a mix of logic and symbolic manipulation tasks.</p><p>• MATH500 <ref type="bibr" target="#b12">(Hendrycks et al., 2021</ref><ref type="bibr">, Lightman et al., 2023)</ref> is a benchmark comprising 500 competition mathematics problems derived from various sources, covering different difficulty levels and often necessitating multi-step derivation and calculation.</p><p>• GPQA Diamond <ref type="bibr">(Rein et al., 2024)</ref>, hereafter referred to as GPQA, consists of 198 PhD-level science questions across biology, chemistry, and physics. Each question is multiple-choice with subtle distractors.</p><p>• Minerva <ref type="bibr" target="#b19">(Lewkowycz et al., 2022)</ref> includes 272 quantitative reasoning problems generally at the undergraduate level. The questions span multiple STEM fields, including physics, biology, chemistry, and economics, often requiring mathematical modeling or calculation steps. Includes tasks such as calculating enzyme kinetics from reaction data.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2.">Experiments Stage II: Tina Model Evaluation</head><p>We now present the core evaluation results for our Tina models. These experiments assess the reasoning capabilities attained by post-training the DeepSeek-R1-Distill-Qwen-1.5B with minimal parameter updates via LoRA-based RL. The results presented in Table <ref type="table">3</ref> demonstrate that significant reasoning performance can be achieved efficiently, yielding models that are competitive with, or outperform, relevant baselines despite the inherent resource constraints of using parameter-efficient tuning.</p><p>3</p><p>Table <ref type="table">3</ref> summarizes the performance of five distinct Tina models across a suite of six reasoning tasks:</p><p>3 Tables <ref type="table">3</ref> and <ref type="table">4</ref> adopt a consistent naming pattern where "Tina-X" denotes our model is the LoRA counterpart of a baseline model X or is trained on a dataset X (possibly followed with an extra ablation setup). This can reflect the model origin and serve as a direct reference to the public checkpoints for reproducibility.</p><p>T ina Mode l St ep s (% of 1 E poc h ) AI M E 2 4 A I ME 2 5 A MC 2 3 M AT H 5 0 0 GP QA M in e rva Avg . Bas e li ne Tina-STILL-3-1.5B-preview 53% 36.67 30.00 77.50 84.60 33.33 26.84 48.16 44.86 Tina-DeepScaleR-1.5B-Preview 19% 43.33 26.67 67.50 86.20 37.88 28.68 48.38 48.74 Tina-Open-RS1 34% 43.33 20.00 80.00 84.00 35.35 28.68 48.56 44.47 Tina-Open-RS2 51% 43.33 26.67 77.50 87.00 36.36 32.72 50.60 41.60 Tina-Open-RS3 57% 36.67 23.33 82.50 85.20 37.37 31.62 49.45 46.06 Table 3: Tina model evaluation. Performance comparison between Tina models and corresponding full-parametertrained SOTA models on six reasoning tasks. The value in the Steps column indicates the training steps of the best model checkpoint within one epoch, the full model checkpoint evaluation is shown in Appendix D. The Baseline column represents the average score achieved by baseline model with full-parameter RL in Table 2.</p><p>AIME24/25, AMC23, MATH500, GPQA, and Minerva. For each Tina model, we report the extent of training completed (as a percentage of a predefined training stpes within 1 epoch) and the percentage scores achieved on each task. The results compellingly demonstrate the efficacy of our economical LoRA-based RL strategy.</p><p>All Tina models exhibit substantial reasoning aptitude, achieving average scores in the range of 48.16% to 50.60%. Significantly, nearly all Tina models notably outperform their corresponding baseline average scores , indicating marked improvements instilled by the parameter-efficient RL. The Tina-Open-RS2 model yielded the highest average performance observed at 50.60%. Furthermore, these strong results were achieved with remarkably limited training durations, ranging from just 19% to 57% of a full training epoch, highlighting the efficiency and rapid adaptation enabled by the Tina approach. These findings strongly support our central hypothesis: robust reasoning capabilities can be effectively and economically cultivated in small language models through the targeted application of LoRA and RL.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.">Experiments Stage III: Tina Ablation Variants</head><p>To better understand the factors influencing the performance and efficiency of our Tina models within the proposed low-cost framework, we conducted a series of ablation studies. These studies systematically investigate the impact of key design choices and hyperparameter: the underlying training dataset, the learning rate for LoRA updates, the rank of the LoRA adapters, and the specific RL algorithm employed. In each study, we typically varied one factor while holding others constant, often based on a high-performing configuration identified in our main experiments or preliminary runs. The results, summarized in Table <ref type="table">4</ref>, provide valuable insights into the robustness and sensitivity of our economical approach.</p><p>Impact of Training Dataset. The first section of Table <ref type="table">4</ref> highlights the influence of the dataset used for RL. We compared seven distinct datasets, varying significantly in size (from ≈1.4k to ≈94k samples).</p><p>Strikingly, the Tina-Open-RS model, trained on a concise dataset of merely 7k examples, achieved the highest average score (50.60%). This outcome surpasses models trained on considerably larger datasets, such as Tina-OpenR1 (93.7k samples, 49.26% avg). This observation strongly supports our core "Tiny"</p><p>premise and reflects the intuition that the quality and diversity of the dataset matter more than the data size.</p><p>Sensitivity to Learning Rate. Using the Tina-LIMR configuration as a testbed (second section of Table <ref type="table">4</ref>),</p><p>we assessed sensitivity to the learning rate. Among the tested values (5 × 10 -6 , 1 × 10 -6 , and 5 × 10 -7 ), a learning rate of 1 × 10 -6 yielded the optimal average performance (48.47%) for this setup. While performance differences were not drastic, this indicates that learning rate selection remains a factor, although effective results were obtained without extensive tuning.</p><p>Effect of LoRA Rank. The third ablation study investigated the impact of LoRA rank, which directly controls the number of trainable parameters. Testing ranks 4, 8, 16, 32, and 64 on the Tina-LIMR setup, we observed</p><p>A bl ation on Datas et s St eps (% of 1 E poc h ) AI M E 2 4 AI M E 2 5 A M C 2 3 M ATH 5 00 GPQA M in e rva Avg . Tina-OpenR1 (93.7k) 13% 36.67 26.67 75.00 86.80 39.90 30.51 49.26 Tina-OpenThoughts (66.1k) 30% 36.67 26.67 72.50 84.80 41.41 33.09 49.19 Tina-DeepScaleR (40.3k) 19% 43.33 26.67 67.50 86.20 37.88 28.68 48.38 Tina-STILL-3 (33k) 53% 36.67 30.00 77.50 84.60 33.33 26.84 48.16 Tina-Open-S1 (18.6k) 34% 43.33 20.00 80.00 84.00 35.35 28.68 48.56 Tina-Open-RS (7k) 51% 43.33 26.67 77.50 87.00 36.36 32.72 50.60 Tina-LIMR (1.39k) 58% 46.67 20.00 75.00 83.80 34.85 30.51 48.47 A bl ation on L e ar n ing Rat e St eps (% of 1 E poc h ) AI M E 2 4 AI M E 2 5 A M C 2 3 M ATH 5 00 GPQA M in e rva Avg . Tina-LIMR-5e-6-lr 29% 36.67 26.67 75.00 83.60 35.86 29.41 47.87 Tina-LIMR-1e-6-lr 58% 46.67 20.00 75.00 83.80 34.85 30.51 48.47 Tina-LIMR-5e-7-lr 58% 43.33 16.67 77.50 84.60 34.85 30.51 47.91 A bl ation on L o RA Ran k St eps (% of 1 E poc h ) AI M E 2 4 AI M E 2 5 A M C 2 3 M ATH 5 00 GPQA M in e rva Avg . Tina-LIMR-64-LoRA-rank 29% 20.00 30.00 77.50 84.20 38.38 31.62 46.95 Tina-LIMR-32-LoRA-rank 58% 46.67 20.00 75.00 83.80 34.85 30.51 48.47 Tina-LIMR-16-LoRA-rank 58% 43.33 33.33 70.00 83.20 35.35 28.31 48.92 Tina-LIMR-8-LoRA-rank 29% 30.00 26.67 82.50 83.80 33.84 30.51 47.89 Tina-LIMR-4-LoRA-rank 86% 36.67 20.00 85.00 83.80 31.82 29.04 47.72 A bl ation on R L A lg ori t hm St eps (% of 1 E poc h ) AI M E 2 4 AI M E 2 5 A M C 2 3 M ATH 5 00 GPQA M in e rva Avg . Tina-Open-RS3-GRPO 57% 36.67 23.33 82.50 85.20 37.37 31.62 49.45 Tina-Open-RS3-DrGRPO 17% 43.33 23.33 80.00 85.00 35.35 30.15 49.53 Table 4: Tina ablation variants evaluation. Performance evaluation of Tina's ablation variants on six reasoning tasks. The value in the Steps column indicates the training steps of the best model checkpoint within one epoch, the full model checkpoint evaluation is shown in Appendix D. For the number in parentheses (the ablation on datasets), it means the data size of a dataset. During training, this number should be multiplied by the num-</p><p>ber of generation in GRPO-like algorithm (in our case, that multiplier is 4). For the model names, Tina-LIMR, Tina-LIMR-1e-6-lr and Tina-LIMR-32-LoRA-rank are the same model, we duplicate them for better visualization. The same idea applies to Tina-DeepScaleR and Tina-DeepScaleR-1.5B-Preview, Tina-STILL-3 and Tina-STILL-3-1.5B-preview, Tina-Open-S1 and Tina-Open-RS1, Tina-Open-RS and Tina-Open-RS2, Tina-Open-RS3-GRPO and Tina-Open-RS3.</p><p>considerable robustness. Ranks 8, 16, and 32 all produced strong results, with average scores clustering between 47.89% and 48.92%. Notably, rank 16 achieved the peak performance (48.92%) in this comparison, slightly outperforming rank 32 (48.47%). Performance decreased slightly at the extremes (rank 4 and 64). This study validates that highly parameter-efficient configurations (low ranks like 16 or 32) are effective, further enhancing the cost-effectiveness and minimal overhead of the Tina approach.</p><p>Comparison of RL Algorithms. Finally, we compared two RL algorithms, GRPO and Dr.GRPO <ref type="bibr" target="#b22">(Liu et al., 2025)</ref>, using the Tina-Open-RS3 setup (final section of Table <ref type="table">4</ref>). Both algorithms led to similar peak average performance levels (49.45% for GRPO vs. 49.53% for Dr.GRPO). However, Dr.GRPO reached its best checkpoint significantly earlier in the training process (17% of an epoch vs. 57% for GRPO). This suggests potential advantages in sample efficiency for Dr.GRPO in this context with an alternative normalization in loss calculation, offering potentially faster convergence and further reductions in training time and cost.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Hypothesis for Effective and Efficient LoRA: Rapid Format Adaptation</head><p>Less is More LoRA-based RL. To understand why LoRA facilitates both effective and efficient reasoning improvements via RL, we analyze the relationship between training compute and performance, alongside training dynamics. As illustrated in Figure <ref type="figure" target="#fig_2">3</ref>, plotting reasoning performance against approximate training FLOPs reveals a stark contrast between full-parameter and LoRA-based training regimes. First, our LoRA-based Tina models achieve reasoning scores comparable or superior to fully fine-tuned baselines while requiring (in some cases) orders of magnitude fewer training FLOPs. We observe that in LoRA models, increased training compute inversely affects performance, in contrast to full-parameter models. This observation highlights a "less compute can yield more performance" phenomenon. This finding supports our hypothesis regarding how LoRA achieves such remarkable efficiency, which relates to the principle of "learn structure/format, maintain knowledge." We posit that LoRA excels in this scenario because RL for reasoning heavily rewards the model's ability to generate outputs in a specific, verifiable format or structure (e.g., step-by-step reasoning chains). LoRA appears to be highly adept at learning these structural and stylistic patterns with minimal parameter changes, thus requiring very few FLOPs. At the same time, because LoRA modifies only a tiny fraction of the weights, it largely preserves the base model's vast pre-trained knowledge. Therefore, LoRA efficiently teaches the model how to format its existing knowledge into effective reasoning traces, rather than potentially imposing costly relearning of concepts or procedures that extensive full-parameter updates might entail. We hypothesize that this focus on structural adaptation allows Tina to achieve high reasoning performance with minimal computational investment.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Phase Transition in LoRA-based RL.</head><p>Further insights into the LoRA-based RL mechanism arise from analyzing the training logs. That is, a distinct pattern emerges in Figure <ref type="figure" target="#fig_3">4</ref>, which displays accuracy rewards, format rewards, and completion lengths over training steps for various Tina model runs. We consistently observe a training phase transition or turning point evident in the format-related metrics (format reward, row 2; completion length, row 3) across most Tina models. Around this transition point (indicated by the green vertical dashed line), the format reward often peaks or destabilizes, while the completion length frequently reaches a minimum before potentially reversing its trend. Notably, this relatively sharp transition observed in format and length metrics does not typically have a corresponding distinct turning point in the accuracy reward plots (row 1). The accuracy reward often exhibits more gradual fluctuations or slower drift over the training duration, without a clear inflection aligned with the format transition. Another crucial observation is the timing of optimal performance: the best-performing checkpoint, yielding the highest reasoning accuracy on held-out evaluations, consistently occurs just prior to or around this observed phase transition point in the format metrics (indicated by the red vertical dashed line). This decoupling between the dynamics of accuracy-based and format-based metrics suggests that the LoRA-based RL process rapidly optimizes the model's ability to adhere to the structural and stylistic elements rewarded by the format score and length constraints. The subsequent transition point may signify where this structural optimization saturates, becomes unstable, or perhaps begins to compromise generative quality in other ways (e.g., by overly constraining or expanding length). The fact that peak reasoning accuracy is achieved just before this format-driven transition implies that while learning the correct output format is essential and efficiently achieved via LoRA, pushing further on format-centric optimization alone does not necessarily yield better reasoning, and may even be detrimental. This reinforces our hypothesis that LoRA efficiently adapts the model by primarily learning the form required for effective reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.">Conclusion</head><p>We presented Tina to demonstrate that effective reasoning capabilities can be instilled in language models with efficiency and effectiveness. The principal contribution of Tina lies in democratizing access to RL-driven reasoning model development. By combining LoRA with RL on a 1.5B parameter base model, we achieved reasoning performance competitive with significantly larger models, accomplishing this within an estimated computational budget of only $9. This outcome prompts reflection on the factors enabling such minimalist approaches, and on their possible future trajectories. Despite encouraging results, this work is subject to certain limitations:</p><p>Base Model Scale: Our experiments centered on a 1.5B parameter model. While showcasing costperformance efficiency, the absolute reasoning ceiling achievable with this "tiny" model may naturally be lower for complex, multi-step reasoning problems than what larger models can offer.</p><p>Reasoning Task Scope: Our evaluation focused primarily on mathematical and formal logic reasoning benchmarks (AIME, AMC, MATH, GPQA, Minerva). The effectiveness and transferability of the learned reasoning skills to other domains, such as coding, warrants further investigation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Hyperparameter Optimization:</head><p>We intentionally minimized hyperparameter tuning costs by adopting established configurations. While this demonstrates a certain form of robustness to our methodology, there may be potential for further performance gains derived from additional tuning, perhaps tailored to the interplay between LoRA, the RL algorithm, and the target reasoning tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Background behind Tina Training</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1. GRPO Formulation</head><p>Recall the following formulation of GRPO: For each question q, GRPO samples a group G = {o 1 , o 2 , . . . , o G } of outputs from the old policy π θ old and optimizes the policy π θ by maximizing the following objective:</p><formula xml:id="formula_0">E q∼P(Q), {o i } G i=1 ∼π θ old (O|q) [ 1 G G ∑ i=1 (min ( π θ (o i |q) π θ old (o i |q) A i , clipped ( π θ (o i |q) π θ old (o i |q) , 1 -ϵ, 1 + ϵ) A i ) -β D KL (π θ ∥π ref ))] .</formula><p>Here A i denotes the advantage computed from a group of rewards</p><formula xml:id="formula_1">{r 1 , r 2 , . . . , r G } A i = r i -mean({r 1 , r 2 , . . . , r G }) std({r 1 , r 2 , . . . , r G }) ,<label>and</label></formula><formula xml:id="formula_2">D KL (π θ ∥π ref ) = π ref (o i |q) π θ (o i |q) -log π ref (o i |q) π θ (o i |q)<label>-1.</label></formula><p>Note that ϵ and β are parameters controlling the clipping range and KL penalty, respectively.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2. LoRA Formulation</head><p>We follow the standard LoRA setup <ref type="bibr" target="#b13">(Hu et al., 2021)</ref>. Given a frozen pretrained weight matrix W 0 ∈ R d×k and trainable low-rank matrices A ∈ R d×r and B ∈ R r×k with r ≪ min(d, k), the original forward pass</p><formula xml:id="formula_3">h(x) = W 0 x is modified as ĥ(x) = W 0 x + ABx.</formula><p>We use the default LoRA implementation provided in the PEFT <ref type="bibr" target="#b26">(Mangrulkar et al., 2022)</ref> library. Model LoRA Rank LoRA Alpha LoRA Dropout Algorithm Learning Rate Reward Type Reward Weights Tina-STILL-3-1.5B-preview -----Accuracy, Length 2, 1 Tina-DeepScaleR-1.5B-Preview -----Accuracy, Format 2, 1 Tina-Open-RS3 -----Cosine, Format 2, 1 Tina-Open-RS3-DrGRPO ---DrGRPO -Cosine, Format 2, 1 Tina-Open-RS2 -----Accuracy, Format 2, 1 Tina-Open-RS1 -----Accuracy, Format 2, 1 Tina-LIMR -----Accuracy, Format 2, 1 Tina-LIMR-5e-6-lr ----5e-6 Accuracy, Format 2, 1 Tina-LIMR-5e-7-lr ----5e-7 Accuracy, Format 2, 1 Tina-LIMR-64-LoRA-rank 64 256 ---Accuracy, Format 2, 1 Tina-LIMR-16-LoRA-rank 16 64 ---Accuracy, Format 2, 1 Tina-LIMR-8-LoRA-rank 8 32 ---Accuracy, Format 2, 1 Tina-LIMR-4-LoRA-rank 4 16 ---Accuracy, Format 2, 1 Tina-OpenR1 -----Accuracy, Cosine, Format, Length, Tag Count, Reasoning Steps, Repetition Penalty 1, 1, 1, 1, 1, 1, 1 Tina-OpenThoughts -----Accuracy, Cosine, Format, Length, Tag Count, Reasoning Steps, Repetition Penalty 1, 1, 1, 1, 1, 1, 1</p><p>Table 6: Varied hyperparameter settings where "-" means unchanged from the common settings in Table <ref type="table">5</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.2. Evaluation Command</head><p>The following is the evaluation command we use to combine lighteval and vLLM for performance evaluation on reasoning tasks. The MODEL_PATH should be replaced with either the local path or huggingface identifier to the model to be evaluated. TASK should be one of the six reasoning tasks including aime24, aime25, amc23, math_500, gpqa:diamond, and minerva. PATH_TO_OPEN_R1_EVALUATE_SCRIPT should be the path to the custom evaluate script provided by OpenR1.<ref type="foot" target="#foot_3">foot_3</ref> </p><p>MODEL_ARGS="pretrained=$MODEL_PATH, dtype=bfloat16, data_parallel_size=2, max_model_length=32768, gpu_memory_utilization=0.5, generation_parameters={max_new_tokens:32768,temperature:0.6,top_p:0.95}" lighteval vllm $MODEL_ARGS "custom|$TASK|0|0" --custom-tasks $PATH_TO_OPEN_R1_EVALUATE_SCRIPT --use-chat-template</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. Full Tina Model Performance Evaluation</head><p>In this section, we present all Tina models' detailed evaluation performance during post-training across six reasoning tasks including AIME24/25, AMC23, MATH500, GPQA and Minerva.  Table 9: Performance evaluation of Tina-Open-RS3. Ch eckpo i n t S te p s ( 8 75 St e p s p er E poc h ) AI M E 2 4 A I M E 25 A MC 23 M ATH5 00 GP QA M i ne rva Avg . 50 33.33 23.33 77.50 84.20 38.89 29.04 47.72 100 36.67 23.33 72.50 84.20 31.31 28.68 46.12 150 40.00 23.33 72.50 85.80 30.30 30.51 47.07 200 26.67 23.33 70.00 83.80 39.39 29.41 45.43 250 46.67 13.33 72.50 82.60 31.82 30.51 46.24 300 30.00 26.67 75.00 84.00 33.33 29.04 46.34 350 33.33 20.00 75.00 84.80 37.37 28.68 46.53 400 26.67 16.67 70.00 83.20 37.37 27.57 43.58 450 43.33 26.67 77.50 87.00 36.36 32.72 50.60 500 20.00 23.33 67.50 84.20 33.84 29.41 43.05 550 40.00 23.33 72.50 83.60 40.91 30.88 48.54 600 33.33 20.00 72.50 84.20 32.83 30.88 45.62 650 33.33 23.33 57.50 83.80 34.85 30.51 43.89 700 23.33 26.67 70.00 82.40 33.33 28.68 44.07 750 30.00 23.33 72.50 84.20 38.89 29.04 46.33 800 30.00 26.67 75.00 84.40 32.32 29.41 46.30 850 26.67 23.33 70.00 83.80 35.86 28.68 44.72 Table 11: Performance evaluation of Tina-Open-RS1. Ch eckpo i n t S te p s ( 1 74 St e p s p er E poc h ) AI M E 2 4 A I M E 25 A MC 23 M ATH5 00 GP QA M i ne rva Avg . 50 20.00 26.67 67.50 85.40 37.88 30.51 44.66 100 46.67 20.00 75.00 83.80 34.85 30.51 48.47 150 26.67 20.00 72.50 84.00 37.37 30.15 45.12 200 33.33 30.00 62.50 83.40 29.80 30.88 44.99  eckpo i n t S te p s ( 1 74 St e p s p er E poc h ) AI M E 2 4 A I M E 25 A MC 23 M ATH5 00 GP QA M i ne rva Avg . 50 40.00 13.33 72.50 83.00 34.34 29.04 45.37 100 43.33 16.67 77.50 84.60 34.85 30.51 47.91 150 30.00 23.33 72.50 86.20 37.37 30.51 46.65 200 33.33 13.33 70.00 83.20 29.29 31.25 43.40 Table 20: Performance evaluation of Tina-LIMR-8-LoRA-rank with LoRA rank 8 and alpha 32. Ch eckpo i n t S te p s ( 1 74 St e p s p er E poc h ) AI M E 2 4 A I M E 25 A MC 23 M ATH5 00 GP QA M i ne rva Avg . 50 30.00 23.33 65.00 85.00 35.35 29.78 44.74 100 26.67 26.67 72.50 82.80 34.85 29.04 45.42 150 36.67 20.00 85.00 83.80 31.82 29.0 47.72 200 33.33 23.33 77.50 85.40 35.86 28.31 47.29 Table 21: Performance evaluation of Tina-LIMR-4-LoRA-rank with LoRA rank 4 and alpha 16. </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Overall comparison between Tina and baseline models. The Tina model in the figure corresponds to the best checkpoint in Table10. Reasoning performance denotes the average score across AIME24/25, AMC23, MATH500, GPQA, and Minerva, as described in Section 3. The calculation of each comparative metric is detailed in Appendix A.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Release timeline of open-source models that aim to replicate the performance of advanced reasoning models like o1(-preview) (OpenAI, 2024) and R1 (DeepSeek-AI, 2025), which we refer to as open-source reasoning replicas.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Less is more LoRA-based RL. Approximate training FLOPs vs reasoning performance comparison between Tina and baseline models. The calculation is detailed in Appendix A.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Phase transition in LoRA-based RL. The raw data is from the Weights &amp; Biases training logs and smoothed via exponential moving average (EMA) with factor 0.1. The "training turning point" in the legend means the step where the format-like metrics (e.g., format reward, completion length) start to destabilize. Refer to Appendix E for the full set of plots.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Phase transition in Tina-Open-RS3 and Tina-Open-RS3-GRPO. The raw data is from the Weights &amp; Biases training logs and smoothed via exponential moving average (EMA) with factor 0.1.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 7 :</head><label>7</label><figDesc>Performance evaluation of Tina-STILL-3-1.5B-preview.</figDesc><table><row><cell cols="8">C hec kpo in t St ep s (3 740 S te ps per E poch) A IME 2 4 A IM E 2 5 A M C2 3 M ATH 5 0 0 GP QA M in erva Avg .</cell></row><row><cell>500</cell><cell>30.00</cell><cell>13.33</cell><cell>75.00</cell><cell>83.60</cell><cell>35.86</cell><cell>32.35</cell><cell>45.02</cell></row><row><cell>1000</cell><cell>36.67</cell><cell>20.00</cell><cell>65.00</cell><cell>84.80</cell><cell>32.32</cell><cell>27.94</cell><cell>44.46</cell></row><row><cell>1500</cell><cell>26.67</cell><cell>20.00</cell><cell>70.00</cell><cell>83.80</cell><cell>37.37</cell><cell>26.84</cell><cell>44.11</cell></row><row><cell>2000</cell><cell>36.67</cell><cell>30.00</cell><cell>77.50</cell><cell>84.60</cell><cell>33.33</cell><cell>26.84</cell><cell>48.16</cell></row><row><cell>2500</cell><cell>33.33</cell><cell>30.00</cell><cell>70.00</cell><cell>83.00</cell><cell>35.35</cell><cell>27.57</cell><cell>46.54</cell></row><row><cell>3000</cell><cell>30.00</cell><cell>20.00</cell><cell>67.50</cell><cell>82.60</cell><cell>30.81</cell><cell>25.74</cell><cell>42.78</cell></row><row><cell>3500</cell><cell>30.00</cell><cell>26.67</cell><cell>67.50</cell><cell>82.20</cell><cell>32.32</cell><cell>26.10</cell><cell>44.13</cell></row><row><cell cols="8">C hec kpo in t St ep s (5 039 S te ps per E poch) A IME 2 4 A IM E 2 5 A M C2 3 M ATH 5 0 0 GP QA M in erva Avg .</cell></row><row><cell>500</cell><cell>30.00</cell><cell>23.33</cell><cell>67.50</cell><cell>82.40</cell><cell>39.39</cell><cell>31.25</cell><cell>45.65</cell></row><row><cell>1000</cell><cell>43.33</cell><cell>26.67</cell><cell>67.50</cell><cell>86.20</cell><cell>37.88</cell><cell>28.68</cell><cell>48.38</cell></row><row><cell>1500</cell><cell>30.00</cell><cell>20.00</cell><cell>80.00</cell><cell>84.80</cell><cell>32.83</cell><cell>29.41</cell><cell>46.17</cell></row><row><cell>2000</cell><cell>20.00</cell><cell>26.67</cell><cell>57.50</cell><cell>80.60</cell><cell>29.29</cell><cell>24.26</cell><cell>39.72</cell></row><row><cell>2500</cell><cell>13.33</cell><cell>16.67</cell><cell>52.50</cell><cell>75.00</cell><cell>31.31</cell><cell>18.01</cell><cell>34.47</cell></row><row><cell>3000</cell><cell>26.67</cell><cell>16.67</cell><cell>57.50</cell><cell>78.60</cell><cell>28.79</cell><cell>23.16</cell><cell>38.57</cell></row><row><cell>3500</cell><cell>23.33</cell><cell>23.33</cell><cell>62.50</cell><cell>80.40</cell><cell>31.82</cell><cell>24.26</cell><cell>40.94</cell></row><row><cell>4000</cell><cell>20.00</cell><cell>20.00</cell><cell>70.00</cell><cell>82.00</cell><cell>41.41</cell><cell>27.94</cell><cell>43.56</cell></row><row><cell>4500</cell><cell>23.33</cell><cell>20.00</cell><cell>72.50</cell><cell>80.80</cell><cell>34.85</cell><cell>26.47</cell><cell>42.99</cell></row><row><cell>5000</cell><cell>20.00</cell><cell>26.67</cell><cell>75.00</cell><cell>80.80</cell><cell>33.33</cell><cell>29.41</cell><cell>44.20</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 8 :</head><label>8</label><figDesc>Performance evaluation of Tina-DeepScaleR-1.5B-Preview.</figDesc><table><row><cell cols="8">Ch eckpo i n t S te p s ( 8 75 St e p s p er E poc h ) AI M E 2 4 A I M E 25 A MC 23 M ATH5 00 GP QA M i ne rva Avg .</cell></row><row><cell>50</cell><cell>26.67</cell><cell>23.33</cell><cell>75.00</cell><cell>84.20</cell><cell>37.37</cell><cell>29.04</cell><cell>45.94</cell></row><row><cell>100</cell><cell>30.00</cell><cell>30.00</cell><cell>65.00</cell><cell>83.00</cell><cell>37.37</cell><cell>29.78</cell><cell>45.86</cell></row><row><cell>150</cell><cell>36.67</cell><cell>16.67</cell><cell>65.00</cell><cell>84.80</cell><cell>27.78</cell><cell>27.94</cell><cell>43.14</cell></row><row><cell>200</cell><cell>20.00</cell><cell>26.67</cell><cell>70.00</cell><cell>83.80</cell><cell>33.33</cell><cell>27.94</cell><cell>43.62</cell></row><row><cell>250</cell><cell>36.67</cell><cell>20.00</cell><cell>65.00</cell><cell>84.60</cell><cell>38.38</cell><cell>28.31</cell><cell>45.49</cell></row><row><cell>300</cell><cell>33.33</cell><cell>26.67</cell><cell>70.00</cell><cell>85.20</cell><cell>30.81</cell><cell>30.15</cell><cell>46.03</cell></row><row><cell>350</cell><cell>40.00</cell><cell>16.67</cell><cell>77.50</cell><cell>84.40</cell><cell>39.90</cell><cell>27.94</cell><cell>47.74</cell></row><row><cell>400</cell><cell>30.00</cell><cell>16.67</cell><cell>70.00</cell><cell>82.80</cell><cell>35.86</cell><cell>31.25</cell><cell>44.43</cell></row><row><cell>450</cell><cell>36.67</cell><cell>26.67</cell><cell>70.00</cell><cell>85.60</cell><cell>33.84</cell><cell>32.72</cell><cell>47.58</cell></row><row><cell>500</cell><cell>36.67</cell><cell>23.33</cell><cell>82.50</cell><cell>85.20</cell><cell>37.37</cell><cell>31.62</cell><cell>49.45</cell></row><row><cell>550</cell><cell>26.67</cell><cell>16.67</cell><cell>80.00</cell><cell>86.00</cell><cell>35.35</cell><cell>29.78</cell><cell>45.75</cell></row><row><cell>600</cell><cell>30.00</cell><cell>26.67</cell><cell>70.00</cell><cell>84.60</cell><cell>37.88</cell><cell>29.78</cell><cell>46.49</cell></row><row><cell>650</cell><cell>20.00</cell><cell>23.33</cell><cell>80.00</cell><cell>85.00</cell><cell>33.33</cell><cell>27.94</cell><cell>44.93</cell></row><row><cell>700</cell><cell>33.33</cell><cell>13.33</cell><cell>72.50</cell><cell>85.00</cell><cell>40.40</cell><cell>31.99</cell><cell>46.09</cell></row><row><cell>750</cell><cell>33.33</cell><cell>23.33</cell><cell>75.00</cell><cell>83.60</cell><cell>31.31</cell><cell>27.57</cell><cell>45.69</cell></row><row><cell>800</cell><cell>30.00</cell><cell>23.33</cell><cell>65.00</cell><cell>84.20</cell><cell>38.38</cell><cell>29.04</cell><cell>44.99</cell></row><row><cell>850</cell><cell>26.67</cell><cell>26.67</cell><cell>75.00</cell><cell>83.80</cell><cell>31.82</cell><cell>27.94</cell><cell>45.32</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 10 :</head><label>10</label><figDesc>Performance evaluation of Tina-Open-RS2.</figDesc><table><row><cell></cell><cell>33.33</cell><cell>20.00</cell><cell>75.00</cell><cell>83.80</cell><cell>31.82</cell><cell>29.78</cell><cell>45.62</cell></row><row><cell>600</cell><cell>30.00</cell><cell>30.00</cell><cell>77.50</cell><cell>84.20</cell><cell>34.34</cell><cell>31.62</cell><cell>47.94</cell></row><row><cell>800</cell><cell>43.33</cell><cell>20.00</cell><cell>80.00</cell><cell>84.00</cell><cell>35.35</cell><cell>28.68</cell><cell>48.56</cell></row><row><cell>1000</cell><cell>33.33</cell><cell>20.00</cell><cell>82.50</cell><cell>84.40</cell><cell>35.86</cell><cell>29.78</cell><cell>47.64</cell></row><row><cell>1200</cell><cell>36.67</cell><cell>20.00</cell><cell>67.50</cell><cell>84.40</cell><cell>37.88</cell><cell>30.15</cell><cell>46.10</cell></row><row><cell>1400</cell><cell>30.00</cell><cell>20.00</cell><cell>67.50</cell><cell>83.40</cell><cell>31.82</cell><cell>29.78</cell><cell>43.75</cell></row><row><cell>1600</cell><cell>23.33</cell><cell>13.33</cell><cell>65.00</cell><cell>83.40</cell><cell>35.86</cell><cell>26.84</cell><cell>41.29</cell></row><row><cell>1800</cell><cell>26.67</cell><cell>20.00</cell><cell>75.00</cell><cell>84.20</cell><cell>34.34</cell><cell>27.57</cell><cell>44.63</cell></row><row><cell>2000</cell><cell>30.00</cell><cell>26.67</cell><cell>72.50</cell><cell>83.00</cell><cell>36.36</cell><cell>27.94</cell><cell>46.08</cell></row><row><cell>2200</cell><cell>30.00</cell><cell>23.33</cell><cell>70.00</cell><cell>81.40</cell><cell>30.81</cell><cell>26.47</cell><cell>43.67</cell></row><row><cell>2400</cell><cell>30.00</cell><cell>23.33</cell><cell>67.50</cell><cell>81.80</cell><cell>30.30</cell><cell>27.57</cell><cell>43.42</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 12 :</head><label>12</label><figDesc>Performance evaluation of Tina-LIMR.</figDesc><table><row><cell cols="8">C h eck poi n t S t ep s ( 1 1 7 1 6 S t ep s p er E poc h ) AI ME 2 4 AI ME 2 5 AMC2 3 M ATH 5 0 0 GPQA M in erva Avg .</cell></row><row><cell>500</cell><cell>30.00</cell><cell>20.00</cell><cell>77.50</cell><cell>85.20</cell><cell>33.84</cell><cell>30.15</cell><cell>46.12</cell></row><row><cell>1000</cell><cell>30.00</cell><cell>23.33</cell><cell>72.50</cell><cell>85.60</cell><cell>33.84</cell><cell>26.67</cell><cell>45.32</cell></row><row><cell>1500</cell><cell>36.67</cell><cell>26.67</cell><cell>75.00</cell><cell>86.80</cell><cell>39.90</cell><cell>30.51</cell><cell>49.26</cell></row><row><cell>2000</cell><cell>26.67</cell><cell>23.33</cell><cell>67.50</cell><cell>83.20</cell><cell>29.80</cell><cell>31.62</cell><cell>43.69</cell></row><row><cell>2500</cell><cell>30.00</cell><cell>23.33</cell><cell>72.50</cell><cell>83.80</cell><cell>33.84</cell><cell>26.84</cell><cell>45.05</cell></row><row><cell>3000</cell><cell>20.00</cell><cell>30.00</cell><cell>67.50</cell><cell>84.60</cell><cell>34.34</cell><cell>28.31</cell><cell>44.13</cell></row><row><cell>3500</cell><cell>36.67</cell><cell>23.33</cell><cell>67.50</cell><cell>83.60</cell><cell>31.31</cell><cell>25.74</cell><cell>44.69</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 13 :</head><label>13</label><figDesc>Performance evaluation of Tina-OpenR1.</figDesc><table><row><cell cols="8">C hec kpo in t St ep s (8 259 S te ps per E poch) A IME 2 4 A IM E 2 5 A M C2 3 M ATH 5 0 0 GP QA M in erva Avg .</cell></row><row><cell>500</cell><cell>33.30</cell><cell>16.67</cell><cell>77.50</cell><cell>84.20</cell><cell>35.86</cell><cell>30.15</cell><cell>46.28</cell></row><row><cell>1000</cell><cell>33.33</cell><cell>23.33</cell><cell>80.00</cell><cell>85.20</cell><cell>24.75</cell><cell>32.72</cell><cell>46.56</cell></row><row><cell>1500</cell><cell>30.00</cell><cell>23.33</cell><cell>70.00</cell><cell>86.00</cell><cell>37.88</cell><cell>29.04</cell><cell>46.04</cell></row><row><cell>2000</cell><cell>30.00</cell><cell>23.33</cell><cell>70.00</cell><cell>84.20</cell><cell>33.33</cell><cell>28.31</cell><cell>44.86</cell></row><row><cell>2500</cell><cell>36.67</cell><cell>26.67</cell><cell>72.50</cell><cell>84.80</cell><cell>41.41</cell><cell>33.09</cell><cell>49.19</cell></row><row><cell>3000</cell><cell>26.67</cell><cell>23.33</cell><cell>75.00</cell><cell>83.60</cell><cell>34.34</cell><cell>32.72</cell><cell>45.94</cell></row><row><cell>3500</cell><cell>20.00</cell><cell>16.67</cell><cell>60.00</cell><cell>84.20</cell><cell>32.32</cell><cell>26.10</cell><cell>39.88</cell></row><row><cell>4000</cell><cell>33.33</cell><cell>23.33</cell><cell>72.50</cell><cell>83.60</cell><cell>38.38</cell><cell>27.94</cell><cell>46.51</cell></row><row><cell>4500</cell><cell>30.00</cell><cell>20.00</cell><cell>65.00</cell><cell>85.00</cell><cell>33.84</cell><cell>26.84</cell><cell>43.45</cell></row><row><cell>5000</cell><cell>20.00</cell><cell>33.33</cell><cell>65.00</cell><cell>84.80</cell><cell>40.91</cell><cell>30.88</cell><cell>45.82</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 14 :</head><label>14</label><figDesc>Performance evaluation of Tina-OpenThoughts.</figDesc><table><row><cell cols="8">Ch eckpo i n t S te p s ( 8 75 St e p s p er E poc h ) AI M E 2 4 A I M E 25 A MC 23 M ATH5 00 GP QA M i ne rva Avg .</cell></row><row><cell>50</cell><cell>33.33</cell><cell>16.67</cell><cell>75.00</cell><cell>83.80</cell><cell>37.37</cell><cell>26.84</cell><cell>45.50</cell></row><row><cell>100</cell><cell>16.67</cell><cell>20.00</cell><cell>70.00</cell><cell>83.20</cell><cell>33.33</cell><cell>26.47</cell><cell>41.61</cell></row><row><cell>150</cell><cell>43.33</cell><cell>23.33</cell><cell>80.00</cell><cell>85.00</cell><cell>35.35</cell><cell>30.15</cell><cell>49.53</cell></row><row><cell>200</cell><cell>30.00</cell><cell>23.33</cell><cell>70.00</cell><cell>84.00</cell><cell>39.90</cell><cell>28.68</cell><cell>45.99</cell></row><row><cell>250</cell><cell>33.33</cell><cell>30.00</cell><cell>65.00</cell><cell>83.80</cell><cell>34.34</cell><cell>28.31</cell><cell>45.80</cell></row><row><cell>300</cell><cell>36.67</cell><cell>16.67</cell><cell>67.50</cell><cell>84.40</cell><cell>37.88</cell><cell>29.78</cell><cell>45.48</cell></row><row><cell>350</cell><cell>26.67</cell><cell>30.00</cell><cell>75.00</cell><cell>84.00</cell><cell>37.88</cell><cell>29.78</cell><cell>47.22</cell></row><row><cell>400</cell><cell>36.67</cell><cell>23.33</cell><cell>72.50</cell><cell>84.40</cell><cell>32.83</cell><cell>27.57</cell><cell>46.22</cell></row><row><cell>450</cell><cell>36.67</cell><cell>16.67</cell><cell>72.50</cell><cell>85.60</cell><cell>29.29</cell><cell>27.57</cell><cell>44.72</cell></row><row><cell>500</cell><cell>30.00</cell><cell>20.00</cell><cell>72.50</cell><cell>85.60</cell><cell>37.37</cell><cell>29.41</cell><cell>45.81</cell></row><row><cell>550</cell><cell>30.00</cell><cell>23.33</cell><cell>77.50</cell><cell>84.80</cell><cell>36.87</cell><cell>31.62</cell><cell>47.35</cell></row><row><cell>600</cell><cell>33.33</cell><cell>26.67</cell><cell>72.50</cell><cell>83.80</cell><cell>30.30</cell><cell>28.31</cell><cell>45.82</cell></row><row><cell>650</cell><cell>26.67</cell><cell>20.00</cell><cell>77.50</cell><cell>82.40</cell><cell>37.88</cell><cell>27.94</cell><cell>45.40</cell></row><row><cell>700</cell><cell>36.67</cell><cell>20.00</cell><cell>80.00</cell><cell>83.80</cell><cell>35.35</cell><cell>31.25</cell><cell>47.85</cell></row><row><cell>750</cell><cell>30.00</cell><cell>26.67</cell><cell>75.00</cell><cell>84.20</cell><cell>38.89</cell><cell>27.57</cell><cell>47.06</cell></row><row><cell>800</cell><cell>20.00</cell><cell>30.00</cell><cell>75.00</cell><cell>82.40</cell><cell>35.86</cell><cell>28.31</cell><cell>45.26</cell></row><row><cell>850</cell><cell>23.33</cell><cell>20.00</cell><cell>72.50</cell><cell>85.40</cell><cell>36.36</cell><cell>30.15</cell><cell>44.62</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 15 :</head><label>15</label><figDesc>Performance evaluation of Tina-Open-RS3-DrGRPO.</figDesc><table><row><cell>50</cell><cell>20.00</cell><cell>26.67</cell><cell>67.50</cell><cell>85.40</cell><cell>37.88</cell><cell>30.51</cell><cell>44.66</cell></row><row><cell>100</cell><cell>46.67</cell><cell>20.00</cell><cell>75.00</cell><cell>83.80</cell><cell>34.85</cell><cell>30.51</cell><cell>48.47</cell></row><row><cell>150</cell><cell>26.67</cell><cell>20.00</cell><cell>72.50</cell><cell>84.00</cell><cell>37.37</cell><cell>30.15</cell><cell>45.12</cell></row><row><cell>200</cell><cell>33.33</cell><cell>30.00</cell><cell>62.50</cell><cell>83.40</cell><cell>29.80</cell><cell>30.88</cell><cell>44.99</cell></row></table><note><p>Ch eckpo i n t S te p s ( 1 74 St e p s p er E poc h ) AI M E 2 4 A I M E 25 A MC 23 M ATH5 00 GP QA M i ne rva Avg .</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_7"><head>Table 16 :</head><label>16</label><figDesc>Performance evaluation of Tina-LIMR-5e-6-lr with learning rate 5e-6.</figDesc><table><row><cell>Ch</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_8"><head>Table 17 :</head><label>17</label><figDesc>Performance evaluation of Tina-LIMR-5e-7-lr with learning rate 5e-7.</figDesc><table><row><cell cols="8">Ch eckpo i n t S te p s ( 1 74 St e p s p er E poc h ) AI M E 2 4 A I M E 25 A MC 23 M ATH5 00 GP QA M i ne rva Avg .</cell></row><row><cell>50</cell><cell>20.00</cell><cell>30.00</cell><cell>77.50</cell><cell>84.20</cell><cell>38.38</cell><cell>31.62</cell><cell>46.95</cell></row><row><cell>100</cell><cell>30.00</cell><cell>23.33</cell><cell>72.50</cell><cell>84.60</cell><cell>32.32</cell><cell>29.78</cell><cell>45.42</cell></row><row><cell>150</cell><cell>36.67</cell><cell>20.00</cell><cell>70.00</cell><cell>83.40</cell><cell>31.82</cell><cell>30.88</cell><cell>45.46</cell></row><row><cell>200</cell><cell>33.33</cell><cell>20.00</cell><cell>72.50</cell><cell>85.00</cell><cell>29.80</cell><cell>29.41</cell><cell>45.01</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_9"><head>Table 18 :</head><label>18</label><figDesc>Performance evaluation of Tina-LIMR-64-LoRA-rank with LoRA rank 64 and alpha 512.</figDesc><table><row><cell></cell><cell>33.33</cell><cell>23.33</cell><cell>62.50</cell><cell>84.20</cell><cell>38.89</cell><cell>31.25</cell><cell>45.58</cell></row><row><cell>100</cell><cell>43.33</cell><cell>33.33</cell><cell>70.00</cell><cell>83.20</cell><cell>35.35</cell><cell>28.31</cell><cell>48.92</cell></row><row><cell>150</cell><cell>26.67</cell><cell>16.67</cell><cell>72.50</cell><cell>83.40</cell><cell>35.35</cell><cell>29.04</cell><cell>43.94</cell></row><row><cell>200</cell><cell>36.67</cell><cell>20.00</cell><cell>75.00</cell><cell>83.00</cell><cell>39.39</cell><cell>30.51</cell><cell>47.43</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_10"><head>Table 19 :</head><label>19</label><figDesc>Performance evaluation of Tina-LIMR-16-LoRA-rank with LoRA rank 16 and alpha 64.</figDesc><table><row><cell cols="8">Ch eckpo i n t S te p s ( 1 74 St e p s p er E poc h ) AI M E 2 4 A I M E 25 A MC 23 M ATH5 00 GP QA M i ne rva Avg .</cell></row><row><cell>50</cell><cell>30.00</cell><cell>26.67</cell><cell>82.50</cell><cell>83.80</cell><cell>33.84</cell><cell>30.51</cell><cell>47.89</cell></row><row><cell>100</cell><cell>26.67</cell><cell>16.67</cell><cell>72.50</cell><cell>84.00</cell><cell>36.87</cell><cell>29.78</cell><cell>44.42</cell></row><row><cell>150</cell><cell>53.33</cell><cell>20.00</cell><cell>60.00</cell><cell>83.20</cell><cell>37.37</cell><cell>30.88</cell><cell>47.46</cell></row><row><cell>200</cell><cell>23.33</cell><cell>20.00</cell><cell>72.50</cell><cell>85.40</cell><cell>32.83</cell><cell>28.68</cell><cell>43.86</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>https://github.com/huggingface/open-r1</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>Occasionally, NVIDIA RTX 6000 Ada GPUs were used instead, which is reflected in the system configuration metadata on Weights &amp; Biases. From our practical experience, these two GPU types are similar in terms of cost and computational performance. For consistency, we report costs and compute metrics based on the L40S.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_2"><p>4 https://github.com/huggingface/open-r1</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_3"><p>https://github.com/huggingface/open-r1/blob/4f5b21e21dec473af9729bce8e084deb16223ae4/src/open_r1/evaluate.py</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head n="7.">Acknowledgment</head><p>We want to express our gratitude to the broader open-source community. This research was made possible by leveraging numerous publicly available resources, including training and evaluation framework, open datasets, accessible pre-trained language models, and the insights shared through technical reports. The computational resources required for the experiments described herein were provided by the <rs type="funder">Center for Advanced Research Computing (CARC)</rs> at the <rs type="institution">University of Southern California (USC)</rs>. We are grateful for the support which enabled the training and evaluation of our models. J.A. was supported by the <rs type="funder">National Science Foundation Graduate Research Fellowship Program</rs> under Grant No. <rs type="grantNumber">DGE-1842487</rs>. Any opinions, findings, and conclusions or recommendations expressed in this material are those of the authors and do not necessarily reflect the views of the National Science Foundation.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_93SESJk">
+					<idno type="grant-number">DGE-1842487</idno>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Appendix A. Cost Breakdown</head><p>This section provides further details on how training data amounts, computational cost, time cost, and performance metrics reported in this paper -particularly those presented in figures like Figures <ref type="figure">1</ref> and <ref type="figure">3</ref> were determined and should be interpreted.</p><p>Overall Comparison (Figure <ref type="figure">1</ref>). For the baseline models included in Figure <ref type="figure">1</ref>, the approximate training data amounts, computational costs (typically reported as GPU hours or total FLOPs), and training times are sourced from their respective technical reports or publications, leveraging the helpful summary provided in the Open-RS paper <ref type="bibr">(Dang and Ngo, 2025)</ref>. Reasoning performance scores for all models, encompassing both baselines and our Tina models, stem from results presented in Tables <ref type="table">2</ref> and <ref type="table">3</ref>.</p><p>Also, it is crucial to understand the scope of reported costs:</p><p>• Epoch vs. Best Checkpoint: Costs cited for Tina and baseline models reflect the resources needed to complete a full training epoch or a predefined training run, not necessarily the minimal cost to reach the single best-performing checkpoint within that run.</p><p>• Training vs. Evaluation: Reported costs cover training only, omitting the computational expense required for model evaluation across benchmarks since such information is missing from several baseline models.</p><p>Particularly, the $9 USD in the abstract represents the estimated cost to train the Tina model up to its bestperforming checkpoint and subsequently evaluate that specific checkpoint. For context comparing potential full training runs, the cost to train a Tina model for a complete epoch is $14 USD (training only). Including evaluation costs for such a full run would increase the total to approximately $31 USD. We emphasize the $9 as representing the efficient path to the best Tina model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>FLOPs Estimation (Figure 3).</head><p>The approximate training FLOPs shown in Figure <ref type="figure">3</ref> serve as a hardwareagnostic measure of computational work. For both Tina and baseline models, these values were estimated based on reported training durations and hardware configurations sourced from technical reports or the Open-RS summary, using standard FLOPs calculation methodologies.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Additional Experimental Details</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1. Hyperparameters</head><p>We show our default choice of hyperparameter in Table <ref type="table" target="#tab_11">5</ref> for all the LoRA-based RL experiments. We also show the varied hyperparameter in Table <ref type="table">6</ref> for all the LoRA-based RL experiments. Particularly, all the reward types including Accuracy, Format, Length, Cosine, Tag Count, Reasoning Steps, Repetition Penalty, are defined and implemented by the OpenR1 code repository.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E. Full Tina Model Training Phase Transition</head><p>In this section, we present all Tina models' training phase transitions along the training dynamics. Specifically, we observe clear phase transitions in the training of Tina-DeepScaleR-1.5B-Preview, Tina-STILL-3-1.5B-preview, Tina-Open-RS1, Tina-Open-RS2, Tina-Open-RS3, and Tina-Open-RS3-GRPO, as shown in Figures <ref type="figure">5</ref>, <ref type="figure">6</ref>, and 7. For Tina-OpenR1 and Tina-Thoughts (Figures <ref type="figure">8</ref> and <ref type="figure">9</ref>), the observation is similar, except the best-performing checkpoint is achieved after the training turning point, rather than before. However, we do not observe such a transition in all Tina variants on the LIMR dataset, as shown in Figures 10, 11, and 12, possibly because its small data size leads to training periods which are too brief to extract meaningful information. Tina: Tiny Reasoning Models via LoRA 0 1000 2000 3000 4000 5000 Step 0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 Accuracy Reward Tina-OpenThoughts: Accuracy Reward Raw Data Smoothed (EMA =0.1) 0 1000 2000 3000 4000 5000 Step 0.4 0.3 0.2 0.1 0.0 0.1 0.2 0.3 0.4 Cosine Scaled Reward Tina-OpenThoughts: Cosine Scaled Reward Raw Data Smoothed (EMA =0.1) 0 1000 2000 3000 4000 5000 Step 0.0 0.2 0.4 0.6 0.8 1.0 Format Reward Tina-OpenThoughts: Format Reward Raw Data Smoothed (EMA =0.1) Best-Performing Checkpoint Training Turning Point 0 1000 2000 3000 4000 5000 Step 0.20 0.15 0.10 0.05 0.00 Len Reward Tina-OpenThoughts: Len Reward Raw Data Smoothed (EMA =0.1) Best-Performing Checkpoint Training Turning Point 0 1000 2000 3000 4000 5000 Step 0.4 0.5 0.6 0.7 0.8 0.9 1.0 Reasoning Steps Reward Tina-OpenThoughts: Reasoning Steps Reward Raw Data Smoothed (EMA =0.1) Best-Performing Checkpoint Training Turning Point 0 1000 2000 3000 4000 5000 Step 0.25 0.20 0.15 0.10 0.05 Repetition Penalty Reward Tina-OpenThoughts: Repetition Penalty Reward Raw Data Smoothed (EMA =0.1) Best-Performing Checkpoint Training Turning Point 0 1000 2000 3000 4000 5000 Step 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 Tag Count Reward Tina-OpenThoughts: Tag Count Reward Raw Data Smoothed (EMA =0.1) Best-Performing Checkpoint Training Turning Point 0 1000 2000 3000 4000 5000 Step 1200 1400 1600 1800 2000 Completion Length Tina-OpenThoughts: Completion Length Raw Data Smoothed (EMA =0.1) Best-Performing Checkpoint Training Turning Point </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 5 :Figure 6 :Figure 8 :</head><label>568</label><figDesc>Phase transition in Tina-DeepScaleR-1.5B-Preview and Tina-STILL-3-1.5B-preview. The raw data is from the Weights &amp; Biases training logs and smoothed via exponential moving average (EMA) with factor 0.1. Phase transition in Tina-Open-RS1 and Tina-Open-RS2. The raw data is from the Weights &amp; Biases training logs and smoothed via exponential moving average (EMA) with factor 0.1. Phase transition in Tina-OpenR1. The raw data is from the Weights &amp; Biases training logs and smoothed via exponential moving average (EMA) with factor 0.1.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 9 :Figure 10 :Figure 11 :Figure 12 :</head><label>9101112</label><figDesc>Phase transition in Tina-OpenThoughts. The raw data is from the Weights &amp; Biases training logs and smoothed via exponential moving average (EMA) with factor 0.1. Phase transition in Tina-LIMR, Tina-LIMR-64-LoRA-rank and Tina-LIMR-16-LoRA-rank. The raw data is from the Weights &amp; Biases training logs and smoothed via exponential moving average (EMA) with factor 0Phase transition in Tina-LIMR-8-LoRA-rank and Tina-LIMR-4-LoRA-rank. The raw data is from the Weights &amp; Biases training logs and smoothed via exponential moving average (EMA) with factor 0.1. Phase transition in Tina-LIMR-5e-6-lr and Tina-LIMR-5e-7-lr. The raw data is from the Weights &amp; Biases training logs and smoothed via exponential moving average (EMA) with factor 0.1.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_11"><head>Table 5 :</head><label>5</label><figDesc>Common hyperparameter settings.</figDesc><table><row><cell>Tina-STILL-3-1.5B-preview</cell><cell>LoRA</cell></row><row><cell>Tina-DeepScaleR-1.5B-Preview</cell><cell>LoRA</cell></row><row><cell>Tina-Open-RS{X}-{Y}</cell><cell>LoRA</cell></row><row><cell>Tina-LIMR-{Z}</cell><cell>LoRA</cell></row><row><cell>Tina-OpenR1</cell><cell>LoRA</cell></row><row><cell>Tina-OpenThoughts</cell><cell>LoRA</cell></row><row><cell>LoRA Modules</cell><cell>query, key, value, dense</cell></row><row><cell>LoRA Rank</cell><cell>32</cell></row><row><cell>LoRA α</cell><cell>128</cell></row><row><cell>LoRA Dropout</cell><cell>0.05</cell></row><row><cell>Algorithm</cell><cell>GRPO</cell></row><row><cell>Optimizer</cell><cell>AdamW</cell></row><row><cell>Optimizer Momentum</cell><cell>β 1 , β 2 = 0.9, 0.999</cell></row><row><cell>Learning Rate</cell><cell>1e-6</cell></row><row><cell>LR Scheduler</cell><cell>Cosine with Min LR</cell></row><row><cell>Warmup Ratio</cell><cell>0.1</cell></row><row><cell>Precision</cell><cell>BF16-mixed</cell></row><row><cell>Gradient Accumulation Step</cell><cell>4</cell></row><row><cell>Total Train Batch Size</cell><cell>32</cell></row><row><cell>Epochs</cell><cell>1</cell></row><row><cell>Hardware</cell><cell>2 × NVIDIA L40S</cell></row><row><cell>Max Prompt Length</cell><cell>512</cell></row><row><cell>Max Completion Length</cell><cell>3584</cell></row><row><cell>Number of Generation</cell><cell>4</cell></row><row><cell>Vllm GPU Memory Utilization</cell><cell>0.4</cell></row><row><cell>Vllm Max Model Length</cell><cell>4608</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Pranjal</forename><surname>Aggarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Welleck</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2503.04697" />
+		<title level="m">L1: Controlling how long a reasoning model thinks with reinforcement learning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Physics of language models: Part 3.3, knowledge capacity scaling laws</title>
+		<author>
+			<persName><forename type="first">Zeyuan</forename><surname>Allen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">-Zhu</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Li</surname></persName>
+		</author>
+		<ptr target="https://artofproblemsolving.com/wiki/index.php/AIME_Problems_and_Solutions" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of International Conference on Learning Representations (ICLR)</title>
+		<meeting>International Conference on Learning Representations (ICLR)</meeting>
+		<imprint>
+			<date type="published" when="2023-02">2025. 2023. February 2024</date>
+		</imprint>
+	</monogr>
+	<note>Art of Problem Solving. Amc problems and solutions Art of Problem Solving. Aime problems and solutions</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Inference-aware fine-tuning for Best-of-N sampling in large language models</title>
+		<author>
+			<persName><forename type="first">Yinlam</forename><surname>Chow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guy</forename><surname>Tennenholtz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izzeddin</forename><surname>Gur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sridhar</forename><surname>Thiagarajan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Craig</forename><surname>Boutilier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aviral</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Faust</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2412.15287" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Cudo</forename><surname>Compute</surname></persName>
+		</author>
+		<ptr target="https://www.cudocompute.com/products/gpu-cloud/nvidia-l40s" />
+		<title level="m">Nvidia L40S pricing</title>
+		<imprint>
+			<biblScope unit="page" from="2025" to="2029" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ganqu</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lifan</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zefan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanbin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wendi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bingxiang</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qixin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiarui</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huayu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiyan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingtai</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Ding</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2502.01456" />
+		<title level="m">Process reinforcement through implicit rewards</title>
+		<meeting>ess reinforcement through implicit rewards</meeting>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Reinforcement learning for reasoning in small llms: What works and what doesn&apos;t, 2025</title>
+		<author>
+			<persName><forename type="first">Quy-Anh</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Ngo</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2503.16219" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">DeepSeek-R1: Incentivizing reasoning capability in llms via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Deepseek-Ai</forename></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2501.12948" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Lighteval: A lightweight framework for llm evaluation</title>
+		<author>
+			<persName><forename type="first">Clémentine</forename><surname>Fourrier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Habib</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hynek</forename><surname>Kydlíček</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Wolf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lewis</forename><surname>Tunstall</surname></persName>
+		</author>
+		<ptr target="https://github.com/huggingface/lighteval" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Omni-MATH: A universal olympiad level mathematic benchmark for large language models</title>
+		<author>
+			<persName><forename type="first">Bofei</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feifan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zefan</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yibo</forename><surname>Miao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingxiu</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenghao</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengyang</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benyou</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daoguang</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanghaoran</forename><surname>Quan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Sha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuancheng</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baobao</forename><surname>Chang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2410.07985" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">A framework for few-shot language model evaluation</title>
+		<author>
+			<persName><forename type="first">Leo</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Tow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stella</forename><surname>Baber Abbasi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sid</forename><surname>Biderman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Black</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Dipofi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurence</forename><surname>Foster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Golding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alain</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haonan</forename><surname>Le Noac'h</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Mcdonell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Ociepa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laria</forename><surname>Phang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hailey</forename><surname>Reynolds</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aviya</forename><surname>Schoelkopf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lintang</forename><surname>Skowron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Sutawika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anish</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Thite</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zou</surname></persName>
+		</author>
+		<ptr target="https://zenodo.org/records/12608602" />
+		<imprint>
+			<biblScope unit="page" from="7" to="2024" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Accelerate: Training and inference at scale made simple, efficient and adaptable</title>
+		<author>
+			<persName><forename type="first">Sylvain</forename><surname>Gugger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lysandre</forename><surname>Debut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Wolf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philipp</forename><surname>Schmid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zachary</forename><surname>Mueller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sourab</forename><surname>Mangrulkar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Bossan</surname></persName>
+		</author>
+		<ptr target="https://github.com/huggingface/accelerate" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Parameter-efficient fine-tuning for large models: A comprehensive survey</title>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sai Qian</forename><surname>Zhang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2403.14608" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Measuring mathematical problem solving with the math dataset</title>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurav</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akul</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2103.03874" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">LoRA: Low-rank adaptation of large language models</title>
+		<author>
+			<persName><forename type="first">Edward</forename><forename type="middle">J</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yelong</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phillip</forename><surname>Wallis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyuan</forename><surname>Allen-Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shean</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2106.09685" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Open-Reasoner-Zero: An open source approach to scaling reinforcement learning on the base model</title>
+		<author>
+			<persName><forename type="first">Jingcheng</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinmin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daxin</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heung-Yeung</forename><surname>Shum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<ptr target="https://github.com/Open-Reasoner-Zero/Open-Reasoner-Zero" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">O1 replication journey -part 2: Surpassing o1-preview through simple distillation, big progress or bitter lesson?</title>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoyang</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuefeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixiu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Chern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijie</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiwei</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhe</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2411.16489" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Open r1: A fully open reproduction of deepseek-r1</title>
+		<author>
+			<persName><forename type="first">Hugging</forename><surname>Face</surname></persName>
+		</author>
+		<ptr target="https://github.com/huggingface/open-r1" />
+		<imprint>
+			<date type="published" when="2025-01">January 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Efficient memory management for large language model serving with pagedattention</title>
+		<author>
+			<persName><forename type="first">Woosuk</forename><surname>Kwon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuohan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lianmin</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cody</forename><forename type="middle">Hao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Stoica</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of Symposium on Operating Systems Principles (SOSP)</title>
+		<meeting>Symposium on Operating Systems Principles (SOSP)</meeting>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Lambert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Morrison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Valentina</forename><surname>Pyatkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengyi</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hamish</forename><surname>Ivison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Faeze</forename><surname>Brahman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lester</forename><surname>James</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Miranda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alisa</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouha</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shane</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuling</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saumya</forename><surname>Malik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victoria</forename><surname>Graf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jena</forename><forename type="middle">D</forename><surname>Hwang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiangjiang</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronan</forename><surname>Le Bras</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oyvind</forename><surname>Tafjord</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Wilhelm</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luca</forename><surname>Soldaini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pradeep</forename><surname>Dasigi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2411.15124" />
+		<title level="m">Tulu 3: Pushing frontiers in open language model post-training</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Solving quantitative reasoning problems with language models</title>
+		<author>
+			<persName><forename type="first">Aitor</forename><surname>Lewkowycz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anders</forename><surname>Andreassen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Dyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vinay</forename><surname>Ramasesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ambrose</forename><surname>Slone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cem</forename><surname>Anil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Imanol</forename><surname>Schlag</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Theo</forename><surname>Gutman-Solo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhuai</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Behnam</forename><surname>Neyshabur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guy</forename><surname>Gur-Ari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vedant</forename><surname>Misra</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of Advances in Neural Information Processing Systems (NeurIPS)</title>
+		<meeting>Advances in Neural Information Processing Systems (NeurIPS)</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="3843" to="3857" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">I</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Beeching</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lewis</forename><surname>Tunstall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Lipkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roman</forename><surname>Soletskyi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Costa</forename><surname>Shengyi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kashif</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Longhui</forename><surname>Rasul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Albert</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziju</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guillaume</forename><surname>Fleureau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stanislas</forename><surname>Lample</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Polu</surname></persName>
+		</author>
+		<ptr target="https://huggingface.co/AI-MO/NuminaMath-CoT" />
+	</analytic>
+	<monogr>
+		<title level="j">NuminaMath</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Let&apos;s verify step by step</title>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Hunter Lightman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harrison</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teddy</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cobbe</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of International Conference on Learning Representations (ICLR)</title>
+		<meeting>International Conference on Learning Representations (ICLR)</meeting>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Understanding r1-zero-like training: A critical perspective</title>
+		<author>
+			<persName><forename type="first">Zichen</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changyu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Penghui</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wee</forename><surname>Sun Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Lin</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2503.20783" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">DeepScaleR: Surpassing o1-preview with a 1.5b model by scaling rl</title>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sijun</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Justin</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoxiang</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">Y</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manan</forename><surname>Roongta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianjun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><forename type="middle">Erran</forename><surname>Li</surname></persName>
+		</author>
+		<ptr target="https://agentica-project.com/" />
+	</analytic>
+	<monogr>
+		<title level="m">Raluca Ada Popa, and Ion Stoica</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">ReFT: Reasoning with reinforced fine-tuning</title>
+		<author>
+			<persName><forename type="first">Trung Quoc</forename><surname>Luong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinbo</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhanming</forename><surname>Jie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoran</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Li</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2401.08967" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Exploring the limit of outcome reward for learning mathematical reasoning</title>
+		<author>
+			<persName><forename type="first">Chengqi</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Songyang</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuzhe</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenwei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfei</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuikun</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuaibin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haian</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weihan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiangning</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongwei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junnan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Songyang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dahua</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Chen</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2502.06781" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">PEFT: State-of-the-art parameter-efficient fine-tuning methods</title>
+		<author>
+			<persName><forename type="first">Sourab</forename><surname>Mangrulkar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sylvain</forename><surname>Gugger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lysandre</forename><surname>Debut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Younes</forename><surname>Belkada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sayak</forename><surname>Paul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Bossan</surname></persName>
+		</author>
+		<ptr target="https://github.com/huggingface/peft" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Imitate, explore, and self-improve: A reproduction report on slow-thinking reasoning systems</title>
+		<author>
+			<persName><forename type="first">Yingqian</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhipeng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinhao</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiwen</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiapeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoxue</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huatong</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wayne</forename><forename type="middle">Xin</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongyuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji-Rong</forename><surname>Wen</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2412.09413" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Emmanuel Candès, and Tatsunori Hashimoto. s1: Simple test-time scaling</title>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zitong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weijia</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lisa</forename><surname>Xiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Liang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2501.19393" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Sky-T1: Train your own o1 preview model within $450</title>
+		<author>
+			<persName><forename type="first">Novasky</forename><surname>Team</surname></persName>
+		</author>
+		<ptr target="https://novasky-ai.github.io/posts/sky-t1" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">OpenAI o1 system card</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://open-thoughts.ai" />
+		<imprint>
+			<date type="published" when="2024-01">2024. January 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">OpenThoughts Team. Open Thoughts</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">REFINER: Reasoning feedback on intermediate representations</title>
+		<author>
+			<persName><forename type="first">Debjit</forename><surname>Paul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mete</forename><surname>Ismayilzada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxime</forename><surname>Peyrard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beatriz</forename><surname>Borges</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Bosselut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>West</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boi</forename><surname>Faltings</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of European Chapter of the ACL (EACL)</title>
+		<meeting>European Chapter of the ACL (EACL)</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="1100" to="1126" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Mutual reasoning makes smaller LLMs stronger problem-solvers</title>
+		<author>
+			<persName><forename type="first">Zhenting</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingyuan</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahang</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><forename type="middle">Lyna</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mao</forename><surname>Yang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2408.06195" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Zero: Memory optimization towards training A trillion parameter models</title>
+		<author>
+			<persName><forename type="first">Samyam</forename><surname>Rajbhandari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Rasley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olatunji</forename><surname>Ruwase</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiong</forename><surname>He</surname></persName>
+		</author>
+		<idno>CoRR, abs/1910.02054</idno>
+		<ptr target="http://arxiv.org/abs/1910.02054" />
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">GPQA: A graduate-level google-proof Q&amp;A benchmark</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Rein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Betty</forename><forename type="middle">Li</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Asa</forename><forename type="middle">Cooper</forename><surname>Stickland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jackson</forename><surname>Petty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">Yuanzhe</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julien</forename><surname>Dirani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Michael</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Samuel R Bowman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of Conference on Language Modeling (COLM)</title>
+		<meeting>Conference on Language Modeling (COLM)</meeting>
+		<imprint>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">STILL-3-1.5B-preview: Enhancing slow thinking abilities of small models through reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Still</forename><surname>Rucaibox</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Team</surname></persName>
+		</author>
+		<ptr target="https://github.com/RUCAIBox/Slow_Thinking_with_LLMs" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">DeepSeekMath: Pushing the limits of mathematical reasoning in open language models</title>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daya</forename><surname>Guo</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2402.03300" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Hybridflow: A flexible and efficient rlhf framework</title>
+		<author>
+			<persName><forename type="first">Guangming</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilingfeng</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xibin</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ru</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanghua</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haibin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuan</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3689031.3696075</idno>
+		<ptr target="http://dx.doi.org/10.1145/3689031.3696075" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of European Conference on Computer Systems (EuroSys), EuroSys &apos;25</title>
+		<meeting>European Conference on Computer Systems (EuroSys), EuroSys &apos;25</meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2025-03">March 2025</date>
+			<biblScope unit="page" from="1279" to="1297" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Trl: Transformer reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Younes</forename><surname>Leandro Von Werra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lewis</forename><surname>Belkada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Tunstall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tristan</forename><surname>Beeching</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Thrush</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengyi</forename><surname>Lambert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kashif</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quentin</forename><surname>Rasul</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gallouédec</surname></persName>
+		</author>
+		<ptr target="https://github.com/huggingface/trl" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shangshang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Willie</forename><surname>Neiswanger</surname></persName>
+		</author>
+		<ptr target="https://shangshangwang.notion.site/llm-reasoning" />
+		<title level="m">LLM reasoning: Curated insights</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Large language models can self-correct with key condition verification</title>
+		<author>
+			<persName><forename type="first">Zhenyu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingkai</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoxuan</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meng</forename><surname>Jiang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of Conference on Empirical Methods in Natural Language Processing (EMNLP)</title>
+		<meeting>Conference on Empirical Methods in Natural Language Processing (EMNLP)</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="12846" to="12867" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Towards large reasoning models: A survey of reinforced reasoning with large language models</title>
+		<author>
+			<persName><forename type="first">Fengli</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qianyue</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zefang</forename><surname>Zong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingwei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunke</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaochong</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahui</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianjian</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fanjin</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyang</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuwei</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qinglong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiwen</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sijian</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyuan</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Li</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2501.09686" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<author>
+			<persName><forename type="first">Weihao</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuzhen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keqing</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zejun</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxian</forename><surname>He</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2503.18892" />
+		<title level="m">SimpleRL-Zoo: Investigating and taming zero reinforcement learning for open base models in the wild</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

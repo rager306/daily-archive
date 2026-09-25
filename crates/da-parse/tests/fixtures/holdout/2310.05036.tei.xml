@@ -1,0 +1,949 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">AVALONBENCH: Evaluating LLMs Playing the Game of Avalon</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2023-11-08">8 Nov 2023</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Jonathan</forename><surname>Light</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Rensselaer Polytechnic Institute</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Min</forename><surname>Cai</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Shenzhen University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Sheng</forename><surname>Shen</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Berkeley</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ziniu</forename><surname>Hu</surname></persName>
+							<affiliation key="aff3">
+								<orgName type="department">California Institute of Technology https://github.com/jonathanmli/Avalon-LLM</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">AVALONBENCH: Evaluating LLMs Playing the Game of Avalon</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2023-11-08">8 Nov 2023</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">3304E09F42903975D56EA2AB9ACAA8ED</idno>
+					<idno type="arXiv">arXiv:2310.05036v3[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:33+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>In this paper, we explore the potential of Large Language Models (LLMs) Agents in playing the strategic social deduction game, Resistance Avalon. Players in Avalon are challenged not only to make informed decisions based on dynamically evolving game phases, but also to engage in discussions where they must deceive, deduce, and negotiate with other players. These characteristics make Avalon a compelling test-bed to study the decision-making and language-processing capabilities of LLM Agents. To facilitate research in this line, we introduce AVALONBENCH -a comprehensive game environment tailored for evaluating multi-agent LLM Agents. This benchmark incorporates: (1) a game environment for Avalon, (2) rule-based bots as baseline opponents, and (3) ReAct-style LLM agents with tailored prompts for each role. Notably, our evaluations based on AVALONBENCH highlight a clear capability gap. For instance, models like ChatGPT playing good-role got a win rate of 22.2% against rule-based bots playing evil, while good-role bot achieves 38.2% win rate in the same setting. We envision AVALONBENCH could be a good test-bed for developing more advanced LLMs (with self-playing) and agent frameworks that can effectively model the layered complexities of such game environments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>* Equal contribution</head><p>Preprint. Under review.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="26" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="27" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="28" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>The Resistance <ref type="bibr">[Wiki]</ref> is a classic hidden-identity, social deduction game with simple rules but complex strategies. In this game, each player has a secret identity, of either good or evil. Good players aim to help missions succeed, while evil players try to sabotage missions. The progression of each mission is structured into three distinct phases, as illustrated in Figure <ref type="figure" target="#fig_0">1</ref>. In the initial Team Selection Phase, players follow a sequential order to propose a subset of players to form a mission team. This is followed by a Voting Phase, during which all players vote whether to approve or reject the team proposal. Finally, in the Mission Phase, the selected players on the team anonymously decide to either pass or sabotage the mission. A single decision to sabotage is enough to fail the mission; otherwise, it is deemed successful. If three out of five missions succeed, good players win. Otherwise, evil players win. A notable asymmetrical nature of this game is that most good players do not know other players' identities, while evil players are aware of who their teammates are. At each phase, all players can use language to discuss their thinking and point out the potential candidates of evil players.</p><p>Resistance Avalon introduces two special roles -Merlin and Assassin -to the vanilla game introduced above. Merlin is a good player who knows all the evil players' identities, a strong guiding force for good players. His identity remains concealed from both good and evil players throughout the game. The Assassin is an evil player who can assassinate a player at the end of the game. If the player they Assassinated is Merlin, evil players win, even if three missions succeed. This forces Merlin to mask his identity and discreetly whisper information to good players, while the evil players are constantly on the hunt to find who Merlin might be.</p><p>Resistance Avalon and related hidden-identity social deduction language games present a significant challenge to AI. We summarized three most prominent challenges in Figure <ref type="figure">2</ref>, which are:</p><p>• Players need to do deductive reasoning. Players need to analyze and deduce the identity of other players based on their actions (team proposal, voting and outcomes), as well as their discussion dialogues (even evil players will try disguising themselves) • Players need to coordinate and collaborate with their teammates to execute a joint strategy.</p><p>As shown in the figure, the player 4 wants to form a group with player 2 before submitting the proposal, and he needs to negotiate with each player and adjust his proposal accordingly • Players need to learn the skill of deception, e.g., hide their true identity and motives from other players during discussion. Players who participated in missions that failed will be under high suspicion from other players, and they need to find ways to explain and disguise their suspicious actions.</p><p>Based on these features of Resistance Avalon, we believe it is a good test-bed for evaluating and studying the language understanding and reasoning capability of AI Agents <ref type="bibr" target="#b11">[Maes, 1994</ref><ref type="bibr" target="#b12">, Müller et al., 1999]</ref>. With the recent advancements in Large Language Models (LLMs) <ref type="bibr">[Brown et al., 2020, Ouyang</ref> Figure <ref type="figure">2</ref>: Communication Skills required to play Avalon. 1) First, they use logical reasoning to analyze the voting pattern and dialogue of other players and deduce their motives. 2) they must coordinate, communicate, and persuade their teammates to follow a particular strategy. 3) they must also hide their identity and motives through deception. <ref type="bibr">et al., 2022</ref><ref type="bibr" target="#b14">, OpenAI., 2022</ref><ref type="bibr">, 2023</ref><ref type="bibr">, Zhang et al., 2023b</ref><ref type="bibr" target="#b17">, Touvron et al., 2023</ref><ref type="bibr">, Zhang et al., 2023a</ref><ref type="bibr">, Gao et al., 2023</ref><ref type="bibr">, Liu et al., 2023a]</ref>, many researchers have started to build LLM-powered AI Agents that can conduct reasoning and decision making <ref type="bibr" target="#b20">[Yao et al., 2023</ref><ref type="bibr" target="#b8">, Li et al., 2022</ref><ref type="bibr">, Hu et al., 2023]</ref> and interact with environments <ref type="bibr" target="#b13">[Nakano et al., 2021</ref><ref type="bibr" target="#b2">, Ahn et al., 2022</ref><ref type="bibr" target="#b4">, Driess et al., 2023]</ref>. Based on these techniques, a series of experimental projects, e.g., <ref type="bibr">AutoGPT [aut]</ref>, BabyAGI <ref type="bibr">[bab]</ref>, have been developed to turn LLM-Agents into pure autonomous task solver. A recent AgentBench <ref type="bibr">[Liu et al., 2023b]</ref> covers multiple single-agent environments to test and study LLM-Agents. However, a comprehensive benchmark test-bed still needs to be improved for studying multi-agent game playing of LLM Agents.</p><p>In this paper, we build a AVALONBENCH, a game engine to benchmark the multi-agent LLM Agents. This includes (1) a game environment for agents to play on Resistance Avalon, which records all players' actions and proceeds the game, (2) several naive AI bots with deterministic rule-based strategies, which can serve as baselines that agents can play against, and (3) some baseline implementations of ReAct-style <ref type="bibr" target="#b20">[Yao et al., 2023]</ref> LLM agents, which contains a tutorial of how to make a decision at each game phase, with carefully designed prompts.</p><p>Based on this benchmark, we evaluate two popular LLMs, i.e., ChatGPT-3.5 and Llama2 model, playing against naive baselines. We show that the best model achieves a win rate of 22.2% compared to 38.2% when playing a good role, and a win rate of 66.7% compared to 61.8% when playing an evil role. This performance gap indicates a large improvement space for the current LLM Agents.</p><p>To summarize, our main contributions are as follows:</p><p>• We introduce a benchmark AVALONBENCH<ref type="foot" target="#foot_0">foot_0</ref> based on the classic hidden identity game Resistance Avalon to study multi-agent game playing of LLM Agents. With it, we benchmarked LLMs including GPT-3.5 and Llama2, against deterministic rule-based bots.</p><p>• We demonstrate that current LLM Agents with sophisticated prompt methods do not possess the deduction, persuasion, negotiation, and deception capabilities yet to play AVALON well.</p><p>In fact, LLMs could fail against even the simplest of baseline players. This highlights the potential for exploring how decision-making techniques can be integrated with LLMs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Pipeline of Avalon</head><p>We describe the game in more detail here. There are four phases in the game where players need to make decisions: (1) team selection phase, (2) voting phase, (3) quest phase, and (4) assassination phase. The game alternates between the first three phases until the end condition is reached, at which point we move on to the assassination phase. Each phase also contains discussion where players can challenge others, defend themselves, and negotiate. A flowchart of the game is presented in Figure <ref type="figure" target="#fig_1">3</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Roles</head><p>There are four basic roles in Resistance Avalon: Servant of Arthur, Minion of Mordred, Merlin, and Assassin. The Servant is a basic good character who does not know the identity of any of the other players. The Minion is a base evil character who knows who is good and evil but does not know the specific roles of each player. Merlin is a unique good character who knows who is good and evil.</p><p>The Assassin is a unique evil character who knows who is good and evil, and in addition, has the ability to assassinate a character at the end of the game. If that character is Merlin, the evil team wins.</p><p>Good players will always outnumber evil players. Hence, evil players must pretend to be good in order to be voted in on teams (and thus sabotage missions). SERVANTs will thus need to sniff out the evil players through their actions and dialogue. MERLIN is usually the only good player with additional information, so they will need to discreetly guide the SERVANTs in the right direction. Servants also need to protect MERLIN, so a common strategy is for SERVANTs to pretend to have hidden information so that evil players will think that they are MERLIN. Evil players will be trying to sniff out MERLIN at the same time, so deduction skills are required for all roles.</p><p>Game Start Switch Leader 5th (Last) Round? Outcome Evil wins! Good wins! Game End Team Members Majority Rejected Correctly Identifies Merlin Team Selection Phase (Leader) Quest Phase (Team Members) Voting Phase (All Players) &lt; 3 Success/Fail No Yes Majority Approved 3 Quests Fail 3 Quests Succeed Fails to Identify Merlin Assassination Phase (Assassin) </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Actions for each Phase</head><p>Depending on the phase team selection, voting, quest, and assassination, players may conduct different actions. We detail the specific actions that players can take in each of these phases below.</p><p>During the team selection phase, only the current leader has to make a choice. Leadership passes around the players sequentially in a loop. The action space of team selection for the leader consists of all subsets of the players with size equal to the mission team size. The mission team size is different for each mission and is determined by the total number of players in the game. For example, in a 5-player game, on mission No.4, the mission team size is 3, so any subset of {1, 2, 3, 4, 5} with size 3 would be a valid action. After the team proposal is determined by the leader, we move on to the voting phase with the selected players.</p><p>During the voting phase, every player in the game needs to simultaneously vote either APPROVE (1) or REJECT (0). Votes are publicly revealed to all players, so players can see what other players voted. If a strict majority votes APPROVE (1), we then move on to the quest phase with the team that was approved. Otherwise, we move back to the selection phase. Note that if four teams have been rejected in a row, and this is the fifth time a team is proposed (for the same mission), we skip the voting and move directly to the quest phase. This prevents the game from dragging on forever.</p><p>During the quest phase, each selected player on the approved team votes anonymously to either PASS (1) or FAIL (0) the mission. The number of votes of PASS vs FAIL are then revealed to everybody. If the number of FAILs is greater than or equal to the number of FAILs required for the mission to fail (usually 1), then this mission is marked as a failure. Otherwise, this mission is marked as a success. Hence, good players usually have no incentive to fail missions, while evil players will want to have enough failures to pass the failure threshold. If three out of five missions fail, evil wins immediately. Otherwise, if three out of five missions succeed, we move on to the assassination phase.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">Discussion</head><p>Group discussion occurs between the quest and selection phases, as well as right before the assassination phase. Players may not communicate during any other time. All conversations are public, and there is no private communication. Typically players may discuss in any format of their choosing as long as only one person is speaking at a time. Some examples of formats include a natural (spontaneous) seminar style (most common, where there is no fixed order of speaking), or sequentially (where players speak in some predefined order). Interruptions and arguments between two players are very common between human players.</p><p>Usually, players will spend this time discussing a couple of key topics, including (1) the observations they made, (2) the guessed identities and sides of players, and (3) the plan for the next mission. The team leader will usually spend this time asking for advice on what team to select and gathering support for that team. Persuasion and adhering to the preferences of other players are usually key to getting a team approved. Players can also accuse other players of being evil, though arguments will need to be justified in order to be persuasive.</p><p>For example, a player (player 3) could start off by stating their (1) observations of what happened in the previous mission. One FAIL was observed, so at least one player on the previous team (consisting of players (1,2,3)) is evil. Player 3 then emphasizes that both Players 1 and 2 voted APPROVE for the previous mission, which ended up a failure. Moreover, the team was proposed by Player 1 in the first place. Player 3 then moves on to discuss the (2) identities of other players. The player says that, despite the fact that only one FAIL was observed, both Players 1 and 2 are evil since they both voted to APPROVE previously. Player 0 is probably good since they voted to REJECT in the previous mission, and Player 3 is also good since they also voted to REJECT, even though they were on the mission. Player 3 then says what they think the (3) plan should be. Specifically, Player 3 says that they should reject the current team no matter what since Player 2 is the leader and is evil. The leadership will then pass to Player 3, who will choose the team (0, 3, 4), which good players should vote to approve since it does not contain any suspected evil players<ref type="foot" target="#foot_1">foot_1</ref> .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.4">Game Ending and Assassination</head><p>In classic RESISTANCE, a good team wins immediately if three missions are successful. In RESIS-TANCE AVALON, there is an additional assassination phase if three missions are successful. During the assassination phase, the ASSASSIN player chooses one player to assassinate. If that player is MERLIN, then evil wins. Otherwise good wins.</p><p>Before they assassinate a player, the ASSASSIN player can and is encouraged to discuss with the other players (mostly their teammates). good players are also welcome to join in on this discussion to mislead the evil players, though it rarely helps. Players can discuss in a format of their choosing, though there is usually a time limit on how long players can discuss before reaching a decision.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Implementation of LLM Agent</head><p>We describe how we implemented LLMs to play AVALON in this section. In a nutshell, we ask the LLM generate both the (1) actions, (2) dialogue, and (3) summary of the game history. We describe each part in more detail below. We also list several selected prompts in Table <ref type="table" target="#tab_0">1</ref>, which will be used to demonstrate examples in the following sections. We separate the prompts into four categories depending on their function as shown in the table.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Actions</head><p>Whenever the LLM-based player needs to take an action, ie. during team selection, voting, quest, and assassination, we prompt the underlying LLM, to return the action it wants to take after feeding it the relevant information. Specifically, we leverage a Reason-then-Action (ReAct) paradigm <ref type="bibr" target="#b20">[Yao et al., 2023]</ref> for decision-making, with zero-shot Chain-of-Thought prompting <ref type="bibr" target="#b18">[Wei et al., 2022</ref><ref type="bibr" target="#b7">, Kojima et al., 2023]</ref>. The input to LLM includes the game rules Rules, the player's role and private information in the game ROLE, a summary of what has happened in the game so far Summary, the discussions in the current round Minutes, and the action prompt Request, fed in that order. This ensures that the LLM has all the information it needs to make a good decision.</p><p>The output is then fed to a separate LLM model that parses the output of LLM into a format readable by the game engine. The parser is given the output act_response of LLM, along with the parsing prompt Parse. For example, after being prompted to select a team LLM might output "I would like to choose players 1, 3, and 4 for the team". PARSER would then parse this into a set {1,3,4}, which can then be fed into the game engine. We found that using a separate PARSER improves the ability of the LLM player to produce the correct actions (with a success rate of 100% in our pilot experiments), while a vanilla ReAct model cannot guarantee a consistent format for parsing.</p><p>More concrete examples can be found in Appendix A.2 and A.4. Hence, the pipeline for making decisions on actions based on LLM is:</p><p>act_response ← LLM(input = {Summary, Minutes}, prompt = {Rules, Role, Request}) action ← LLM(input = {act_response}, prompt = {Parse})</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Summary</head><p>Large amounts of discussion and game data can be generated during a single game. Usually, games will involve around 15-20 rounds of discussion (max 25). Hence, just counting dialogue, with 5 players this could result in 5000 words of conversation even if players are only allowed 2 sentences per round of discussion. The API-based LLMs, e.g., GPT-3.5-turbo, have confined context lengths and cannot handle such large game histories. Additionally, longer context might also confine the ability of LLMs to reason and parse through noise. Thus, for better reasoning, we also ask the LLM to summarize their history recursively by feeding them the previous history Summary t-1 , the minutes of the discussions this round Minutes t , the outcome of the mission Outcome, and the summarization prompt Recap. Hence, the summary for this period is generated as follows:</p><formula xml:id="formula_0">Summary t ← LLM(input = {Summary t-1 , Minutes t , Outcome}, prompt = {Rules, Role, Recap})</formula><p>In AVALON, both voting and quest outcomes are visible to all players. However, our baseline naive strategies only use the outcomes of missions for their strategies, not the history of how players voted.</p><p>For better comparison with baseline strategies, in the base implementation, we only feed mission information to LLMs after each quest phase.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Discussion</head><p>During the discussion phase, we ask each player (LLM) to state their opinion in some number of sentences by feeding the LLM the prompt Discuss (See A.3). We limit the number of sentences so that players do not speak over the discussion limit, as defined in the game rules. For simplicity, the players discuss in some predefined order starting from the leader, and can only make statements once per discussion round. The leader speaks twice, once at the beginning and once at the end of the discussion round. The statements from each player will then be concatenated into a transcript of the discussion this round, Minutes, which is fed to the LLM when making decisions and used to create the summary. Formally, it is</p><formula xml:id="formula_1">Minutes (i) t ← LLM(input = {Summary t , Minutes (i-1) t }, prompt = {Rules, Role, Discuss})</formula><p>where Minutes</p><p>t refers to the discussion before the i-th player's turn.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Baseline Strategies</head><p>In order to benchmark our agent, we would like to test it out against naive baseline agents. These agents are 'naive' because they neither take dialogue nor voting history into consideration -only the number of fails on each mission counts. They also believe that other players will do the same, and will act optimally given these beliefs.</p><p>When benchmarking against naive agents, we use an LLM to produce dialogue for the naive agent, but the decision-making is completely detached from the language module.</p><p>Naive Servant. The Naive Servant represents the very baseline of what a SERVANT should be able to do. They do this by ruling out teams that logically must have evil players on them. The Naive Servant assumes that good players will always pass missions, but evil players will not necessarily fail missions. If the Naive Servant is indifferent between two teams, they will pick the team that had a "good" record before.</p><p>The Naive Servant maintains a list of all possible combinations of good and evil for the players in the game, SELF.B, as well as corresponding probabilities of those events SELF.P b initialized to SELF. five-player game. If one failure is observed on a team, then the Servant rules out the possibility that all members of the team are good. If x or more fails were observed, then the Servant rules out the corresponding possibilities where less than x Evil players are on that team. If 0 Fails were observed on a team, then the Servant has a lexicographic preference for super sets and subsets of that team on future missions. The Servant will then only approve and propose teams that have the highest probability of containing no evil players, assuming that each possibility that has not been disproved has equal probability.</p><formula xml:id="formula_3">P b ← 1 |SELF.B| . For example, (E, G, G, E, G</formula><p>For example, we are in a five-player game with setup (M erlin, Evil, Good, Good, Evil). Then at the start of the game, all six possible combinations of other player's identities are possible. Hence, player 3 will select and only vote yes for teams that contain themself and any other player, since that maximizes the probability of the team containing no evil players. After a few turns of team selection and voting, the team (1, 2) is passed and goes on the quest. 1 Fail was observed. Hence, player 3 knows that at least 1 evil was on the quest (ie. it can't be the case that both 1 and 2 are good). Based on this evidence, player 3 rules out the (G, G, G, E, E) possibility. Thus, for the second quest, player 3 will only approve of the teams with them on it (which all have equal probability of being all good), except for the team (1, 2, 3) which must be bad.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Naive Minion.</head><p>The Naive Minion will vote yes for any mission that has at least one evil player on it, and no otherwise in order to promote bad teams. They will propose teams consisting of themselves and a random collection of other players. The Naive Minion will vote to Fail missions they are on unless they know that the Assassin is also on the mission, in which case they will refrain from failing the mission because they know that the Assassin will do so.</p><p>Naive Assassin. The Naive Assassin behaves the same as a Naive Minion, except that they will always Fail missions they are on. The Naive Assassin will guess a random good player to assassinate since they do not take voting patterns into consideration.</p><p>Naive Merlin. The Naive Merlin will only vote yes for and propose missions that have no evil players. The Naive Merlin will only pass missions. Since the Naive Merlin thinks that other players will not look at voting patterns, it votes its true preferences freely. However, this makes them easily detectable by non-naive ASSASSINs, who can easily tell who is MERLIN based on voting patterns. In the future, we plan to add some voting randomness to our upgraded baseline MERLIN in order to fool evil players.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Evaluating LLMs Against Baseline Bots</head><p>We describe our experimental setup, benchmark metrics, and results in this section. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Experimental Setup</head><p>In the experiments, we benchmark two LLMs, e.g., GPT-3.5 (GPT-3.5-turbo) and Llama2-7B (Llama2-chat-7B) in different settings described below. Note that during experiments, we benchmark the underlying LLM , not the other auxiliary LLMs (such as PARSER), which use the same model throughout experiments.</p><p>Baseline, Assassin, and Servant Settings. In the BASELINESET setting, all players use naive strategies as described in Section 4. In the ASSASSINSET setting, the Assassin is played by an LLM agent, while all other players still use the naive strategy. Similarly, we fix the LLM to play one of the Servants in the SERVANTSET setting, while all other players use the naive strategy. Hence, we are in essence comparing what happens if we replace either the Naive Assassin or one of the Naive Servants with a LLM agent. In both settings, LLMs will only have access to mission outcome data, not voting outcomes. This is to ensure a fair comparison with naive strategies, which only use mission outcome information.</p><p>With or Without Discussion. In the without-discussion setting, players are not allowed to discuss (ie. there is no discussion phase). Hence, the LLM is only used for action selection. In the withdiscussion setting, the discussion phase is active, and the LLM player will be prompted for dialogue.</p><p>In addition, since the naive agents do not have language capabilities themselves, we extend them with a 'detached' LLM model<ref type="foot" target="#foot_2">foot_2</ref> that is fed the same dialogue-generating prompts (except from a different role). However, this LLM will not be prompted for actions -actions will be produced solely by the naive strategy instead.</p><p>Implementation Details. We set the temperature to 0.1 for the LLMs that we used. We use zeroshot CoT for all the LLM settings. For experiments with GPT-3.5-turbo, we ran 30 different games. For Llama2-chat-7B, we ran 10 different games. For the baseline, we ran 1000 games. For output parsing, we used GPT-3.5-turbo to parse outputs of all LLMs, which have been tested to be stable in our experiments. Note that the same underlying model is used for actions Request, summarizing, and dialogue for all settings.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Benchmark Metrics</head><p>We report several metrics for the different scenarios. For the ASSASSINSET setting, we report the (1) percentage of games where EVIL wins by failing three missions (mission winrate), ( <ref type="formula">2</ref>) the percentage of games where EVIL wins through assassinating Merlin (assass. winrate), and (3) what percentage</p><p>Table 4: Case study: Example of a good LLM discussion round. LLM's outputs with great communication skills are highlighted in orange, and those outputs with poor skills are highlighted in blue. We mark our comments in red to explain why each statement shows good or pool skill.</p><p>Statement from Leader Player 4, Assassin As the leader, I propose a team consisting of Player 0, Player 1, and myself, Player 4. I believe this team is a strong choice as it includes both a Merlin and a Loyal Servant of Arthur, ensuring that we have the necessary knowledge and loyalty to successfully complete the quest. //The Assassin (Evil) tries to conceal their identity and provide justification from Good's perspective Discussion of other Players Player 0, Servant I agree with the leader's proposal, it seems like a solid team composition.</p><p>Player 1, Servant I agree with the leader's proposal, it seems like a solid team composition //Repetition of previous player's output, not very convincing Player 2, Minion The leader's proposal is a good choice for Evil as it includes both a Merlin and a Loyal Servant, making it harder for Good to identify the Assassin. //As a Evil player, directly saying the true preferences from the Evil perspective reveals their own and the leader's identity.</p><p>Player 3, Merlin The leader's proposal seems reasonable, as it includes both a Merlin and a Loyal Servant, which can help ensure the success of the quest. //As Merlin, who know all identities but cannot explicitly say it, use the word "seems" to hint other Good players that there's some concern in the team.</p><p>of time the assassin assassinates Merlin correctly (assass. acc). For SERVANTSET, we report the (1) percentage of games where GOOD wins, and (2) the average deduction accuracy (deduction acc) for the Servants in the game. Avalon presents a very natural way to score how good Servants are at deduction -we can simply ask them to which side they think the other players are on, and compare this with the truth. In other words,</p><formula xml:id="formula_4">DeductionAcc j (q ij ) = 1 n n i=0 1(q ij = q i ), q ij = GOOD, p ij ∈ [0.5, 1] EVIL, p ij ∈ [0, 0.5) where p ij = P ij q i = GOOD INPUT j ; LLM</formula><p>Where p ij is the predicted probability score that player j believes that player i is a GOOD player, then q ij is the side that player j believes that player i is on, and q i is the true side that player i is on. The prompt we use for making such a prediction is shown in Table <ref type="table" target="#tab_13">20</ref> of the Appendix. Taking the average across all Servants j gives us the deduction accuracy for that game. The results for these metrics are shown in Tables <ref type="table" target="#tab_1">2</ref> and <ref type="table" target="#tab_2">3</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Results and Analysis</head><p>We show our results when benchmarking various LLMs to our baseline (naive agents) below. We also show some good and bad examples of LLM discussion in tables 4 and 5.</p><p>Assassin and Servant Settings. We display our results for the ASSASSINSET and SERVANTSET settings in tables 2 and 3 respectively. Overall, we found that LLM agents perform very poorly</p><p>Table 5: Case study: Example of a bad LLM discussion round. Sentences with great communication skills are highlighted in orange, and those with poor skills are highlighted in blue. We mark our comments in red to explain why each statement shows good or pool skill. Statement from Leader Player 0, Assassin As the leader, I propose a team consisting of Player 0 (myself) and Player 1. I believe this team is a strong choice because Player 1 has shown loyalty and dedication to the cause of Evil. Together, we can ensure that this Quest ends in failure and bring victory closer for the forces of Evil. I urge my fellow players to support this team.</p><p>//The Assassin on the Evil side directly says their own preferences from the evil perspective, which reveals their identity.</p><p>Discussion of other Players Player 1, Servant I am a Good player and will not support this team proposal. //Successfully identifies the leader as evil.</p><p>Player 2, Minion I agree with Player 0's choice and will support this team proposal.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Player 3, Servant</head><p>The leader, Player 0, is proposing a team with Player 1, claiming they are both Evil and can ensure the quest fails. //Successfully identifies the leader as evil with explanation.</p><p>Player 4, Merlin The leader's proposal is concerning as it suggests a team of Evil players, but Player 1's denial of being Evil raises suspicion. //Points out that leader is evil while not revealing their own identity (Merlin).</p><p>compared to the naive strategies when discussion is not allowed. This suggests that the LLM agents have trouble understanding the rules of the game and formulating even very simple decision policies like the naive strategies described in section 4. Even with discussion, the LLM agents perform poorly in the SERVANTSET setting. They are able to perform better in the ASSASSINSET with discussion by dramatically increasing the probability of assassinating Merlin. We suspect that this is because the LLMs give away identity information quickly when they discuss. This hypothesis is further corroborated by the fact that the deduction score for LLM agents in the SERVANT SET are quite high, suggesting that while the LLMs are able to deduce identities well based on discussion, they are unable to synthesize this information into making better decisions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Exploring Multi-LLMs Self-Play</head><p>Apart from benchmarking a single LLM playing against our rule-based bots, we also explore scenarios where LLMs play against each other.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Setup.</head><p>In the setting of MULTI-LLM arena, where LLM agents and no naive strategies empower all players are used, we consider GPT-3.5-turbo for all the LLMs. We also set the temperature to 0.1, using the ReAct framework with zero-shot CoT when LLMs take action. We run 60 games with discussion in this setting.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Result of Multi-LLM.</head><p>In this setting, we discovered that the games are heavily imbalanced in favor of EVIL, where EVIL wins 83.3% of the games. Specifically, LLMs playing EVIL side win 48.3% of the games by sabotaging mission, and win the remaining 35% of the games by assassinating Merlin even after 3 missions passed. On the contrary, LLM playing GOOD side only wins 16.7% of the games.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Case Studies.</head><p>Looking into the game logs of discussion, we discover that LLMs have displayed some basic strategies. We show such an example in Table <ref type="table">4</ref>, in which the leader, Player 4 (playing ASSASSIN) tries to propose a team consisting of himself and two other good players without showing his own identity. This is a common strategy from Evil players as Sleeper agent shown in Appendix C. If the team forms and he sabotages the mission subsequently, other players will suspect the true identities of the two good players in this team. The responding discussion by MERLIN also looks interesting; he shall know all players' identities and know that if the team forms, the evil leader will likely sabotage the mission. However, he still agrees to the proposal and conceals his true identity as MERLIN, to avoid being easily identified by Assassin. Meanwhile, he uses the word "seems" to pass information to good players that the team might have some concern. The other discussions, especially player 1, who repeats the previous output, and player 2 who reveals his evil identity, are not promising. More examples can be found in Section B in Appendix.</p><p>We notice that in our current implementation, evil players frequently reveal their identity (even in the prompt, we explicitly tell them not to). Another example is shown in Table <ref type="table">5</ref>, in which the evil Player 0 (ASSASSIN) think player 1 is also evil, and try to form such a group. This does not seem right because player 1 is actually from a good team, and such a conversation can reveal player 0's evil identity. The response from all other good players looks reasonably good, showing they identify the leader as evil and disagree with the team. Both these examples show that current LLMs have some basic understanding of the game, but many times still make stupid mistakes. It asks for better methods to improve LLMs, making more rational decisions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Conclusion</head><p>We constructed a benchmark AVALONBENCH to study LLM Agents playing the social deduction game Resistance Avalon. We found that while LLMs can deduce player identities based on discussion, they cannot formulate and execute simple strategies in Avalon, and often make mistakes like revealing their own evil identities during discussion. Hence, we hope AVALONBENCH can serve as a test-bed for developing LLM agents with better decision-making and communication skills.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Example Script for Prompts</head><p>A.1 System Prompt The Resistance: Avalon is the game of hidden identities and social dedeuction. There are two teams in the game: Good and Evil. Each player has a hidden identity and side.</p><p>There are five Quests in the game. Good players aim to help three Quests succeed, while Evil players aim to fail three Quests. Different quests require different numbers of players to participate.</p><p>Each round, after a round of discussion, the leader will select a team of players to participate in the Quest. Then, all players will vote on whether to approve or reject the team. If the team is approved (a strict majority vote to approve), the Quest will be carried out. If the team is not approved, the next player becomes the leader and the next round will start. If four teams are rejected in a row, the fifth team will automatically be approved.</p><p>If the team is approved, each teammember chooses to pass or fail the Quest anonymously. Usually if there is at least one fail vote, the Quest fails. Otherwise, the Quest succeeds.</p><p>Below are the roles in the game: Servant of Arthur (Servant): A good player who does not know who is on the Evil side. Servant's job is to help Good players to complete three Quests without being failed by the Evil players. Minion of Mordred (Minion): An Evil player who knows who is on the Evil side. Minion's job is to fail three Quests without being identified by the Good players. Merlin: A Good player who knows who is on the Evil side. Merlin's job is to help Good players to complete three Quests without being failed by the Evil players. However, if the Evil players can identify who Merlin is, the Evil players will win the game immediately. Assassin: An Evil player who knows who is on the Evil side. Assassin's job is to assassinate Merlin if the Evil players can identify who Merlin is. If Assassin successfully assassinates Merlin, the Evil players will win the game immediately. Hence, Evil players usually know who is on the Evil side, but Good players usually do not know who is on the Evil side.</p><p>Players may make any claims during the game, at any point in the game. Discussion, deception, accusation, persuasion, and logical deduction are all equally important in order for Good to prevail or Evil to rule the day. Hence, players should rarely reveal their true identity to other players.</p><p>Table 7: System Prompt for Identity (Roles in Table 1) [SYSTEM] You are Player {id}, {role}, and also {Good | Evil} player. Please do not forget your identity, and do not pretend to be other roles throughout the game. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Action Prompt</head><p>Table 9: Action Prompt for Team Selection (Request in Table <ref type="table" target="#tab_0">1</ref>)</p><formula xml:id="formula_5">Input: Rules+Role+Summary+ [USER]</formula><p>Please choose {team_size} players from player ids 0 to 4 as team members. Output: [ASSISTANT](Player 1, Servant, Good Player) Based on the discussion and concerns raised, I have reconsidered my initial proposal. As the leader, I now propose a team consisting of Player 1 (myself) and Player 3. This team composition ensures that both Good and Evil players are represented, allowing for a fair evaluation of their actions and decisions during the quest.  [ASSISTANT](Player 2, Minion, Evil Player) As Player 2 (Minion), I will vote to reject the quest with team <ref type="bibr">[1,</ref><ref type="bibr">2,</ref><ref type="bibr">3]</ref>. Although I am part of the team, my goal as the Minion is to ensure that at least one quest fails. By rejecting the quest, I increase the chances of a failed quest and bring Evil closer to victory.    Table 15: Parse Prompt for Team Selection (Parse in Table 1) Input: Based on the discussion and concerns raised, I have reconsidered my initial proposal. As the leader, I now propose a team consisting of Player 1 (myself) and Player 3. This team composition ensures that both Good and Evil players are represented, allowing for a fair evaluation of their actions and decisions during the quest. [USER] Based on the information, what team does the player choose? Please answer with the following template: Answer: [player_ids] Output: Answer: [1, 3] Table 16: Parse Prompt for Voting(Parse in Table <ref type="table" target="#tab_0">1</ref>)</p><formula xml:id="formula_6">Input:</formula><p>Based on the discussion and the concerns raised by Player 1, Player 3, and Player 4 (Merlin), I have decided to vote against the team <ref type="bibr">[1,</ref><ref type="bibr">3]</ref>. As an Evil player, it would be advantageous for me to create doubt and suspicion among the Good players.</p><p>[USER] Based on the information, does the player approve the team? Please answer with the following template: Answer: {Yes|No} Output: Answer: No</p><p>Table 17: Parse Prompt for Quest (Parse in Table 18: Parse Prompt for Assassination (Parse in Please summarize the history. Try to keep all the useful information, including your identification and your observations of the game. Output: Throughout the game, I have been playing as Player 0, a Servant of Arthur and a Good player. So far, we have completed two Quests successfully, with only one failing. This means that we are currently in a critical stage of the game, as Evil only needs one more failed Quest to win.</p><p>In the previous rounds, I have observed the following:</p><p>-Player 1 has consistently shown loyalty and support for the Good team. They have voted in favor of the proposed teams and have not raised any suspicions.</p><p>-Player 2 has also been supportive of the Good team and has not raised any red flags.</p><p>-Player 3 has been relatively quiet throughout the game, making it difficult to gauge their loyalty. However, they have not opposed any of the proposed teams so far.</p><p>-Player 4 has been more vocal and has expressed some doubts and suspicions towards certain players. While this could be seen as a sign of active participation, it is important to consider their motivations and potential alignment.</p><p>Based on this information, I believe that Player 1 is a trustworthy and loyal player, making them a good choice for the proposed team. I am open to hearing the thoughts and opinions of the other players before finalizing the team. Table 22: Example #1 of Summary In this game of The Resistance: Avalon, there are 5 players. Player 0, Player 2, and myself (Player 3) are Good players, with Player 3 being Merlin. Player 4 is the Minion of Evil. We have not yet identified the roles of Player 1.</p><p>So far, we have completed two quests, both of which were successful. This means that Good is currently leading with two successful quests, while Evil has not yet been able to sabotage any quests.</p><p>Based on the information we have, Player 4 is the Minion of Evil, while Players 0 and 2 are Loyal Servants of Arthur. However, we still need to determine the role of Player 1.</p><p>As Merlin, it is crucial for me to be cautious with my actions and words, as the Evil team will be trying to identify and assassinate me at the end of the game. I must also pay close attention to the actions and claims of the other players to gather information and make informed decisions.</p><p>In the previous round, Player 2 proposed a team consisting of themselves and Player 0, which was successful. This further strengthens our belief in the loyalty of Player 0.</p><p>As the current leader, I am proposing a team consisting of Player 0, Player 2, and myself. I believe this team combines loyalty and strategic thinking, and I will use my role as Merlin to guide the team towards success.</p><p>We must remain vigilant and continue gathering information to identify the remaining roles and ensure the success of future quests.</p><p>Table 23: Example #2 of Summary Sure, here's a summary of the game history and my observations:</p><p>-There are 5 players in the game: Player 0, Player 1, Player 2 (myself), Player 3, and Player 4.</p><p>-There are 3 good players: Player 0, Player 2 (myself), and Player 3.</p><p>-There are 2 evil players: Player 1 and Player 4.</p><p>-Player 1 has been on one quest, which succeeded.</p><p>-Player 3 has been on one quest, which succeeded.</p><p>-Player 4 has been on one quest, which succeeded.</p><p>-I have identified myself as Player 2, a loyal servant of Arthur.</p><p>-I proposed a team consisting of myself (Player 2) and Player 0 for the next quest, which was accepted.</p><p>-The quest with team [0, 2] has succeeded.</p><p>Based on this information, we have a strong start for the Good team, with all quests so far succeeding. However, we still need to be cautious as Evil players are among us. Let's continue working together and strategizing to ensure the success of future quests and secure victory for the Good team.</p><p>Table 24: Example #3 of Summary Based on this information, I believe that Player 4 is the Minion. I will continue to observe the players' actions and claims to gather more information and make strategic decisions as the game progresses.  As the leader, I propose a team consisting of Player 0, Player 1, and myself, Player 3. I believe this team is a strong choice because Player 0 and Player 1 have both been active in the discussions and have shown a good understanding of the game mechanics. Additionally, as Merlin, I can provide valuable insight and guidance to ensure the success of the quest. I trust that this team will work together effectively and make the right decisions for the good of Camelot.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2 Examples of Discussion</head><p>Output of Player 0 Player 1: I agree with the leader's choice, as Player 0 and I have been actively participating and can contribute to the success of the quest.</p><p>Output of Player 1 Player 1: I agree with the leader's choice and believe that this team has a good chance of succeeding.</p><p>Output of Player 2 Player 2 (Minion): The leader's choice seems reasonable, but I will need to ensure that the quest fails.</p><p>Output of Player 3 Player 3 (Merlin): The leader's choice seems solid, but I must be cautious of Player 2's intentions as the Minion of Evil.</p><p>Output of Player 4 Player 4 (Assassin): The leader's choice seems logical, but I must be careful not to reveal my true identity as the Assassin.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Output of Player 3</head><p>Based on the discussion and agreement, the team members for the next quest will be Player 0 and Player 1.</p><p>Table 27: Example #3 of Discussion Please choose 3 players in this round.</p><p>Output of Player 3 As the leader, I propose a team consisting of Player 0, Player 2, and myself, Player 3. Player 0 has been consistently making logical and strategic decisions throughout the game, and I believe they would be a valuable asset to the team.</p><p>Player 2 has also shown their dedication to the cause and has been actively participating in discussions. I trust their judgment and believe they would contribute positively to the quest.</p><p>As Merlin, I will do my best to guide the team and ensure the success of the quest. I have been observing the players closely and have valuable information that can help us make the right decisions.</p><p>I urge my fellow players to support this team proposal and help us move closer to victory.</p><p>Output of Player 0 Player 1: I agree with the leader's proposal, Player 0 and Player 2 have been actively participating and seem trustworthy.</p><p>Output of Player 1 Player 1: I agree with the leader's proposal and trust their judgment.</p><p>Output of Player 2 Player 2 (Minion): The leader's proposal seems reasonable and the other players' agreement adds to its credibility.</p><p>Output of Player 3 Player 4: I am hesitant to fully trust the leader's proposal, as we don't have enough information about their true identity as Merlin.</p><p>Output of Player 4 Player 4: I agree with Player 3's hesitation, as we need more information before fully trusting the leader's proposal.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Output of Player 3</head><p>Based on the discussion and the players' statements, the team members will be Player 0, Player 2, and Player 3. 1. Player 2, as the leader, has proposed a team consisting of Player 0, Player 1, and themselves. 2. Player 2 claims to be a Minion and urges support for the team to achieve victory for Evil. 3. Player 1 agrees with Player 2's proposal, citing the loyalty of Player 0 and themselves in previous rounds. 4. Player 1 expresses suspicion of Player 2's claim as a Minion, suggesting caution. 5. Player 2 acknowledges Player 1's concerns but maintains their proposal. 6. Player 3, as Merlin, is wary of Player 2's claim as a Minion and expresses caution. 7. Player 4, as the Assassin, sees the risk in Player 2's claim but considers supporting the proposed team to gain trust.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3 Example of Voting</head><p>Considering these factors, I believe it is prudent to be cautious and skeptical of Player 2's claim as a Minion. While Player 1 and Player 4 may be inclined to support the proposed team, it is crucial to prioritize the success of the quest and the safety of Merlin.</p><p>Therefore, as Player 0, a Servant, I vote to reject the team [0, 1, 2].</p><p>Output of Player 1: Based on the information provided and my observation, I am inclined to vote against team [0, 1, 2]. I have doubts about Player 2's claim as a Minion and their intention to sabotage the quest. Therefore, I will vote "Reject" for this team.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Output of Player 2</head><p>Based on the previous discussion and observations, I will vote to support the team [0, 1, 2].</p><p>Output of Player 3 As Merlin, I am aware that Player 2 is the Minion and Player 4 is the Assassin. Therefore, I cannot support the proposed team [0, 1, 2] as it includes both evil players. I will vote against this team.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Output of Player 4</head><p>Based on the discussion and observations, I, Player 4 (Assassin), will vote to support team [0, 1, 2].</p><p>Team votes: [0, 0, 1, 0, 1], team outcome: False</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Common Human Strategies</head><p>Humans display a wide variety of strategies when playing AVALON, depending on who they play with and what role they are playing as (ie. the 'meta'). We list a couple of strategies and techniques that humans deploy below:</p><p>• Sleeper agent. EVIL players can try to gain trust early on by passing missions and not engaging in any suspicious voting. In particular, it is usually helpful for at least one EVIL player to sleep on it.</p><p>• All in. Choose a player that you trust most. Stick with them until the end. There's usually a more than 50% of them being GOOD. Very risky, but potentially high payoff.</p><p>• They can't all be good. The MERLIN player deliberately chooses a team of all EVIL and approves it. Usually, since EVIL players don't know who will vote FAIL on the mission, they all end up voting FAIL. Then it becomes immediately obvious who is EVIL when the number of fails is revealed.</p><p>Below are some tips that are especially relevant for new players to AVALON.</p><p>• Consistency. Almost all lie detection techniques rely on measuring how the behavior of the subject differs from the baseline. The same is true in AVALON -you can often tell that a player is playing a different role from before if their behavior changes.</p><p>• Patience. Usually rejecting a team is better than approving. GOOD players need to be extra risk averse because just one FAIL will cause the mission to fail. Hence, it is extremely unlikely for a random team to not contain any EVIL players. Even if you think the team is good, it can still be advantageous to reject the team so that we can observe the voting patterns and engage in another round of discussion • Agitation. For EVIL players, the opposite is true. EVIL players want to approve teams as fast as possible before GOOD players get the chance to analysis and think deeply about the problem. Hence, EVIL players are more likely to approve teams and try to make quick decisions. The only exception to this is when EVIL players are trying to figure out who MERLIN is, in which case more information is better.</p><p>• Actions speak more than words. Players can say whatever they want in AVALON, but they must vote based on their true preferences at least some of the time in order to get the results they desire. Hence, the next time you see a team unanimously approved, you know there must be evil on the team.</p><p>• Act ignorant. Both Merlin and EVIL players have information that other players do not. If you are too adamant, other players can tell that you have hidden information • Act knowledgeable. On the other hand, SERVANTs need to act like they do have hidden information so that EVIL players will mistake them for MERLIN Common rhetoric techniques can also be used in AVALON to great effect.</p><p>• Logos. Logic and reason are a SERVANT's best friend. Not only does analysis help you see through the noise, but is also makes you more persuasive to other GOOD players.</p><p>• Pathos. We're friends so you wouldn't lie to me right? If you really wanted us to win, you would approve this team. Emotions play a huge role in human decision making, for good or for evil.</p><p>• Good faith. EVIL players are not discussing in good faith, and thus will never be persuaded by you, so there is no point in wasting effort persuading EVIL players.</p><p>• What-about-ism. You think I'm suspicious? What about Bob? He was also on a failed mission. Common technique to eliminate suspicion.</p><p>• Information overload. EVIL players can try to present as much information and 'facts' as possible in order to confuse GOOD players . This can cause SERVANT to be overload with clutter and thus miss out on the key points.</p><p>Remember, AVALON is designed so that every player counts! A side is as weak as its weakest link.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: The three phases per round of Resistance game. Good players are shown in blue, while Evil players in red. In Selection Phase, the team leader (player 5 in this round) proposes a team (player 1 and 5, himself). In Voting Phase, all players votes publicly whether to approve this team or not. If strict majority votes yes, the team is approved and move on to the mission phase. Otherwise, redo the Selection Phase with the next player as leader. If the team goes on the Mission Phase, selected team members (player 1 and 5) anonymously vote to pass or fail the mission. If at least one person (player 1, as he is evil player) votes fail, the mission fails. Otherwise it succeeds.</figDesc><graphic coords="1,127.80,477.29,356.40,150.54" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Flowchart illustrating the various game states and transition diagram. Round boxes indicate game states (phases) where player (role highlighted in bracket) have to make decisions 2.2 Actions for each Phase</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><figDesc>) is a possible combination of good and evil in a Algorithm 1: Naive Servant Update Beliefs Input: Mission team size |S|, mission team S, number of fails seen on mission k // Go through each possibility, crossing out any that are impossible for Possibility b and corresponding probability p b in SELF.B and SELF.P b do If less than k members of S are evil under b, set p b ← 0 end Output: Updated beliefs SELF.B and SELF.P b Algorithm 2: Naive Servant Preference Calculation Input: Mission team S, last successful team S * Set x ← 0, y ← 0 If S ⊆ S * or S ⊇ S * , y ← 1 // Go through each possibility for Possibility b and corresponding probability p b in SELF.B and SELF.P b do If all players in S are good under b, x ← x + p b end Output: Lexigraphic team preference (x, y)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><figDesc>[ASSISTANT](Player 2, Assassin, Evil Player) As the leader, I propose a team consisting of Player 0, Player 2 (myself), and Player 4. I believe this team is a strong choice because Player 0 and Player 4 are both known to be good players. Player 0 is Merlin, who has the ability to see the true identities of other players, and Player 4 is a Loyal Servant of Arthur's. As the Assassin, I am confident in my ability to deceive and manipulate the game in favor of Evil. By including myself on the team, I can ensure that Evil has a strong presence in the quest and increase the chances of it failing. I encourage all players to support this team proposal and help Evil achieve victory.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>Sure, here is a summary of the game history and the information gathered so far:-There are 5 players in the game: Player 0, Player 1 (Assassin), Player 2, Player 3, and Player 4 (Minion).-There are 3 Good players: Player 0, Player 2, and Player 3.-There are 2 Evil players: Player 1 (Assassin) and Player 4 (Minion).-The goal for Good is to successfully complete three Quests, while Evil aims to have three Quests end in failure or assassinate Merlin. -The first proposed team was [0, 2], but it was rejected. -The second proposed team was [0, 1, 3], and it was also rejected. -The third proposed team was [0, 2], and it succeeded in completing the quest. -Player 4 (Minion) has not been proposed for any team so far. -Player 0, Player 2, and Player 3 have claimed to be Good. -Player 1 (myself) is the Assassin and Evil player.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Table 25 :</head><label>25</label><figDesc>Example #1 of Discussion Please choose 3 players in this round. Output of Player 2 As the leader, I propose a team consisting of Player 0, Player 1, and myself, Player 2. I believe this team is a strong choice because Player 0 and Player 1 have both shown their loyalty to Arthur in previous rounds. Additionally, as a Minion, I can assure you that this team will work towards the failure of the quest. I urge my fellow players to support this team and help us achieve victory for Evil. Output of Player 0 Player 1: "I agree with Player 2's proposal, as both Player 0 and I have proven our loyalty in previous rounds." Output of Player 1 Player 1: I am suspicious of Player 2's claim as a Minion, as they may be trying to deceive us into supporting an evil team. Output of Player 2 Player 2's proposal seems convincing, but Player 1 raises a valid point about being suspicious of their claim as a Minion. Output of Player 3 Player 3 (Merlin): I am wary of Player 2's claim as a Minion and will be cautious in supporting their proposed team. Output of Player 4 Player 4 (Assassin): Player 2's claim as a Minion is a risky move, but it may be worth supporting the proposed team to gain the trust of the other players. Output of Player 2 As the leader, I choose Player 0, Player 1, and myself (Player 2) as the team members for this quest.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><graphic coords="2,108.00,505.25,415.81,164.14" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Description of selected prompts</figDesc><table><row><cell>Category</cell><cell>Name</cell><cell cols="2">Prompt Description</cell></row><row><cell>System</cell><cell>Rules Role</cell><cell>A.1 A.1</cell><cell>Describes the rules of Avalon Tells the LLM their role and the private information that they know</cell></row><row><cell>Actions</cell><cell>Request Parse</cell><cell>A.2 A.4</cell><cell>Asks the LLM to take an action, based on the current phase Asks the LLM to parse the action response Action</cell></row><row><cell>History</cell><cell>Recap Summary t</cell><cell>A.5 A.5</cell><cell>Asks the LLM to summarize the game history The summary that the LLM produces from Summarize at turn t</cell></row><row><cell cols="2">Discuss Discussion Minutest</cell><cell>A.3 A.3</cell><cell>Asks the LLM to discuss in the discussion phase Compilation of what was spoken during turn t</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Results of LLMs playing role of ASSASSIN, EVIL, against baseline playing GOOD team</figDesc><table><row><cell>Model</cell><cell>Setting</cell><cell cols="4">Detailed Stats total winrate mission winrate assass. winrate assass. acc</cell></row><row><cell>Baseline</cell><cell>ASSASSIN Bot</cell><cell>61.8</cell><cell>42.7</cell><cell>19.1</cell><cell>33.3</cell></row><row><cell>GPT-3.5</cell><cell>w/o discussion w/ discussion</cell><cell>26.7 66.7</cell><cell>20.0 0.0</cell><cell>6.7 66.7</cell><cell>8.0 66.7</cell></row><row><cell cols="2">Llama2-7B w/ discussion</cell><cell>30.0</cell><cell>0.0</cell><cell>30.0</cell><cell>30.0</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Results of LLMs playing role of SERVANT, GOOD, against baseline playing EVIL team</figDesc><table><row><cell>Model</cell><cell>Setting</cell><cell cols="2">Detailed Stats total winrate deduction acc</cell></row><row><cell>Baseline</cell><cell>SERVANT Bot</cell><cell>38.2</cell><cell>71.8</cell></row><row><cell>GPT-3.5</cell><cell>w/o discussion w/ discussion</cell><cell>11.1 22.2</cell><cell>60.7 76.0</cell></row><row><cell cols="2">Llama2-7B w/ discussion</cell><cell>13.3</cell><cell>68.0</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 6 :</head><label>6</label><figDesc>System Prompt for Introduction (Rules in Table1)</figDesc><table><row><cell>Prompt:</cell></row><row><cell>[SYSTEM]</cell></row><row><cell>You are playing a game called The Resistance: Avalon.</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 8 :</head><label>8</label><figDesc>System Prompt for Identity Reveal (Merlin and Evil Players)</figDesc><table><row><cell>[SYSTEM]</cell></row><row><cell>Players {evil_players} are Evil. Players {good_players} are Good.</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 10 :</head><label>10</label><figDesc>Action Prompt for Voting (Request in Table1)Based on the discussion and the concerns raised by Player 1, Player 3, and Player 4 (Merlin), I have decided to vote against the team[1, 3]. As an Evil player, it would be advantageous for me to create doubt and suspicion among the Good players.</figDesc><table><row><cell>Input:</cell></row><row><cell>Rules+Role+Summary+Minutes+</cell></row><row><cell>[USER]</cell></row><row><cell>Based on the discussion, and your observations and preferences, do you approve or reject</cell></row><row><cell>the team {team}?</cell></row><row><cell>Output:</cell></row><row><cell>[ASSISTANT](Player 0, Assassin, Evil Player)</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 11 :</head><label>11</label><figDesc>Action Prompt for Quest (Request in Table1)</figDesc><table><row><cell>Input:</cell></row><row><cell>Rules+Role+Summary+Minutes+</cell></row><row><cell>[USER]</cell></row><row><cell>The team {team} was approved, which includes you. Based on your preferences, do you</cell></row><row><cell>want to help the mission succeed or fail it?</cell></row><row><cell>Output:</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_7"><head>Table 12 :</head><label>12</label><figDesc>Action Prompt for Assassination (Request in Table1)As the Assassin, my goal is to assassinate Merlin and secure victory for Evil. Based on the information provided, Player 4 is Merlin, the key player on the side of Good. Therefore, I will choose to assassinate Player 4 (Merlin) by selecting their player ID.</figDesc><table><row><cell>Input:</cell></row><row><cell>Rules+Role+Summary+Minutes+</cell></row><row><cell>[USER]</cell></row><row><cell>Assassination phase. Your job is to assassinate Merlin. Choose a player (id) to assassinate.</cell></row><row><cell>Choose the player id from 0 to 4.</cell></row><row><cell>Output:</cell></row><row><cell>[ASSISTANT](Player 0, Assassin, Evil Player)</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_8"><head>Table 13 :</head><label>13</label><figDesc>Prompt for Leader to Initialize the Discussion (Discuss in Table1)</figDesc><table><row><cell>Input:</cell></row><row><cell>Rule+Role+Summary+</cell></row><row><cell>[USER]</cell></row><row><cell>You are the leader this round. Please make some statements about what team you want to</cell></row><row><cell>propose.</cell></row><row><cell>Output:</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_9"><head>Table 14 :</head><label>14</label><figDesc>Discussion Prompt Players (Minutes t in Table1)Statement from Leader {player_id}: {statements_from_leader}. And words from other players: {discussions}. This is discussion phase, and you don't need to take any actions. Please discuss about words from the leader and other players with just one sentence. Output:[ASSISTANT](Player 3, Merlin, Good Player) Player 3: I agree with the leader's choice and trust Player 1's loyalty.</figDesc><table><row><cell>Input:</cell></row><row><cell>Rules+Role+Summary+Minutes+</cell></row><row><cell>[USER]</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_10"><head>Table 1 )</head><label>1</label><figDesc>Input:As Player 2 (Minion), I will vote to reject the quest with team[1, 2, 3]. Although I am part of the team, my goal as the Minion is to ensure that at least one quest fails. By rejecting the quest, I increase the chances of a failed quest and bring Evil closer to victory.</figDesc><table><row><cell>[USER]</cell></row><row><cell>Based on the information, does the player support the quest? Please answer with the</cell></row><row><cell>following template:</cell></row><row><cell>Answer: {Yes|No}</cell></row><row><cell>Output:</cell></row><row><cell>Answer: No</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_11"><head>Table 1 )</head><label>1</label><figDesc>Input:As the Assassin, my goal is to assassinate Merlin and secure victory for Evil. Based on the information provided, Player 4 is Merlin, the key player on the side of Good. Therefore, I will choose to assassinate Player 4 (Merlin) by selecting their player ID.</figDesc><table><row><cell>[USER]</cell></row><row><cell>Based on the information, which player will be assassinated? Please answer with the</cell></row><row><cell>following template:</cell></row><row><cell>Answer: [player_id_num]</cell></row><row><cell>Output:</cell></row><row><cell>Answer: [4]</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_12"><head>Table 19 :</head><label>19</label><figDesc>Summarization Prompt (Recap in Table1)</figDesc><table><row><cell>Input:</cell></row><row><cell>Rules+Role+Summary+Minutes+Outcome+</cell></row><row><cell>[USER]</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_13"><head>Table 20 :</head><label>20</label><figDesc>Get Believed SidesTo what extend do you believe each player to be Good, from Player 0 to Player 4? Please output probabilities within [0, 1] and round to two decimal places. If you are not sure, you can simply output 0.5. Output: Based on the information provided and the actions taken by each player, I will provide my assessment of the probability of each player being Good, rounded to two decimal places: Please note that these probabilities are based on the available information and are subject to change as the game progresses and more actions and statements are made by each player.</figDesc><table><row><cell>Input:</cell></row><row><cell>Rules+Role+Summary+Minutes+Outcome+</cell></row><row><cell>[USER]</cell></row><row><cell>Player 0: 0.95</cell></row><row><cell>Player 1 (myself): 0.95</cell></row><row><cell>Player 2: 0.50</cell></row><row><cell>Player 3: 0.95</cell></row><row><cell>Player 4: 0.50</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_14"><head>Table 26 :</head><label>26</label><figDesc>Example #2 of Discussion</figDesc><table><row><cell>Please choose 2 players in this round.</cell></row><row><cell>Output of Player 3</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_15"><head>Table 28 :</head><label>28</label><figDesc>Example #1 of Voting</figDesc><table><row><cell>Team Voting</cell></row><row><cell>Output of Player 0:</cell></row><row><cell>Based on the information provided and the discussion among the players, I have observed</cell></row><row><cell>the following:</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_0"><p>The code is available at: https://github.com/jonathanmli/Avalon-LLM</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_1"><p>At this point, Player 2 reveals that they are the assassin and assassinates Player 3, who is indeed MERLIN. Player 3's intuition and analysis were way too correct to be a SERVANT</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_2"><p>This uses the same LLM model as the underlying LLM</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">An experimental open-source attempt to make gpt-4 fully autonomous</title>
+		<author>
+			<persName><surname>Autogpt</surname></persName>
+		</author>
+		<ptr target="https://github.com/Significant-Gravitas/Auto-GPT" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<ptr target="https://github.com/yoheinakajima/babyagi" />
+		<title level="m">Github repository of babyagi</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Michael Ahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Byron</forename><surname>Cortes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keerthana</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Herzog</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.01691</idno>
+		<title level="m">Do as i can, not as i say: Grounding language in robotic affordances</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Driess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">M</forename><surname>Mehdi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Corey</forename><surname>Sajjadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Lynch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ayzaan</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Wahid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quan</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhe</forename><surname>Vuong</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.03378</idno>
+		<title level="m">Palm-e: An embodied multimodal language model</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaming</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Renrui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijie</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aojun</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Conghui</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyu</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongsheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Qiao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.15010</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Parameter-efficient visual instruction model</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">AVIS: autonomous visual information seeking with large language models</title>
+		<author>
+			<persName><forename type="first">Ziniu</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmet</forename><surname>Iscen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhou</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><forename type="middle">A</forename><surname>Ross</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cordelia</forename><surname>Schmid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alireza</forename><surname>Fathi</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2306.08129</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2306.08129" />
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Large language models are zero-shot reasoners</title>
+		<author>
+			<persName><forename type="first">Takeshi</forename><surname>Kojima</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shane</forename><surname>Shixiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Machel</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutaka</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusuke</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Iwasawa</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.11916</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Antonio Torralba, and Yuke Zhu. Pre-trained language models for interactive decision-making</title>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Puig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Paxton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clinton</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linxi</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">De-An</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ekin</forename><surname>Akyürek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anima</forename><surname>Anandkumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Andreas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<ptr target="http://papers.nips.cc/paper_files/paper/2022/hash/ca" />
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note>3b1f24fc0238edf5ed1ad226b9d655-Abstract-Conference.html</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong Jae</forename><surname>Lee</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.08485</idno>
+		<title level="m">Visual instruction tuning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanchen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanyu</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanyu</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hangliang</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiwen</forename><surname>Men</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kejuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shudan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aohan</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengxiao</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenhui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sheng</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianjun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minlie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiao</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Tang</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2308.03688</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2308.03688" />
+		<imprint/>
+	</monogr>
+	<note>Agentbench: Evaluating llms as agents. CoRR, abs/2308.03688, 2023b</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Agents that reduce work and information overload</title>
+		<author>
+			<persName><forename type="first">Pattie</forename><surname>Maes</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/176789.176792</idno>
+		<ptr target="https://doi.org/10.1145/176789.176792" />
+	</analytic>
+	<monogr>
+		<title level="j">Commun. ACM</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<biblScope unit="page" from="30" to="40" />
+			<date type="published" when="1994">1994</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<author>
+			<persName><forename type="first">P</forename><surname>Jörg</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Müller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Munindar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anand</forename><forename type="middle">S</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rao</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/3-540-49057-4</idno>
+		<ptr target="https://doi.org/10.1007/3-540-49057-4" />
+	</analytic>
+	<monogr>
+		<title level="m">Intelligent Agents V, Agent Theories, Architectures, and Languages, 5th International Workshop, ATAL &apos;98</title>
+		<title level="s">Lecture Notes in Computer Science</title>
+		<meeting><address><addrLine>Paris, France</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="1998">July 4-7, 1998. 1999</date>
+			<biblScope unit="volume">1555</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suchir</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christina</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shantanu</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Saunders</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2112.09332</idno>
+		<title level="m">Browser-assisted question-answering with human feedback</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chatgpt</surname></persName>
+		</author>
+		<ptr target="https://openai.com/blog/chatgpt/" />
+		<title level="m">Optimizing language models for dialogue</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<idno type="arXiv">arXiv:2303.08774</idno>
+		<title level="m">OpenAI. Gpt-4 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Training language models to follow instructions with human feedback</title>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carroll</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katarina</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="27730" to="27744" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">LLaMA: Open and efficient foundation language models</title>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thibaut</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gautier</forename><surname>Izacard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Martinet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marie-Anne</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothée</forename><surname>Lacroix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baptiste</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Faisal</forename><surname>Azhar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.13971</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Chain of thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.11903</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Wiki-page of &quot;the resistance (game)</title>
+		<author>
+			<persName><surname>Wiki</surname></persName>
+		</author>
+		<ptr target="https://en.wikipedia.org/wiki/The_Resistance_" />
+		<imprint/>
+	</monogr>
+	<note>game</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03629</idno>
+		<title level="m">React: Synergizing reasoning and acting in language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Llama-adapter: Efficient fine-tuning of language models with zero-init attention</title>
+		<author>
+			<persName><forename type="first">Renrui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaming</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aojun</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangfei</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shilin</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongsheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Qiao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.16199</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Multimodal chain-of-thought reasoning in language models</title>
+		<author>
+			<persName><forename type="first">Zhuosheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aston</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hai</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Karypis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Smola</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.00923</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<publisher>Get Believed Sides</publisher>
+			<biblScope unit="volume">21</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>Parse Results</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Based on the above information, to what extend do you believe for each player to be Good, from Player 0 to Player 4 with probabilities within [0, 1]</title>
+		<idno>Input: ... Player 0: 0.95 Player 1 (myself): 0.95 Player 2: 0.50 Player 3: 0.95 Player 4: 0.50</idno>
+		<imprint/>
+	</monogr>
+	<note>Please summarize with the following template: Answer: {0: score_for_0, 1: score_for_1, 2: score_for_2, 3: score_for_3, 4: score_for_4} Output: Answer: {0: 0.95, 1: 0.95, 2: 0.50, 3: 0.95, 4: 0.50}</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,1991 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">CAST: Enhancing Code Retrieval-Augmented Generation with Structural Chunking via Abstract Syntax Tree</title>
+				<funder>
+					<orgName type="full">Amazon AI Research Gift Fund</orgName>
+				</funder>
+				<funder ref="#_ejcqy9m">
+					<orgName type="full">ONR</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-10-02">2 Oct 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Yilin</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Carnegie Mellon University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xinran</forename><surname>Zhao</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Carnegie Mellon University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zora</forename><forename type="middle">Zhiruo</forename><surname>Wang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Carnegie Mellon University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Chenyang</forename><surname>Yang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Carnegie Mellon University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jiayi</forename><surname>Wei</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Carnegie Mellon University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Tongshuang</forename><surname>Wu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Carnegie Mellon University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">CAST: Enhancing Code Retrieval-Augmented Generation with Structural Chunking via Abstract Syntax Tree</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-10-02">2 Oct 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">361BC2FA4B2308B249EBB6B1D3896897</idno>
+					<idno type="arXiv">arXiv:2506.15655v2[cs.SE]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:09+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Retrieval-Augmented Generation (RAG) has become essential for large-scale code generation, grounding predictions in external code corpora to improve factuality. However, a critical yet underexplored aspect of RAG pipelines is chunking-the process of dividing documents into retrievable units. Existing linebased chunking heuristics often break semantic structures, splitting functions or merging unrelated code, which can degrade generation quality. We propose chunking via Abstract Syntax Trees (CAST), a structure-aware method that recursively breaks large AST nodes into smaller chunks and merges sibling nodes while respecting size limits. This approach generates selfcontained, semantically coherent units across programming languages and tasks, improving performance on diverse code generation tasks, e.g., boosting Recall@5 by 4.3 points on Re-poEval retrieval and Pass@1 by 2.67 points on SWE-bench generation. Our work highlights the importance of structure-aware chunking for scaling retrieval-enhanced code intelligence.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Large-scale code generation has emerged as a cornerstone of modern software engineering, powering tasks that range from automated bug fixing <ref type="bibr" target="#b28">(Meng et al., 2024)</ref> to full-fledged repository-level completion <ref type="bibr">(Zhang et al., 2023a)</ref>. Retrieval-augmented generation (RAG) pushes this frontier further by allowing language models to ground their predictions in a rich external corpus of data <ref type="bibr" target="#b16">(Guu et al., 2020)</ref>, effectively mitigating hallucinations and improving factual correctness <ref type="bibr" target="#b20">(Izacard et al., 2022)</ref>.</p><p>One crucial preprocessing step in Retrieval-Augmented Generation (RAG) is chunking <ref type="bibr">(Bohnet et al., 2023)</ref>-breaking large documents into manageable segments that can be efficiently indexed, def normalize(vals):</p><p>...code for mean and var... return <ref type="bibr">[(v -mean)</ref> / std for v in vals] def compute_stats(vals): total = sum(vals) n = len(vals) or 1 distinct_count =len(set(vals)) mean = total / n var = sum((v -mean)**2 for v in vals) / n return distinct_count, mean, var # Code completion task: # Call compute_stats and print out a summary. def print_summary(values): Query def print_summary(values): stats = compute_stats(values) print(f"Total:{stats['total']}") print(f"Count:{stats['count']}") print(f"Mean:{stats['mean']:.2f}") print(f"Var: {variance:.2f}") Syntax-aware chunks preserve code context Syntax-agnostic chunks breaks code structure Code Chunking Code Retrieval and Generation</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>❌</head><p>def print_summary(values): distinct_count, mean, variance = compute_stats(values) print(f"Distinct count {distinct_count}") print(f"Mean: {mean:.2f}") print(f"Var: {variance:.2f}")</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>✅</head><p>Figure <ref type="figure">1</ref>: Syntax-agnostic chunking often omits crucial information needed to generate functional code. In this example, fixed-size chunking breaks the structure of the compute_stats method, causing the model to lose context regarding its return value. As a result, the model generates incorrect code based on a mistaken assumption of what is returned. In contrast, when given syntax-aware chunks, the model accurately identifies the return values and integrates them correctly within the existing codebase.</p><p>retrieved, and used as contextual input during generation. To date, most chunking approaches rely on fixed-size, line-based splitting <ref type="bibr" target="#b23">(Lewis et al., 2020)</ref>. While simple and generally effective, this method struggles with structured content like code, where the document naturally contains semantic or syntactic blocks. As shown in Figure <ref type="figure">1</ref>, naive chunking often splits meaningful units (e.g., functions and classes) across different chunks, losing structural integrity and context.</p><p>Can we chunk documents more intelligently, preserving their original structure? In this work, we explore CAST-Chunking via Abstract Syntax Trees. ASTs represent code as hierarchical trees with typed nodes corresponding to program units. By parsing source code into an AST, we apply a recursive, split-then-merge algorithm to convert tree structures into chunks that are better aligned with syntactic boundaries.</p><p>Extensive experiments show that CAST improves performance across a range of code generation tasks. Specifically, it offers three key advantages: (1) Structure-preserving chunks: AST traversal yields more self-contained chunks, improving both retrieval and generation. For instance, StarCoder2-7B sees an average of 5.5 points gain on RepoEval <ref type="bibr">(Zhang et al., 2023b)</ref>. (2) Crosslanguage consistency: The language-agnostic nature of CAST enables better generalization across programming languages, achieving up to 4.3 points gain on CrossCodeEval <ref type="bibr" target="#b8">(Ding et al., 2023)</ref>. (3) Metadata retention: AST-based chunks more faithfully capture metadata at the file, class, and function levels, enhancing context matching in hybrid code+natural language tasks, e.g., up to 2.7 points gain on SWE-bench <ref type="bibr" target="#b21">(Jimenez et al., 2024)</ref>, which focuses on resolving GitHub issues.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">CAST</head><p>We focus on the first stage of the RAG pipeline: chunking. In this step, source code is parsed into semantically meaningful units (such as functions or classes) while preserving the structure of the code. These units are then grouped into coherent chunks, which serve as the retrievable context that can be obtained by a subsequent retriever and used to prompt a language model. Design Goal. Our design for CAST pursues four aligned goals: (1) syntactic integrity-whenever possible, chunk boundaries should align with complete syntactic units instead of splitting them; (2) high information density-each chunk is packed up to, but not beyond, a fixed size budget to maximize content utility; (3) language invariance-the algorithm employs no language-specific heuristics so it works unchanged across diverse programming languages and code-related tasks; and (4) plugand-play compatibility-concatenating the chunks must reproduce the original file verbatim, enabling seamless drop-in replacement within existing RAG pipelines.</p><p>AST Parsing. To support syntax-aware chunking, we leverage the Abstract Syntax Tree (AST) representation of code. An AST is a tree-structured abstraction that captures the syntactic structure of source code in a way that is both hierarchical and semantically rich. Rather than treating code as plain text, AST encodes language constructs-like functions, classes, loops, and conditionals-as dis-tinct nodes in a structured parse tree. This enables us to identify meaningful code boundaries with precision, ensuring that chunking respects the underlying syntax. Since ASTs are widely supported across languages, this approach also enhances the language-invariance and portability of our method. Our work uses the tree-sitter library (Tree-sitter, 2025) for the AST tree parsing.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>AST-based Recursive Chunking.</head><p>With the AST tree at hand, we use a recursive, split-then-merge algorithm for converting tree structures into chunks, as shown in Figure <ref type="figure" target="#fig_0">2</ref>. To retain as much syntactic information as possible, we first traverse the tree in a top-down manner, to fit those large AST nodes into a single chunk whenever possible. For those nodes that must be split due to exceeding the chunk size limit, to avoid too many overly small chunks, we further perform a greedy merging step, combining adjacent small sibling nodes into one chunk, to maximize the per-chunk information density. The detailed process is also described in Alg. 1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Chunk size metric.</head><p>Choosing an appropriate budget for each chunk is nontrivial: two segments of equal line count can carry wildly different amounts of code, and AST-aligned chunks naturally vary in their physical span (e.g., a single import line versus an entire class body). So unlike prior work <ref type="bibr" target="#b40">(Wang et al., 2024)</ref>, we measure chunk size by the number of non-whitespace characters rather than by lines. This keeps chunks text-dense and comparable across diverse files, languages, and coding styles, ensuring that our budget reflects actual content rather than incidental formatting.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Experiments</head><p>We evaluate CAST with various top retrieval and generation models in various code task settings. We present results of selected end-to-end RACG pipelines (retriever + LM) in Section 3.2 and full tables in the Appendix (5, 6, 7, 8).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Experiment Settings</head><p>Datasets. We evaluate CAST on various software engineering (SE) tasks using three benchmarks: • RepoEval <ref type="bibr">(Zhang et al., 2023b)</ref>: Code completion tasks with long intra-file contexts; • CrossCodeEval <ref type="bibr" target="#b8">(Ding et al., 2023)</ref>: Multilanguage queries requiring cross-file reasoning; • SWE-bench <ref type="bibr" target="#b21">(Jimenez et al., 2024)</ref>: General SE tasks involving code patch generation. We use chunk 2 chunk 1 chunk 3 Fixed-size chunks Source code A B FIXED-SIZE CHUNKING cAST CHUNKING import lib1 import lib2 class A: def __init__(): ... def foo(): ... class B: def __init__(): ... def bar(): ... a = A() b = B() import lib1 import lib2 class A: def __init__(): ... def foo(): ... class B: def __init__(): ... def bar(): ... a = A() b = B() Class Def. Class Def. Module Import Import Exp. Exp. Func Def. Func Def. Func Def. Func Def.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>AST-based parsing b1</head><p>import lib1 import lib2</p><p>class A:</p><p>def __init__(): ... def foo(): ... For CAST, we first parse the document into a tree of AST nodes. Then, starting from the first level, we greedily merge AST nodes into chunks. If adding a node would exceed the chunk size limit, we recursively break it into smaller nodes. The output of CAST is a list of chunks where each chunk contains a list of AST nodes.</p><p>the SWE-bench Lite variant (bench Lite, 2024), a 300-problem subset where each issue is solvable by editing a single file.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Metrics.</head><p>For retrieval performance, we report three common metrics: nDCG, Precision and Recall, with k = 5. Notably, since retrieval scores from different corpus distributions are not directly comparable, we implement a score mapping technique to align AST-based retrieval scores with those of the baseline, with details in Appendix A.2. As for generation, we use Pass@k <ref type="bibr" target="#b5">(Chen et al., 2021)</ref> for execution-based datasets and matchbased metrics for the others, following prior work <ref type="bibr" target="#b40">(Wang et al., 2024;</ref><ref type="bibr" target="#b8">Ding et al., 2023)</ref>. Specifically, we report the canonical Pass@1 score for RepoEval and SWE-bench. Additionally, we record the Pass@8 score for SWE-bench by sampling multiple responses with high temperature following Agentless <ref type="bibr">(Xia et al., 2024a)</ref> to examine the robustness of CAST. For CrossCodeEval, we report exact match (EM), edit similarity (ES), and other identifier match metrics in the original work.</p><p>Retrieval and Generation Models. We adopt various kinds of retrievers, including general-text dense retrievers: BGE-base <ref type="bibr" target="#b45">(Xiao et al., 2023)</ref> and GIST-base (Solatorio, 2024); and code-specific retriever: Codesage-small-v2 <ref type="bibr" target="#b47">(Zhang et al., 2024)</ref>, following CodeRAG-Bench <ref type="bibr" target="#b40">(Wang et al., 2024)</ref>.</p><p>Similarly, for generations, we include two code-specific LMs: StarCoder2-7B <ref type="bibr">(Lozhkov et al., 2024)</ref>, CodeLlama-7B-Python (Roziere et al., 2023); and two general-purpose LMs (claude-3.7-sonnet, gemini-2.5-pro-0325), as both represent the state-of-the-art in coding.</p><p>Further details of our experimental setup are introduced in Appendix A.1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">CAST Results and Analysis</head><p>Table <ref type="table" target="#tab_0">1</ref> presents the end-to-end RACG results with selected retrievers (BGE-base, GIST-base, Codesgae-small-v2) on the three datasets. The results highlight several key observations:</p><p>Retrieval. CAST 's structure-aware chunking steadily improves retrieval performance across datasets and retrievers. Specifically, all models show gains of 1.2-3.3 points in Precision and 1.8-4.3 in Recall on code-to-code retrieval (Repo-Eval), and 0.5-1.4 in Precision and 0.7-1.1 in Recall on the more challenging NL-to-code retrieval (SWE-Bench). These improvements suggest that aligning chunks with abstract syntax boundaries helps diverse retrievers surface semantically coherent code fragments, supplying richer and more accurate evidence for downstream tasks. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Generation.</head><p>CAST benefits both intra-file and cross-file code completion. Notably, gains are most pronounced when the RACG pipeline employs code-specific retrievers, implying that the structurally aligned chunks deliver fuller context to both the specialized retriever and the generation model, which in turn facilitates more accurate context retrieval and coherent code synthesis. On NLto-code generation, we observe remarkable gains with BGE-base and CodeSage retrievers under one and multiple rounds of sampling.</p><p>Correlation between retrieval and generation performance. Among the three retrieval metrics we use, we notice that higher precision tends to convert into better generation performance, aligning with conclusions from prior work <ref type="bibr" target="#b51">(Zhao et al., 2024)</ref>. This suggests that ensuring the top-k context is highly relevant reduces noise and enables the language model to concentrate on concise, accurate evidence, thereby boosting answer fidelity <ref type="bibr" target="#b10">(Fang et al., 2024;</ref><ref type="bibr" target="#b32">Salemi and Zamani, 2024)</ref>. By contrast, recall-oriented metrics and nDCG correlate only weakly with downstream quality-once the necessary evidence appears in the retrieved set, adding lower-ranked chunks yields diminishing returns or can even hurt performance by introducing distractors.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Ablations</head><p>Necessity of merging. The motivation for introducing merging in our algorithm is to maximize the information density of each chunk. Under a Table 3: Ablation study evaluating the impact of different context lengths on the overall performance of several retrieval and generation pipelines.</p><p>split-only approach, small AST nodes, such as import statements and variable assignments, generate an excessive number of chunks, which unnecessarily enlarges the index and degrades retrieval performance. These fine-grained chunks also contain limited context, making them less effective for downstream tasks, as shown in Table <ref type="table" target="#tab_1">2</ref>. Across all retrievers, we find that both retrieval and generation performance decline under the split-only strategy.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Selection of context length.</head><p>In our experiments, we set max_context_length = 4000, which roughly corresponds to the top five chunks. A comparison of different context lengths is shown in Table <ref type="table">3</ref>. We observe that doubling the context length does not necessarily improve generation, whereas a modest reduction in context length can lead to performance degradation, likely due to chunk truncation. 5 Related Work Structure-aware modeling in code tasks. Early work showed clear benefits from feeding explicit syntax to models: TranX (grammar-guided decoding) and path-based encoders code2vec/code2seq leveraged AST productions or paths to outperform token-only baselines in NL-to-code and summarization <ref type="bibr" target="#b46">(Yin and Neubig, 2018;</ref><ref type="bibr">Alon et al., 2019b,a)</ref>. Transformer-era studies refined this idea. Graph-CodeBERT <ref type="bibr" target="#b15">(Guo et al., 2021)</ref> and the Code Transformer <ref type="bibr" target="#b52">(Zügner et al., 2021)</ref> inject data-flow edges or AST distances, while CODEDISEN <ref type="bibr" target="#b50">(Zhang et al., 2021)</ref> disentangles syntax from semantics for cross-language transfer. More recent models layer structure-aware objectives onto large LMs: TypeT5 <ref type="bibr" target="#b41">(Wei et al., 2023)</ref> adds static-analysis context for type inference, and AST-T5 <ref type="bibr" target="#b12">(Gong et al., 2024)</ref> and StructCoder <ref type="bibr" target="#b38">(Tipirneni et al., 2024</ref>) mask or generate subtrees to boost transpilation and Java-Python translation.</p><p>Although modern LLMs can often internalize such structure from raw tokens, these results indicate that explicit syntax still provides measurable gains-especially in preprocessing steps like chunking, where respecting function or class boundaries directly controls what the model sees. In light of the importance of structure awareness in the above literature, we propose to leverage the tree structure of code snippets to improve chunking.</p><p>Retrieval-augmented code generation. Successful code RAG hinges on pairing high-quality retrievers with generation frameworks that can effectively leverage the fetched context. Generalpurpose systems-RAG <ref type="bibr" target="#b23">(Lewis et al., 2020)</ref>, FiD <ref type="bibr" target="#b19">(Izacard and Grave, 2021)</ref>, and RePlug <ref type="bibr" target="#b35">(Shi et al., 2023)</ref>-demonstrate that feeding high-recall evidence to a language model markedly improves factuality. In the software-engineering domain, <ref type="bibr">CodeRAG-Bench (Wang et al., 2024)</ref> confirms these gains on repository-level tasks while revealing that lexical-matching retrievers often miss relevant code, motivating code-specific retrieval mod-els. State-of-the-art code retrievers such as Code-BERT <ref type="bibr" target="#b11">(Feng et al., 2020)</ref>, UniXcoder <ref type="bibr" target="#b14">(Guo et al., 2022)</ref>, and CodeRetriever <ref type="bibr" target="#b25">(Li et al., 2022)</ref> learn joint code-text or code-code embeddings and consistently surpass generic dense models in code search and question answering. Most pipelines still inherit fixed line-based chunking from naturallanguage RAG. Our work shows that respecting syntactic units with AST-aware chunks further enhances these retrieval-generation loops.</p><p>Most relevantly, CodeCRAG ( <ref type="formula">Du</ref> </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion and Discussion</head><p>In this work, we present CAST as a simple and effective chunking strategy for retrieval-augmented code generation. Through the structural awareness brought by AST, we are allowed to maintain syntactic integrity and high information density during chunking. Extensive experiments on various retrievers, LLM generators, and code generation tasks, validate the gain from CAST over the commonly used fixed-size chunking strategy on both retrieval and RAG tasks.</p><p>By maintaining the original RAG pipeline, for the code agent practitioner, CAST could be used as a simple plug-and-play tool to provide informative and formatted chunks for later stage agent use. For code RAG benchmark developers, CAST could serve as additional resources and an effective alternative or complementary retrieval unit.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitations</head><p>Contextual Awareness. In our experiments, for a fair comparison, we maintain the original retrievalaugmented code generation pipeline to parse code snippets into self-contained chunks, without explicit contextual awareness from higher chunking units in the AST. However, as shown in <ref type="bibr" target="#b33">(Sarthi et al., 2024;</ref><ref type="bibr" target="#b4">Cai et al., 2024)</ref>, in textual RAG, including multi-level information in the tree structures can improve the retrieval performance, which can also potentially benefit code retrieval with the natural structures that can be extracted with our AST framework.</p><p>Multi-view of the code. In this work, we mainly explore chunking with pure code files. However, each code snippet can potentially have multiple views, e.g., the input-output elicitation in the comments, natural language descriptions, pseudo code, and etc. Each of these views can emphasize different facets of the very code snippet. Previous work shows that including multiple views helps model math reasoning <ref type="bibr" target="#b26">(Liang et al., 2023)</ref>. Similarly, instead of pure AST-based chunking on code snippets, including different chunk candidates from different views can potentially relieve the code completeness reliance of our cAST.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Inner Execution Dynamics.</head><p>In this work, we focus on introducing the structural awareness to retrieval augmented generation with AST, as a static analysis of the code semantics. However, the execution trace <ref type="bibr" target="#b29">(Ni et al., 2024)</ref>, type inference <ref type="bibr" target="#b41">(Wei et al., 2023)</ref>, and compilation <ref type="bibr" target="#b7">(Cummins et al., 2024)</ref> can potentially lead to a deep understanding of the variable dynamics. Introducing the awareness of such in-depth query analysis can help augment our cAST with per-query adaptiveness.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Appendix</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 Implementation Details</head><p>For Gemini and Claude models, we use the official API service. For other open-sourced models, we use locally served models on nodes with 8 Nvidia A100 (40G) GPU and 8 Nvidia A6000 (40G) GPUs with CUDA 12 installed. Our inference structure is built upon vLLM <ref type="bibr" target="#b22">(Kwon et al., 2023)</ref>.</p><p>For fair comparison of chunks with varying sizes, instead of using top-k chunks directly, We use max_context_length to sequentially include retrieved chunks up to a threshold, truncating the final chunk if needed. We set the limit to 4000 for RepoEval and SWE-Bench, and extend it to 10000 for CrossCodeEval to test cross-file retrieval. 1 For generation, we adopt different settings based on evaluation metrics based on prior work <ref type="bibr" target="#b40">(Wang et al., 2024;</ref><ref type="bibr" target="#b24">Li et al., 2023;</ref><ref type="bibr">Xia et al., 2024a)</ref>: We use t = 0.2, top p = 0.95, and 1 sample for Pass@1; t = 0.8 and 8 samples for Pass@8.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Metric Score Mapping Details</head><p>In Section 3.1, we denote the distributional incomparability across corpses. We implement a score mapping technique to align AST-based retrieval scores over baselines.</p><p>Specifically, similar to <ref type="bibr" target="#b6">(Chen et al., 2023)</ref>, we assign each line of code a score inherited from its corresponding AST chunk. These line-level scores are then aggregated to recompute the scores of baseline chunks, allowing us to rerank them and estimate AST-based retrieval performance within the baseline framework.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3 AST-based Chunking Algorithm Details</head><p>In the main paper, we provide textual descriptions of our algorithm. Here, we present the pseudo code of our implementation in Alg. 1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.4 Extended Experiment Results</head><p>In the main paper, we show concise results from our experiment to demonstrate a clear contribution. We further include detailed results from our settings here. In Table <ref type="table" target="#tab_3">5</ref>, we present the retrieval performance with various metrics and retrievers on RepoEval and SWE-bench. In Table <ref type="table">7</ref>, we present the RAG performance on SWE-Bench with various retrievers (large language models) and generators. In Table <ref type="table">6</ref>, we present the RAG performance on 1 We use default tokenizers for open-weighted models, and cl100k_base for API models.</p><p>Algorithm 1 AST-based Chunking Algorithm</p><p>1: MAX_SIZE ← maximum chunk size 2: 3: function CHUNKCODE(code) 4: tree ← PARSEAST(code) 5: if GETSIZE(code) ≤ MAX_SIZE then 6: return [tree] 7: else 8: return CHUNKNODES(tree.children) 9: end if 10: end function 11: 12: function CHUNKNODES(nodes) 13: chunks ← [ ], chunk ← [ ], size ← 0 14: for node in nodes do 15: s ← GETSIZE(node) 16: if (chunk = [ ] and s &gt; MAX_SIZE) or 17: (size + s &gt; MAX_SIZE) then 18: if chunk ̸ = [ ] then 19: chunks.append(chunk) 20: chunk, size ← [ ], 0 21: end if 22: if s &gt; MAX_SIZE then 23: subchunks ← CHUNKNODES(node.children) 24: chunks.extend(subchunks) 25: continue 26: end if 27: else 28: chunk.append(node); size ← size + s 29: end if 30: end for 31: if chunk ̸ = [ ] then 32: chunks.append(chunk) 33: end if 34: return chunks 35: end function RepoEval with various retrievers and generators. In Table 8, we show the RAG performance with various retrievers on CCEval across different programming languages.s These tables show similar conclusions with our findings in the main paper, where CAST consistently performs better than fixed-size line-based chunking with syntactic integrity and high information density.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.5 Performance differences across different programming languages</head><p>A key limitation of fixed-size, line-based chunking is its poor generalizability across programming languages. Language-specific syntax means a line limit tuned for one language over-or undersegments another, leading to uneven information density and degraded retrieval and generation quality. In contrast, CAST uses structure-aware segmentation based on abstract-syntax units common across languages, mitigating these issues. Table 6: RAG performance (Pass@1) on RepoEval with various retrievers.</p><p>ods use fixed chunk lengths, performance variation across languages is notably higher for the baseline. Averaged over four languages, CAST improves EM by 2.9 on code and 3.0 on identifier, with the largest gains on TypeScript-the noisiest language. These consistent gains highlight the value of respecting syntax when handling multilingual code.</p><p>The performance differences across different languages with different chunking strategies, as well as RAG design choices, can form an interesting future line of work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.6 Ethical Statements</head><p>We foresee no ethical concerns or potential risks in our work. All of the retrieval models, code generators, and datasets are open-sourced or with public APIs, as shown in Section 3. The LLMs we applied in the experiments are also publicly available. Given our context, the outputs of LLMs (code snippets) are unlikely to contain harmful and dangerous information. All the code is executed in sandboxes, with no threat to the public internet. The natural language part of our experiments is mainly on English. Multiple programming languages are included: Python, Java, C#, and TypeScript.</p><p>Our code is open source and available at <ref type="url" target="https://github.com/yilinjz/astchunk">https:   //github.com/yilinjz/astchunk</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.7 Licenses of scientific artifacts</head><p>We conclude the licenses of the scientific artifacts we used in Table <ref type="table">9</ref>. All of our usage for scientific discovery follows the original purpose of the artifacts.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :</head><label>2</label><figDesc>Figure2: Comparison of fixed-size chunking vs. CAST. For CAST, we first parse the document into a tree of AST nodes. Then, starting from the first level, we greedily merge AST nodes into chunks. If adding a node would exceed the chunk size limit, we recursively break it into smaller nodes. The output of CAST is a list of chunks where each chunk contains a list of AST nodes.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><figDesc>et al., 2025) utilizes the graphical view of code flow to improve the overall LLM code generation pipeline. Shen et al. (2024); Xia et al. (2024b); Song et al. (2024) propose to compute code similarity based on the graph structure of code. In our work, we conduct a fine-grained study on one important block of code RAG workflow: chunking.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Retrieval and Generation Performances across three benchmarks, using different retrieval models (BGE, GIST, CodeSage) and different LMs (full model names in §3.1).</figDesc><table><row><cell></cell><cell>Metric (Model)</cell><cell cols="2">CAST chunking</cell><cell cols="2">Fixed-size chunking</cell></row><row><cell></cell><cell></cell><cell cols="4">BGE GIST CodeSage BGE GIST CodeSage</cell></row><row><cell></cell><cell></cell><cell>RepoEval</cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell>nDCG</cell><cell>71.1 75.9</cell><cell>85.1</cell><cell>71.3 74.2</cell><cell>83.0</cell></row><row><cell>R</cell><cell>Precision</cell><cell>34.9 38.1</cell><cell>44.1</cell><cell>32.8 34.8</cell><cell>42.9</cell></row><row><cell></cell><cell>Recall</cell><cell>69.8 75.0</cell><cell>83.9</cell><cell>67.4 70.7</cell><cell>82.1</cell></row><row><cell>G</cell><cell cols="2">Pass@1 (StarCoder2) 51.7 57.9 Pass@1 (CodeLlama) 49.6 56.6</cell><cell>73.2 72.1</cell><cell>47.5 51.2 45.6 51.5</cell><cell>67.6 66.5</cell></row><row><cell></cell><cell></cell><cell cols="2">SWE-Bench</cell><cell></cell><cell></cell></row><row><cell></cell><cell>nDCG</cell><cell>44.0 44.4</cell><cell>43.1</cell><cell>42.4 43.1</cell><cell>42.6</cell></row><row><cell>R</cell><cell>Precision</cell><cell>39.7 39.1</cell><cell>38.8</cell><cell>38.3 38.6</cell><cell>37.5</cell></row><row><cell></cell><cell>Recall</cell><cell>18.4 18.5</cell><cell>18.3</cell><cell>17.3 17.8</cell><cell>17.5</cell></row><row><cell>G</cell><cell>Pass@1 (Claude) Pass@8 (Gemini)</cell><cell>16.3 15.0 35.3 33.7</cell><cell>16.7 32.7</cell><cell>13.7 14.7 32.3 33.0</cell><cell>14.0 31 0</cell></row><row><cell></cell><cell></cell><cell cols="2">CrossCodeEval</cell><cell></cell><cell></cell></row><row><cell cols="3">R Identifier Match (EM) 34.7 34.0</cell><cell>39.9</cell><cell>32.0 33.5</cell><cell>36.3</cell></row><row><cell>G</cell><cell>EM (StarCoder2) ES (StarCoder2)</cell><cell>23.8 23.4 72.2 71.9</cell><cell>29.1 74.3</cell><cell>21.2 23.0 71.0 71.7</cell><cell>24.8 73.1</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Ablation study comparing performance metrics for Split-then-merge (CAST) and Split-only methodologies across different models.</figDesc><table><row><cell></cell><cell>Metric (Model)</cell><cell cols="2">Split-then-merge (CAST)</cell><cell cols="2">Split-only</cell></row><row><cell></cell><cell></cell><cell cols="4">BGE GIST CodeSage BGE GIST CodeSage</cell></row><row><cell cols="2">R nDCG</cell><cell>71.1 75.9</cell><cell>85.1</cell><cell>53.5 59.1</cell><cell>66.1</cell></row><row><cell>G</cell><cell cols="2">Pass@1 (StarCoder2) 51.7 57.9 Pass@1 (CodeLlama) 49.6 56.6</cell><cell>73.2 72.1</cell><cell>48.3 45.0 47.2 48.5</cell><cell>65.4 58.4</cell></row><row><cell></cell><cell cols="2">Pipeline (R + G)</cell><cell cols="3">Context length (tokens)</cell></row><row><cell></cell><cell></cell><cell></cell><cell>3500</cell><cell>4000</cell><cell>8000</cell></row><row><cell></cell><cell cols="2">BGE + StarCoder2</cell><cell>46.9</cell><cell>51.7</cell><cell>51.7</cell></row><row><cell></cell><cell cols="2">GIST + StarCoder2</cell><cell>57.1</cell><cell>57.9</cell><cell>58.2</cell></row><row><cell></cell><cell cols="2">CodeSage + StarCoder2</cell><cell>70.5</cell><cell>73.2</cell><cell>69.2</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 4 :</head><label>4</label><figDesc>Ablation study of maximum chunk size effects on retrieval and generation performance.</figDesc><table><row><cell>Selection of maximum chunk size. We set</cell></row><row><cell>max_chunk_size = 2000 in our experiments, as the</cell></row><row><cell>resulting chunks exhibit similar statistics (e.g., line</cell></row><row><cell>counts and token counts) to the fixed-size chunking</cell></row><row><cell>baseline. A sensitivity analysis of max_chunk_size</cell></row><row><cell>is presented in Table 4. We observe that re-</cell></row><row><cell>trieval and generation performance peak when</cell></row><row><cell>max_chunk_size is between 2000 and 2500 char-</cell></row></table><note><p>acters. Additionally, generation performance also depends on max_context_length, as shown in the previous analysis. When context length allows, larger chunks can provide more information, while smaller chunks help mitigate the risk of truncation.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 5 :</head><label>5</label><figDesc>Table8reports results with the Codesage-small-v2 + Starcoder2-7B pipeline. Though both meth-Retrieval performance (nDCG, Precision, Recall@{5,10}) on RepoEval and SWE-bench.</figDesc><table><row><cell>Fixed-size</cell></row></table></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgments</head><p>The authors thank <rs type="person">Jamie Callan</rs>, <rs type="person">Fernando Diaz</rs>, <rs type="person">Graham Neubig</rs>, <rs type="person">Daniel Fried</rs>, and <rs type="person">Pengcheng Yin</rs> for their insights into design and evaluation choices. The authors also thank the constructive discussions with colleagues from <rs type="institution">CMU WInE Lab and Augment Code</rs>. <rs type="person">Xinran Zhao</rs> is supported by the <rs type="funder">ONR</rs> Award <rs type="grantNumber">N000142312840</rs>. This work is supported by the <rs type="programName">OpenAI Research Credit program</rs>, the <rs type="funder">Amazon AI Research Gift Fund</rs>, and the <rs type="institution">Gemma Academic Program GCP Credit Award</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_ejcqy9m">
+					<idno type="grant-number">N000142312840</idno>
+					<orgName type="program" subtype="full">OpenAI Research Credit program</orgName>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Apache License 2.0 numpy <ref type="bibr" target="#b17">(Harris et al., 2020)</ref> <ref type="url" target="https://numpy.org/">https://numpy.org/</ref> BSD License matplotlib <ref type="bibr" target="#b18">(Hunter, 2007)</ref> <ref type="url" target="https://matplotlib.org/">https://matplotlib.org/</ref> BSD compatible License vllm <ref type="bibr" target="#b22">(Kwon et al., 2023)</ref> <ref type="url" target="https://github.com/vllm-project/vllm">https://github.com/vllm-project/vllm</ref> </p><p>Apache License 2.0 BGE <ref type="bibr" target="#b45">(Xiao et al., 2023)</ref> <ref type="url" target="https://huggingface.co/BAAI/bge-large-en">https://huggingface.co/BAAI/bge-large-en</ref> MIT license GIST <ref type="bibr" target="#b36">(Solatorio, 2024)</ref> <ref type="url" target="https://huggingface.co/avsolatorio/GIST-Embedding-v0">https://huggingface.co/avsolatorio/GIST-Embedding-v0</ref> </p><p>MIT license CodeSage <ref type="bibr" target="#b47">(Zhang et al., 2024)</ref> <ref type="url" target="https://huggingface.co/codesage/codesage-small-v2">https://huggingface.co/codesage/codesage-small-v2</ref> </p><p>Apache License 2.0 Jina-v2-Code <ref type="bibr">(Günther et al., 2023)</ref>  </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 7 :</head><label>7</label><figDesc>RAG performance (Claude w/ Pass@1 &amp; Gemini w/ Pass@8) on SWE-bench.</figDesc><table><row><cell>Method</cell><cell></cell><cell cols="7">CAST Claude-3.7-Sonnet Gemini-2.5-pro Claude-3.7-Sonnet Gemini-2.5-pro Fixed-size</cell></row><row><cell>BGE-base</cell><cell></cell><cell>16.3</cell><cell></cell><cell>35.3</cell><cell></cell><cell>13.7</cell><cell></cell><cell>32.3</cell></row><row><cell>BGE-large</cell><cell></cell><cell>13.3</cell><cell></cell><cell>30.3</cell><cell></cell><cell>14.6</cell><cell></cell><cell>33.7</cell></row><row><cell>GIST-base</cell><cell></cell><cell>15.0</cell><cell></cell><cell>33.7</cell><cell></cell><cell>14.7</cell><cell></cell><cell>33.0</cell></row><row><cell>GIST-large</cell><cell></cell><cell>15.3</cell><cell></cell><cell>31.0</cell><cell></cell><cell>13.0</cell><cell></cell><cell>33.0</cell></row><row><cell cols="2">Codesage-small-v2</cell><cell>16.7</cell><cell></cell><cell>32.7</cell><cell></cell><cell>14.0</cell><cell></cell><cell>31.0</cell></row><row><cell>Method</cell><cell cols="8">CAST EM (code) ES (code) EM (id) F1 (id) EM (code) ES (code) EM (id) F1 (id) Fixed-size</cell></row><row><cell></cell><cell></cell><cell></cell><cell cols="3">BGE-base + Starcoder2-7B</cell><cell></cell><cell></cell><cell></cell></row><row><cell>Python</cell><cell>23.8</cell><cell>72.2</cell><cell>34.7</cell><cell>63.8</cell><cell>21.2</cell><cell>71.0</cell><cell>32.0</cell><cell>62.1</cell></row><row><cell>Java</cell><cell>27.8</cell><cell>70.9</cell><cell>37.5</cell><cell>63.8</cell><cell>27.3</cell><cell>71.6</cell><cell>37.1</cell><cell>64.1</cell></row><row><cell>C#</cell><cell>26.9</cell><cell>73.5</cell><cell>32.0</cell><cell>56.4</cell><cell>23.9</cell><cell>71.8</cell><cell>28.3</cell><cell>53.8</cell></row><row><cell>TypeScript</cell><cell>13.4</cell><cell>49.6</cell><cell>19.5</cell><cell>43.6</cell><cell>11.4</cell><cell>46.0</cell><cell>17.4</cell><cell>40.2</cell></row><row><cell></cell><cell></cell><cell></cell><cell cols="3">GIST-base + Starcoder2-7B</cell><cell></cell><cell></cell><cell></cell></row><row><cell>Python</cell><cell>23.4</cell><cell>71.9</cell><cell>34.0</cell><cell>63.7</cell><cell>23.0</cell><cell>71.7</cell><cell>33.5</cell><cell>63.3</cell></row><row><cell>Java</cell><cell>28.0</cell><cell>71.2</cell><cell>37.7</cell><cell>64.3</cell><cell>27.0</cell><cell>71.3</cell><cell>36.8</cell><cell>63.7</cell></row><row><cell>C#</cell><cell>26.6</cell><cell>73.2</cell><cell>31.2</cell><cell>56.0</cell><cell>24.3</cell><cell>72.5</cell><cell>28.7</cell><cell>54.3</cell></row><row><cell>TypeScript</cell><cell>13.0</cell><cell>49.3</cell><cell>19.7</cell><cell>43.9</cell><cell>11.2</cell><cell>46.1</cell><cell>17.2</cell><cell>40.2</cell></row><row><cell></cell><cell></cell><cell cols="4">Codesage-small-v2 + Starcoder2-7B</cell><cell></cell><cell></cell><cell></cell></row><row><cell>Python</cell><cell>29.1</cell><cell>74.3</cell><cell>39.9</cell><cell>67.6</cell><cell>24.8</cell><cell>73.1</cell><cell>36.3</cell><cell>65.7</cell></row><row><cell>Java</cell><cell>30.9</cell><cell>72.2</cell><cell>41.2</cell><cell>66.1</cell><cell>28.1</cell><cell>71.5</cell><cell>38.3</cell><cell>64.6</cell></row><row><cell>C#</cell><cell>28.3</cell><cell>74.2</cell><cell>33.4</cell><cell>58.2</cell><cell>25.5</cell><cell>72.4</cell><cell>29.9</cell><cell>54.9</cell></row><row><cell>TypeScript</cell><cell>13.7</cell><cell>49.1</cell><cell>19.6</cell><cell>43.5</cell><cell>11.9</cell><cell>46.0</cell><cell>17.7</cell><cell>40.6</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 8 :</head><label>8</label><figDesc>RAG performance (Code Match &amp; Identifier Match) on CrossCodeEval.</figDesc><table><row><cell cols="2">Artifacts/Packages Citation</cell><cell>Link</cell><cell>License</cell></row><row><cell>RepoEval</cell><cell>(Zhang et al., 2023b)</cell><cell>https://github.com/irgroup/repro_eval</cell><cell>MIT License</cell></row><row><cell>SWE-bench</cell><cell cols="2">(Jimenez et al., 2024) https://github.com/SWE-bench/SWE-bench</cell><cell>MIT License</cell></row><row><cell>CrossCodeEval</cell><cell>(Ding et al., 2023)</cell><cell>https://github.com/amazon-science/cceval</cell><cell>Apache License 2.0</cell></row><row><cell>PyTorch</cell><cell>(Paszke et al., 2019)</cell><cell>https://pytorch.org/</cell><cell>BSD-3 License</cell></row><row><cell>transformers</cell><cell>(Wolf et al., 2019)</cell><cell></cell><cell></cell></row></table><note><p>https://huggingface.co/transformers/v2.11.0/index.html</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 9 :</head><label>9</label><figDesc>Details of datasets, major packages, and existing models we use. The curated datasets and our code/software are under the MIT License.</figDesc><table><row><cell></cell><cell cols="2">https://huggingface.co/jinaai/jina-embeddings-v2-base-code Apache License 2.0</cell></row><row><cell>StarCoder2</cell><cell>(Lozhkov et al., 2024) https://huggingface.co/bigcode/starcoder2-7b</cell><cell>LICENSE</cell></row><row><cell>CodeLlama</cell><cell>(Roziere et al., 2023)</cell><cell></cell></row></table><note><p>https://huggingface.co/codellama/CodeLlama-7b-hf LICENSE</p></note></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">code2seq: Generating sequences from structured representations of code</title>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaked</forename><surname>Brody</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omer</forename><surname>Levy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eran</forename><surname>Yahav</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations (ICLR)</title>
+		<imprint>
+			<date type="published" when="2019">2019a.</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">2019b. code2vec: Learning distributed representations of code</title>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meital</forename><surname>Zilberstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omer</forename><surname>Levy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eran</forename><surname>Yahav</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ACM/IEEE Symposium on Principles of Programming Languages (POPL)</title>
+		<meeting>the ACM/IEEE Symposium on Principles of Programming Languages (POPL)</meeting>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">Lite</forename><surname>Swe</surname></persName>
+		</author>
+		<ptr target="https://www.swebench.com/lite.html" />
+		<title level="m">Swe-bench lite</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Dipanjan Das, and 3 others. 2023. Attributed question answering: Evaluation and modeling for attributed large language models</title>
+		<author>
+			<persName><forename type="first">Bernd</forename><surname>Bohnet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Vinh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pat</forename><surname>Tran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roee</forename><surname>Verga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Aharoni</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Andor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baldini</forename><surname>Livio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Massimiliano</forename><surname>Soares</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Ciaramita</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuzman</forename><surname>Eisenstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Ganchev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Herzig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji</forename><surname>Kwiatkowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianmo</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sestorain</forename><surname>Lierni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tal</forename><surname>Saralegui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">W</forename><surname>Schuster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Collins</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.08037</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">MixGR: Enhancing retriever generalization for scientific domain through complementary granularity</title>
+		<author>
+			<persName><forename type="first">Fengyu</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinran</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sihao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iryna</forename><surname>Gurevych</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heinz</forename><surname>Koeppl</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.10691</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henrique</forename><surname>Ponde De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harri</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raul</forename><surname>Puri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Petrov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heidy</forename><surname>Khlaaf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brooke</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Gray</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page">39</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongwei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sihao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaixin</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinran</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.06648</idno>
+		<title level="m">Dense x retrieval: What retrieval granularity should we use? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Cummins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Volker</forename><surname>Seeker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dejan</forename><surname>Grubisic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baptiste</forename><surname>Roziere</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Gehring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Synnaeve</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hugh</forename><surname>Leather</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.02524</idno>
+		<title level="m">Meta large language model compiler: Foundation models of compiler optimization</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Crosscodeeval: A diverse and multilingual benchmark for cross-file code completion</title>
+		<author>
+			<persName><forename type="first">Yangruibo</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijian</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uddin</forename><surname>Wasi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hantian</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nihal</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Krishna</forename><surname>Murali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ramesh</forename><surname>Ramanathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Parminder</forename><surname>Nallapati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Bhatia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Roth</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Xiang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Thirty-seventh Conference on Neural Information Processing Systems Datasets and Benchmarks Track</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Codegrag: Bridging the gap between natural language and programming language via graphical retrieval augmented generation</title>
+		<author>
+			<persName><forename type="first">Kounianhua</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jizheng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Renting</forename><surname>Rui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huacan</forename><surname>Chai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingyue</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiming</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weinan</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.02355</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Enhancing noise robustness of retrieval-augmented language models with adaptive adversarial training</title>
+		<author>
+			<persName><forename type="first">Feiteng</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuelin</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiwen</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruifeng</forename><surname>Xu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.20978</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Code-BERT: A pre-trained model for programming and natural languages</title>
+		<author>
+			<persName><forename type="first">Zhangyin</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daya</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Duyu</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaocheng</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linjun</forename><surname>Shou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ting</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daxin</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: EMNLP</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="1536" to="1547" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">Linyuan</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mostafa</forename><surname>Elhoushi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alvin</forename><surname>Cheung</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.03003</idno>
+		<title level="m">AST-T5: Structure-aware pretraining for code generation and understanding</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Günther</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jackmin</forename><surname>Ong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Isabelle</forename><surname>Mohr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alaeddine</forename><surname>Abdessalem</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tanguy</forename><surname>Abel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Kalim Akram</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Susana</forename><surname>Guzman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Georgios</forename><surname>Mastrapas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saba</forename><surname>Sturua</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.19923</idno>
+		<title level="m">Bo Wang, and 1 others. 2023. Jina embeddings 2: 8192-token general-purpose text embeddings for long documents</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">UniXcoder: Unified crossmodal pre-training for code representation</title>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Daya Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanlin</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics (ACL)</title>
+		<meeting>the 60th Annual Meeting of the Association for Computational Linguistics (ACL)</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="7212" to="7225" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Graph-CodeBERT: Pre-training code representations with data flow</title>
+		<author>
+			<persName><forename type="first">Shuo</forename><surname>Daya Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhangyin</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Duyu</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shujie</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexey</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengyu</forename><surname>Svyatkovskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michele</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tufano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Shao Kun Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Clement</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Neel</forename><surname>Drain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Sundaresan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daxin</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations (ICLR)</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Retrieval augmented language model pre-training</title>
+		<author>
+			<persName><forename type="first">Kelvin</forename><surname>Guu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenton</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zora</forename><surname>Tung</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on machine learning</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="3929" to="3938" />
+		</imprint>
+	</monogr>
+	<note>Panupong Pasupat, and Mingwei Chang</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Array programming with numpy</title>
+		<author>
+			<persName><forename type="first">Charles</forename><forename type="middle">R</forename><surname>Harris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Jarrod Millman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stéfan</forename><surname>Van Der Walt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ralf</forename><surname>Gommers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pauli</forename><surname>Virtanen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Cournapeau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Wieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Taylor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Berg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathaniel</forename><forename type="middle">J</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Kern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matti</forename><surname>Picus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephan</forename><surname>Hoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marten</forename><forename type="middle">H</forename><surname>Van Kerkwijk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Brett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Allan</forename><surname>Haldane</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaime</forename><surname>Fernández Del Río</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Wiebe</surname></persName>
+		</author>
+		<idno type="DOI">10.1038/S41586-020-2649-2</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="volume">585</biblScope>
+			<biblScope unit="page" from="357" to="362" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Matplotlib: A 2d graphics environment</title>
+		<author>
+			<persName><forename type="first">John D</forename><surname>Hunter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Computing in science &amp; engineering</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">03</biblScope>
+			<biblScope unit="page" from="90" to="95" />
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Leveraging passage retrieval with generative models for open domain question answering</title>
+		<author>
+			<persName><forename type="first">Gautier</forename><surname>Izacard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edouard</forename><surname>Grave</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations (ICLR)</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Few-shot learning with retrieval augmented language models</title>
+		<author>
+			<persName><forename type="first">Gautier</forename><surname>Izacard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Hosseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><forename type="middle">A</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armand</forename><surname>Joulin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Riedel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edouard</forename><surname>Grave</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2208.03299</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">SWE-bench: Can language models resolve real-world github issues?</title>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Karthik R Narasimhan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Efficient memory management for large language model serving with pagedattention</title>
+		<author>
+			<persName><forename type="first">Woosuk</forename><surname>Kwon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuohan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lianmin</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cody</forename><forename type="middle">Hao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Stoica</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ACM SIGOPS 29th Symposium on Operating Systems Principles</title>
+		<meeting>the ACM SIGOPS 29th Symposium on Operating Systems Principles</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Retrieval-augmented generation for knowledgeintensive NLP tasks</title>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Piktus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladimir</forename><surname>Karpukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heinrich</forename><surname>Küttler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Rocktäschel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Riedel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Douwe</forename><surname>Kiela</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems (NeurIPS)</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="9459" to="9474" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Oleh Shliazhko, and 48 others</title>
+		<author>
+			<persName><forename type="first">Raymond</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Loubna</forename><surname>Ben Allal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangtian</forename><surname>Zi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denis</forename><surname>Kocetkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenghao</forename><surname>Mou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Marone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Akiki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jenny</forename><surname>Chim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evgenii</forename><surname>Zheltonozhskii</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Terry</forename><surname>Yue Zhuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Dehaene</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mishig</forename><surname>Davaadorj</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joel</forename><surname>Lamy-Poirier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">João</forename><surname>Monteiro</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.06161</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Starcoder: may the source be with you! Preprint</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">CodeRetriever: A large scale contrastive pre-training method for code search</title>
+		<author>
+			<persName><forename type="first">Xiaonan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yeyun</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yelong</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xipeng</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bolun</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhen</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daxin</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Duan</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2022.emnlp-main.187</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing (EMNLP)</title>
+		<meeting>the 2022 Conference on Empirical Methods in Natural Language Processing (EMNLP)<address><addrLine>Abu Dhabi, United Arab Emirates</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="2898" to="2910" />
+		</imprint>
+	</monogr>
+	<note>Association for Computational Linguistics</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Mint: Boosting generalization in mathematical reasoning via multi-view fine-tuning</title>
+		<author>
+			<persName><forename type="first">Zhenwen</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoman</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenlin</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingkai</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangliang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.07951</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Anton</forename><surname>Lozhkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raymond</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Loubna</forename><surname>Ben Allal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joel</forename><surname>Lamy-Poirier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouamane</forename><surname>Tazi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ao</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmytro</forename><surname>Pykhtar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.19173</idno>
+		<title level="m">Yuxiang Wei, and 1 others. 2024. Starcoder 2 and the stack v2: The next generation</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">An empirical study on llmbased agents for automated bug fixing</title>
+		<author>
+			<persName><forename type="first">Xiangxin</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zexiong</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Peng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2411.10213</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Next: Teaching large language models to reason about code execution</title>
+		<author>
+			<persName><forename type="first">Ansong</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miltiadis</forename><surname>Allamanis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arman</forename><surname>Cohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinlin</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kensen</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengcheng</forename><surname>Yin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.14662</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Pytorch: An imperative style, high-performance deep learning library</title>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Paszke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Gross</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francisco</forename><surname>Massa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Lerer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Bradbury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gregory</forename><surname>Chanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Trevor</forename><surname>Killeen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeming</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Natalia</forename><surname>Gimelshein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luca</forename><surname>Antiga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alban</forename><surname>Desmaison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Köpf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zachary</forename><surname>Devito</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Raison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alykhan</forename><surname>Tejani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sasank</forename><surname>Chilamkurthy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benoit</forename><surname>Steiner</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 32: Annual Conference on Neural Information Processing Systems</title>
+		<meeting><address><addrLine>NeurIPS; Vancouver, BC, Canada</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2019-12-08">2019. 2019. 2019. December 8-14, 2019</date>
+			<biblScope unit="page" from="8024" to="8035" />
+		</imprint>
+	</monogr>
+	<note>Lu Fang, and 2 others</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Baptiste Roziere</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabian</forename><surname>Gehring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sten</forename><surname>Gloeckle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Itai</forename><surname>Sootla</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Xiaoqing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yossi</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyu</forename><surname>Adi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tal</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Remez</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.12950</idno>
+		<title level="m">Jérémy Rapin, and 1 others. 2023. Code llama: Open foundation models for code</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Evaluating retrieval quality in retrieval-augmented generation</title>
+		<author>
+			<persName><forename type="first">Alireza</forename><surname>Salemi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hamed</forename><surname>Zamani</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.13781</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Raptor: Recursive abstractive processing for tree-organized retrieval</title>
+		<author>
+			<persName><forename type="first">Parth</forename><surname>Sarthi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Salman</forename><surname>Abdullah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditi</forename><surname>Tuli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shubh</forename><surname>Khanna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Goldie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations (ICLR)</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Improving retrieval-augmented text-to-sql with astbased ranking and schema pruning</title>
+		<author>
+			<persName><forename type="first">Zhili</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pavlos</forename><surname>Vougiouklis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenxin</forename><surname>Diao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaustubh</forename><surname>Vyas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanyi</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><forename type="middle">Z</forename><surname>Pan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.03227</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">REPLUG: Retrieval-augmented black-box language models</title>
+		<author>
+			<persName><forename type="first">Weijia</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sewon</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michihiro</forename><surname>Yasunaga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minjoon</forename><surname>Seo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wentau</forename><surname>Yih</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2301.12652</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Gistembed: Guided in-sample selection of training negatives for text embedding fine-tuning</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Aivin</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Solatorio</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Revisiting code similarity evaluation with abstract syntax tree edit distance</title>
+		<author>
+			<persName><forename type="first">Yewei</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cedric</forename><surname>Lothritz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xunzhu</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tegawendé</forename><surname>Bissyandé</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacques</forename><surname>Klein</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.acl-short.3</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics<address><addrLine>Bangkok, Thailand</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="38" to="46" />
+		</imprint>
+	</monogr>
+	<note>Short Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Structcoder: Structure-aware transformer for code generation</title>
+		<author>
+			<persName><forename type="first">Sindhu</forename><surname>Tipirneni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chandan</forename><forename type="middle">K</forename><surname>Reddy</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3636430</idno>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Knowledge Discovery from Data</title>
+		<imprint>
+			<biblScope unit="volume">18</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page">20</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Tree-sitter documentation</title>
+		<author>
+			<persName><surname>Tree-Sitter</surname></persName>
+		</author>
+		<ptr target="https://tree-sitter.github.io/tree-sitter/" />
+		<imprint>
+			<date type="published" when="2025-05-11">2025. May 11, 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zora</forename><surname>Zhiruo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akari</forename><surname>Asai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyan</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiqing</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.14497</idno>
+		<title level="m">CodeRAG-Bench: Can retrieval augment code generation? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">TypeT5: Seq2seq type inference using static analysis</title>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Durrett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Isil</forename><surname>Dillig</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations (ICLR)</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Huggingface&apos;s transformers: State-of-the-art natural language processing</title>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Wolf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lysandre</forename><surname>Debut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Sanh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julien</forename><surname>Chaumond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clement</forename><surname>Delangue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Moi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierric</forename><surname>Cistac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Rault</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rémi</forename><surname>Louf</surname></persName>
+		</author>
+		<idno>ArXiv preprint, abs/1910.03771</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note>Morgan Funtowicz, and 1 others</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">2024a. Agentless: Demystifying llm-based software engineering agents</title>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinlin</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soren</forename><surname>Dunn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.01489</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">2024b. Improving ast-level code completion with graph retrieval and multi-field attention</title>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tian</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weihuan</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Kuang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 32nd IEEE/ACM International Conference on Program Comprehension</title>
+		<meeting>the 32nd IEEE/ACM International Conference on Program Comprehension</meeting>
+		<imprint>
+			<biblScope unit="page" from="125" to="136" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">C-pack: Packaged resources to advance general chinese embedding</title>
+		<author>
+			<persName><forename type="first">Shitao</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peitian</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<idno>arXiv</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">TRANX: A transition-based neural abstract syntax parser for semantic parsing and code generation</title>
+		<author>
+			<persName><forename type="first">Pengcheng</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing (System Demonstrations)</title>
+		<meeting>the 2018 Conference on Empirical Methods in Natural Language Processing (System Demonstrations)<address><addrLine>Brussels, Belgium</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="7" to="12" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dejiao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wasi</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hantian</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ramesh</forename><surname>Nallapati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Roth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaofei</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Xiang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.01935</idno>
+		<title level="m">Code representation learning at scale</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<title level="m" type="main">2023a. RepoCoder: Repository-level code completion through iterative retrieval and generation</title>
+		<author>
+			<persName><forename type="first">Fengji</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacky</forename><surname>Keung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daoguang</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian-Guang</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.emnlp-main.151</idno>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<biblScope unit="page" from="2471" to="2484" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">2023b. RepoCoder: Repository-level code completion through iterative retrieval and generation</title>
+		<author>
+			<persName><forename type="first">Fengji</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacky</forename><surname>Keung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daoguang</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian-Guang</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.emnlp-main.151</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2023 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<biblScope unit="page" from="2471" to="2484" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Disentangled code representation learning for multiple programming languages</title>
+		<author>
+			<persName><forename type="first">Jingfeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haiwen</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ye</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yulei</forename><surname>Sui</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: ACL-IJCNLP</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="4454" to="4466" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title level="m" type="main">Beyond relevance: Evaluate and improve retrievers on perspective awareness</title>
+		<author>
+			<persName><forename type="first">Xinran</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sihao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tongshuang</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.02714</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Language-agnostic representation learning of source code from structure and context</title>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Zügner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tobias</forename><surname>Kirschstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michele</forename><surname>Catasta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jure</forename><surname>Leskovec</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephan</forename><surname>Günnemann</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

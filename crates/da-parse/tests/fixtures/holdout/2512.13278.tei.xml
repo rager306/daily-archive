@@ -1,0 +1,3092 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">AutoTool: Dynamic Tool Selection and Integration for Agentic Reasoning</title>
+				<funder ref="#_bpw9Mu4">
+					<orgName type="full">National Science Foundation</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-06-05">5 Jun 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Jiaru</forename><surname>Zou</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Princeton University</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Illinois Urbana-Champaign</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ling</forename><surname>Yang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Princeton University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yunzhe</forename><surname>Qi</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Illinois Urbana-Champaign</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Sirui</forename><surname>Chen</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Illinois Urbana-Champaign</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Mengting</forename><surname>Ai</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Illinois Urbana-Champaign</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ke</forename><surname>Shen</surname></persName>
+							<affiliation key="aff2">
+								<address>
+									<settlement>Mengdi Wang</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jingrui</forename><surname>He</surname></persName>
+							<email>&lt;jingrui@illinois.edu&gt;</email>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Illinois Urbana-Champaign</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Mengdi</forename><surname>Wang</surname></persName>
+							<email>&lt;mengdiw@princeton.edu&gt;.</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Princeton University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">AutoTool: Dynamic Tool Selection and Integration for Agentic Reasoning</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-06-05">5 Jun 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">492C8E5573FF85FCDF9B6F6C55ABF3F6</idno>
+					<idno type="arXiv">arXiv:2512.13278v2[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:16+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Agentic reinforcement learning has advanced large language models (LLMs) to reason through long chain-of-thought trajectories while interleaving external tool use. Existing approaches assume a fixed inventory of tools, which limits the adaptability of LLM agents to new or evolving toolsets. We present AutoTool, a training framework that equips LLM agents with dynamic tool-selection capabilities throughout their reasoning trajectories. AutoTool employs a dual-phase optimization pipeline: (i) SFT and RL-based trajectory stabilization for coherent reasoning, and (ii) KLregularized Plackett-Luce Ranking to refine consistent multi-step tool selection. We further build a 200k dataset with explicit tool-selection rationales across 1,000+ tools and 100+ tasks spanning mathematics, science, code generation, and multimodal reasoning. Across ten diverse benchmarks, we train two base models, Qwen3-8B and Qwen2.5-VL-7B, with AutoTool. With fewer parameters, AutoTool consistently outperforms advanced LLM agents and tool-integration methods, yielding average gains of 6.4% in math &amp; science reasoning, 4.5% in search-based QA, 7.7% in code generation, and 6.9% in multimodal understanding. In addition, AutoTool exhibits stronger generalization by dynamically leveraging unseen tools from evolving toolsets during inference.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>Recent advances in reinforcement learning (RL) <ref type="bibr" target="#b52">(Shao et al., 2024;</ref><ref type="bibr">Yu et al., 2025a)</ref> have improved the reasoning capabilities of large language models (LLMs) <ref type="bibr" target="#b30">(Lu et al., 2025;</ref><ref type="bibr"></ref> Proceedings of the 43 rd International Conference on Machine Learning, Seoul, South Korea. PMLR 306, 2026. Copyright 2026 by the author(s). <ref type="bibr" target="#b17">Guo et al., 2025;</ref><ref type="bibr" target="#b58">Team et al., 2025)</ref>, enabling them to generate long chain-of-thought (CoT) trajectories for complex tasks across domains such as visual question answering (Pramanick et al., 2025), knowledge retrieval <ref type="bibr" target="#b57">(Su et al., 2025)</ref>, and mathematical reasoning (Maxwell-Jia, 2024). Building on this, a growing line of research on agentic RL <ref type="bibr" target="#b55">(Singh et al., 2025;</ref><ref type="bibr" target="#b44">Qian et al., 2025;</ref><ref type="bibr" target="#b4">Chen et al., 2025)</ref> explores how LLMs, beyond purely text-based model internal reasoning, can operate as agents that interleave their reasoning with multi-turn interactions in external tool environments <ref type="bibr" target="#b32">(Mai et al., 2025;</ref><ref type="bibr">Wang et al., 2025c)</ref>, such as search engines <ref type="bibr" target="#b24">(Kong et al., 2023;</ref><ref type="bibr" target="#b23">Jin et al., 2025)</ref>, code interpreters <ref type="bibr">(Feng et al., 2025a)</ref>, and vision tools <ref type="bibr" target="#b57">(Su et al., 2025;</ref><ref type="bibr" target="#b39">Peng et al., 2025;</ref><ref type="bibr" target="#b63">Wu &amp; Xie, 2024)</ref>. The tool integration process reduces compounding errors in long CoT trajectories and enables more precise and reliable computation, which in turn strengthens the model's reasoning and leads to consistent task performance <ref type="bibr" target="#b74">(Zhang et al., 2023;</ref><ref type="bibr">Feng et al., 2025b)</ref>.</p><p>Despite these advances, existing approaches typically operate under the assumption of single-domain fixed tools <ref type="bibr">(Gao et al., 2025a</ref>): the policy model learns when and how to invoke the designated tools, but the available tools are predefined and static for a specific task. In practice, these methods curate training datasets that explicitly cover the utilization of this fixed tool inventory, and then apply advanced supervised fine-tuning (SFT) or RL techniques to align the model's behavior with the prescribed tool usage <ref type="bibr">(Feng et al., 2025a;</ref><ref type="bibr" target="#b23">Jin et al., 2025;</ref><ref type="bibr">Zou et al., 2026b)</ref>. While effective within closed environments, such designs fail to capture realistic scenarios as illustrated in Figure <ref type="figure" target="#fig_0">1</ref>(up), where (i) an agent must select the appropriate tool from a complex domain-diverse toolset, and (ii) new unseen tools during training stages may later be introduced and required at inference time. Without an explicit mechanism for dynamic tool selection, LLM agents risk overfitting to a closed tool inventory and failing to generalize in evolving tool environments. Addressing this gap requires LLM agents to move beyond simple tool-use toward adaptively choosing tools from dynamic toolsets during generation, while preserving strong reasoning ability. To this end, we aim to investigate: We introduce AutoTool, a new training framework that equips LLM agents with dynamic tool-selection capabilities throughout the reasoning process. AutoTool integrates reasoning and tool use into a unified trajectory, where the agent alternates between generating rationales and selecting tools from a large and evolving toolset. As illustrated in Figure <ref type="figure" target="#fig_0">1</ref> (bottom), we design a dual-phase optimization pipeline to train an LLM agent policy. In Phase I, we initialize the LLM agent with SFT followed by RL policy optimization, equipping the model with stable long CoT reasoning and trajectory generation abilities. In Phase II, we continue refining the LLM agent with a dedicated focus on tool selection, enabling the model to compose effective sequences of tool choices during its generation. We draw inspiration from the Plackett-Luce (PL) Ranking <ref type="bibr" target="#b31">(Luce et al., 1959;</ref><ref type="bibr" target="#b5">Cheng et al., 2010)</ref> and frame tool-selection steps within model trajectories as a sequence ranking problem over the evolving toolset. We provide a theoretical bridge connecting the PL Ranking of tool-selection steps with the LLM agent's policy optimization, and then optimize the LLM agent with a KL-regularized objective by minimizing a tractable policylevel Cross-Entropy (CE) loss. The optimization over tool preferences explicitly trains the LLM agent to favor more effective tool compositions over weaker alternatives, leading to effective and generalizable tool-selection strategies.</p><p>To complement our method and support dynamic tool environments, we construct a 200k-scale dynamic tool-use dataset, curated through a three-stage dedicated pipeline that explicitly incorporates tool-selection rationales into LLM agents' trajectory-level reasoning. Our curated dataset spans a diverse library of over 1,000 tools and more than 100 tasks across mathematics, science, code generation, and multimodal understanding, providing rich supervision for learning to choose tools from a large, evolving toolset.</p><p>We conduct extensive experiments across ten diverse benchmarks, training both Qwen3-8B <ref type="bibr">(Yang et al., 2025a)</ref> and Qwen2.5-VL-7B <ref type="bibr" target="#b1">(Bai et al., 2025)</ref> backbones with Au-toTool. Incorporating AutoTool over previous training paradigms, such as SFT and GRPO, further boosts performance by an average of 6.4% in math &amp; science, 4.5% in search, 7.7% in code generation, and 6.9% in multimodal understanding. Additionally, while advanced LLM agents or specialized tool-integration methods typically excel within fixed domains, they often fail to transfer their tool-usage abilities to other tasks. In contrast, AutoTool consistently demonstrates strong generalizability across all downstream tasks by leveraging dynamic tool-selection.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">AutoTool</head><p>We introduce AutoTool, an agentic reasoning framework that equips LLM agents with dynamic tool-selection capabilities during generation. Our framework leverages a dual-phase optimization pipeline: (i) trajectory stabilization through supervised fine-tuning (SFT) and RL-based policy optimization, which endows agents with stable long-form CoT reasoning patterns; and (ii) tool-selection refinement via reward-guided Plackett-Luce (PL) ranking optimization.</p><p>Method Roadmap. We begin by introducing the preliminaries and notation that formalize the tool-selection setting within LLM agents' generation process (Section 2.1). We then describe how LLM agents interact with an evolving toolset through tool-embedding grounded trajectory generation (Section 2.2). Next, we present the overall pipeline for the dual-phase policy optimization strategy (Section 2.3). Finally, we elaborate on how we optimize tool-selection via PL ranking during policy training (Section 2.4).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1.">Preliminary and Notations</head><p>Toolset. We denote π θ as an LLM agent, parameterized by θ.</p><p>In our agentic reasoning setting, an LLM agent is endowed with an evolving toolset, i.e., T = {t 1 , t 2 , • • • , t |T | }, where the size |T | is not fixed. Each tool t k ∈ T is paired with a feature description µ(t k ), which serves as its "instruction manual," specifying the tool's name, functionality, inputoutput schema, and usage constraints.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Agentic Trajectory Generation.</head><p>We conceptualize a complete reasoning trajectory generated by an LLM agent π θ as an interplay among three complementary components:</p><formula xml:id="formula_0">τ = . . . τ reason i-1 ⊕ τ select i ⊕ τ integrate i+1 . . . ,<label>(1)</label></formula><p>where τ includes: (i) inner-reasoning steps τ reason , which π θ produces a CoT format internal reasoning process; (ii) tool-selection steps τ select , which π θ reasons over the toolset T and selects a tool t k ∈ T ; and (iii) tool-integration steps τ integrate , which follow immediately after the tool-selection steps and involve calling the selected tool, executing it, and feeding the feedback back into π θ 's middle generation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Per-step Tool Selection.</head><p>During trajectory generation, we consider the tool-selection step τ select i in particular and formulate π θ 's tool-selection process as a per-step decisionmaking problem. Given the input question x, the evolving toolset T , and π θ 's previous generated steps τ &lt;i , we model π θ 's generation at step i as selecting τ select i from all potential tool-selection candidates { τ select k | t k ∈ T } with each τ select k corresponds to the tool t k ∈ T , i.e.,</p><formula xml:id="formula_1">τ select i = arg max τ select k π θ τ select k | x, τ &lt;i , T .<label>(2)</label></formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2.">Tool-Aware Trajectory Generation</head><p>We first describe in AutoTool, how LLM agents interact with the external toolset T and make tool selections during trajectory generation. Our rollout procedure is designed to allow LLM agents to seamlessly interleave reasoning with tool-selection steps for more coherent tool usage.</p><p>Tool Embedding. To incorporate rich and precise information from the external toolset T into the LLM agent π θ , we first collect the embedding representation of each tool t k together with its descriptive features µ(t k ). We leverage the internal embedding layer of π θ to obtain a contextualized representation for each tool:</p><formula xml:id="formula_2">e t k = Emb π θ [t k , µ(t k )] , with E T = {e t k } |T | k=1 , (3)</formula><p>where E T is the tool-embedding set for T . The latent embedding for each tool shares the same space of hidden state space as LLM agents, ensuring natural alignment with the LLM agents' generation process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Embedding-Anchored Tool Selection.</head><p>For each toolselection step τ select i , we ask π θ to first generate a selection rationale s i , followed by an explicit anchor token with predicted embedding representation e ′ i . The tool for τ select i is then selected by sampling from the softmax-normalized distance distribution <ref type="bibr" target="#b8">(Dong et al., 2015)</ref> between the predicted e ′ i and the candidate tool embeddings e t k ∈ E T :</p><formula xml:id="formula_3">π θ (t k | x, τ &lt;i , s i , T ) = exp -γ ∥e ′ i -e t k ∥ 2 F tj ∈T exp -γ ∥e ′ i -e tj ∥ 2 F ,<label>(4)</label></formula><p>where || • || F is the Frobenius norm and γ &gt; 0 controls the distribution skewness. By sampling from an embeddingbased distribution, the LLM agent dynamically selects tools that are most aligned with its previous reasoning context. Note that Eq. 4's embedding-based selection operates over frozen, pre-computed tool embeddings, and the similarity computation involves only lightweight vector operations on a single hidden-state anchor. As a result, the tool-selection overhead is negligible relative to LLM inference and scales efficiently to toolsets with thousands of tools.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Takeaway: Why Embedding-Anchored Selection?</head><p>As the external toolset T evolves, directly generating tool names by the LLM agent risks failure on unseen tools. By anchoring selection in the embedding space, which is generalizable <ref type="bibr" target="#b36">(Mikolov et al., 2013;</ref><ref type="bibr" target="#b14">Ganguly et al., 2015)</ref>, the agent can select new tools via representation alignment, avoiding reliance on memorized tool identifiers and remaining robust to the evolving toolsets environments.</p><p>After the tool selection step, the predicted tool is invoked and executed, with its outputs and feedback returned to the LLM agent for subsequent trajectory generation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3.">Dual-phase Policy Training Pipeline</head><p>Next, we describe how the LLM agent is trained as the policy model in AutoTool through a dual-phase optimization strategy. The overall training flow of π θ is summarized as:</p><formula xml:id="formula_4">θ ref SFT --→ θ SFT RL -→ Phase I -Trajectory Stabilization θ RL PL Ranking ------→ θ AutoTool Phase II -Tool-Selection Refinement</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Phase I -Trajectory Stabilization.</head><p>To enable the LLM agent to follow the reasoning patterns in Eq. 1 and produce valid tool-integrated trajectories, we initialize from a base reference model π θref (e.g., an off-the-shelf reasoning model). The LLM agent is then trained using agentic</p><p>… 𝜏𝜏 1 𝜏𝜏 N 𝜏𝜏 2 1 2 3 … 𝜏𝜏 1 𝜏𝜏 N 𝜏𝜏 2 1 2 3 Rollout x N Train with CE loss … 𝑒𝑒 𝑡𝑡 2 … Trajectory Collection Inner reasoning Tool selection (𝑡𝑡 1 ) Tool-Selection Refinement (AutoTool) 𝑡𝑡 1 𝑡𝑡 2 𝑡𝑡 𝑘𝑘 Tool Embeddings 𝑒𝑒 𝑡𝑡 1 𝑒𝑒 𝑡𝑡 2 𝑒𝑒 𝑡𝑡 𝑘𝑘 𝝉𝝉 𝟏𝟏 … Evolving Toolset 𝑻𝑻 PL Ranking &amp; Policy Optimization 𝑷𝑷 𝝅𝝅 * 𝑷𝑷 𝝅𝝅 𝜽𝜽 𝑒𝑒 𝑡𝑡 1 &lt;/&gt; Tool integration (𝑡𝑡 1 ) Encode 𝝉𝝉 𝟐𝟐 &lt;/&gt; &lt;/&gt; &lt;/&gt; 𝝉𝝉 𝑵𝑵 &lt;/&gt; &lt;/&gt; Rank &amp; Train KL-Regularized 𝜋𝜋 𝜃𝜃 𝜋𝜋 * Score by 𝑅𝑅 tool training strategies <ref type="bibr" target="#b9">(Dong et al., 2025;</ref><ref type="bibr">Feng et al., 2025a)</ref>, beginning with supervised fine-tuning and followed by RLbased policy optimization. The primary goal of Phase I is to equip the LLM agent with stable generation across inner-reasoning, tool-selection, and tool-integration steps, which serves as the basis for the subsequent tool-selection refinement in Phase II.</p><p>Phase II -Tool-Selection Refinement. After the agent acquires stable reasoning capabilities in Phase I, we further refine the model with a dedicated optimization focused on toolselection steps. Unlike the full-trajectory optimization in Phase I, we mask out internal reasoning and tool-integration steps, restricting optimization to the tool-selection segments of trajectories. This masked formulation places special emphasis on improving the tool-selection process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>KL-Regularized Tool-Selection Objective.</head><p>In Phase II, we train the LLM agent via a KL-regularized RL objective to refine its tool-selection process. Formally, given an input question x and the toolset T , our objective is to optimize the LLM agent policy from Phase I by:</p><formula xml:id="formula_5">max π θ E τ ∼π θ (•|x,T ) R tool (τ ) -β • D KL π θ (• | x, T ) π old (• | x, T ) ,<label>(5)</label></formula><p>where β controls the regularization intensity and R tool (•) denotes the masked trajectory reward that evaluates solely on the correctness of tool-selection steps (defined later).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Motivation on Policy Optimization under PL Ranking.</head><p>Previous agentic RL approaches <ref type="bibr" target="#b52">(Shao et al., 2024;</ref><ref type="bibr">Yu et al., 2025a)</ref> directly optimize trajectory output rewards but do not explicitly capture the ordering relationships among candidate tools in the toolset. On the other hand, Plackett-Luce (PL) ranking <ref type="bibr" target="#b31">(Luce et al., 1959;</ref><ref type="bibr" target="#b42">Qi et al., 2026)</ref> converts trajectory rewards into a permutation distribution, so that higher-reward tools are prioritized over weaker ones. This formulation naturally aligns with our embedding-anchored selection mechanism in Eq. 4. Motivated by this, we optimize Eq. 5 under the PL ranking framework, aligning the policy-induced ranking with reward-guided tool preferences and providing a principled refinement of tool-selection.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.4.">PL Ranking &amp; Optimization on Tool Selection</head><p>We detail how the LLM agent is optimized under the PL ranking framework. The key idea is to view trajectory rollouts for each query as a ranked list, where the relative order is induced by trajectory rewards derived from tool-selection steps. By mapping these rewards into a probabilistic ranking distribution, we connect the LLM agent policy optimization with ranking consistency and train the policy with a tractable loss that directly improves the LLM agent's tool-selection.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Trajectory Collection &amp; Reward Assignment.</head><p>For each input question x and toolset T , we first sample N trajectory rollouts T = {τ (j) } N j=1 from the LLM agent π θ (• | x, T ). Within each trajectory, every tool-selection step τ select i is assigned a step-level reward r tool that jointly evaluates the quality of the tool-selection rationale and the correctness of the final answer produced with the chosen tool:</p><formula xml:id="formula_6">r tool (x, τ select i ) = PRM τ select i + Acc(x, t k ), t k ∈ T,<label>(6)</label></formula><p>where the process reward model, PRM(•), provides dense supervision by evaluating the reasoning quality of each tool-selection step τ select i , and Acc(x, t k ) measures whether the final answer obtained using tool t k is correct. We then aggregate all per-step selection rewards into a single masked trajectory-</p><formula xml:id="formula_7">level reward R tool (τ ) = 1 |S(τ )| i∈S(τ ) r tool (x, τ select i</formula><p>), where S(τ ) is the (random) set of selection-step indices in each trajectory τ . We use R tool for the KL-Regularized optimization in Eq. 5.</p><p>PL Ranking over Collected Rollouts. Given the collected set of trajectory rollouts T with associated tool-selection rewards R tool , for a permutation σ of N trajectories, we</p><p>&lt;code&gt; ```python max_b = 100 // 14 print(max_b) ``` &lt;/code&gt; &lt;interpreter&gt;7&lt;/interpreter&gt; Trajectory Augmentation Toolset Collection Code Tools Search Tools IMG Tools Mathematical Reasoning Science Reasoning Code Generation Multimodal Understanding Task Collection … 1000+ tools! 100+ tasks! &lt;select&gt; I need to calculate 100 divided by 14 to determine the maximum possible value of b. Code Interpreter is the best tool as it can handle mathematical operations. &lt;tool&gt;Code Interpreter (CI)&lt;/tool&gt; &lt;/select&gt; Adding Tool-Selection Rationale Tool-Selection Rationale Generation Original step with Predefined Tool Answer Okay, so I need to solve this problem step by step with correct tools to select. … So, 13b + b ≤ 100, i.e. 14b ≤ 100 Therefore, b ≤ 100/14. Now I need to select a tool to calculate 100 divided by 14. &lt;select&gt;I need to calculate 100 … &lt;/select&gt; &lt;code&gt;```python … &lt;/code&gt; Problem Find the number of positive integers (𝑎𝑎, 𝑏𝑏) with 𝑎𝑎 + 𝑏𝑏 ≤ 100 such that 𝑎𝑎 + 1 𝑏𝑏 1 𝑎𝑎 + 𝑏𝑏 = 13 … Inner-Reasoning Step Tool-Selection Step Tool-Integration Step have the induced PL ranking model of the LLM agent π θ :</p><formula xml:id="formula_8">P π θ (σ | T ) = N j=1 exp R tool (τ σ(j) ) N l=j exp R tool (τ σ(l) ) , (<label>7</label></formula><formula xml:id="formula_9">)</formula><p>where σ(j) denotes the trajectory placed at rank j in the permutation σ. Eq. 7 shows that trajectory candidates with higher tool-selection reward appear earlier in the ranking order, thereby providing a tool-preference aware distribution over the N candidate rollouts.</p><p>Bridging PL Ranking with Policy Optimization. In Eq. 7, directly optimizing the PL distribution over the N ! possible trajectory permutations is computationally infeasible <ref type="bibr" target="#b5">(Cheng et al., 2010)</ref>. To obtain a tractable training objective, we establish a theoretical bridge that links the PL ranking to the LLM agent's policy optimization. In the following theorem, we establish that learning the optimal policy is equivalent to matching its induced PL ranking distribution over candidate trajectory rollouts.</p><p>Theorem 2.1 (Equivalence between Optimal Policy and PL Ranking). Consider the KL-regularized RL objective defined in Eq. 5 with the tool-selection reward R tool defined in Eq. 6. Let π * denote the corresponding optimal policy <ref type="bibr" target="#b47">(Rafailov et al., 2023)</ref> for Eq. 5. Then, a trainable policy π θ is equal to the optimal policy (i.e., π θ = π * ) if and only if their induced PL ranking distributions coincide for any input x and trajectory collection T , i.e.</p><formula xml:id="formula_10">π θ = π * ⇐⇒ P π θ (σ | T ) = P π * (σ | T ), ∀σ.</formula><p>Theorem 2.1 (proof in Appendix B) suggests that optimizing the LLM agent policy provides a tractable surrogate to direct PL ranking optimization. Accordingly, leveraging the closed-form solution of π * <ref type="bibr" target="#b50">(Schulman et al., 2017;</ref><ref type="bibr" target="#b47">Rafailov et al., 2023)</ref>, we employ a practical Cross-Entropy (CE) loss to train the LLM agent policy π θ towards the optimal policy π * on a training set D:</p><formula xml:id="formula_11">L CE = -E x∼D τ ∈T π * (τ | x, T ) log π θ (τ | x, T ) = -E x∼D τ ∈T π old (τ | x, T ) exp 1 β R tool (τ ) τ ′ ∈T π old (τ ′ | x, T ) exp 1 β R tool (τ ′ ) log π θ (τ | x, T ) τ ′ ∈T π θ (τ ′ | x, T ) .<label>(8)</label></formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Data Curation for Tool-Selection</head><p>Since existing training data <ref type="bibr">(Yu et al., 2025a;</ref><ref type="bibr">Feng et al., 2025a)</ref> and downstream evaluations <ref type="bibr" target="#b44">(Qian et al., 2025;</ref><ref type="bibr">Wang et al., 2025a)</ref> for LLM agents prescribe fixed tool usage tailored to specific tasks, they cannot be directly applied to train or evaluate tool selection setups. To address this limitation, we extend these data recipes to curate a 200k dataset that explicitly integrates tool selection into the reasoning trajectory. In particular, we design a data curation pipeline that simulates real-world scenarios of agentic tool selection and reasoning across diverse domains, including mathematical and scientific reasoning, code generation, and multimodal understanding. As illustrated in Figure <ref type="figure" target="#fig_2">3</ref>, our pipeline consists of three key stages:</p><p>1 Toolset &amp; Task Collection. We begin by assembling a diverse library of candidate tools, drawing from prior tool integration studies <ref type="bibr" target="#b57">(Su et al., 2025;</ref><ref type="bibr">Feng et al., 2025a;</ref><ref type="bibr" target="#b23">Jin et al., 2025)</ref>. In particular, we collect three representative categories: (i) Code Tools, including code sandboxes and interpreters; (ii) Search Tools, covering search engines and web browser APIs (e.g., Jina Reader); and (iii) Multimodal Tools, comprising image processing and understanding mod-ules such as OCR <ref type="bibr" target="#b57">(Su et al., 2025)</ref> and GroundingDINO <ref type="bibr" target="#b28">(Liu et al., 2024)</ref>. We collect the total of 1,346 tools during this process. Next, we correspondingly curate diverse agentic tasks aligned with these tools, spanning mathematical and scientific reasoning, code generation, search-based QA, and related domains, covering 120 task types. Together, the toolset and task set provide the foundation for enabling agents to operate in open-ended, multimodal environments.</p><p>2 Tool-Selection Rationale Generation. As real-world toolsets are dynamic and may include unseen tools, Auto-Tool (Section 2) formulates tool selection as a step-wise decision-making process in which the agent reasons toward selecting the most appropriate tool given the current context.</p><p>To support this from a data perspective, we revisit each collected trajectory and, before every tool invocation, prompt an expert reasoning model to generate an explicit rationale explaining why the selected tool is suitable at that step. The rationales provide supervision that aligns tool selection with contextual reasoning rather than fixed tool identities.</p><p>3 Trajectory Augmentation. Next, we filter and insert newly generated tool-selection rationales back into the original trajectories. To ensure data quality, we first apply LLMas-a-judge <ref type="bibr" target="#b77">(Zheng et al., 2023)</ref> to filter out rationales that result in incorrect tool choices. The remaining valid rationales are placed between the model's internal reasoning and the subsequent tool invocation (Figure <ref type="figure" target="#fig_2">3</ref>). Finally, we use the expert model to review and refine the full trajectories, smoothing transitions, and removing logical inconsistencies. This process produces a corpus of 200k high-quality trajectories with explicit reasoning, tool-selection, and toolintegration steps (Eq. 1). Additional dataset statistics and dynamic tool-selection settings are provided in Appendix A.1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Supporting Unseen and Evolving Toolsets.</head><p>To support the setting of unseen and evolving tool environments, we explicitly decouple toolset construction from training-instance curation and progressively expand the tool-selection pool during inference. Specifically, among the 1,346 tools constructed in Stage 1 , only a subset of 460 tools (34.2%) aligned with the training tasks is used during AutoTool 's dual-stage training. For the rationales curated in Stages 2 and 3 , all training instances involve tool-selection rationales drawn exclusively from the 460-tool subset. During downstream inference, we progressively expand the toolselection pool across multiple rounds, introducing additional tools beyond those seen during training. In the final training stage, the full tool library of 1,346 tools is available, of which 886 tools (65.8%) are entirely unseen during training. This separation between toolset construction and traininginstance curation enables AutoTool to operate under evolving tool environments and to fairly evaluate its ability to select previously unseen tools at inference. Additional data statistics and settings are listed in Appendix A.2 and A.3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Experiments</head><p>Tasks and Datasets. To assess the effectiveness and generalizability of AutoTool, we conduct evaluations on a broad range of downstream tasks. For mathematical and scientific reasoning, we evaluate on AIME24 (Maxwell-Jia, 2024), AIME25 (math ai, 2025), and GPQA-Diamond <ref type="bibr" target="#b48">(Rein et al., 2024)</ref>. For search-based reasoning, we use multi-hop question answering datasets including HotpotQA <ref type="bibr" target="#b67">(Yang et al., 2018)</ref>, 2WikiMultiHopQA (2Wiki) <ref type="bibr" target="#b18">(Ho et al., 2020)</ref>, and Bamboogle <ref type="bibr" target="#b41">(Press et al., 2023)</ref>, which together cover a broad spectrum of search and reasoning challenges. For multimodal understanding, we first apply MMSearch <ref type="bibr" target="#b22">(Jiang et al., 2024)</ref>, a comprehensive benchmark for evaluating multimodal search performance. In addition, to assess Au-toTool performance in multi-turn interaction scenarios, we curate 500 image-based questions spanning three domains: (i) V-Chart, covering chart reasoning with questions sourced from the ChartGemma dataset <ref type="bibr" target="#b33">(Masry et al., 2024)</ref>; (ii) V-Math, consisting of math problems derived from GSM8K <ref type="bibr" target="#b6">(Cobbe et al., 2021)</ref> and AIME24 (Maxwell-Jia, 2024); and (iii) V-Code, focusing on code generation with questions drawn from MBPP <ref type="bibr" target="#b0">(Austin et al., 2021)</ref>, HumanEval <ref type="bibr" target="#b3">(Chen et al., 2021)</ref>, and LiveCodeBench <ref type="bibr" target="#b21">(Jain et al., 2024)</ref>. All three domains are presented to the LLM agents in image form, requiring them to parse visual inputs before reasoning.</p><p>Baselines and Models. We compare AutoTool with a broad set of baselines, including advanced LLM agents, fixed tool-integration and selection approaches, and agentic training paradigms. (i) For advanced LLM agents, we compare against strong reasoning models including GPT-4o <ref type="bibr" target="#b20">(Hurst et al., 2024)</ref>, Qwen2.5-VL-72B <ref type="bibr" target="#b1">(Bai et al., 2025)</ref>, Qwen2.5-Math-72B <ref type="bibr">(Yang et al., 2025a)</ref>, QwQ-32B <ref type="bibr" target="#b59">(Team, 2025)</ref>, and DeepSeek-R1-Distill-Qwen-14B <ref type="bibr" target="#b17">(Guo et al., 2025)</ref>. (ii) For tool-integration methods, we compare with both general and domain-specific methods: Toolformer <ref type="bibr" target="#b49">(Schick et al., 2023)</ref> and ToolGen <ref type="bibr">(Wang et al., 2025b)</ref> as general toolintegration; ReTool <ref type="bibr">(Feng et al., 2025a)</ref> for strategic tool use on math and science reasoning, Search-R1 <ref type="bibr" target="#b23">(Jin et al., 2025)</ref> for search-based question answering, and v-ToolRL <ref type="bibr" target="#b57">(Su et al., 2025)</ref> for multimodal understanding. (iii) For agentic training methods, we compare with three common agentic post-training paradigms: supervised fine-tuning (SFT), where the policy model is fine-tuned on our curated training set; Agentic RL algorithms, including GRPO <ref type="bibr" target="#b52">(Shao et al., 2024)</ref> and ARPO <ref type="bibr" target="#b30">(Lu et al., 2025)</ref>.</p><p>Implementation Details. We incorporate AutoTool into two off-the-shelf models Qwen3-8B (think mode) <ref type="bibr">(Yang et al., 2025a)</ref> and Qwen2.5-VL-7B <ref type="bibr" target="#b1">(Bai et al., 2025)</ref>, and train them on our curated training dataset described in Section 3. For Phase I training, we leverage LLaMa-Factory <ref type="bibr" target="#b78">(Zheng et al., 2024)</ref> for SFT and VeRL <ref type="bibr" target="#b54">(Sheng et al., 2024)</ref> for RL training. For Phase II training, we train the induced We leave additional experimental setups in Appendix C.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.">Main Results</head><p>AutoTool Balances Performance Across Domains. As shown in Table <ref type="table" target="#tab_0">1</ref>, we first compare AutoTool against advanced LLM agents and tool-integration methods. Auto-Tool consistently delivers balanced and robust performance across diverse domains. Large LLM agents such as GPT-4o and Qwen2.5-VL-72B rely primarily on internal reasoning and exhibit uneven performance across tasks (e.g., GPT-4o excels in multimodal benchmarks but underperforms on math-intensive tasks, while Qwen2.5-Math-72B shows the opposite trend). Fixed tool-integration methods similarly suffer from domain brittleness. ReTool achieves strong math performance but degrades substantially on search tasks. In contrast, by dynamically selecting and integrating tools during reasoning, AutoTool extends the model's effective capability beyond its internal knowledge and achieves consistently strong results across various benchmarks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>AutoTool Advances beyond Standard Agentic Training.</head><p>Table <ref type="table" target="#tab_1">2</ref> compares AutoTool with two commonly adopted agent training paradigms. For Qwen3-8B, we equipped the model with vision-extraction tools such as OCR to retrieve text from image inputs. AutoTool outperforms both SFT and RL methods by explicitly modeling and optimizing tool selection within reasoning trajectories. For instance, Auto-Tool (Qwen3-8B) delivers an average of 6.7% improvement on AIME24 and 6.5% on HotpotQA compared with GRPO and ARPO. Our results demonstrate that, beyond stabilizing reasoning via Phase I, AutoTool's Phase II PL-ranking provides additional benefits by explicitly modeling dynamic tool selection, thereby enabling tool-aware optimization. Generalization on Unseen Tools. To better understand AutoTool's selection ability on unseen tools, we analyze AutoTool (Qwen3-8B) generated trajectories in Table <ref type="table" target="#tab_0">1</ref>. We extract all tool-selection steps and identify the selected tools. Across all 7 tasks, we compute the fractions of seen v.s. unseen tools among runs that lead to correct final answers. As shown in Figure <ref type="figure" target="#fig_3">4</ref>, AutoTool relies largely on unseen tools, especially on search and multimodal tasks. This suggests that the improved performance is driven by generalizing tool selection beyond memorizing training-time tools.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2.">In-depth Analyses on AutoTool</head><p>Out-of-Domain Performance under Unseen Tools. We further evaluate AutoTool in a fully unseen-tool setting by restricting the inference-time tool pool to the 886 unseen tools and testing on AIME24 and V-Chart. We additionally assess out-of-domain generalization on two benchmarks not covered by our curated dataset, LiveCodeBench-V2 <ref type="bibr" target="#b21">(Jain et al., 2024)</ref> and MedQA <ref type="bibr">(Yang et al., 2025b)</ref>. All experiments are conducted using AutoTool (Qwen3-8B) under identical inference settings. As shown in Table <ref type="table" target="#tab_2">3</ref>, AutoTool consistently achieves the strongest performance across all evaluated domains. In addition, relative to using the full toolset (1,346 tools), restricting AutoTool to unseen tools results in only a marginal performance drop of less than 2% on both AIME24 and HotpotQA. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Relationship between Tool-Selection and Performance.</head><p>To further examine the relationship between tool-selection capability and final performance, we analyze the overall HitRate of AutoTool. Comparing Figure <ref type="figure" target="#fig_4">5</ref> with the main results in Tables <ref type="table" target="#tab_0">1</ref> and <ref type="table" target="#tab_1">2</ref>, we find that higher tool-selection hit rates consistently correlate with improved downstream accuracy across methods. Notably, Phase-II refinement substantially increases AutoTool 's HitRate, which directly translates into stronger end-task performance. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Effectiveness of Tool-Selection Rationales.</head><p>We conduct an ablation study to evaluate the effectiveness of incorporating tool-selection rationales. As shown in Figure <ref type="figure" target="#fig_5">6</ref>, models trained with rationales consistently outperform those without. In addition, we observe that tool-selection rationales increase successful tool executions by 13.5%, indicating more reliable tool use during intermediate steps. We leave additional analyses and case studies in Appendix E.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Related Work</head><p>Agentic Reasoning in RL. Recent work on agentic reasoning in LLMs leverages reinforcement learning to directly optimize reasoning behaviors. The introduction of criticfree methods such as GRPO and its variants <ref type="bibr">(Li et al., 2025a;</ref><ref type="bibr">Yu et al., 2025a;</ref><ref type="bibr">Zou et al., 2026c</ref>) marked a key shift toward group-relative advantage estimation. Building on this, subsequent studies incorporate tool use into agentic RL, including ARTIST <ref type="bibr" target="#b55">(Singh et al., 2025)</ref> and rStar2 <ref type="bibr" target="#b51">(Shang et al., 2025)</ref>, while parallel lines of work on self-evolving agents emphasize continual adaptation through learning and structural modification <ref type="bibr" target="#b11">(Fang et al., 2025)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Tool Use and Integration in LLMs.</head><p>Early work on tool use in LLMs relied on prompting strategies that interleaved reasoning with external queries or API calls <ref type="bibr" target="#b41">(Press et al., 2023;</ref><ref type="bibr">Yao et al., 2023;</ref><ref type="bibr">Zou et al., 2026a)</ref>. Additional existing works <ref type="bibr" target="#b37">(Nakano et al., 2021;</ref><ref type="bibr" target="#b49">Schick et al., 2023;</ref><ref type="bibr" target="#b19">Hu et al., 2024)</ref> proposed training-based approaches that explicitly empower LLMs with tool-use capabilities, as well as extended tool-usage to large-scale API integration and planning <ref type="bibr" target="#b38">(Patil et al., 2024;</ref><ref type="bibr" target="#b56">Song et al., 2023)</ref>, multi-tool orchestration <ref type="bibr" target="#b53">(Shen et al., 2023)</ref>, and adaptive selection <ref type="bibr" target="#b45">(Qin et al., 2024)</ref>. More recent work integrates tool use tightly into training and system design, such as multimodal agent tuning <ref type="bibr">(Gao et al., 2025b)</ref> and infrastructure for dynamic discovery and synchronization <ref type="bibr" target="#b7">(Ding, 2025;</ref><ref type="bibr" target="#b34">Mastouri et al., 2026)</ref>. We leave additional related works in Appendix D.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.">Conclusion</head><p>We introduced AutoTool, a framework that equips LLM agents with dynamic tool-selection capabilities. We train the agent policy through a dual-phase optimization pipeline, enabling AutoTool to move beyond static tool use and achieve adaptive, generalizable reasoning. Extensive experiments across mathematics, science, retrieval, and multimodal tasks demonstrate that AutoTool consistently outperforms training-only baselines and existing tool-enhanced methods. These results highlight the importance of explicit tool-selection optimization in building extensible agents that can effectively operate under evolving tool environments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Additional Details on AutoTool Data Curation</head><p>A.1. Data Curation Pipeline Details 1 Toolset &amp; Task Collection. We begin by assembling a diverse library of candidate tools, drawing from prior tool integration studies <ref type="bibr" target="#b57">(Su et al., 2025;</ref><ref type="bibr">Feng et al., 2025a;</ref><ref type="bibr" target="#b23">Jin et al., 2025)</ref>. In particular, we collect three representative categories: (i) Code Tools, including code sandboxes and interpreters that allow the agent model to execute code and leverage outputs or error messages during generation; (ii) Search Tools, covering search engines and web browser APIs (e.g., Jina Reader) for retrieving external knowledge from various corpora; and (iii) Image Tools, comprising image processing and understanding modules such as OCR <ref type="bibr" target="#b57">(Su et al., 2025)</ref> and GroundingDINO <ref type="bibr" target="#b28">(Liu et al., 2024)</ref>, which enable the agent model to extract and reason over textual content embedded in images. This results in a comprehensive toolset of over 1,000 tools. Each tool is annotated with a feature description specifying its toolset index, functionality, input-output schema, and usage constraints. In addition, we curate a diverse set of downstream tasks aligned with these tools, spanning mathematical and scientific reasoning, code generation, search-based QA, and related domains, covering over 100 task types. Together, the toolset and task set provide the foundation for enabling agents to operate in open-ended, multimodal environments.</p><p>2 Tool-Selection Rationale Generation. In real-world scenarios, toolsets are dynamic and evolve with new incoming tools. Therefore, we avoid formulating tool selection as a simple classification problem over a fixed tool index. Instead, we cast it as a decision-making process in which the agent model should learn to reason step by step toward selecting the most appropriate tool for the current context. To support this, we first retrieve the original responses from the collected downstream tasks in the previous stage, which consist of reasoning trajectories involving both model reasoning and tool integration components. In each response chain, before a specific tool is invoked, we leverage an expert reasoning model (DeepSeek-R1) to generate explicit rationales that justify why a particular tool is preferred at each step, serving as the supervision signals that align tool selection with contextual reasoning. We illustrate our template to generate tool-selection rationale training data in Figure <ref type="figure" target="#fig_6">7</ref>.</p><p>3 Trajectory Augmentation. After collecting tool-selection rationales, we insert them back into the original response trajectories. To ensure quality, we first leverage LLM-as-a-judge <ref type="bibr" target="#b77">(Zheng et al., 2023)</ref> to filter out invalid rationales that lead to incorrect tool choices. We then insert the valid rationales between the model's internal reasoning and the subsequent tool invocation (see the example in Figure <ref type="figure" target="#fig_2">3</ref>). Finally, we employ DeepSeek-R1 to review the entire trajectory, smoothing connections and eliminating logical inconsistencies. This process yields a corpus of 200k data instances, including various tasks with corresponding tool selection and integration trajectory responses.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2. Data Curation Statistics</head><p>Through Stage 1: Toolset &amp; Task Collection, we curate a comprehensive toolset of 1,346 tools drawn from diverse domains (e.g., online APIs, open-source libraries, multimodal utilities). Among them, 460 tools are used during training, while the remaining 886 tools are kept completely unseen and reserved exclusively for inference-time evaluation. During training, the candidate toolset is fixed to the 460 predefined tools, because all tool-selection rationales and ground-truth trajectories in our source datasets involve only these tools. This fixed training pool ensures stable tool-embedding learning and consistent PL-ranking optimization. Note that Stage 1 is decoupled from Stages 2 and 3, which focus on collecting high-quality reasoning trajectories strictly over the 460 seen tools. This separation prevents leakage of unseen tools into training and enables a clean evaluation of generalization.</p><p>Table 4. Statistics of the curated toolset.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Category #Tools</head><p>Full Toolset 1346 Seen Tools (Training) 460 Unseen Tools (Inference Only) 886</p><p>During inference, we expand the available toolset to the full 1,346 tools, simulating an evolving tool environment in which many tools have never been observed during training. This design allows us to systematically evaluate AutoTool's ability to perform dynamic tool selection under distribution shift, where the candidate tools may differ across tasks and include entirely new unseen tools. The overall dataset statistics are summarized in Table <ref type="table">4</ref>. We next describe how experiments are conducted under the evolving toolset setting.</p><p>A.3. Evolving Toolset Settings Training-Time Toolset. During training, the toolset is fixed to the 460 "seen" tools collected through Stage 2 and Stage 3 of our data curation pipeline. All training-time tool-selection rationales and ground-truth tool trajectories reference only these 460 tools because the underlying source datasets provide demonstrations exclusively for this subset. As a result, every training instance uses the same 460-tool candidate pool. This design ensures stable tool-embedding learning and consistent PL-ranking optimization across all training samples. As AutoTool learns dynamic tool-selection behavior through its embedding-based matching mechanism (Eq. 4), rather than through dynamic changes in the training-time toolset itself. Therefore, an evolving toolset is not required during training for the model to develop dynamic selection capabilities.</p><p>Inference-Time Evolving Toolset. During inference, AutoTool does not assume a static or closed tool inventory. Instead, we simulate realistic tool evolution by evaluating the model over the full toolset that includes both the 460 tools seen during training and an additional 886 unseen tools from our toolset collection. This allows us to evaluate AutoTool under realistic, large-scale tool environments while keeping comparisons fair across baselines.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.4. Template on Generating Tool-Selection Rationales Template for Tool-Selection Rationale</head><p>You are a Tool Use Expert in selecting the most appropriate tool(s) to answer user questions. You are provided with three inputs: # INPUT QUESTION: ... # MODEL ANSWER: ... # TOOLSET (including different types of tools and capabilities) ¡tool1 name¿ + ¡description¿ ¡tool2 name¿ + ¡description¿ ... Your task is to provide the rationale and the final selected tool from the toolset before the model invokes a tool. Your response: Reverse Direction. Suppose P π θ (σ | T , x) = P π * (σ | T , x) for possible permutations σ, finite trajectory sets T , and queries x (with β &gt; 0 and π old (• | x) &gt; 0 on the support). First, define the scores</p><formula xml:id="formula_12">s π (τ | x) := β log π(τ | x) π old (τ | x) .</formula><p>Next, consider any two trajectories τ, τ ′ and the two-trajectory collection T = {τ, τ ′ }. The PL probabilities for the two possible permutations satisfy</p><formula xml:id="formula_13">P π θ (τ, τ ′ ) | T , x = P π * (τ, τ ′ ) | T , x , P π θ (τ ′ , τ ) | T , x = P π * (τ ′ , τ ) | T , x .</formula><p>By the PL definition on a two-item set T = {τ, τ ′ }, the probability of placing τ first under π will be</p><formula xml:id="formula_14">P π (τ, τ ′ ) | T , x = e sπ(τ |x) e sπ(τ |x) + e sπ(τ ′ |x) = 1 1 + exp s π (τ ′ | x) -s π (τ | x)</formula><p>.</p><p>Hence equality of the two top-1 probabilities for π θ and π * implies equality</p><formula xml:id="formula_15">P π θ ((τ, τ ′ ) | T , x) P π θ ((τ ′ , τ ) | T , x) = P π * ((τ, τ ′ ) | T , x) P π * ((τ ′ , τ ) | T , x) ⇐⇒ e sπ θ (τ |x)-sπ θ (τ ′ |x) = e s π * (τ |x)-s π * (τ ′ |x) .</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Taking logarithms yields s</head><formula xml:id="formula_16">π θ (τ | x) -s π θ (τ ′ | x) = s π * (τ | x) -s π * (τ ′ | x).</formula><p>Fix an arbitrary reference τ 0 and set τ ′ = τ 0 . The above identity then gives, for every τ ,</p><formula xml:id="formula_17">s π θ (τ | x) -s π θ (τ 0 | x) = s π * (τ | x) -s π * (τ 0 | x).</formula><p>Based on the invariance property of the exponential scoring and ranking mechanism (Lemma B.2), this is equivalent to the existence of a constant C(x) := s π θ (τ</p><formula xml:id="formula_18">0 | x) -s π * (τ 0 | x) (independent of τ ) such that s π θ (τ | x) = s π * (τ | x) + C(x), ∀τ.</formula><p>Equivalently,</p><formula xml:id="formula_19">β log π θ (τ | x) π old (τ | x) = β log π * (τ | x) π old (τ | x) + C(x),</formula><p>so dividing by β and exponentiating gives</p><formula xml:id="formula_20">π θ (τ | x) π old (τ | x) = π * (τ | x) π old (τ | x) e C(x)/β =⇒ π θ (τ | x) = e C(x)/β π * (τ | x).</formula><p>Since both π θ and π * are probability distributions and will sum to 1 over all possible trajectories, e C(x)/β = 1, which implies π θ (τ |x) = π * (τ |x). Therefore, if the induced PL ranking models are identical, then the underlying policy models will also be identical. Combining the results from both directions will complete the proof.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Experiment Setups</head><p>We evaluate our model on a comprehensive suite of benchmarks to assess its capabilities across various domains. The datasets used are detailed below, categorized by the primary task they are designed to evaluate.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Mathematical and Scientific Reasoning</head><p>• AIME24 and AIME25 (Maxwell-Jia, 2024; math ai, 2025): The American Invitational Mathematics Examination (AIME) datasets, specifically from the years 2024 and 2025, consist of challenging mathematical problems from this prestigious high school competition. These datasets are used to evaluate the mathematical reasoning and problem-solving abilities of large language models. The problems cover various domains like algebra, geometry, and number theory and require multi-step reasoning.</p><p>• GPQA / GPQA-Diamond <ref type="bibr" target="#b48">(Rein et al., 2024)</ref>: GPQA is a benchmark of 448 graduate-level multiple-choice questions in biology, chemistry, and physics, crafted by domain experts and validated to be "Google-proof." Expert accuracy is 65% (or 74% after correction), while skilled non-experts (with unlimited web access) achieve 34%. The "Diamond" subset is often used to select the hardest subset of these questions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Search-Based Reasoning</head><p>• HotpotQA <ref type="bibr" target="#b67">(Yang et al., 2018)</ref>: A multi-hop QA dataset built over Wikipedia, containing 113k questions. Each question often spans multiple documents, and supporting fact annotations are provided to encourage explainable reasoning.</p><p>• 2WikiMultiHopQA (2Wiki) <ref type="bibr" target="#b18">(Ho et al., 2020)</ref>: Similar to HotpotQA, this is a multi-hop question-answering dataset created from Wikipedia. It's designed to evaluate the reasoning steps of a model and includes evidence to support the answers. It has different question types, including comparison, inference, and compositional questions.</p><p>• Bamboogle <ref type="bibr" target="#b41">(Press et al., 2023)</ref>: This dataset is a collection of questions that are designed to be difficult for Google's search engine to answer correctly. It is used to test the compositional reasoning abilities of language models, pushing them beyond simple information retrieval.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Multimodal Understanding</head><p>• MMSearch <ref type="bibr" target="#b22">(Jiang et al., 2024)</ref>: This is a benchmark for evaluating the multimodal search performance of large language models. The dataset consists of instances that are not present in the training data of current models, so the correct answer can only be found by searching. It evaluates models on tasks like re-querying, reranking, and summarization in a multimodal context.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Data Example of V-Chart</head><p>Answer: 3 Input Prompt: You are given a problem and a set of tools. Solve the problem step by step by selecting the proper tools to use during your thinking.</p><p>Here is the name and usage instructions for the toolset, where you will select the appropriate tools to use. Tool 1: Code Interpreter (CI) ... Tool 2: OCR ... Tool 3: SearchAPI ... ... Now, given the input image &lt;problem.png&gt; about the cryptarithmetic puzzle, solve the problem and put the final answer into \boxed{}</p><p>• V-Chart -ChartGemma <ref type="bibr" target="#b33">(Masry et al., 2024)</ref>: The ChartGemma dataset is used for chart understanding and reasoning. It contains a diverse set of charts and is used to train and evaluate models on their ability to interpret and answer questions about the visual information presented in charts.</p><p>• V-Math -GSM8K <ref type="bibr" target="#b6">(Cobbe et al., 2021)</ref>: This dataset, which stands for "Grade School Math 8K," contains 8,500 high-quality and linguistically diverse grade school math word problems. It is designed to measure the multi-step reasoning capabilities of language models. -AIME24: Using data from AIME24, we reframe the text data into an image form.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Data Example of V-Math</head><p>Answer: 81 Input Prompt: You are given a problem and a set of tools. Solve the problem step by step by selecting the proper tools to use during your thinking.</p><p>Here is the name and usage instructions for the toolset, where you will select the appropriate tools to use. Tool 1: Code Interpreter (CI) ... Tool 2: OCR ... Tool 3: SearchAPI ... ... Now, given the input image &lt;problem.png&gt; about the cryptarithmetic puzzle, solve the problem and put the final answer into \boxed{}</p><p>• V-Code -MBPP <ref type="bibr" target="#b0">(Austin et al., 2021)</ref>: The "Mostly Basic Python Problems" dataset consists of around 1,000 entry-level Python programming problems. It's used to evaluate the ability of language models to generate code from natural language descriptions. -HumanEval <ref type="bibr" target="#b3">(Chen et al., 2021)</ref>: A dataset created by OpenAI, HumanEval consists of 164 handwritten programming problems to evaluate the functional correctness of code generated by language models. The problems are designed to be novel and not easily found on the web, to prevent models from simply recalling existing code. -LiveCodeBench <ref type="bibr" target="#b21">(Jain et al., 2024)</ref>: A dynamic benchmark collecting new programming problems from competitive programming platforms (LeetCode, AtCoder, Codeforces), designed to provide "contamination-free" code evaluation by only testing on problems released after model training cutoffs.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 .</head><label>1</label><figDesc>Figure 1. Illustration of fixed vs. challenging evolving tool environments. AutoTool enables LLM agents to dynamically select from complex unseen toolsets via a dual-phase optimization pipeline.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 .</head><label>2</label><figDesc>Figure 2. Illustration on AutoTool's Tool-Selection Refinement Phase. We cast tool-selection as a Plackett-Luce (PL) ranking problem during trajectory generation, optimizing the LLM agent to align its policy distribution with reward-consistent tool preferences.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 .</head><label>3</label><figDesc>Figure 3. Data curation pipeline for AutoTool (Section 3). The overall pipeline has three stages: (i) Toolset &amp; Task Collection, assembling 1,000+ tools with metadata across 100+ tasks in math, science, code, and multimodal reasoning; (ii) Tool-Selection Rationale Generation, producing explicit justifications for tool choices; and (iii) Trajectory Augmentation, combining CoT reasoning, tool-selection, and tool-integration steps into complete trajectories for robust training.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 .</head><label>4</label><figDesc>Figure 4. Proportion of seen vs. unseen tools selected by AutoTool (Qwen3-8B) across 7 benchmarks.</figDesc><graphic coords="7,307.44,498.65,234.00,105.91" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 5 .</head><label>5</label><figDesc>Figure 5. Analyses on Tool-selection hit rates. Higher hit rates correlate with improved downstream performance.</figDesc><graphic coords="8,52.44,596.38,241.04,94.55" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 6 .</head><label>6</label><figDesc>Figure 6. Ablations on tool-selection rationales.</figDesc><graphic coords="8,312.12,405.04,224.65,115.73" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 7 .</head><label>7</label><figDesc>Figure 7. Template to generate tool-selection rationales during AutoTool's data curation process.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 .</head><label>1</label><figDesc>Comparison of AutoTool with advanced LLM agents and tool-integration methods across math, search, and multimodal benchmarks. While some baselines excel in isolated domains (e.g., ReTool on math, Search-R1 on search, GPT-4o on multimodal), AutoTool delivers balanced and robust performance across all diverse tasks, demonstrating the generalization benefits of dynamic tool-selection and integration. The best results are bold, and the second-best results are underlined.</figDesc><table><row><cell>Method</cell><cell>Size</cell><cell cols="2">Math ↑</cell><cell cols="2">Search ↑</cell><cell cols="2">Multimodal ↑</cell><cell></cell></row><row><cell></cell><cell></cell><cell cols="7">AIME24 AIME25 HotpotQA 2Wiki V-Chart V-Math V-Code</cell></row><row><cell></cell><cell></cell><cell cols="3">Advanced LLM Agents</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>GPT4o</cell><cell>-</cell><cell>18.2</cell><cell>15.8</cell><cell>38.7</cell><cell>29.8</cell><cell>27.3</cell><cell>41.4</cell><cell>51.2</cell></row><row><cell>Qwen2.5-VL-72B-Instruct</cell><cell>72B</cell><cell>6.3</cell><cell>4.1</cell><cell>13.9</cell><cell>10.4</cell><cell>22.5</cell><cell>24.5</cell><cell>18.2</cell></row><row><cell>Qwen2.5-Math-72B-Instruct</cell><cell>72B</cell><cell>31.3</cell><cell>27.4</cell><cell>23.7</cell><cell>16.7</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>QwQ-32B</cell><cell>32B</cell><cell>47.3</cell><cell>31.8</cell><cell>32.6</cell><cell>22.3</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell cols="2">DeepSeek-R1-Distill-Qwen-14B 14B</cell><cell>65.9</cell><cell>44.1</cell><cell>24.2</cell><cell>14.1</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell></cell><cell cols="4">Fixed Tool-Integration Methods</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Toolformer</cell><cell>6B</cell><cell>6.4</cell><cell>4.8</cell><cell>11.5</cell><cell>10.6</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>ToolGen</cell><cell>8B</cell><cell>14.3</cell><cell>12.6</cell><cell>19.8</cell><cell>17.5</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>v-ToolRL</cell><cell>2B</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>21.6</cell><cell>19.5</cell><cell>13.3</cell></row><row><cell>Search-R1</cell><cell>7B</cell><cell>12.1</cell><cell>7.3</cell><cell>43.3</cell><cell>44.5</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>ReTool</cell><cell>32B</cell><cell>70.1</cell><cell>47.4</cell><cell>21.4</cell><cell>19.7</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell></cell><cell cols="4">Dynamic Tool-Selection &amp; Integration</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>AutoTool (Qwen2.5-VL-7B)</cell><cell>7B</cell><cell>45.3</cell><cell>38.9</cell><cell>33.2</cell><cell>36.5</cell><cell>13.2</cell><cell>44.3</cell><cell>52.5</cell></row><row><cell>AutoTool (Qwen3-8B)</cell><cell>8B</cell><cell>68.8</cell><cell>51.2</cell><cell>45.1</cell><cell>48.8</cell><cell>24.7</cell><cell>53.0</cell><cell>56.1</cell></row></table><note><p>PL-Ranking framework by setting the rollout size N to 8 per question and training for 3 epochs. All training and inference experiments are conducted on 8xA100-80G GPUs.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 .</head><label>2</label><figDesc>Comparison of AutoTool with agentic training baselines. AutoTool consistently outperforms the training-based baselines, demonstrating that the Phase II PL-ranking stage provides complementary gains by explicitly optimizing dynamic tool selection.</figDesc><table><row><cell>Method</cell><cell cols="3">Math &amp; Science ↑</cell><cell></cell><cell>Search ↑</cell><cell></cell><cell></cell><cell cols="2">Multimodal ↑</cell><cell></cell></row><row><cell></cell><cell cols="10">AIME24 AIME25 GPQA HotpotQA 2Wiki Bamboogle V-Chart V-Math V-Code MMSearch</cell></row><row><cell>Qwen3-8B</cell><cell>46.7</cell><cell>40.0</cell><cell>58.1</cell><cell>26.2</cell><cell>31.1</cell><cell>37.4</cell><cell>6.0</cell><cell>39.4</cell><cell>43.2</cell><cell>-</cell></row><row><cell>SFT</cell><cell>53.3</cell><cell>40.0</cell><cell>63.6</cell><cell>34.3</cell><cell>37.9</cell><cell>40.2</cell><cell>16.3</cell><cell>44.6</cell><cell>48.6</cell><cell>-</cell></row><row><cell>GRPO</cell><cell>56.7</cell><cell>46.7</cell><cell>70.7</cell><cell>38.6</cell><cell>45.2</cell><cell>52.8</cell><cell>22.8</cell><cell>51.8</cell><cell>55.2</cell><cell>-</cell></row><row><cell>ARPO</cell><cell>66.7</cell><cell>50.0</cell><cell>72.8</cell><cell>43.6</cell><cell>48.1</cell><cell>54.5</cell><cell>23.2</cell><cell>52.6</cell><cell>55.8</cell><cell>-</cell></row><row><cell>AutoTool</cell><cell>66.7</cell><cell>53.3</cell><cell>73.7</cell><cell>45.1</cell><cell>48.8</cell><cell>56.8</cell><cell>24.7</cell><cell>53.0</cell><cell>56.1</cell><cell>-</cell></row><row><cell>Qwen2.5-VL-7B</cell><cell>6.7</cell><cell>13.2</cell><cell>7.6</cell><cell>14.0</cell><cell>18.2</cell><cell>10.6</cell><cell>2.6</cell><cell>22.9</cell><cell>26.6</cell><cell>27.8</cell></row><row><cell>SFT</cell><cell>30.0</cell><cell>20.0</cell><cell>30.8</cell><cell>24.9</cell><cell>22.0</cell><cell>24.5</cell><cell>6.8</cell><cell>28.4</cell><cell>43.2</cell><cell>39.7</cell></row><row><cell>GRPO</cell><cell>36.7</cell><cell>33.3</cell><cell>33.3</cell><cell>28.5</cell><cell>32.5</cell><cell>44.0</cell><cell>10.7</cell><cell>42.7</cell><cell>49.6</cell><cell>45.2</cell></row><row><cell>ARPO</cell><cell>46.7</cell><cell>43.3</cell><cell>36.1</cell><cell>32.0</cell><cell>35.1</cell><cell>46.4</cell><cell>13.2</cell><cell>43.0</cell><cell>50.9</cell><cell>48.2</cell></row><row><cell>AutoTool</cell><cell>46.7</cell><cell>40.0</cell><cell>38.4</cell><cell>33.2</cell><cell>36.5</cell><cell>48.2</cell><cell>13.2</cell><cell>44.3</cell><cell>52.5</cell><cell>49.3</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 .</head><label>3</label><figDesc>Out-of-domain performance under fully unseen tool settings. AutoTool is evaluated using only unseen tools at inference.</figDesc><table><row><cell>Method</cell><cell cols="4">AIME24 HotpotQA LiveCodeBench MedQA</cell></row><row><cell>Search-R1</cell><cell>13.3</cell><cell>43.3</cell><cell>36.2</cell><cell>73.5</cell></row><row><cell>ReTool</cell><cell>66.7</cell><cell>21.4</cell><cell>71.5</cell><cell>64.7</cell></row><row><cell>AutoTool (with unseen tools)</cell><cell>66.7</cell><cell>43.8</cell><cell>77.9</cell><cell>84.3</cell></row></table></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgment</head><p>The authors thank members of the iDEA-iSAIL Group for helpful discussions and feedback on this work. This work is supported by <rs type="funder">National Science Foundation</rs> under Award No. <rs type="grantNumber">IIS-2117902</rs>. The views and conclusions are those of the authors and should not be interpreted as representing the official policies of the funding agencies or the government.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_bpw9Mu4">
+					<idno type="grant-number">IIS-2117902</idno>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Impact Statement</head><p>AutoTool operates within standard large language model deployment settings and focuses on optimizing inference-time decision-making over existing tool interfaces. It does not introduce new forms of autonomy or human replacement beyond current agentic systems. We don't anticipate potential negative societal impacts arising uniquely from this work.</p><p>Table of Contents A Additional Details on AutoTool Data Curation 15 A.1 Data Curation Pipeline Details . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 15 A.2 Data Curation Statistics . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 15 A.3 Evolving Toolset Settings . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 15 A.4 Template on Generating Tool-Selection Rationales . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 16 B Theoretical Bridge between Optimal Policy and PL Ranking 17 B.1 Proof of Theorem 2.1 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 17 B.2 Proof of Lemma B.2 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 19 C Experiment Setups 20 D Additional Related Works 22 E Additional Experiments 23 E.1 AutoTool vs. Oracle Tool Assignment. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 23 E.2 Case Study on AutoTool . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 23 B. Theoretical Bridge between Optimal Policy and PL Ranking B.1. Proof of Theorem 2.1</p><p>In the main body, we denote P π (σ|T ) by omitting the query x for notation brevity. For the derivations below, we reinstate this dependence. In this case, for a collection of trajectories T = {τ (j) }</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>|T |</head><p>j=1 and query x, the Plackett-Luce (PL) ranking model induced by a policy π, relative to a previous policy π old , will be defined as:</p><formula xml:id="formula_21">P π (σ|T , x) = |T | i=1 exp β log π(τ σ(i) |x) πold(τ σ(i) |x) |T | j=i exp β log π(τ σ(j) |x) πold(τ σ(j) |x) ,<label>(9)</label></formula><p>where we have σ being a permutation (or ranking) of the indices {1, 2, . . . , |T |}, and denote τ σ(i) being the trajectory ranked at position i in permutation σ. π(τ |x) πold(τ |x) represents the relative preference of policy π over the previous checkpoint before updating.</p><p>We consider two policy models: π θ is a trainable policy model with parameters θ, and π * is the optimal policy model. Subsequently, let us denote the two induced PL ranking models by</p><formula xml:id="formula_22">P π θ (σ|T , x) = |T | i=1 exp β log π θ (τ σ(i) |x) πold(τ σ(i) |x) |T | j=i exp β log π θ (τ σ(j) |x) πold(τ σ(j) |x) , P π * (σ|T , x) = |T | i=1 exp β log π * (τ σ(i) |x) πold(τ σ(i) |x) |T | j=i exp β log π * (τ σ(j) |x) πold(τ σ(j) |x)</formula><p>.</p><p>We will then have the following result on the equivalence between the optimal policy and the optimal PL ranking model. Results from the following Theorem B.1 supports the conclusion from Theorem 2.1. Theorem B.1 (Equivalence between Optimal Policy and PL Ranking). Consider the KL-regularized RL objective defined in Eq. 5 with the tool-selection reward R tool defined in Eq. 6. Let π * denote the corresponding optimal policy <ref type="bibr" target="#b47">(Rafailov et al., 2023)</ref> for Eq. 5. Then, a trainable policy π θ is equal to the optimal policy (i.e., π θ = π * ) if and only if their induced PL ranking distributions coincide for any input x and trajectory collection T , i.e.</p><formula xml:id="formula_23">π θ = π * ⇐⇒ P π θ (σ | T ) = P π * (σ | T ), ∀σ.</formula><p>Proof. We need to prove both directions of the equivalence, and we will start with the forward direction that optimal policy indicates the optimal PL ranking.</p><p>Forward Direction. Suppose π θ (τ |x) = π * (τ |x) for all τ and x. Then, since the policies are identical, their ratios with respect to the old policy are also identical, leading to</p><formula xml:id="formula_24">π θ (τ |x) π old (τ |x) = π * (τ |x) π old (τ |x)<label>(10)</label></formula><p>Therefore, with β &gt; 0, for any permutation σ:</p><formula xml:id="formula_25">P π θ (σ|T , x) = |T | i=1 exp β log π θ (τ σ(i) |x) πold(τ σ(i) |x) |T | j=i exp β log π θ (τ σ(j) |x) πold(τ σ(j) |x) = |T | i=1 exp β log π * (τ σ(i) |x) πold(τ σ(i) |x) |T | j=i exp β log π * (τ σ(j) |x) πold(τ σ(j) |x) = P π * (σ|T , x)</formula><p>Thus, if the policies are identical, then their induced PL ranking models are also identical.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2. Proof of Lemma B.2</head><p>In this section, we provide the proof for Lemma B.2 previously used in the proof of Theorem B.1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Lemma B.2 (Softmax Shift-invariance Property).</head><p>Let z, w ∈ R d , d ≥ 2 be two vectors of the same dimension. The softmax outputs are identical, softmax(z) = softmax(w), if and only if there exists a scalar constant C ∈ R such that the inputs differ by a constant shift, i.e., w = z + C • 1, where 1 is the vector of ones. The softmax function is defined component-wise as softmax(x</p><formula xml:id="formula_26">) i = exp(xi) K j=1 exp(xj ) for a position i.</formula><p>Proof. (Forward ⇒) Suppose vector w = z + C • 1 for some constant C. Then, for any component i:</p><formula xml:id="formula_27">softmax(w) i = exp(w i ) K j=1 exp(w j ) = exp(z i + C) K j=1 exp(z j + C) = exp(z i )e C e C K j=1 exp(z j ) = exp(z i ) K j=1 exp(z j ) = softmax(z) i .</formula><p>Since this holds for all i, softmax(w) = softmax(z).</p><p>(Backward⇐) Suppose softmax(z) = softmax(w). Let S z = j exp(z j ) and S w = j exp(w j ). This condition implies</p><formula xml:id="formula_28">exp(zi) Sz = exp(wi) Sw for all i. Since S z , S w &gt; 0, we rearrange to get exp(w i ) = exp(z i ) • (S w /S z ).</formula><p>Let the positive constant K = S w /S z . Taking the natural logarithm yields w i = ln(exp(z i )K) = z i + ln(K). Setting the constant C = ln(K), we have w i = z i + C for all i. Thus, we will have w = z + C • 1, which completes the proof.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Data Example of V-Code</head><p>Answer:</p><p>def mul_list(nums1, nums2): result = map(lambda x, y: x * y, nums1, nums2) return list(result)</p><p>Input Prompt: You are given a problem and a set of tools. Solve the problem step by step by selecting the proper tools to use during your thinking.</p><p>Here is the name and usage instructions for the toolset, where you will select the appropriate tools to use. Tool 1: Code Interpreter (CI) ... Tool 2: OCR ... Tool 3: SearchAPI ... ... Now, given the input image &lt;problem.png&gt; about the cryptarithmetic puzzle, solve the problem and put the final answer into \boxed{} D. Additional Related Works</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LLM Agents with Agentic RL.</head><p>A prominent line of research on agentic reasoning in LLMs builds upon reinforcement learning to optimize reasoning behaviors directly. GRPO and its variants <ref type="bibr" target="#b52">(Shao et al., 2024;</ref><ref type="bibr" target="#b76">Zheng et al., 2025;</ref><ref type="bibr" target="#b75">Zhao et al., 2025;</ref><ref type="bibr">Li et al., 2025a;</ref><ref type="bibr" target="#b73">Zhang et al., 2025</ref>) marked a turning point, proposing a critic-free formulation that estimates group-relative advantages across sampled responses <ref type="bibr" target="#b29">(Liu et al., 2025;</ref><ref type="bibr">Yu et al., 2025a;</ref><ref type="bibr" target="#b30">Lu et al., 2025)</ref>. Building on these foundations, recent work has explored agentic reasoning with tool use, such as ARTIST <ref type="bibr" target="#b55">(Singh et al., 2025)</ref> and rStar2 <ref type="bibr" target="#b51">(Shang et al., 2025)</ref>, which employ outcome-based RL in settings with noisy or uncertain tool feedback. In parallel, recent research on self-evolving agents <ref type="bibr" target="#b11">(Fang et al., 2025;</ref><ref type="bibr">Yu et al., 2025b;</ref><ref type="bibr">Gao et al., 2025a)</ref> shifts the view from static agents toward agents designed for continual adaptation. This line of work emphasizes mechanisms such as continual learning, structural modification, and autonomous self-improvement to extend an agent's reasoning capacity over time.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Tool Selection in LLM Agents.</head><p>Prior work on enabling LLM agents to interact with external tools has explored both retrieval-based selection and tool-generation paradigms <ref type="bibr">(Li et al., 2025b;</ref><ref type="bibr" target="#b46">Qu et al., 2025;</ref><ref type="bibr" target="#b66">Yang et al., 2026;</ref><ref type="bibr" target="#b27">Li et al., 2026)</ref>. Retrieval-based approaches <ref type="bibr" target="#b10">(Du et al., 2024)</ref>, employ external hierarchical retrievers to map user queries to candidate tools. These retrievers are trained independently of the LLM agent and operate as standalone indexing systems, resulting in a two-stage pipeline in which the LLM does not directly optimize its internal representations for tool selection. Another line of research focuses on tool generation, including CRAFT <ref type="bibr" target="#b71">(Yuan et al., 2024)</ref>, ToolMaker <ref type="bibr" target="#b2">(Cai et al., 2023)</ref>, and CREATOR <ref type="bibr" target="#b43">(Qian et al., 2023)</ref>, which synthesize new tools or executable code when suitable tools are unavailable. While effective, these methods emphasize tool construction and often incur substantial execution, validation, and debugging overhead. In contrast, AutoTool focuses on the complementary challenge of tool selection by jointly aligning the LLM's internal representations with tool embeddings, enabling efficient and robust generalization to large and evolving toolsets.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E. Additional Experiments</head><p>E.1. AutoTool vs. Oracle Tool Assignment. To examine the effectiveness of AutoTool's dynamic tool selection abilities, we further conduct experiments to compare AutoTool with a ground-truth tool assignment baseline where the correct tool is directly provided before each invocation. As shown in Table <ref type="table" target="#tab_4">5</ref>, we find that AutoTool achieves performance highly competitive with this "oracle" setup, with only marginal differences across benchmarks (e.g., 49.3 vs. 49.8 on MMSearch and 44.3 vs. 43.7 on V-Math). This minimized gap demonstrates that AutoTool 's Phase II optimization enables agents to autonomously select tools nearly as effectively as ground-truth assignment, validating the robustness of explicit tool-selection training.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.2. Case Study on AutoTool</head><p>In Figure <ref type="figure" target="#fig_7">8</ref>, we present an example of AutoTool (Qwen3-8B) solving an image-based cryptarithmetic puzzle from V-Math.</p><p>The agent first invokes OCR to extract textual content from the input image, and then adaptively switches to the Code Interpreter to verify digit assignments and compute the final solution. This case study highlights how AutoTool enables dynamic tool selection for the agent model to seamlessly integrate visual perception with symbolic reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Case Study on V-Math</head><p>Input Prompt: You are given a problem and a set of tools. Solve the problem step by step by selecting the proper tools to use during your thinking.</p><p>Here is the name and usage instructions for the toolset, where you will select the appropriate tools to use. Tool 1: Code Interpreter (CI) ... Tool 2: OCR ... Tool 3: SearchAPI ... ... Now, given the input image &lt;problem.png&gt; about the cryptarithmetic puzzle, solve the problem and put the final answer into \boxed{}</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>AutoTool Response:</head><p>Okay, let's tackle this cryptarithmetic puzzle step by step. First, given the input image, I need to extract the information about the puzzle for later calculation.</p><p>&lt;select&gt; We need to extract the information from the input image and then reason programmatically about the cryptarithmetic problem. OCR is suitable because it converts the visual image into structured text for further automated reasoning. &lt;tool&gt;OCR&lt;/tool&gt; &lt;/select&gt; &lt;ocr&gt; {"name": "OCR", "action": "extract text", "input": "problem.png"} &lt;/ocr&gt; &lt;interpreter&gt; Extracted Text: Solve the following problem ... by the answer PICNIC. &lt;/interpreter&gt;</p><p>From the texts, each letter represents a unique digit. We need to find the number represented by PICNIC. First, since adding two 5-digit numbers results in a 6-digit number, the leading digit P must be 1 due to the maximum carryover. So, P = 1.</p><p>Next, we analyze the columns from right to left. The key steps involve checking carryovers and ensuring unique digits. Let's verify possible values for W and I based on the equation 2W + c4 = 10 + I. &lt;select&gt; We need to systematically check possible values for W and I based on mathematical constraints. This requires iterating through multiple possibilities and performing calculations. A code execution environment is ideal for this task. &lt;tool&gt;Code Interpreter (CI)&lt;/tool&gt; &lt;/select&gt; &lt;code&gt; possible_w_i=[] for c4 in [0,1]: for W in range(2,10): I=2 * W+c4-10 if 0&lt;=I&lt;=9 and I!=1: possible_w_i.append((W,I,c4)) print(possible_w_i)</p><p>&lt;/code&gt; &lt;interpreter&gt; [(5, 0, 0), (6, 2, 0), (7, 4, 0), (8, 6, 0), (9, 8, 0), (6, 3, 1), (7, 5, 1), (8, 7, 1), (9, 9, 1)] &lt;/interpreter&gt; From the output, valid (W, I) pairs are filtered. We then explore each case. After several attempts, we find a valid solution when W = 8, I = 6, c4 = 0, and other constraints align. Thus, WHITE is 83,642 and WATER is 85,427. Adding together, the PICNIC is 169,069. All digits are unique and satisfy the constraints. Thus, the answer is \boxed{169069}. </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 8 .</head><label>8</label><figDesc>Case Study of AutoTool on V-Math.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 5 .</head><label>5</label><figDesc>Comparison with a ground-truth tool assignment baseline where the correct tool is directly provided to the LLM agent before invocation (i.e., no requirements for explicit tool-selection actions).</figDesc><table><row><cell cols="3">Qwen2.5-VL-7B Pre-given (No Tool-Selection) AutoTool</cell></row><row><cell>AIME24</cell><cell>46.7</cell><cell>46.7</cell></row><row><cell>HotpotQA</cell><cell>35.2</cell><cell>33.2</cell></row><row><cell>2Wiki</cell><cell>38.1</cell><cell>36.5</cell></row><row><cell>MMSearch</cell><cell>49.8</cell><cell>49.3</cell></row><row><cell>V-Math</cell><cell>43.7</cell><cell>44.3</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Program synthesis with large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Odena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Le</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2108.07732</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2502.13923" />
+	</analytic>
+	<monogr>
+		<title level="m">-vl technical report</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Large language models as tool makers</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno>abs/2305.17126</idno>
+		<ptr target="https://arxiv.org/abs/2305.17126" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">ArXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">P D O</forename><surname>Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Brockman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Research: Learning to reason with search for llms via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">Z</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2503.19470" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Label ranking methods based on the plackett-luce model</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Hüllermeier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">J</forename><surname>Dembczynski</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 27th International Conference on Machine Learning (ICML-10)</title>
+		<meeting>the 27th International Conference on Machine Learning (ICML-10)</meeting>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="215" to="222" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Training verifiers to solve math word problems</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Nakano</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.14168</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Toolregistry: A protocol-agnostic tool management library for function-calling llms</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Ding</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.10593</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Image superresolution using deep convolutional networks</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">C</forename><surname>Loy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Tang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE transactions on pattern analysis and machine intelligence</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page" from="295" to="307" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">G</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.19849</idno>
+		<title level="m">Agentic reinforced policy optimization</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Anytool: Self-reflective, hierarchical agents for large-scale api calls</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.04253</idno>
+		<ptr target="https://arxiv.org/abs/2402.04253" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 41st International Conference on Machine Learning (ICML 2024</title>
+		<meeting>the 41st International Conference on Machine Learning (ICML 2024</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">235</biblScope>
+			<biblScope unit="page" from="6757" to="6775" />
+		</imprint>
+	</monogr>
+	<note type="report_type">ArXiv preprint</note>
+	<note>PMLR</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">A comprehensive survey of self-evolving ai agents: A new paradigm bridging foundation models and lifelong agentic systems</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Yi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2508.07407</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Retool: Reinforcement learning for strategic tool use in llms</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhong</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2504.11536" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">L</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">An</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.10978</idno>
+		<title level="m">Group-in-group policy optimization for llm agent training</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Word embedding based generalized language model for information retrieval</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ganguly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Roy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mitra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">J</forename><surname>Jones</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 38th international ACM SIGIR conference on research and development in information retrieval</title>
+		<meeting>the 38th international ACM SIGIR conference on research and development in information retrieval</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="795" to="798" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">A survey of self-evolving agents: On path to artificial super intelligence</title>
+		<author>
+			<persName><forename type="first">H.-A</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Hua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Juan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.21046</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Multi-modal agent tuning: Building a vlm-driven agent for efficient tool usage</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S.-C</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations (ICLR)</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note>b</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">D</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Bi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.12948</idno>
+		<title level="m">Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A.-K</forename><forename type="middle">D</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sugawara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Aizawa</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2011.01060</idno>
+		<title level="m">Constructing a multi-hop qa dataset for comprehensive evaluation of reasoning steps</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Visual sketchpad: Sketching as a visual chain of thought for multimodal language models</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Roth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ostendorf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Krishna</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="139348" to="139379" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hurst</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lerer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">P</forename><surname>Goucher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Perelman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ostrow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Welihinda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hayes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Radford</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.21276</idno>
+		<title level="m">Gpt-4o system card</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">N</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Solar-Lezama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Sen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Stoica</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Livecodebench</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.07974</idno>
+		<title level="m">Holistic and contamination free evaluation of large language models for code</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">D</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Song</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.12959</idno>
+		<title level="m">Benchmarking the potential of large models as multimodal search engines</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Search-r1: Training llms to reason and leverage search engines with reinforcement learning</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yoon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Arik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zamani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Han</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2503.09516" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Tptu-v2: Boosting task planning and tool usage of large language model-based agents in real-world systems</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Kong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ruan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.11315</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Lam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Repo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2506.09340</idno>
+		<title level="m">Replay-enhanced policy optimization</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Torl: Scaling tool-integrated rl</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2503.23383" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">In-the-flow agentic system optimization for effective planning and tool use</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Lu</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=Mf5AleTUVK" />
+	</analytic>
+	<monogr>
+		<title level="m">The Fourteenth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Grounding dino: Marrying dino with grounded pre-training for open-set object detection</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Su</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<publisher>Springer</publisher>
+			<biblScope unit="page" from="38" to="55" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Understanding r1-zero-like training: A critical perspective</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">S</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.20783</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">F</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C.-W</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Arpo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.16282</idno>
+		<title level="m">Endto-end policy optimization for gui agents with experience replay</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Individual choice behavior</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">D</forename><surname>Luce</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1959">1959</date>
+			<publisher>Wiley</publisher>
+			<biblScope unit="volume">4</biblScope>
+			<pubPlace>New York</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Agent rl scaling law: Agent rl with spontaneous code execution for mathematical problem solving</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Mai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.07773</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Masry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Thakkar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bajaj</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kartha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Hoque</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Joty</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chartgemma</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.04172</idno>
+		<title level="m">Visual instructiontuning for chart reasoning in the wild</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">From rest to mcp: An empirical study of api wrapping and automated server generation for llm agents</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mastouri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Ksontini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Barrak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Kessentini</surname></persName>
+		</author>
+		<ptr target="https://huggingface.co/datasets/math-ai/aime25" />
+		<imprint>
+			<date type="published" when="2025">2026. 2025</date>
+			<biblScope unit="page" from="2025" to="2025" />
+		</imprint>
+	</monogr>
+	<note>math ai. AIME 2025 dataset</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">Maxwell-Jia</forename></persName>
+		</author>
+		<ptr target="https://huggingface.co/datasets/Maxwell-Jia/AIME_2024" />
+		<title level="m">AIME 2024 dataset</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="2025" to="2025" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Distributed representations of words and phrases and their compositionality</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Mikolov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">S</forename><surname>Corrado</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dean</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="volume">26</biblScope>
+		</imprint>
+	</monogr>
+	<note>Advances in neural information processing systems</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<author>
+			<persName><forename type="first">R</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Saunders</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2112.09332</idno>
+		<title level="m">Browser-assisted question-answering with human feedback</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Gorilla: Large language model connected with massive apis</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">G</forename><surname>Patil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="126544" to="126565" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>You</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.07536</idno>
+		<title level="m">Lmm-r1: Empowering 3b lmms with strong reasoning abilities through two-stage rule-based rl</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">A dataset for multimodal question answering on scientific papers</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Pramanick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Chellappa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Venugopalan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Spiqa</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2407.09413" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Measuring and narrowing the compositionality gap in language models</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Schmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lewis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: EMNLP 2023</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="5687" to="5711" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Auto-regressive incontext demonstration selection</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>He</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=lp2EtO9A01" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Creator: Tool creation for disentangling abstract and concrete reasoning of large language models</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">R</forename><surname>Fung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename></persName>
+		</author>
+		<ptr target="https://aclanthology.org/2023.findings-emnlp.462/.EMNLPFindings2023" />
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: EMNLP 2023</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="462" to="477" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<author>
+			<persName><forename type="first">C</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">C</forename><surname>Acikgoz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hakkani-Tür</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Tur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Toolrl</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.13958</idno>
+		<title level="m">Reward is all tool learning needs</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Facilitating large language models to master 16000+ real-world APIs</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Gerstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Toolllm</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=dHng2O0Jjr" />
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Tool learning with large language models: a survey</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wen</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s11704-024-40678-2</idno>
+		<ptr target="http://dx.doi.org/10.1007/s11704-024-40678-2" />
+	</analytic>
+	<monogr>
+		<title level="j">Frontiers of Computer Science</title>
+		<idno type="ISSN">2095-2236</idno>
+		<imprint>
+			<biblScope unit="volume">19</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<date type="published" when="2025-01">January 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Direct preference optimization: Your language model is secretly a reward model</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rafailov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ermon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="53728" to="53741" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">GPQA: A graduate-level google-proof q&amp;a benchmark</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Rein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">L</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">C</forename><surname>Stickland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Petty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">Y</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dirani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Michael</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">R</forename><surname>Bowman</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=Ti67584b98" />
+	</analytic>
+	<monogr>
+		<title level="m">First Conference on Language Modeling</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Toolformer: Language models can teach themselves to use tools</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Scialom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="68539" to="68551" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Wolski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Klimov</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1707.06347" />
+		<title level="m">Proximal policy optimization algorithms</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">L</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2508.20722</idno>
+		<title level="m">rstar2agent: Agentic reasoning technical report</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.03300</idno>
+		<title level="m">Deepseekmath: Pushing the limits of mathematical reasoning in open language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Solving ai tasks with chatgpt and its friends in hugging face</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hugginggpt</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="38154" to="38180" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hybridflow</surname></persName>
+		</author>
+		<idno>arXiv: 2409</idno>
+		<title level="m">A flexible and efficient rlhf framework</title>
+		<imprint>
+			<date type="published" when="2024">19256. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<title level="m" type="main">Agentic reasoning and tool integration for llms via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Magazine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Pandya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Nambi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.01441</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Yao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.06624</idno>
+		<title level="m">Connecting large language models with real-world restful apis</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<monogr>
+		<title level="m" type="main">Openthinkimg: Learning to think with images via visual tool reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Qu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.08617</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<monogr>
+		<author>
+			<persName><forename type="first">K</forename><surname>Team</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.20534</idno>
+		<title level="m">Open agentic intelligence</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<monogr>
+		<title level="m" type="main">QwQ-32B: Embracing the power of reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Team</surname></persName>
+		</author>
+		<ptr target="https://qwenlm.github.io/blog/qwq-32b/" />
+		<imprint>
+			<date type="published" when="2025-03">March 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<analytic>
+		<title level="a" type="main">Mllm-tool: A multimodal large language model for tool agent learning</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2025 IEEE/CVF Winter Conference on Applications of Computer Vision (WACV)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<biblScope unit="page" from="6678" to="6687" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<monogr>
+		<title level="m" type="main">Unified tool retrieval and calling via generation</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Baldwin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Toolgen</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2410.03439" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<monogr>
+		<title level="m" type="main">Ragen: Understanding self-evolution in llm agents via multi-turn reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">N</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.20073</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<analytic>
+		<title level="a" type="main">Guided visual search as a core mechanism in multimodal llms</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><surname>V?</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="13084" to="13094" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lv</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.09388</idno>
+		<title level="m">Qwen3 technical report</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<analytic>
+		<title level="a" type="main">Llm-medqa: Enhancing medical question answering through case studies in large language models</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C.-S</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2025 International Joint Conference on Neural Networks (IJCNN)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="1" to="8" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b66">
+	<monogr>
+		<author>
+			<persName><forename type="first">X</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Diao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Tong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">J</forename><surname>Buehler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zou</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2604.25917" />
+		<title level="m">Recursive multi-agent systems</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b67">
+	<monogr>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">W</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hotpotqa</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1809.09600</idno>
+		<title level="m">A dataset for diverse, explainable multi-hop question answering</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b68">
+	<analytic>
+		<title level="a" type="main">React: Synergizing reasoning and acting in language models</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations (ICLR)</title>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b69">
+	<monogr>
+		<title level="m" type="main">Dapo: An open-source llm reinforcement learning system at scale</title>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.14476</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b70">
+	<monogr>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2510.11701</idno>
+		<title level="m">Demystifying reinforcement learning in agentic reasoning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b71">
+	<analytic>
+		<title level="a" type="main">Customizing llms by creating and retrieving from specialized toolsets</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">R</forename><surname>Fung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Craft</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.17428</idno>
+		<ptr target="https://arxiv.org/abs/2309.17428" />
+	</analytic>
+	<monogr>
+		<title level="m">12th International Conference on Learning Representations (ICLR 2024)</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">ArXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b72">
+	<monogr>
+		<author>
+			<persName><forename type="first">X</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mammoth</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.05653</idno>
+		<title level="m">Building math generalist models through hybrid instruction tuning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b73">
+	<monogr>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gvpo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.19599</idno>
+		<title level="m">Group variance policy optimization for large language model post-training</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b74">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">C</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>-C</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.04371</idno>
+		<title level="m">Cumulative reasoning with large language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b75">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Ye</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.20673</idno>
+		<title level="m">Geometric-mean policy optimization</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b76">
+	<monogr>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X.-H</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Men</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.18071</idno>
+		<title level="m">Group sequence policy optimization</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b77">
+	<monogr>
+		<title level="m" type="main">Judging llm-as-a-judge with mt-bench and chatbot arena. Advances in neural information processing systems</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-L</forename><surname>Chiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Xing</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="46595" to="46623" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b78">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Llamafactory</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.13372</idno>
+		<title level="m">Unified efficient fine-tuning of 100+ language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b79">
+	<analytic>
+		<title level="a" type="main">Transformer copilot: Learning from the mistake log in LLM fine-tuning</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ban</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>He</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=MRvxlTlkNQ" />
+	</analytic>
+	<monogr>
+		<title level="m">The Thirty-ninth Annual Conference on Neural Information Processing Systems, 2026a</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b80">
+	<analytic>
+		<title level="a" type="main">TaTToo: Toolgrounded thinking PRM for test-time scaling in tabular reasoning</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Roy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">K</forename><surname>Verma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wipf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Negi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>He</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=zc1ezBrr5m" />
+	</analytic>
+	<monogr>
+		<title level="m">The Fourteenth International Conference on Learning Representations, 2026b</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b81">
+	<analytic>
+		<title level="a" type="main">Reasonflux-PRM: Trajectory-aware PRMs for long chain-of-thought reasoning in LLMs</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wang</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=f3sZjkQbv2" />
+	</analytic>
+	<monogr>
+		<title level="m">The Thirty-ninth Annual Conference on Neural Information Processing Systems, 2026c</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

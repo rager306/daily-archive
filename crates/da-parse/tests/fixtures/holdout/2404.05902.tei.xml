@@ -1,0 +1,1076 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">WILBUR: Adaptive In-Context Learning for Robust and Accurate Web Agents</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-04-08">8 Apr 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Michael</forename><surname>Lutz</surname></persName>
+							<email>michaeljlutz@berkeley.edu</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Eletrical Engineering and Computer Science</orgName>
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Berkeley Berkeley</settlement>
+									<region>CA</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Arth</forename><surname>Bohra</surname></persName>
+							<email>arthbohra@berkeley.edu</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Eletrical Engineering and Computer Science</orgName>
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Berkeley Berkeley</settlement>
+									<region>CA</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Manvel</forename><surname>Saroyan</surname></persName>
+							<email>manvel@bardeen.ai</email>
+							<affiliation key="aff1">
+								<orgName type="institution">Bardeen, Inc. San</orgName>
+								<address>
+									<settlement>Francisco</settlement>
+									<region>CA</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Artem</forename><surname>Harutyunyan</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Bardeen, Inc. San</orgName>
+								<address>
+									<settlement>Francisco</settlement>
+									<region>CA</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Giovanni</forename><surname>Campagna</surname></persName>
+							<email>giovanni@bardeen.ai</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Eletrical Engineering and Computer Science</orgName>
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Berkeley Berkeley</settlement>
+									<region>CA</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">WILBUR: Adaptive In-Context Learning for Robust and Accurate Web Agents</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-04-08">8 Apr 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">E388D49055AF5F83AFC733BB38F0F230</idno>
+					<idno type="arXiv">arXiv:2404.05902v1[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:40+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Current Goal &amp; Step Demonstration Retriever +</term>
+					<term>-Goal Specific Demonstrations +</term>
+					<term>-Website Specific Demonstrations</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>In the realm of web agent research, achieving both generalization and accuracy remains a challenging problem. Due to high variance in website structure, existing approaches often fail. Moreover, existing fine-tuning and in-context learning techniques fail to generalize across multiple websites. We introduce WILBUR, an approach that uses a differentiable ranking model and a novel instruction synthesis technique to optimally populate a black-box large language model's prompt with task demonstrations from previous runs. To maximize end-to-end success rates, we also propose an intelligent backtracking mechanism that learns and recovers from its mistakes. Finally, we show that our ranking model can be trained on data from a generative auto-curriculum which samples representative goals from an LLM, runs the agent, and automatically evaluates it, with no manual annotation. WILBUR achieves state-of-the-art results on the WebVoyager benchmark, beating text-only models by 8% overall, and up to 36% on certain websites. On the same benchmark, WILBUR is within 5% of a strong multi-modal model despite only receiving textual inputs, and further analysis reveals a substantial number of failures are due to engineering challenges of operating the web.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>* Equal contribution. Work done while at Bardeen.</head></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>The rise of large language models has led to various attempts at creating intelligent agents that interact with the web through a browser, also known as web agents <ref type="bibr" target="#b6">(Gur et al., 2022;</ref><ref type="bibr" target="#b11">Kagaya et al., 2024;</ref><ref type="bibr" target="#b12">Kim et al., 2024)</ref>. By encoding the Document Object Model (DOM) and optionally a screenshot of the page in a multimodal fashion, state-of-the-art web agents have obtained noteworthy success rates on various tasks on the web <ref type="bibr" target="#b9">(He et al., 2024;</ref><ref type="bibr">Zheng et al., 2024)</ref>. Yet, the success rate of even the best web agents is a far cry from that of experienced people familiar with the websites and tasks at hand.</p><p>We hypothesize that the disparity in success rate is not only due to the reasoning limitations of the underlying LLM, but also due to the need to learn how specific websites works. Even for a person, it is not enough to know how to operate the web: instead, faced with a never-seen-before website, one needs to explore, try different approaches, and adjust. Only after succeeding at the task once (or a few times), one can perform the task without hitting dead ends or clicking the wrong link. At the same time, there are more than a billion websites in the world <ref type="bibr" target="#b8">(Haan, 2023)</ref>. It is implausible that any LLM can memorize all of them just from pretraining, thus any zero-shot approach is likely to fail <ref type="bibr" target="#b12">(Kim et al., 2024)</ref>.</p><p>Synthesizer (LLM) Goal Conditioned Synthesis Website Conditioned Synthesis Knowledge Bank (Memory) Actor (LLM) save_link("shoe 1", selector) click(selector) press_enter(selector) Verifier (LLM) Next Step 🕷🕸Wilbur Backtrack?, Continue?, Finish?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Demonstration Ranker</head><p>Website Demonstrations</p><p>Figure <ref type="figure">1</ref>: The WILBUR Agent, which utilizes retrieval, synthesis, action, and verification steps to accomplish tasks on the web.</p><p>To address this challenge and improve the generality of web agents, we propose WILBUR, an agent with two novel capabilities (Fig. <ref type="figure">1</ref>):</p><p>• explore, reflect, and backtrack: faced with a novel website, WILBUR proceeds by executing an action sampled from an LLM. After observing the new page state, it queries a reflection LM to verify that the action contributed progress toward the goal. If verification fails, WILBUR dynamically backtracks to a previous successful state, while storing the failure in the model's context for all future steps.</p><p>• retrieve demonstrations from a scalable knowledge bank: We include both goal-conditioned demonstrations, which teach WILBUR how to perform a similar task on a potentially unseen website, and website-conditioned demonstrations, which teach WILBUR how to act on a similar web page, regardless of the overall task. These two sources of knowledge are complementary and help WILBUR generalize.</p><p>As the limited LLM context window can only fit a small number of demonstrations, we train a dedicated demonstration ranking model to select the most helpful ones. This model is trained to predict whether the actions will lead to a successful execution or not and optimally populates a model's context. Additionally, following <ref type="bibr" target="#b0">Bohra et al. (2023)</ref>, we propose to summarize a large sample of successful and unsuccessful actions into concise instructions. This combination of explicit examples and summarized instructions allows the model to see a few details while also gather insight from many runs, including unsuccessful ones.</p><p>Finally, in order to quickly acquire knowledge of new websites and new tasks, we propose an autocurriculum which generates plausible goals to populate demonstration banks <ref type="bibr" target="#b2">(Clark et al., 2003;</ref><ref type="bibr" target="#b16">McClosky et al., 2006;</ref><ref type="bibr" target="#b22">Wang et al., 2023)</ref>. Applying an LLM-based automatic scoring step to evaluate an agent's execution, our approach quickly populates a dataset of trajectories, both successful and unsuccessful. These executions can be fed back into the agent in the future, through task demonstrations and instruction synthesis, to further improve success rate.</p><p>To evaluate our approach, we have WILBUR on the WebVoyager <ref type="bibr" target="#b9">(He et al., 2024)</ref> benchmark, where we achieve a new text-only state-of-the-art result of 53%, 8% higher than the previous state of the art, and within 5% of a strong multimodal model. Compared to a strong baseline with retrying but no backtracking, using backtracking and loop detection improves by 6%. Furthermore, our approach of adaptive in-context-learning and autocurriculum leads to an additional 12% improvement, without any annotated data, which strongly shows the importance of learning the websites where the agent is applied.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.1">Contributions</head><p>The contributions of this paper are as follows:</p><p>• We propose the first web agent that is able to recover from delayed mistakes, by modeling the web agent task as graph exploration over the web and adding the ability to navigate back to a previous state in the graph.</p><p>• To reduce the number of backtracks and improve accuracy, we propose learning in-context from previous executions of the agent, querying on similar pages and goals. These executions are both selected as task demonstrations using a novel trained model, and summarized into succinct instructions, allowing a large number of executions to be used while limiting the prompt size.</p><p>• To bootstrap the agent on new websites and task, we are the first to apply an autocurriculum strategy with an LLM scoring step to the web agent task, allowing us to obtain high quality training data without human feedback.</p><p>• We evaluated our approach end-to-end on the WebVoyager benchmark, and we find our agent outperforms the zero-shot baseline by 18%, and the text-only state of the art by 8%.</p><p>2 Related Work</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Web Agents</head><p>The field of web agents has recently seen an increase in research interest, due to the general availability of powerful LLMs. These agents are tested on a variety of benchmarks, some highly specialized <ref type="bibr">(Yao et al., 2022a)</ref> and others with general goals on a diverse set of websites <ref type="bibr" target="#b19">(Shi et al., 2017;</ref><ref type="bibr" target="#b14">Liu et al., 2018;</ref><ref type="bibr" target="#b9">He et al., 2024;</ref><ref type="bibr" target="#b3">Deng et al., 2023)</ref>.</p><p>Common state of the art approaches for web agents include splitting the agent's work amongst an actor, a retriever, a planner, and a verifier or critique step <ref type="bibr" target="#b6">(Gur et al., 2022;</ref><ref type="bibr" target="#b11">Kagaya et al., 2024;</ref><ref type="bibr" target="#b9">He et al., 2024)</ref>. Previous work also proposed using a code-generation step, with LLM feedback to critique the generated code <ref type="bibr" target="#b7">(Gur et al., 2023;</ref><ref type="bibr" target="#b21">Sun et al., 2024)</ref>.</p><p>Critically, these works only include the ability to retry failures, and do not backtrack to previous steps, so they cannot recover mistakes that are not immediately apparent. <ref type="bibr" target="#b15">Ma et al. (2023)</ref> recognized the need for backtracking, but used a fixed state-space specific for the WebShop benchmark, instead of operating directly on the agent's trajectory on the web.</p><p>Due to context window limitations, many previous works did not use few-shot task demonstrations, preferring zero-shot prompting techniques such as ReAct <ref type="bibr">(Yao et al., 2022b)</ref> or fine-tuning dedicated models <ref type="bibr" target="#b4">(Furuta et al., 2023;</ref><ref type="bibr" target="#b23">Xu et al., 2021)</ref>.</p><p>Sridhar et al. (2023) and Deng et al. (2023) proposed summarizing the current web page to reduce the prompt size, but did not include previous demonstrations in the summary. Kim et al. (2024) included task demonstrations in the LLM prompt, but only used few positive experiences related to the specific subtask. WILBUR is the first agent to summarize positive and negative task demonstrations, and separate both website-conditioned and goal-conditioned examples.</p><p>In-Context and Few-shot Learning Beyond web agents, in-context learning, also known as few-shot learning, has been applied to a number of tasks <ref type="bibr" target="#b1">(Brown et al., 2020;</ref><ref type="bibr" target="#b5">Gao et al., 2021;</ref><ref type="bibr" target="#b10">Hendrycks et al., 2021;</ref><ref type="bibr" target="#b17">Min et al., 2022)</ref>. In ICL, demonstrations taken from a training set are included as examples in the to the prompt of an LLM, optionally with explanations <ref type="bibr" target="#b13">(Lampinen et al., 2022)</ref>. Raw task demonstrations are limited by the size of the context window. Previous work by <ref type="bibr" target="#b0">Bohra et al. (2023)</ref> proposed summarizing training examples into succinct instructions. They only evaluated on classification, and did not use negative examples. Additionally, existing approaches either use a fixed set of few-shot training examples, or naively include the closest examples by embedding similarity. We propose instead to use a dedicated model to predict the suitability of each specific example.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">The WILBUR Agent</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Problem Statement</head><p>The web agent challenge can be modeled under a Partially Observable Markov Decision Process (POMDP). The agent receives a natural language goal g which requires a multi-step execution where each action a ∈ A modifies the web page (clicking, typing, etc.) and/or extracts textual information for the user.</p><p>The agent's state space S represents a combination of previously extracted text and the website environment's true state, itself comprised of current DOM, network requests, state of the website's backend, etc. Because the backend is not accessible to a web agent, the agent's observation space O is limited to all visible DOM elements as well as the text extracted by the agent so far. Specifically, we treat o ∈ O as follows:</p><formula xml:id="formula_0">o = (URL, DOM, Extracted Text)</formula><p>In o, the DOM is formatted as text. The specific format is described in Appendix A.</p><p>Provided the current o t and the goal g, the agent takes an action according to a policy π:</p><formula xml:id="formula_1">π(o t , g) → a t , where o ∈ O, a ∈ A resulting in a trajectory τ = {(o 0 , a 0 ), ..., (o t , a t )} at timestep t.</formula><p>When the agent finishes execution, the reward r can be calculated deterministically by a benchmark or estimated by a self-evaluation module r(τ, g, answer) ∈ [0, 1] run at the end of an execution, where answer is the textual output of the agent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">WILBUR During Inference Time</head><p>Given the goal and the current state of the page, the WILBUR repeatedly executes actions according to policy π until the task is predicted to have finished or until backtracking is necessary. The formal algorithm is given in Algorithm 1, and an example is shown in Fig. <ref type="figure" target="#fig_0">2</ref>.</p><p>At each step of the execution, WILBUR makes use of the following sub-modules:</p><p>1. the demonstration retriever queries a demonstration bank of full-length trajectories D τ and finds the relevant ones D τ ⊂ D τ ; individual action demonstrations D a are also queried from D a ; the retriever obtains both positive (successful) demonstrations D + and negative (unsuccessful) demonstrations D -.</p><p>2. the knowledge synthesizer summarizes the demonstrations into a description of learnings l; D τ and D a are summarized separately.</p><p>3. the actor references D τ , D a , and l to predict an action a, given the current state o, next step plan p form previous step, and feedback φ if returning from a backtrack.</p><p>4. the executor performs action a on the website and obtains the new observable state o ′ as well as execution feedback φ.</p><p>5. the reflection module compares o and o ′ before determining whether to backtrack, continue, or finish; if backtrack → update φ; if continue → plan next step p' 6. at the end of an execution, the answer module produces the textual response required by the goal using the final observable state o, and agent's trajectory τ</p><p>In the rest of this section, we describe each WILBUR module in detail.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Demonstration Retrieval</head><p>The goal of the demonstration retriever is to identify previous relevant trajectories and actions to use as guidance. Full-length trajectories provide information relevant to planning, while action demonstrations help the actor correctly interact with website elements. Hence, we store two types of demonstration banks: a bank D τ of entire trajectories and a bank D a of isolated actions relevant to the current step action plan.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Algorithm 1 WILBUR agent loop</head><p>Require: goal g, initial state o 1:</p><formula xml:id="formula_2">D + g , D - g ← RetrieveForGoal(D τ , g) 2: l g ← SynthesizeForGoal(D + τ , D - τ , g) 3: τ ← ∅ 4: φ ← ∅ 5: p ← g 6: done ← CONTINUE 7: while done ̸ = FINISH do 8: D + a , D - a ← RetrieveForAction(D a , p) 9: l a ← SynthesizeForAction(D + a , D - a , g, o) 10: a ← Actor(o, τ, φ, D + a , l a , l g ) 11: o ′ , φ ′ ← Execute(a) 12: τ ′ ← τ ∪ {(a, o ′ )} 13: done, p, φ ′ ← Verify(o, o ′ , τ ′ , φ ′ ) 14: φ ← φ ∪ φ</formula><p>′ 15: if done = CONTINUE then 16: o ← o ′ 17: τ ← τ ′ 18: else if done = BACKTRACK then 19: o b , τ, p ← Previous(τ) 20: o ← Revert(o b ) 21: end if 22: end while 23: return (τ, Answer(o, τ, g)) /home 🤖type("books", 2) 🕵Continue 🤖click(7) Goal: Find me a hardcover copy of Charlotte's Web /item_3 🕵backtrack 💡"not hardcover" Answer: I found you a hard-copy book of Charlotte's Web! /results... 🕵Continue 🤖click(3) 🤖click(5) /item_5 🕵continue 🤖save_link(name, 15) 🕵continue 🤖save_text(price, 34) 🕵continue 🤖save_text(cover, 35) 🕵finish WILBUR queries D τ with the goal g and queries D a with the current step p, using cosine similarity between an embedding of the query and an embedding of the trajectory or action in the bank. The k g goal-conditioned trajectories D g are then split into D + g (successful) and D - g (unsuccessful) demonstrations. We include negative examples to help WILBUR avoid previously discovered pitfalls. For example, through negative goal-conditioned trajectory demonstrations, WILBUR can learn how specific steps can lead to downstream failure of tasks. Similarly, showing the agent negative website-conditioned tasks teaches it how to avoid mistakes given the specific nuances of certain webpages (e.g. saving the wrong text, clicking the wrong element).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Action Demonstration Reranking</head><p>In order to have action demonstrations scale across multiple websites and types of pages (e.g. search pages, documentation, etc.), we must also factor in DOM similarity. Additionally, the quality of positive action demonstrations strongly impacts performance, and simple cosine similarity is not sufficient to determine whether a demonstration will actively help the actor. While a demonstration might be similar, there may exist slight differences in respective DOMs that lead the actor astray.</p><p>Hence, after retrieving the top k a action demonstrations d ∈ D a , we re-rank them:</p><formula xml:id="formula_3">⃗ h o d , ⃗ h p d , ⃗ h a d , ⃗ h p , ⃗ h o = Embedding(o d , p d , a d , p, o) sim d = α 1 ( ⃗ h T o d ⃗ h o ) + α 2 ( ⃗ h T p d ⃗ h p ) score d = sim d × MLP( ⃗ h o d ∥ ⃗ h p d ∥ ⃗ h a d ∥ ⃗ h o ∥ ⃗ h p ) d + ∼ Softmax(score d∈D a )</formula><p>where where α 1 and α 2 are hyperparameters. The ranking model is an MLP that encodes the embeddings of the demonstrations (observation, plan, action) as well as the current observation and plan, and it is trained to predict whether a demonstration leads to a successful execution or not, as a 0-1 score. After computing the score of each demonstrations and normalizing with softmax, we then sample k + a successful executions to include in the actor's context.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Synthesizing Demonstrations</head><p>We wish to retrieve a large space of relevant demonstrations, so the actor has access to a diverse set of previous experiences. Yet, we cannot include the raw k demonstrations in the actor's prompt due to context window limitations. To overcome this, WILBUR calls a synthesizer LLM to distill the essence of multiple demonstrations into actionable insights. This guides the actor in performing the next action by highlighting common patterns, strategies, or pitfalls identified across the demonstrations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Action Prediction and Execution</head><p>Given the goal g, k ′ &lt; k raw demonstrations, the synthesized learnings l, and the current observable state of the webpage o, the actor predicts:</p><formula xml:id="formula_4">a = π(o, g) = Actor(o, τ, φ, D + a , l a , l g )</formula><p>The actor is implemented as an LLM which produces executable code in a domain-specific language optimized for web actions. The DSL also includes operations to save content from the page in the state. The full definition of the agent DSL is given in Appendix B. If the actor does not produce valid DSL (according to its syntax or semantics), it is prompted again to attempt to produce a different a, adding the DSL compilation feedback to the context.</p><p>The DSL is executed by an interpreter in the web browser. If execution fails, for example because the selector does not match an interactable element on the page, the whole step is marked as failed, new feedback φ is computed, and the agent backtracks. After execution, the new observed state o ′ is computed based on the new URL and new content of the page.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reflection and Backtracking</head><p>The purpose of the reflection LM is to assess the effectiveness of actions taken by WILBUR. After the actor executes an action, resulting in a new observation o ′ , the reflector checks whether the action has reasonably completed the planned step. It takes into consideration the previous observed state o, new observed state o ′ , the action a, the plan p, and the current goal to make its judgment:</p><formula xml:id="formula_5">v, φ, p ′ = Reflect(o, o ′ , a, p, g)</formula><p>where v is a ternary verdict:</p><p>• FINISH: the current goal was completed successfully and the agent is done • CONTINUE: proceed by completing planned step p ′ next • BACKTRACK: backtrack and try an alternative action with feedback φ</p><p>The reflector uses both a rule-based comparison algorithm that checks for differences between o and o ′ , and an LLM to compute the verdict. Qualitatively, we observe that incorrect executions often result in no change in the DOM, for example because the agent tries to click on a button that is disabled because a form needs to be filled first. Hence, the rule-based comparison ensures that execution performed had the desired effect on the page. The additional reflection step then checks that the new state of the page corresponds to the expected state according to the plan.</p><p>If the agent backtracks, it returns to the most recent observation o prev that is possible to return to. Because the backend is real and not simulated, not all state changes can be reverted. In the current implementation, WILBUR returns to the most recent state that corresponded to a navigation (change in page URL). The new state is applied by that refreshing or navigating to that URL, which resets the DOM on the page.</p><p>Overall, the reflector helps in ensuring WILBUR remains on the most promising path towards the goal at every step by preventing wasted efforts on ineffective actions.</p><p>Answering Model Once WILBUR finishes the execution, it leverages a final LLM call to deliver a human-readable answer as a response. Given the goal, execution history, and extracted text, it produces a summary of WILBUR's trajectory and addresses the initial goal.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Learning websites with WILBUR</head><p>In order to populate WILBUR's demonstration banks and train the knowledge model, we leverage a multi-step auto-curriculum to collect reference trajectories (Algorithm 2):</p><p>1. An auto-curriculum is run on a batch of websites and record predicted end-to-end success using an execution evaluation LM.</p><p>2. A more challenging goal-generation process is run conditioned on initial goals and utilizing task and goal demonstrations from trajectories recorded in the first step.</p><p>3. We train our knowledge model to predict success likelihood of actions in the followup run which reference demonstrations in the first run.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Autocurriculum Goal Generation</head><p>In order to model realistic use-cases and goals on the web, we model the goal generation process as a function of a website's DOM representation:</p><formula xml:id="formula_6">G = GenerateGoals(w)</formula><p>where G = {g 1 , g 2 , ..., g n } is a batch of goals that are reasonably achievable given the starting state of a website, sampled from an LLM. We instruct the LLM to produce information extraction and DOM interaction goals in approximately equal proportion.</p><p>During the second phase of the auto-curriculum, we condition on previously generated goals in order to develop diverse and more challenging follow-up goals G ′ :</p><formula xml:id="formula_7">G ′ = GenerateGoals(G, w)</formula><p>Self-Evaluation In order to evaluate an agent's execution on a goal from the autocurriculum, we model self-evaluation r ∈ [0, 1] as a function of the agent's execution trajectory τ and returned text answer. r is predicted by an LLM which evaluates the entire execution trajectory with regards to the goal's requirements.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Knowledge Model Training</head><p>The first run of the auto-curriculum generates demonstrations queried during the second run of the auto-curriculum. As such, the follow-up run generates training data for the knowledge model. We train the knowledge model to predict action success v a as estimated in the reflection step, using binary cross-entropy loss.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Evaluation</head><p>We implemented WILBUR as a browser extension in a commercial web automation platform. In this section, we evaluate it on the WebVoyager benchmark <ref type="bibr" target="#b9">(He et al., 2024)</ref>. For reproducibility, upon publication, we will release detailed evaluation results, as well as the auto-curriculum training data.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Experimental Setup</head><p>Benchmark WebVoyager is a benchmark of 643 goals, divided across 15 diverse real websites. Tasks include navigation, information retrieval, transactions, general questionanswering. The tasks are performed on the actual websites, not on simulators or sandbox environments. The score is obtained at the end of the task from automatic evaluation by GPT4V (OpenAI, 2023), which uses the screenshot of the page at the end of the task. Note though that WILBUR is a text-only model and does not use screenshots to predict actions.</p><p>We chose WebVoyager because it uses real websites and, unlike other benchmarks, the score only measures task success rate. Agents are not penalized for following different trajectories than the reference one, as long as they complete the task and obtain the right answer.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Ablation Study</head><p>To further study the effect of the different components of our methodology, we perform an ablation study. We compare WILBUR against the following baselines: • Zero-shot: a baseline with no backtracking capabilities and no task demonstrations.</p><p>• + Backtracking: a zero-shot agent with the ability to verify and backtrack.</p><p>• + Demonstrations: the agent is additionally prompted with positive-only task demonstrations, obtained from the auto-curriculum training data by embedding similarity with no dedicated model.</p><p>• + Synthesis: in addition to positive task demonstrations, we synthesize instructions from positive and negative demonstrations.</p><p>Hyperparameters For our experiments, we use OpenAI GPT-4 Turbo (OpenAI, 2023) (gpt-4-0125-preview) as the underlying LLM. We set the temperature to 0 for all calls, except for the actor LLM during autocurriculum, which has a temperature of 0.4. We use OpenAI's text-embedding-3-large as the embedding model, compressed down to a dimension of (1536, 1) for vector storage. For every goal, we retrieve 20 goal-conditioned demonstrations by cosinesimilarity, of which we use 2 negative and 3 positive for instruction synthesis. Similarly for every execution step, we retrieve 20 website-conditioned demonstrations by cosime-similar, from which we select 5 positive to include in the prompt, and we use 5 positive and 5 negative examples for instruction synthesis.</p><p>For the knowledge model, we use a three-layer fully-connected MLP, using a ReLU nonlinearity between hidden layers and a sigmoid at the end. The input concatenates embedding vectors of demonstration DOM, demonstration plan, demonstration action, current DOM, and current plan for a total size of 7680. The intermediate layers have hidden size 200.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Autocurriculum Training</head><p>We sample 254 goals during the initial phase of the autocurriculum across the websites used in WebVoyager. Of these, 72% were marked successful during the self-evaluation phase. Overall, the knowledge bank includes 183 goals and 634 action steps across all websites.</p><p>To train the knowledge model, we record total action steps across the follow-up goal executions. Of all actions, approximately 61% were marked as as successful during the autocurriculum. We split the action step demonstrations into 4319 demonstrations for training and 1080 for evaluation. On the held-out set, the knowledge model achieves an accuracy of 93.1% and F1 score of 0.942 after training for 8 epochs with batch-size 32 and learning rate 0.001.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Results</head><p>Results of running the agent are shown in</p><p>Table 1. On this benchmark, WILBUR outperforms the state-of-the-art text-only model by He et al. (2024) by 8%. Specifically, we observe that WILBUR outperforms the text-only state of the art on most websites except GitHub and the Google websites. It improves substantially on the very hard Booking.com case, from around 2-4% to 39%. WILBUR is also within 5% of the multimodal model, which has access to screenshots during execution, and outperforms it on Allrecipes, ArXiv, Booking.com, ESPN, Cambridge Dictionary, BBC News, and Wolfram.</p><p>Comparing against the ablation baselines, we observe that the naive zero-shot baseline is significantly worse than the state of the art, but adding backtracking is enough to come close to the state-of-the-art result. Adding task demonstrations improves to 50%, showing the value of recalling previous experiences from auto-curriculum. Finally, the use of the fine-tuned demonstration retrieval model further improves by 3% overall, highlighting the importance of selecting high-quality task demonstrations. We additionally discuss the number of LLM calls of the different ablations in Appendix D.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Error analysis</head><p>Further analyzing the cases where WILBUR does not succeed, we observe a few key reasons. These reasons suggest that many of the failures of web agents in practice are engineeringrelated, not caused by the model, which should inform future research in web agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Inability to interact with complex widgets</head><p>A large source of errors for WILBUR was its inability to interact with date selectors, which are used by Google Flights and Booking.com. In these situations, the model tends to get stuck trying to operate these widgets, leading to its eventual failure. Future work should explore creating new built-in functions for the agent to interact with common complex widgets.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Inability to performing actions</head><p>We find that in many cases, even if the agent predicts the correct action, it is unable to perform it on the page. For example, we see issues trying to successfully emulate the Enter key. Additionally, our agent is built to operate only on main DOM of the page, and cannot act inside frames or inside the shadow DOM used by web components. We find this affects the success rates on Apple and GitHub. Future work should investigate a DSL and DOM representation that successfully captures this aspect of web technology, and an agent architecture, Anti-scraping techniques A lot of websites have anti-scraping techniques that detect and block automated agents. This is noticeable on ArXiv, where the agent can be rate-limited and be presented with an empty page. As a result, Wilbur is unable to get past the first step of the execution and fails. This is a well-known failure mode of automated web agents, with known workarounds such as using proxies and artificially slowing down execution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion and Future Work</head><p>We have presented WILBUR, a novel web agent approach that can leverage its own experiences, both successes and failures, in performing the tasks, and automatically improve over time. WILBUR is the first agent that can backtrack to a previous state during execution. This leads to a significantly higher success rate because mistakes become non-fatal even if they are not detected immediately. We also propose a novel in-context-learning approach that combines high-quality positive task demonstrations selected by a fine-tuned model with a large set of positive and negative task demonstrations summarized in succinct instructions.</p><p>With our approach, WILBUR achieves a new text-only state-of-the-art result of 53% on the WebVoyager benchmark, while using the same underlying LLM, showing that there is significant space for improving web agents with better prompting, independently of the base model in use. Our approach is within 5% of the multimodal state of the art, and in fact surpasses it on Apple, ArXiv, Cambridge Dictionary, BBC News, and Wolfram Alpha, showing that text-only models can be effective at navigating the web, at a fraction of the cost of multi-modal models.</p><p>Our error analysis suggests that a large class of errors is in fact caused by the engineering of the agent, and not a failure of the model. These practical issues are a result of the complexity of the web, but we expect they will eventually be overcome, leading to high-accuracy, general-purpose web agents.</p><p>Additionally, while WILBUR can learn from executing on similar pages, it still needs to perform expensive model predictions at inference time. In principle, because WILBUR's DSL uses CSS selectors, which generalize across pages with identical structure and different content, successful actions could also be used by future executions without regenerating them. Future work should explore how to directly reuse previously generated skills, both simple and complex, ranging from basic search to filtering and exploring.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A DOM Formatting</head><p>To represent the DOM, we include all leaves of interactive and structural elements (headings, links, paragraphs). We do not include formatting elements. For each element, we include element index, tag name, accessiblity properties (role, alt, ARIA label), content, and links. An example snippet of formatted DOM is included in Fig. <ref type="figure">3</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B DSL Definition</head><p>The WILBUR actor predicts code in a DSL syntactically similar to Python. The DSL does not support control constructs, and only supports assignments and function call statements. The agent can predict more than one function call in one step, and they are executed sequentially. The agent predicts element references by numeric index, which are converted to CSS selectors prior to execution.</p><p>The DSL has access to the following builtin functions:</p><p>save text(element, key) Extract the content of the given element into the agent's temporary database. key is the description of the saved text. save link(element, key)</p><p>Extract the link URL from the given anchor element into the agent's temporary database. save list(element 1 , element 2 ) Given two elements inside a list, compute a CSS selector that refers to all elements in the list, then enter list mode. While in list mode, further DSL calls are repeated for each list element, using CSS selectors scoped to the list element. type input(element, value)</p><p>Set the given element to the specified value. press enter(element)</p><p>Focus the given element and press the Enter key. click(element)</p><p>Click on the given element. go back() Navigate to the previous URL.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Training Algorithm</head><p>Algorithm 2 Training WILBUR Require: Websites W 1: D τ , D a ← ∅ ▷ Knowledge and action demonstration vectors 2: Initialize auto-curriculum phase 3: for each website w ∈ W do 4: o 0 ← initial observation state in w 5:</p><p>G ← GenerateGoals(w) ▷ Generate multiple plausible goals 6:</p><p>for each goal g ∈ G do 7: τ, answer ← WILBUR(g, o 0 ) ▷ Perform actions towards goal 8:</p><p>v τ ← ExecutionSelfEvaluation(τ, g, text) 9:</p><p>UpdateDemonstrations(D g , D a , g, v τ ) 10:</p><p>end for 11:</p><formula xml:id="formula_8">G ′ ← GenerateFollowupGoals(G, w) ▷ Condition on previous goals 12:</formula><p>for each goal g ′ ∈ G ′ do 13:</p><p>τ, text ← WILBUR(g, o 0 ) ▷ Perform actions towards goal 14: r ← ExecutionSelfEvaluation(τ, text) 15:</p><p>UpdateDemonstrations(D τ , D a , g ′ , v τ ) 16:</p><p>end for 17: end for 18: TrainKnowledgeModel(D g , D a )</p><p>▷ Finetune model with demonstrations</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Computation Cost of WILBUR</head><p>In Table <ref type="table" target="#tab_1">2</ref> we show the number of actor LLM calls used by WILBUR and the different ablated baselines. We see that while adding in-context learning examples decreases the number of steps required by the agent, the added synthesis step leads to a sharp increase again. WILBUR, however, utilizing the demonstrating ranking model, is able to filter out bad fewshot examples to lower the average steps to success.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: An example of WILBUR backtracking to previous URL after failure.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Evaluation of WILBUR on WebVoyager (automatic evaluation). "text" is a text-only model, "multi" is multimodal (text and vision). All WILBUR results are text-only.</figDesc><table><row><cell></cell><cell>Allrecipes</cell><cell>Amazon</cell><cell>Apple</cell><cell>ArXiv</cell><cell>GitHub</cell><cell>Booking</cell><cell>ESPN</cell><cell>Coursera</cell></row><row><cell>He et al. (2024) (text)</cell><cell>57.8</cell><cell>43.1</cell><cell>36.4</cell><cell>50.4</cell><cell>63.4</cell><cell>2.3</cell><cell>38.6</cell><cell>24.6</cell></row><row><cell>Zero-shot</cell><cell>40.0</cell><cell>41.5</cell><cell>48.9</cell><cell>39.5</cell><cell>22.0</cell><cell>4.5</cell><cell>31.8</cell><cell>31.0</cell></row><row><cell>+ Backtrack</cell><cell>35.6</cell><cell>43.9</cell><cell>41.9</cell><cell>39.5</cell><cell>31.7</cell><cell>2.3</cell><cell>47.7</cell><cell>73.3</cell></row><row><cell>+ Demonstrations</cell><cell>28.9</cell><cell>43.9</cell><cell>62.8</cell><cell>62.8</cell><cell>17.1</cell><cell>18.3</cell><cell>40.1</cell><cell>61.9</cell></row><row><cell>+ Synthesis</cell><cell>53.3</cell><cell>48.8</cell><cell>65.1</cell><cell>55.8</cell><cell>12.2</cell><cell>13.6</cell><cell>47.7</cell><cell>61.9</cell></row><row><cell>WILBUR</cell><cell>60.0</cell><cell>43.9</cell><cell>60.5</cell><cell>51.2</cell><cell>22.0</cell><cell>38.6</cell><cell>59.1</cell><cell>51.1</cell></row><row><cell>He et al. (2024) (multi)</cell><cell>51.1</cell><cell>52.9</cell><cell>62.8</cell><cell>52.0</cell><cell>59.3</cell><cell>32.6</cell><cell>47.0</cell><cell>57.9</cell></row><row><cell></cell><cell>Dictionary</cell><cell>BBC News</cell><cell>Flights</cell><cell>Maps</cell><cell>Search</cell><cell>Huggingface</cell><cell>Wolfram</cell><cell>Overall</cell></row><row><cell>He et al. (2024) (text)</cell><cell>66.7</cell><cell>45.2</cell><cell>7.1</cell><cell>62.6</cell><cell>75.2</cell><cell>31.0</cell><cell>60.2</cell><cell>44.3</cell></row><row><cell>Zero-shot</cell><cell>46.5</cell><cell>54.8</cell><cell>2.4</cell><cell>41.5</cell><cell>55.8</cell><cell>41.9</cell><cell>15.2</cell><cell>34.4</cell></row><row><cell>+ Backtrack</cell><cell>74.4</cell><cell>69.0</cell><cell>0.0</cell><cell>34.1</cell><cell>62.8</cell><cell>41.9</cell><cell>13.0</cell><cell>40.6</cell></row><row><cell>+ Demonstrations</cell><cell>72.1</cell><cell>76.2</cell><cell>2.4</cell><cell>43.9</cell><cell>67.4</cell><cell>53.5</cell><cell>71.7</cell><cell>48.4</cell></row><row><cell>+ Synthesis</cell><cell>76.7</cell><cell>66.7</cell><cell>0.0</cell><cell>46.3</cell><cell>72.1</cell><cell>58.1</cell><cell>67.4</cell><cell>49.9</cell></row><row><cell>WILBUR</cell><cell>86.0</cell><cell>81.0</cell><cell>0.0</cell><cell>39.0</cell><cell>67.4</cell><cell>53.5</cell><cell>65.2</cell><cell>52.6</cell></row><row><cell>He et al. (2024) (multi)</cell><cell>71.3</cell><cell>60.3</cell><cell>51.6</cell><cell>64.3</cell><cell>77.5</cell><cell>55.8</cell><cell>60.9</cell><cell>57.1</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Average number of actor LLM calls on successful executions on the WebVoyager benchmark</figDesc><table><row><cell></cell><cell># calls</cell></row><row><cell>Zero-shot</cell><cell>6.72</cell></row><row><cell>+ Backtrack</cell><cell>6.43</cell></row><row><cell>+ Demonstrations</cell><cell>4.34</cell></row><row><cell>+ Synthesis</cell><cell>7.19</cell></row><row><cell>WILBUR</cell><cell>5.33</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">BYOC: Personalized few-shot classification with co-authored class descriptions</title>
+		<author>
+			<persName><forename type="first">Arth</forename><surname>Bohra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Govert</forename><surname>Verkes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Artem</forename><surname>Harutyunyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pascal</forename><surname>Weinberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Giovanni</forename><surname>Campagna</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.findings-emnlp.933</idno>
+		<ptr target="https://aclanthology.org/2023.findings-emnlp.933" />
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: EMNLP 2023</title>
+		<editor>
+			<persName><forename type="first">Houda</forename><surname>Bouamor</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Juan</forename><surname>Pino</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Kalika</forename><surname>Bali</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023-12">December 2023</date>
+			<biblScope unit="page" from="13999" to="14015" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ariel</forename><surname>Herbert-Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Henighan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rewon</forename><surname>Child</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Ziegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clemens</forename><surname>Winter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Sigler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mateusz</forename><surname>Litwin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Chess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Berner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+		<ptr target="https://proceedings.neurips.cc/" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Larochelle</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Ranzato</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">R</forename><surname>Hadsell</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><forename type="middle">F</forename><surname>Balcan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Lin</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+		</imprint>
+	</monogr>
+	<note>paper files/paper/2020/ file/1457c0d6bfcb4967418bfb8ac142f64a-Paper.pdf</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Bootstrapping pos-taggers using unlabelled data</title>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><forename type="middle">R</forename><surname>Curran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miles</forename><surname>Osborne</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the seventh conference on Natural language learning at HLT-NAACL 2003</title>
+		<meeting>the seventh conference on Natural language learning at HLT-NAACL 2003</meeting>
+		<imprint>
+			<date type="published" when="2003">2003</date>
+			<biblScope unit="page" from="49" to="55" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyuan</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><surname>Stevens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boshi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Su</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Towards a generalist agent for the web</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hiroki</forename><surname>Furuta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Nachum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuang-Huei</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutaka</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shixiang</forename><surname>Shane Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izzeddin</forename><surname>Gur</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.11854</idno>
+		<title level="m">Multimodal web navigation with instruction-finetuned foundation models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Making pre-trained language models better fewshot learners</title>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Fisch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danqi</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2021.acl-long.295</idno>
+		<ptr target="https://aclanthology.org/2021.acl-long.295" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 59th Annual Meeting of the Association for Computational Linguistics and the 11th International Joint Conference on Natural Language Processing</title>
+		<meeting>the 59th Annual Meeting of the Association for Computational Linguistics and the 11th International Joint Conference on Natural Language Processing</meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2021-08">August 2021</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="3816" to="3830" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Izzeddin</forename><surname>Gur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Nachum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingjie</forename><surname>Miao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mustafa</forename><surname>Safdari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Austin</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03945</idno>
+		<title level="m">Sharan Narang, Noah Fiedel, and Aleksandra Faust. Understanding html with large language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">A real-world webagent with planning, long context understanding, and program synthesis</title>
+		<author>
+			<persName><forename type="first">Izzeddin</forename><surname>Gur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hiroki</forename><surname>Furuta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Austin</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mustafa</forename><surname>Safdari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutaka</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Douglas</forename><surname>Eck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Faust</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.12856</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Top website statistics for 2023</title>
+		<author>
+			<persName><forename type="first">Katherine</forename><surname>Haan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Forbes</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hongliang</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenlin</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaixin</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenzhong</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Webvoyager</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.13919</idno>
+		<title level="m">Building an end-to-end web agent with large multimodal models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Measuring massive multitask language understanding</title>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mantas</forename><surname>Mazeika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Rap: Retrieval-augmented planning with contextual memory for multimodal llm agents</title>
+		<author>
+			<persName><forename type="first">Tomoyuki</forename><surname>Kagaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thong</forename><surname>Jing Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jayashree</forename><surname>Karlekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sugiri</forename><surname>Pranata</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akira</forename><surname>Kinose</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Koki</forename><surname>Oguri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Wick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>You</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Language models can solve computer tasks</title>
+		<author>
+			<persName><forename type="first">Geunwoo</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Baldi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Mcaleer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Can language models learn from explanations in context?</title>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Lampinen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ishita</forename><surname>Dasgupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephanie</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kory</forename><surname>Mathewson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mh</forename><surname>Tessler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonia</forename><surname>Creswell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Mcclelland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Hill</surname></persName>
+		</author>
+		<ptr target="https://aclanthology.org/2022.findings-emnlp.38" />
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: EMNLP 2022</title>
+		<meeting><address><addrLine>Abu Dhabi, United Arab Emirates</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2022-12">December 2022</date>
+			<biblScope unit="page" from="537" to="563" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Reinforcement learning on web interfaces using workflow-guided exploration</title>
+		<author>
+			<persName><forename type="first">Evan Zheran</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kelvin</forename><surname>Guu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Panupong</forename><surname>Pasupat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianlin</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1802.08802</idno>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Laser: Llm agent with state-space exploration for web navigation</title>
+		<author>
+			<persName><forename type="first">Kaixin</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongwei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoman</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.08172</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Effective self-training for parsing</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Mcclosky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eugene</forename><surname>Charniak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Johnson</surname></persName>
+		</author>
+		<ptr target="https://aclanthology.org/N06-1020" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Human Language Technology Conference of the NAACL, Main Conference</title>
+		<meeting>the Human Language Technology Conference of the NAACL, Main Conference<address><addrLine>New York City, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2006-06">June 2006</date>
+			<biblScope unit="page" from="152" to="159" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sewon</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinxi</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ari</forename><surname>Holtzman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikel</forename><surname>Artetxe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2202.12837</idno>
+		<title level="m">Rethinking the role of demonstrations: What makes in-context learning work? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title/>
+	</analytic>
+	<monogr>
+		<title level="j">OpenAI. Gpt-4 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">World of bits: An open-domain platform for web-based agents</title>
+		<author>
+			<persName><forename type="first">Tianlin</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrej</forename><surname>Karpathy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linxi</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Hernandez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="3135" to="3144" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Abishek</forename><surname>Sridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.14257</idno>
+		<title level="m">Hierarchical prompting assists large language model on web navigation</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Adaplanner: Adaptive planning from feedback with language models</title>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingkai</forename><surname>Kong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Voyager: An open-ended embodied agent with large language models</title>
+		<author>
+			<persName><forename type="first">Guanzhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqi</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Mandlekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaowei</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuke</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linxi</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anima</forename><surname>Anandkumar</surname></persName>
+		</author>
+		<idno>arXiv: Arxiv-2305.16291</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Grounding open-domain instructions to automate web support tasks</title>
+		<author>
+			<persName><forename type="first">Nancy</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Masling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Giovanni</forename><surname>Campagna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Larry</forename><surname>Heck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Landay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Monica</forename><forename type="middle">S</forename><surname>Lam</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Webshop: Towards scalable real-world web interaction with grounded language agents</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Howard</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<ptr target="https://proceedings.neurips.cc/paperfiles/paper/2022/file/82" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Koyejo</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Mohamed</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Agarwal</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">D</forename><surname>Belgrave</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Cho</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Oh</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="20744" to="20757" />
+		</imprint>
+	</monogr>
+	<note>ad13ec01f9fe44c01cb91814fd7b8c-Paper-Conference.pdf</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03629</idno>
+		<title level="m">React: Synergizing reasoning and acting in language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">] ariaLabel: Collapse side panel/&gt; &lt;13: [button] ariaLabel: Collapse side panel/&gt; &lt;14: [a] ariaLabel: Sign in, text: \Sign in&quot;/&gt; &lt;15: [button] ariaLabel: Show Your Location/&gt; &lt;16: [label] text: \Show Your Location</title>
+		<author>
+			<persName><forename type="first">Boyuan</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyu</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jihyung</forename><surname>Kil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Su</surname></persName>
+		</author>
+		<idno>&lt;17: [label] text: Show Your Location/&gt; &lt;18: [button] text: \Update&quot;/&gt; &lt;19: [button] text: \Learn more&quot;/&gt; &lt;20: [button] ariaLabel: Zoom in/&gt; &lt;21</idno>
+		<imprint/>
+	</monogr>
+	<note>Gpt-4v(ision) is a generalist web agent, if grounded, 2024. &lt;0: [button] ariaLabel: Collapse side panel/&gt; &lt;1: [button input] required: True, name: q, type: text/&gt; &lt;5: [button] ariaLabel: Search/&gt; &lt;6: [button] ariaLabel: Directions/&gt; &lt;7: [button] ariaLabel: Collapse side panel/&gt; &lt;8: [button] ariaLabel: Collapse side panel/&gt; &lt;9: [button] ariaLabel: Menu/&gt; &lt;10: [button] text: \Saved&quot;/&gt; &lt;11: [button] text: \Recents&quot;/&gt; &lt;12: [button label] text: \Zoom&quot;/&gt; &lt;22: [label] text: Zoom/&gt; &lt;23: [button] text: \Show slider&quot;/&gt; &lt;24: [button] text: \Hide slider&quot;/&gt; &lt;25: [button] ariaLabel: Zoom out/&gt; &lt;26: [button] ariaLabel: Show Street View coverage/&gt; &lt;27: [button] ariaLabel: Show imagery/&gt; &lt;28: [button] ariaLabel: Collapse side panel/&gt; &lt;29: [button] ariaLabel: Zoom in/&gt; &lt;30: [button] ariaLabel: Zoom out/&gt; &lt;31: [span] text: &quot;&quot;/&gt; &lt;32: [label] text: \Layers&quot;/&gt; &lt;33: [label] text: Layers/&gt; &lt;34: [h2] text: \Map details&quot;/&gt; &lt;35: [button] ariaLabel: Close, text: \&quot;/&gt; &lt;36: [button] text: \Transit&quot;/&gt; &lt;37: [button] text: \Traffic&quot;/&gt; &lt;38: [button] text: \Biking&quot;/&gt; &lt;39: [button] text: \Terrain&quot;/&gt; &lt;40: [button] text: \Street View&quot;/&gt; &lt;41: [button] text: \Wildfires&quot;/&gt; &lt;42: [button] text: \Air Quality&quot;/&gt; &lt;43: [h2] text: \Map tools&quot;/&gt; &lt;44: [button] text: \Travel time&quot;/&gt; &lt;45: [button] text: \Measure&quot;/&gt; &lt;46: [h2] text: \Map type&quot;/&gt; &lt;47: [button] text: \Default&quot;/&gt; &lt;48: [button] text: \Satellite&quot;/&gt; &lt;49: [button] text: \Globe view&quot;/&gt; &lt;50: [button] text: \Labels&quot;/&gt; &lt;51: [span] text: Map data ©2024 Google/&gt; &lt;52: [button] text: \United States&quot;/&gt; &lt;53: [button] text: \Terms&quot;/&gt; &lt;54: [button] text: \Privacy&quot;/&gt; &lt;55: [button] text: \Send Product Feedback&quot;/&gt; &lt;56: [button] text: \2000 ft&quot;&gt; Figure 3: Example of formatted DOM from Google Maps</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

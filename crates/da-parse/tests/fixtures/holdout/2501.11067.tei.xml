@@ -1,0 +1,1254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">IntellAgent: A Multi-Agent Framework for Evaluating Conversational AI Systems</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-01-19">19 Jan 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Elad</forename><forename type="middle">Levi</forename><surname>Plurai</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Ilan</forename><surname>Kadar</surname></persName>
+						</author>
+						<title level="a" type="main">IntellAgent: A Multi-Agent Framework for Evaluating Conversational AI Systems</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-01-19">19 Jan 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">D8DA33627706D1F52E3AF00AE6A018FF</idno>
+					<idno type="arXiv">arXiv:2501.11067v1[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:52+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large Language Models (LLMs) are transforming artificial intelligence, evolving into task-oriented systems capable of autonomous planning, execution, and refinement. One of the primary applications of LLMs is conversational AI systems, which must navigate multi-turn dialogues, integrate domain-specific APIs, and adhere to strict policy constraints. However, evaluating these agents remains a significant challenge, as traditional methods fail to capture the complexity and variability of real-world interactions. We introduce IntellAgent, a scalable, opensource multi-agent framework designed to evaluate conversational AI systems comprehensively. IntellAgent automates the creation of diverse, synthetic benchmarks by combining policy-driven graph modeling, realistic event generation, and interactive user-agent simulations. This innovative approach provides fine-grained diagnostics, addressing the limitations of static and manually curated benchmarks with coarse-grained metrics. IntellAgent represents a paradigm shift in evaluating conversational AI. By simulating realistic, multi-policy scenarios across varying levels of complexity, IntellAgent captures the nuanced interplay of agent capabilities and policy constraints. Unlike traditional methods, it employs a graph-based policy model to represent relationships, likelihoods, and complexities of policy interactions, enabling highly detailed diagnostics. IntellAgent also identifies critical performance gaps, offering actionable insights for targeted optimization. Its modular, open-source design supports seamless integration of new domains, policies, and APIs, fostering reproducibility and community collaboration. Our findings demonstrate that IntellAgent serves as an effective framework for advancing conversational AI by addressing challenges in bridging research and deployment. The framework is available at <ref type="url" target="https://github.com/plurai-ai/intellagent">https://github.com/plurai-ai/intellagent</ref>.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Large Language Models (LLMs) are revolutionizing the field of artificial intelligence by transitioning from static language processors to dynamic, task-oriented agents that can autonomously plan, execute, and refine their actions. These agents promise transformative applications across a wide range of domains, including healthcare <ref type="bibr" target="#b19">[20,</ref><ref type="bibr" target="#b0">1]</ref>, finance <ref type="bibr" target="#b29">[30,</ref><ref type="bibr" target="#b25">26,</ref><ref type="bibr" target="#b6">7]</ref>, customer support <ref type="bibr" target="#b20">[21,</ref><ref type="bibr" target="#b13">14]</ref> and education <ref type="bibr" target="#b30">[31,</ref><ref type="bibr" target="#b28">29]</ref>. This evolution positions LLM agents as foundational technologies for reshaping human-computer interaction, enabling intelligent systems to tackle complex, real-world challenges with unprecedented efficiency and adaptability. Among these advancements, conversational AI agents present a particularly demanding frontier. Unlike single-turn systems, these agents must navigate multi-turn dialogues, integrate domainspecific tools and APIs, and adhere to stringent policy constraints. The interplay of these requirements introduces a new level of complexity, where the cost of errors-ranging from inconsistent responses to policy violations-can severely undermine reliability and trust. Reliability is not just desirable but critical, as it directly determines the feasibility of deploying such agents in real-world, high-stakes environments. Despite significant progress, evaluating conversational AI agents at this level of complexity remains a significant challenge <ref type="bibr" target="#b18">[19,</ref><ref type="bibr" target="#b8">9]</ref>. Traditional evaluation methods rely on static manually curated benchmarks <ref type="bibr" target="#b32">[33,</ref><ref type="bibr" target="#b14">15]</ref> that fail to scale or reflect the intricate dynamics of multi-turn interactions, policy adherence, and tool usage. These approaches often prioritize coarse-grained metrics, offering limited insights into agents' specific strengths and vulnerabilities. Consequently, existing methods leave critical gaps in both understanding and optimizing conversational agents for real-world applications.</p><p>In this work, we present IntellAgent, a scalable open-source multi-agent framework powered by AI agents, specifically designed to simulate and evaluate conversational AI agents comprehensively. IntellAgent represents a paradigm shift in evaluation by automating the generation of diverse, synthetic scenarios that rigorously test agents across multiple dimensions. Unlike existing approaches, IntellAgent leverages a novel pipeline that combines policy-driven graph modeling, realistic event generation, and interactive user-agent simulation to holistically assess agent performance, including a full spectrum of complexity levels, combinations of domain policies modeled through graph-based policy representations, and integration with API tools. The IntellAgent framework employs an automated process that involves constructing a policy graph to represent the relationships, complexity, and likelihood of various policies, generating events by sampling combinations of policies from the graph that align with real-world tasks and database states, and simulating interactions between a user agent and the chatbot. These simulations are then analyzed to provide fine-grained performance insights, identifying failure points, strengths, and opportunities for improvement. An overview of the system is illustrated in Figure <ref type="figure" target="#fig_0">1</ref>, which outlines the key components of the IntellAgent pipeline.</p><p>Our study demonstrates the effectiveness and versatility of IntellAgent as a benchmarking tool for evaluating conversational AI agents. The results reveal a strong correlation between model performance on the IntellAgent benchmark and the τ -bench <ref type="bibr" target="#b32">[33]</ref>, despite IntellAgent relying entirely on synthetic data. This validates IntellAgent as a robust alternative for evaluating conversational agents across diverse scenarios and challenges. Key findings from our analysis indicate that model performance decreases with increasing complexity levels, but the rate of decline varies significantly across models. Additionally, our policy-specific evaluation uncovers significant variations in model capabilities across different policy categories. This highlights IntellAgent's ability to provide detailed diagnostic insights, empowering users to identify the most suitable configuration for their specific requirements.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>This work makes several key contributions to the evaluation of conversational AI agents:</head><p>• A Scalable Multi-Agent Evaluation Framework: IntellAgent provides a robust and scalable multi-agent framework that automatically generates diverse, realistic scenarios tailored to address the unique challenges of conversational AI agents. By overcoming the limitations of small-scale, manually curated benchmarks, IntellAgent enables comprehensive and thorough evaluations.</p><p>• Fine-Grained Diagnostics with a Policies Graph: IntellAgent leverages a policies graph, inspired by GraphRAG <ref type="bibr" target="#b9">[10]</ref>, where nodes represent individual policies and their complexity, and edges denote the likelihood of co-occurrence between policies in conversations. This structure facilitates the generation of naturalistic user requests that span a wide range of policies and complexity levels, providing fine-grained diagnostic insights.</p><p>• An Open-Source and Extensible Framework: IntellAgent is released as an open-source framework, promoting reproducibility and community collaboration in advancing the evaluation and optimization of conversational AI agents. Its modular design supports seamless integration of new domains, including their respective policies, APIs, and database schemas. Additionally, the framework enables rigorous testing and optimization of custom conversational agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related Work</head><p>Recent advancements in using LLMs for synthetic data generation, automated evaluation have significantly influenced the development of AI systems. This section delves into these key areas, outlining existing methodologies and their limitations while highlighting how our approach advances the state of the art.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Synthetic Benchmarks</head><p>Data generation. Synthetic data generation using Large Language Models (LLMs) has become a transformative technique for advancing AI across various domains, including code generation <ref type="bibr" target="#b21">[22,</ref><ref type="bibr" target="#b31">32]</ref>, mathematical reasoning <ref type="bibr" target="#b33">[34,</ref><ref type="bibr" target="#b17">18]</ref>, text embedding <ref type="bibr" target="#b23">[24]</ref>, and text-to-image synthesis <ref type="bibr" target="#b4">[5]</ref>. Synthetic data reduces the costs and time of human-annotated datasets while providing control over sample distribution, crucial for fine-tuning and optimizing performance in downstream tasks <ref type="bibr" target="#b15">[16,</ref><ref type="bibr" target="#b26">27]</ref>. Evaluating synthetic data focuses on two key metrics: faithfulness and diversity.</p><p>Faithfulness ensures synthetic data reflects real-world patterns and relationships, while diversity captures a wide range of scenarios to enhance model robustness and mitigate overfitting <ref type="bibr" target="#b16">[17]</ref>. Achieving both metrics is challenging; recent research explores conditional prompting and multi-step generation to balance them. Conditional prompting improves diversity by defining attributes through conditionvalue pairs <ref type="bibr" target="#b11">[12,</ref><ref type="bibr" target="#b27">28]</ref>. Multi-step generation enhances coherence and domain coverage by decomposing tasks into smaller subtasks <ref type="bibr" target="#b7">[8,</ref><ref type="bibr" target="#b24">25,</ref><ref type="bibr" target="#b12">13,</ref><ref type="bibr" target="#b22">23]</ref>, though these methods often require significant manual effort and may not scale well to complex domains.</p><p>Our approach automates synthetic dataset generation to ensure both faithfulness and diversity by using a policies graph inspired by GraphRAG <ref type="bibr" target="#b9">[10]</ref>, where nodes represent policies and edges capture their complexity relationships. This framework enables fine-grained generation across various combinations of policies, tools, and tasks, producing datasets that reflect application requirements while covering a diverse range of scenarios. It addresses challenges from simple tasks to complex edge cases, ensuring rigorous evaluation of agents under diverse conditions.</p><p>Automated evaluation. Synthetic datasets have become invaluable for evaluating retrieval-augmented generation (RAG) systems, offering metrics to measure retrieval quality, generation fidelity, and robustness. Frameworks like RAGAS <ref type="bibr" target="#b10">[11]</ref> automate the evaluation of RAG pipelines, focusing on aspects such as retrieval accuracy and generation relevance. Unlike traditional metrics, RAGAS operates without reference answers, enabling broader applicability. However, it primarily targets isolated components and does not fully address the complexities of multi-turn dialogues or real-world conversational AI applications. This underscores the need for expanded evaluation frameworks that encompass diverse, dynamic use cases.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Conversational AI Benchmarks</head><p>Evaluating conversational AI systems in real-world applications has been the focus of various benchmarks, each targeting specific capabilities. For instance, τ -bench <ref type="bibr" target="#b32">[33]</ref> assesses agents' ability to interact with users, adhere to domain-specific policies, and utilize API tools effectively, with simulations in domains like retail and airline customer service. However, τ -bench is limited by its reliance on manual curation, with only 50 samples for airlines and 115 for retail, restricting scalability. Additionally, its evaluation focuses solely on coarse-grained end-to-end metrics, overlooking policy violations and dialogue flow errors, which limits comprehensive assessment.</p><p>The ALMITA benchmark <ref type="bibr" target="#b2">[3]</ref> proposes a novel dataset and framework specifically tailored for evaluating tool-augmented conversational AI agents in customer support scenarios. It uses a combination of automated and manual processes to generate diverse and realistic conversations grounded in user-defined procedures. Despite its rigorous evaluation, ALMITA focuses primarily on customer support, and the generalizability to other domains remains an open question. Moreover, the reliance on manually curated samples, while ensuring quality, limits scalability.</p><p>The LTM Benchmark <ref type="bibr" target="#b5">[6]</ref> effectively highlights limitations in conversational multitasking, especially with interleaved tasks. However, its reliance on predefined interaction structures limits its ability to capture the unpredictable and non-linear nature of real-world conversational flows, such as spontaneous topic shifts or revisiting earlier contexts. Similarly, E2E Benchmark <ref type="bibr" target="#b3">[4]</ref> evaluates chatbot responses based on accuracy and usefulness, emphasizing conversational coherence in nontask-oriented interactions. Nevertheless, its lack of support for complex tool use and multi-turn interactions restricts its applicability to broader real-world contexts. The CURATe framework <ref type="bibr" target="#b1">[2]</ref> addresses alignment challenges for personalized conversational agents by focusing on user-specific safety-critical contexts. While it introduces valuable techniques for multi-turn personalization, its emphasis on alignment rather than general performance testing narrows its scope.</p><p>Although these benchmarks provide valuable tools for assessing conversational AI systems, their reliance on manual curation limits scalability and adaptability to diverse real-world applications, making it challenging to generate the extensive datasets required for comprehensive evaluations. Our approach, in contrast, is fully automated, enabling the generation of diverse scenarios and dialogues at scale, thus supporting evaluations across varied domains. Additionally, our framework addresses a broader range of challenges, from simple tasks to complex edge cases, ensuring rigorous agent evaluation under diverse conditions. Unlike existing benchmarks that use coarse-grained metrics for overall performance, our method offers fine-grained insights by evaluating agents across all policy and tool combinations, identifying specific strengths and weaknesses.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Method</head><p>Our multi-agent system is illustrated in Figure <ref type="figure" target="#fig_0">1</ref>. The system pipeline consists of the following steps: (1) The IntellAgent system receives a schema of the system database along with either a chatbot system prompt or a document outlining the company policies. Based on this input, the system constructs a policy graph (3.1.1). It then samples a list of policies from the graph at varying levels of complexity and generates an event addressing these policies (3.1.2). The event includes a scenario description with a user request and corresponding samples for the initial database state, ensuring the validity of the user requests. (2) The system simulates a dialog between the chatbot and a user agent using the information provided in the event (3.2). (3) Finally, a critique is provided with the dialog and provides an analysis of the chatbot's performances with respect to the event policies list (3.3).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Event Generation</head><p>To address the challenge of developing advanced chatbots capable of interacting with a system database, the system must generate complex and natural user requests that cover various policies. Additionally, it should create an initial database state for the chatbot, ensuring that when the chatbot processes the user request and queries the database, it does not encounter failures.</p><p>An IntellAgent event is defined by the following components: (1) A list of policies. (2) A description of a user request that aligns with the specified policies. (3) The initial state of the chatbot's system database.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Algorithm 1 Event Policies Sampling</head><p>Require: A policy graph (G, E) with node weights {n g } g∈G , and a range n1 &lt; n2 ∈ N X = ∅ ▷ The events policies list while |X| &lt; N do P = ∅ e w ∼ U(n 1 , n 2 ), g ∼ U(G) ▷ Sample the policy complexity and the initial policy while e w &gt; 0 do Choose a neighbor h ∈ G with probability:</p><formula xml:id="formula_0">P (X = h | Y = g) = E g,h h∈G E h,g P ← P ∪ {h} e w ← e w -n h end while X ← X ∪ {P } end while</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.1">Policies graph</head><p>IntellAgent aims to generate a diverse set of events with varying levels of complexity. To create and complex user-chatbot interaction scenarios, IntellAgent constructs a policy graph. In this graph, nodes represent individual policies, and edge weights indicate the likelihood of two policies appearing together in the same interaction. Each node is also assigned a weight that reflects the complexity of its associated policy.</p><p>The graph is built through multiple queries to a large language model (LLM). First, the system extracts a list of policies from the prompt and assigns a difficulty ranking to each. Then, for every pair of policies, the LLM assigns a score (on a scale of 1-10) representing the likelihood of the two policies co-occurring in a conversation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.2">Event generator</head><p>The complexity of an event is defined as the sum of the complexities of its policies. Given a policy graph with a set of policies G, weighted edges E and nodes complexity weights {n g } g∈G . the event generator aims to produce a valid set of policies that satisfies the following criteria:</p><p>1. The event complexity is uniformly distributed within a specified range. 2. The distribution of the first policy in the event is uniformly distributed across all possible policies. 3. For a given complexity level and initial policy, the distribution of the resulting policy list aligns with real-world distributions.</p><p>Policies graph sampling. To satisfy the outlined criteria, the IntellAgent sampling algorithm operates in batches. The process for each iteration is as follows: The complexity of events in the current batch is sampled first. The batch distribution is adjusted to ensure that the overall distribution of all generated events (including previous batches) remains uniform. Next, the initial policy for each event is sampled uniformly across all nodes in the policy graph. Then For each event, the system generates a policy path by performing a random walk on the graph. The walk terminates once the cumulative complexity of the visited nodes exceeds the sampled event complexity. An overview of the entire sampling method is provided in Algorithm 1.</p><p>This approach ensures that the generated events policies list maintains the desired complexity distribution and follows realistic transitions between policies as determined by the graph structure.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Event generator agent.</head><p>The goal of the event generator agent is to create an event based on a given list of policies. The primary challenge is to generate a valid and consistent initial database state that the chatbot can interact with during the conversation. The agent's architecture is shown in Figure <ref type="figure" target="#fig_2">4</ref>. To manage complex database schemas, the event generator agent first creates a symbolic</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Uniform distribution</head><p>Max Sampling Weighted Sampling</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Initial policy</head><p>The user cannot add travel insurance after the initial booking when modifying a reservation.</p><p>The user cannot add travel insurance after the initial booking when modifying a reservation.</p><p>The user cannot add travel insurance after the initial booking when modifying a reservation.</p><p>Policy 2 Cancelling a flight reservation: The refund will go to original payment methods in 5 to 7 business days.</p><p>The agent must first obtain the user id and the reservation id before modifying a flight reservation.</p><p>The agent must first obtain the user id and the reservation id before modifying a flight reservation.</p><p>Policy 3 Cabin class must be the same across all the flights in the same reservation Basic economy flights cannot be modified. Other reservations can be modified without changing the origin, destination, and trip type.</p><p>The agent can only cancel the whole trip that is not flown.</p><p>Table 1: Comparison of random walk sampling strategies. (Left) Uniform sampling of the next node. (Middle) Selection of the next node based on maximal edge weight. (Right) IntellAgent weighted probability sampling, which balances diversity and alignment with real-world distributions.</p><p>representation of all the entities involved in the event. These entities are determined based on the provided chatbot prompt and the database schema. Typical entities may include users, products, reservations, etc.</p><p>The agent then iterates over these symbols, instantiating them by inserting the relevant rows into the database and replacing the symbolic variables with the corresponding data. This symbolic representation enables the agent to generate valid and consistent events, even across complex chatbot databases. Refer to Appendix B for an example of a generated symbolic representation and its corresponding database.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Dialog simulation</head><p>For each event in the events database, IntellAgent simulates an interaction between a user and the chatbot being tested. Figure <ref type="figure" target="#fig_3">5</ref> provides an overview of the simulation architecture. The user agent is given the event details, which include the description of the event and all relevant information inserted into the chatbot's system database by the event generator agent. Additionally, the user agent is provided with the expected behavior of the chatbot at each step of the interaction, based on the event's policy list. The user has the option to terminate the interaction at any point, either when the chatbot successfully completes the task or if the chatbot fails to adhere to one of the policies and does not follow the expected behavior.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Dialog Critique</head><p>The Dialog critique component is given the user-chatbot dialog and the chatbot system prompt to assess whether the reason for the dialog's termination, as provided by the user agent, is correct. If the reason is incorrect, the critique provides feedback to the user agent, and the dialog resumes. If the reason is correct, the critique then determines: (1) The subset of event policies that were tested during the dialog. (2) The subset of policies that the chatbot did not adhere to (this list may be empty). Using this information, a comprehensive report on the chatbot's performance is generated.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Benchmark</head><p>Dataset construction. To evaluate the performance of our system in real-world scenarios, we utilized the τ -bench <ref type="bibr" target="#b32">[33]</ref> environments. Specifically, we employed the benchmark's prompts, database schema, and tools for the two benchmark's environments: airline and retail. For each environment, the system generates a policy graph from the prompt and simulates 1,000 events-a substantial increase that enables more fine-grained analysis compared to the original benchmark, which used 50 samples for airlines and 115 for retail. The complexity levels of the generated events range from 2 to 11. Table <ref type="table">1</ref> presents a comparison of various random walk sampling strategies. Selecting the next node uniformly leads to unrelated policies, whereas choosing the next node based on maximal weight produces a cohesive cluster of policies. In contrast, IntellAgent-weighted probability sampling achieves a balance between diversity and alignment with the real-world distribution. Appendix B provides a detailed example of the event generation process.</p><p>Tested agents. We evaluated several state-of-the-art proprietary LLMs: GPT-4o, GPT-4o-mini, Gemini-1.5-pro, Gemini-1.5-flash, Claude-3.5-sonnet, and Claude-3.5-haiku. For all these models we employed the native tool-calling agent (supported by all the tested LLMs) with the tested environment system prompt. During each iteration, the model determines whether to send a message to the user or to call a tool.</p><p>IntellAgent Implementation details. The IntellAgent multi-agent system was implemented using the Langgraph<ref type="foot" target="#foot_0">foot_0</ref> framework. GPT-4o served as the system's LLM model, used for the event generation, the user agent, and dialog critique. For full implementation details including all the system prompts, we provide the source code and documentation<ref type="foot" target="#foot_1">foot_1</ref> </p><p>Figure <ref type="figure">3</ref>: Comparison of the success rates of the top four models across various policy categories, highlighting that some categories are more challenging than others. Additionally, the relative performance order of different models varies across categories.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Results</head><p>Benchmarks comparison. Table <ref type="table" target="#tab_0">2</ref> presents a comparison of the tested model's success rates on the τ -bench <ref type="bibr" target="#b32">[33]</ref> and the IntellAgent benchmark. The Pearson correlation coefficients are 0.98 for the Airline environment and 0.92 for the Retail environment, highlighting a strong alignment in model performance across the two benchmarks. Notably, this strong correlation persists despite IntellAgent being generated exclusively with synthetic data.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Models comparison.</head><p>Figure <ref type="figure" target="#fig_1">2</ref> illustrates the success rates of the top four models as a function of challenge level. As expected, model performance declines as the challenge level increases, though the pattern of decline varies across models. For instance, while Gemini-pro-1.5 significantly outperforms GPT-4o-mini in the airline environment up to level 10, their performances converge at higher challenge levels. This highlights the value of IntellAgent's detailed analysis, enabling users to select the most suitable model based on the desired complexity the chatbot should handle.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Policies comparison.</head><p>Figure <ref type="figure">3</ref> shows the performance of the top four models models across different policy categories. The relative ranking of models shifts across different categories. IntellAgent provides a detailed analysis of the specific policies where the tested chatbot may encounter difficulties.</p><p>It is also important to note that all models face challenges with user consent policies. This policy category is not assessed in the τ -bench <ref type="bibr" target="#b32">[33]</ref> since its evaluation focuses solely on the final state of the database.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>In this work, we introduced IntellAgent, a scalable, open-source multi-agent framework designed to comprehensively evaluate conversational AI systems. IntellAgent addresses the limitations of traditional evaluation methods by automating the generation of diverse, policy-driven scenarios and providing fine-grained diagnostics. By leveraging a graph-based policy model, realistic event generation, and user-agent simulations, IntellAgent captures the nuanced complexities of multi-turn dialogues, policy adherence, and tool integration.</p><p>Our findings demonstrate IntellAgent's ability to uncover critical performance gaps, offering actionable insights to optimize conversational agents for real-world applications. Its modular design supports extensibility, ensuring it remains relevant across diverse domains and use cases.</p><p>In future work, we plan to explore the benefits of incorporating additional real-world context into the environment, such as a small set of user-chatbot interactions. We hypothesize that this context could significantly enhance the policies graph quality by deriving edge weights and node challenge-level weights from the real-data distributions. Furthermore, we anticipate that this added context could improve the overall performance of the system database generation process.  the detailed event scenario. Additionally, Figures <ref type="figure">6</ref>, <ref type="figure">7</ref>, and 8 showcase the generated event database for event 43.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Event Challange level 5</head><p>Event Policies 1. Modify default user address: you have to authenticate the user identity by locating their user id via email, or via name + zip code 2. You must deny any requests for tasks related to any other user.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Symbolic description</head><p>User 'U1' initiates a conversation with the chatbot to update their default address from 'A1' to 'A2'. The chatbot authenticates 'U1' by verifying their email or name and zip code. During the conversation, 'U1' requests information about their spouse 'U2's recent order 'O1', claiming authority to access it. After this, 'U1' returns to their original request to update their default address.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Symbolic variables</head><p>'U1: The user initiating the conversation', 'U2: The spouse of the user', 'O1: A recent order made by the spouse', 'A1: The current default address of the user', 'A2: The new address the user wants to set as default'</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Event Scenario details</head><p>User 'emma_jones_4829' initiates a conversation with the chatbot to update their default address from 'address1': '123 Elm Street', 'address2': 'Apt 4B', 'city': 'Seattle', 'country': 'USA', 'province': 'WA', 'zip': '98101' to 'A2'. The chatbot authenticates 'emma_jones_4829' by verifying their email or name and zip code. During the conversation, 'emma_jones_4829' requests information about their spouse 'liam_smith_9274's recent order '#O9274620', claiming authority to access it. After this, 'emma_jones_4829' returns to their original request to update their default address.</p><p>Table <ref type="table">3</ref>: Event 43 generation steps { "emma_jones_4829": { "user_id": "emma_jones_4829", "name": "{'first_name': 'Emma', 'last_name': 'Jones'}", "address": "{'address1': '123 Elm Street', 'address2': 'Apt 4B', 'city': ' Seattle', 'country': 'USA', 'province': 'WA', 'zip': '98101'}", "email": "emma.jones4829@example.com", "payment_methods": "{'paypal_4829103': {'source': 'paypal', 'id': ' paypal_4829103'}, 'credit_card_1938472': {'source': 'credit_card', ' brand': 'visa', 'last_four': '3847', 'id': 'credit_card_1938472'}}", "orders": "['#A1234567']" }, "liam_smith_9274": { "user_id": "liam_smith_9274", "name": "{'first_name': 'Liam', 'last_name': 'Smith'}", "address": "{'address1': '456 Oak Avenue', 'address2': 'Unit 12', 'city': ' Austin', 'country': 'USA', 'province': 'TX', 'zip': '73301'}", "email": "liam.smith9274@example.com", "payment_methods": "{'paypal_9274620': {'source': 'paypal', 'id': ' paypal_9274620'}, 'credit_card_4620193': {'source': 'credit_card', ' brand': 'visa', 'last_four': '4620', 'id': 'credit_card_4620193'}, ' credit_card_567890': {'id': 'credit_card_567890', 'last_four': 1234, ' brand': 'visa', 'source': 'card', 'balance': 50}}", "orders": "['#O9274620']" } } Figure <ref type="figure">6</ref>: Event 43 generated 'Users' dataset { "#O9274620": { "order_id": "#O9274620", "user_id": "liam_smith_9274", "address": "{'address1': '456 Oak Avenue', 'address2': 'Unit 12', 'city': ' Austin', 'country': 'USA', 'province': 'TX', 'zip': '73301'}", "items": "[{'name': 'Yoga Mat', 'product_id': '1234567890', 'item_id': '9876543210', 'price': 25.99, 'options': {'color': 'green', 'thickness': '5mm'}}, {'name': 'Dumbbell Set', 'product_id': '0987654321', 'item_id': '1234509876', 'price': 89.99, 'options': {'weight': '20kg', 'material': 'iron', 'color': 'blue'}}]", "fulfillments": "[{'tracking_id': ['123456789012'], 'item_ids':</p><p>['9876543210', '1234509876']}]", "status": "pending", "payment_history": "[{'transaction_type': 'payment', 'amount': 115.98, ' payment_method_id': 'credit_card_567890'}]" } } </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: System diagram. (1) Given a chatbot prompt and a Schema DB, the system generates an event that targets a subset of policies, which includes a user request and a system DB state. (2) For each event the system simulates a conversation between the user and the chatbot. (3) A fine-grained report on the chatbot performances is generated.</figDesc><graphic coords="2,127.80,72.00,356.40,175.25" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Model success rates across different challenge levels. While all models show reduced performance as the challenge level increases, they exhibit distinct patterns of decline, differing in both the onset level and the magnitude of the decrease.</figDesc><graphic coords="7,108.00,72.00,194.04,116.42" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Event generator architecture overview.</figDesc><graphic coords="11,127.80,72.00,356.39,209.90" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Simulator architecture overview.</figDesc><graphic coords="11,127.80,315.81,356.40,173.63" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 8 :</head><label>8</label><figDesc>Figure 8: Event 43 generated 'Orders' dataset</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 2 :</head><label>2</label><figDesc>Model τ -airline IntellAgent-airline τ -retail IntellAgent-retailComparison of the success rates of various agent models utilizing function calling, evaluated on the τ -bench and the IntellAgent benchmark. The results demonstrate a strong correlation between success rates across τ -bench and IntellAgent benchmark.</figDesc><table><row><cell>claude-3.5-sonnet</cell><cell>0.46</cell><cell>0.70</cell><cell>0.69</cell><cell>0.71</cell></row><row><cell>gpt-4o</cell><cell>0.44</cell><cell>0.70</cell><cell>0.51</cell><cell>0.68</cell></row><row><cell>gemini-1.5-pro</cell><cell>0.34</cell><cell>0.63</cell><cell>0.43</cell><cell>0.58</cell></row><row><cell>gpt-4o-mini</cell><cell>0.30</cell><cell>0.55</cell><cell>0.46</cell><cell>0.62</cell></row><row><cell>claude-3.5-haiku</cell><cell>0.28</cell><cell>0.53</cell><cell>0.44</cell><cell>0.56</cell></row><row><cell>gemini-1.5-flash</cell><cell>0.21</cell><cell>0.40</cell><cell>0.31</cell><cell>0.48</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>https://github.com/langchain-ai/langgraph</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>https://github.com/plurai-ai/intellagent</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Appendix</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Architecture details</head><p>This section offers further insight into the IntellAgent architecture. Figures <ref type="figure">4</ref> and <ref type="figure">5</ref> illustrate the architecture of the event generator and the simulator executor, respectively.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Complete Example of Event Generation</head><p>This section presents a comprehensive example of the generation process for event 43 in the retail environment. Table <ref type="table">3</ref> illustrates the entire process, starting from the requested challenge level, followed by extracting the event policies, generating the symbolic description, and finally obtaining { "1234567890": { "name": "Yoga Mat", "product_id": "1234567890", "variants": { "1011121319": { "item_id": "9876543210", "options": { "color": "green", "thickness": "5mm" }, "available": true, "price": 25.99 }, "1011121314": { "item_id": "9876543210", "options": { "color": "blue", "thickness": "5mm" }, "available": true, "price": 25.99 } } }, "0987654321": { "name": "Dumbbell Set", "product_id": "0987654321", "variants": { "1011121319": { "item_id": "1234509876", "options": { "weight": "20kg", "material": "iron", "color": "blue" }, "available": true, "price": 89.99 }, "1011121314": { "item_id": "1234509876", "options": { "weight": "20kg", "material": "iron", "color": "green" }, "available": true, "price": 89.99 } } } } </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 7 :</head><label>7</label><figDesc>Event 43 generated 'Products' dataset</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Conversational health agents: A personalized llm-powered agent framework</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Abbasian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Azimi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">M</forename><surname>Rahmani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Jain</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Curate: Benchmarking personalised alignment of conversational ai assistants</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Alberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ellis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lupu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Foerster</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.21159</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations (ICLR), 2025</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Automated test generation to evaluate tool-augmented llms as conversational ai agents</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Arcadinho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Aparício</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">S C</forename><surname>Almeida</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.15934</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Benchmarking llm powered chatbots: Methods and metrics</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Banerjee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Avadhanam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Srivastava</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Improving image generation with better captions</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Betker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Goh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Jing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Timbrooks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Longouyang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Juntangzhuang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Joycelee</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yufeiguo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wesammanassra</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Prafulladhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Caseychu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Yunxinjiao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ramesh</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Beyond prompts: Dynamic conversational benchmarking of large language models</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Castillo-Bolado</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Davidson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rosa</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.20222</idno>
+	</analytic>
+	<monogr>
+		<title level="m">2024. 38th Conference on Neural Information Processing Systems (NeurIPS) Track on Datasets and Benchmarks</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Large language model agent in financial trading: A survey</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Enhancing chat language models by scaling high-quality instructional conversations</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zhou</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023-12">Dec. 2023</date>
+			<biblScope unit="page" from="3029" to="3051" />
+			<pubPlace>Singapore</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Botchat: Evaluating llms&apos; capabilities of having multi-turn dialogues</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Chen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">From local to global: A graph rag approach to query-focused summarization</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Edge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Trinh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bradley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mody</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Truitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Larson</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.16130</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<publisher>Microsoft Research</publisher>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Ragas: Automated evaluation of retrieval-augmented generation</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Es</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>James</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Espinosa-Anke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Schockaert</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.15217</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gunasekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Aneja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">C T</forename><surname>Mendes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">D</forename><surname>Giorno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gopi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Javaheripi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Kauffmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>De Rosa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Saarikivi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Salim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Shah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">S</forename><surname>Behl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bubeck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Eldan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">T</forename><surname>Kalai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">T</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>Textbooks are all you need. CoRR, abs/2306.11644</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Unnatural instructions: Tuning language models with (almost) no human labor</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Honovich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Scialom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Levy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schick</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL</title>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="14409" to="14428" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Crmarena: Understanding the capacity of llm agents to perform professional crm tasks in realistic environments</title>
+		<author>
+			<persName><forename type="first">K.-H</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Prabhakar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Dhawan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Laban</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C.-S</forename><surname>Wu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">MT-eval: A multi-turn capabilities evaluation benchmark for large language models</title>
+		<author>
+			<persName><forename type="first">W.-C</forename><surname>Kwan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Shang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K.-F</forename><surname>Wong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing</title>
+		<editor>
+			<persName><forename type="first">Y</forename><surname>Al-Onaizan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Bansal</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Y.-N</forename><surname>Chen</surname></persName>
+		</editor>
+		<meeting>the 2024 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Miami, Florida, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024-11">Nov. 2024</date>
+			<biblScope unit="page" from="20153" to="20177" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Intent-based prompt calibration: Enhancing prompt optimization with synthetic boundary cases</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Levi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Brosh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Friedmann</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">On llms-driven synthetic data generation, curation, and evaluation: A survey</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Long</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Wizardmath: Empowering mathematical reasoning for large language models via reinforced evol-instruct</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno>CoRR, abs/2308.09583</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">V</forename><surname>Maharaj</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Bhattacharya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Galatanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Hanessian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Kapoor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Russell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Vaithyanathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<title level="m">Evaluation and continual improvement for an enterprise ai assistant</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Evaluating large language models as agents in the clinic</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Mehandru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">Y</forename><surname>Miao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">R</forename><surname>Almaraz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sushil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">J</forename><surname>Butte</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Alaa</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Digital Medicine</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<date type="published" when="2024-04">Apr. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">ask me anything&quot;: How comcast uses llms to assist agents in real time</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Rome</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Ture</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 47th International ACM SIGIR Conference on Research and Development in Information Retrieval</title>
+		<meeting>the 47th International ACM SIGIR Conference on Research and Development in Information Retrieval</meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2024-07">July 2024</date>
+			<biblScope unit="page" from="2827" to="2831" />
+		</imprint>
+	</monogr>
+	<note>SIGIR 2024</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Code llama: Open foundation models for code</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gehring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Gloeckle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sootla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Gat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">E</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Adi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Remez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Rapin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kozhevnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Evtimov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bitton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bhatt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Canton-Ferrer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Grattafiori</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Défossez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Copet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Azhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Usunier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Scialom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Synnaeve</surname></persName>
+		</author>
+		<idno>CoRR, abs/2308.12950</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Explore-instruct: Enhancing domainspecific instruction coverage through active exploration</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Quan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Shi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP</title>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="9435" to="9454" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Improving text embeddings with large language models</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Majumder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Wei</surname></persName>
+		</author>
+		<idno>CoRR, abs/2401.00368</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Let&apos;s synthesize step by step: Iterative dataset synthesis with large language models by extrapolating errors from small models</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sachan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP (Findings)</title>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="11817" to="11831" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Tradingagents: Multi-agents llm financial trading framework</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Wizardlm: Empowering large language models to follow complex instructions</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Jiang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Knowledgeinfused prompting: Assessing and advancing clinical text data generation with large language models</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Kan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">C</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">J</forename><surname>Yang</surname></persName>
+		</author>
+		<idno>CoRR, abs/2311.00287</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Eduagent: Generative student agents in learning</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Qin</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Finrobot: An open-source ai agent platform for financial applications using large language models</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">D</forename><surname>Wang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">K</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Darwin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Copur-Gencturk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+		<title level="m">Content Knowledge Identification with Multi-agent Large Language Models (LLMs)</title>
+		<imprint>
+			<publisher>Springer Nature Switzerland</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="284" to="292" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Decoding data quality via synthetic corruptions: Embeddingguided pruning of code data</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">K</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Elhoushi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mahmoud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Tirumala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Gloeckle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">S</forename><surname>Morcos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ardalani</surname></persName>
+		</author>
+		<idno>CoRR, abs/2312.02418</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Razavi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.12045</idno>
+		<title level="m">A benchmark for tool-agent-user interaction in real-world domains</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Scaling relationship on learning mathematical reasoning with large language models</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno>CoRR, abs/2308.01825</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

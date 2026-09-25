@@ -1,0 +1,1688 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Retrieval-augmented GUI Agents with Generative Guidelines</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Ran</forename><surname>Xu</surname></persName>
+							<email>ran.xu@emory.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Emory University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Kaixin</forename><surname>Ma</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Tencent AI Lab</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Wenhao</forename><surname>Yu</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Tencent AI Lab</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hongming</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Tencent AI Lab</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Joyce</forename><forename type="middle">C</forename><surname>Ho</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Emory University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Carl</forename><surname>Yang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Emory University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Tencent AI Lab</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Retrieval-augmented GUI Agents with Generative Guidelines</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">FBA726D6568D0005ECF3E5BF2A9CC223</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:13+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>GUI agents powered by vision-language models (VLMs) show promise in automating complex digital tasks. However, their effectiveness in real-world applications is often limited by scarce training data and the inherent complexity of these tasks, which frequently require longtailed knowledge covering rare, unseen scenarios. We propose RAG-GUI , a lightweight VLM that leverages web tutorials at inference time. RAG-GUI is first warm-started via supervised finetuning (SFT) and further refined through self-guided rejection sampling finetuning (RSF). Designed to be model-agnostic, RAG-GUI functions as a generic plug-in that enhances any VLM-based agent. Evaluated across three distinct tasks, it consistently outperforms baseline agents and surpasses other inference baselines by 2.6% to 13.3% across two model sizes, demonstrating strong generalization and practical plug-and-play capabilities in real-world scenarios.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Graphical User Interface (GUI) agents have emerged as powerful tools capable of automating complex interactions across diverse digital platforms, including web browsers <ref type="bibr" target="#b22">(Zhou et al., 2024;</ref><ref type="bibr" target="#b12">He et al., 2024)</ref>, computer use <ref type="bibr" target="#b34">(Xie et al., 2024)</ref>, and mobile applications <ref type="bibr" target="#b26">(Rawles et al., 2023</ref><ref type="bibr" target="#b25">(Rawles et al., , 2024))</ref>. Recent advances in vision-language models (VLMs) <ref type="bibr" target="#b19">(Liu et al., 2023;</ref><ref type="bibr">Bai et al., 2025)</ref> have greatly enhanced agents' abilities in grounding, visual context understanding, and reasoning, leading to notable progress in GUI-based interaction. However, these agents still struggle with real-world tasks due to their inherently complex, multi-step nature and the limited availability of high-quality training data <ref type="bibr" target="#b1">(Aksitov et al., 2023;</ref><ref type="bibr">Sun et al., 2024)</ref>.</p><p>To address these challenges, several studies leverage web tutorials, which provide step-by-step instructions and rich contextual information <ref type="bibr">(Xu et al., 2025b;</ref><ref type="bibr" target="#b22">Ou et al., 2024;</ref><ref type="bibr" target="#b39">Zhang et al., 2025)</ref>, to synthesize agent trajectories for model finetuning. However, the quality of such synthetic data remains variable, limiting flexibility and generalization to novel tasks.</p><p>We propose leveraging web tutorials as a nonparametric knowledge base at inference time to enhance agents' adaptability across diverse tasks. While this setup resembles the retrieval-augmented generation (RAG) paradigm, it differs from standard RAG pipelines that rely on cleaned, chunked Wikipedia passages for QA <ref type="bibr">(Lewis et al., 2020;</ref><ref type="bibr" target="#b20">Liu et al., 2025;</ref><ref type="bibr" target="#b27">Shi et al., 2024)</ref> and introduces two intrinsic challenges: (1) tutorials often encode procedural knowledge that is lost with fixed-length chunking, while leaving them unprocessed leads to long, noisy inputs that may degrade LLM performance <ref type="bibr">(Yu et al., 2024a)</ref>; and (2) tutorial relevance is not guaranteed-unlike QA corpora, tutorials may not align with the agent's task. Addressing these challenges is critical to fully leveraging tutorials for guiding agents towards desired behaviors.</p><p>Motivated by the above challenges, we introduce RAG-GUI, a lightweight VLM as an adapter between the agent backbone and the tutorial during inference. RAG-GUI is designed to: (1) assess the relevance between the current task (query and prior actions) and a given tutorial; and (2) generate a useful guidance from the relevant tutorial to assist task completion. Training RAG-GUI begins with supervised finetuning (SFT) with synthetic relevance labels generated by a teacher VLM to bootstrap learning. We then use rejection sampling that allows RAG-GUI to refine both relevance prediction and summarization, based on the assumption that better guidance improves agent performance. RAG-GUI is model-agnostic and can serve as a plug-and-play module for any VLM-based agent, making it broadly applicable across different tasks.</p><p>We evaluate RAG-GUI on three tasks with two backbones, consistently improving VLM-based agents at inference and often outperforming agents trained on synthetic tutorial trajectories. On the online AndroidWorld benchmark, RAG-GUI achieves 13.3% and 10.7% absolute gains for 7B and 72B backbones, respectively. Moreover, it narrows or surpasses the gap with training-based methods in real-world settings, highlighting its strong generalization across diverse, real-world scenarios.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related Works</head><p>Enabling large language models (LLMs) and vision-language models (VLMs) to function as capable GUI agents has been a vibrant area of research. Early approaches <ref type="bibr" target="#b9">(Deng et al., 2023;</ref><ref type="bibr" target="#b11">Gur et al., 2023)</ref> improved web agents by leveraging raw HTML elements but did not incorporate visual information. More recent works have demonstrated the promise of VLMs for GUI tasks, capitalizing on their strong visual understanding <ref type="bibr" target="#b40">(Zheng et al., 2024;</ref><ref type="bibr">Yan et al., 2023;</ref><ref type="bibr">Hong et al., 2024)</ref>. Concurrently, efforts such as <ref type="bibr" target="#b10">(Gou et al., 2025;</ref><ref type="bibr" target="#b30">Wu et al., 2025;</ref><ref type="bibr" target="#b34">Xu et al., 2024)</ref> focus on collecting largescale training data to enhance model capabilities.</p><p>Closest to our approach, AgentTrek <ref type="bibr">(Xu et al., 2025b)</ref> and TongUI <ref type="bibr" target="#b39">(Zhang et al., 2025)</ref> leverage web tutorials by synthesizing training trajectories to improve agent performance. Our work takes a complementary perspective: rather than relying solely on synthetic data generation, we directly integrate tutorial-based guidance at inference time through a lightweight, adaptive retrieval-augmented framework. This design enables flexible, plug-and-play enhancement of VLM-based GUI agents without the need for extensive retraining.</p><p>Retrieval-augmented generation (RAG) serves as a powerful technique for knowledge intensive tasks under both text-only <ref type="bibr">(Lewis et al., 2020;</ref><ref type="bibr" target="#b27">Shi et al., 2024;</ref><ref type="bibr">Yu et al., 2024a,b;</ref><ref type="bibr">Xu et al., 2025a)</ref> and multimodal scenarios <ref type="bibr" target="#b36">(Yu et al., 2025)</ref>. However, in our scenario, leveraging tutorials poses unique challenges due to their length and the presence of potentially irrelevant or noisy context, which motivates our design of task-aware guidance generation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Methodology</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Preliminaries</head><p>We formulate GUI tasks as a sequential decisionmaking problem and adopt the SeeAct framework <ref type="bibr" target="#b40">(Zheng et al., 2024)</ref>. Given a website state s, a task description g ∈ G, and an action space A, the agent generates a sequence of actions A = (a 1 , a 2 , . . . , a n ) ∈ A n to complete the task. At t-th step, the VLM-based agent π selects the next action a t based on the current environment observation s t , the task description g, and the history of previous actions A t = (a 1 , . . . , a t-1 ) as a t = π(g, s t , A t ). In our tutorial-augmented setting, we first retrieve a set of potentially relevant tutorials τ = {τ 1 , . . . , τ k } using the task description g. A lightweight VLM f θ then processes each tutorial to produce task-aware guidance as: τi,t = f θ (g, s t , A t , τ i ).</p><p>Here, the guidance τ = (ℓ, σ) contains a binary relevance label ℓ with the task-aware guidance σ.</p><p>The agent then generates the next action based on the current state, task description, action history, and the set of summaries identified as relevant:</p><formula xml:id="formula_0">ât = π(g, s t , A t , σt ),</formula><p>where</p><formula xml:id="formula_1">σt = {σ i,t | 1 ≤ i ≤ k, ℓ i = 1}</formula><p>is the filtered set of guidance summarized from relevant tutorials. We emphasize that the agent policy π is fixed without parameter update and and only the VLM f θ is updated.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Tutorial Collection</head><p>Our initial phase involves constructing a comprehensive dataset of GUI tutorials from diverse opensource online repositories. We define a GUI tutorial as a resource that provides sequential, step-by-step instructions for executing a task within a GUI, incorporating both textual descriptions and visual screenshots. Following <ref type="bibr">Qin et al. (2025)</ref>, we select two large-scale, image-text interleaved datasets, MINT <ref type="bibr">(Awadalla et al., 2024)</ref> and OmniCorpus <ref type="bibr">(Li et al., 2024a)</ref>, as primary sources for potential tutorial data. Additionally, we incorporate articles crawled from the WikiHow website<ref type="foot" target="#foot_0">foot_0</ref> as a supplementary corpus, given its focus on how-to content.</p><p>Recognizing that MINT and OmniCorpus include a wide spectrum of topics beyond GUI instruction, we conduct a multi-stage filtering process to extract relevant high-quality tutorials. This process comprises three key steps: (1) FastText Filtering, (2) Deduplication, and (3) LLM Labeling. The details for these steps are deferred to Appendix B. After all steps, we obtain a high-quality set of approximately 2.6M GUI tutorials from MINT, OmniCorpus and GUI tutorials, which serves as the task-adaptive guidance resource for the subsequent experiments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Optimization for Task-aware Guidance Generation f θ</head><p>Using a frozen VLM to generate task-specific guidance often leads to suboptimal results, as these models are typically fine-tuned for general-purpose tasks. This can create a mismatch between what the adapter f θ perceives as 'good' guidance and what the agent π effectively utilizes. To this end, we finetune f θ to align the generated guidance towards target tasks by leveraging the training data</p><formula xml:id="formula_2">containing D = {(g i , s i , A i , a i )} |D| i=1</formula><p>where a i is the ground-truth action step.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>SFT Warmup.</head><p>To warm up f θ for the target application, we first learn an initial policy via supervised finetuning by imitating the behavior of an expert VLM u. Specifically, we use a frontier model, GPT-4.1-mini, to generate high-quality guidance on open-sourced datasets of (state, tutorial, action) pairs as D SFT = {(x, h)}, where x = (g, s, A, τ i ) is the input containing both environment states, actions and retrieve tutorial, h ∼ u(x) is sampled from the expert VLM. This dataset is used to perform supervised fine-tuning on f θ as</p><formula xml:id="formula_3">L SFT = -E (x,h)∼D SFT |h| l=1 log f θ (h l | h &lt;l , x), providing a warm-up for downstream optimization.</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Self-guided Rejection Sampling Finetuning.</head><p>Generating large-scale high-quality distillation data is often infeasible in real-world settings. To improve the model's ability to produce effective guidance from tutorials, we adopt the hypothesis that good guidance should help the agent take the correct action. To that end, we repurpose the existing training tuples (g, s t , a t ) to first retrieve relevant tutorials τ , then train the guidance generation model such that its output increases the likelihood of the agent selecting the correct action as (note that τi = ( li , σi )):</p><formula xml:id="formula_4">p(ât = at|g, st, τi) = log τi p θ (τi|τi)p(ât = at|g, st, σi) ≥ Eq[log p(ât = at|g, st, σi)] + DKL(q || p θ ( τi|τi)) ELBO L(p θ ,q)</formula><p>Rather than directly optimizing the marginal loglikelihood, we maximize its evidence lower bound (ELBO) L(p θ , q), where q(τ ) is the posterior over the sampled guidance τ . The optimal q is given by:</p><formula xml:id="formula_5">q (τi | g, st, at, τi) = p θ (τi | τi) p (ât = at | g, st, σi) τ ′ p θ (τ ′ i | τi) p (ât = at | g, st, σ′ i ) ∝ p θ (τi | τi) • p(ât = at | g, st, σi).</formula><p>Assume p(a t | g, s t , τ ) ∝ I[ ât = a t ], i.e., the probability is nonzero only when the generated action matches the ground-truth. Then, the overall rejection sampling procedure is as follows:</p><p>1. Sample guidance: For each tutorial τ i , draw m candidate guidances {τ</p><formula xml:id="formula_6">(j) i } m j=1 ∼ p θ ( τ | τ i ).</formula><p>2. Guideline Filtering: For each Guideline τ (j) i , let â(j) t = f (g, s t , σ(j) i ), then only those (τ i , τ (j) i ) for which â(j) t = a t are kept, yielding a filtered set D RSF .</p><p>3. Fine-tune: Update f θ by minimizing the RSF Loss of the retained guideline:</p><formula xml:id="formula_7">L RSF = min -(τ i ,τ )∈D RSF log p θ (τ | τ i ) .</formula><p>In practice, if the model assigns conflicting relevance labels to the same tutorial across different generations-yet both instances result in the correct action-we discard these examples to prevent introducing ambiguity into the training of the guideline generator f θ .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">Model Inference</head><p>At the inference stage, for example (g, s t , A t , a t ) and retrieved tutorials τ = {τ 1 , ..., τ k }, we first use the guideline generation model f θ to generate relevant guidelines (ℓ i , σ i ) = f θ (g, s t , A t , τ i ) for each tutorial τ i . Next, we filter the generated guidelines to retain only those marked relevant and augment the original prompt with this filtered set as</p><formula xml:id="formula_8">σt = {σ i | 1 ≤ i ≤ k, ℓ i = 1}.</formula><p>The agent π uses this augmented guideline to make its final action prediction as ât = π (g, s t , A t , σt ) , which updates the environment state s t+1 and action history A t+1 for the subsequent step.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Experiment Setups</head><p>Datasets and Evaluation Metrics We evaluate RAG-GUI on one challenging out-of-distribution online dataset Android World <ref type="bibr" target="#b25">(Rawles et al., 2024)</ref> and two in-distribution offline datasets Android Control <ref type="bibr">(Li et al., 2024b)</ref> and Multimodal-Mind2Web <ref type="bibr" target="#b9">(Deng et al., 2023)</ref>. The details for these datasets are in Appendix A.</p><p>Baselines We compare against the following baselines: (1) Inference-based methods without tutorials, including Seeclick <ref type="bibr">(Cheng et al., 2024b)</ref>, UGround <ref type="bibr" target="#b10">(Gou et al., 2025)</ref>, OmniParse (Lu  <ref type="formula">2025b</ref>), which finetunes the VLM using synthetic trajectories generated from web tutorials. We also report results from finetuning-based methods that leverage large amounts of grounding data and agent trajectories <ref type="bibr" target="#b34">(Xu et al., 2024;</ref><ref type="bibr">Qin et al., 2025)</ref>, but mainly for reference. Designing approaches to incorporate our tutorial guideline generation into finetuning is an interesting direction for future work.</p><p>Implementation Details Our guideline generation model f θ is built upon the Qwen-2.5-VL-7B backbone model. To create task-specific guideline for training, we utilize AitW <ref type="bibr" target="#b26">(Rawles et al., 2023)</ref>, AMEX <ref type="bibr" target="#b5">(Chai et al., 2024)</ref>, and GUIAct (web-multi and web-single) <ref type="bibr" target="#b6">(Chen et al., 2024)</ref> as seed datasets. We use E5 <ref type="bibr" target="#b29">(Wang et al., 2022)</ref> as the default embedding model for tutorial retrieval. For the SFT warmup, we train the backbone model for 1 epoch using a learning rate of 1e -5 and a cosine scheduler. During rejection sampling, we set the temperature to 1.0. For the RSF stage, we continue training the model for one additional epoch, building on the SFT checkpoint, with a learning rate of 5e -6.</p><p>For evaluation, we use Qwen-2.5-VL-7B/72B <ref type="bibr">(Bai et al., 2025)</ref> as the agent backbone model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Main Experiments</head><p>Table <ref type="table" target="#tab_0">1</ref> exhibits the experiment results on three tasks. We have the following findings:</p><p>Experiment on Offline Tasks Evaluations on AndroidControl and mm-Mind2Web reveal that naively incorporating tutorials via a standard RAG pipeline yields limited improvements, particularly for smaller backbones (7B), due to LLMs' constrained ability to process tutorials directly. In contrast, RAG-GUI achieves notable gains (4.4% on Mind2Web and 6.3% on AndroidControl) and narrow the gap between training-based methods and training-free models, verifying the benefit of carefully integrating tutorials. RAG-GUI also outperforms AgentTrek trained with synthetic trajectories converted from tutorials. We hypothesize that AgentTrek is hampered by dataset quality issues and still relies on high-quality trajectories to achieve strong performance.</p><p>Experiment on Online Tasks We evaluate RAG-GUI on AndroidWorld, an online environment requiring multi-step reasoning that mirrors real-world scenarios. Remarkably, incorporating guided summarization leads to more than 10% success rates compared to direct inference, which further validates the effectiveness of our proposed approach.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Effect of Two-Stage Training</head><p>The results also demonstrate that incorporating self-guided rejection sampling finetuning (RSF) consistently improves performance, emphasizing the benefit of enabling the model to self-evolve and avoid costly manual annotation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Effect of Textual Guidance Generator</head><p>In order to evaluate the capability of RAG-GUI to generate high-quality textual guidance, we conduct additional experiments that leverage frozen  Qwen2.5-VL-7B/72B as textual guidance generator for the Android World dataset. As shown in Table <ref type="table" target="#tab_1">2</ref>, RAG-GUI consistently outperforms the frozen models generating textual guidance for both 7B and 72B backbones. This demonstrates that the task-adaptive fine-tuning and guidance optimization in RAG-GUI lead to substantial improvements over simply using an online LLM to generate guidance, validating the effectiveness of our approach.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Additional Studies</head><p>We present additional analyses on guideline generation in Figure <ref type="figure" target="#fig_0">1</ref>. As illustrated in Figure <ref type="figure" target="#fig_0">1(a)</ref>, retrieving k = 3 tutorials yields optimal performance-too many tutorials result in lengthy contexts that may confuse the model, while too few (k = 1) risk missing relevant information. Furthermore, Figure <ref type="figure" target="#fig_0">1(b)</ref> compares our guideline generation framework against alternative designs, including prompting Qwen-2.5-VL-72B for reranking or using it solely as a summarization model without task-specific adaptation. The inferior performance of these variants verifies the effectiveness of our proposed guideline generation approach. More cases studies are presented in Appendix E for better illustration.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>In this work, we introduce RAG-GUI, a VLM-based guideline generation framework that enables agents to effectively harness the vast information contained in web tutorials. We curate a large dataset of 2.6 million tutorials and adopt a two-stage training approach to produce highquality guideline. Experiments across three benchmarks with two VLM backbones show consistent performance gains of RAG-GUI, ranging from 2.6% to 13.3% across model sizes. Notably, the improvements are more pronounced in online environments that closely simulate real-world scenarios, demonstrating the strong generalization capability of RAG-GUI in assisting VLM-based Agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitations</head><p>Our study is limited to inference-time evaluation without any model finetuning, which may constrain the achievable performance gains through adaptation. Furthermore, all experiments are performed exclusively on the Qwen-VL-series models, limiting the generalizability of our results to other architectures such as LLaVA <ref type="bibr" target="#b19">(Liu et al., 2023)</ref>. While incorporating guideline generation introduces additional inference latency, the consistent performance improvements justify this overhead. Nonetheless, future work could focus on optimizing the efficiency of both retrieval and guideline generation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Details for Evaluation Tasks</head><p>Android World assesses performance within a virtual Android emulator, with 116 distinct tasks across 20 mobile applications. For this dataset, we report Step accuracy, which measures the correctness of the final stage of task execution. Multimodal-Mind2Web focuses on interactions within web environments, with 1,013 tasks spanning 100 different websites. We utilize three metrics for evaluation: Element accuracy (Ele. Acc.), Operation F1 (Op. F1), and Step success rate (Step SR). Android Control is designed for the mobile environment. Following the methodology of Li et al. (2024b), we randomly sample 500 tasks to form our test set. Performance on this dataset is measured by Step accuracy. Notably, Android Control includes both high-level instructions, requiring the model to simultaneously plan and execute actions, and low-level instructions, where the model only needs to execute a predefined action.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Details for Tutorial Collection</head><p>FastText Filtering Given the substantial scale of the MINT (1054M documents) and OmniCorpus (988M documents) datasets, we employ the computationally efficient FastText classifier <ref type="bibr" target="#b15">(Joulin et al., 2016)</ref> for an initial filtering of potential tutorials. Leveraging the inherent feature of the Wiki-How corpus, which categorizes its articles by topic, we curated a positive training set by extracting approximately 24K samples classified under the "Computers and Electronics" category. To create a balanced training set, we randomly selected 12K negative samples from WikiHow articles belonging to other categories and an additional 12K random samples from the MINT dataset. This resulted in a training corpus of 48K labeled examples. The trained FastText classifier is then applied to filter the MINT and OmniCorpus datasets, after which 26.5M documents from MINT and 52M documents from OmniCorpus are retained, forming a preliminary candidate set of tutorials.</p><p>Deduplication To mitigate redundancy within the candidate tutorial set derived from MINT and OmniCorpus (e.g., content duplication across different URLs and overlap between the two datasets), we performed content-based deduplication on the filtered documents from the previous stage. This process yields a refined set of approximately 7.5M unique documents from MINT and 24M unique documents from OmniCorpus.</p><p>LLM Labeling To achieve a more precise selection of GUI-related tutorials, we employ Qwen2.5-7b-it <ref type="bibr">(Qwen et al., 2025)</ref> for a subsequent classification step. We prompt the LLM to analyze the content of each document and identify those specifically providing instructions for GUI tasks. This more granular filtering process further reduces the number of false positives, resulting in a highquality set of approximately 0.74M GUI tutorials from MINT and 1.8M from OmniCorpus. The prompt format is detailed in Appendix C. Aggregating these with the initial 24K positive samples sourced from WikiHow yields a final pool of 2.6M GUI tutorials, which serves as the task-adaptive guidance resource for the subsequent experiments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Prompt Format for LLM Labeling</head><p>Figure <ref type="figure" target="#fig_1">2</ref> shows the prompts used for estimating whether the content is a GUI-related tutorial.</p><p>System Prompt: You are an assistant that classifies content based on specific criteria. Your task is to evaluate whether a given piece of content serves as a tutorial specifically related to graphical user interfaces (GUI), such as for web applications, desktop applications, or operating systems.</p><p># Classification Criteria The content qualifies as a GUI-related tutorial if it meets the following conditions: 1. It includes a task description outlining what needs to be achieved. 2. It provides clear step-by-step instructions for interacting with a GUI, such as: -Step 1: Open the application -Step 2: Navigate to the settings menu. User Prompt: Given the below content, predict if the content is a GUI-related tutorial or not. Output 'Yes' if the above content is a GUI-related tutorial and 'No' if it is not. Provide only 'Yes' or 'No' as the output. {content} Assistant Prompt: Output: {Generated relevant label} </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Prompt Format for Inference</head><p>The prompt template for guidance generation is listed in Figure <ref type="figure" target="#fig_2">3</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>System Prompt:</head><p>You are a helpful assistant that aim to use a tutorial for completing a specific GUI-based task. Given a query, previous actions and a related tutorial, your task is to first identify the relevance between the tutorial and the task and previous actions.</p><p>Then, if the tutorial is relevant, please generate a concise summary for the tutorial with the following requirements: -1. You should only retain the most relevant information from the tutorial that help to solve the task conditioned on previous actions. -2.Please make sure to include detailed guidance from the tutorial if it is helpful to solve the problem based on the current state. -3. If the tutorial is not helpful or relevant to the task, then please only generate the score without summary. Use the following format in your output: &lt;score&gt; [the relevance score (0 or 1)] &lt;/score&gt; &lt;summary&gt; [Your summary of the tutorial conditioned on the task and previous actions] &lt;/summary&gt; User Prompt: The user query: {instruc-tion} Task progress (You have done the following operation on the current device): {previ-ous_actions}; Tutorial: {tutorial} Assistant Prompt: Output: {Model generated guidance} </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E Case Study</head><p>We present a case study in Table <ref type="table" target="#tab_2">3</ref> from Android Control to demonstrate the task guidance generated by RAG-GUI based on goal, previous actions and the retrieved tutorial. We observe that the retrieved tutorial contains noise, much of which is irrelevant to the specific task at hand.. However, the task guidance generated by RAG-GUI is much more concise, while still retaining the important information. Furthermore, the generated guidance seamlessly integrates contextual data derived from both the stated goal and the prior actions. Crucially, it provides specific, actionable cues on how to execute the subsequent step, directly addressing the requirements of the current task in light of the performed interactions. In the main page of the MakeMyTrip app, after selecting the "Flights" tab, proceed to fill out the flight search form by entering the departure city as Rotterdam, the destination city as Puerto Natales, and set the travel date to 11th January. After completing the form, initiate the search to view available flights matching these criteria. Select the preferred flight from the search results to verify details such as pricing and dates. Continue by entering passenger and contact information, then proceed to payment information where you accept terms and confirm the trip to complete the booking.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Additional studies.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure2: Prompt for using Qwen-2.5 for generating quality labels for web tutorials.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Prompt for guidance generation.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>The performance of RAG-GUI and baselines on three benchmarks. M2W, AC and AW stands for mm-Mind2Web, AndroidControl and AndroidWorld, respectively.Acc Op. F1 Step SR Ele. Acc Op. F1 Step SR Ele. Acc Op. F1 Step SR Step Acc. Step Acc.</figDesc><table><row><cell cols="2">Models</cell><cell>AW</cell><cell cols="3">M2W -Cross Task</cell><cell cols="3">M2W -Cross Website</cell><cell cols="3">M2W -Cross Domain</cell><cell cols="2">AC -High AC -Low</cell></row><row><cell cols="4">Planner Ele. GPT-4o (2024) SeeClick (2024a) Grounder SR -32.1</cell><cell>-</cell><cell>-</cell><cell>33.1</cell><cell>-</cell><cell>-</cell><cell>33.5</cell><cell>-</cell><cell>-</cell><cell>41.8</cell><cell>52.8</cell></row><row><cell>GPT-4o (2024)</cell><cell>UGround (2025)</cell><cell>32.8</cell><cell>47.7</cell><cell>-</cell><cell>-</cell><cell>46.0</cell><cell>-</cell><cell>-</cell><cell>46.6</cell><cell>-</cell><cell>-</cell><cell>48.4</cell><cell>62.4</cell></row><row><cell cols="2">GPT-4V (2023) OmniParse (2024)</cell><cell>-</cell><cell>42.4</cell><cell>87.6</cell><cell>39.4</cell><cell>41.0</cell><cell>84.8</cell><cell>36.5</cell><cell>45.5</cell><cell>85.7</cell><cell>42.0</cell><cell>-</cell><cell>-</cell></row><row><cell cols="2">GPT-4o (2024)</cell><cell>34.5 (SOM)</cell><cell>5.7</cell><cell>77.2</cell><cell>4.3</cell><cell>5.7</cell><cell>79</cell><cell>3.9</cell><cell>5.5</cell><cell>86.4</cell><cell>4.5</cell><cell>20.8</cell><cell>19.4</cell></row><row><cell cols="2">Claude Computer Use (2025)</cell><cell>27.9</cell><cell>62.7</cell><cell>84.7</cell><cell>53.5</cell><cell>59.5</cell><cell>79.6</cell><cell>47.7</cell><cell>64.5</cell><cell>85.4</cell><cell>56.4</cell><cell>12.5</cell><cell>19.4</cell></row><row><cell cols="2">AgentTrek 7B (2025b)</cell><cell>-</cell><cell>45.5</cell><cell>84.9</cell><cell>40.9</cell><cell>40.8</cell><cell>82.8</cell><cell>35.1</cell><cell>48.6</cell><cell>84.1</cell><cell>42.1</cell><cell>-</cell><cell>-</cell></row><row><cell cols="2">Qwen2.5-VL-7B (2025)</cell><cell>22.0</cell><cell>57.9</cell><cell>82.5</cell><cell>45.3</cell><cell>58.6</cell><cell>80.0</cell><cell>41.6</cell><cell>57.5</cell><cell>83.4</cell><cell>45.2</cell><cell>52.9</cell><cell>72.5</cell></row><row><cell cols="2">w/ vanilla RAG</cell><cell>22.4</cell><cell>59.0</cell><cell>83.1</cell><cell>46.0</cell><cell>57.4</cell><cell>80.4</cell><cell>41.3</cell><cell>57.9</cell><cell>83.5</cell><cell>45.3</cell><cell>55.8</cell><cell>74.3</cell></row><row><cell>RAG-GUI-7B</cell><cell></cell><cell>35.3</cell><cell>63.9</cell><cell>84.1</cell><cell>51.5</cell><cell>60.7</cell><cell>83.6</cell><cell>46.1</cell><cell>60.3</cell><cell>84.5</cell><cell>47.8</cell><cell>59.6</cell><cell>81.6</cell></row><row><cell cols="2">w/o RSF</cell><cell>32.8</cell><cell>59.9</cell><cell>83.5</cell><cell>46.8</cell><cell>58.6</cell><cell>82.3</cell><cell>44.2</cell><cell>59.5</cell><cell>84.5</cell><cell>47.3</cell><cell>54.9</cell><cell>79.4</cell></row><row><cell cols="2">Qwen2.5-VL-72B (2025)</cell><cell>35.0</cell><cell>63.4</cell><cell>81.7</cell><cell>51.8</cell><cell>64.0</cell><cell>81.8</cell><cell>49.6</cell><cell>56.5</cell><cell>84.1</cell><cell>46.2</cell><cell>57.0</cell><cell>78.6</cell></row><row><cell cols="2">w/ vanilla RAG</cell><cell>37.5</cell><cell>58.6</cell><cell>82.9</cell><cell>45.8</cell><cell>63.8</cell><cell>81.8</cell><cell>49.0</cell><cell>60.0</cell><cell>81.6</cell><cell>49.8</cell><cell>56.2</cell><cell>76.7</cell></row><row><cell>RAG-GUI-72B</cell><cell></cell><cell>45.7</cell><cell>69.5</cell><cell>85.0</cell><cell>56.8</cell><cell>68.1</cell><cell>83.1</cell><cell>53.0</cell><cell>66.3</cell><cell>85.9</cell><cell>55.0</cell><cell>60.7</cell><cell>84.6</cell></row><row><cell cols="2">w/o RSF</cell><cell>44.4</cell><cell>66.3</cell><cell>84.2</cell><cell>53.8</cell><cell>66.9</cell><cell>82.9</cell><cell>52.1</cell><cell>63.6</cell><cell>84.7</cell><cell>52.2</cell><cell>58.7</cell><cell>80.9</cell></row><row><cell></cell><cell>-</cell><cell></cell><cell></cell><cell></cell><cell cols="8">Training-based LLMs using in-distribution training data. For Reference Only.</cell><cell></cell></row><row><cell cols="2">AgentTrek 7B (w/ M2W) (2025b)</cell><cell>-</cell><cell>60.8</cell><cell>88.9</cell><cell>55.7</cell><cell>57.6</cell><cell>88.1</cell><cell>51.4</cell><cell>56.0</cell><cell>87.5</cell><cell>52.6</cell><cell>-</cell><cell>-</cell></row><row><cell cols="2">Aguvis 7B (2024)</cell><cell>-</cell><cell>64.2</cell><cell>89.8</cell><cell>60.4</cell><cell>60.7</cell><cell>88.1</cell><cell>54.6</cell><cell>60.4</cell><cell>89.2</cell><cell>56.6</cell><cell>61.5</cell><cell>80.5</cell></row><row><cell cols="2">Aguvis 72B (2024)</cell><cell>26.1</cell><cell>69.5</cell><cell>90.8</cell><cell>64.0</cell><cell>62.6</cell><cell>88.6</cell><cell>56.5</cell><cell>63.5</cell><cell>88.5</cell><cell>58.2</cell><cell>66.4</cell><cell>84.4</cell></row><row><cell cols="2">UI-TARS 7B (2025)</cell><cell>33.0</cell><cell>73.1</cell><cell>92.2</cell><cell>67.1</cell><cell>68.2</cell><cell>90.9</cell><cell>61.7</cell><cell>66.6</cell><cell>90.9</cell><cell>60.5</cell><cell>72.5</cell><cell>90.8</cell></row><row><cell cols="2">UI-TARS 72B (2025)</cell><cell>46.6</cell><cell>74.7</cell><cell>92.5</cell><cell>68.6</cell><cell>72.4</cell><cell>91.2</cell><cell>63.5</cell><cell>68.9</cell><cell>91.8</cell><cell>62.1</cell><cell>74.7</cell><cell>91.3</cell></row></table><note><p>et al., 2024), GPT-4o(Hurst et al., 2024)</p><p>, and Claude<ref type="bibr" target="#b2">(Anthropic, 2025)</ref></p><p>; (2) Tutorial-based inference method: vanilla RAG (Lewis et al., 2020)</p><p>, which augments tasks, states, and previous actions with top retrieved tutorials; (3) Tutorial-based synthetic data generation: AgentTrek (Xu et al.,</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>The performance of RAG-GUI and frozen Qwen as textual guidance generators on the Android-World benchmark.</figDesc><table><row><cell cols="3">Models</cell><cell></cell><cell>AW SR</cell></row><row><cell cols="4">Qwen2.5-VL-7B (2025)</cell><cell>22.0</cell></row><row><cell></cell><cell></cell><cell cols="2">w/ vanilla RAG</cell><cell>22.4</cell></row><row><cell></cell><cell></cell><cell cols="3">w/ textual guidance from frozen Qwen2.5-VL-7B</cell><cell>27.5</cell></row><row><cell cols="3">RAG-GUI-7B</cell><cell></cell><cell>35.3</cell></row><row><cell cols="4">Qwen2.5-VL-72B (2025)</cell><cell>35.0</cell></row><row><cell></cell><cell></cell><cell cols="2">w/ vanilla RAG</cell><cell>37.5</cell></row><row><cell></cell><cell></cell><cell cols="3">w/ textual guidance from frozen Qwen2.5-VL-72B</cell><cell>37.9</cell></row><row><cell cols="3">RAG-GUI-72B</cell><cell></cell><cell>45.7</cell></row><row><cell></cell><cell>45</cell><cell></cell><cell></cell></row><row><cell>Success Rate</cell><cell>30 35 40</cell><cell></cell><cell></cell></row><row><cell></cell><cell>25</cell><cell></cell><cell cols="2">RAG-GUI-7B RAG-GUI-72B</cell></row><row><cell></cell><cell>20</cell><cell>1</cell><cell>3</cell><cell>5</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>A case study from Android Control demonstrating the task guidance generated by RAG-GUI. Green text stands for the alignment of guidance and action goal while blue text justify the ability of RAG-GUI in generating customized guidance by taking the previous actions into the consideration. I want to search for a flight from Rotterdam to Puerto Natales to visit my favorite travel destination Patagonia on the MakeMyTrip app for 11th January. Click on the Flights option. Search In the Main Page select the "Flights" tab, and a form is shown with the information you submit for search flights. Complete the Form In the form, enter the information for your reservation: Depart and return cities, depart and return dates, amount of tickets, etc. After filling out the form, click on: Select Flights You will see a list with the flights that match your search criteria in previous step. Verify pricing information, dates, etc; and select the flight you want by clicking on this button: Verify The reservation summary information is shown,with Flight data, prices, purchase conditions, etc. To continue, click on the following button: Enter your Data The form is shown to collect the information for passengers, contact, etc. Complete the form and click on "Reserve". Payment Information Now the form to enter payment information, that could be Credit Card or Deposit. IMPORTANT: Your credit card is not charged on this step. It is used only for reservation validation. A Sales executive will contact you to complete the payment process. Click on "Accept Terms and Conditions" and then on "Confirm Trip". Reservation Complete Congratulations! you have reserved your flight ticket. A Sales Executive will contact you to complete the payment and issue the Electronic Ticket.</figDesc><table><row><cell>Goal</cell><cell></cell></row><row><cell>Previous</cell><cell>Step 1: Open MakeMyTrip app.</cell></row><row><cell cols="2">Actions Step 2: Retrieved</cell></row><row><cell>Tutorial</cell><cell></cell></row><row><cell></cell><cell>Packages</cell></row><row><cell></cell><cell>Hotels</cell></row><row><cell></cell><cell>Air Tickets</cell></row><row><cell></cell><cell>Search for Tourism Packages</cell></row><row><cell></cell><cell>Ingrese el nombre del hotel o la ciudad:</cell></row><row><cell></cell><cell>Partners Hotels recommended</cell></row><row><cell>Task Guidance</cell><cell></cell></row><row><cell>Generated by</cell><cell></cell></row><row><cell>RAG-GUI</cell><cell></cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>www.wikihow.com</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Adler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lama</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilge</forename><surname>Akkaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florencia</forename><surname>Leoni Aleman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Janko</forename><surname>Altenschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Altman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.08774</idno>
+		<title level="m">Shyamal Anadkat, and 1 others. 2023. Gpt-4 technical report</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Pranesh Srinivasan, and 1 others</title>
+		<author>
+			<persName><forename type="first">Renat</forename><surname>Aksitov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sobhan</forename><surname>Miryoosefi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zonglin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daliang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sheila</forename><surname>Babayan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kavya</forename><surname>Kopparapu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zachary</forename><surname>Fisher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiqi</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sushant</forename><surname>Prakash</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.10003</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Rest meets react: Selfimprovement for multi-step reasoning llm agent</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Introducing computer use</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note>a new claude 3.5 sonnet, and claude 3.5 haiku</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Caiming Xiong, and 1 others. 2024. Mint-1t: Scaling open-source multimodal data by 10x: A multimodal dataset with one trillion tokens</title>
+		<author>
+			<persName><forename type="first">Anas</forename><surname>Awadalla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oscar</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manli</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannah</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Etash</forename><surname>Guha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sheng</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohamed</forename><surname>Awadalla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvio</forename><surname>Savarese</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="36805" to="36828" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keqin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuejing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenbin</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sibo</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijie</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.13923</idno>
+		<title level="m">Jun Tang, and 1 others. 2025. Qwen2. 5-vl technical report</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Chai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yazhe</forename><surname>Niu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dingyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongsheng</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.17490</idno>
+		<title level="m">Amex: Android multiannotation expo dataset for mobile gui agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Yupeng Huo, and 1 others</title>
+		<author>
+			<persName><forename type="first">Wentong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junbo</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinyi</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guirong</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.11317</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Guicourse: From general vision language models to versatile gui agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Kanzhi</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiushi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yougang</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangzhi</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yantao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianbing</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyong</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.10935</idno>
+		<title level="m">Seeclick: Harnessing gui grounding for advanced visual gui agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">2024b. SeeClick: Harnessing GUI grounding for advanced visual GUI agents</title>
+		<author>
+			<persName><forename type="first">Kanzhi</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiushi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yougang</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangzhi</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Yantao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianbing</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyong</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.acl-long.505</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics<address><addrLine>Bangkok, Thailand</addrLine></address></meeting>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="9313" to="9332" />
+		</imprint>
+	</monogr>
+	<note>Long Papers) Association for Computational Linguistics</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Mind2web: Towards a generalist agent for the web</title>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyuan</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Stevens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boshi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Su</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="28091" to="28114" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Navigating the digital world as humans do: Universal visual grounding for GUI agents</title>
+		<author>
+			<persName><forename type="first">Boyu</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruohan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyuan</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanan</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiheng</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Su</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">Izzeddin</forename><surname>Gur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hiroki</forename><surname>Furuta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Austin</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mustafa</forename><surname>Safdari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutaka</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Douglas</forename><surname>Eck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Faust</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.12856</idno>
+		<title level="m">A real-world webagent with planning, long context understanding, and program synthesis</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">WebVoyager: Building an end-toend web agent with large multimodal models</title>
+		<author>
+			<persName><forename type="first">Hongliang</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenlin</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaixin</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenzhong</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.acl-long.371</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics<address><addrLine>Bangkok, Thailand</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="6864" to="6890" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Ming Ding, and 1 others. 2024. Cogagent: A visual language model for gui agents</title>
+		<author>
+			<persName><forename type="first">Wenyi</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weihan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingsong</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiazheng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenmeng</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junhui</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiao</forename><surname>Dong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<biblScope unit="page" from="14281" to="14290" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Hurst</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Lerer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><forename type="middle">P</forename><surname>Goucher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Perelman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aidan</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akila</forename><surname>Ostrow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Welihinda</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hayes</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.21276</idno>
+		<title level="m">Alec Radford, and 1 others. 2024. Gpt-4o system card</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">Armand</forename><surname>Joulin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edouard</forename><surname>Grave</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Bojanowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthijs</forename><surname>Douze</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hérve</forename><surname>Jégou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomas</forename><surname>Mikolov</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1612.03651</idno>
+		<title level="m">Fasttext. zip: Compressing text classification models</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Tim Rocktäschel, and 1 others. 2020. Retrieval-augmented generation for knowledge-intensive nlp tasks</title>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Piktus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladimir</forename><surname>Karpukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heinrich</forename><surname>Küttler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="9459" to="9474" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qingyun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiyun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhai</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shenglong</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenjiang</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanzhou</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinan</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhangwei</forename><surname>Gao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.08418</idno>
+		<title level="m">Erfei Cui, and 1 others. 2024a. Omnicorpus: A unified multimodal corpus of 10 billion-level images interleaved with text</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Folawiyo Campbell-Ajala, Divya Tyamagundlu, and Oriana Riva. 2024b. On the effects of data scale on ui control agents</title>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">E</forename><surname>Bishop</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alice</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Rawles</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="92130" to="92154" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Visual instruction tuning</title>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong Jae</forename><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="34892" to="34916" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Roserag: Robust retrieval-augmented generation with small-scale llms via margin-aware preference optimization</title>
+		<author>
+			<persName><forename type="first">Tianci</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoxiang</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianze</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ran</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linjun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tuo</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoyu</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.10993</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yadong</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianwei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yelong</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmed</forename><surname>Awadallah</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.00203</idno>
+		<title level="m">Omniparser for pure vision based gui agent</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tianyue</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Frank</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiarui</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abishek</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sudipta</forename><surname>Sridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Sengupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Roth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Neubig</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.15637</idno>
+		<title level="m">Synatra: Turning indirect knowledge into direct demonstrations for digital agents at scale</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yining</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoming</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shihao</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shizuo</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junda</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunxin</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.12326</idno>
+		<title level="m">Shijue Huang, and 1 others. 2025. Uitars: Pioneering automated gui interaction with native agents</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">:</forename><surname>Qwen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baosong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beichen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianhong</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianwei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianxin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingren</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.15115</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">Preprint</note>
+	<note>and 25 others. 2025. Qwen2.5 technical report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Folawiyo Campbell-Ajala, and 1 others</title>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Rawles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Clinckemaillie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Waltz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabrielle</forename><surname>Lau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marybeth</forename><surname>Fair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alice</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Bishop</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.14573</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Androidworld: A dynamic benchmarking environment for autonomous agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Androidinthewild: A large-scale dataset for android device control</title>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Rawles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alice</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Rodriguez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oriana</forename><surname>Riva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><surname>Lillicrap</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="59708" to="59728" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">REPLUG: Retrievalaugmented black-box language models</title>
+		<author>
+			<persName><forename type="first">Weijia</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sewon</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michihiro</forename><surname>Yasunaga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minjoon</forename><surname>Seo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>James</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.naacl-long.463</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</title>
+		<meeting>the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies<address><addrLine>Mexico City, Mexico</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="8371" to="8384" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qiushi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kanzhi</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zichen</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuanyang</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yian</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangzhi</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenyu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengyou</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liheng</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.19723</idno>
+		<title level="m">Zhoumianze Liu, and 1 others. 2024. Os-genesis: Automating gui agent trajectory construction via reverse task synthesis</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaolong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binxing</forename><surname>Jiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linjun</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daxin</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rangan</forename><surname>Majumder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Furu</forename><surname>Wei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.03533</idno>
+		<title level="m">Text embeddings by weaklysupervised contrastive pre-training</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">OS-ATLAS: Foundation action model for generalist GUI agents</title>
+		<author>
+			<persName><forename type="first">Zhiyong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenyu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangzhi</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yian</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiushi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengyou</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kanzhi</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zichen</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liheng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><forename type="middle">Pu</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Qiao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Fangyu Lei, and 1 others. 2024. Osworld: Benchmarking multimodal agents for open-ended tasks in real computer environments</title>
+		<author>
+			<persName><forename type="first">Tianbao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danyang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jixuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaochuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siheng</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruisheng</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Toh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhoujun</forename><surname>Hua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongchan</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Shin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="52040" to="52094" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">2025a. SimRAG: Selfimproving retrieval-augmented generation for adapting large language models to specialized domains</title>
+		<author>
+			<persName><forename type="first">Ran</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sreyashi</forename><surname>Nag</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenwei</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaochen</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianfeng</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joyce</forename><forename type="middle">C</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carl</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>He</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2025.naacl-long.575</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2025 Conference of the Nations of the Americas Chapter</title>
+		<meeting>the 2025 Conference of the Nations of the Americas Chapter<address><addrLine>Albuquerque, New Mexico</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="11534" to="11550" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Caiming Xiong, and Tao Yu. 2025b. Agenttrek: Agent trajectory synthesis via guiding replay with web tutorials</title>
+		<author>
+			<persName><forename type="first">Yiheng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dunjie</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhennan</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junli</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zekun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Mao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yiheng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zekun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junli</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dunjie</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianbao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amrita</forename><surname>Saha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Doyen</forename><surname>Sahoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.04454</idno>
+		<title level="m">Aguvis: Unified pure vision agents for autonomous gui interaction</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanrong</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linjie</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianwei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiwu</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Mcauley</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.07562</idno>
+		<title level="m">Jianfeng Gao, and 1 others. 2023. Gpt-4v in wonderland: Large multimodal models for zero-shot smartphone gui navigation</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Vis-RAG: Vision-based retrieval-augmented generation on multi-modality documents</title>
+		<author>
+			<persName><forename type="first">Shi</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaoyue</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bokai</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junbo</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junhao</forename><surname>Ran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yukun</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenghao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">2024a. Chain-of-note: Enhancing robustness in retrieval-augmented language models</title>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoman</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peixin</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaixin</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongwei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.emnlp-main.813</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2024 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Miami, Florida, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<biblScope unit="page" from="14672" to="14685" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">RankRAG: Unifying context ranking with retrieval-augmented generation in LLMs</title>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Ping</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boxin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxuan</forename><surname>You</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Shoeybi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan</forename><surname>Catanzaro</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirty-eighth Annual Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<author>
+			<persName><forename type="first">Bofei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zirui</forename><surname>Shang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojian</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinxiao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Song-Chun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qing</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.12679</idno>
+		<title level="m">Tongui: Building generalized gui agents by learning from multimodal web tutorials</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">GPT-4v(ision) is a generalist web agent, if grounded</title>
+		<author>
+			<persName><forename type="first">Boyuan</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyu</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jihyung</forename><surname>Kil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Su</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Forty-first International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Uri Alon, and Graham Neubig. 2024. Webarena: A realistic web environment for building autonomous agents</title>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuhui</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abishek</forename><surname>Sridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianyi</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyue</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

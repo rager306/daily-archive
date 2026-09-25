@@ -1,0 +1,2407 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">MULTI-AGENT EVOLVE: LLM SELF-IMPROVE THROUGH CO-EVOLUTION</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-10-30">30 Oct 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Yixing</forename><surname>Chen</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Illinois at Urbana-Champaign</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yiding</forename><surname>Wang</surname></persName>
+							<email>yidingw@stu.pku.edu.cn</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Illinois at Urbana-Champaign</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Siqi</forename><surname>Zhu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Illinois at Urbana-Champaign</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Haofei</forename><surname>Yu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Illinois at Urbana-Champaign</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Tao</forename><surname>Feng</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Illinois at Urbana-Champaign</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Muhan</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Peking University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Mostofa</forename><surname>Patwary</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Jiaxuan</forename><surname>You</surname></persName>
+							<email>jiaxuan@illinois.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Illinois at Urbana-Champaign</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">MULTI-AGENT EVOLVE: LLM SELF-IMPROVE THROUGH CO-EVOLUTION</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-10-30">30 Oct 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">6E7C8A1F7E524EB070D757DD11100057</idno>
+					<idno type="arXiv">arXiv:2510.23595v3[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:15+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Reinforcement Learning (RL) has demonstrated significant potential in enhancing the reasoning capabilities of large language models (LLMs). However, the success of RL for LLMs heavily relies on human-curated datasets and verifiable rewards, which limit their scalability and generality. Recent Self-Play RL methods, inspired by the success of the paradigm in games and Go, aim to enhance LLM reasoning capabilities without human-annotated data. However, their methods primarily depend on a grounded environment for feedback (e.g., a Python interpreter or a game engine); extending them to general domains remains challenging. To address these challenges, we propose Multi-Agent Evolve (MAE), a framework that enables LLMs to self-evolve in solving diverse tasks, including mathematics, reasoning, and general knowledge Q&amp;A. The core design of MAE is based on a triplet of interacting agents (Proposer, Solver, Judge) that are instantiated from a single LLM, and applies reinforcement learning to optimize their behaviors. The Proposer generates questions, the Solver attempts solutions, and the Judge evaluates both while co-evolving. Experiments on Qwen2.5-3B-Instruct demonstrate that MAE achieves an average improvement of 4.54% on multiple benchmarks. These results highlight MAE as a scalable, data-efficient method for enhancing the general reasoning abilities of LLMs with minimal reliance on human-curated supervision.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="26" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="27" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="28" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="29" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>Reinforcement Learning (RL) <ref type="bibr" target="#b19">(Kaelbling et al., 1996;</ref><ref type="bibr" target="#b39">Silver et al., 2014)</ref> has demonstrated substantial potential in training Large Language Models (LLMs), leading to notable improvements in tasks such as coding and reasoning <ref type="bibr" target="#b10">(Guo et al., 2025)</ref>. However, these successes rely heavily on humancurated datasets, where ground truth answers are available to provide verifiable rewards <ref type="bibr" target="#b38">(Shao et al., 2024)</ref>. Human-curated datasets are costly and limited in numbers, which raises concerns about their scalability. Moreover, if LLMs are to advance beyond human-level intelligence in general domains, they will likely require training signals that surpass the capacity of human curation. In this paper, we focus on the central research question: can we build an effective RL framework for LLM to self-improve without human annotation in general domains?</p><p>Self-Play has long been a proven paradigm for achieving self-improvement in machine learning, particularly in environments with well-defined feedback such as Go, and other games <ref type="bibr" target="#b31">(OpenAI et al., 2019;</ref><ref type="bibr" target="#b40">Silver et al., 2017;</ref><ref type="bibr" target="#b20">Klein, 2022)</ref>. By letting models compete with themselves, Self-Play enables the discovery of progressively stronger strategies without human supervision. Recent studies have extended this idea to LLMs, demonstrating success in tasks such as code reasoning and games <ref type="bibr" target="#b52">(Zhao et al., 2025;</ref><ref type="bibr">Liu et al., 2025a)</ref>. However, existing approaches typically depend on grounded environments that can provide verifiable feedback (e.g., a Python interpreter or a game engine), making it challenging to generalize Self-Play to open-ended domains such as natural language reasoning or general knowledge. The key challenge lies in designing reward signals that can Multi-Agent Evolve instantiates three interactive roles (Proposer, Solver, and Judge) from a single LLM to form a closed selfimproving loop. The Proposer generates new questions, the Solver attempts to answer them, and the Judge evaluates both to provide general-domain reward signals. The Judge rewards the Solver for accurate reasoning, while the Proposer receives both a quality reward from the Judge and a difficulty reward that increases when the Solver fails, creating an adversarial co-evolution process that continuously enhances the model's reasoning ability.</p><p>improve LLMs' general capabilities without relying on such domain-specific grounding, as rewards in most real-world reasoning scenarios are inherently ambiguous and difficult to quantify.</p><p>To address these challenges, we propose Multi-Agent Evolve (MAE), a multi-agent self-evolving framework that extends the Self-Play paradigm to general domains. Multi-Agent Evolve instantiates three cooperative while competing roles (Proposer, Solver, and Judge) from a single base LLM. The Proposer generates questions, the Solver produces answers, and the Judge follows the LLMas-a-Judge paradigm <ref type="bibr" target="#b9">(Gu et al., 2024)</ref> to evaluate their generation and provide reward signals. This design forms a self-rewarding loop where the model can assess and improve itself without external supervision or domain-specific ground truth, as shown in Figure <ref type="figure" target="#fig_0">1</ref>. The Proposer and Solver engage in an adversarial interaction: the Solver is rewarded by the Judge for accurate and well-reasoned answers, while the Proposer receives both a quality reward from the Judge and a difficulty reward that increases when the Solver fails, driving co-evolution toward more challenging and informative tasks. To further ensure stable and scalable training, MAE applies format rewards and quality filtering, filtering out low-quality questions based on the Judge's evaluation scores.</p><p>Experimental results validate the effectiveness of Multi-Agent Evolve. Even from a minimal setup without real-world data or verifiable rewards, MAE improves upon the base model across nearly all benchmark types and outperforms the strong AZR baseline. When initialized with a small seed of unlabeled reference questions, MAE's performance is further amplified. This approach significantly outperforms standard Supervised Fine-Tuning (SFT) on the same dataset, even though SFT relies on ground-truth answers while MAE does not.</p><p>In summary, our main contributions are as follows:</p><p>• We introduce Multi-Agent Evolve(MAE), a multi-agent self-evolving framework that instantiates three interactive roles-Proposer, Solver, and Judge-from a single base LLM and jointly trains them via reinforcement learning. The framework forms a closed-loop propose-solve-judge pipeline with synchronized updates, supports both with/without reference settings, and integrates quality filtering to stabilize self-evolution.</p><p>• We design domain-agnostic self-rewarding mechanisms, including Judge-based evaluation, difficulty-aware rewards, and format rewards, which eliminate the reliance on humanlabeled ground truth or external verifiers.</p><p>• We empirically demonstrate the effectiveness and scalability of Multi-Agent Evolve on Qwen2.5-3B-Instruct <ref type="bibr" target="#b33">(Qwen et al., 2025)</ref> across mathematics, coding, reasoning, and general knowledge benchmarks, achieving improvements over both base and supervised fine-tuning baselines. We also give a thorough analysis of the training process and an ablation study to investigate the contribution of our components.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">RELATED WORKS</head><p>LLM-as-a-judge The paradigm of "LLM-as-a-judge" <ref type="bibr" target="#b9">(Gu et al., 2024)</ref> leverages the advanced capabilities of Large Language Models (LLMs) to perform evaluation tasks such as scoring, ranking, or selection, which have traditionally relied on costly human annotation <ref type="bibr" target="#b23">(Li et al., 2024)</ref>. This approach has been widely adopted across the LLM life-cycle for applications including evaluation, alignment, retrieval, and reasoning. Although it has some limitations, it has become a promising approach to provide self-training signals. Early prompting-based methods <ref type="bibr" target="#b35">(Raman et al., 2024;</ref><ref type="bibr" target="#b46">Weng et al., 2022)</ref>, utilizing LLMs themselves to provide generative feedback and refine their answers. Following work, like <ref type="bibr" target="#b32">Pang et al. (2023)</ref>, increases answering accuracy for reasoning tasks through a teacher-student self-play. <ref type="bibr" target="#b49">Yuan et al. (2025)</ref> use Self-Rewarding Language Models to iteratively train their instruction-following capability given the self-rated scores. In our paper, the LLM-as-ajudge paradigm is integrated into the system and participates in the model's evolution.</p><p>Self-Play for LLM Self-Play is a data-free approach that requires minimal human supervision. It primarily relies on the system's capabilities and its self-interaction to enable higher intelligence to emerge. Self-Play settings often only have two players participating and their interactions are somewhat limited to a zero-sum fashion. Recent works have deployed Self-Play on different LLM settings to improve corresponding capabilities <ref type="bibr" target="#b48">(Ye et al., 2025;</ref><ref type="bibr" target="#b8">Fang et al., 2025;</ref><ref type="bibr" target="#b17">Huang et al., 2025;</ref><ref type="bibr" target="#b53">Zhou et al., 2025;</ref><ref type="bibr" target="#b26">Lin et al., 2025)</ref>. Self-RedTeam <ref type="bibr">(Liu et al., 2025b)</ref> conducts attacker and defender interactions in a game of LLM safety to produce a safer model. Absolute Zero <ref type="bibr" target="#b52">(Zhao et al., 2025)</ref> uses Self-Play in RLVR to enhance performance in coding and mathematics, which relies on a verifiable environment. SPIRAL <ref type="bibr">(Liu et al., 2025a)</ref> conducts Self-Play under zero-sum game settings to enable a broader range of tasks. Multi-Agent Evolve distinguishes itself by utilizing the Self-Play paradigm as a component while introducing a Judge for evaluation to make zero-sum no longer a compulsory setting and makes even more general domain tasks applicable.</p><p>Multi-Agent for LLM LLMs have exhibited intelligence that is capable of all kinds of tasks. Therefore, they have been specialized as agents to cope with different situations <ref type="bibr">(Wang et al., 2024a)</ref>, and their interactions show great potential <ref type="bibr" target="#b24">(Liang et al., 2024;</ref><ref type="bibr" target="#b42">Talebirad &amp; Nadiri, 2023;</ref><ref type="bibr" target="#b4">Chen et al., 2023;</ref><ref type="bibr" target="#b1">Bettini et al., 2024)</ref>. However, previous works often directly deploy multi-agent systems and apply no training to these agents, which limits the adaptive evolution of these agents. Despite the promising effects of Multi-Agent for LLM, it presents various challenges in implementation, cost, and stability <ref type="bibr" target="#b2">(Cemri et al., 2025)</ref>. <ref type="bibr" target="#b30">Motwani et al. (2025)</ref> deploys Multi-Agent LLM training with a voting mechanism for reasoning enhancement. <ref type="bibr" target="#b51">Zeng et al. (2024)</ref> employs Multi-Agent LLM on a simpler setting of attack and defense of harmful responses. Our work presents a framework for general tasks that involves the interaction of three agents instantiated from one base model with Task-Relative REINFORCE++ <ref type="bibr" target="#b52">(Zhao et al., 2025)</ref>, which applies RL training to each agent role.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">PRELIMINARIES</head><p>Zero-Sum Self-Play Zero-sum games refer to games where two adversarial agents have completely opposed objectives. In such games, the gain of one player directly equals the loss of the other. This setting is commonly seen in games like chess and Go, where one player's win means the other's loss. Self-play is often employed in this setting, where the agent plays against copies of itself to generate data and utilize its feedback to optimize its strategy. The final goal of such self-play is to reach a Nash Equilibrium, where no agent can increase its utility by unilaterally changing strategy. This situation can be expressed as:</p><formula xml:id="formula_0">max π1 min π2 V π1,π2 (s 0 ) = min π2 max π1 V π1,π2 (s 0 )</formula><p>Solver Advantage Coding Common Knowledge Reasoning Math Verifiable Environment Limited to Certain Disciplines Limited interaction between models LLM as General Evaluator Capable of Providing Evaluation in General Tasks More interaction between models Task-Relative REINFORCE++ Proposer Rollout Sequence Solver Rollout Sequence Judge Rollout Sequence Proposer Advantage Judge Advantage Synchronized Parameter Update Generated Question 1:A+B+C=? x C Generated Question 2: What do you use when you want to wash your clothes? A. soap B. shampoo Reference Question 1: A+B=1 x C Reference Question 2: Soap is used to () Original Question: How much should be deposited to earn a $2000 interest in one year with an interest rate of 1%? Is this a good question? NO YES Initialization of Dataset Can Start from Zero Data Question Dumped Answer Needs Human Curation Outer Supervision with no interaction Question Enables self-improvement Proposer Judge Solver Proposer Solver Solver While the zero-sum self-play setting yields improvements in games like chess and Go, it does not entirely align with general tasks that involve more complex reward combinations.</p><p>Task-Relative REINFORCE++ Multi-agent training requires applying reinforcement learning to each role. We follow Absolute Zero Reasoner <ref type="bibr" target="#b52">(Zhao et al., 2025)</ref> and use Task-Relative REIN-FORCE++, which computes separate baselines for each agent. This is an interpolation between the per-question algorithm (e.g., GRPO) and a single baseline algorithm (e.g., REINFORCE++ <ref type="bibr" target="#b16">(Hu et al., 2025)</ref>), enabling variance reduction for each agent's task type. The normalized advantage A norm is computed as:</p><formula xml:id="formula_1">A norm role =</formula><p>r -µ role σ role , role ∈ {P roposer, Solver, Judge}</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">MULTI-AGENT EVOLVE</head><p>In this section, we introduce our Multi-Agent Evolve (MAE) framework, in which a shared backbone LLM plays multiple roles (Proposer, Solver, and Judge) to create problems, generate answers, and provide feedback as a training signal to self-improve. Through self-evolving training loops, MAE aims to improve the backbone model's problem-solving capabilities. The entire workflow is illustrated in Figure <ref type="figure" target="#fig_3">4</ref> and detailed in Algorithm 1. Please refer to the appendix for each agent's prompt.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">THE PROPOSER</head><p>The Proposer in the self-evolving system serves as the agent that raises solvable yet challenging questions to drive the Solver's learning. Its objective lies in two aspects: (1) the Judge considers its generated questions as well-formed and of high quality;</p><p>(2) the generated questions are challenging to the current Solver. At each step, the Proposer π P receives a set of generation instructions I g . It can also be prompted with a reference question without its corresponding ground truth answer, q ref , which is sampled from the valid question set (initialized with about 1K seed data from different datasets). The Proposer then generates a new question q with the necessary thinking steps. This process can be expressed as:</p><formula xml:id="formula_2">q ∼ π P (•|I g , (q ref ); θ)</formula><p>Reward Design. The reward for q generated by the Proposer is a weighted sum of three scores:</p><p>1. Quality Reward (R quality ): The Judge agent provides a score evaluating the quality of the question, such as its clarity and solvability.</p><p>2. Difficulty Reward (R dif f iculty ): This reward measures the difficulty of the question for the current Solver. We sample N sample answers from the Solver and collect their score V J (a, q) as evaluated by the Judge. This average solve score is RS (q):</p><formula xml:id="formula_3">RS (q) = 1 N sample N sample i=1 V J (a i , q) where a i ∼ π S (•|q)</formula><p>The difficulty reward is designed to be high only when the question is challenging for the Solver: R dif f iculty (q) = 1 -RS (q)</p><p>3. Format Reward (R f ormat ): This reward ensures the Proposer's generated question q is correctly formatted and parsable. It checks for the presence and uniqueness of the &lt;question&gt; tag in the Proposer's raw output, output P : R f ormat (output P ) =    1.0 if exactly one valid &lt;question&gt;...&lt;/question&gt; tag pair is present 0.5 if more than one valid tag pair is present 0.0 otherwise The Proposer's total reward is thus expressed as (in our experiments, λ quality , λ dif f iculty , and λ f ormat are all set to 1 3 ).: R P (q) = λ quality R quality + λ dif f iculty R dif f iculty + λ f ormat R f ormat</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Quality Filtering</head><p>We maintain a continually evolving pool of validated questions to stabilize training and provide guidance. The questions generated by the Proposer are collected only if they are considered 'Qualified' by the Judge. To be specific, we filter out 'Unqualified Questions' whose Quality Score falls below 0.7(on a score scale of [0, 1]).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">THE SOLVER</head><p>The Solver agent is tasked with generating responses to the Proposer's questions. It receives a general problem-solving instruction, I S , and the specific question, q, from the Proposer. The primary goal of the entire framework is to enhance the Solver's capabilities through this multi-agent coevolution process.</p><formula xml:id="formula_4">a ∼ π S (•|I S , q; θ)</formula><p>Reward Design The Solver's reward is a weighted sum of two scores:</p><p>1. Judge Reward (R judge ): Since our framework is designed for general domains and newly generated questions that may lack verifiable ground-truth rewards, the Solver's primary reward is given by the Judge. The Judge evaluates the quality and correctness of the answer a based on the answer and its corresponding question pair (q, a), providing a score R judge = V J (a, q).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Format Reward (R f ormat ):</head><p>The Solver also receives a format reward to ensure its generation a is placed inside the requested &lt;answer&gt; tags for correct parsing.</p><p>This reward is based on the Solver's raw output, output S : R f ormat (output S ) =    1.0 if exactly one valid &lt;answer&gt;...&lt;/answer&gt; tag pair is present 0.5 if more than one valid tag pair is present 0.0 otherwise Algorithm 1 Training Workflow for Multi-Agent Evolve Require: Base LLM M , seed question dataset D 0 , training steps T , question quality threshold a 1: Initialize Proposer π P , Solver π S , and Judge π J from M 2: Initialize question dataset D ← D 0 , pair dataset P ← ∅ 3: for t = 1, . . . , T do 4: if Propose_With_Reference then ▷ Proposer 5: Sample q ref from dataset D ▷ Sample reference question 6: q t , output P ← π P (I g , q ref ) ▷ Generate new question 7: else 8: q t , output P ← π P (I g , ∅) ▷ Generate new original question 9: end if 10:</p><formula xml:id="formula_5">RS (q t ) ← 1 N sample N sample i=1 V J (π S (q t ), q t ) ▷ Calculate average solve score 11: R dif f iculty (q t ) ← 1 -RS (q t ) ▷ Calculate difficulty 12: if R quality (q t ) ≥ 0.7 then 13: D ← D ∪ {q t } ▷ Update question dataset 14: end if 15: Reward: r P ← λ quality R quality (q t ) +λ dif f iculty R dif f iculty (q t ) +λ f ormat R f ormat (output P ) 16: Sample q from dataset D ▷ Solver 17:</formula><p>a t , output S ← π S (I S , q) ▷ Solver answers the question 18:</p><formula xml:id="formula_6">P ← P ∪ {(q, a t )} ▷ Update pair dataset 19: Reward: r S ← λ judge V J (a t , q) +λ f ormat R f ormat (output S ) 20: Sample (q, a) from dataset P ▷ Judge 21: g ← π J (q, a) ▷ Generation for evaluation (g = output J ) 22: Reward: r J ← R f ormat (g) 23:</formula><p>Update π P , π S , π J based on r P , r S , r J ▷ Update 24: end for 25: return improved model M ′ aggregated from π P , π S , π J The Solver's total reward is expressed as (in experiments, both λ judge and λ f ormat are set to 0.5):</p><formula xml:id="formula_7">R S (a) = λ judge R judge + λ f ormat R f ormat 4.3 THE JUDGE</formula><p>The Judge agent, π J , operates as a generative reward model, providing the numerical scores that guide the training of both the Proposer and the Solver. It leverages a chain-of-thought process, first generating a detailed analysis within &lt;think&gt; tags before outputting a final score, ensuring the evaluations are well-reasoned. The Judge performs two evaluation tasks using carefully designed, strict rubrics without any ground truth.</p><p>Judging Answers When evaluating a Solver's answer a for a given question q, the Judge provides a score V J (a, q). The evaluation prompt emphasizes correctness above all else, mandating a score in the '[1,3]' range for any factual, logical, or calculation error. Answers that are factually correct but have minor omissions or formatting issues are scored in the '[4,7]' range. Only flawless and comprehensive responses that adhere to all instructions can receive a top-tier score of '[8,10]'.</p><p>Judging Questions Similarly, when evaluating a question q generated by the Proposer, the Judge assesses its intrinsic quality, which we denote as the quality score R quality (q). The rubric for questions prioritizes solvability and logical coherence. Questions that are unsolvable, self-contradictory, or violate common sense are assigned a low score of '[1,3]'. Questions that are generally reasonable but suffer from ambiguity are placed in the '[4,7]' range. Only questions that are clear, well-formed, and logically sound receive high scores of '[8,10]'.</p><p>Format Reward A critical component of the Judge's training is the Format Reward, R f ormat . This reward incentivizes the Judge itself to produce clean, parsable output, which is crucial for automating the self-play loop. The reward is based on the structure of the Judge's response: R f ormat (output J ) =    1.0 if exactly one valid &lt;score&gt;X&lt;/score&gt; tag is present 0.5 if more than one valid tag is present 0 otherwise This mechanism ensures that the numerical scores used to train the Proposer and Solver can be reliably extracted, maintaining the stability of the entire training framework.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">COORDINATION AMONG PROPOSER, SOLVER, AND JUDGE</head><p>As demonstrated in Algorithm 1, a single training step of our framework includes the following phases: (1) Proposer Phase: The Proposer creates questions based on sampled reference questions from the existing dataset or poses new questions without any reference to obtain a new batch of challenging questions. Qualified questions evaluated by the Judge will be added to the valid dataset.</p><p>(2) Solver Phase: The Solver samples from the valid dataset. The Solver's task is to produce the best possible answers for this batch of questions, and the scores of these answers are rated by the Judge.</p><p>All question-answer pairs are then added to the pair dataset for the Judge to use.</p><p>(3) Judge Phase:</p><p>The Judge samples from the pair dataset and generates corresponding scores. It receives a format reward for its own output structure. (4) Synchronized Update: After the questions, answers, and scores are collected, the shared LLM backbone is updated for all three roles simultaneously using the gradients gathered this cycle.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">EXPERIMENTS</head><p>In this section, we evaluate the effectiveness of our Multi-Agent Evolve framework.</p><p>Settings: We choose Qwen2.5-3B-Instruct <ref type="bibr" target="#b33">(Qwen et al., 2025)</ref> as our base model. Our framework explores four distinct settings based on whether we use real-world reference questions and how reference questions are used to guide the Proposer. We first introduce the MAE (zero) setting. This is a minimal setup designed for a fair comparison with 'AZR' <ref type="bibr" target="#b52">(Zhao et al., 2025)</ref>, which uses no real-world data and ground truth. In this setting, we manually collect a minimal number of questions (16) generated by the model itself to guide the domain of evolution. The Proposer initializes its valid question set D with these 16 questions and then has an equal chance of generating a new question from a reference (sampled from the current D) or from scratch. For the other three settings, we initialize a valid question set D with a seed dataset of 967 questions (without ground truth) sampled from 14 real-world training sets covering math, coding, and commonsense reasoning, such as GSM8K <ref type="bibr" target="#b7">(Cobbe et al., 2021)</ref>, MATH <ref type="bibr">(Hendrycks et al., 2021a)</ref>, and HumanEval <ref type="bibr" target="#b3">(Chen et al., 2021)</ref>. This dataset is fixed across all experiments. A detailed breakdown is available in Appendix D. These settings are divided based on whether and how the Proposer uses this seed dataset as a reference:</p><p>• MAE (no reference): The Proposer initializes its valid question set D with the seed data and generates every new question from scratch.</p><p>• MAE (half reference): The Proposer also initializes its question set with the seed data, but has an equal chance of generating a new question from a reference (sampled from D) or from scratch.</p><p>• MAE (with reference): The Proposer initializes its valid question set D with the seed data and generates every new question based on a randomly sampled reference question from D.</p><p>For our evaluation, we select two groups of datasets. The first group consists of test sets corresponding to our reference data (in-distribution setting). These benchmarks include GSM8K <ref type="bibr" target="#b7">(Cobbe et al., 2021)</ref>, MATH <ref type="bibr" target="#b12">(Hendrycks et al., 2020)</ref>, ARC Challenge <ref type="bibr" target="#b6">(Clark et al., 2018)</ref>, MMLU <ref type="bibr">(Hendrycks et al., 2021a)</ref>, GPQA <ref type="bibr" target="#b36">(Rein et al., 2023)</ref>, Commonsense QA (CQA) <ref type="bibr" target="#b43">(Talmor et al., 2018)</ref>, Open-BookQA (OBQA) <ref type="bibr" target="#b29">(Mihaylov et al., 2018)</ref>, NaturalQuestions (NQ) <ref type="bibr" target="#b21">(Kwiatkowski et al., 2019)</ref>, TriviaQA <ref type="bibr" target="#b18">(Joshi et al., 2017)</ref>, SQuAD <ref type="bibr" target="#b34">(Rajpurkar et al., 2016)</ref>, BoolQ <ref type="bibr" target="#b5">(Clark et al., 2019)</ref>, and HellaSwag <ref type="bibr" target="#b50">(Zellers et al., 2019)</ref>. The second group consists of held-out datasets from an out-of-reference-data distribution. These include TruthfulQA <ref type="bibr" target="#b25">(Lin et al., 2022)</ref>, BigBench Hard(BBH) <ref type="bibr" target="#b41">(Suzgun et al., 2022)</ref>, LiveBench Reasoning <ref type="bibr" target="#b47">(White et al., 2025)</ref>, AMC <ref type="bibr">(Hendrycks et al., 2021b)</ref>, Minerva <ref type="bibr" target="#b22">(Lewkowycz et al., 2022)</ref>, Winogrande <ref type="bibr" target="#b37">(Sakaguchi et al., 2021)</ref>, Olympiad <ref type="bibr" target="#b11">(He et al., 2024)</ref>, and MMLU-Pro <ref type="bibr">(Wang et al., 2024b)</ref>. We evaluate models' coding performance using Evalplus library, while for the other benchmarks, since our MAE-trained model's outputs aren't regularized to a strict output pattern and is only required to put its answer inside given tags, we evaluate all the models' (and baselines') performance based on a strong LLM (see more details in Appendix. B) as the judge, which compares the model's generation inside given tags with the ground truth and then outputs a TRUE/FALSE judgment.</p><p>Baselines: We compare our method with essential baselines. The baseline 'Base' denotes the performance of the initial model. SFT denotes the supervised-finetuning baseline using our seed data with ground-truth answers, both embedded in the evaluation format. For SFT, we use LoRA <ref type="bibr" target="#b15">Hu et al. (2022)</ref> with a 128-rank to train the model for 5 epochs and make sure the loss converges. For the 'AZR' baseline, we use its official implementation and run it for 100 steps, keeping the hyperparameters identical.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">RESULTS AND FINDINGS</head><p>Evolution without Reference Questions As shown in the upper part of  (Left) The number of questions in the dataset increases steadily while low-quality questions are excluded. (Mid and Right) The Proposer learns to generate questions that present a desirable level of difficulty to the Solver, thereby benefiting the model in future training.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Evolution with Reference Questions</head><p>In the settings using reference questions (lower part of Table 2), we first observe that the SFT baseline, despite being trained on ground-truth answers, shows a performance degradation (Overall Avg. 53.87 vs. Base 55.33). We attribute this to the wide distribution and limited size of the seed dataset, which presents a significant challenge for standard supervised fine-tuning. In stark contrast, all MAE variants, which do not use any ground-truth answers, significantly outperform this SFT baseline. For instance, 'MAE (with reference)' outperforms SFT across both ID (65.07 vs. 63.28) and OOD (43.18 vs. 37.41) averages. Interestingly, 'MAE (no reference)', which generates all questions from scratch, also achieves a strong 'Overall Avg.' of 58.18, indicating that exploration is also an effective strategy. The optimal results are achieved by MAE (half reference), which finds a balance between leveraging the reference distribution and exploring novel, self-generated questions. This balanced approach leads to the highest scores on both in-distribution (ID Avg. 68.95) and out-of-distribution (OOD Avg. 43.96) benchmarks, culminating in the best Overall Avg. score of 59.87.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">TRAINING STABILITY AND TRAINING CURVE ANALYSIS</head><p>Previous approaches that use LLM interactions often suffer from instability and collapse during training <ref type="bibr" target="#b52">(Zhao et al., 2025;</ref><ref type="bibr" target="#b17">Huang et al., 2025)</ref>. To further investigate the effectiveness of our framework, we analyze the training stability and training curve in the remainder of this section.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.1">TRAINING STABILITY</head><p>Models trained with our framework show improved performance for over 250 steps with a batch size of 128. In comparison, R-Zero <ref type="bibr" target="#b17">(Huang et al., 2025)</ref> reports improvement over 3 iterations and a total of 45 steps for the solver and 15 steps for the challenger, all with the same batch size. Unlike previous methods that have faced hacking issues, the high-quality dataset and the interactions among the three roles in our framework enable continuous training. We observe that our framework consistently contributes questions to the dataset in each training step, indicating that question quality remains high. This also suggests that our framework may yield greater improvements on larger models, as they possess stronger capabilities and more knowledge to construct better questions throughout the co-evolution process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.2">TRAINING CURVE ANALYSIS</head><p>To demonstrate the effectiveness and scalability of our framework, we present key findings from the training process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Agent diversity contributes to stability</head><p>The interactions among different roles form the foundation of our framework, naturally requiring each agent's actions to be diverse to ensure overall diversity. If not, the collapse or convergence of any single agent may cause the entire framework to collapse. For example, suboptimal prompts and settings may lead the proposer to propose only open-ended writing questions. This, in turn, causes the model to perform worse on most benchmarks due to interactions between the agents.</p><p>Table 2: Ablation study: Experiments for our ablation study are carried out in the 'half reference' setting, training from the Qwen2.5-3B-Instruct <ref type="bibr" target="#b33">(Qwen et al., 2025)</ref> base model. Our results demonstrate the necessity of all our components for enabling model evolution. Each role in our framework is essential, and excluding any one of them will result in decreased performance. Format reward and question quality filtering both ensure the stability of the training process and prevent dataset corruption. Question quality filtering alone also shows a similar effect in constraining format and proves to be more important in our training. The bold underlined results are the best results across all settings.</p><p>Method GSM8K MATH ARC-C MMLU GPQA CQA OBQA NQ TriviaQA SQuAD BoolQ HellaSwag MBPP+ HumanEval+ MAE (half reference) 82.20 65.80 83.20 69.00 30.80 77.20 80.00 36.40 61.00 93.40 78.00 79.00 61.10 68.30 agent roles MAE (no solver training) 86.20 63.20 84.60 64.60 31.41 74.70 75.85 35.24 60.15 90.52 78.64 69.36 62.70 62.60 MAE (no proposer training) 84.20 64.20 80.60 62.60 30.85 75.03 76.67 35.86 57.31 92.20 79.50 67.92 60.00 69.50 MAE (no judge training) 85.20 64.40 81.00 62.40 30.90 75.18 76.83 36.06 57.98 92.02 79.86 68.26 61.40 68.30 question quality filtering and format reward MAE (no question quality filtering) 85.60 67.40 81.40 60.60 32.88 76.26 78.78 36.31 62.34 90.71 78.33 70.62 61.40 68.30 MAE (no format reward) 86.40 66.40 83.40 64.80 30.23 75.00 80.52 39.26 61.61 93.38 76.39 68.28 61.40 68.30 Method TruthfulQA BBH LiveBench Reasoning AMC Minerva Winogrande Olympiad MMLU-Pro ID Avg. OOD Avg. Overall Avg. MAE (half reference) 50.55 53.14 33.61 35.54 38.26 60.71 32.46 47.43 68.95 43.96 59.87 agent roles MAE (no solver training) 48.80 56.60 20.00 37.35 37.78 63.00 27.58 42.51 66.98 41.70 57.79 MAE (no proposer training) 47.80 54.80 24.00 40.96 38.89 61.25 27.70 41.98 66.89 42.17 57.90 MAE (no judge training) 40.20 54.80 18.50 37.35 32.58 64.52 27.66 43.80 67.13 39.93 57.24 question quality filtering and format reward MAE (no question quality filtering) 36.02 48.54 27.33 32.53 24.15 60.05 19.40 36.40 67.92 33.1425 56.15 MAE (no format reward) 53.54 56.55 26.42 42.17 39.44 64.72 25.91 43.45 68.24 44.03 59.44</p><p>Desirable difficulty offers improvement Through careful investigation into the training curves, we identify that generating feasible yet difficult questions is the key to improved performance. Once the model acquires the ability to create difficult questions during training, its performance on benchmarks exhibits a corresponding increase, as shown in Figure <ref type="figure" target="#fig_2">3</ref>. The relationship between difficulty and model performance suggests that hard questions, which present challenges to the model, help push its ability boundary further. This effect is intuitively consistent with the Desirable Difficulty Effect, which holds that, for optimal long-term learning, tasks should be challenging but not overwhelming.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">ABLATION</head><p>To investigate the individual contributions of the components in the Multi-Agent Evolve framework, we conduct a comprehensive ablation study on the Qwen-2.5-3B-Instruct <ref type="bibr" target="#b33">(Qwen et al., 2025)</ref> model. Specifically, we examine our agent roles, format reward, and question quality filtering.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3.1">AGENT ROLES</head><p>What distinguishes us from the familiar Self-Play setting is the interaction among our three agents. To demonstrate that each of our agents matters, we disable training for each role and see its corresponding performance. The performance drops by 2.08%, 1.97%, and 2.63% when the Solver, the Proposer, and the Judge are disabled, respectively. The results are shown in Table <ref type="table">5</ref>.3.</p><p>Although disabling training for each role does not affect the stability of the training, it does impede the model's potential for higher performance. The comprehensive interactions between roles are critical for overall progress, and removing any role results in falling short of several benchmarks. This indicates that each role plays its part in successful self-evolution, and training for each role is necessary in our setting.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3.2">FORMAT REWARD AND QUESTION QUALITY FILTERING</head><p>Dataset quality is critical to our framework, prompting us to implement multiple safeguards against corruption. Format rewards focus on supervising the model's generation to ensure that tags for extraction are correctly placed, providing fully curated supervision designed by humans. For instance, the &lt;question&gt;&lt;/question&gt; tags help identify the item to be given to the judge and added to the maintained dataset. Question quality filtering functions as a self-regulator, overseeing the entire process by having the Judge assign scores to questions, ensuring that only feasible, informative, and useful questions are submitted into the dataset.</p><p>However, we discovered that question quality filtering partially covers the function of format reward. This is because the model can correctly assign scores based on the designed rubrics. When an extraction failure or displacement occurs, the question is often deemed of low quality according to rubrics, and the Judge excludes it. As a result, the final performance only shows minor degradation when the format reward is removed. Removing quality filtering entirely allows low-quality questions to enter the dataset and propagate during training (except in the 'no reference' setting). This leads to a considerable performance drop of 3.72% compared to the 'half reference' setting.</p><p>The inclusion of question quality filtering also justifies our adoption of a beyond-zero-sum reward scheme. A difficulty reward in isolation could incentivize the Proposer to generate unsolvable questions or ambiguous contexts to hack the system and earn higher rewards. The Judge's direct evaluation, however, provides oversight of the dataset from a general perspective on feasibility and quality.</p><p>When both designs are absent, the quality of generation may drop significantly, rendering our framework infeasible. The Proposer sometimes places its generated question outside the tags, replacing the original position with its own description of the generation requirement, or retains the original placeholder in the last pair of question tags. The Judge generates scores that are not in score tags or produces multiple scores, which frequently causes training to revert to neutral scores. Some examples are shown in Figure <ref type="figure" target="#fig_3">4</ref>. The above situations can make training unstable and prevent it from being sustained over longer periods.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">CONCLUSION</head><p>We presented Multi-Agent Evolve, a multi-agent, self-evolving RL framework that instantiates a Proposer-Solver-Judge triad from a single backbone LLM and leverages domain-agnostic, selfrewarding signals. Without relying on external verifiers or human-curated labels, Multi-Agent Evolve delivers consistent gains over base and SFT baselines across math, coding, reasoning, and general-knowledge benchmarks on Qwen2.5-3B-Instruct, with ablations confirming the necessity of each role and the benefits of question quality filtering and format reward. Our analysis highlights stability considerations, particularly dataset corruption, and identifies a crucial turning point during our training process. Future work includes scaling to larger backbones, adding more roles to the framework, and integrating verifiable environments to build a unified platform where models can evolve across all general domains without human supervision.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A PROMPTS AND TRAINING HYPERPARAMETERS</head><p>A.1 PROMPTS FOR AGENTS Listing 1: Solver Prompt ## Task: Generate a High-Quality Response to a Given Task You will be given a cognitive, creative, logical, mathematical, or planning-related task. Your job is to generate a complete, highquality response that satisfies the task's constraints and demonstrates clear, structured reasoning or creativity. ### Instructions: -Carefully read and understand the task. -Think step by step -break down the task, simulate it mentally if needed, and reason through constraints. -Then directly write your final response inside a pair of &lt;answer&gt;&lt;/ answer&gt; tags(no need to restate or reformat the task). -Your output should: * Be ** correct ** or ** plausibly optimal ** , given the task * ** Fulfill all constraints ** in the task * Be ** clear ** and ** structured ** * Avoid any vagueness or randomness ### Good Response Traits:</p><p>-For reasoning tasks: shows logical progression and result -For generation tasks: respects the given constraints -For math/logic/planning: includes a final answer that could be evaluated -For creative tasks: coherent and original</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Listing 2: Proposer_No_Ref_No_Answer_Generation Prompt</head><p>## Task: Create a Challenging and Original Task Design a new and intellectually demanding task that tests ** complex reasoning, creative thinking, structured planning, or deep understanding ** . The task should be suitable for evaluation in general intelligence, reasoning benchmarks or instruction following.</p><p>You may design a task that resembles a quiz, puzzle or symbolic reasoning prompt. Focus on structure, challenge, and clarity.</p><p>---### Task Requirements:</p><p>-The task must be:</p><p>* ** Self-contained ** and clearly described * ** Non-trivial ** , requiring multiple reasoning steps, constraints, or synthesis * ** Deterministic ** or tightly constrained (even if open-ended in form) * ** Free from cultural bias or real-time information ** * ** Difficult ** but ** not impossible ** to solve -Accepted Domains include: * Logic puzzles and reasoning tasks * Context comprehension * Common knowledge Q&amp;A * Pattern-based math or symbolic challenges * Spatial planning or constraint problems * Instruction followings tasks -Avoid: * Trivia questions or subjective writing * Ambiguous or taste-based open-ended prompts * Any dependency on web access or recent knowledge * Tasks with no clear solvability path ---Follow the following format: &lt;question&gt; [Your generated question here] &lt;/question&gt; MAKE SURE THAT EVERY GENERATED QUESTION AND ** ONLY THE GENERATED QUESTION ** IS INSIDE THE &lt;question&gt;&lt;/question&gt; TAGS! USING THE CORRECT FORMAT AS GIVEN IS IMPORTANT! Listing 3: Proposer_With_Ref_No_Answer_Generation Prompt ## Task: Create a Challenging and Modified Version of a Reference Task Given one ** reference task ** , your goal is to design a ** new, more challenging task ** by making ** controlled perturbations ** to the original. The modifications should ** increase reasoning depth, introduce extra constraints, or add multi-step dependencies ** while keeping the problem ** self-contained and solvable ** . You must preserve the ** core domain or reasoning type ** of the reference (e.g., if it's a logic puzzle, keep it a logic puzzle) but ensure the ** surface content and structure are new ** . You may: -Add additional constraints or intermediate steps -Replace elements with analogous but more complex structures -Introduce distractors or traps that require careful reasoning -Change numerical values, symbolic rules, or conditions to increase difficulty ---### Task Requirements: -The modified task must be: * ** Self-contained ** and clearly described * ** Significantly different in surface form ** from the reference, but maintain same reasoning type * ** More challenging ** -requiring additional steps or deeper analysis than the reference * ** Deterministic ** or tightly constrained * ** Free from cultural bias, real-time info, or factual recall ** -Avoid: * Trivia questions or subjective writing * Ambiguous or taste-based open-ended prompts * Any dependency on web access or recent knowledge * Tasks with no clear solvability path ---Follow the following format: &lt;question&gt; [Your generated question here] &lt;/question&gt; MAKE SURE THAT EVERY GENERATED QUESTION AND ** ONLY THE GENERATED QUESTION ** IS INSIDE THE &lt;question&gt;&lt;/question&gt; TAGS! USING THE CORRECT FORMAT AS GIVEN IS IMPORTANT! Listing 4: Judge Answer Prompt Please evaluate the following solution to a question/problem following a strict rubric. Question/Problem: {question} Generated Solution: {answer} First, analyze the solution in the &lt;think&gt; and &lt;/think&gt; tags below: &lt;think&gt; STRICT RUBRIC: -Factual correctness is mandatory. ANY factual error (including arithmetic mistakes, violated common sense, wrong units, invalid assumptions, or faulty reasoning steps) =&gt; final score MUST be in [1,3]. -Meaningless or excessive repetition, rambling, or filler content =&gt; final score MUST be in [1,3]. -Hallucinated references, fabricated data, unsupported claims, or contradictions =&gt; final score MUST be in [1,3]. -Completeness &amp; directness: The answer must fully address the asked question. Missing key steps, incomplete derivations, or only partially addressing the prompt =&gt; score in [4,7] unless there are factual errors (then [1,3]). -Only answers that are entirely correct, follow instructions, are concise (no redundant repetition) may receive [8,10]. [Write your detailed analysis here: identify any factual errors, faulty reasoning steps or repetition issues. If ANY such issue exists, note that the score band must be [1,3]. If none, justify why it qualifies for 8-10; otherwise place it in 4-7.] &lt;/think&gt; Then provide a score from 1 to 10 between &lt;score&gt; and &lt;/score&gt; consistent with your thoughts where: -8-10: Flawless or near-flawless: entirely correct; no factual/logic/ common-sense/calculation errors; concise with no meaningless repetition; fully answers the question. -4-7: Generally on-topic and partially correct, but has omissions or clarity problems (NO factual errors). -1-3: ANY factual/logic/common-sense/calculation error OR hallucination OR large meaningless repetition OR severe irrelevance. &lt;score&gt;X&lt;/score&gt; (where X is an integer from 1 to 10) Listing 5: Judge Question Prompt Please evaluate the quality of the following question generation following a strict rubric. Question: {question} First, analyze the question in the &lt;think&gt; and &lt;/think&gt; tags below: &lt;think&gt; STRICT RUBRIC (Question): -If the question is unsolvable as stated (insufficient information, internal contradiction, presupposition failure), violates common sense, logically incoherent or simply not in the form of a question =&gt; final score MUST be in [1,3]. -If the question is unsafe/inappropriate or not actually a question =&gt; final score MUST be in [1,3]. -If the question is too open-ended =&gt; final score MUST be in [1,3]. -Clarity &amp; completeness: ambiguous wording, missing constraints, or unclear objectives =&gt; typically [4,7] (unless it's unsolvable/ incoherent, then [1,3]). -Only questions that are fully clear, well-formed, logically sound, feasible/solvable, relevant, and concise (no redundant repetition) may receive [8,10]. [Write your detailed analysis here: check solvability, logical soundness, clarity, relevance, and redundancy. If ANY unsolvability or commonsense violation exists, score must be [1,3].] &lt;/think&gt; Then provide a score from 1 to 10 between &lt;score&gt; and &lt;/score&gt; consistent with your thoughts where: -8-10: Perfectly clear, feasible, self-contained, logically sound, and concise; appropriate and relevant. -4-7: Generally reasonable but with notable ambiguity, missing details, or minor issues (NO unsolvability/commonsense violations). -1-3: Unsolvable/contradictory/commonsense-violating/unsafe/irrelevant/ not a valid question. &lt;score&gt;X&lt;/score&gt; (where X is an integer from 1 to 10)</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 TRAINING HYPERPARAMETERS</head><p>We show our training hyperparameters in Table <ref type="table" target="#tab_2">3</ref>. These parameters remain constant across all our experiments. As previously mentioned, we use a strong LLM as a judge for evaluating model outputs on most benchmarks. The configuration for this judge model is detailed in Table <ref type="table" target="#tab_3">4</ref>. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C GENERATION EXAMPLES</head><p>In this section, we provide some detailed example generations for each role of our framework.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1 PROPOSER</head><p>We separately provide examples of questions with low/high judge scores, only with the extracted question part.</p><p>Question: If a square garden has a side length represented by the expression \( 2x + 3 \) meters, and there is another square garden with a side length of \( 5 \) meters. Find the total area of both gardens, provided that \( x = 4 \). What is the sum of the areas of the two gardens? ============================================== Answer: &lt;think&gt; To find the total area of both gardens, first calculate the area of the first garden using \(2x + 3\) with \(x = 4\), then calculate the area of the second garden directly, sum these areas, and simplify.&lt;/think&gt; &lt;answer&gt;88&lt;/answer&gt;</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Listing 14: Solver Generation Example</head><p>Question: How many colors are needed to paint the map such that no two adjacent regions are the same color, and which regions use which colors? Given the map with five regions.</p><p>Region 1: adjacent to regions 2 and 3. Region 2: adjacent to regions 1, 3, and 4. Region 3: adjacent to regions 1, 2, and 4, and the same with region 5. Region 4: adjacent to regions 2, 3, and 5. Region 5: adjacent to regions 3 and 4. ============================================== Answer: &lt;think&gt; To solve this, we can use the Four Color Theorem, which states that any map can be colored using at most four colors such that no two adjacent regions share the same color. We only need to show one possible coloring for the given map.&lt;/think&gt; &lt;think&gt;Let's start by assigning colors to the regions based on adjacent requirements:&lt;/think&gt; 1. Region 1 can be colored with color A. 2. Region 2, being adjacent to Region 1 and Region 3, must be colored with color B. 3. Region 3, with being adjacent to Region 1 and Region 2, can be colored with color C, different from both A and B. 4. Region 4, adjacent to Region 2 and Region 3, must be colored with color D, different from color B. 5. Region 5, adjacent to Regions 3 and 4, can be colored with color A, different from color C. 6. Finally, Region 5 still needs color C, so we use an option to reuse previously assigned colors to maintain no two adjacent regions having the same color.</p><p>&lt;think&gt;Thus, the coloring will cycle using all four colors to ensure no two adjacent regions are the same color:&lt;/think&gt; &lt;answer&gt; Region 1: A Region 2: B Region 3: C Region 4: D Region 5: A &lt;/answer&gt;</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.3 JUDGE Listing 16: Judge Generation Example For Question Evaluation</head><p>To evaluate the quality of the question generation, we need to carefully analyze it against the provided rubric. Let's break down the components:</p><p>1. ** Solvability and Logical Soundness ** :</p><p>-The question specifies a 15x15 grid filled with integers ranging from 1 to 450.</p><p>-It imposes several constraints on the arrangement of these integers : -Each row, column, and the two main diagonals must sum to a prime number.</p><p>-The sum of the numbers in the top-left, bottom-right, and topright corner cells must also be a prime number.</p><p>-The first descending quadrant and the first ascending quadrant must be symmetric with respect to their centers.</p><p>-The difference between the sum of elements in every quadrant and its immediate diagonally adjacent quadrant must be a perfect square.</p><p>-No row, column, or diagonal can be in an ascending order. -These constraints are complex and interdependent, making it challenging to determine if a solution is possible without a detailed analysis.</p><p>2. ** Clarity and Completeness ** :</p><p>-The question is well-structured and provides a clear set of instructions.</p><p>-However, the constraints are intricate and require a deep understanding of number theory and combinatorial mathematics.</p><p>-The diagram provided helps visualize the quadrants and their centers, which aids in understanding the symmetry and perfect square conditions.</p><p>3. ** Feasibility and Relevance ** : -The problem is mathematically complex and requires advanced problem -solving skills.</p><p>-While the constraints are mathematically sound, the task of arranging the numbers to meet all these conditions simultaneously is highly non-trivial.</p><p>-The question is relevant to the field of combinatorial mathematics and number theory.</p><p>Given the complexity and the need for a detailed analysis to determine solvability, the question is not entirely clear and complete without a thorough examination. However, it is feasible and relevant.</p><p>&lt;score&gt;4&lt;/score&gt;</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure1: Overview of the Multi-Agent Evolve Framework. Multi-Agent Evolve instantiates three interactive roles (Proposer, Solver, and Judge) from a single LLM to form a closed selfimproving loop. The Proposer generates new questions, the Solver attempts to answer them, and the Judge evaluates both to provide general-domain reward signals. The Judge rewards the Solver for accurate reasoning, while the Proposer receives both a quality reward from the Judge and a difficulty reward that increases when the Solver fails, creating an adversarial co-evolution process that continuously enhances the model's reasoning ability.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Multi-Agent Evolve Framework: (Upper) Multi-Agent Evolve uses the backbone LLM itself as a general evaluator for questions and answers. This brings several benefits, including adaptability for general tasks and increased interactions between agents. (Lower Left) Our framework adapts the quality filtering technique to the Proposer's generation loop, preventing degradation in dataset quality during prolonged training. (Lower Right) Our multi-agent training employs Task-Relative REINFORCE++, which calculates advantage for each role respectively and then performs synchronized parameter update to the uniform model.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Training Process Analysis: These three figures demonstrate an example training process. (Left) The number of questions in the dataset increases steadily while low-quality questions are excluded. (Mid and Right) The Proposer learns to generate questions that present a desirable level of difficulty to the Solver, thereby benefiting the model in future training.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 :</head><label>4</label><figDesc>Figure4: Examples of Applying Format Reward and Question Quality Filtering Examples shown in green demonstrate the generation that can be correctly extracted when these two techniques are applied, which helps the maintenance of our dataset and the training process. The red examples show typical errors that detract from the training process by introducing incorrect questions or by frequently causing the reward to fall back to a neutral value.</figDesc><graphic coords="11,108.00,81.86,395.99,85.46" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>MAE can self-evolve in general domains without verifiable rewards. For fair comparison, our experimental results are presented in two parts that differ in the use of seed data. In w/o reference questions setting, MAE offers an improvement on almost all benchmarks across all domains, surpassing AZR. Improvements are further enhanced when some reference questions are provided without directly using their ground truth, the MAE (half reference) achieves the highest overall average accuracy. We highlight in-distribution (ID) benchmarks in blue and held-out (OOD) benchmarks in green. Results shown in bold font are the best results of the benchmark in its own seed data settings. The bold underlined results are the best results across all settings.</figDesc><table><row><cell>Method</cell><cell cols="7">GSM8K MATH ARC-C MMLU GPQA CQA OBQA</cell><cell>NQ</cell><cell cols="6">TriviaQA SQuAD BoolQ HellaSwag MBPP+ HumanEval+</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="3">w/o reference questions.</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Base</cell><cell>85.20</cell><cell>60.40</cell><cell>80.60</cell><cell>63.40</cell><cell>34.67</cell><cell>66.80</cell><cell>67.80</cell><cell>27.80</cell><cell>51.60</cell><cell>78.20</cell><cell>73.60</cell><cell>67.80</cell><cell>60.60</cell><cell>68.30</cell></row><row><cell>AZR</cell><cell>81.20</cell><cell>62.40</cell><cell>82.80</cell><cell>63.40</cell><cell>38.93</cell><cell>74.36</cell><cell>77.55</cell><cell>35.33</cell><cell>56.67</cell><cell>90.85</cell><cell>78.50</cell><cell>67.56</cell><cell>61.40</cell><cell>68.30</cell></row><row><cell>MAE (zero)</cell><cell>86.00</cell><cell>68.20</cell><cell>84.20</cell><cell>61.40</cell><cell>29.42</cell><cell>71.54</cell><cell>79.39</cell><cell>37.98</cell><cell>60.13</cell><cell>92.28</cell><cell>78.46</cell><cell>70.34</cell><cell>62.20</cell><cell>69.50</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="3">w/ reference questions.</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>SFT</cell><cell>70.00</cell><cell>47.00</cell><cell>80.20</cell><cell>60.80</cell><cell>37.63</cell><cell>75.40</cell><cell>78.00</cell><cell>27.40</cell><cell>48.60</cell><cell>86.80</cell><cell>81.40</cell><cell>64.80</cell><cell>62.70</cell><cell>65.20</cell></row><row><cell>MAE (with reference)</cell><cell>76.00</cell><cell>49.00</cell><cell>82.80</cell><cell>62.40</cell><cell>32.60</cell><cell>75.58</cell><cell>76.11</cell><cell>34.20</cell><cell>57.13</cell><cell>90.73</cell><cell>83.45</cell><cell>69.62</cell><cell>61.00</cell><cell>60.30</cell></row><row><cell>MAE (no reference)</cell><cell>85.20</cell><cell>63.80</cell><cell>84.20</cell><cell>68.00</cell><cell>34.42</cell><cell>72.17</cell><cell>78.85</cell><cell>34.68</cell><cell>58.11</cell><cell>87.03</cell><cell>81.99</cell><cell>65.59</cell><cell>62.00</cell><cell>69.10</cell></row><row><cell>MAE (half reference)</cell><cell>82.20</cell><cell>65.80</cell><cell>83.20</cell><cell>69.00</cell><cell>30.80</cell><cell>77.20</cell><cell>80.00</cell><cell>36.40</cell><cell>61.00</cell><cell>93.40</cell><cell>78.00</cell><cell>79.00</cell><cell>61.10</cell><cell>68.30</cell></row><row><cell>Method</cell><cell cols="14">TruthfulQA BBH LiveBench Reasoning AMC Minerva Winogrande Olympiad MMLU-Pro ID Avg. OOD Avg. Overall Avg.</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="3">w/o reference questions.</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Base</cell><cell>45.71</cell><cell>53.79</cell><cell></cell><cell>20.80</cell><cell></cell><cell>39.76</cell><cell>34.52</cell><cell>63.53</cell><cell>27.73</cell><cell></cell><cell>44.68</cell><cell>63.34</cell><cell>41.32</cell><cell>55.33</cell></row><row><cell>AZR</cell><cell>44.92</cell><cell>52.57</cell><cell></cell><cell>19.27</cell><cell></cell><cell>34.94</cell><cell>41.22</cell><cell>64.65</cell><cell>28.94</cell><cell></cell><cell>44.09</cell><cell>67.09</cell><cell>41.33</cell><cell>57.72</cell></row><row><cell>MAE (zero)</cell><cell>52.71</cell><cell>57.51</cell><cell></cell><cell>16.48</cell><cell></cell><cell>44.58</cell><cell>39.91</cell><cell>59.48</cell><cell>26.47</cell><cell></cell><cell>42.66</cell><cell>68.37</cell><cell>42.48</cell><cell>58.51</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="3">w/ reference questions.</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>SFT</cell><cell>30.63</cell><cell>47.28</cell><cell></cell><cell>39.63</cell><cell></cell><cell>30.12</cell><cell>28.94</cell><cell>57.37</cell><cell>22.18</cell><cell></cell><cell>43.14</cell><cell>63.28</cell><cell>37.41</cell><cell>53.87</cell></row><row><cell>MAE (with reference)</cell><cell>53.86</cell><cell>57.17</cell><cell></cell><cell>26.78</cell><cell></cell><cell>34.94</cell><cell>38.80</cell><cell>62.83</cell><cell>26.67</cell><cell></cell><cell>44.35</cell><cell>65.07</cell><cell>43.18</cell><cell>57.11</cell></row><row><cell>MAE (no reference)</cell><cell>43.70</cell><cell>61.06</cell><cell></cell><cell>20.00</cell><cell></cell><cell>33.74</cell><cell>38.72</cell><cell>65.24</cell><cell>25.63</cell><cell></cell><cell>46.75</cell><cell>67.51</cell><cell>41.86</cell><cell>58.18</cell></row><row><cell>MAE (half reference)</cell><cell>50.55</cell><cell>53.14</cell><cell></cell><cell>33.61</cell><cell></cell><cell>35.54</cell><cell>38.26</cell><cell>60.71</cell><cell>32.46</cell><cell></cell><cell>47.43</cell><cell>68.95</cell><cell>43.96</cell><cell>59.87</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 ,</head><label>2</label><figDesc>MAE (zero)demonstrates the framework's ability to self-evolve from a minimal seed set without real-world data or ground-truth answers. Compared to the base model, 'MAE (zero)' achieves performance improvements across the vast majority of benchmarks, resulting in a higher Overall Avg. (58.51 vs. 55.33). Specifically, 'MAE (zero)' shows clear superiority in mathematical reasoning (MATH, 60.40 → 68.20; AMC, 39.76 → 44.58), commonsense question answering (ARC-C, 80.60 → 84.20;</figDesc><table><row><cell></cell><cell></cell><cell cols="4">Valid Questions over Steps</cell><cell></cell><cell></cell><cell cols="5">Difficulty Score over Steps</cell><cell></cell><cell></cell><cell cols="3">Overall Accuracy over Steps</cell></row><row><cell>Number of Valid Questions</cell><cell>2500 5000 7500 10000 12500 15000 17500</cell><cell cols="3">Valid Questions Accumulated Batch Size</cell><cell></cell><cell>Difficulty Score</cell><cell>0.3 0.9 1.0 0.4 0.5 0.6 0.7 0.8</cell><cell cols="3">Original Smoothed (5-point avg)</cell><cell></cell><cell></cell><cell>Overall Accuracy</cell><cell>0.620 0.590 0.615 0.595 0.600 0.605 0.610</cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>0.2</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>0.585</cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell>0</cell><cell>50</cell><cell>100</cell><cell>150 Step</cell><cell>200</cell><cell>250</cell><cell>0</cell><cell>50</cell><cell>100</cell><cell>Step</cell><cell>150</cell><cell>200</cell><cell>250</cell><cell>50</cell><cell>100</cell><cell>150 Step</cell><cell>200</cell><cell>250</cell></row></table><note><p>CQA, 66.80 → 71.54), and reading comprehension (SQuAD, 78.20 → 92.28). We also compare 'MAE (zero)' to the 'AZR' baseline. 'MAE (zero)' achieves a higher 'Overall Avg.' score than 'AZR' (58.51 vs. 57.72). While 'AZR' shows strong performance on specific benchmarks like CQA (74.36), 'MAE (zero)' yields significant gains in complex reasoning domains where 'AZR' struggles, such as BBH (+4.94) and AMC (+9.64). This demonstrates that MAE can enhance general capabilities through multi-role co-evolution, guided only by minimal data.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Training hyperparameters used in our experiments.</figDesc><table><row><cell>Hyperparameter</cell><cell>Value</cell></row><row><cell>Max Prompt Length</cell><cell>8192</cell></row><row><cell>Max Response Length</cell><cell>8192</cell></row><row><cell>Train Batch Size</cell><cell>128</cell></row><row><cell>Learning Rate</cell><cell>1 × 10 -6</cell></row><row><cell>Optimizer</cell><cell>AdamW</cell></row><row><cell>Grad Clip</cell><cell>1.0</cell></row><row><cell>Training Steps</cell><cell>300</cell></row><row><cell>Algorithm</cell><cell>Task-Relative REINFORCE++</cell></row><row><cell>KL Loss</cell><cell>False</cell></row><row><cell>KL Reward</cell><cell>False</cell></row><row><cell>PPO Epochs</cell><cell>1</cell></row><row><cell>Entropy Coefficient</cell><cell>0.001</cell></row><row><cell>Actor Rollout Temperature</cell><cell>1.0</cell></row><row><cell>Actor Rollout Top-P</cell><cell>1.0</cell></row><row><cell>N Rollout</cell><cell>1</cell></row><row><cell>N Reference Problem</cell><cell>1</cell></row><row><cell cols="2">N samples to Estimate Difficulty 5</cell></row><row><cell cols="2">B EVALUATION PROMPTS AND CONFIGURATION</cell></row><row><cell cols="2">B.1 PROMPTS FOR EVALUATING MATH PROBLEMS</cell></row><row><cell cols="2">Listing 6: Math Problem Evaluation Prompt</cell></row><row><cell cols="2">Please evaluate whether the following mathematical answer is correct.</cell></row><row><cell>Question: {question}</cell><cell></cell></row><row><cell>Ground Truth Answer: {ground_truth}</cell><cell></cell></row><row><cell>Model's Answer: {model_answer}</cell><cell></cell></row><row><cell cols="2">First, analyze both answers in the &lt;think&gt; tags below:</cell></row><row><cell>&lt;think&gt;</cell><cell></cell></row><row><cell cols="2">Compare the mathematical content of both answers:</cell></row><row><cell cols="2">-Do they arrive at the same final numerical result? (MOST IMPORTANT)</cell></row><row><cell cols="2">-Is the reasoning correct in the model's answer?</cell></row><row><cell>-Are there any mathematical errors?</cell><cell></cell></row><row><cell cols="2">-Do they represent the same solution even if expressed differently?</cell></row><row><cell>[Write your detailed analysis here]</cell><cell></cell></row><row><cell>&lt;/think&gt;</cell><cell></cell></row><row><cell cols="2">Then determine if the model's answer is correct:</cell></row><row><cell cols="2">-TRUE means the model's answer is mathematically correct and matches the</cell></row><row><cell>ground truth</cell><cell></cell></row><row><cell cols="2">-FALSE means the model's answer is mathematically incorrect or doesn't</cell></row><row><cell>match the ground truth</cell><cell></cell></row><row><cell cols="2">&lt;answer&gt;TRUE&lt;/answer&gt; or &lt;answer&gt;FALSE&lt;/answer&gt;</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 :</head><label>4</label><figDesc>LLM Judge Configuration ParameterValue</figDesc><table><row><cell cols="2">Model Name nvidia/llama-3.1-nemotron-70b-instruct</cell></row><row><cell cols="2">Temperature 1.0</cell></row><row><cell>Top P</cell><cell>0.95</cell></row><row><cell>Max Tokens</cell><cell>1000</cell></row></table></figure>
+		</body>
+		<back>
+
+			<div type="availability">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>3 NVIDIA <ref type="url" target="https://github.com/ulab-uiuc/Multi-agent-Evolve">https://github.com/ulab-uiuc/Multi-agent-Evolve</ref> </p></div>
+			</div>
+
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Listing 10: Proposer Generation Example With Low Judge Score</head><p>What is the next shape in the following sequence? &lt;list&gt; &lt;item&gt; Circle &lt;item&gt; Square &lt;item&gt; Triangle &lt;item&gt; Question mark (?) &lt;item&gt; Rectangle &lt;item&gt; Diamond &lt;/list&gt; Listing 11: Proposer Generation Example With High Judge Score Question: Which of the following water solutions is most suitable for gargling to soothe sore throats, considering you need to adjust it to eliminate bitterness and maintain a neutral pH? (A) Mix 30 grams of table salt with 40 ounces (1.18 liters) of water, then add 2 grams of baking soda to simplify the taste and adjust slightly towards neutrality. (B) Dissolve 30 grams of table salt in 40 ounces (1.18 liters) of warm water, and then add 2 grams of sugar to the mixture. (C) Combine 15 grams of table salt with 25 ounces (0.75 liters) of warm water, and add 1 gram of baking soda to remove any harshness and increase pH slightly. (D) Stir 30 grams of table salt into 40 ounces (1.18 liters) of tepid water, then sprinkle 1 gram of granulated sugar on top to mask the taste and balance sweetness.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.2 SOLVER Listing 12: Proposer Generation Example</head><p>Question: What is the smallest positive integer that is both a square and a cube, but not a perfect fifth power? ============================================== Answer: &lt;think&gt; To find the smallest positive integer that is both a square and a cube but not a perfect fifth power, it must be a sixth power, as this is the lowest common multiple of 2 and 3.&lt;/think&gt; &lt;answer&gt;1&lt;/answer&gt;</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Listing 15: Solver Generation Example</head><p>Question: Lily had $200 in her account. She first spent $20 on a t-shirt. Then, she visited a second store where she purchased a hat, spending only one-third as much as she did on the t-shirt. After the hat, she went to a third shop and purchased a pair of headphones, spending twice the amount she spent on the hat. Finally, she went to a fourth shop to buy a camera, spending three times as much as she did on the headphones. How much money is left in Lily's account? ============================================== Answer: &lt;think&gt;Let's break down Lily's expenses step-by-step and then determine how much money she has left in her account.</p><p>1. Expenditure on t-shirt: Lily spent $20 on a t-shirt.</p><p>2. Expenditure on hat: Lily spent one-third as much as she did on the tshirt on the hat. Since she spent $20 on the t-shirt, she spends \( \ frac{1}{3} \times $20 = $6.6667 \) on the hat. 3. Expenditure on headphones: The amount spent on headphones is twice the amount she spent on the hat, which is \( 2 \times $6.6667 = $13.3333 \). 4. Expenditure on camera: She spends three times the amount she did on the headphones on the camera, which is \( 3 \times $13.3333 = $40 \).</p><p>Now, let's calculate Lily's total expenditure and how much money she has left: -Total expenditure on t-shirt: $20 -Total expenditure on hat: $6.6667 -Total expenditure on headphones: $13.3333 -Total expenditure on camera: $40 Total amount spent = $20 + $6.6667 + $13.3333 + $40 = $80 Since Lily initially had $200 in her account, the remaining amount in her account is: -Initial amount in account: $200 -Total amount spent: $80 Remaining amount in account = Initial amount -Total amount spent = $200 -$80 = $120 &lt;/think&gt; &lt;answer&gt; The amount of money left in Lily's account after her shopping spree is $120. &lt;/answer&gt;</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Listing 17: Judge Generation Example For Answer Evaluation</head><p>To evaluate the solution, let's break down the rubric and analyze each aspect:</p><p>1. ** Factual correctness ** : The solution correctly identifies that the annual interest rate of 10% compounded quarterly means a quarterly interest rate of 2.5%. This is accurate and correct. The calculation of the amount after each quarter is also done correctly, maintaining the compounded interest rate. There are no arithmetic mistakes or contradictions in the calculations. Given that the solution is entirely correct, follows the instructions, is concise, and fully addresses the prompt, it qualifies for a score of 8-10.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>&lt;score&gt;8&lt;/score&gt;</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D SEED DATA COMPOSITION</head><p>Table <ref type="table">5</ref> shows the composition of the 967 seed data points used to initialize the valid question set for the MAE settings that utilize reference examples.</p><p>Table 5: Distribution of Seed Data Across Benchmarks Benchmark Count</p><p>CommonsenseQA <ref type="bibr" target="#b43">(Talmor et al., 2018)</ref> 70 TriviaQA <ref type="bibr" target="#b18">(Joshi et al., 2017)</ref> 71 Natural Questions <ref type="bibr" target="#b21">(Kwiatkowski et al., 2019)</ref> 79 OpenBookQA <ref type="bibr" target="#b29">(Mihaylov et al., 2018)</ref> 75 BoolQ <ref type="bibr" target="#b5">(Clark et al., 2019)</ref> 88 SQuAD <ref type="bibr" target="#b34">(Rajpurkar et al., 2016)</ref> 82 MATH <ref type="bibr">(Hendrycks et al., 2021a)</ref> 84 Hellaswag <ref type="bibr" target="#b50">(Zellers et al., 2019)</ref> 90 GSM8K <ref type="bibr" target="#b7">(Cobbe et al., 2021)</ref> 77 GPQA <ref type="bibr" target="#b36">(Rein et al., 2023)</ref> 69 MBPP <ref type="bibr" target="#b0">(Austin et al., 2021)</ref> 53 ARC-Challenge <ref type="bibr" target="#b6">(Clark et al., 2018)</ref> 78 MMLU <ref type="bibr" target="#b12">(Hendrycks et al., 2020)</ref> 69 HumanEval <ref type="bibr" target="#b3">(Chen et al., 2021)</ref> 15 Total 967</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>2. ** Meaningless or excessive repetition, rambling, or filler content ** :The solution is concise and to the point. It breaks down the problem into clear steps and provides detailed calculations for each quarter . There is no unnecessary repetition or rambling. 3. ** Hallucinated references, fabricated data, unsupported claims, or contradictions ** : The solution does not introduce any fabricated data , unsupported claims, or contradictions. All calculations and steps are based on the given information and follow the correct mathematical principles. 4. ** Completeness &amp; directness ** : The solution fully addresses the question by providing the amount of money John will have in his account after two full years. It breaks down the problem into manageable steps and provides the final answer. The steps are clear and the calculations are detailed.5. ** Factual errors, faulty reasoning steps, or repetition issues ** : There are no factual errors, faulty reasoning steps, or repetition issues in the solution. The calculations are correct and the steps are logically consistent.</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Program synthesis with large language models</title>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Augustus</forename><surname>Odena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carrie</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2108.07732</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Benchmarl: Benchmarking multi-agent reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Matteo</forename><surname>Bettini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Prorok</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Moens</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2312.01472" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Why do multi-agent llm systems fail?</title>
+		<author>
+			<persName><forename type="first">Mert</forename><surname>Cemri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melissa</forename><forename type="middle">Z</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lakshya</forename><forename type="middle">A</forename><surname>Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bhavya</forename><surname>Chopra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Tiwari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kurt</forename><surname>Keutzer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Parameswaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Klein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kannan</forename><surname>Ramchandran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matei</forename><surname>Zaharia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Stoica</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2503.13657" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henrique</forename><surname>Ponde De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harri</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raul</forename><surname>Puri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Petrov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heidy</forename><surname>Khlaaf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brooke</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikhail</forename><surname>Pavlov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alethea</forename><surname>Power</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clemens</forename><surname>Winter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philippe</forename><surname>Tillet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felipe</forename><forename type="middle">Petroski</forename><surname>Such</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dave</forename><surname>Cummings</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fotios</forename><surname>Chantzis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elizabeth</forename><surname>Barnes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ariel</forename><surname>Herbert-Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Hebgen Guss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Nichol</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Paino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolas</forename><surname>Tezak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Babuschkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suchir</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shantanu</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Saunders</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">N</forename><surname>Carr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Leike</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2107.03374" />
+		<title level="m">Evaluating large language models trained on code</title>
+		<editor>
+			<persName><forename type="first">Josh</forename><surname>Achiam</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Vedant</forename><surname>Misra</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Evan</forename><surname>Morikawa</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Matthew</forename><surname>Knight</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Miles</forename><surname>Brundage</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Mira</forename><surname>Murati</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Katie</forename><surname>Mayer</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Peter</forename><surname>Welinder</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Bob</forename><surname>Mc-Grew</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sam</forename><surname>Mccandlish</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Wojciech</forename><surname>Zaremba</surname></persName>
+		</editor>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Facilitating multi-agent collaboration and exploring emergent behaviors</title>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingwei</forename><surname>Zuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenfei</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi-Min</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heyang</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaxi</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi-Hsin</forename><surname>Hung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruobing</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Agentverse</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2308.10848" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenton</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Kwiatkowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Collins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kristina</forename><surname>Toutanova</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Boolq</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1905.10044</idno>
+		<title level="m">Exploring the surprising difficulty of natural yes/no questions</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Isaac</forename><surname>Cowhey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oren</forename><surname>Etzioni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carissa</forename><surname>Schoenick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oyvind</forename><surname>Tafjord</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1803.05457</idno>
+		<title level="m">Think you have solved question answering? try arc, the ai2 reasoning challenge</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Training verifiers to solve math word problems</title>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.14168</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Serl: Self-play reinforcement learning for large language models with limited data</title>
+		<author>
+			<persName><forename type="first">Wenkai</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kongcheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tongya</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaixuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingli</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dacheng</forename><surname>Tao</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2505.20347" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuhui</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhichao</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hexiang</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuehao</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengjin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinghan</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengjie</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honghao</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2411.15594</idno>
+		<title level="m">A survey on llm-as-a-judge</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Daya Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoyu</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shirong</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.12948</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Olympiadbench: A challenging benchmark for promoting agi with olympiad-level bilingual multimodal scientific problems</title>
+		<author>
+			<persName><forename type="first">Chaoqun</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Renjie</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuzhuo</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengding</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Leng Thai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junhao</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinyi</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2402.14008" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mantas</forename><surname>Mazeika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2009.03300</idno>
+		<title level="m">Measuring massive multitask language understanding</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Measuring mathematical problem solving with the math dataset</title>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurav</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akul</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2103.03874" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Measuring mathematical problem solving with the math dataset</title>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurav</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akul</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2103.03874</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Lora: Low-rank adaptation of large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Edward</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yelong</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phillip</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyuan</forename><surname>Wallis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Allen-Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shean</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ICLR</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page">3</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Reinforce++: An efficient rlhf algorithm with robustness to both prompt and reward models</title>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><forename type="middle">Klein</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Shen</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2501.03262" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">R-zero: Self-evolving reasoning llm from zero data</title>
+		<author>
+			<persName><forename type="first">Chengsong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zongxia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruosen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxin</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haitao</forename><surname>Mi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2508.05004" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Triviaqa: A large scale distantly supervised challenge dataset for reading comprehension</title>
+		<author>
+			<persName><forename type="first">Mandar</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eunsol</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">S</forename><surname>Weld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1705.03551</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Reinforcement learning: A survey</title>
+		<author>
+			<persName><forename type="first">Leslie</forename><surname>Pack</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaelbling</forename><surname>Michael L Littman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">W</forename><surname>Moore</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of artificial intelligence research</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="page" from="237" to="285" />
+			<date type="published" when="1996">1996</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Neural networks for chess</title>
+		<author>
+			<persName><forename type="first">Dominik</forename><surname>Klein</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2209.01506" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Natural questions: a benchmark for question answering research</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Kwiatkowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jennimaria</forename><surname>Palomaki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivia</forename><surname>Redfield</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Collins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ankur</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Alberti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danielle</forename><surname>Epstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Illia</forename><surname>Polosukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenton</forename><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="page" from="453" to="466" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Solving quantitative reasoning problems with language models</title>
+		<author>
+			<persName><forename type="first">Aitor</forename><surname>Lewkowycz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anders</forename><surname>Andreassen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Dyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vinay</forename><surname>Ramasesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ambrose</forename><surname>Slone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cem</forename><surname>Anil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Imanol</forename><surname>Schlag</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Theo</forename><surname>Gutman-Solo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhuai</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Behnam</forename><surname>Neyshabur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guy</forename><surname>Gur-Ari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vedant</forename><surname>Misra</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2206.14858" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">From generation to judgment: Opportunities and challenges of llm-as-a-judge</title>
+		<author>
+			<persName><forename type="first">Dawei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bohan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liangjie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alimohammad</forename><surname>Beigi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengshuai</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amrita</forename><surname>Bhattacharjee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Canyu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Liu</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2411.16594</idno>
+		<ptr target="https://api.semanticscholar.org/CorpusID:274280574" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Encouraging divergent thinking in large language models through multiagent debate</title>
+		<author>
+			<persName><forename type="first">Tian</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiwei</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenxiang</forename><surname>Jiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xing</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujiu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuming</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaopeng</forename><surname>Tu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2305.19118" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">TruthfulQA: Measuring how models mimic human falsehoods</title>
+		<author>
+			<persName><forename type="first">Stephanie</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Owain</forename><surname>Evans</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2022.acl-long.229</idno>
+		<ptr target="https://aclanthology.org/2022.acl-long.229/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">Preslav</forename><surname>Smaranda Muresan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Aline</forename><surname>Nakov</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Villavicencio</surname></persName>
+		</editor>
+		<meeting>the 60th Annual Meeting of the Association for Computational Linguistics<address><addrLine>Dublin, Ireland</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2022-05">May 2022</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="3214" to="3252" />
+		</imprint>
+	</monogr>
+	<note>Long Papers) Association for Computational Linguistics</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Learning to solve and verify: A self-play framework for code and test generation</title>
+		<author>
+			<persName><forename type="first">Zi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sheng</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingbo</forename><surname>Shang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixin</forename><surname>Nie</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2502.14948" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Spiral: Self-play on zero-sum games incentivizes reasoning via multi-agent multi-turn reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leon</forename><surname>Guertler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zichen</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Penghui</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Balcells</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mickel</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheston</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiyan</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wee</forename><surname>Sun Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Natasha</forename><surname>Jaques</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2506.24119" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Chasing moving targets with online self-play reinforcement learning for safer language models</title>
+		<author>
+			<persName><forename type="first">Mickel</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liwei</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yancheng</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Shaolei Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Althoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Natasha</forename><surname>Jaques</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2506.07468" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">Todor</forename><surname>Mihaylov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1809.02789</idno>
+		<title level="m">Can a suit of armor conduct electricity? a new dataset for open book question answering</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Malt: Improving reasoning with multi-agent llm training</title>
+		<author>
+			<persName><forename type="first">Ramesh</forename><surname>Sumeet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chandler</forename><surname>Motwani</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jyoti</forename><surname>Rocktim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rafael</forename><surname>Das</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ivan</forename><surname>Rafailov</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Laptev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">S</forename><surname>Philip</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Torr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronald</forename><surname>Pizzati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Schroeder De Witt</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2412.01928" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">:</forename><surname>Openai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Berner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brooke</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vicki</forename><surname>Cheung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Przemysław</forename><surname>Dębiak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christy</forename><surname>Dennison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Farhi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quirin</forename><surname>Fischer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shariq</forename><surname>Hashme</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rafal</forename><surname>Józefowicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Catherine</forename><surname>Olsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakub</forename><surname>Pachocki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Petrov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">D O</forename><surname>Henrique</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Raiman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeremy</forename><surname>Salimans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Schlatter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Szymon</forename><surname>Schneider</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sidor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Filip</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Susan</forename><surname>Wolski</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1912.06680" />
+		<title level="m">Dota 2 with large scale deep reinforcement learning</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Language model self-improvement by reinforcement learning contemplation</title>
+		<author>
+			<persName><forename type="first">Jing-Cheng</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengyuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiong-Hui</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiacheng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zongzhang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Yu</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2305.14483</idno>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page">258865735</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">:</forename><surname>Qwen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baosong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beichen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianhong</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianwei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianxin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingren</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keming</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keqin</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingfeng</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qin</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Men</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runji</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tingyu</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingzhang</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuancheng</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqiong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenru</forename><surname>Zhang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2412.15115" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note>and Zihan Qiu. Qwen2.5 technical report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Squad: 100,000+ questions for machine comprehension of text</title>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Rajpurkar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Konstantin</forename><surname>Lopyrev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1606.05250</idno>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Cape: Corrective actions from precondition errors using large language models</title>
+		<author>
+			<persName><forename type="first">Vanya</forename><surname>Shreyas Sundara Raman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ifrah</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Idrees</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raymond</forename><surname>Rosen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefanie</forename><surname>Mooney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Tellex</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Paulius</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2024 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="14070" to="14077" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Gpqa: A graduate-level google-proof q&amp;a benchmark</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Rein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Betty</forename><forename type="middle">Li</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Asa</forename><forename type="middle">Cooper</forename><surname>Stickland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jackson</forename><surname>Petty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">Yuanzhe</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julien</forename><surname>Dirani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Michael</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><forename type="middle">R</forename><surname>Bowman</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2311.12022" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Winogrande: An adversarial winograd schema challenge at scale</title>
+		<author>
+			<persName><forename type="first">Keisuke</forename><surname>Sakaguchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Ronan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chandra</forename><surname>Bras</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Bhagavatula</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Communications of the ACM</title>
+		<imprint>
+			<biblScope unit="volume">64</biblScope>
+			<biblScope unit="issue">9</biblScope>
+			<biblScope unit="page" from="99" to="106" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.03300</idno>
+		<title level="m">Pushing the limits of mathematical reasoning in open language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Deterministic policy gradient algorithms</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guy</forename><surname>Lever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Heess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Degris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daan</forename><surname>Wierstra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Riedmiller</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on machine learning</title>
+		<imprint>
+			<publisher>Pmlr</publisher>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="387" to="395" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Mastering chess and shogi by self-play with a general reinforcement learning algorithm</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Hubert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Guez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Lanctot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurent</forename><surname>Sifre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dharshan</forename><surname>Kumaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thore</forename><surname>Graepel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karen</forename><surname>Simonyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Demis</forename><surname>Hassabis</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1712.01815" />
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Challenging bigbench tasks and whether chain-of-thought can solve them</title>
+		<author>
+			<persName><forename type="first">Mirac</forename><surname>Suzgun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Gehrmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyung</forename><forename type="middle">Won</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><forename type="middle">H</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2210.09261" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Multi-agent collaboration: Harnessing the power of intelligent llm agents</title>
+		<author>
+			<persName><forename type="first">Yashar</forename><surname>Talebirad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amirhossein</forename><surname>Nadiri</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2306.03314" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<author>
+			<persName><forename type="first">Alon</forename><surname>Talmor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Herzig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Lourie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Berant</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1811.00937</idno>
+		<title level="m">Commonsenseqa: A question answering challenge targeting commonsense knowledge</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yiding</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangwei</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhou</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.06435</idno>
+		<title level="m">Simulating human-like daily activities with desire-driven autonomy</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Mmlu-pro: A more robust and challenging multitask language understanding benchmark</title>
+		<author>
+			<persName><forename type="first">Yubo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueguang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuansheng</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhranil</forename><surname>Chandra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiguang</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiming</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aaran</forename><surname>Arulraj</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuan</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyan</forename><surname>Jiang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="95266" to="95290" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<title level="m" type="main">Large language models are better reasoners with self-verification</title>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Weng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minjun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shizhu</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengping</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Zhao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.09561</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">Livebench: A challenging, contamination-limited llm benchmark</title>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>White</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><surname>Dooley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manley</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arka</forename><surname>Pal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Feuer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siddhartha</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ravid</forename><surname>Shwartz-Ziv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Neel</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Khalid</forename><surname>Saifullah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sreemanti</forename><surname>Dey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandeep</forename><surname>Shubh-Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siddartha</forename><surname>Singh Sandha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chinmay</forename><surname>Naidu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Hegde</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Lecun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Willie</forename><surname>Goldstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Micah</forename><surname>Neiswanger</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Goldblum</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2406.19314" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<title level="m" type="main">Scalable reinforcement post-training beyond static human prompts: Evolving alignment via asymmetric self-play</title>
+		<author>
+			<persName><forename type="first">Ziyu</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianqi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarmishta</forename><surname>Velury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qijun</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Liu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2411.00062" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<title level="m" type="main">Self-rewarding language models</title>
+		<author>
+			<persName><forename type="first">Weizhe</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">Yuanzhe</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyunghyun</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xian</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sainbayar</forename><surname>Sukhbaatar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2401.10020" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<title level="m" type="main">Hellaswag: Can a machine really finish your sentence?</title>
+		<author>
+			<persName><forename type="first">Rowan</forename><surname>Zellers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ari</forename><surname>Holtzman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Farhadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1905.07830</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title level="m" type="main">Autodefense: Multiagent llm defense against jailbreak attacks</title>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiran</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huazheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyun</forename><surname>Wu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2403.04783" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<title level="m" type="main">Absolute zero: Reinforced self-play reasoning with zero data</title>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiran</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quentin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthieu</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shenzhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyun</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilong</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gao</forename><surname>Huang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2505.03335" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<title level="m" type="main">Self-challenging language model agents</title>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xian</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sainbayar</forename><surname>Sukhbaatar</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2506.01716" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

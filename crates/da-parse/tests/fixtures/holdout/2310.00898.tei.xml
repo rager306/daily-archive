@@ -1,0 +1,1809 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">ENABLING LANGUAGE MODELS TO IMPLICITLY LEARN SELF-IMPROVEMENT</title>
+				<funder ref="#_GMnPhgG">
+					<orgName type="full">U.S. DARPA ECOLE</orgName>
+				</funder>
+				<funder ref="#_3VGJAS4 #_X5CZRbt">
+					<orgName type="full">U.S. DARPA ITM</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-09-12">12 Sep 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Ziqi</forename><surname>Wang</surname></persName>
+							<email>ziqiw9@illinois.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Illinois</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><surname>Le Hou</surname></persName>
+							<email>lehou@google.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Illinois</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Tianjian</forename><surname>Lu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Illinois</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yuexin</forename><surname>Wu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Illinois</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yunxuan</forename><surname>Li</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Illinois</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hongkun</forename><surname>Yu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Illinois</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Illinois</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><surname>Google</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Illinois</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">ENABLING LANGUAGE MODELS TO IMPLICITLY LEARN SELF-IMPROVEMENT</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-09-12">12 Sep 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">9140994079526BE2B396E71B5F059611</idno>
+					<idno type="arXiv">arXiv:2310.00898v4[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:33+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large Language Models (LLMs) have demonstrated remarkable capabilities in open-ended text generation tasks. However, the inherent open-ended nature of these tasks implies that there is always room for improvement in the quality of model responses. To address this challenge, various approaches have been proposed to enhance the performance of LLMs. There has been a growing focus on enabling LLMs to self-improve their response quality, thereby reducing the reliance on extensive human annotation efforts for collecting diverse and high-quality training data. Recently, prompting-based methods have been widely explored among self-improvement methods owing to their effectiveness, efficiency, and convenience. However, those methods usually require explicitly and thoroughly written rubrics as inputs to LLMs. It is expensive and challenging to manually derive and provide all necessary rubrics with a real-world complex goal for improvement (e.g., being more helpful and less harmful). To this end, we propose an ImPlicit Self-ImprovemenT (PIT) framework that implicitly learns the improvement goal from human preference data. PIT only requires preference data that are used to train reward models without extra human efforts. Specifically, we reformulate the training objective of reinforcement learning from human feedback (RLHF)instead of maximizing response quality for a given input, we maximize the quality gap of the response conditioned on a reference response. In this way, PIT is implicitly trained with the improvement goal of better aligning with human preferences. Experiments on two real-world datasets and one synthetic dataset show that our method significantly outperforms prompting-based methods.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="26" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="27" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="28" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="29" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="30" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="31" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>LLMs <ref type="bibr" target="#b7">(Devlin et al., 2018;</ref><ref type="bibr" target="#b24">Raffel et al., 2020;</ref><ref type="bibr" target="#b3">Brown et al., 2020;</ref><ref type="bibr" target="#b6">Chowdhery et al., 2022;</ref><ref type="bibr" target="#b25">Schulman et al., 2022;</ref><ref type="bibr">OpenAI, 2023;</ref><ref type="bibr" target="#b0">Anil et al., 2023)</ref> have achieved state-of-the-art results on complex tasks such as math reasoning <ref type="bibr" target="#b37">(Wei et al., 2022;</ref><ref type="bibr" target="#b40">Xue et al., 2023;</ref><ref type="bibr" target="#b45">Zhou et al., 2023)</ref>, summarization <ref type="bibr">(Stiennon et al., 2020b)</ref>, conversations <ref type="bibr" target="#b25">(Schulman et al., 2022;</ref><ref type="bibr" target="#b2">Bai et al., 2022)</ref>, schema induction <ref type="bibr" target="#b44">(Li et al., 2023)</ref> and solving domain-specific problems <ref type="bibr" target="#b28">(Singhal et al., 2022)</ref>. The keys of LLMs success are their abilities of following instructions and aligning with human preferences <ref type="bibr" target="#b20">(Ouyang et al., 2022;</ref><ref type="bibr">Peng et al., 2023a;</ref><ref type="bibr" target="#b26">Shen et al., 2023)</ref>. A widely adopted approach toward them is instruction fine-tuning and reinforcement learning from human feedback (RLHF) <ref type="bibr" target="#b20">(Ouyang et al., 2022)</ref>. However, instruction fine-tuning and RLHF are imperfect, and there is always room for improvement. For example, LLMs may hallucinate information <ref type="bibr">(OpenAI, 2023)</ref>, have reasoning errors <ref type="bibr" target="#b4">(Bubeck et al., 2023)</ref>, and generate unhelpful and harmful contents <ref type="bibr" target="#b2">(Bai et al., 2022)</ref>. A straightforward approach is to collect more diverse and high-quality data and improve the alignment with a human-in-the-loop training paradigm <ref type="bibr" target="#b20">(Ouyang et al., 2022)</ref>, which requires extensive amount of human effort, especially for specific domains that require expert knowledge.</p><p>Therefore, the community has explored to use LLMs to self-improve their own response quality without human intervention. With the advent of generative language models, prompting methods have proved effective and efficient (no need to train models) with convenience (no need to serve models and can be used with black-box language models through APIs). <ref type="bibr" target="#b18">Madaan et al. (2023)</ref> use</p><p>Is [PIT-Improved Output] better than [LLM Output]? PIT PIT [Input] [LLM Output] LLMs [PIT-Improved Output] PIT Reward Model Reinforcement Learning I need to improve [LLM Output] Inference Training Prompting (Self-Refine) [Input] [LLM Output] LLMs LLMs [Feedback] Reflection LLMs Refine [LLM-Improved Output]</p><p>Figure <ref type="figure">1</ref>: The pipeline of PIT and prompting methods (Self-Refine). Upper: PIT utilizes inputs and LLM outputs for further improvement during inference. During training, a reward model will assess the gap of PIT-improved outputs and LLM outputs, and the reward is used for reinforcement learning to train PIT. Lower: Self-Refine uses LLMs to give self-feedback and then asks LLMs to improve outputs based on the self-feedback.</p><p>LLMs to give self-feedback and iteratively improve LLMs response quality, <ref type="bibr" target="#b5">Chen et al. (2023)</ref> enable LLMs to self-debug to enhance code generations. Nevertheless, self-improvement in language models through prompting can be less than ideal, as humans often find it challenging to define comprehensive improvement goals and create detailed assessment rubrics. For example, improving helpfulness and harmlessness of LLMs requires careful definitions of these qualities to guide LLMs in improving their responses accordingly. As a result, prompting could make LLMs self-improve well only if the improvement goal is clear, simple, and well-defined through prompting. LLMs perform poorly in our experiments if we ask them to make responses more helpful. This is because the LLM tends to add more details to the response and thus makes the response longer, whereas more details are not always preferred since it may lead to the response going off the topic. Instead, asking language models to be polite, offer necessary information, and avoid going off topics will yield better improvements. Previous methods have also discussed similar observations on the effect of detailed rubrics. <ref type="bibr" target="#b23">Rafailov et al. (2023)</ref> showed that using a simple rubric of Which summary is better? will yield much more disagreement with humans than a more comprehensive rubric of Which summary summarizes most important points without including unimportant details?</p><p>Despite the effectiveness, detailed rubrics are often hard to obtain. First, it is hard for humans to infer and write all possible rubrics. Second, when the task requires domain expertise (e.g., clinical domain <ref type="bibr" target="#b28">(Singhal et al., 2022)</ref>), it is impractical to scale up. To this end, we switch our focus from explicitly designing rubrics to implicitly learning self-improvement from data. We notice that the preference data used to train reward models implicitly tells how to improve the response quality. Thus, we utilize this preference data to train a novel model that implicitly understands self-improvement goals from data. Using this method, we eliminate the need for rubric design and avoid the need for additional data since we only reuse the data used to train reward models.</p><p>We denote our approach ImPlicit Self-ImprovemenT (PIT), a novel approach that enables the model to learn self-improvement implicitly from data. Specifically, we reformulate the instruction finetuning and RLHF process and switch the training objective from maximizing response quality for given inputs to maximizing response quality gap conditioned on reference responses for given inputs.</p><p>Figure <ref type="figure">1</ref> shows the working flows of PIT and prompting methods. PIT utlizes given inputs and reference responses and generates improved responses accordingly. Similar to prompting methods, PIT can repeat this process iteratively by replacing reference responses with improved responses. Compared with prompting methods, our method PIT does not require a manual rubric design. Extensive evaluations on two real-world datasets and one synthetic dataset show the effectiveness of PIT compared with prompting methods such as Self-Refine <ref type="bibr" target="#b18">(Madaan et al., 2023)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">RELATED WORK</head><p>Alignment Alignment is critical for a helpful and harmless language model <ref type="bibr" target="#b20">(Ouyang et al., 2022;</ref><ref type="bibr" target="#b2">Bai et al., 2022)</ref>. One common way for alignment is RLHF <ref type="bibr" target="#b20">(Ouyang et al., 2022)</ref>. However, RLHF is sensitive to the training details and is complicated to implement. To get rid of the RL, <ref type="bibr" target="#b17">Lu et al. (2022)</ref> use quantized rewards as control tokens to continually fine-tune policy models; <ref type="bibr" target="#b8">Diao et al. (2023)</ref>; <ref type="bibr" target="#b9">Dong et al. (2023)</ref>; <ref type="bibr" target="#b11">Gulcehre et al. (2023)</ref> use reward models to filter out high-reward generations for further fine-tuning . Some approaches are even simpler and do not require reward models. <ref type="bibr" target="#b16">Liu et al. (2023)</ref> use human feedback as control tokens directly to fine-tune models on model generations. <ref type="bibr" target="#b33">Sun et al. (2023)</ref> use human-written principles to guide language models to generate helpful and harmless responses and use generated responses to fine-tune models. <ref type="bibr" target="#b43">Zhao et al. (2023)</ref> use a calibration loss to mimic RLHF. <ref type="bibr" target="#b23">Rafailov et al. (2023)</ref> designs a loss function that can be theoretically proved to be identical to RLHF. <ref type="bibr" target="#b39">Xiong et al. (2023)</ref> shows that online alignment is much better than offline alignment. We used RLHF for alignment in our paper, as it is the most commonly used method.</p><p>Self-improvement Self-improvement enables language models to improve themselves without extra human effort. Moreover, the self-improved responses can then be utilized for context distillation <ref type="bibr" target="#b1">(Askell et al., 2021)</ref> to update LLMs. <ref type="bibr" target="#b13">Huang et al. (2022)</ref> use PaLM <ref type="bibr" target="#b6">(Chowdhery et al., 2022)</ref> to label more task-specific data and use the most confident labeled data to continue fine-tuning PaLM itself. However, fine-tuning language models on specific tasks may lower the overall generation performance of models <ref type="bibr" target="#b42">(Zhai et al., 2023)</ref>. Therefore, researchers also put much effort into self-improvement without modifying language models themselves. <ref type="bibr" target="#b27">Shinn et al. (2023)</ref> put language models into an environment and let language models reflect their actions when they meet failures.</p><p>Wang et al. (2023a) use the Python interpreter's error message to improve language models' code generation abilities. However, these methods require environments that can provide automatic feedback, which may not be accessible in general. Self-Refine (Madaan et al., 2023) enables LLMs to reflect on their responses and provide feedback, then ask LLMs to use feedback to improve responses. Zeng et al. (2023) apply Self-Refine to generate better meta-reviews for papers. Xue et al. (2023) guide LLMs to fine-grained feedback for math problems. The feedback could also benefit from tools. Zhou et al. (2023) use OpenAI's code interpreter to collect more accurate feedback. Wang et al. (2023b) propose a benchmark to evaluate how models can get improved from human or AI feedback. Nevertheless, these methods require explicit prompting to collect feedback and self-improve. Our method does not require modifying model weights, interactive environment, or explicitly prompting.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">METHOD</head><p>Policy models (i.e., "LLMs" in Figure <ref type="figure">1</ref>) trained with RLHF generate reference responses for given inputs, whereas PIT takes the given inputs and reference responses as its inputs and generates improved responses. The different input formats between policy models and PIT (See Appendix A for details) requires reformulating RLHF training objectives to train PIT. We follow and reformulate RLHF steps proposed by <ref type="bibr" target="#b20">Ouyang et al. (2022)</ref>: supervised fine-tuning, reward model training, and reinforcement learning. Although there are many other alignment methods such as Direct Preference Optimization <ref type="bibr" target="#b23">(Rafailov et al., 2023)</ref> or Preference Ranking Optimization <ref type="bibr" target="#b30">(Song et al., 2023)</ref>, we choose RLHF to train policy models and PIT for two reasons: (1) RLHF is the most widely used approach for alignment (2) PIT is not aimed for alignment but for triggering self-improvement. Therefore, the alignment method is not the focus of this paper.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">FORMULATION</head><p>Suppose we have data D = {(x, y l , y w )} 3n , where x is the input prompt, y l is the worse model generation, and y w is the better model generation, annotated by humans. We could equally divide the data into three folds D SFT , D RM and D RL for the supervised fine-tuning, reward model training, and reinforcement learning, respectively. The policy model M P is trained to generate response y P for the given input x: y P ∼ M P (•|x). PIT model M PIT is trained to generate improved response y PIT for given input x and reference response y ref :</p><formula xml:id="formula_0">y PIT ∼ M PIT (•|x, y ref ).</formula><p>In the following sections, we use subscript • P to denote the policy model and • PIT to denote PIT, and use superscripts such as SFT or RL to denote different checkpoints of models.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">SUPERVISED FINE-TUNING</head><p>Supervised fine-tuning (SFT) is the pre-requisite step of RLHF <ref type="bibr" target="#b20">(Ouyang et al., 2022)</ref>. SFT only uses x and y w , and y w could also be human-written responses <ref type="bibr" target="#b20">Ouyang et al. (2022)</ref>. To train policy models, we follow <ref type="bibr" target="#b20">Ouyang et al. (2022)</ref> and simply maximize the likelihood of y w : L SFT P = -(x,y l ,yw)∈DSFT log M P (y w |x).</p><p>Since PIT aims to improve reference responses, we need to include y l to train PIT: L SFT PIT = -(x,y l ,yw)∈DSFT log M PIT (y w |x, y l ). A natural extension for this loss function is that we can apply unlikelihood <ref type="bibr" target="#b38">(Welleck et al., 2019)</ref> loss to M PIT (y l |x, y w ), M PIT (y l |x, y l ) and M PIT (y w |x, y w ). However, we find the unlikelihood loss causes performance degradation in experiments, therefore we only keep likelihood loss when training PIT with SFT.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">REWARD MODEL TRAINING</head><p>The reward model is used to judge how good a response is and is the key component for reinforcement learning. A reward model denoted as R P maps an input x and the corresponding response y to a scalar r: r(x, y) = R P (x, y). Since the data D RM only contains preference (y l and y w ) and does not provide r directly, <ref type="bibr" target="#b20">Ouyang et al. (2022)</ref> trains the reward model by maximizing the reward gap between y l and y w :</p><formula xml:id="formula_1">L RM P = -DRM log σ(r w -r l )</formula><p>, where r w and r l are rewards, i.e., R P (x, y w ) and R P (x, y l ), respectively. Unlike R P , the reward model R PIT does not focus on rewards r of responses but cares about the gap r gap between responses: r gap (x, y 1 , y 2 ) = R PIT (x, y 1 , y 2 ). Therefore, R PIT needs to learn (r w -r l ) from the training data D RM . To formulate the loss function, we can use the fact that r gap (x, y w , y l ) ≥ r gap (x, y w , y w ) ≈ r gap (x, y l , y l ) ≥ r gap (x, y l , y w ).</p><p>(1) To ensure that the reward model performs as expected in Equation 1, after training, we consider all pairwise relations mentioned above, and the loss function becomes:</p><formula xml:id="formula_2">L RM PIT = - DRM [log σ(r w,l gap -r w,w gap ) + log σ(r w,l gap -r l,l gap ) + log σ(r w,l gap -r l,w gap ) + log σ(r w,w gap -r l,w gap ) + log σ(r l,l gap -r l,w gap )],<label>(2)</label></formula><p>where r w,l gap is the shortcut of r gap (x, y w , y l ), etc. Although there are other options to model the reward gap, such as computing the rewards subtraction through R P , we find Equation 2 is the best fit. More discussions could be found in Appendix C.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">REINFORCEMENT LEARNING</head><p>Reinforcement learning (RL) finds a policy that maximizes expected rewards over time, aligning LLMs with human preferences. The optimization goal for RL is <ref type="bibr" target="#b20">(Ouyang et al., 2022)</ref>:</p><formula xml:id="formula_3">Optimization RL P = DRL r(x, y) -βlog M RL P (y|x) M SFT P (y|x) .<label>(3)</label></formula><p>where r(x, y) = R P (x, y) and y ∼ M RL P (•|x). M RL P is the policy model to be optimized, which is initialized to M SFT P . M SFT P is M P trained in supervised fine-tuning, which is fixed in the RL. The KL divergence is used to restrict dramatic weight changes and reward hacking in RL.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4.1">CURRICULUM REINFORCEMENT LEARNING</head><p>Different from Equation 3, PIT aims to improve a reference response y ref instead of generating a response from scratch. Therefore, the RL for PIT utilizes x and y ref simultaneously. The difficulty is how to choose y ref .</p><p>An intuitive way is to use y l and y w provided in the dataset, and the optimization goal becomes:</p><formula xml:id="formula_4">Optimization RL, 0 PIT = DRL yref∈{y l ,yw} r gap (x, y, y ref ) -βlog M RL PIT (y|x, y ref ) M SFT PIT (y|x, y ref ) .<label>(4)</label></formula><p>However, PIT aims to improve M RL P responses, and y l and y w are chosen from the annotated data, not sampled from the M RL P . Therefore, we need to do another round of reinforcement learning, where y ref is sampled from the policy model:</p><formula xml:id="formula_5">Optimization RL, 1 PIT = DRL yref∼M RL P (•|x) r gap (x, y, y ref ) -βlog M RL PIT (y|x, y ref ) M SFT PIT (y|x, y ref .<label>(5)</label></formula><p>The flexibility of y ref in fact enables us to do multiple rounds of reinforcement learning to improve PIT further. For example, a third round Optimization RL, 2 PIT can sample y ref ∼ M RL PIT (•|x, y 1 ), where y 1 ∼ M RL P (•|x) with other terms unchanged. The third round enables PIT to improve the improved M RL P responses. In principle, this process could be extended to infinite rounds. We denote this process as curriculum reinforcement learning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4.2">DISCUSSIONS ON CURRICULUM REINFORCEMENT LEARNING</head><p>It is worth noting that the first round Optimization RL, 0 PIT is necessary since the optimization Optimization RL, 1  PIT is too hard to be optimized directly. This is because responses sampled from M RL P are already of high quality (higher than y l and y w in the data, as shown in Section 4.6), and are harder to be improved compared to y l and y w . Therefore, curriculum reinforcement learning is needed to ensure the success of optimizing Optimization RL, 1  PIT . We find that removing Optimization RL, 0 PIT and directly optimize Optimization RL, 1  PIT will make PIT fail to improve M RL P responses (Section 4.6). Besides, purely training PIT on Optimization RL, 0  PIT will also lead to a disaster since PIT never saw data sampled from M RL P (Section 4.6). In fact, we could even insert several intermediate rounds between the first and second rounds to build a smoother curriculum. Concretely, we could choose y ref sampled from intermediate checkpoints of M RL P (e.g., checkpoints dumped during training and have not been optimized for high rewards yet) since their responses will be less perfect and easier to be improved.</p><p>In our experiments, we use Optimization RL, 0  PIT and Optimization RL, 1 PIT to optimize PIT. This is because we find the dataset is not hard enough to require more rounds and intermediate rounds. The algorithm block of PIT can be found in the Algorithm 1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.5">SELF-IMPROVEMENT INFERENCE</head><p>Given the input x, we first sample y ref ∼ M RL P (•|x). Then we can get improved response y 1 ∼ M RL PIT (•|x, y ref ). The improvement process could be repeated infinite times. For examples, we could get y 2 ∼ M RL PIT (•|x, y 1 ) and y 3 ∼ M RL PIT (•|x, y 2 ), etc. The self-improvement inference process is summarized in the Algorithm 2. Moreover, PIT does not bring extra computational overhead compared with prompting methods such as Self-Refine (Madaan et al., 2023). Detailed discussions can be found in Appendix B.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">EXPERIMENTS</head><p>Our experiments are designed to answer two questions: (1) Can our method improve the quality of the original response? The term 'quality' here is defined by the preference data. For example, if the preference data is to get a more helpful and less harmless response, then 'higher quality' denotes more helpful and less harmless. (2) Can our method better improve the response than prompting methods such as Self-Refine? 4.1 DATASETS We use three diverse datasets for our experiments: Anthropic/HH-RLHF. The HH-RLHF dataset <ref type="bibr" target="#b2">(Bai et al., 2022;</ref><ref type="bibr" target="#b10">Ganguli et al., 2022)</ref> is released by Anthropic and is allowed for research purposes, which contains 161K conversation pairs between humans and AI assistants for training and 8.55K for testing. The dataset aims to train a helpful and harmless AI assistant and has two subsets: the helpful subset and the harmless subset. In our experiment, we only use the helpful subset and divide the subset equally into three folds for supervised fine-tuning, reward model training, and reinforcement learning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>OpenAI/Summary</head><p>The OpenAI/Summary <ref type="bibr">(Stiennon et al., 2020a)</ref>, which is also allowed for research purposes, contains Reddit posts and two summaries for each post with human preferences. It contains 92.9K training data and 86.1K validation data. Similarly to the Anthropic/HH-RLHF dataset, we equally divide the training dataset into three folds for supervised fine-tuning, reward model training, and reinforcement learning, respectively.</p><p>Synthetic Data To test the instruction following abilities of language models, we use PaLM 2 (Unicorn) <ref type="bibr" target="#b0">(Anil et al., 2023)</ref> to generate 13K synthetic data. Every synthetic data includes a question with multiple requirements, such as using a specific format for writing responses. It also includes a satisfactory response that meets all of the requirements, as well as an unsatisfactory response that only meets some of the requirements. Lastly, there is a reflection on how to improve the unsatisfactory response to make it satisfactory (not used in our experiments). Similarly, we divide synthetic data into three folds equally and use 128 examples for evaluation. The synthetic data generation process and examples can be found in Appendix D.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">SETTINGS</head><p>We use pre-trained PaLM 2 (Bison) as our backbone language model and reward model since we find smaller models' (Gecko and Otter) generation abilities are poorer, and larger models (Unicorn) are too expensive to train. We train our models on TPU v4 <ref type="bibr" target="#b14">(Jouppi et al., 2023)</ref>. In our experiments, we compare PIT with other self-improvement methods using prompts, specifically Self-Refine <ref type="bibr" target="#b18">(Madaan et al., 2023)</ref>. Self-Refine uses prompts (Appendix E.1) to instruct the model M RL P to reflect the current response and give feedback to improve the response, then asks M RL P to give an improved response based on the feedback. We set the sampling temperature to be 1 for all models during inference unless stated otherwise. More experiment settings can be found in Appendix F. We use third-party LLMs and reward models that are allowed to be used for research as evaluators, similar to previous works <ref type="bibr" target="#b23">(Rafailov et al., 2023;</ref><ref type="bibr" target="#b11">Gulcehre et al., 2023;</ref><ref type="bibr" target="#b9">Dong et al., 2023)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">EVALUATION MODELS</head><p>LLMs are sensitive to the rubric and need carefully designed prompts to achieve good performance for evaluation <ref type="bibr" target="#b23">(Rafailov et al., 2023)</ref>, which is also aligned with our motivation. Reward models may have reward hacking phenomenon <ref type="bibr" target="#b29">(Skalse et al., 2022)</ref>. To get a reliable evaluation, we use both thirdparty LLMs and reward models to do evaluations and use human evaluations when the two evaluations disagree. Evaluation prompts for LLMs are adopted from <ref type="bibr" target="#b44">Zheng et al. (2023)</ref>; <ref type="bibr" target="#b23">Rafailov et al. (2023)</ref> and are shown in Appendix E.2. We compute the agreement of LLMs with ground-truth validation data (Appendix G), and GPT-4 has the highest agreement compared to ChatGPT and PaLM 2 (Unicorn) and will be used as the representative of third-party language models to do evaluations afterward. We use DeBERTa-Large (304M) <ref type="bibr" target="#b12">(He et al., 2020)</ref> trained by Open Assistant<ref type="foot" target="#foot_0">foot_0</ref> as the representative of reward models because it uses different model architectures (compared with R P and R PIT ) and full training data (R P and R PIT only use 1/3 data) and is not used to optimize models (R PIT and R P are used for optimization), reducing the risk of reward hacking during evaluations. Moreover, it performs similarly to GPT-4 on the ground-truth validation data (Appendix G).</p><p>We also compare the agreement of R PIT and R P with the ground-truth labels on validation sets (Appendix G), and conclude R PIT generally outperforms R P , as expected. We then draw R PIT reward distribution on the synthetic dataset (since reward models perform best on this dataset among others and the distribution pattern is more noticeable) in Figure <ref type="figure" target="#fig_0">2</ref>. The distribution exactly follows our loss design in Equation 1. Moreover, we observe that the reward is negative when two responses are identical, indicating that PIT penalties repeating responses (or generating responses that have the same qualities as reference responses).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">RESULTS</head><p>Since GPT-4 API is expensive and slow, we evaluate 128 examples when using GPT-4 and 1,000 examples when using the DeBERTa reward model. To reduce the noise, the reward model will give a tie if the rewards for two responses are similar. In practice, the reward model gives a tie if σ(r 1 -r 2 ) ∈ PIT improves responses' qualities. We apply PIT to original responses and get improved responses. Then, we report the win rate of PIT against original responses. We use the difference between the win rate and the lose rate (∆ for short) to denote the performance of PIT. Table <ref type="table" target="#tab_0">1</ref> shows results. First, we find that the original responses are much better than y w in data, showing that M RL P is well optimized (this conclusion does not hold on synthetic data, which is expected since a much larger LLM produces y w ). We can see PIT consistently has better qualities (ranging from 7.2% to 33.59%) than original responses across three datasets with both GPT-4 and DeBERTa evaluators, showing the effectiveness of our method. Since DeBERTa performs poorly and GPT-4 has a high agreement with the ground-truth labels on the synthetic data (Appendix G), we only use GPT-4 as the evaluator for the synthetic data. It is worth noting that the summation of the win rate and the lose rate is less than 1 because of the existence of the tie rate.</p><p>PIT improves response quality better than Self-Refine. We then compare Self-Refine with PIT and original responses. Table <ref type="table" target="#tab_0">1</ref> shows the comparison results on the Anthropic/HH-RLHF dataset. GPT-4 and DeBERTa both agree that Self-Refine indeed improves response qualities. However, GPT-4 prefers Self-Refine more (3.91% better than PIT), whereas DeBERTa prefers PIT more (3.70% better than Self-Refine). This is understandable since GPT-4 and Self-Refine use manual prompts to evaluate or improve responses, making them prefer each other. On the contrary, DeBERTa and PIT are trained on the same data. Therefore, we conduct human evaluations to determine which is better and find that human prefers PIT more (23.53% better than Self-Refine). Appendix I shows details of human evaluations. The disagreement between GPT-4 and humans arises from GPT-4's inclination to long and detailed responses and Self-Refine's preference to generate such responses. Nonetheless, these responses can include irrelevant information not related to the questions humans raised, which is not desirable to humans. Appendix H.2 contains one concrete example of this phenomenon. Table <ref type="table" target="#tab_0">1</ref> also shows results on the synthetic dataset, where we can easily conclude that PIT outperforms Self-Refine, though they all improve original responses.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5">THE INFLUENCE OF IMPROVEMENT TEMPERATURES</head><p>In the above experiments, we set the temperature to be 1 for M RL P , M RL PIT and Self-Refine. However, higher temperatures often represent diversities and randomness, while lower temperatures usually represent coherence and qualities. Intuitively, self-improvement is expected to improve the original response along one most reliable improvement direction rather than randomly explore directions (which many harm the improvement performance). Therefore, a low temperature may be preferable to restrict the diversity of the improvement. Fig <ref type="figure" target="#fig_2">3</ref> shows the difference between win rates and lose rates among the original responses, improved responses by Self-Refine, and improved responses by PIT under different temperatures. The original responses are generated with the temperature 1, and improved responses are generated with different temperatures, as the figure shows. To achieve cost-effectiveness, we have opted for DeBERTa as the evaluator to assess 1,000 instances of Anthropic/HH-RLHF and OpenAI/Summary. We made this choice because, as indicated in Table <ref type="table" target="#tab_0">1</ref> and Section 4.4, DeBERTa correlates more closely with human preferences than GPT-4 does. Nevertheless, for the evaluation of 128 examples of synthetic data, we will rely on GPT-4 as DeBERTa is not ideal for this purpose, as shown in Appendix G. We do not report the results of Self-Refine for OpenAI/Summary since the dataset only contains summarization instructions, making Self-Refine not applicable.</p><p>On Anthropic/HH-RLHF dataset, we find our method improves the original responses most with low temperatures (0.4 ∼ 0.6), which fits our assumptions proposed at the beginning of this section. Table 2: The effect of curriculum reinforcement learning. A great performance drop is observed when we only use RL once. ∆ &lt; 0 represents 'XX RL Only' response quality is worse than the compared method. Evaluator: DeBERTa; Dataset: Anthropic/HH-RLHF Win rate / Lose rate / ∆ (%) First RL Only Second RL Only vs. Original 40.50/36.10/4.40 28.90/28.70/0.20 vs. Self-Refine 32.0/47.7/-15.70 28.50/47.40/-18.90 vs. PIT 20.70/50.80/-30.10 19.30/56.00/-36.70</p><p>Table 3: ELO scores (higher is better) of different improvement iterations on 1, 000 conversations in Anthropic/HH-RLHF and 1, 000 posts in OpenAI/-Summary. Evaluator: DeBERTa. Anthropic/HH-RLHF Responses ELO Rank PIT (Iter 4) 1036 1 PIT (Iter 1) 1033 2 PIT (Iter 5) 1025 3 PIT (Iter 3) 1018 4 PIT (Iter 2) 1016 5 Self-Refine (Iter 1) 1001 6 Self-Refine (Iter 3) 995 7 Self-Refine (Iter 4) 990 8 Self-Refine (Iter 2) 982 9 Self-Refine (Iter 5) 982 10 Original 921 11 OpenAI/Summary Responses ELO Rank PIT (Iter 2) 1049 1 PIT (Iter 3) 1031 2 PIT (Iter 1) 1022 3 PIT (Iter 5) 1013 4 PIT (Iter 4) 985 5 Original 900 6 Similar Worse Better First RL Only However, Self-Refine improves the original responses most with high temperatures (0.6 ∼ 0.8). We find that this is because Self-Refine tends to keep all the original response and only append extra details to the original response with low temperatures, leading to sub-optimal improvement. Corresponding examples can be found in Appendix H.3. OpenAI/Summary shows similar observations, whereas PIT is not heavily affected by temperatures on the synthetic data. This is probably because we only evaluate the instruction following ability and do not evaluate the concrete content quality on the synthetic data. Nevertheless, PIT outperforms Self-Refine under all temperatures (except a tie under the temperature 0.8 on the Anthropic/HH-RLHF dataset). Moreover, we compare PIT and Self-Refine under the best temperatures on Anthropic/HH-RLHF(i.e., 0.4 for PIT and 0.8 for Self-Refine), and find PIT still outperforms Self-Refine by 9.2%.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.6">THE EFFECT OF CURRICULUM REINFORCEMENT LEARNING</head><p>We conduct reinforcement learning twice in PIT , with the difficulty increases, as illustrated in Section 3.4.1. The first RL (Equation <ref type="formula" target="#formula_4">4</ref>) aims to teach models to improve ground-truth responses, whereas the second RL (Equation <ref type="formula" target="#formula_5">5</ref>) aims to teach models to improve M RL P responses. To demonstrate the importance of curriculum reinforcement learning, we trained two additional PIT variants. One model was optimized using the first RL, while the other model skipped the first RL and directly used the second RL. We compare the two extra models with PIT , Self-Refine conducted by M RL P , and original responses sampled from M RL P on the Anthropic/HH-RLHF datasets. Table <ref type="table">2</ref> shows that both models can only improve original responses marginally and have a large performance gap when compared to Self-Refine and PIT. The results are expected since the first model does not learn how to improve the original responses but is only trained on easier ground-truth data. On the contrary, the second model is directly facing a hard optimization problem (Table <ref type="table" target="#tab_0">1</ref> shows that original responses are much better than y w ). Examples can be found in Appendix H.4.</p><p>We also show rewards w.r.t. training steps when training M RL PIT with Equation 5 and training a PIT variant with second RL only in Figure <ref type="figure" target="#fig_3">4</ref>. Rewards are given by R PIT (x, •, y ref ), where y ref ∼ M RL P (x) is the original response. It is clear that the model with second RL only struggles to improve y ref due to the hard optimization, whereas PIT can break through the Similar area thanks to the first RL. Besides, the starting point of PIT in the Figure <ref type="figure" target="#fig_3">4</ref>, i.e., the PIT variant with the first RL only, fails to improve y ref , as expected.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.7">THE EFFECT OF IMPROVEMENT ITERATIONS</head><p>Knowing when to stop self-improvement is crucial since the improvement process could be iterated infinitely in principle. The stop condition depends on the actual needs. For example, the stop condition could be a fixed wall time or the significance of each improvement (i.e., stop further improvement if the current improvement is marginal). In this section, we only focus on the response qualities and investigate if the response qualities become better with more improvement iterations. If the answer is yes, then more iterations are always welcomed. Otherwise, stop conditions need to be carefully designed in real applications. We use ELO scores <ref type="bibr" target="#b44">(Zheng et al., 2023)</ref> to show quantitative results among models.</p><p>We use PIT and Self-Refine (with their best temperatures respectively) to improve 1, 000 original responses for 5 iterations on Anthropic/HH-RLHF, meaning each conversation now has 11 responses. We then use the DeBERTa reward model to compare 11 responses (Appendix H.5 shows an example), resulting C<ref type="foot" target="#foot_1">foot_1</ref> 11 = 55 comparisons for each conversation and 55, 000 comparisons in total. We then use 55, 000 comparisons to compute ELO scores 2 and report results in Table <ref type="table">3</ref>. We get ELO scores on OpenAI/Summary similarly, except for the difference that Self-Refine is not applicable to this dataset. Table <ref type="table">3</ref> shows consistent results with previous experiments that PIT (Iter 1) is better than Self-Refine (Iter 1), and the original responses have the lowest qualities. Intuitively, the best iteration for PIT should be consistent with the number of RL in curriculum reinforcement learning. However, Table <ref type="table">3</ref> shows that the response qualities and the number of iterations do not follow this intuition as PIT (Iter 1) is not best. Moreover, there is not a simple positive correlation between response qualities and improvement iterations. One possible explanation may be that the datasets are too easy and do not need more iterations. This phenomenon suggests we develop stop conditions in real applications carefully. We observe that sometimes the self-improvement yields the same responses as its previous iteration with low temperatures, which could potentially serve as a stop condition. An example is shown in Appendix H.5. We can also observe that PIT is consistently better than Self-Refine regardless of the number of iterations. Therefore, PIT is a better self-improvement method than Self-Refine regardless of the stop condition.</p><p>Since ELO scores are affected by the order of comparisons, we randomly shuffle comparisons several times and observe the change of ranks to ensure our conclusion is not caused by randomness. We find that PIT is always better than Self-Refine, and the original responses are the worst among 11 responses, but the internal rank of PIT and Self-Refine may be changed with different shuffles, which does not affect our conclusions above.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">CONCLUSION</head><p>We propose PIT, a novel approach that learns self-improvement implicitly from data.PIT does not require explicit prompting and extra data. Extensive experiments show the effectiveness of PIT on selfimprovement compared with prompting methods such as Self-Refine. We highlight our limitations and future work in Appendix J.  </p><formula xml:id="formula_6">(•|x), PIT model M RL PIT (•|•, •), self-improvement iteration K Output: Improved responded y • while k &lt; K ▷ Self-Improvement -y ← M RL PIT (•|x, y) [PIT] or y ← Self-Refine(x, y, M RL P ) [Self-Refine] -k ← k + 1 • done • return y B COMPUTATIONAL COST DURING INFERENCE</formula><p>Our approach has the same (or a bit lower) computational overhead compared with Self-Refine. The inference process is shown in Algorithm 2. Here is a detailed explanation:</p><p>The inference prompt of Self-Refine looks like this:</p><p>Human: Given a prompt {x} and a candidate response {y ref } provided by one assistant, you need to improve the response to be more helpful. Helpful means {rubric}. Assistant:</p><p>PIT uses a much simpler prompt with only special tokens as splitters:</p><formula xml:id="formula_7">Human: {x} Assistant: &lt;&lt; Candidate &gt;&gt; {y ref } &lt;&lt; Improved &gt;&gt;</formula><p>The {} denotes the concrete content, and &lt;&lt;&gt;&gt; denotes the special token. Both methods will return an improved response. The difference is that PIT does not need to explicitly write prompts since self-improvement is learned during our proposed training framework. Both methods use a one-time inference to get an improved response, and PIT in principle has the same computational cost as Self-Refine during inference, or strictly speaking even fewer computational costs due to the fewer input tokens (without complex rubrics).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C WHY EQUATION 2?</head><p>We made many efforts to filter out other reward modeling options and pin down our final choice to Equation 2. Since it is not applicable to try all possible solutions, we filter out other methods based on prior work findings and our own pilot experiments. Here is our detailed selection process:</p><p>The first question in developing the reward model is if we can directly use R p (i.e., the vanilla reward model that takes x and y as inputs and returns a scalar reward r) to compute the reward gap between two responses y 1 and y 2 , or we need to develop another reward model that directly calculates the reward gap (i.e., preference model). The most straightforward implementation using R p is to compute the subtraction of individual rewards of y 1 and y 2 obtained by R p . However, previous works show that R p fails to faithfully reflect the response quality when r is high <ref type="bibr" target="#b2">(Bai et al., 2022)</ref>. That is to say, if r 1 and r 2 are higher than a threshold, then r 1 &lt; r 2 does not necessarily denote y 1 is worse. This phenomenon is possible because of the poor calibration of the reward model <ref type="bibr">(Peng et al., 2023b)</ref>. Moreover, other work <ref type="bibr" target="#b43">(Zhao et al., 2023)</ref> shows that directly modeling the reward gap brings less noise and performs better than computing the subtraction of individual rewards. Therefore, we decided to train a reward model that directly models reward gaps.</p><p>Next, we need to decide the training objective. In the beginning, the training objective is simply maximizing the reward gap r gap (x, y w , y l ) and minimizing r gap (x, y l , y w ), which is similar to Equation 2 but without r gap (x, y w , y w ) and r gap (x, y l , y l ). However, we observe that LLM finds a shortcut that ignores the third argument, thus degenerating to R p and failing to grasp the reward gap. Therefore, we add r gap (x, y w , y w ) and r gap (x, y l , y l ) to prevent the degeneration.</p><p>We also explore the possibility of using pointwise rather than pairwise training signals used above. For example, we tried to explicitly assign r gap (x, y w , y l ) = 1, r gap (x, y l , y w ) = 0 and r gap (x, y l , y l ) = r gap (x, y w , y w ) = 0.5 and use MSE to train the reward model. We find this implementation is less effective than our proposed approach (e.g., Equation <ref type="formula" target="#formula_2">2</ref>) on the held-out reward model test set of 500 examples (∼ 5% accuracy drop). We think this phenomenon is because the inductive bias of assigning rewards to 1, 0.5, and 0 is not preferred in the data distribution.</p><p>Based on the above analysis, Equation 2 is chosen as our final choice.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D SYNTHETIC DATA</head><p>The synthetic data aims to test the instruction following abilities. Therefore, each question contains multiple requirements. We first manually design a list of tasks (e.g., email writing and advertisement writing) and requirements (e.g., using specific formats such as HTML, Markdown, or upper case.). Then, we randomly choose a task and several requirements from the list. We instruct PaLM 2 (Unicorn) to generate a question x 0 based on the chosen task and requirements and give a response y l accordingly. Next, we randomly select a few more requirements and instruct PaLM 2 (Unicorn) to add extra requirements to x 0 and get a new question x together with its response y w . The difference between y w and y l is that y w follows all instructions whereas y l only follows part of instructions in x.</p><p>It is worth noting that y w does not necessarily have better content than y l . In the synthetic dataset, we only care about the instruction following ability. At last, we instruct PaLM 2 (Unicorn) to give a chain-of-thoughts reflection c on improving y l to y w . {(x, y l , y w , c)} forms the synthetic dataset.</p><p>We use a two-step filtering method to filter out low-quality data: (1) We prompt PaLM 2 (Unicorn) to self-verify if y w follows all instructions and y l does not. (2) We manually inspect data and select a group of high-quality data and low-quality data, and then we use these data to fine-tune a classifier to further filter our low-quality data. In the end, we obtained 13K synthetic data in total.</p><p>Here is an example:</p><p>x: Create a serious tagline for a company that designs and builds roller coasters and rides for theme parks. It should follow the format "We are the best at [what the company does]". Also, make part of your answer in HTML format.</p><formula xml:id="formula_8">y l :</formula><p>We are the best at designing and building the most thrilling roller coasters and rides.</p><p>c: The response is a good tagline. It is serious. It is of the format "We are the best at [what the company does]". However, it does not contain any HTML format. We can improve it by adding some HTML format. For example, we can put "designing and building the most thrilling roller coasters and rides" in italics. This would make the tagline more visually appealing. [INPUT]</p><p>What should the assistant respond next in order to be helpful to satisfy the human's needs?</p><p>Here is a candidate's response:</p><formula xml:id="formula_9">[LLM OUTPUT]</formula><p>You should analyze the response and see if the response could be further improved to be more helpful to satisfy human needs and not go off-topic (You are not required to give an improved response).</p><p>Your reply should only contain the analysis and no more other words.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Assistant: My analysis:</head><p>Refinement to get [LLM-Improved Output]:</p><p>Human: Consider the following context:</p><p>[INPUT]</p><p>What should the assistant repond next in order to be helpful to satisfy the human's needs?</p><p>Here is a candidate response:</p><formula xml:id="formula_10">[LLM Output]</formula><p>Here is the analysis of the candidate response: <ref type="bibr">[Feedback]</ref> Please give me the improved response that is more helpful to satisfy human's needs and does not go off-topic according to the analysis. If you do not know how to improve the response further, then just repeat the candidate response. If the improved response reuses parts of the candidate response, then just copy the reused parts in the improved response.</p><p>Your reply should only contain the improved response and no more other words. Assistant: Improved response: E.1.2 SYNTHETIC DATA Reflection to get [Feedback]: Consider the following instruction: [INPUT] Here is a candidate response: [LLM Output] You should analyze the response and see if the response could be further improved to better follow instructions. Your reply should only contain the analysis and no more other words. Response: Refinement to get [LLM-Improved Output]: Consider the following instruction:</p><p>[INPUT]</p><p>Here is a candidate response:</p><formula xml:id="formula_11">[LLM Output]</formula><p>Here is the analysis of the candidate response: <ref type="bibr">[Feedback]</ref> Please give me the improved respone that better follows instructions according to the analysis.</p><p>If you do not know how to improve the response further, then just repeat the candidate response.</p><p>If the improved response reuses parts of the candidate response, then just copy the reused parts in the improved response.</p><p>Your reply should only contain the improved response and no more other words.</p><p>Response:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.2 EVALUATION PROMPTS</head><p>Evaluation prompts need to be as detailed as possible to make LLMs fully understand the evaluation task. We combine prompts used in <ref type="bibr" target="#b23">Rafailov et al. (2023)</ref>; <ref type="bibr" target="#b44">Zheng et al. (2023)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.2.1 ANTHROPIC/HH-RLHF</head><p>Please act as an impartial judge and evaluate the quality of the responses provided by two AI assistants to the user question displayed below. You should choose the assistant that follows the user's instructions better and provides more helpful responses to the user's questions. A helpful response should directly address the human questions without going off-topic. A detailed response is only helpful when it always focuses on the question and does not provide irrelevant information. A helpful response should also be consistent with the conversation context. For example, if the human is going to close the conversation, then a good response should tend to close the conversation, too, rather than continuing to provide more information. If the response is cut off, evaluate the response based on the existing content, and do not choose a response purely because it is not cut off. Begin your evaluation by comparing the two responses and provide a short explanation. Avoid any positional biases and ensure that the order in which the responses were presented does not influence your decision. Do not allow the length of the responses to influence your evaluation. Do not favor specific names of the assistants. Be as objective as possible. After providing your explanation, output your final verdict by strictly following this format: [[A]] if assistant A is better, <ref type="bibr">[[B]</ref>] if assistant B is better, and [[C]] for a tie.</p><p>--User Question--</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[Input] --The Start of Assistant A's Answer--[OUTPUT A] --The End of Assistant A's Answer----The Start of Assistant B's Answer--[OUTPUT B] --The End of Assistant B's Answer--</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.2.2 OPENAI/SUMMARY</head><p>Please act as an impartial judge and evaluate the summaries' quality of the Reddit posts displayed below. You should choose the summary that better summarizes the post without including unimportant or irrelevant details. A good summary is both precise and concise. Begin your evaluation by comparing the two summaries and provide a short explanation. Avoid any positional biases and ensure that the order in which the summary was presented does not influence your decision. Be as objective as possible. After providing your explanation, output your final verdict by strictly following this format: [[A]] if summary A is better, <ref type="bibr">[[B]</ref>] if summary B is better, and [[C]] for a tie.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>--Post--[Input] --Summary A--[OUTPUT A] --The End of Summary A----Summary B--[OUTPUT B] --The End of Summary B--</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.2.3 SYNTHETIC DATA</head><p>Please act as an impartial judge and evaluate the quality of the responses provided by two AI assistants to the user question displayed below. You should choose the assistant that better follows the user's instructions. Begin your evaluation by comparing the two responses and provide a short explanation. Avoid any positional biases and ensure that the order in which the responses were presented does not influence your decision. Do not allow the length of the responses to influence your evaluation. Do not favor certain names of the assistants. Be as objective as possible. After providing your explanation, output your final verdict by strictly following this format: [[A]] if assistant A is better, <ref type="bibr">[[B]</ref>] if assistant B is better, and [[C]] for a tie.</p><p>--User Question-- </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F EXPERIMENT SETTINGS</head><p>In the supervised fine-tuning stage, we fine-tune M SFT PIT and M SFT P for one epoch to avoid overfitting and set the learning rate to 3e -5. We use the last SFT checkpoint for RL since only this checkpoint sees all SFT data. The learning rate is set to 3e -4 in the reward model training. The learning rate of reinforcement learning is set to 1e -5. We set the context window to 512 for inputs and 512 for outputs for M P , and the context window to 512 for inputs, 512 for reference outputs and 512 for outputs for M PIT . We drop data that exceeds such limits. We use reward model checkpoints that achieve the highest accuracy on a held-out 128 ground-truth validation data. To select the best checkpoint of M RL PIT and M RL P , we first divide all checkpoints into several groups by their KL divergence to their SFT counterparts, and then select the one to two checkpoints per group that have the highest rewards on validation data. At last, we manually check the quality of model generations on 10 to 20 examples and select the best checkpoint.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G AGREEMENT OF EVALUATORS WITH GROUND-TRUTH LABELS</head><p>Table <ref type="table">4</ref> shows the agreement between evaluators and ground-truth labels on the validation data. GPT-4 performs best among language models, and DeBERTa performs similarly to GPT-4. The two models are chosen to be our evaluators.</p><p>Accuracy(%) Third-Party Language Models Reward Models ChatGPT PaLM 2 (Unicorn) GPT-4 DeBERTa * R PIT # R P # Anthropic/HH-RLHF 65.63 67.19 71.48 69.14 65.63 65.63 OpenAI/Summary 61.33 63.28 67.97 69.14 72.66 68.75 Synthetic Data 67.19 83.20 84.38 49.20 96.09 87.50</p><p>Table 4: Agreement between automatic evaluation models and ground truth labels. We evaluate 128 examples for third-party language models and 1,000 examples for reward models. * DeBERTa reward model is trained by OpenAssistant. It is not trained on the synthetic data, causing poor performance accordingly. # R PIT and R P is trained by us on the 1/3 of the full data as described in Section 4.1. It is used for RLHF. R PIT states y 1 is better than y 2 if r gap (x, y 1 , y 2 ) &gt; r gap (x, y 2 , y 1 ), and R P use r(x, y 1 ) &gt; r(x, y 2 ) as the criteria. Due to the low inference speed, we only evaluate 128 examples with them.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>H EXAMPLES H.1 COMMON EXAMPLES</head><p>We show several examples randomly selected from data to give readers senses about how PIT outperform Self-Refine. As suggested by Figure <ref type="figure" target="#fig_2">3</ref>, the temperature for PIT and Self-Refine is 0.4 and 0.8 for Anthropic/HH-RLHF dataset. For OpenAI/Summary, we use the temperature of 0.4 for PIT. We use temperature 1 and 0.4 for PIT and Self-Refine on the synthetic data.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>H.1.1 ANTHROPIC/HH-RLHF</head><p>PIT offers more comprehensive responses without going-off topic.</p><p>[Input]: Human: What lies outside of the universe? y w in Data: You're probably asking about the multiverse. What's the rest of the answer?</p><p>[LLM Output](i.e., Original Responses): One of the most interesting and intriguing mysteries about the universe is what, if anything, is outside of it. There are two main theories of what might lie outside of the universe. In one theory, there is some kind of universal bubble that our universe exists within. This bubble would be surrounded by a vast superspace called the quantum foam.</p><p>The quantum foam would consist of energy at the smallest possible scales, and it could stretch on forever in all directions. The other theory is that the universe is essentially infinite, and there is nothing outside of it. If this is true, then what lies outside of our universe is literally nothing.</p><p>[LLM-Improved Output] (i.e., Self-Refine):</p><p>One of the most intriguing questions about the universe is what, if anything, is outside of it. There are several possibilities, but the two main theories are the multiverse theory and the theory of a closed universe. According to the multiverse theory, there are countless universes existing in parallel with our own, and each of these universes has its own laws of physics. The theory of a closed universe posits that our universe is a finite bubble existing within a larger superspace, and the bubble is bounded on all sides. There is also some speculation that our universe could be infinite, with no boundary or external space. This is known as the 'no-boundary' theory.</p><p>[PIT-Improved Response]: No one knows for sure, but there are a number of theories. One of the most popular is the 'multiverse' theory, which posits that there are many different universes, each with its own laws of physics. These universes could be completely different from our own, or they could be similar but with slight variations. In either case, the multiverse theory suggests that there is a vast expanse of space outside of our universe, with many different universes existing in it. Another theory is that there is nothing outside of our universe. This is sometimes called the 'cosmological principle', and it suggests that the laws of physics are the same everywhere in the universe. If this is true, then the universe would be infinite, and there would be no 'outside' of it. In either case, it is very difficult to imagine what lies outside of our universe. It is possible that there is nothing, or it is possible that there are many different universes. We may never know for sure, but it is an interesting question to ponder. I hope this answer was helpful, and I wish you the best of luck in your future explorations of the universe! H.1.2 OPENAI/SUMMARY PIT improves the original summary by adding key information without mentioning irrelevant details.</p><p>[Input]:</p><p>Generate a summary of the following text: *** I am NOT planning of giving neither of them advice/opinions etc. They have lawyers for that. I'm just curious to what reddit thinks of this case. *** * The dog is a he, but to avoid confusion I will refer to him as "it". * On going divorce between a friend and her husband of 10 years. The dog is the husband's (he had it before the marriage). ** However, for most of the marriage, the wife is the one who walks it, feeds it, cleans after it. ** And when it got sick (I am not familiar with animal health issues, but it has to take certain meds regularly) she's the one who takes it to the vet and also started making raw food for the dog to improve its overall health. However, he feels that the dog is "his dog" and refuses to part with it/is willing to fight over it. Some background, feel free to skip: The wife is the stay-at-home mom of two boys. She does some contract work when she could. It is not her first choice, but the husband was never home because of his career and often out of the country. (Which makes him unfit to take care of the dog) After giving birth to the second child, he asked her to stay home so he could focus on his career and she could take care of: 1. Two boys. 2. The elderly in-laws. (80 and 75 now) 3. House-hold chores. 4. The dog. (walking it, taking it to the vet, giving it meds, making food for it) y w in Data: Husband wants wife to give up custody of their dog because he feels it is his dog and not hers.</p><p>[LLM Output](i.e., Original Responses): Married 10 years, Husband' dog. Wife does all the caretaking. Husband refuses to part with dog. What do you think of this case?? [PIT-Improved Response]: Wife is the stay-at-home mom who takes care of the dog. Husband feels that the dog is his dog and refuses to part with it. Now in divorce, he's willing to fight over it. What do you think of this case? H.1.3 SYNTHETIC DATASET PIT improves instruction following abilities: [INPUT]: What is the question that this sentence is the answer to? As the largest city in the United States, New York City is an ideal location for a business to reach a large audience. Your answer should be in HTML format. y w in Data:&lt;p&gt;Why is New York City an ideal location for a business to reach a large audience?&lt;/p&gt; [LLM Output](i.e., Original Responses):&lt;question&gt;What is the largest city in the United States?&lt;/question&gt; &lt;answer&gt;New York City&lt;/answer&gt; [LLM-Improved Output] (i.e., Self-Refine):&lt;question&gt;&lt;b&gt;What is the largest city in the United States?&lt;/b&gt;&lt;/question&gt; &lt;answer&gt;&lt;i&gt;New York City&lt;/i&gt;&lt;/answer&gt; [PIT-Improved Response]:&lt;html&gt; &lt;head&gt; &lt;title&gt;What is the largest city in the United States?&lt;/title&gt; &lt;/head&gt; &lt;body&gt; &lt;h1&gt;New York City&lt;/h1&gt; &lt;p&gt;As the largest city in the United States, New York City is an ideal location for a business to reach a large audience.&lt;/p&gt; &lt;/body&gt; &lt;/html&gt; H.2 GPT-4 BIASES ON LONG RESPONSES</p><p>GPT-4 prefers long and detailed sequences, even if they may provide irrelevant information or are less comprehensive.</p><p>[INPUT]: Human: What is Black Friday?</p><p>Assistant: This is a very significant shopping holiday that happens in the US and Canada on the day after Thanksgiving. Many stores offer big sales and deals on many products.</p><p>Human: I see. What is the origin of the name "Black Friday"?</p><formula xml:id="formula_12">y w</formula><p>in Data:</p><p>The origin of the term 'Black Friday' is disputed. The term was popularized in the US as a sales-promotion day for retailers. However, it is thought to have originated from the heavy traffic and post-Thanksgiving shopping associated with the day.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[LLM Output](i.e., Original Responses):</head><p>One popular explanation for the origins of the term is that it was given the negative connotation of being a time of traffic jams, long lines, and over-crowded retailers. The term was used by law enforcement officials in Philadelphia to describe the chaotic conditions that often arise for consumers when large crowds converge on department stores on the day after Thanksgiving.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[LLM-Improved</head><p>Output] (i.e., Self-Refine):</p><p>The term "Black Friday" refers to the day after Thanksgiving and is associated with congested traffic, long lines, and many crowded department stores. According to one explanation, it originally referred to a heavy traffic jam at the intersection of the main roads leading to a large department store in downtown Philadelphia, which was caused by shopping crowds. It was eventually adopted by retailers as a description of the heavy traffic and sales frenzy which accompany the commercial holiday. Shopping on Black Friday can be stressful and uncomfortable for many people due to the crowds and crowds, and can also result in overspending and impulse purchasing. For many consumers, the stress of Black Friday shopping outweighs the potential financial benefits, and so shopping on Black Friday is avoided by many consumers.</p><p>[PIT-Improved Response]: It's because the retailers' sales figures turn from red (meaning loss) to black (meaning profit). And it's also because there are many large crowds at the stores on Black Friday, often leading to disorder and chaos.</p><p>It can be clearly seen from above that [LLM-Improved Output] goes off-topic, where as [PIT-Improved Response] focuses on the topic and provides two possible originations. However, GPT-4 prefers the former one and our human annotators prefer the latter one.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>H.3 TEMPERATURE AFFECTS GENERATION QUALITIES</head><p>PIT performs well under low temperatures, as discussed in Section 4.5. Here is a concrete example:</p><p>[INPUT]: Human: Do other planets besides the Earth have wind?</p><p>Assistant: Yes, of course! All planets have wind, though the speeds and strength of the wind vary from planet to planet. The Earth's wind is usually not very strong, but Mars has very strong winds. Jupiter has the strongest wind of any planet in our Solar System. Venus has very slow winds.</p><p>Human: What causes wind? y w in Data: Wind is caused by differences in temperature. In general, hot air rises, while cooler air sinks. This causes different parts of the atmosphere to move past each other, creating wind. The Sun heats up the Earth's atmosphere, and this causes wind. The wind blows all around the Earth, but near the Earth's surface it usually doesn 2019t blow very fast. Near the top of the atmosphere, though, the wind can be quite fast.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[LLM Output](i.e., Original Responses):</head><p>Wind is the air movement that's produced by unequal heating of the atmosphere and the rotation of the planet. The unequal heating of the atmosphere means that warm air rises and cool air sinks, which creates an upward and downward air current. The planet's rotation causes the upward and downward currents to move along the planet's surface, which creates the wind. This is because the atmosphere is constantly spinning with the planet, and as it spins, some air rises, and some air sinks. Air currents move in the direction that the surface is moving, and the surface of a planet is moving towards the eastern direction because of the rotation of the planet. This means that the upper air currents move towards the east, and the lower air currents move towards the west.</p><p>[PIT-Improved Response] (Temperature 0.4):</p><p>Wind is caused by the uneven heating of the atmosphere. The sun heats the air at the equator, and the air rises. This causes cooler air from the poles to rush in to fill the space. This creates a wind. The strength of the wind depends on how much the air is heated, and how quickly the air moves. The Earth's atmosphere is heated by the sun, and the air moves because of the Earth's rotation. This is why the wind is stronger in the tropics, and weaker at the poles. The Earth's atmosphere is also affected by the land and oceans. The land heats up and cools down more quickly than the oceans, so this causes the wind to change direction. The wind also changes direction as it travels over the mountains.</p><formula xml:id="formula_13">[PIT-Improved Response] (Temperature 1.0):</formula><p>Wind is caused by the uneven heating of the atmosphere by the Sun. The warm surface of the planet causes the air above it to expand and rise, causing a low-pressure area near the surface. The cold air above it (known as the thermosphere) then sinks, creating high-pressure areas, which forces the warm air above the surface to rush in towards the higher-pressure area. This rush of warm air is known as wind.</p><p>On the contrary, Self-Refine tends to repeat the whole original response and only add extra details in low temperatures, leading to a sub-optimal performance:</p><p>[INPUT]: Human: How can I get started with creating an app? y w in Data:</p><p>Well the first step is to come up with an idea for an app. Then you can start prototyping the user interface. Can I give you some examples of how to do this? First, we'll start with the outline of the app. What is it for? [LLM Output](i.e., Original Responses): I am so glad you are interested in creating your own app! There are many different types of apps you can create, from mobile apps to web apps and more. Here are a few steps you can follow to get started with app creation:</p><p>-Consider the type of app you would like to create, and the unique functionality you would like your app to have.</p><p>-Create a wireframe for your app. A wireframe is a visual representation of how your app will function and look, before building out a fully fledged app.</p><p>-Research any technologies or coding languages you will need in order to build your app.</p><p>-Test your app on a small scale to make sure it runs smoothly and functions as intended. -Publish your app, and continue to monitor and improve it based on user feedback. I hope that helps to get you started! Feel free to let me know if you have any additional questions or concerns.</p><p>[LLM-Improved Output] (i.e., Self-Refine) (Temperature 0): I am so glad you are interested in creating your own app! There are many different types of apps you can create, from mobile apps to web apps and more. Here are a few steps you can follow to get started with app creation:</p><p>-Consider the type of app you would like to create, and the unique functionality you would like your app to have. For example, you might want to create a mobile app that helps users find nearby restaurants, or a web app that helps users manage their finances.</p><p>-Create a wireframe for your app. A wireframe is a visual representation of how your app will function and look, before building out a fully fledged app. You can use a wireframing tool like Balsamiq or Adobe XD to create a wireframe for your app.</p><p>-Research any technologies or coding languages you will need in order to build your app. For example, if you want to create a mobile app, you will need to learn a mobile app development framework like React Native or Flutter. If you want to create a web app, you will need to learn a web development framework like Angular or React.</p><p>-Test your app on a small scale to make sure it runs smoothly [LLM-Improved Output](i.e., Self-Refine)(Temperature 0.8): Here are some steps for getting started with creating an app:</p><p>1. Decide on the type of app you want to create. Are you looking to make an Android app or an iOS app? Or maybe you want to create a desktop app? 2. Research and learn the basic features of the platform. Browse existing apps to identify the features you like to incorporate into your own app. You can use a web app called the Google Play Store or Apple's App Store to browse the different apps, and you can also check out the relevant developer websites for more information.</p><p>3. Make an app development plan. Once you've decided on the type of app you want to create, you'll need to plan out the steps for developing the app. There are many different approaches to creating an app, so you'll need to decide on a specific development strategy. I recommend starting with a simple prototype app, and then building on the prototype to create a more complex app. 4. Learn how to code. The coding language will depend on the platform you're developing on, but you'll need to learn the basic features of that language. You can use online tutorials and resources to learn the basics of coding.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>H.4 THE EFFECTIVENESS OF CURRICULUM REINFORCEMENT LEARNING</head><p>Curriculum reinforcement learning is critical for the successful optimization of PIT. If we only use the first or the second RL, PIT is either not optimized to improve original responses or optimized under a hard optimization goal directly, leading to optimization failure. We show qualitative examples here to show the failure of such a case: Human: What causes wind? y w in Data: Wind is caused by differences in temperature. In general, hot air rises, while cooler air sinks. This causes different parts of the atmosphere to move past each other, creating wind.</p><p>The Sun heats up the Earth's atmosphere, and this causes wind. The wind blows all around the Earth, but near the Earth's surface it usually doesn 2019t blow very fast. Near the top of the atmosphere, though, the wind can be quite fast.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[LLM Output](i.e., Original Responses):</head><p>Wind is the air movement that's produced by unequal heating of the atmosphere and the rotation of the planet. The unequal heating of the atmosphere means that warm air rises and cool air sinks, which creates an upward and downward air current. The planet's rotation causes the upward and downward currents to move along the planet's surface, which creates the wind. This is because the atmosphere is constantly spinning with the planet, and as it spins, some air rises, and some air sinks. Air currents move in the direction that the surface is moving, and the surface of a planet is moving towards the eastern direction because of the rotation of the planet. This means that the upper air currents move towards the east, and the lower air currents move towards the west.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[PIT-Improved Response]:</head><p>Wind is caused by the uneven heating of the atmosphere. The sun heats the air at the equator, and the air rises. This causes cooler air from the poles to rush in to fill the space. This creates a wind. The strength of the wind depends on how much the air is heated, and how quickly the air moves. The Earth's atmosphere is heated by the sun, and the air moves because of the Earth's rotation. This is why the wind is stronger in the tropics, and weaker at the poles. The Earth's atmosphere is also affected by the land and oceans. The land heats up and cools down more quickly than the oceans, so this causes the wind to change direction. The wind also changes direction as it travels over the mountains.</p><p>[PIT-Improved Response] (First RL Only): Wind is caused by differences in air pressure. Air molecules move from high pressure to low pressure. This movement of air molecules is what causes wind. The speed and strength of the wind depends on the difference in air pressure. If there is a large difference in air pressure, the wind will be strong. If there is a small difference in air pressure, the wind will be weak.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[PIT-Improved Response] (Second RL Only):</head><p>Wind is caused by the uneven heating of the atmosphere by the Sun. When the atmosphere is heated unevenly, the air moves from the hotter areas to the cooler areas. This movement of air is called wind. The amount of wind varies from planet to planet, depending on how much the atmosphere is heated by the Sun.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>H.5 MODEL GENERATIONS WITH DIFFERENT IMPROVEMENT ITERATIONS</head><p>Section 4.7 shows that the model generations are not necessarily always improved with the increase of self-improvement iterations. Here is an example:</p><p>[INPUT]:Human: How many terms can a mayor serve? y w in Data: Two terms are the standard, though some mayors may opt to serve for longer than two terms, or to serve more than two terms consecutively.</p><p>[LLM Output](i.e., Original Responses): According to the National League of Cities (NLC), a mayor can only serve for 8 years. This is a state-by-state law, but most states have adopted the 8-year limit. However, there are some states that have different term limits, for example New Jersey has a four-year limit, and Louisiana has a 2-year limit. In most cities, there is a two-term limit.</p><p>[PIT-Improved Response] (Iter 1): In the United States, a mayor can serve up to two terms. This is a common practice, and is designed to prevent a mayor from becoming too powerful. In some cities, there are term limits that are shorter, such as a single term of four years. But in general, the two-term limit is the standard. This allows the mayor to serve for a reasonable amount of time, while also ensuring that there is a regular turnover of leadership. In some cities, there are also limits on the total number of terms that a person can serve. For example, in New York City, the mayor can only serve for two terms, and in Chicago, the mayor can only serve for three terms. This is designed to ensure that the mayor's power is limited, and that there is a regular turnover of leadership. Overall, the two-term limit is a common and reasonable practice, and it ensures that the mayor's power is limited. It also ensures that there is a regular turnover of leadership, which is important for maintaining a healthy political system. I hope this information was helpful, and I wish you the best of luck in your research. Please feel free to contact me again [PIT-Improved Response] (Iter 2): In the United States, a mayor can serve up to two terms. This is a common practice, and is designed to prevent a mayor from becoming too powerful. In some cities, there are term limits that are shorter, such as a single term of four years. But in general, the two-term limit is the standard. This allows the mayor to serve for a reasonable amount of time, while also ensuring that there is a regular turnover of leadership. In some cities, there are also limits on the total number of terms that a person can serve. For example, in New York City, the mayor can only serve for two terms, and in Chicago, the mayor can only serve for three terms. This is designed to ensure that the mayor's power is limited, and that there is a regular turnover of leadership. Overall, the two-term limit is a common and reasonable practice, and it ensures that the mayor's power is limited. It also ensures that there is a regular turnover of leadership, which is important for maintaining a healthy political system. I hope this information was helpful, and I wish you the best of luck in your research. Please feel free to contact me again</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[PIT-Improved Response] (Iter 3):</head><p>In the United States, a mayor can serve a maximum of two terms. This is a common practice, and is designed to prevent a mayor from becoming too powerful. In some cities, there are term limits that are shorter, such as a single term of four years. But in general, the two-term limit is the standard. This allows the mayor to serve for a reasonable amount of time, while also ensuring that there is a regular turnover of leadership. In some cities, there are also limits on the total number of terms that a person can serve. For example, in New York City, the mayor can only serve for two terms, and in Chicago, the mayor can only serve for three terms. This is designed to ensure that the mayor's power is limited, and that there is a regular turnover of leadership. Overall, the two-term limit is a common and reasonable practice, and it ensures that the mayor's power is limited. It also ensures that there is a regular turnover of leadership, which is important for maintaining a healthy political system. I hope this information was helpful, and I wish you the best of luck in your research. Please feel free to contact me [PIT-Improved Response] (Iter 4):</p><p>In the United States, a mayor can serve a maximum of two terms. This is a common practice, and is designed to prevent a mayor from becoming too powerful. In some cities, there are term limits that are shorter, such as a single term of four years. But in general, the two-term limit is the standard. This allows the mayor to serve for a reasonable amount of time, while also ensuring that there is a regular turnover of leadership. In some cities, there are also limits on the total number of terms that a person can serve. For example, in New York City, the mayor can only serve for two terms, and in Chicago, the mayor can only serve for three terms. This is designed to ensure that the mayor's power is limited, and that there is a regular turnover of leadership. Overall, the two-term limit is a common and reasonable practice, and it ensures that the mayor's power is limited. It also ensures that there is a regular turnover of leadership, which is important for maintaining a healthy political system. I hope this information was helpful, and I wish you the best of luck in your research. Please feel free to contact me</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[PIT-Improved Response] (Iter 5):</head><p>In the United States, a mayor can serve a maximum of two terms. This is a common practice, and is designed to prevent a mayor from becoming too powerful. In some cities, there are term limits that are shorter, such as a single term of four years. But in general, the two-term limit is the standard. This allows the mayor to serve for a reasonable amount of time, while also ensuring that there is a regular turnover of leadership. In some cities, there are also limits on the total number of terms that a person can serve. For example, in New York City, the mayor can only serve for two terms, and in Chicago, the mayor can only serve for three terms. This is designed to ensure that the mayor's power is limited, and that there is a regular turnover of leadership. Overall, the two-term limit is a common and reasonable practice, and it ensures that the mayor's power is limited. It also ensures that there is a regular turnover of leadership, which is important for maintaining a healthy political system. I hope this information was helpful, and I wish you the best of luck in your research. Please feel free to contact me [LLM-Improved Output](i.e., Self-Refine)(Iter 1): According to the National League of Cities (NLC), the term limit for mayors is generally 8 years, but there are some exceptions to this rule. For example, in the city of Boston, the mayor can only serve for four years. In most cities, there is a two-term limit, which means that the mayor can only serve for two consecutive terms. For more information on term limits for mayors in your city or state, you can visit the NLC website at <ref type="url" target="www.nlc.org">www.nlc.org</ref>.</p><p>[LLM-Improved Output](i.e., Self-Refine)(Iter 2): According to the National League of Cities, the term limit for mayors is generally 8 years. This is because it takes a long time to really get to know a city and make meaningful changes. It is also important for mayors to have a term limit, so that they do not become too powerful and abuse their position. In most cities, there is a two-term limit, which means that the mayor can only serve for two consecutive terms. For more information on term limits for mayors in your city or state, you can visit the National League of Cities website at <ref type="url" target="www.nlc.org">www.nlc.org</ref>.</p><p>[LLM-Improved Output](i.e., Self-Refine)(Iter 3): The term limit for mayors in the US is generally eight years. This is because it takes a long time to really get to know a city and make meaningful changes. Term limits are also important for mayors, so that they do not become too powerful and abuse their position. In most cities, there is a two-term limit, which means that the mayor can only serve for two consecutive terms. Term limits for mayors are set by state or local laws, and they can vary by city or state. The reasons for term limits vary by city, but generally mayors are subject to term limits in order to promote political accountability and ensure that the office does not become too powerful.</p><p>The primary responsibilities of the mayor include overseeing the city's budget, managing city services, and representing the city on a local and national level. The mayor also serves as the political leader of the city, and is responsible for setting the city's policy agenda, appointing city officials, and communicating with citizens. Overall, the mayor plays a vital role in shaping the city's direction and priorities.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[LLM-Improved</head><p>Output](i.e., Self-Refine)(Iter 4):</p><p>The term limit for mayors in the US is generally eight years, in accordance with state and city laws. The primary responsibilities of the mayor include overseeing the city's budget, managing city services, and representing the city on a local and national level. The mayor also serves as the political leader of the city, and is responsible for setting the city's policy agenda, appointing city officials, and communicating with citizens. Overall, the mayor plays a vital role in shaping the city's direction and priorities.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>[LLM-Improved</head><p>Output](i.e., Self-Refine)(Iter 5):</p><p>The term limit for mayors in the US is generally eight years, in accordance with state and city laws. The primary responsibilities of the mayor include overseeing the city's budget, managing city services, and representing the city on a local and national level. The mayor also serves as the political leader of the city, and is responsible for setting the city's policy agenda, appointing city officials, and communicating with citizens. Overall, the mayor plays a vital role in shaping the city's direction and priorities. The mayor's duties generally include:</p><p>-Overseeing the city's budget and financial management -Setting the city's policy agenda -Appointment and removal of city staff and officials -Representing the city on a local and national level -Providing leadership and direction to the city -Communicating with citizens about city issues and priorities Overall, the mayor plays a vital role in setting the city's goals and direction, and ensuring the city runs smoothly and effectively. The mayor is elected by citizens in local elections, and is generally limited to two or four terms in office, depending on the state and city laws.</p><p>We can observe two interesting phenomena: (1) More improvement iterations may make responses worse since adding details unstoppablely may easily lead the response to go off-topic, as shown in LLM-Improved Output](i.e., Self-Refine)(Iter 5). (2) PIT sometimes will generate the same responses as the previous iteration (e.g., Iter 1 and 2, Iter 3,4 and 5), which may suggest a potential stop condition of self-improvement.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I HUMAN EVALUATIONS</head><p>We instruct five people to human evaluate 170 examples in Anthropic/HH-RLHF with the same instruction used in GPT-4 evaluation. Annotators are required to compare [LLM-Improved Response] and [PIT-Improved Response] of each example. Each example has two annotators. To avoid position bias, response orders are shuffled. One response is better than another if and only if both annotators agree with each other, otherwise they are treated as Tie.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>J LIMITATIONS AND FUTURE WORK</head><p>Though our method has the same inference cost compared with prompting methods for selfimprovement, our method requires training, which needs computation resources accordingly. In our experiment, PIT is the same size as the policy model M RL P . To reduce the training costs, we plan to investigate if changing PIT to smaller models can still improve large policy model responses in the future. Moreover, self-improvement methods such as PIT or other prompting methods, face a common problem of the stop condition. Practically, we should stop self-improvement iterations if we know responses cannot be further improved by the method, which is an interesting topic for future exploration. We believe our method will show more potential when the self-improvement goal needs domain expertise. We plan to extend experiments to domain-specific datasets once there is good publicly available preference data. We will also extend our experiments to more models, such as Llama 2 <ref type="bibr" target="#b34">(Touvron et al., 2023)</ref>. At last, a natural extension of our method is to incorporate Chain-of-Thought, i.e., c, y ∼ M RL PIT (x, y ref ), where c denotes the Chain-of-Thought reflection on the way to improve y ref to y. However, we find that this will cause performance degradation (See Appendix K for details), and further exploration is needed.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>K EXTEND PIT TO SUPPORT CHAIN-OF-THOUGHTS IMPROVEMENTS</head><p>A natural extension of PIT is to support Chain-of-Thoughts <ref type="bibr" target="#b37">(Wei et al., 2022)</ref>. To this end, we utilize the reflection in the synthetic data, and the training data becomes {(x, y l , y w , c)}, where c denotes the Chain-of-Thought reflection on the way to improve y l to y w , and PIT becomes c, y ∼ M RL PIT (x, y ref ) during inference. Strictly speaking, M RL PIT first sample c and then sample y based on x, y ref and c. As a preliminary experiment, we explore the supervised fine-tuning version of PIT and the training objective of PIT becomes:</p><formula xml:id="formula_14">L SFT PIT = - (x,y l ,yw,c)∈DSFT log M PIT (c, y w |x, y l )</formula><p>We denote this model PIT (SFT, CoT). Similarly, we denote M SFT PIT as PIT (SFT). We then use M SFT P to generate responses (denoted as 'Original Responses') and use PIT (SFT, CoT) and PIT (SFT) to improve responses. Figure <ref type="figure" target="#fig_9">5</ref> shows corresponding results evaluated by GPT-4 on 128 examples. Surprisingly, we find that PIT (SFT, CoT) does not outperform PIT (SFT) and, instead, is worse. This may be because the quality of the chain-of-thoughts reflections in the dataset is not good. However, further exploration is needed to understand this observation. Another challenging point is to let RL supports chain-of-thoughts reflections. This is hard because it requires data that identifies the bad and good reflections, which is hard to obtain. We leave these as our future work. </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Reward distribution of R PIT on the synthetic data, which follows Equation 1.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><figDesc>[0.45, 0.55], where r 1 and r 2 denote the reward of two responses. We first sample responses y ref ∼ M RL P (x) (denoted as 'Original Responses') and then use self-improvement methods to improve y ref . Appendix H.1 shows several qualitative examples.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: The difference between win rate and lose rate (∆) among original responses, improved responses by Self-Refine, and improved responses by PIT under different temperatures. ∆ &gt; 0 denotes the former response is better, and higher |∆| denotes larger performance gap.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Rewards w.r.t. training steps. Rewards are divided into three regions. The Better region denotes the model can improve original responses; The Similar region suggests the model can only generate responses that are on par with original responses; The Worse denotes the model cannot improve original responses and make original responses worse.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>REPRODUCIBILITYDatasets has been discussed in 4.1. Two of three datasets (Anthropic/HH-RLHF and OpenAI/Summary) are publicly available and can be easily found on the HuggingFace website. Appendix D describes the generation process of the remaining synthetic dataset. Evaluators are discussed in Section 4.3 and Appendix G. Moreover, Appendix E.2 offers the evaluation prompts. Experiment settings, baselines, and details are discussed in Section 4.2 and Appendix F. Appendix E.1 also offers prompts used for the baseline method. A THE WORKING FLOW Given a dataset D = {(x, y l , y w )}, we equally divide it into three folds D SFT , D RM and D RL . Starting from a pre-trained language model M pre (•|•), we first conduct normal SFT and RLHF on D to obtain RLHF-finetuned model M RL P (•|•). M RL P (•|•) takes a prompt x as the input (e.g., Please give me a three-day travel plan about Los Angeles.) and return a response y. The input format of M RL P (•|x) during training and inference is: Human:{x} Assistant: , where {x} denotes the concrete input x. Then we train PIT M RL PIT (•|•, •) that takes a prompt and a candidate response as inputs and returns an improved response. The input format of M RL PIT (•|x, y ref ) is Human:{x} Assistant:&lt;&lt;Candidate&gt;&gt;{y ref }&lt;&lt;Improved&gt;&gt; , where {} denotes concrete contents and &lt;&lt;&gt;&gt; denotes a special token. Similarly, the input format of R P (x, y) is Human:{x} Assistant:{y} , and the input format of R PIT (x, y 1 , y 2 ) is Human:{x} Assistant:&lt;&lt;Candidate&gt;&gt;{y 2 }&lt;&lt;Improved&gt;&gt;{y 1 } Algorithm 1: PIT Training Input: Dataset DSFT, DRM and DRL, a pre-trained model Mpre(•|•), and an RLHF-finetuned model M RL P (•|•) trained on DSFT, DRM, DRL and Mpre(•|•). Output: PIT Model M RL PIT (•|•, •) • M SFT PIT (•|•, •) ← Mpre(•|•) • for x, y l , yw in D SFT ▷ Supervised fine-tuning -Supervised fine-tuning Mpre(•|•) using lossL SFT PIT = -log M SFT PIT (yw|x, y l ) • RPIT(•, •, •) ← Mpre(•|•) • for x, y l , yw in DRM ▷ Reward model training -Compute reward gap RPIT(x, y1, y2), y1 ∈ {y l , yw}, y2 ∈ {y l , yw} -Optimize RPIT by Equation 2 • M RL PIT (•|•, •) ← M SFT PIT (•|•, •) • while not converge ▷ First RL-Sample x, yref from DRL, where y ∈ {y l , yw} -Generate y ∼ M RL PIT (•|x, yref) -Use reinforcement learning algorithm such as PPO to optimize Equation4• done• while not converge ▷ Second RL -Sample x from DRL, yref ∼ M RL P (•|x) -Generate y ∼ M RLPIT (•|x, yref) -Use reinforcement learning algorithm such as PPO to optimize Equation5• done• return M RL PIT When conducting self-improvement during inference, we need first to get y ref ∼ M RL P (•|x), and then apply M RL PIT or Self-Refine to get improved responses. The self-improvement process could be done iteratively during inference. The concrete inference procedure is shown in Algorithm 2.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Algorithm 2 :</head><label>2</label><figDesc>Self-Improvement During InferenceInput: Input x, an response yref sampled from RLHF-finetuned model M RL P</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><figDesc>We are the best at &lt;i&gt;designing and building the most thrilling roller coasters and rides&lt;/i&gt;.E PROMPTS E.1 PROMPTS FOR SELF-REFINESelf-Refine first enables LLMs to obtain feedback, and then asks LLMs to improve responses based on the feedback.E.1.1 ANTHROPIC/HH-RLHFReflection to get [Feedback]:Human: Consider the following context:</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><figDesc>End of Assistant A's Answer----The Start of Assistant B's Answer--[OUTPUT B]--The End of Assistant B's Answer--</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>[</head><figDesc>INPUT]: Human: Do other planets besides the Earth have wind?Assistant: Yes, of course! All planets have wind, though the speeds and strength of the wind vary from planet to planet. The Earth's wind is usually not very strong, but Mars has very strong winds. Jupiter has the strongest wind of any planet in our Solar System. Venus has very slow winds.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: The difference between win rate and lose rate (∆) among original responses, improved responses by Self-Refine, improved responses by PIT (SFT) and improved responses by PIT (SFT, CoT) under different temperatures on the synthetic dataset. ∆ &gt; 0 denotes the former response is better, and higher |∆| denotes higher performance gap. Evaluator: GPT-4 (on 128 examples).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Comparisons among y w in data, original responses, improved responses by Self-Refine, and improved responses by PIT on three datasets. Win rate / Lose rate denotes the percentage of the former model's responses that is better / worse than the latter's. Their difference ∆ &gt; 0 denotes that the former response is better and vice versa. Higher |∆| denotes a higher performance gap.</figDesc><table><row><cell>Dataset</cell><cell>Comparison</cell><cell>GPT-4</cell><cell cols="3">Win rate / Lose rate / ∆ (%) DeBERTa</cell><cell>Human Evaluation</cell></row><row><cell></cell><cell>Original vs. y w</cell><cell cols="2">71.85/17.19/54.69</cell><cell>68.20/18.00/50.20</cell><cell>-</cell></row><row><cell>Anthropic/HH-RLHF</cell><cell>PIT vs. Original Self-Refine vs. Original</cell><cell cols="2">55.47/27.34/28.13 60.94/17.19/43.75</cell><cell>46.30/32.30/14.00 40.30/31.40/8.90</cell><cell>--</cell></row><row><cell></cell><cell>PIT vs. Self-Refine</cell><cell cols="2">38.28/42.19/-3.91</cell><cell>41.3/37.60/3.70</cell><cell>47.06/23.53/23.53</cell></row><row><cell>OpenAI/Summary</cell><cell>Original vs. y w PIT vs. Original</cell><cell cols="2">74.22/8.59/65.63 44.53/24.22/20.31</cell><cell>84.90/10.70/74.20 41.9/34.7/7.2</cell><cell>--</cell></row><row><cell></cell><cell>Original vs. y w</cell><cell cols="2">28.91/51.56/-22.66</cell><cell>-</cell><cell>-</cell></row><row><cell>Synthetic Data</cell><cell>PIT vs. Original Self-Refine vs. Original</cell><cell cols="2">48.44/14.84/33.59 34.38/17.97/16.41</cell><cell>--</cell><cell>--</cell></row><row><cell></cell><cell>PIT vs. Self-Refine</cell><cell cols="2">45.31/35.16/10.16</cell><cell>-</cell><cell>-</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>https://huggingface.co/OpenAssistant/reward-model-deberta-v3-large-v2</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>We use scripts released by Chatbot Arena<ref type="bibr" target="#b44">(Zheng et al., 2023)</ref>: https://colab.research.google. com/drive/1J2Wf7sxc9SVmGnSX_lImhT246pxNVZip?usp=sharing</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>ACKNOWLEDGEMENT</head><p>We would like to acknowledge our Google colleagues for their invaluable advice and support. In particular, we thank <rs type="person">Music Li</rs> (<rs type="affiliation">Yuezhang Li</rs>) for insightful discussions and manual evaluation. We thank <rs type="person">Tianqi Liu</rs>, <rs type="person">Honglong Cai</rs>, and <rs type="person">Albert Webson</rs> for their constructive advice, and <rs type="person">Léonard Hussenot</rs> and <rs type="person">Robert Dadashi</rs> for building RLHF infra. Finally, we would like to acknowledge <rs type="person">Melvin Johnson</rs>, <rs type="person">Hongkun Yu</rs>, and <rs type="person">Denny Zhou</rs> for their support throughout the project. We also thank the anonymous reviewers for their suggestions and comments. This research is also based upon work supported by <rs type="funder">U.S. DARPA ECOLE</rs> Program No. <rs type="grantNumber">HR00112390060</rs> and <rs type="funder">U.S. DARPA ITM</rs> Program No. <rs type="grantNumber">FA8650-23-C-7316</rs> and KAIROS Program No. <rs type="grantNumber">FA8750-19-2-1004</rs>. The views and conclusions contained herein are those of the authors and should not be interpreted as necessarily representing the official policies, either expressed or implied, of <rs type="institution">DARPA</rs>, or the <rs type="institution">U.S. Government</rs>. The U.S. Government is authorized to reproduce and distribute reprints for governmental purposes notwithstanding any copyright annotation therein.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_GMnPhgG">
+					<idno type="grant-number">HR00112390060</idno>
+				</org>
+				<org type="funding" xml:id="_3VGJAS4">
+					<idno type="grant-number">FA8650-23-C-7316</idno>
+				</org>
+				<org type="funding" xml:id="_X5CZRbt">
+					<idno type="grant-number">FA8750-19-2-1004</idno>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Anil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">M</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Orhan</forename><surname>Firat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melvin</forename><surname>Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitry</forename><surname>Lepikhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandre</forename><surname>Passos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siamak</forename><surname>Shakeri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emanuel</forename><surname>Taropa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paige</forename><surname>Bailey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhifeng</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.10403</idno>
+		<title level="m">Palm 2 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuntao</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Drain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deep</forename><surname>Ganguli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Henighan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nova</forename><surname>Dassarma</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2112.00861</idno>
+		<title level="m">A general language assistant as a laboratory for alignment</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Training a helpful and harmless assistant with reinforcement learning from human feedback</title>
+		<author>
+			<persName><forename type="first">Yuntao</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kamal</forename><surname>Ndousse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nova</forename><surname>Dassarma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Drain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stanislav</forename><surname>Fort</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deep</forename><surname>Ganguli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Henighan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.05862</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sébastien</forename><surname>Bubeck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Varun</forename><surname>Chandrasekaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronen</forename><surname>Eldan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Gehrke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Horvitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ece</forename><surname>Kamar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yin</forename><surname>Tat Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Lundberg</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.12712</idno>
+		<title level="m">Sparks of artificial general intelligence: Early experiments with gpt-4</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Teaching large language models to self-debug</title>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.05128</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaurav</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Barham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyung</forename><forename type="middle">Won</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Gehrmann</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.02311</idno>
+		<title level="m">Scaling language modeling with pathways</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenton</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kristina</forename><surname>Toutanova</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bert</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1810.04805</idno>
+		<title level="m">Pre-training of deep bidirectional transformers for language understanding</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Lmflow: An extensible toolkit for finetuning and inference of large foundation models</title>
+		<author>
+			<persName><forename type="first">Shizhe</forename><surname>Diao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanze</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ka</forename><forename type="middle">Shun</forename><surname>Shum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jipeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.12420</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hanze</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deepanshu</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shizhe</forename><surname>Diao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jipeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kashun</forename><surname>Shum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.06767</idno>
+		<title level="m">Raft: Reward ranked finetuning for generative foundation model alignment</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">Deep</forename><surname>Ganguli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liane</forename><surname>Lovitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jackson</forename><surname>Kernion</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuntao</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurav</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Schiefer</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kamal Ndousse</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2209.07858</idno>
+		<title level="m">Red teaming language models to reduce harms: Methods, scaling behaviors, and lessons learned</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Reinforced self-training (rest) for language modeling</title>
+		<author>
+			<persName><forename type="first">Caglar</forename><surname>Gulcehre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><forename type="middle">Le</forename><surname>Paine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Srivatsan</forename><surname>Srinivasan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ksenia</forename><surname>Konyushkova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lotte</forename><surname>Weerts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Siddhant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ahern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miaosen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenjie</forename><surname>Gu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.08998</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Deberta: Decoding-enhanced bert with disentangled attention</title>
+		<author>
+			<persName><forename type="first">Pengcheng</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2006.03654</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Large language models can self-improve</title>
+		<author>
+			<persName><forename type="first">Jiaxin</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shixiang</forename><forename type="middle">Shane</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuexin</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongkun</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Han</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.11610</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Tpu v4: An optically reconfigurable supercomputer for machine learning with hardware support for embeddings</title>
+		<author>
+			<persName><forename type="first">Norm</forename><surname>Jouppi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Kurian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rahul</forename><surname>Nagarajan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lifeng</forename><surname>Nai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nishant</forename><surname>Patil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suvinay</forename><surname>Subramanian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Swing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Towles</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 50th Annual International Symposium on Computer Architecture</title>
+		<meeting>the 50th Annual International Symposium on Computer Architecture</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="1" to="14" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Open-domain hierarchical event schema induction by incremental prompting and verification</title>
+		<author>
+			<persName><forename type="first">Sha</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruining</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manling</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Callison-Burch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Han</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. The 61st Annual Meeting of the Association for Computational Linguistics (ACL2023)</title>
+		<meeting>The 61st Annual Meeting of the Association for Computational Linguistics (ACL2023)</meeting>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carmelo</forename><surname>Sferrazza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.02676</idno>
+		<title level="m">Languages are rewards: Hindsight finetuning using human feedback</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Quark: Controllable text generation with reinforced unlearning</title>
+		<author>
+			<persName><forename type="first">Ximing</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Welleck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Hessel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liwei</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lianhui</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>West</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prithviraj</forename><surname>Ammanabrolu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="27591" to="27609" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Self-refine: Iterative refinement with self-feedback</title>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niket</forename><surname>Tandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prakhar</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Skyler</forename><surname>Hallinan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Wiegreffe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouha</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shrimai</forename><surname>Prabhumoye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.17651</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title/>
+	</analytic>
+	<monogr>
+		<title level="j">OpenAI. Gpt-4 technical report. arXiv</title>
+		<imprint>
+			<biblScope unit="page" from="2303" to="08774" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Training language models to follow instructions with human feedback</title>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carroll</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katarina</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="27730" to="27744" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">Baolin</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengcheng</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michel</forename><surname>Galley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Gao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.03277</idno>
+		<title level="m">Instruction tuning with gpt-4</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">Baolin</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linfeng</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ye</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lifeng</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haitao</forename><surname>Mi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.10202</idno>
+		<title level="m">Stabilizing rlhf through advantage model and selective rehearsal</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Rafael</forename><surname>Rafailov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Archit</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefano</forename><surname>Ermon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.18290</idno>
+		<title level="m">Direct preference optimization: Your language model is secretly a reward model</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Exploring the limits of transfer learning with a unified text-to-text transformer</title>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Raffel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katherine</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Matena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanqi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><forename type="middle">J</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Mach. Learn. Res</title>
+		<idno type="ISSN">1532-4435</idno>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<date type="published" when="2020-01">jan 2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Chatgpt: Optimizing language models for dialogue</title>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barret</forename><surname>Zoph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christina</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Menick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Weng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juan</forename><surname>Felipe Ceron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liam</forename><surname>Uribe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Fedus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Metz</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Pokorny</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">OpenAI blog</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Mixture-of-experts meets instruction tuning: A winning combination for large language models</title>
+		<author>
+			<persName><forename type="first">Sheng</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanqi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shayne</forename><surname>Longpre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyung</forename><forename type="middle">Won</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barret</forename><surname>Zoph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Fedus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.14705</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Reflexion: Language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beck</forename><surname>Labash</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.11366</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Large language models encode clinical knowledge</title>
+		<author>
+			<persName><forename type="first">Karan</forename><surname>Singhal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shekoofeh</forename><surname>Azizi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sara</forename><surname>Mahdavi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyung</forename><forename type="middle">Won</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Tanwani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heather</forename><surname>Cole-Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Pfohl</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.13138</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Defining and characterizing reward gaming</title>
+		<author>
+			<persName><forename type="first">Joar</forename><surname>Skalse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolaus</forename><surname>Howe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitrii</forename><surname>Krasheninnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Krueger</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="9460" to="9471" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Feifan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minghao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haiyang</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongbin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Houfeng</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.17492</idno>
+		<title level="m">Preference ranking optimization for human alignment</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Learning to summarize from human feedback</title>
+		<author>
+			<persName><forename type="first">Nisan</forename><surname>Stiennon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">M</forename><surname>Ziegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Lowe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Christiano</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note>In NeurIPS, 2020a</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Learning to summarize with human feedback</title>
+		<author>
+			<persName><forename type="first">Nisan</forename><surname>Stiennon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Ziegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Lowe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><forename type="middle">F</forename><surname>Christiano</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="3008" to="3021" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Principle-driven self-alignment of language models from scratch with minimal human supervision</title>
+		<author>
+			<persName><forename type="first">Zhiqing</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yikang</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qinhong</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongxin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenfang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Cox</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuang</forename><surname>Gan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.03047</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Llama 2: Open foundation and fine-tuned chat models</title>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Albert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amjad</forename><surname>Almahairi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasmine</forename><surname>Babaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolay</forename><surname>Bashlykov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soumya</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prajjwal</forename><surname>Bhargava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shruti</forename><surname>Bhosale</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.09288</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reyhaneh</forename><surname>Jabbarvand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Leti</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.10314</idno>
+		<title level="m">Learning to generate from textual interactions</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Mint: Evaluating llms in multi-turn interaction with tools and language feedback</title>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiateng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangyi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lifan</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24824" to="24837" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Welleck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilia</forename><surname>Kulikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Roller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emily</forename><surname>Dinan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyunghyun</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1908.04319</idno>
+		<title level="m">Neural text generation with unlikelihood training</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Gibbs sampling from human feedback: A provable kl-constrained framework for rlhf</title>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanze</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenlu</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.11456</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Rcot: Detecting and rectifying factual inconsistency in reasoning by reversing chain-of-thought</title>
+		<author>
+			<persName><forename type="first">Tianci</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziqi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenhailong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.11499</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mankeerat</forename><surname>Sidhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pong</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ji</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.14647</idno>
+		<title level="m">Meta-review generation with checklist-guided iterative introspection</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Investigating the catastrophic forgetting in multimodal large language models</title>
+		<author>
+			<persName><forename type="first">Yuexiang</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengbang</forename><surname>Tong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mu</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qing</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jae</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Ma</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.10313</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianqi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Misha</forename><surname>Khalman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Saleh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><forename type="middle">J</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.10425</idno>
+		<title level="m">Slic-hf: Sequence likelihood calibration with human feedback</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Judging llm-as-a-judge with mt-bench and chatbot arena</title>
+		<author>
+			<persName><forename type="first">Lianmin</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Lin</forename><surname>Chiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhanghao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonghao</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuohan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dacheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Xing</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.05685</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Solving challenging math word problems using gpt-4 code interpreter with code-based self-verification</title>
+		<author>
+			<persName><forename type="first">Aojun</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ke</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zimu</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weikang</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sichun</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zipeng</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoqing</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anya</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linqi</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingjie</forename><surname>Zhan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.07921</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

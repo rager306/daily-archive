@@ -1,0 +1,2456 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">On the Tool Manipulation Capability of Open-source Large Language Models</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><roleName>Fenglu</roleName><forename type="first">Qiantong</forename><surname>Xu</surname></persName>
+							<email>qiantong.xu@sambanovasystems.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">SambaNova Systems, Inc. Palo Alto</orgName>
+								<address>
+									<region>CA</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Bo</forename><surname>Hong</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">SambaNova Systems, Inc. Palo Alto</orgName>
+								<address>
+									<region>CA</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Changran</forename><surname>Li</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">SambaNova Systems, Inc. Palo Alto</orgName>
+								<address>
+									<region>CA</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhengyu</forename><surname>Hu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">SambaNova Systems, Inc. Palo Alto</orgName>
+								<address>
+									<region>CA</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jian</forename><surname>Chen</surname></persName>
+							<email>jian.zhang@sambanovasystems.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">SambaNova Systems, Inc. Palo Alto</orgName>
+								<address>
+									<region>CA</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><surname>Zhang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">SambaNova Systems, Inc. Palo Alto</orgName>
+								<address>
+									<region>CA</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">On the Tool Manipulation Capability of Open-source Large Language Models</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">11DA7DA57B0AA911288F7D68DFED66CB</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:30+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Recent studies on software tool manipulation with large language models (LLMs) mostly rely on closed model APIs. The industrial adoption of these models is substantially constrained due to the security and robustness risks in exposing information to closed LLM API services. In this paper, we ask can we enhance open-source LLMs to be competitive to leading closed LLM APIs in tool manipulation, with practical amount of human supervision. By analyzing common tool manipulation failures, we first demonstrate that open-source LLMs may require training with usage examples, in-context demonstration and generation style regulation to resolve failures. These insights motivate us to revisit classical methods in LLM literature, and demonstrate that we can adapt them as model alignment with programmatic data generation, system prompts and in-context demonstration retrievers to enhance open-source LLMs for tool manipulation. To evaluate these techniques, we create ToolBench 1 , a tool manipulation benchmark consisting of diverse software tools for real-world tasks. We demonstrate that our techniques can boost leading open-source LLMs by up to 90% success rate, showing capabilities competitive to OpenAI GPT-4 in 4 out of 8 ToolBench tasks. We show that such enhancement typically requires about one developer day to curate data for each tool, rendering a recipe with practical amount of human supervision.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Tool-augmented large language models (LLMs) recently emerge as a research frontier. Such augmented LLMs demonstrate tool manipulation capabilities which automate software operations through natural language instructions <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b1">2,</ref><ref type="bibr" target="#b2">3,</ref><ref type="bibr" target="#b3">4,</ref><ref type="bibr" target="#b4">5]</ref>. Despite the fact that open-source LLMs substantially shrink the quality gap towards proprietary closed LLMs in tasks such as chatbot <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b6">7,</ref><ref type="bibr" target="#b7">8,</ref><ref type="bibr" target="#b8">9]</ref>, recent tool-augmented LLMs still mostly rely on closed LLM APIs <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b1">2,</ref><ref type="bibr" target="#b2">3,</ref><ref type="bibr" target="#b3">4]</ref>. This leads to a fundamental barrier for the industrial adoption of these augmented LLMs due to security and robustness risks associated with exposing enterprise-internal workflows and information to closed LLM APIs <ref type="bibr" target="#b9">[10,</ref><ref type="bibr" target="#b10">11]</ref>. To maximize the industrial impact, there is a substantial need for tool manipulation capabilities founded on open-source LLMs. To this end, we ask can we build on open-source LLMs with practical amount of human supervision and achieve tool manipulation capabilities competitive to closed LLMs.</p><p>In this paper, we first demystify key challenges for tool manipulation using open-source LLMs; we then leverage the insights to suggest practical recipes for enhancement. Concretely, we study the setting shown in Figure <ref type="figure">1</ref> where LLMs take in a natural language instruction as the goal and generate API calls to accomplish the goal. Although we expect a quality gap between the open-source and closed LLMs <ref type="bibr" target="#b11">[12]</ref>, what we observe is a far more severe disparity. Specifically, for an on-sale house searching tool, a leading open LLM for code generation fails every test case while the OpenAI GPT-Figure <ref type="figure">1</ref>: Tool manipulation setup. We augment LLMs as action generators with access to API documentations. In a single-step scenario, an action generator directly generates API calls to accomplish the goal. A multi-step action generator iterates with an environment using API calls and generates the next-step calls based on the information from the environment until an exit state.</p><p>Action Generator Goal Action Generator Single-step Manipulation API calls Multi-step Manipulation LLM Goal Action Generator Observation API calls Environment API docs Exit state Executed results</p><p>4 <ref type="bibr" target="#b12">[13]</ref> attains 77% success rate across the same one hundred examples. This observation motivates us to study the challenges for open-source LLMs to attain strong tool manipulation capability.</p><p>During our investigation, we identify three key challenges that impede the performance of open-source LLMs in tool manipulation. Firstly, open-source models often struggle to accurately identify API names, whereas closed LLMs demonstrate the capability to invoke the correct APIs without explicit usage examples or documentation during inference. This suggests that closed LLMs hypothetically internalize knowledge of API usage during training. Secondly, we show that without demonstration examples, open-source LLMs often fail to populate the appropriate values for API arguments. Thirdly, we demonstrate that open-source LLMs tend to produce non-executable generation, such as natural language beyond the desired code.</p><p>Our insights suggest us to revisit three simple techniques from LLMs for conventional NLP tasks. In the context of tool manipulation, we adapt them with practical amount of supervision and use them to enhance open-source LLMs. Model alignment: To first internalize API usage knowledge, we perform instruction tuning <ref type="bibr" target="#b13">[14,</ref><ref type="bibr" target="#b14">15]</ref> with programatically generated data. Specifically, we first write a few dozens of templates on goals and corresponding API calls. We then pragmatically bootstrap the data volume by instantiating templates with concrete key word values. In-context demonstration retriever: Inspired by retrieval-augmented generation <ref type="bibr" target="#b15">[16,</ref><ref type="bibr" target="#b16">17,</ref><ref type="bibr" target="#b17">18]</ref>, we additionally enhance the LLMs with a retriever to leverage in-context demonstrations during inference. This module selects demonstration examples with the most semantically similar goals from a human-curated pool of examples. Given n API functions, the retriever only requires O (n) examples where every API function appears in at least one example. We then leverage LLMs to generalize to goals achieved by unseen API combinations. System prompt: Finally we embed goal descriptions into a pre-defined system prompt which provides inference-time guidelines to generate executable API calls; such system prompts were shown to regulate language style in chatbots <ref type="bibr" target="#b18">[19]</ref>. These techniques only require a small amount of human supervision. Thus they render a potentially practical recipe for building on top of open-source LLMs.</p><p>To extensively evaluate the inspired techniques, we present ToolBench, a benchmark suite on eight diverse tools ranging from Google Sheets manipulation to controlling robots <ref type="bibr" target="#b19">[20]</ref>. It enables the first publicly-available quantitative evaluation test bench among the ones brought up in the tool-augmented LLM literature <ref type="bibr" target="#b1">[2,</ref><ref type="bibr" target="#b2">3]</ref>. For the software tools in our benchmark, LLMs need to accomplish a variety of goals by selecting and combining API functions from up to a hundred candidates.</p><p>Using the tools in the ToolBench suite, we first empirically show that leading open-source LLMs can demonstrate up to 78% lower success rate when compared to the OpenAI GPT-4 APIs. We then demonstrate that these simple techniques can substantially improve the success rate of open-source LLMs by up to 90%, attaining results competitive or better than OpenAI GPT-4 models in 4 out of the 8 tools in our benchmark <ref type="foot" target="#foot_1">2</ref> . To reveal the impact of different techniques, we provide evidence that aligning model with synthetic data primarily contributes to the significant improvement of open-source LLMs. The system prompt and the in-context demonstration retriever further enhance the performance. During the enhancement process, we observe that, on average, it takes just one day for a developer to craft the in-context demonstrations and curate the templates for generating model alignment data. This implies that the recipe requires a practical level of human supervision.</p><p>Our contributions and the structure of this paper are as follows.</p><p>• In Section 3, we reveal challenges in API selection, argument populating and non-executable generation which hinder open-source LLMs on tool manipulation.</p><p>• To alleviate the challenges, we revisit simple techniques for conventional NLP tasks. We adapt them for tool manipulation to boost open-source LLMs with minimal human supervision in Section 4.</p><p>• In Section 5, we introduce the ToolBench, the first open-sourced benchmark with pre-defined test cases for quantitative evaluation compared to the ones in the recent tool-augmented LLM literature.</p><p>• We demonstrate in Section 6 that our adapted techniques boost open-source LLMs by up to 90% success rate, showing competitiveness with GPT-4 APIs in 4 out of 8 ToolBench tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Background</head><p>To establish backgrounds, we first concretize the software tool manipulation setup. We then present a preliminary observation on the capability of open-source LLMs. This observation motivates our study on the challenges in Section 3 which inspire simple techniques for enhancements in Section 4.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Tool manipulation setup</head><p>In this paper, we study the scenario where software users intend to translate a natural language goal description g into a sequence of application programming interface (API) calls C g = c 0 , c 1 , • • • , c ng to accomplish the goal. We study tool manipulation with open-source LLMs in this specific setting, because APIs serve as the prevalent abstraction for developers and users in modern software systems.</p><p>Large language model Autoregressive language models encode probabilities of the next word x N +1 given x 0 , x 1 , • • • , x N as the context sequence <ref type="bibr" target="#b20">[21]</ref>. By sampling from this conditional probability p (x N +1 |x 0 , x 1 , • • • , x N ) iteratively, it generates language continuations from given contexts. In the recent wave of scaling up model size and training data volume, transformer-based language models show unprecedented capability in instruction following for text and code generation <ref type="bibr" target="#b21">[22,</ref><ref type="bibr" target="#b22">23,</ref><ref type="bibr" target="#b23">24]</ref>. In the context of tool manipulation, we cast goal descriptions and optional information as an instruction in the context and task the LLMs to generate code for API calls as the continuation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Algorithm 1 API Call Generation</head><p>Input: Goal g, API docs D, action generator A Input: Optional info O 1: procedure ACTIONGEN(g, D, A, O) 2: Dg ← R (g, D) ▷ Retrieve API functions 3:</p><p>Cg ← A (g, Dg, O) ▷ API call generation 4:</p><p>return Cg 5: end procedure Action generator A key implementation for tool manipulation is an action generator A which maps a goal g to API calls C g . As open-source LLMs likely have not seen the information regarding the relevant APIs, we augment an LLM M into an action generator by providing access to a pool of m candidate API functions D = {d 0 , d 1 , • • • , d m }. Due to the input sequence length limit of LLMs, we provide an optional retriever R to retain a relevant subset of API documents D g = R (g, D) ∈ D. Thus, the action generator produces the sequence of API calls C g = A (g, D g , O), where O represents the optional information that can be included in the prompt. This is a naive way of retrieval augmented generation <ref type="bibr" target="#b17">[18,</ref><ref type="bibr" target="#b24">25,</ref><ref type="bibr" target="#b25">26]</ref> and we employ an off-the-shelf retriever implementation <ref type="bibr" target="#b26">[27]</ref> for our study, but we also highly encourage the community to explore algorithms tailored for the action generator.</p><p>Single and multi-step tool manipulation As shown in Figure <ref type="figure">1</ref>, an action generator may interact with software in either a single-step or a multi-step scenario. In a single-step scenario, action generator directly produces an API call sequence C g = A (g, D g , ∅). In a multi-step scenario, the action generator produces a series of API call sequences C g = ∪ i C g,i where each segment C g,i is used to interact with a predefined environment E and generates the observation O i = E(C g,i ). The observation is then used to generate a new segment C g,i+1 = A (g, D g , O i ). The process stops at an exit state. Throughout the remainder of this paper, we use the single-step setup for illustration clarity unless stated otherwise. Our experiments in Section 6 cover both single and multi-step cases. 3 Challenges for open-source LLMs</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Motivating Observation</head><p>Table 3: Categorized typical tool manipulation error types on a weather query tool. GPT-4 LLaMA StarCoder CodeGen Failure rate 19% 61% 68% 93% API selection 0% 22% 22% 30% Args. populating 14% 32% 23% 63% Non-executable 5% 7% 23% 0%</p><p>To demystify key challenges, we study the behaviors of open-source LLMs in tool manipulation. By analyzing common mistakes in a weather query task, we discover three challenges to attain strong tool manipulation capabilities. As shown in Table <ref type="table" target="#tab_0">2</ref>, we observe that open-source LLMs often face difficulty in (1) API selection, (2) API argument population, and (3) generating legitimate and executable code <ref type="foot" target="#foot_2">3</ref> . These insights are described in detail in this section and inspire the techniques to alleviate the challenges in Section 4.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Difficulty in API selection</head><p>We observe that API selection failures often involve using incorrect APIs and even hallucinating non-existent API names. To quantitatively understand the intrinsic capability in API selection, we compare open-source LLMs to GPT-4 without providing any documentation or in-context demonstrations during inference. The results, as shown in Figure <ref type="figure">2</ref> for the weather query tool OpenWeather, reveal that GPT-4 can choose the right API without additional information beyond the goal, while open-source models struggle. Such capability disparity entails that closed LLMs potentially internalize knowledge of API usage during training.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Confusion in populating arguments</head><p>After the action generator selects the appropriate APIs, the subsequent challenge lies in parsing the goal description and populating the API arguments. At this stage, we observe that open-source models often provide wrong values for the required API arguments. The confusion in argument populating contributes to up to 63% of the failures in open-source models, as shown in Table <ref type="table">3</ref>. In an attempt to mitigate this issue, we provide the LLMs with a hand-picked oracle in-context demonstration which achieves the same goal with different argument values. We show in Figure <ref type="figure">2</ref> that the hand-picked oracle examples improve success rates by up to 45%. It is important to note that oracle examples are not intended as a solution for argument populating confusion, as they are hand-picked on a per-test-case basis. Nonetheless, these observations suggest that in-context demonstrations can substantially enhance open-source LLMs for tool manipulation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Non-executable generation</head><p>The third common failure of open-source LLMs is non-executable generation. Such failures encompass issues such as language verbosity around API calls and adherence to natural language based guidelines, as shown in Table <ref type="table" target="#tab_0">2</ref>. Open-source models sometimes exhibit such errors in 23% of one hundred weather query cases. These observations underscore the necessity of regulating open-source LLMs to exclusively generate code.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Boosting Open-source LLMs for Tool Manipulation</head><p>The insights from Section 3 emphasize the importance of tuning with API usage examples, in-context demonstration and generation regulation in the domain of tool manipulation. In this section, we revisit three techniques from the LLM literature and adapt them to address the aforementioned challenges, using a practical amount of human supervision. We first introduce model alignment with programatically curated data to internalize API usage knowledge in Section 4.1. We then discuss augmenting open-source LLMs with an in-context demonstration retriever in Section 4.2. Lastly, we apply a system prompt to regulate generation in Section 4.3. These techniques collectively serve as a strong baseline for alleviating the challenges presented in Section 3 and inspiring further innovations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Multi-tool model alignment with programmatic data curation</head><p>Model alignment, through tuning LLMs with usage examples, plays a vital role in improving LLMs for capabilities such as instruction following and conversation <ref type="bibr" target="#b13">[14,</ref><ref type="bibr" target="#b18">19,</ref><ref type="bibr" target="#b27">28]</ref>. In light of our insights from in Section 3, we recognize the potential of model alignment with API usage examples to improve API selection capability. To practically leverage such alignment for tool manipulation, it requires a data curation strategy without massive manual example writing. Towards this end, we prototype a method which generates usage examples from human-curated templates. Task: Move the robot to {position}, and {move} the arm by {height}. API Calls: robot.move_to({x}, {y}) robot.raise_arm({h}) Task: Move the robot to location (20, 30), and raise the arm by 5cm. API Calls: robot.move_to(20, 30) robot.raise_arm(5) Random Value Pool position: location (20, 30) move: raise height: 5cm x: 20 y: 30 h: 5 Training Data Templates position: the corner move: raise height: 0.5 meter x: 0 y: 0 h: 50 ... position: (0, 40) move: drop height: 10cm x: 0 y: 40 h: -10 We create a handful of templates consisting of goal descriptions and corresponding API calls. These templates contain one or more placeholder pairs. Each of these pairs maps to a key word in the goal and an argument in the corresponding API calls. We also provide a pool of candidate values for each keyword and randomly choose values to fill in the placeholders within the template. Given a tool with n candidate APIs, we only require O(n) human-curated templates to ensure practical human supervision. Specifically we use a principle where each of the n APIs is encouraged to appear in at least one template. In practice, we find it takes on average one day for one developer to curate the data for one software tool in our benchmark; this includes writing the goal templates, providing the pool of argument values and generate the data. We provide example templates we use for different tools in Appendix C. With data curated for all the tools, we perform model alignment tuning jointly for all tools and produce a single model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Demonstration retrieval</head><p>In Section 3, we demonstrate the efficacy of hand-picked oracle examples in improving argument populating. However, extending from oracles to practical in-context demonstration poses two challenges. First, given n API function candidates, there are exponentially many combinations of API calls associated with different goals. Thus, LLMs should be capable of generalizing to a wide variety of goals based on a limited number of examples. Second, to ensure effective demonstration, it is important to provide LLMs with only the relevant examples without human interventions.</p><p>To fulfill the above two desiderata, we augment open-source LLMs with a demonstration retriever module. This module revolves around a repository where every API is required to appear in only one human-curated demonstration. This implies that only O(n) examples are needed. Among these demonstration examples, the retriever selects the most semantically similar examples to the goal descriptions. 0 1 2 3 4 5 6 7 8 30 60 90 In-context examples Success rate GPT-4 LLaMA StarCoder CodeGen</p><p>Validation To verify the effectiveness of demonstration examples in practice, we empirically show that the retrieved demonstrations can improve the success rate on goals requiring API combinations unseen in the example repository.</p><p>In particular, we evaluate this approach on the home search task which exposes 15 API functions and requires multiple functions to accomplish each goal. With only 10 human-curated demonstrations that do not precisely match any of the 100 test cases in terms of API combinations, the retrieved demonstrations can boost the success rate by up to 79% across open-source LLMs and make GPT-4 nearly perfect, as shown in Figure <ref type="figure" target="#fig_2">4</ref>. This shows that the demonstration examples can improve tool manipulation for unseen types of goals with a repository of size O(n) only.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Generation regulation with system prompts</head><p>Figure <ref type="figure">5</ref>: System prompt with guidelines to only generate code in a desired format. Red parts are populated with real data for each test case during inference.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>… As the AI API Assistant, my focus is on assembling the APIs in the correct order to achieve the desired outcome without introducing any new APIs or unnecessary information. …</head><p>Here is a list of API functions: {A list of API functions} - <ref type="figure">---------------------------------</ref>-To guide me in generating the executable code snippet, use the following format. Within the three ticks I will be generate code only: Task: Goal Action: ``À PI_function_name1(args1, args2) API_function_name2(args3) ``H ere is a list of demonstration examples: {A list of demonstration examples} - <ref type="figure">----------------------------------Task:</ref> {Goal} Action: ``` The use of system prompts is a well-established technique in chatbots powered by LLMs <ref type="bibr" target="#b18">[19]</ref>. By incorporating human-chatbot conversations, system prompts can effectively control the natural language style of the generated responses. In the context of tool manipulation, we regularize open-source LLMs to exclusively generate API calls with a system prompt in Figure <ref type="figure">5</ref>, where the black part is the template shared across all tasks and the red rows are instantiated during inference for a certain goal. Our system prompt first defines a format that combines text sections containing goals, demonstrations, and generations. It then provides explicit guidelines in natural language, instructing the LLMs to generate code exclusively. The system prompt incorporates the goal description and the retrieved API functions directly for each request, reducing the human development effort to a one-time task.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">ToolBench: A New Tool Manipulation Benchmark</head><p>To evaluate open-source LLMs in the domain of tool manipulation, we curate a benchmark suite from both existing datasets and newly collected ones. This benchmark stands out as the first open-source test bench with predefined test cases for quantitative evaluation, distinguishing it from recent tool manipulation research using closed LLMs <ref type="bibr" target="#b1">[2,</ref><ref type="bibr" target="#b2">3]</ref>. In this section, we introduce the software tools and the evaluation infrastructure. We also demonstrate the level of challenges posed by each tool, in terms of the ability to generalize to unseen API combinations and the requirement for advanced reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Software tools and evaluation infrastructure</head><p>As shown in Table <ref type="table">4</ref>, our benchmark consists of five tasks we collected and three tasks derived from existing datasets, including VirtualHome <ref type="bibr" target="#b28">[29,</ref><ref type="bibr" target="#b29">30]</ref>, Webshop <ref type="bibr" target="#b30">[31]</ref> and Tabletop <ref type="bibr" target="#b19">[20]</ref>. They cover both single-step and multiple-step action generation, which requires selecting and combining from 2 to 108 Table <ref type="table">4</ref>: Tasks in the ToolBench. We provide demonstration examples for few-shot in-contextlearning while test cases are for quantitatively evaluation. We develop API complexity, a metric to quantify the challenge level in generalizing to unseen API combinations; higher complexity indicates more challenging tasks. We package the challenges beyond API complexity as advanced reasoning. We refer to Appendix A for more details on these tasks.</p><p>Single Step Multi-Step Open The Cat Home Trip Google WebShop Task Weather API Search Booking Sheets VirtualHome Long / Short Tabletop Data API functions 9 6 15 20 108 40 2 32 Demonstration examples 18 12 10 11 10 83 1533 / 200 74 Test cases 100 100 100 120 70 100 100 105 Level of challenges API complexity 2.2 1.4 7.3 11.1 8.4 12.3 0.0 4.6 Advanced reasoning ✓ ✓ ✓</p><p>API functions to accomplish the goals. Each task consists of approximately approximately 100 test cases, including goal descriptions and the ground truth API calls. We also provide a limited number of demonstration examples to aid model predictions <ref type="foot" target="#foot_3">4</ref> . We include a comprehensive introduction and analysis of each task within the benchmark in Appendix A.</p><p>We use success rate as the primary evaluation metric for most tasks, except for the WebShop where we report rewards, as well as for VirtualHome where we use executability and Longest Common Subsequence (LCS), following the original metrics proposed by the respective authors. To facilitate evaluation, we build an infrastructure that executes the API calls generated by the action generators and assess the final outcome. This process enables reliable evaluation of tool manipulation capabilities without restricting the action generators to perfectly match the ground truth API calls.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Level of challenges</head><p>Table 5: A typical task of Google Sheets manipulation. It requires both selecting the correct API function and reasoning on the arguments. Product Cost Price beef 1 3 pork 5 4 chicken 10 11 Task: Update beef's price to 10. Action: worksheet.update("C2", 10)</p><p>To assess the level of challenge, we examine ToolBench tasks based on their API complexity and the requirement for advanced reasoning. Intuitively, API complexity indicates the challenges in generalizing to unseen API combinations and non-default argument values. Challenges beyond API complexity then involve advanced reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>API Complexity</head><p>To quantify the challenge in generalizing to unseen API combinations, we develop a task-agnostic complexity score S ∈ R + 0 , where</p><formula xml:id="formula_0">S(T , X , D) = E t∈T min e∈X d(t, e).<label>(1)</label></formula><p>It averages over all the test samples in the test set T on the minimum distance between t and any demonstration example e from the example pool X . In particular, the distance d(t, e) between each test sample t and a demonstration example e is negatively proportional to the probability of transforming the API combination of e to match that of t, by randomly dropping the API functions irrelevant to t and inserting the uncovered API functions required by t from the API pool D. We refer to the details of the complexity score to Appendix D and list their values in Table <ref type="table">4</ref>. The score is non-negative and the higher the score is, the more complex a task is. Despite the fact that this complexity score reflects the challenge level of API selection, it does not capture all the difficulties of a task. A task with low complexity score can still be very challenging as it might require advanced reasoning. For instance, even though Webshop is challenging, the API selection complexity of it is zero. This is because there are only two API functions requiring only one argument each in Webshop, and they are both covered by the examples, so there is no API selection complexity.</p><p>Advanced reasoning Within our benchmark, advanced reasoning encompasses challenges beyond generalizing to unseen API combinations. These challenges include non API-based coding for tasks such as Google Sheets and Tabletop, as well as decision-making based on observations returned from the WebShop environment. For instance, in the Google Sheets example shown in Table <ref type="table">5</ref>, the coordinate of the beef price's cell ("C2") cannot be easily derived from either the goal or the table itself. The action generator needs to understand the content or write additional python code to derive this coordinate before calling the API function. In the similar scenario, WebShop task requires the action generator to extract the exact button ID to click on the webpage given the description. These challenges, categorized as advanced reasoning, complement the API complexity category.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Experiment</head><p>In this section, we leverage the ToolBench to empirically validate the techniques introduced in Section 4. First, to concretize the capability gap between open-source and closed LLMs, we demonstrate that OpenAI GPT-4 API can have substantially higher success rate than representative open-source LLMs in Section 6.2. We then show in Section 6.3 that the simple techniques in Section 4 can boost open-source LLMs to achieve success rates competitive to in-context-learning with GPT-4 APIs<ref type="foot" target="#foot_4">foot_4</ref> in four out of the eight tasks. Through ablation studies in Section 6.4, we additionally show that model alignment does the heavy lifting for boosting open-source LLMs, while system prompt and in-context learning robustify LLMs for further improvement.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.1">Experiment Setup</head><p>To establish strong baselines, we use GPT-4 API as the representative closed LLM in our study because it attains the leading accuracy in mainstream NLP tasks. In our study, we compare LLAMA-30B <ref type="bibr" target="#b31">[32]</ref>, StarCoder <ref type="bibr" target="#b32">[33]</ref> and CodeGen-16B-mono <ref type="bibr" target="#b33">[34]</ref> to GPT-4. LLAMA represents open research models, while StarCoder and CodeGen are publicly available for both research and commercial purposes. We choose these three models due to their superior performance on ToolBench among open-source models as shown in Table <ref type="table" target="#tab_4">9</ref>  <ref type="foot" target="#foot_5">6</ref> . In our experiments, we consider the zero-shot setting as the out-of-the-box configuration where only API documentation is provided without any demonstration examples. We use this configuration to understand the initial gap in capabilities among models. We then incorporate all available techniques on top of this initial configuration to assess their benefits. For the original Tabletop dataset <ref type="bibr" target="#b19">[20]</ref>, which includes examples in a few-shot setting without explicit API definitions, we only evaluate settings with in-context demonstrations. More detailed setup information is included in Appendix C. We run each job 3 times with different random seeds and report average accuracy. The variation is minimal, so we ignore them in the main paper but report them in appendix.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.2">Capability Gap</head><p>Table <ref type="table" target="#tab_2">6</ref> exhibits significant disparities in tool manipulation between the closed GPT-4 API and open-source models in the out-of-the-box zero-shot setting. For simpler tasks, namely Open Weather and the Cat API, which require only one API call for each goal, the open-source models exhibit success rates up to 74% lower than GPT-4. Furthermore, on all the remaining tasks other than the Webshop, none of the LLAMA, the StarCoder and the CodeGen model can reach meaningful accuracy or compare with GPT-4. These results highlight an opportunity to enhance open-source LLMs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.3">Boosting open-source LLMs</head><p>To boost the open-source LLMs, we first perform model alignment using programmatially generated data. We then apply a system prompt and a 3-shot demonstration retriever during inference. Given GPT-4 does not provide tuning APIs, we enhance the out-of-the-box GPT-4 with the same system prompt and demonstration retriever as the baseline. The improvements from the combined enhancement techniques are shown in Table <ref type="table" target="#tab_2">6</ref>, where the success rates of the open-source LLMs can improve up to 90%. As a result, the open-source models achieve competitive or better success rates on 4 out </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Human supervision</head><p>To identify the practicality of an enhancement recipe, the amount of required human supervision is a crucial factor. In our approach, human supervision is primarily in the form of in-context demonstration examples and alignment data templates. Regarding the demonstration examples, we provide 10 to 83 examples for each task as shown in Table <ref type="table">4</ref>, except for WebShop given its difficulty in advanced reasoning. As shown in Table <ref type="table" target="#tab_1">10</ref>, the number of templates for alignment data is typically less than 100 for each task. We observe that providing these supervisions takes one developer day on average, making it practical in terms of the time cost on human supervision.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Remaining challenges</head><p>In our experiments, we observe that the boosted open-source LLMs still have relatively low success rates on tasks that require advanced reasoning, such as Google Sheets, WebShop and Tabletop tasks. This implies the need to further enhance the reasoning capabilities of open-source models. We are excited about the prospect of more exploration from the community to address the challenges for tool manipulation on these complex tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.4">Ablation Study</head><p>Table <ref type="table">7</ref>: The number of ToolBench tasks improved (+N) or hurt (-N) over the baselines when adding or dropping techniques.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LLaMA StarCoder CodeGen</head><p>Zero-shot ---+ Sys. Prompt +4 +4 +4 + 3-shot +8 +8 +8 + Alignment +7 +7 +7</p><p>Full system ----Sys. Prompt -0 -2 -3 -3-shot -3 -4 -5 -Alignment -5 -5 -7</p><p>We break down the contribution of the techniques in two ways. First, we apply each technique individually on top of the out-of-the-box zero-shot configuration and evaluate its impact. As shown in Table <ref type="table">7</ref>, both the 3-shot in-context demonstration and model alignment techniques bump up the success rates across all tasks, while the system prompt only benefits simple tasks that involve relatively fewer API calls for each goal.</p><p>Next, we consider the combination of all techniques and remove them one at a time to evaluate their relative contributions within the full system. As shown in in Table <ref type="table">7</ref>, solely removing model alignment triggers success rate degradation in up to 7 tasks, while removing either in-context demonstration up to 5 tasks and dropping system prompt up to 3. We notice that the tasks that are not significantly impacted when removing techniques are typically the ones with relatively low success rate (usually &lt;20% even in the full system). Thus, those accuracy changes are hypothetically subject to high variance and fluctuation. The full results from the experiments in this section can be found in Table <ref type="table" target="#tab_5">12</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Related work</head><p>Our work establishes a strong connection to the LLM-driven program synthesis. In contrast to the conventional rule-based code generation in popular compilation frameworks <ref type="bibr" target="#b34">[35]</ref>, recent autoregressive LLMs such as CodeGen <ref type="bibr" target="#b33">[34]</ref>, SantaCoder <ref type="bibr" target="#b35">[36]</ref> and StarCoder <ref type="bibr" target="#b32">[33]</ref> treat the problem as a sequence generation task and demonstrate superior capabilities in emitting semantically correct computer programs. We use CodeGen as a representative from these models in our study for API call generation.</p><p>Tool manipulation are also known as tool augmented learning <ref type="bibr" target="#b2">[3,</ref><ref type="bibr" target="#b36">37]</ref>. Some of the works seek to augment generations with the execution results from various tools <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b37">38,</ref><ref type="bibr" target="#b38">39,</ref><ref type="bibr" target="#b25">26,</ref><ref type="bibr" target="#b39">40,</ref><ref type="bibr" target="#b40">41,</ref><ref type="bibr" target="#b41">42]</ref>, while another line of works focus on executing the tools themselves, including embodied robotic learning <ref type="bibr" target="#b19">[20,</ref><ref type="bibr" target="#b29">30,</ref><ref type="bibr" target="#b42">43,</ref><ref type="bibr" target="#b43">44,</ref><ref type="bibr" target="#b44">45]</ref>, and automation for other tools <ref type="bibr" target="#b30">[31,</ref><ref type="bibr" target="#b45">46,</ref><ref type="bibr" target="#b46">47,</ref><ref type="bibr" target="#b47">48]</ref>. We focus on the study of the second stream with different models and techniques.</p><p>Recent works in tool manipulation with LLMs mostly study techniques to enhance in-contextlearning with closed LLMs APIs <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b1">2,</ref><ref type="bibr" target="#b2">3,</ref><ref type="bibr" target="#b3">4,</ref><ref type="bibr" target="#b4">5]</ref>. In contrast, we study simple techniques to allow for developers to practically build on top of open-source LLMs. The three techniques we mention in this paper <ref type="bibr" target="#b18">[19,</ref><ref type="bibr" target="#b21">22,</ref><ref type="bibr" target="#b25">26,</ref><ref type="bibr" target="#b48">49]</ref> are well studied in the conventional NLP tasks. We revisit and adapt them in the context of tool manipulation on open-source models with a practical amount of human supervision.</p><p>In the recent LLM literature, there are several works presenting tool manipulation benchmarks <ref type="bibr" target="#b1">[2,</ref><ref type="bibr" target="#b2">3]</ref>. Compared to these benchmarks, the ToolBench is the first one providing predefined test cases for evaluation on real execution results.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8">Conclusion</head><p>In this paper, we answer the question can we enhance open-source LLMs to compete with leading closed LLM APIs in tool manipulation, with practical amount of human supervision. Drawing from our observations of the common tool manipulation failures and insights from the literature on conventional NLP tasks with LLM, we propose to instantiate model alignment with programmatical data generation, system prompts, and in-context demonstration retrievers to improve the tool manipulation capability of open-source models. To comprehensively evaluate the impact of these techniques, we create the ToolBench, a benchmark consisting of diverse software tools for real-world tasks. Our results demonstrate that these techniques can make the leading open-source LLMs competitive with the OpenAI GPT-4 in 4 out of 8 ToolBench tasks, all achieved with a practical amount of human labeling effort.</p><p>In the appendix section, we provide detailed information on the following aspects of our study. In Appendix A, we present the background and curation details for the 8 tasks included in ToolBench. Appendix B focuses on the performance evaluation of an extensive suite of LLMs on ToolBench. In Appendix C, we delve into the details of model alignment, including the process of generating the training data and training details. We also provided the full spectrum of results for the experiments in Section 6. Finally, in Appendix D, we introduce the API selection complexity score system, and demonstrate its effectiveness and implication in measuring task complexity.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Benchmark Details</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 OpenWeather</head><p>This task involves using the REST API to interact with OpenWeather website <ref type="foot" target="#foot_6">7</ref> . We include 9 types of API calls that cater to 9 categories of queries, including but not limited to retrieving current weather data in a city, obtaining air quality data at a specific longitude and latitude, and acquiring weather forecast data for a location specified by a zip code. Making each type of API calls involves correctly filling 2 to 3 required parameters (such as lon for longitude and lat for latitude) and 0 to 3 optional parameters (such as lang for language and units for units of measurement), depending on the requirements specified in each query. In total, we develop 100 unique queries for the 9 categories and 2 demonstration examples for each category. To assess the quality of the LLM's generation, we look for the first line beginning with the word "curl", if it exists. We then execute this line using the shell process. If the shell process returns a non-zero value, we declare "not executable" for this generation. On the other hand, if the code can be executed, we compare the returned response with the corresponding result from the ground-truth Curl request. The model's generation will be considered successful if the output matches the expected result precisely.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 The Cat API</head><p>This task is a similar REST API task as the OpenWeather, but it involves making all the GET, DELETE, or POST request to The Cat API website <ref type="foot" target="#foot_7">8</ref> . There are 6 types of API calls for 6 types of queries, including deleting a cat image from the user's list of favorites, adding an image to the user's list of favorites, returning the list of favorite images, voting up or down to an image, and searching for cat images with filtering requirements. We develop 100 queries for the test set and 2 demonstration examples for each category. To evaluate the executability and success of the LLM's generation in these scenarios, we follow a similar procedure as that of the Open Weather task. It is worth noting that for queries related to removing an image from the list of favorites, we compare the LLM's generation verbatim with the ground-truth label since duplicated deletion would inevitably lead to failure if executed.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3 Home Search</head><p>This task is designed to replicate the process of searching for homes at a specific location based on certain criteria. We design the API with 15 functions, including</p><p>• set_location which sets the desired location;</p><p>• set_but_or_rent which specifies whether the user is looking to buy or rent a home;</p><p>• 12 functions for setting criteria, such as home prices, number of bedrooms, and home square footage;</p><p>• search which submits the criteria to get search results.</p><p>We consider executability and f1 score of the generated action. To ensure executable searches, the agent should make a sequence of function calls that starts with set_location and set_buy_or_rent, followed by the criterion-setting functions, and then ends with a call to the search function. If executable, an f1 score is computed between the criteria set by the generated program and that by the ground-truth program. We develop a test set consisting of 100 queries that asked for home options with varying criteria combinations and provide 10 demonstration examples.</p><p>To test the LLM's ability to utilize unseen API functions, we intentionally exclude 3 criterion-setting functions from all demonstration examples.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.4 Trip Booking</head><p>The Trip Booking task is similar to the Home Search task but with more advanced dependency requirements among function calls. It simulates the process of submitting search requests for transportation tickets, hotel rooms, or both based on specific requirements like locations, dates, and the number of tickets required. We design 20 functions for the three types of booking scenarios.</p><p>Depending on the scenario, some function calls may be required while others are optional. Missing any required function call or mistake the order of some function calls results in a non-executable search, while missing optional function calls lead to an unsuccessful search. We include 120 queries in the test set and provide 11 demonstration examples.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.5 Google Sheets</head><p>This task is to manipulate the real worksheets from the Google Sheets 9 , via the gspread library 10 . We include 100 distinct API function calls from the gspread library, but we only create tests for the most common use cases, including updating cell values, sorting, adding or deleting rows and columns, merging cells, filtering, formatting and creating pivot tables. There are 70 test cases and 10 examples in total. We also encourage the model to utilize Pandas DataFrame 11 and gspread-dataframe 12 for advanced manipulations, by explicitly providing 8 additional API functions and certain examples for them. The manipulation is considered as correct only if both the value and the format of each cell match the expectation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.6 Virtual Home</head><p>This task is inherited from the setting of the VirtualHome 13 simulator and asks the LLM to generate sequences of actions for completing household activities. We develop API definitions, demonstration examples, and a test set based on the list of available examples 14 curated in <ref type="bibr" target="#b29">[30]</ref>. The API consists of 40 functions, each of which corresponds to a specific action used in the examples. These functions can take up to two arguments, and we collect the list of valid object names for each argument based on all examples. Some examples of the functions include Sleep(), Push(object), and PourInto(object1, object2).</p><p>The original example list contains 202 household activities, represented by 5088 examples, with each example being a series of actions to complete a specific activity. However, some activities have exactly the same solution as another activity. After deduplication, we are left with 183 unique activities with non-overlapping solutions between any two activities. We randomly select 100 activities to form the test set, while the remaining 83 tasks with their 512 solutions are used as demonstration examples.</p><p>When evaluating the LLM's generation for a given task, we consider both executability and correctness. The generation is considered executable if it can be correctly parsed into a series of valid actions, where each action involves only recognizable objects. Regarding correctness, we measure the similarity between the generated program and the ground-truth solution, using the longest common subsequence (LCS) <ref type="bibr" target="#b28">[29]</ref> normalized by the maximum length of the two. For tasks with multiple solutions, we consider the highest LCS score from any solution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.7 WebShop</head><p>This is a multi-step task inherited from Webshop <ref type="bibr" target="#b30">[31]</ref>, a simulated online shopping environment. The task requires an agent to navigate through a series of webpages to find and purchase a desired product 9 <ref type="url" target="https://www.google.com/sheets/about/">https://www.google.com/sheets/about/</ref> 10 <ref type="url" target="https://docs.gspread.org/">https://docs.gspread.org/</ref> 11 <ref type="url" target="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html">https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html</ref> 12 <ref type="url" target="https://gspread-dataframe.readthedocs.io/en/latest/">https://gspread-dataframe.readthedocs.io/en/latest/</ref> 13 <ref type="url" target="http://virtual-home.org/">http://virtual-home.org/</ref> 14 <ref type="url" target="https://github.com/huangwl18/language-planner/blob/main/src/available_examples.json">https://github.com/huangwl18/language-planner/blob/main/src/available_examples.json</ref> based on a text instruction that outlines the item description.The agent can perform two primary types of actions: search[text], which involves entering a text query, and click[button] which involves selecting a button on the page.</p><p>We generate demonstration examples based on this file <ref type="foot" target="#foot_8">15</ref> , which contains trajectories collected from humans performing the online shopping tasks. We formulate each trajectory into a series of (instruction, webpage description, action) tuples in plain text format. The Long version of the demonstration set consists of 1533 full trajectories, which often exceed the input sequence length limit of the LLM. To address this issue, we provide a Short version of the demonstration examples, by first removing 80% of the non-targeted items from any webpage description, and selecting only the 200 shortest trajectories from the complete set.</p><p>For evaluation, we use the predefined simple mode of the WebShop environment <ref type="foot" target="#foot_9">16</ref> and set up the environment with the provided option of using only 1000 random products. We include 100 instructions from sessions with ID numbers 0 to 99 in the test set. We define success as making a purchase which receives a positive reward from the environment within 25 steps.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.8 Tabletop</head><p>This task is developed based on the simulated tabletop manipulation domain presented by <ref type="bibr" target="#b49">[50]</ref> and outlined in their Appendix K. In this simulation environment, a UR5e robot with a Robotiq 2F85 jaw gripper can perform pick and place actions parameterized by 2D top-down positions. We reuse their API definitions and prompts as demonstration examples. We iterate on the 14 instruction templates used in their evaluation benchmark and create 15 types of tasks that involve manipulating up to 4 colored blocks and 4 colored bowls. For each type of task, we generate 7 valid initial setups of blocks and bowls for the test set, ensuring that no collisions occur during the execution of a valid solution. The success of the LLM's generated program is determined by whether all objects are within a small threshold of their target positions after execution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Comprehensive Model Evaluation on the ToolBench</head><p>In this section, we want to compare the performance of different models on the ToolBench. Specifically, we selected 27 representative LLMs from both closed and open-source community, and evaluate them on the ToolBench in 3-shot scenario.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1 Models</head><p>As listed in Table <ref type="table" target="#tab_3">8</ref>, we select a set of representative LLMs from both closed-source and open-source community.</p><p>The closed models are the (Generative Pre-trained Transformer) GPT series from OpenAI, especially the GPT-3 <ref type="bibr" target="#b21">[22]</ref> and its successors <ref type="bibr" target="#b12">[13]</ref>. GPT-3 is a state-of-the-art language model developed by OpenAI, with 175 billion parameters, making it the largest and most powerful language model ever created. It is capable of performing a wide range of natural language processing tasks and has the potential to revolutionize the way we interact with and understand language. Due to the lack of detailed information about its training, we are motivated to study methods to build models achieving similar capabilities, especially using open-source models.</p><p>We select the representative and the most advanced open-source models from recent years in our work. They are all decoder-only models, based on transformers <ref type="bibr" target="#b50">[51]</ref> architecture. Bloomz <ref type="bibr" target="#b51">[52]</ref> is the largest open-source LLM built upon the large-scale multilingual pretrained BLOOM <ref type="bibr" target="#b52">[53]</ref>. Bloomz is funtuned on xP3 <ref type="bibr" target="#b51">[52]</ref>, a crosslingual task mixture, for crosslingual generalization to unseen tasks and languages. StarCoder <ref type="bibr" target="#b32">[33]</ref> is a family of models developed for purely code generation and synthesis with 8K context length. They exhibit superior performance on common code generation benchmarks. LLaMA <ref type="bibr" target="#b31">[32]</ref> is a family of pretrained models, that are performant on quite a few NLP benchamrks. Although they are not as large as Bloomz, they are all trained for almost 4 times longer than Bloom. This is an important reason why they are able to outperform several top peer models on many NLP tasks. Alpaca <ref type="bibr" target="#b53">[54,</ref><ref type="bibr" target="#b54">55]</ref> is fine-tuned LLaMA-13b model on 52K instruction-following data as well responses from GPT-4. OPT-IML <ref type="bibr" target="#b55">[56]</ref> is the finetuned version of the original OPT <ref type="bibr" target="#b56">[57]</ref>, which is the first family of large-scale (176 billion parameters) open-source models that are trained on publicly available datasets. OPT-IML significatly improves the instruction following capability of OPT by training on a large benchmark of 2000 NLP tasks for Instruction MetaLearning (IML). We only select the publicly accessibile checkpoints from the OPT families in our work.</p><p>Another important family of models are all developed from the NeoX toolkit <ref type="bibr" target="#b57">[58]</ref> and pretrained using the PILE dataset <ref type="bibr" target="#b58">[59]</ref>. GPT-NeoX-20B <ref type="bibr" target="#b59">[60]</ref> is only pretrained on the PILE, while GPT-NeoXT-Chat-Base-20B <ref type="bibr" target="#b6">[7]</ref> is further finetuned on the OIG-43M <ref type="bibr" target="#b60">[61]</ref>, a dataset targetting better instruction following capability. CodeGen family <ref type="bibr" target="#b33">[34]</ref> is designed for superior capability on code generation, as they are heavily finetuned on large code datasets. Pythia family <ref type="bibr" target="#b61">[62]</ref> is a suite of models designed for analyzing LLMs across training and scaling. They are all pretrained on the Pile in the same way, but have different model sizes and intermediate checkpoints released during training. We use those variants in our ablation study. Dolly <ref type="bibr" target="#b62">[63]</ref> is finetuned beyond Pythia-12b on a new, high-quality human generated instruction following dataset, crowdsourced among Databricks employees. The StableLM family <ref type="bibr" target="#b63">[64]</ref> is pre-trained on an experimental version of the PILE datasets which has 1.5 trillion tokens in total. The models have a sequence length of 4096 to push beyond the context window limitations of the existing open-source language models. The instruction tuned counterpart of each model is also released. By the time we publish this work, only 7b and 3b models are released, while the team behind them is training larger models.</p><p>There are other notable models, such as FlanT5 <ref type="bibr" target="#b27">[28]</ref>, the T0 family <ref type="bibr" target="#b22">[23]</ref>, and the T5 family <ref type="bibr" target="#b64">[65]</ref>, that have shown promising performance. We do not include all of them in our baseline comparison, as some of their features are not designed for the task at hand. For example, their tokenizers do not distinguish between spaces, tabs and new lines, making it hard for them to generate executable code based on API function calls. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2 Evaluation</head><p>To collect the baseline results, we exploit the naive approach described in section 2 as the action generator. We give each LLM sufficient max tokens to generate on each task and retrieve as many API functions as possible in the prompt. The detailed information is listed in Table <ref type="table" target="#tab_4">9</ref>. We evaluate all the models on a mixture of GPUs and RDUs <ref type="bibr" target="#b65">[66,</ref><ref type="bibr" target="#b66">67,</ref><ref type="bibr" target="#b67">68]</ref>. In particular, the 176b-parameter bloomz is evaluated on RDU, while all the other models are evaluated on NVIDIA A100 GPUs with 80GB RAM.</p><p>For these models, We only conduct the few-shot evaluation described Section 6 because 1) zero-shot results are not representative, as most of them are zero, 2) it is not practical to tune all the models on our training data, and 3) few-shot results can be used as a great proxy of the model performance in all the other settings. For the conversation-oriented models, including gpt-3.5-turbo, chavinlo/gpt4-xalpaca, GPT-NeoXT-Chat-Base-20B and dolly-v2-12b, we additionally add &lt;human&gt;: and &lt;bot&gt;: key words in the prompt to better align with their training data format for better performance.</p><p>After we get the completion from the LLMs given a prompt, only minimal post-processing steps are applied to the completion: 1) Properly truncate the completion, given the list of task-specific stop sequences and 2) Replace the {API_KEY} keywords in the completion with the real API key, so as to execute the code properly. Finally, as shown in Figure <ref type="figure">1</ref>, to validate the action generated for the single-step tasks, we execute the generated API calls and compare its output against the ground truth; while for the multi-step tasks, the actions are used to interact with the environment directly and only   which learns to generate the API calls for every goal in a sequence. We use this loss formulation because it empirically delivers better success rate, especially when using in-context demonstrations, than the conventional loss which only backpropagates the loss associated with the API calls for the last goal.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.3 Training details</head><p>We finetune each model on the same dataset created with the method described in Section C.1 for 8 epochs. We use a max sequence length of 2048 without packing and mix the data from all the tasks into a single dataset with random shuffling. In each sample, all the goal-action pairs are from the same task. We report the validation accuracy on the best checkpoint. We use a batch size of 16 and a constant learning rate of 1e -5 for each model and train on an internal cluster of 4 A100 GPU's, each with 80GB RAM.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.4 Extended results for Section 6</head><p>We list out the detailed results of Section 6 in Table <ref type="table" target="#tab_5">12</ref>, where we report the model performance on all the possible combinations of the three proposed techniques. The main observations are all covered in Section 6. We run each job 3 times, and report the mean and standard deviation of the main metrics. Their are some inevitable randomness happens in API or example retrieval, public API services and the environment provided in Webshop and Tabletop. Even though randoness exists, we observe that they barely change the final results. Thus, we only report the mean value everywhere else in the paper.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D API Selection Complexity Score</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.1 Complexity score</head><p>This section introduces a complexity score system designed to measure the intrinsic complexity and difficulty of the tasks from ToolBench. The complexity score system aims to provide a quantitative measure of the intrinsic complexity of the tests given the examples by calculating the probability of the tests being derived or converted from the examples; and the derivation or conversion is performed in a random system with all possible outcomes equally likely. This score serves to assess the inherent level of difficulty involved in transitioning from one scenario to another, thereby assisting researchers and developers in benchmark evaluation and analysis.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.1.1 The likelihood of a test being derived from an example</head><p>In the complexity score system proposed herein, the calculation of the complexity score involves assessing the probability or likelihood of the tests being derived from an example in the particular task. Given a demonstration example e and a set of API functions D, the derivation of a particular test sample t involves two major steps: 1) remove all the unused API calls while keeping all the necessary ones and 2) insert the new API calls that e does not cover. Given a random system, where all possible outcomes are equally likely, we suppose the deletion possibility of each API call from e is 50%, while the insertion possibilities of the correct API call is 1/|D|, where |D| is the total number of API functions of the given task. If t or e contains multiple calls to the same API function, we consider them as different API calls, because they are usually not interchangeable. Based on these assumptions, the likelihood of generating a test sample t is calculated using Equation <ref type="bibr" target="#b0">(1)</ref>.</p><formula xml:id="formula_1">p(t | e, D) = 1 2 |e| 1 |D| |t\e|<label>(2)</label></formula><p>where |e| represents the number of API calls in the example e, and |t \ e| is the number of uncovered API calls in the test sample. Suppose we have a task that has 10 API functions in total {a i } 10 1 , and the demonstration example covers {a 1 , a 2 , a 3 , a 4 }, but the test sample requires {a 1 , a 2 , a 6 , a 4 , a 5 }. In the first step, the probability of successfully dropping a 3 while keeping the rest ones in e is 1 2 4 .</p><p>Then, the probability of correctly adding in the uncovered ones, a 5 and a 6 , is 1 10 2 . Note that we do not take the order of API calls into consideration for the purpose of being simple without losing generosity.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.1.2 The distance between a test and example pair</head><p>We first define the distance d between one particular test and example pair by take the logarithm of the reciprocal of Equation (1) as:</p><formula xml:id="formula_2">d(t, e) = log 1 p(t | e, D)<label>(3)</label></formula><p>The use of the reciprocal in the expression aligns the complexity score with the definition of complexity, where a higher score indicates a greater level of complexity. Additionally, applying the logarithm to the reciprocal value aids in addressing the magnitude gap. The logarithm function compresses the range of values, reducing the impact of extreme values and creating a more manageable scale. This normalization ensures that the complexity score is not disproportionately influenced by outliers or extreme values, providing a more balanced representation of complexity across the range of input values. By combining the reciprocal and logarithm, the expression effectively balances the score by aligning it with the definition of complexity and mitigating the impact of magnitude differences in the input values.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.1.3 Complexity score of a task</head><p>Based on the complexity score of generating a test from an example, we can construct the complexity score S of a given task. The score S = f (T , X , D) is a function of the test samples T , the demonstration examples X and the API functions D of each task.</p><formula xml:id="formula_3">S(T , X , D) = E t∈T min e∈X d(t, e) = E t∈T min e∈X log 1 p(t | e, D) = -E t∈T max e∈X log 1 2 |e| 1 |D| |t\e|<label>(4)</label></formula><p>This score ranges from zero to infinity. The larger the score is, the more challenging a task is in terms of API selection. We calculate this score for both the original ToolBench (Table <ref type="table">4</ref>) and the training data we created for alignment Table <ref type="table" target="#tab_1">10</ref>. They share the same D and T , but have a different X , so that their API selection complexities are different for each task.   <ref type="formula" target="#formula_1">2</ref>) reversed F1 score and error rate, for all five tasks. The results are illustrated in fig. <ref type="figure" target="#fig_5">7</ref> and table <ref type="table" target="#tab_6">13</ref>.</p><p>The findings of the study reveal near-perfect Spearman's correlation coefficient (SCC) between the complexity score and the error rate for the LLaMA-30b, CodeGen-16b and StarCoder models. This strong correlation indicates that the proposed complexity score system accurately captures the intrinsic difficulty of these tasks.</p><p>For more powerful models like GPT4, which exhibit near-perfect accuracy (above 93%) for lowcomplexity tasks (complexity &lt; 12) such as Open Weather, The Cat API, Home Search, and Trip Booking, the SCC becomes relatively sensitive to any randomness or turbulence during the experiments. Consequently, the complexity score system shows a non-perfect SCC of 0.2 in this case.</p><p>Despite the sensitivity of the SCC in the GPT4 experiments, the complexity score remains a superior indicator of task difficulty compared to the r-F1 score. It effectively captures the inherent difficulty of each task and provides valuable insights into task complexity. Overall, complexity score is more effective at capturing the inherent difficulty of each task, thus providing valuable insights into task complexity.</p><p>The obtained results provide empirical evidence supporting the validity and reliability of the proposed complexity score system. The high SCC values signify a consistent relationship between the complexity score and the error rate across different models and tasks. This correlation strengthens the argument that the complexity score accurately captures the complexity and difficulty of the benchmarks, enabling researchers and developers to assess and compare the inherent challenges associated with different tasks.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Programmatic training data generation using templates and random values</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3</head><label>3</label><figDesc>Figure3depicts our flow to generate alignment data. We create a handful of templates consisting of goal descriptions and corresponding API calls. These templates contain one or more placeholder pairs. Each of these pairs maps to a key word in the goal and an argument in the corresponding API calls. We also provide a pool of candidate values for each keyword and randomly choose values to fill in the placeholders within the template. Given a tool with n candidate APIs, we only require O(n) human-curated templates to ensure practical human supervision. Specifically we use a principle where each of the n APIs is encouraged to appear in at least one template. In practice, we find it takes on average one day for one developer to curate the data for one software tool in our benchmark; this includes writing the goal templates, providing the pool of argument values and generate the data. We provide example templates we use for different tools in Appendix C. With data curated for all the tools, we perform model alignment tuning jointly for all tools and produce a single model.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure4: In-context demonstration can improve both closed and open-source models on Home Search, a tool for browsing houses on sale.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 6 :</head><label>6</label><figDesc>Figure6: We use all-shot loss for model alignment. We concatenate several examples into a single training sample and backpropagate through the loss on the blue actions in every example. There is no separator token between examples.API Definition Goal 1Goal N API calls N ... Normal:API Definition Goal 1 API calls 1Goal N API calls N ... All shot: API calls 1 Goal 2 API calls 2 Goal 2 API calls 2</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>0.3) 94.2(0.8) 72.7(2.0) 89.6(0.9) 28.6(0.0) 42.8(0.6) / 8.6(0.1) 0.0(0.0) -llama-30b 50.0(0.0) 88.0(0.0) 0.0(0.0) 0.0(0.0) 11.4(0.0) 24.0(0.0) / 2.5(0.0) 0.0(0.0) -starcoder 71.0(0.0) 91.0(0.0) 2.0(0.0) 7.5(0.0) 15.9(0.2) 26.0(0.0) / 4.9(0.0) 0.0(0.0) -codegen-16B-mono 32.0(0.0) 69.0(0.0) 0.0(0.0) 0.0(0.0) 7.1(0.0) 5.0(0.0) / 1.6(0.0) 0.0(0.0) --3-shot gpt4 93.0(0.0) 96.0(0.0) 97.0(0.0) 96.7(0.0) 62.9(0.0) 23.0(0.0) / 23.5(0.0) 0.0(0.0) 0.0(0.0) 81.0(0.0) llama-30b 78.0(0.0) 84.0(0.0) 66.0(0.0) 45.0(0.0) 37.1(0.0) 27.0(0.0) / 21.7(0.0) 0.0(0.0) 30.6(0.0) 34.3(0.0) starcoder 91.0(0.0) 84.0(0.0) 82.0(0.0) 51.7(0.0) 48.0(1.1) 23.0(0.0) / 19.4(0.0) 2.6(0.0) 0.0(0.0) 21.9(0.0) codegen-16B-mono 63.7(0.5) 72.0(0.0) 52.0(0.0) 28.3(0.0) 31.5(0.5) 28.0(0.0) / 15.7(0.0) 1.5(0.0) 6.6(0.0) 15.2(0.0) Alignment llama-30b 100.0(0.0) 94.0(0.0) 85.0(0.0) 87.5(0.0) 4.3(0.0) 14.0(0.0) / 10.6(0.0) 20.80.0) 98.0(0.0) 98.0(0.0) 99.2(0.0) 68.6(0.0) 29.0(0.0) / 21.7(0.0) 0.0(0.0) 0.0(0.0) 83.8(0.0) llama-30b 66.0(0.0) 82.0(0.0) 63.0(0.0) 45.8(0.0) 27.1(0.0) 34.0(0.0) / 20.5(0.0) 0.0(0.0) 0.0(0.0) 34.6(0.2) starcoder 92.0(0.0) 91.0(0.0) 73.0(0.0) 54.2(0.0) 50.0(0.2) 28.0(0.0) / 15.0(0.0) 0.0(0.0) 0.0(0.0) 23.4(0.3) codegen-16B-mono 64.2(0.3) 70.0(0.0) 45.0(0.0) 22.5(0.0) 28.6(0.9) 27.0(0.0) / 15.7(0.0) 0.0(0.0) 0.0(0.0) 14.6(0.2) Sys. Prompt + Alignment llama-30b 100.0(0.0) 94.0(0.0) 79.0(0.0) 80.8(0.0) 5.7(0.0) 10.0(0.0) / 10.3(0.0) 0.6(0.0) -starcoder 98.7(0.2) 97.0(0.0) 79.0(0.0) 84.2(0.0) 10.0(0.0) 18.0(0.0) / 10.3(0.0) 0.0(0.0) -codegen-16B-mono 99.0(0.0) 96.0(0.0) 77.0(0.0) 75.8(0.0) 8.6(0.0) 7.0(0.0) / 10.0(0.0) 25.7(0.0) --3-shot + Alignment llama-30b 100.0(0.0) 94.0(0.0) 88.0(0.0) 89.2(0.0) 4.3(0.0) 20.0(0.0) / 26.3(0.0) 19.5(0.0) 15.1(0.0) 6.9(0.2) starcoder 100.0(0.0) 96.0(0.0) 91.0(0.0) 84.2(0.0) 15.7(0.0) 48.0(0.0) / 21.3(0.0) 0.0(0.0) 0.0(0.0) 13.9(0.3) codegen-16B-mono 99.0(0.0) 97.9(0.2) 80.0(0.0) 77.5(0.0) 16.4(0.9) 38.0(0.0) / 18.6(0.0) 6.5(0.0) 17.5(0.0) 16.2(0.0) Prompt + 3-shot + Alignment llama-30b 100.0(0.0) 94.0(0.0) 87.0(0.0) 85.8(0.0) 2.9(0.0) 16.0(0.0) / 24.3(0.0) 0.0(0.0) 0.0(0.0) 7.5(0.1) starcoder 99.0(0.0) 97.0(0.0) 83.0(0.0) 80.8(0.0) 21.2(0.3) 31.0(0.0) / 18.4(0.0) 0.0(0.0) 0.0(0.0) 13.9(0.3) codegen-16B-mono 97.7(0.2) 99.0(0.0) 82.0(0.0) 77.5(0.0) 19.8(0.3) 29.0(0.0) / 17.2(0.0) 0.0(0.0) 3.5(0.0) 16.2(0.0)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Spearman's correlation coefficient(SCC) is computed separately for two comparisons: (1) complexity score and error rate, and (2) reversed F1 score and error rate on five tasks: (1) Open Weather, (2) The Cat API, (3) Home Search, (4) Trip Booking, and (5) Virtual Home.</figDesc><graphic coords="25,108.00,111.70,395.99,100.23" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 2 :</head><label>2</label><figDesc>Example of tool manipulation errors. Errors are highlighted in red.</figDesc><table><row><cell></cell><cell></cell><cell cols="2">Figure 2: Without API documentation exposure dur-</cell></row><row><cell></cell><cell></cell><cell cols="2">ing inference, closed LLMs attain high accuracy in</cell></row><row><cell></cell><cell># To move the robot to position (x, y)</cell><cell cols="2">selecting APIs (left), implying potential example us-</cell></row><row><cell>Goal</cell><cell>robot.move_to(x, y) # To raise the arm by a given height robot.raise_arm(height) Task: how to move a robot to (20, 30)?</cell><cell cols="2">age exposure during training. Hand-picked oracle one-shot demonstration improves success rate over zero-shot on the OpenWeather (right), showing the</cell></row><row><cell cols="2">Expected results Wrong API Wrong Arguments robot.move_to(30, 20) robot.move_to(20, 30) robot.raise_arm(20) Non-executable You can create a robot with robot = Robot() and move it to the target location by robot.move_to(20, 30)</cell><cell cols="2">roofline impact of in-context demonstrations. 0 30 60 0 API selection acc. goal only 20 40 60 80 Success rate</cell><cell>zero-shot one-shot</cell></row><row><cell></cell><cell></cell><cell>G P T -4 L L aM A S ta rC o d er C o d eG en</cell><cell>G P T -4 L L aM A S ta rC o d er C o d eG en</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 1 :</head><label>1</label><figDesc>Huge capability gaps on a house searching task. Open-source LLMs lag behind the OpenAI GPT-4 by 70% on success rate.70% success rate gap compared to the zero-shot GPT-4 APIs as shown in Table1. Such gap motivates us to study what impedes open-source LLM' performance.</figDesc><table><row><cell>Model</cell><cell cols="4">GPT-4 LLaMA StarCoder CodeGen</cell></row><row><cell>Open source</cell><cell>✗</cell><cell>✓</cell><cell>✓</cell><cell>✓</cell></row><row><cell cols="2">Success rate 77%</cell><cell>0%</cell><cell>7%</cell><cell>0%</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 6 :</head><label>6</label><figDesc>Capability gap in tool manipulation is substantial between closed API and open-source LLMs in the out-of-the-box zero-shot setting. Using model alignment, the in-context demonstration retriever and the system prompt, open-soured LLMs attain significant boost in success rate. GPT-4 is enhanced with the retriever and system prompt. Tabletop is only evaluated in the few-shot fashion., including Open Weather, the Cat API, VirturalHome and WebShop. Moreover, on Home Search and Trip Booking, the gap between the LLAMA model and the GPT-4 API is reduced to 11% and 13.4% respectively, compared to the initial gap of up to 91%. Despite the fact that open-source models are still lagging behind on the Google Sheets and Tabletop, these observations show that our recipe can significantly improve the performance of open-source LLMs and attain success rates comparable to GPT-4 API on many of the ToolBench tasks.</figDesc><table><row><cell>Task</cell><cell cols="5">Open The Cat Home Weather API Search Booking Sheets Trip Google</cell><cell cols="3">WebShop VirtualHome Long Short</cell><cell>Tabletop</cell></row><row><cell>Zero-shot Baseline</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>GPT-4</cell><cell>81.3</cell><cell>97.4</cell><cell>76.6</cell><cell>91.5</cell><cell>5.7</cell><cell>40.8 / 8.0</cell><cell>0.0</cell><cell></cell><cell>-</cell></row><row><cell>LLaMA-30b</cell><cell>39.0</cell><cell>49.0</cell><cell>0.0</cell><cell>0.0</cell><cell>0.0</cell><cell>78.0 / 0.3</cell><cell>0.0</cell><cell></cell><cell>-</cell></row><row><cell>StarCoder</cell><cell>32.0</cell><cell>71.0</cell><cell>7.0</cell><cell>13.3</cell><cell>5.9</cell><cell>22.0 / 3.7</cell><cell>0.0</cell><cell></cell><cell>-</cell></row><row><cell>CodeGen-16B-mono</cell><cell>7.0</cell><cell>78.0</cell><cell>0.0</cell><cell>0.0</cell><cell>1.4</cell><cell>4.0/ 1.0</cell><cell>0.0</cell><cell></cell><cell>-</cell></row><row><cell>Enhanced w/ techniques</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>GPT-4</cell><cell>99.0</cell><cell>98.0</cell><cell>98.0</cell><cell>99.2</cell><cell>68.6</cell><cell>29.0 / 21.7</cell><cell>0.0</cell><cell>0.0</cell><cell>83.8</cell></row><row><cell>LLaMA-30b</cell><cell>100.0</cell><cell>94.0</cell><cell>87.0</cell><cell>85.8</cell><cell>2.9</cell><cell>16.0 / 24.3</cell><cell>0.0</cell><cell>0.0</cell><cell>7.5</cell></row><row><cell>StarCoder</cell><cell>99.0</cell><cell>97.0</cell><cell>83.0</cell><cell>80.8</cell><cell>21.2</cell><cell>31.0 / 18.4</cell><cell>0.0</cell><cell>0.0</cell><cell>13.9</cell></row><row><cell>CodeGen-16B-mono</cell><cell>97.7</cell><cell>99.0</cell><cell>82.0</cell><cell>77.5</cell><cell>19.8</cell><cell>29.0 / 17.2</cell><cell>0.0</cell><cell>3.5</cell><cell>16.2</cell></row><row><cell>of 8 tasks</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 8 :</head><label>8</label><figDesc>The achitecture and training data of all the models in our evaluation. The models are grouped by their architecture and training data.</figDesc><table><row><cell>Model</cell><cell cols="3">Architecture</cell><cell></cell><cell>Data</cell><cell></cell></row><row><cell></cell><cell cols="4">Family Size Max SS # Tokens</cell><cell>Pretraining</cell><cell>Finetuning</cell></row><row><cell>Closed-source</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>text-davinci-003</cell><cell cols="3">gpt3 175b 4096</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>gpt-3.5-turbo</cell><cell>gpt3</cell><cell>-</cell><cell>4096</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>text-curie-001</cell><cell cols="3">gpt3 6.7b 2048</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>gpt4</cell><cell>gpt4</cell><cell>-</cell><cell>8192</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>Open-source</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>bloomz</cell><cell cols="3">bloom 176b 2048</cell><cell>366B</cell><cell>bloom corpus</cell><cell>xP3</cell></row><row><cell>llama-65b</cell><cell cols="3">llama 65b 2048</cell><cell>1.4T</cell><cell>CCNet, C4,</cell><cell>-</cell></row><row><cell>llama-30b</cell><cell cols="3">llama 30b 2048</cell><cell>1.4T</cell><cell>GitHub, Wikipedia,</cell><cell>-</cell></row><row><cell>llama-13b</cell><cell cols="3">llama 13b 2048</cell><cell>1.4T</cell><cell>Books, ArXiv,</cell><cell>-</cell></row><row><cell>llama-13b-alpaca</cell><cell cols="3">llama 13b 2048</cell><cell>1.4T</cell><cell>Stack Exchange</cell><cell>GPT-4 responses, Alpaca</cell></row><row><cell>starcoderbase starcoder</cell><cell cols="3">bigcode 15.5b 8192 bigcode 15.5b 8192</cell><cell>1T 1T</cell><cell>The Stack</cell><cell>-The Stack (Python)</cell></row><row><cell>opt-30b opt-1.3b opt-iml-30b opt-iml-1.3b</cell><cell>opt opt opt opt</cell><cell cols="2">30b 2048 1.3b 2048 30b 2048 1.3b 2048</cell><cell cols="2">300B The Pile, BookCorpus, 300B CC-Stories, Reddit, CCNewsV2 300B 300B</cell><cell>--OPT-IML Bench</cell></row><row><cell>gpt-neox-20b</cell><cell cols="3">neox 20b 2048</cell><cell>450B</cell><cell></cell><cell>-</cell></row><row><cell cols="4">GPT-NeoXT-Chat-Base-20B neox 20b 2048</cell><cell>460B</cell><cell></cell><cell>OpenChatKit IT</cell></row><row><cell>codegen-16B-nl</cell><cell cols="3">neox 16b 2048</cell><cell>700B</cell><cell></cell><cell>-</cell></row><row><cell>codegen-16B-multi codegen-16B-mono</cell><cell cols="3">neox 16b 2048 neox 16b 2048</cell><cell>1T 1T</cell><cell>The Pile</cell><cell>BigQuery BigQuery, BigPython</cell></row><row><cell>pythia-12b</cell><cell cols="3">neox 12b 2048</cell><cell>300B</cell><cell></cell><cell>-</cell></row><row><cell>dolly-v2-12b</cell><cell cols="3">neox 12b 2048</cell><cell>300B</cell><cell></cell><cell>Dolly IT</cell></row><row><cell>pythia-6.9b/2.8b1.4b</cell><cell cols="3">neox multi 2048</cell><cell>300B</cell><cell></cell><cell>-</cell></row><row><cell>stablelm-base-alpha-7b</cell><cell>neox</cell><cell>7b</cell><cell>4096</cell><cell>800B</cell><cell></cell><cell>-</cell></row><row><cell>stablelm-base-alpha-3b stablelm-tuned-alpha-7b</cell><cell>neox neox</cell><cell>3b 7b</cell><cell>4096 4096</cell><cell>800B 800B</cell><cell>The Pile (1.5T)</cell><cell>-Alpaca, GPT4All,</cell></row><row><cell>stablelm-tuned-alpha-3b</cell><cell>neox</cell><cell>3b</cell><cell>4096</cell><cell>800B</cell><cell></cell><cell>Anthropic, Dolly, ShareGPT</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 9 :</head><label>9</label><figDesc>The performance on ToolBench of different models in 3-shot scenario. The models are group by their architecture and training data.</figDesc><table><row><cell>Task</cell><cell cols="5">Open The Cat Home Weather API Search Booking Sheets Trip Google</cell><cell cols="3">WebShop VirtualHome Long Short</cell><cell>Tabletop</cell></row><row><cell>max tokens to generate</cell><cell>128</cell><cell>128</cell><cell>128</cell><cell>300</cell><cell>256</cell><cell>128</cell><cell>128</cell><cell></cell><cell>256</cell></row><row><cell>num API function</cell><cell>all</cell><cell>all</cell><cell>all</cell><cell>all</cell><cell>10</cell><cell>10</cell><cell>all</cell><cell></cell><cell>0</cell></row><row><cell>Closed-source</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>gpt4</cell><cell>93.0</cell><cell>96.0</cell><cell>97.0</cell><cell>96.7</cell><cell>62.9</cell><cell>23.0 / 23.5</cell><cell>0.0</cell><cell></cell><cell>81.0</cell></row><row><cell>text-davinci-003</cell><cell>99.0</cell><cell>98.0</cell><cell>97.0</cell><cell>89.2</cell><cell>62.9</cell><cell>31.0 / 25.1</cell><cell>0.0</cell><cell></cell><cell>66.7</cell></row><row><cell>gpt-3.5-turbo</cell><cell>90.0</cell><cell>92.0</cell><cell>80.0</cell><cell>85.8</cell><cell>51.4</cell><cell>20.0 / 18.9</cell><cell>0.0</cell><cell>1.8</cell><cell>33.3</cell></row><row><cell>text-curie-001</cell><cell>8.0</cell><cell>58.0</cell><cell>6.0</cell><cell>6.7</cell><cell>1.4</cell><cell>12.0 / 4.1</cell><cell>0.0</cell><cell>0.0</cell><cell>1.0</cell></row><row><cell>Open-source</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>llama-65b</cell><cell>90.0</cell><cell>80.0</cell><cell>84.0</cell><cell>65.8</cell><cell>32.9</cell><cell>32.0 / 20.3</cell><cell cols="2">0.0 41.2</cell><cell>30.5</cell></row><row><cell>llama-30b</cell><cell>78.0</cell><cell>84.0</cell><cell>66.0</cell><cell>45.0</cell><cell>37.1</cell><cell>27.0 / 21.7</cell><cell cols="2">0.0 30.6</cell><cell>34.3</cell></row><row><cell>llama-13b</cell><cell>70.0</cell><cell>74.0</cell><cell>45.0</cell><cell>35.8</cell><cell>5.7</cell><cell>28.0 / 18.9</cell><cell cols="2">0.0 27.6</cell><cell>17.1</cell></row><row><cell>llama-13b-alpaca</cell><cell>62.0</cell><cell>43.0</cell><cell>44.0</cell><cell>40.8</cell><cell>11.4</cell><cell>1.0 / 1.6</cell><cell>0.0</cell><cell>2.7</cell><cell>9.5</cell></row><row><cell>starcoder</cell><cell>91.0</cell><cell>84.0</cell><cell>82.0</cell><cell>51.7</cell><cell>48.0</cell><cell>23.0 / 19.4</cell><cell>2.6</cell><cell>0.0</cell><cell>21.9</cell></row><row><cell>starcoderbase</cell><cell>90.0</cell><cell>86.0</cell><cell>79.0</cell><cell>63.3</cell><cell>42.9</cell><cell>24.0 / 16.3</cell><cell cols="2">5.8 23.1</cell><cell>17.1</cell></row><row><cell>codegen-16B-nl</cell><cell>51.0</cell><cell>75.0</cell><cell>37.0</cell><cell>21.7</cell><cell>7.1</cell><cell>43.0 / 18.0</cell><cell>0.0</cell><cell>0.0</cell><cell>16.2</cell></row><row><cell>codegen-16B-multi</cell><cell>56.0</cell><cell>75.0</cell><cell>47.0</cell><cell>7.5</cell><cell>21.4</cell><cell>31.0 / 14.1</cell><cell>0.0</cell><cell>0.5</cell><cell>8.6</cell></row><row><cell>codegen-16B-mono</cell><cell>63.7</cell><cell>72.0</cell><cell>52.0</cell><cell>28.3</cell><cell>31.5</cell><cell>28.0 / 15.7</cell><cell>1.5</cell><cell>6.6</cell><cell>15.2</cell></row><row><cell>bloomz</cell><cell>58.0</cell><cell>85.0</cell><cell>36.0</cell><cell>22.5</cell><cell>14.3</cell><cell>9.0 / 4.9</cell><cell>0.0</cell><cell>1.0</cell><cell>1.0</cell></row><row><cell>opt-iml-30b</cell><cell>44.0</cell><cell>48.0</cell><cell>5.0</cell><cell>3.3</cell><cell>2.9</cell><cell>13.0 / 8.3</cell><cell>0.0</cell><cell>0.0</cell><cell>1.0</cell></row><row><cell>opt-30b</cell><cell>46.0</cell><cell>35.0</cell><cell>2.0</cell><cell>3.3</cell><cell>8.6</cell><cell>24.0 / 11.7</cell><cell>0.0</cell><cell>0.0</cell><cell>1.0</cell></row><row><cell>opt-iml-1.3b</cell><cell>20.0</cell><cell>28.0</cell><cell>0.0</cell><cell>0.0</cell><cell>4.3</cell><cell>13.0 / 3.1</cell><cell>0.0</cell><cell>0.0</cell><cell>1.0</cell></row><row><cell>opt-1.3b</cell><cell>18.0</cell><cell>30.0</cell><cell>0.0</cell><cell>0.0</cell><cell>1.4</cell><cell>31.0 / 9.7</cell><cell>0.0</cell><cell>0.0</cell><cell>1.0</cell></row><row><cell>neox-20b</cell><cell>55.0</cell><cell>69.0</cell><cell>27.0</cell><cell>10.8</cell><cell>18.6</cell><cell>28.0 / 15.3</cell><cell>0.0</cell><cell>8.8</cell><cell>6.7</cell></row><row><cell>GPT-NeoXT-Chat-Base-20B</cell><cell>43.0</cell><cell>73.0</cell><cell>28.0</cell><cell>10.8</cell><cell>4.3</cell><cell>26.0 / 13.1</cell><cell>0.0</cell><cell>0.7</cell><cell>7.6</cell></row><row><cell>pythia-12b</cell><cell>53.0</cell><cell>65.0</cell><cell>12.0</cell><cell>0.8</cell><cell>11.4</cell><cell>17.0 / 12.1</cell><cell>0.0</cell><cell>0.0</cell><cell>1.9</cell></row><row><cell>dolly-v2-12b</cell><cell>0.0</cell><cell>1.0</cell><cell>10.0</cell><cell>5.0</cell><cell>7.1</cell><cell>11.0 / 8.9</cell><cell>0.0</cell><cell>0.0</cell><cell>7.6</cell></row><row><cell>pythia-12b</cell><cell>53.0</cell><cell>65.0</cell><cell>12.0</cell><cell>0.8</cell><cell>11.4</cell><cell>17.0 / 12.1</cell><cell>0.0</cell><cell>0.0</cell><cell>1.9</cell></row><row><cell>pythia-6.9b</cell><cell>41.0</cell><cell>72.0</cell><cell>8.0</cell><cell>7.5</cell><cell>4.3</cell><cell>29.0 / 14.0</cell><cell>0.0</cell><cell>0.0</cell><cell>8.6</cell></row><row><cell>pythia-2.8b</cell><cell>49.0</cell><cell>54.0</cell><cell>7.0</cell><cell>3.3</cell><cell>12.9</cell><cell>24.0 / 14.8</cell><cell>0.0</cell><cell>0.0</cell><cell>7.6</cell></row><row><cell>pythia-1.4b</cell><cell>37.0</cell><cell>48.0</cell><cell>4.0</cell><cell>5.0</cell><cell>10.0</cell><cell>22.0 / 10.7</cell><cell>0.0</cell><cell>5.2</cell><cell>7.6</cell></row><row><cell>stablelm-base-alpha-7b</cell><cell>22.0</cell><cell>47.0</cell><cell>0.0</cell><cell>0.0</cell><cell>4.3</cell><cell>28.0 / 10.3</cell><cell>0.0</cell><cell>0.0</cell><cell>2.9</cell></row><row><cell>stablelm-tuned-alpha-7b</cell><cell>23.0</cell><cell>38.0</cell><cell>0.0</cell><cell>0.0</cell><cell>1.4</cell><cell>26.0 / 7.3</cell><cell>0.0</cell><cell>0.0</cell><cell>3.8</cell></row><row><cell>stablelm-base-alpha-3b</cell><cell>6.0</cell><cell>28.0</cell><cell>0.0</cell><cell>0.0</cell><cell>1.4</cell><cell>29.0 / 5.3</cell><cell>0.0</cell><cell>0.0</cell><cell>1.0</cell></row><row><cell>stablelm-tuned-alpha-3b</cell><cell>14.0</cell><cell>31.0</cell><cell>0.0</cell><cell>0.8</cell><cell>0.0</cell><cell>8.0 / 5.6</cell><cell>0.0</cell><cell>0.0</cell><cell>1.0</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 12 :</head><label>12</label><figDesc>The detailed performance on the ToolBench of models with different techniques applied. Mean(standard deviation) values are provided for each task. There exists some inevitable randomness, but it won't cange the results by too much.</figDesc><table><row><cell>Task</cell><cell>Open The Cat Home Weather API Search Booking Sheets Trip Google</cell><cell>VirtualHome</cell><cell>WebShop Long Short</cell><cell>Tabletop</cell></row><row><cell>Zero-shot Baseline</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>gpt4</cell><cell>81.3(1.7) 97.4(0.</cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 13 :</head><label>13</label><figDesc>Spearman's Correlation CoefficientsIn this section, Spearman's Correlation Coefficient (SCC)<ref type="bibr" target="#b69">[70]</ref> is employed to assess the effectiveness of the proposed complexity score. The evaluation involves the analysis of five different tasks using three models: GPT-4, LLaMA-30b, CodeGen-16b, and StarCoder. We only include the five tasks without advanced reasoning from table 4, as the advanced reasoning breaks the correlation between the API selection difficulty and the final model performance. The complexity score and the r-F1 score are calculated for each task. SCC is then computed separately for two comparisons: (1) complexity score and error rate, and (</figDesc><table><row><cell></cell><cell cols="4">GPT-4 LLaMA CodeGen StarCoder</cell></row><row><cell>Complexity</cell><cell>0.2</cell><cell>1.0</cell><cell>1.0</cell><cell>0.7</cell></row><row><cell>r-F1</cell><cell>-0.3</cell><cell>0.7</cell><cell>0.7</cell><cell>0.3</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>Available at https://github.com/sambanova/toolbench Preprint. Under review.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>We apply the same system prompt and in-context example retriever for GPT-4. Model alignment is not applicable to GPT-4 as there is no publicly available tuning APIs for it during our experiments.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>If a failure case has multiple errors, we categorize it by the first triggered category in the following order: non-executable generation, wrong API selection, wrong argument populating</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_3"><p>For WebShop, we find that more than O(n) demonstration examples can improve the success rate. Nonetheless, these examples can be acquired from programmatic software operations without heavy human curation.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_4"><p>GPT-4 tuning APIs were not released by the time this work is done.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_5"><p>Surprisingly, we observe that for tool manipulations, open-source LLMs instruction-tuned for conventional NLP tasks do not outperform their base models before tuning.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="7" xml:id="foot_6"><p>https://openweathermap.org/api</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="8" xml:id="foot_7"><p>https://thecatapi.com</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="15" xml:id="foot_8"><p>https://github.com/princeton-nlp/WebShop/blob/master/baseline_models/data/il_trajs_finalized_images.zip</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="16" xml:id="foot_9"><p>https://github.com/princeton-nlp/WebShop#text-environment-simple-mode</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgments and Disclosure of Funding</head><p>We sincerely appreciate the helpful discussion with <rs type="person">Urmish Thakker</rs>, <rs type="person">Tian Zhao</rs>, <rs type="person">Raghu Prabhakar</rs>, <rs type="person">Kaizhao Liang</rs>, <rs type="person">Petro Junior Milan</rs>, <rs type="person">Bowen Yang</rs>, <rs type="person">Qinghua Li</rs> and <rs type="person">Yaqi Zhang</rs>.</p></div>
+			</div>			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>the final status is evaluated. For each task, we report the metrics described in Section 5 for each task. Note that we only evaluate the top 1 generated action with sampling disabled. This is because, in practice, action can only be executed once and there is no chance to reset things and try another action.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3 ToolBench performance of different models</head><p>The performance of different models are summarized in Table <ref type="table">9</ref>. Below we show several observations. Capability Gap Currently, the GPT family of models stands out as the leading players in the field, and there is a significant gap between GPT-4, GPT-3.5 and all the other open-source models. While open-source models may demonstrate competitiveness on some simpler tasks, they lag far behind on more challenging tasks such as Google Sheets and Tabletop.</p><p>Instruction tuning on conventional NLP tasks doesn't help Comparing the models between chavinlo/gpt4-x-alpaca and LLaMA-13b, OPT-IML and OPT, StableLM-tuned and StableLM-base, NeoX-Chat-Base-20b and NeoX, and dolly and pythia, the former model in each pair is intentionally optimized to enhance instruction following capability compared to the latter model. However, no significant accuracy improvement is observed on the ToolBench. Further, the LLaMA family, despite not undergoing any specific instruction tuning during training, still achieves relatively good quality compared to other public models.</p><p>Model size is important By comparing the performance of models from GPT faimily, LLaMA family, OPT family, Pythia family and StableLM family, we can clearly see the trend that the larger models tend to perform better on the ToolBench, given the same quantity and quality of their training data.</p><p>Code generation is important StarCoder and CodeGen faimily stand out among other models with similar sizes on ToolBench, while StarCoderBase is even on par with the llama-65b model which is more than 4 times larger in size. CodeGen-16B-mono is overall better than its base model CodeGen-16B-nl, which is not specifically tuned for code generation. It is also surprisingly better than CodeGen-16B-multi on almost all the tasks, indicating that it is highly beneficial for action generation if the model is heavily tuned on Python-style code generation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Experiment Details</head><p>In this section, we extended Section 6 with more details about model training and results.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1 Training data</head><p>For the OpenWeather, The Cat API, Trip Booking, and Home Search tasks, we generate the training data by converting or expanding the demonstration examples of each task into templates and populating them with various sets of variable values. For the remaining four tasks, we format the training samples directly from the demonstration example set described in section 5. We exclude any test samples from the training data and minimize the overlap of the API function call combinations between any training and test samples. For example, we make sure that the API function combinations used in each test case for the Home Search task are never present in the training data. However, for the OpenWeather task, it was unavoidable to have some overlap because each test case only involved a single function call and the training examples covered all the API functions. The numbers of templates and training samples for each task are summarized in table <ref type="table">10</ref>. Example templates and variable values are shown in table 11. The training sets for all tasks, except for the Google Sheets and WebShop task, reduce the complexity score of their respective test sets when compared to the example sets. As expected, the model's accuracy shows improvement after fine-tuning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.2 All-shot loss</head><p>To construct the training samples, we concatenate API documents and multiple pairs of goal and API calls as one input sequence to the LLMs. We use an all-shot loss formulation illustrated in Figure <ref type="figure">6</ref> Table <ref type="table">10</ref>: The statistics of model alignment data </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.2 Complexity score on the ToolBench</head><p>In this section we demonstrate how the complexity score behaves on the ToolBench.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.2.1 Computation details</head><p>For the Trip Booking, Home Search, Virtual Home, and Google Sheets tasks, the set of API functions D is the same as described in appendix A. For the single-step, single-API-call tasks, Open Weather and The Cat API, each valid URL with parameters is treated as a unique API option in set D. In total, Open Weather has 37 API options, while The Cat API has 52 API options. In the case of the Tabletop task, since there are no predefined correct answers for the test cases, we divide the three set of "Tabletop Manipulation" examples 17 into 65 single-step samples. Note that for the WebShop task, since there are only two API functions always covered by the example set, the complexity score is 0 by definition.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.2.2 Reversed-F1 Score</head><p>For comparison purpose, we also consider the simple Reversed-F1 (r-F1) distance d r-F 1 , derived from the conventional F1 score <ref type="bibr" target="#b68">[69]</ref>, between one particular test and example pair as</p><formula xml:id="formula_4">d r-F 1 (t, e) = (1 -F 1(t, e)) * 100<label>(5)</label></formula><p>We multiply 100 to the score to align with the range of the complexity score defined above. Follow the same definition proposed in appendix D.1.3, we can construct the r-F1 score S r-F 1 of a given task as:</p><formula xml:id="formula_5">S r-F 1 (T , X ) = E t∈T min e∈X d r-F 1 (t, e) = E t∈T min e∈X [(1 -F 1(t, e)) * 100]<label>(6)</label></formula><p>D.2.3 Measurements 17 <ref type="url" target="https://code-as-policies.github.io/">https://code-as-policies.github.io/</ref> </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_7"><head>Table 11 :</head><label>11</label><figDesc>Training template examples of different tools</figDesc><table><row><cell cols="2">Task</cell><cell>Open Weather</cell><cell cols="7">The Cat Home API Search Booking Sheets Trip Google VirtualHome WebShop Tabletop</cell></row><row><cell cols="2">Templates</cell><cell>90</cell><cell>40</cell><cell>100</cell><cell>30</cell><cell>1</cell><cell>1</cell><cell></cell><cell>2</cell><cell>1</cell></row><row><cell cols="2">Repeat</cell><cell>20</cell><cell>45</cell><cell>18</cell><cell>60</cell><cell>118</cell><cell cols="2">512</cell><cell>900</cell><cell>74</cell></row><row><cell cols="2">Training samples</cell><cell>1800</cell><cell>1800</cell><cell>1800</cell><cell>1800</cell><cell>118</cell><cell cols="2">512</cell><cell>1800</cell><cell>74</cell></row><row><cell cols="2">Complexity score</cell><cell>1.1</cell><cell>1.0</cell><cell>6.4</cell><cell>10.1</cell><cell>12.1</cell><cell cols="2">12.3</cell><cell>0.0</cell><cell>4.6</cell></row><row><cell></cell><cell></cell><cell>Goal</cell><cell></cell><cell></cell><cell>Action</cell><cell></cell><cell></cell><cell cols="2">Variable values</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">{city: "Palo Alto",</cell></row><row><cell>Open Weather</cell><cell cols="3">What is the present weather situation in {city}? Please respond in {lang} and use {units} units.</cell><cell cols="4">curl -X GET 'https://api.openweathermap.org/data/ 2.5/weather?q={city_formatted}&amp;appid= {API_KEY}&amp;lang={lang_abbr}&amp;units={units}'</cell><cell cols="2">city_formatted: "palo+alto", lang: "English", lang_abbr: "en",</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">units: "imperial"}</cell></row><row><cell>The Cat API</cell><cell cols="3">Add the cat photo with id={image_id} to my list of favorites.</cell><cell cols="4">curl -X POST 'https://api.thecatapi.com/v1/favourites' -data '{"image_id":"{image_id}"}'</cell><cell cols="2">{image_id: "MTUyNTA1OA"}</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">API.set_location({location})</cell><cell></cell><cell></cell><cell></cell></row><row><cell>Home Search</cell><cell cols="3">Looking for homes for sale in {location} with {num_beds} bedrooms and {num_baths} bathrooms, between ${min_price} and ${max_price}.</cell><cell cols="3">API.set_buy_or_rent("buy") API.set_num_beds({num_beds}) API.set_num_baths({num_baths}) API.set_min_price({min_price}) API.set_max_price({max_price})</cell><cell></cell><cell cols="2">{location: "Palo Alto", num_beds: 4, num_baths: 5, min_price: 7000000, max_price: 8000000}</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>API.search()</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="3">API.select_booking_type("trip tickets")</cell><cell></cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="4">API.select_transportation({means_of_transportation})</cell><cell cols="2">{means_of_transportation: "flight",</cell></row><row><cell></cell><cell cols="3">Search for {means_of_transportation}</cell><cell cols="3">API.set_num_adults({num_adults})</cell><cell></cell><cell cols="2">max_price_ticket: 150,</cell></row><row><cell>Trip</cell><cell cols="3">tickets for {num_adults} adults</cell><cell cols="3">API.set_origin(Loc({location_from}))</cell><cell></cell><cell cols="2">num_adults: 2,</cell></row><row><cell>Booking</cell><cell cols="2">from {location_from} to</cell><cell></cell><cell cols="3">API.set_destination(Loc({location_to}))</cell><cell></cell><cell cols="2">location_from: "San Francisco",</cell></row><row><cell></cell><cell cols="3">{location_to}, on {departure_date}.</cell><cell cols="2">date = Date({departure_date})</cell><cell></cell><cell></cell><cell cols="2">location_to: "Los Angeles",</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">API.set_departure_date(date)</cell><cell></cell><cell></cell><cell cols="2">departure_date: "2023-08-15"}</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>API.search()</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>{task: "</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">| Product | Cost | Price |</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>| beef | 1 | 3 |</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>| pork | 5 | 4 |</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">| chicken | 10 | 11 |</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">| lamb | 3 | 15 |</cell></row><row><cell>Google Sheet</cell><cell>{task}</cell><cell></cell><cell></cell><cell>{action}</cell><cell></cell><cell></cell><cell></cell><cell cols="2">| duck | 12 | 2 | | fish | 2 | 100 |</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>Task:</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">Sum B1:B4 and write the result below B4</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>Action:",</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>action: "</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">worksheet.update('B5', '=SUM(B1:B4)',</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>raw=False)"}</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>{task: "</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">Task: Read book</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>Action:",</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>action: "</cell></row><row><cell cols="2">VirtualHome {task}</cell><cell></cell><cell></cell><cell>{action}</cell><cell></cell><cell></cell><cell></cell><cell cols="2">Agent.Find(novel)</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">Agent.Grab(novel)</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">Agent.Find(chair)</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">Agent.SitOn(chair)</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">Agent.Read(novel)"}</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">{task: "Instruction: i'm looking to</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">buy a high resolution marine</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">animal themed backdrop. the size</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">should be 12x10ft, and price lower</cell></row><row><cell>WebShop</cell><cell>{task}</cell><cell></cell><cell></cell><cell>{action}</cell><cell></cell><cell></cell><cell></cell><cell cols="2">than 100.00 dollars [button] Search [button_]</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>Action:",</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>action: "</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">search[12x10ft high resolution</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">marine animal backdrop]"}</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">{task: "objects = ['yellow block',</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">'green block', 'yellow bowl',</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">'blue block', 'blue bowl', 'green bowl']</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2"># move the green block to the</cell></row><row><cell cols="2">Tabletop {task}</cell><cell></cell><cell></cell><cell>{action}</cell><cell></cell><cell></cell><cell></cell><cell cols="2">top right corner.", action: "</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">corner_pos = parse_position(</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">'top right corner')</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">put_first_on_second(</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">'green block', corner_pos)"}</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Toolformer: Language models can teach themselves to use tools</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Scialom</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.04761</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Api-bank: A benchmark for tool-augmented llms</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.08244</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Tool learning with foundation models</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Han</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.08354</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Auto-gpt: An autonomous gpt-4 experiment</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gravitas</surname></persName>
+		</author>
+		<ptr target="https://github.com/Significant-Gravitas/Auto-GPT" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Hugginggpt: Solving ai tasks with chatgpt and its friends in huggingface</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhuang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.17580</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Vicuna: An open-source chatbot impressing gpt-4 with 90%* chatgpt quality</title>
+		<author>
+			<persName><forename type="first">W.-L</forename><surname>Chiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Stoica</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">P</forename><surname>Xing</surname></persName>
+		</author>
+		<ptr target="https://vicuna.lmsys.org" />
+		<imprint>
+			<date type="published" when="2023-03">March 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Openchatkit: An open toolkit and base model for dialogue-style applications</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Computer</surname></persName>
+		</author>
+		<ptr target="https://github.com/togethercomputer/OpenChatKit" />
+		<imprint>
+			<date type="published" when="2023">3 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Laion: Open-assistant</title>
+		<author>
+			<persName><forename type="first">O.-A</forename><surname>Team</surname></persName>
+		</author>
+		<ptr target="https://open-assistant.io/chat" />
+		<imprint>
+			<date type="published" when="2023-04">April 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Databricks&apos; dolly, a large language model trained on the databricks machine learning platform</title>
+		<author>
+			<persName><surname>Databricks</surname></persName>
+		</author>
+		<ptr target="https://github.com/databrickslabs/dolly" />
+		<imprint>
+			<date type="published" when="2023">3 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Samsung bans staff&apos;s ai use after spotting chatgpt data leak</title>
+		<author>
+			<persName><surname>Bloomberg</surname></persName>
+		</author>
+		<ptr target="https://www.bloomberg.com/news/articles/2023-05-02/samsung-bans-chatgpt-and-other-generative-ai-use-by-staff-after-leak#xj4y7vzkg" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Jpmorgan restricts employee use of chatgpt</title>
+		<author>
+			<persName><surname>Cnn</surname></persName>
+		</author>
+		<ptr target="https://www.cnn.com/2023/02/22/tech/jpmorgan-chatgpt-employees/index.html" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Holistic evaluation of language models</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Bommasani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Tsipras</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Soylu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yasunaga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Narayanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kumar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.09110</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">GPT-4 technical report</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023-03">Mar. 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Training language models to follow instructions with human feedback</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ray</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="27" to="730" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kundu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kernion</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Goldie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mirhoseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Mckinnon</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.08073</idno>
+		<title level="m">Constitutional ai: Harmlessness from ai feedback</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Improving language models by retrieving from trillions of tokens</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Borgeaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mensch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hoffmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Rutherford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Millican</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">B</forename><surname>Van Den Driessche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-B</forename><surname>Lespiau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Damoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Clark</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on machine learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="2206" to="2240" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">A survey on retrieval-augmented text generation</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2202.01110</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">In-context retrieval-augmented language models</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Ram</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Dalmedigos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Muhlgay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Shashua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Leyton-Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shoham</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.00083</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Improving alignment of dialogue agents via targeted human judgements</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Glaese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Mcaleese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Trębacz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Aslanides</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Firoiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Ewalds</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rauh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Weidinger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chadwick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Thacker</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2209.14375</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Code as policies: Language model programs for embodied control</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2209.07753</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">D</forename><surname>Jurafsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">H</forename><surname>Martin</surname></persName>
+		</author>
+		<title level="m">Speech and Language Processing</title>
+		<imprint>
+			<date type="published" when="2023-01">Jan 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Askell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Multitask prompted training enables zero-shot task generalization</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Sanh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Webson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Raffel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">H</forename><surname>Bach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Sutawika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Alyafeai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chaffin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Stiegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">L</forename><surname>Scao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Raja</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.08207</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">P D O</forename><surname>Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Brockman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Retrieval-augmented generation for knowledge-intensive nlp tasks</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Piktus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Karpukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Küttler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>-T. Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Rocktäschel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="s">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="9459" to="9474" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Few-shot learning with retrieval augmented language models</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Izacard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Hosseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Joulin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Riedel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Grave</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2208.03299</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Haystack documentation</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Gmbh</surname></persName>
+		</author>
+		<ptr target="https://docs.haystack.deepset.ai/docs/retriever#bm25-recommended" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Scaling instruction-finetuned language models</title>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">W</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Longpre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zoph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Fedus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Dehghani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Brahma</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.11416</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Virtualhome: Simulating household activities via programs</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Puig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Boben</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Fidler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Torralba</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Language models as zero-shot planners: Extracting actionable knowledge for embodied agents</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Pathak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Mordatch</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="9118" to="9147" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Webshop: Towards scalable real-world web interaction with grounded language agents</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Llama: Open and efficient foundation language models</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Izacard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Martinet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-A</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lacroix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Azhar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.13971</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">R</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">B</forename><surname>Allal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kocetkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Mou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Marone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Akiki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chim</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.06161</idno>
+		<title level="m">Starcoder: may the source be with you!</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Codegen: An open large language model for code with multi-turn program synthesis</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Nijkamp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hayashi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xiong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.13474</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Mlir: A compiler infrastructure for the end of moore&apos;s law</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lattner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Amini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Bondhugula</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Davis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Pienaar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Riddle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Shpeisman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Vasilache</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Zinenko</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2002.11054</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">B</forename><surname>Allal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kocetkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Mou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Akiki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">M</forename><surname>Ferrandis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Dey</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2301.03988</idno>
+		<title level="m">Santacoder: don&apos;t reach for the stars!</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Foundation models for decision making: Problems, methods, and opportunities</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Nachum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.04129</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Augmented language models: a survey</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Mialon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Nalmpantis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Pasunuru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Celikyilmaz</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.07842</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">React: Synergizing reasoning and acting in language models</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03629</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Taskmatrix. ai: Completing tasks by connecting foundation models with millions of apis</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.16434</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Training verifiers to solve math word problems</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Nakano</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.14168</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Parisi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Fiedel</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.12255</idno>
+		<title level="m">Talm: Tool augmented language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Cortes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Herzog</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.01691</idno>
+		<title level="m">Do as i can, not as i say: Grounding language in robotic affordances</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">Progprompt: Generating situated robot task plans using large language models</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Blukis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mousavian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tremblay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fox</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Thomason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Garg</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2209.11302</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Chatgpt for robotics: Design principles and model abilities</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Vemprala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Bonatti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bucker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kapoor</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023, 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Webgpt: Browser-assisted question-answering with human feedback</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Saunders</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2112.09332</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<title level="m" type="main">Visual chatgpt: Talking, drawing and editing with visual foundation models</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Duan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.04671</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">Language models can solve computer tasks</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Baldi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mcaleer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.17491</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Snorkel: Rapid training data creation with weak supervision</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ratner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">H</forename><surname>Bach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ehrenberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Fries</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Ré</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the VLDB Endowment. International Conference on Very Large Data Bases</title>
+		<meeting>the VLDB Endowment. International Conference on Very Large Data Bases</meeting>
+		<imprint>
+			<publisher>NIH Public Access</publisher>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="page">269</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<title level="m" type="main">Code as policies: Language model programs for embodied control</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeng</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Attention is all you need</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Vaswani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Parmar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Uszkoreit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">N</forename><surname>Gomez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ł</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Polosukhin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="volume">30</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title level="m" type="main">Crosslingual generalization through multitask finetuning</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Sutawika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Biderman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">L</forename><surname>Scao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">S</forename><surname>Bari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z.-X</forename><surname>Yong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Schoelkopf</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.01786</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<title level="m" type="main">BLOOM (revision 4ab0472)</title>
+		<author>
+			<persName><forename type="first">Bigscience</forename><surname>Workshop</surname></persName>
+		</author>
+		<ptr target="https://huggingface.co/bigscience/bloom" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Chavez</surname></persName>
+		</author>
+		<ptr target="https://huggingface.co/chavinlo/gpt4-x-alpaca" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<author>
+			<persName><forename type="first">R</forename><surname>Taori</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Gulrajani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dubois</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Guestrin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">B</forename><surname>Hashimoto</surname></persName>
+		</author>
+		<ptr target="https://github.com/tatsu-lab/stanford_alpaca" />
+		<title level="m">Stanford alpaca: An instruction-following llama model</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<title level="m" type="main">Opt-iml: Scaling language model instruction meta learning through the lens of generalization</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Iyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">V</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Pasunuru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Mihaylov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Simig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Shuster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">S</forename><surname>Koura</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.12017</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<title level="m" type="main">Opt: Open pre-trained transformer language models</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Roller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Artetxe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Dewan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Diab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">V</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.01068</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Andonian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Anthony</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Biderman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Black</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Gali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Hallahan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Levy-Kramer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Leahy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Nestler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Parker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Pieler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Purohit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Songz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Phil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Weinbach</surname></persName>
+		</author>
+		<ptr target="https://www.github.com/eleutherai/gpt-neox" />
+		<title level="m">GPT-NeoX: Large Scale Autoregressive Language Modeling in PyTorch</title>
+		<imprint>
+			<date type="published" when="2021">8 2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<monogr>
+		<author>
+			<persName><forename type="first">L</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Biderman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Black</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Golding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Hoppe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Foster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Phang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Thite</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Nabeshima</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2101.00027</idno>
+		<title level="m">The pile: An 800gb dataset of diverse text for language modeling</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Black</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Biderman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Hallahan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Anthony</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Golding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Leahy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Mcdonell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Phang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.06745</idno>
+		<title level="m">Gpt-neox-20b: An open-source autoregressive language model</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<monogr>
+		<title level="m" type="main">The oig dataset</title>
+		<author>
+			<persName><forename type="first">Laion</forename><surname>Together</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ontocord</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ai</surname></persName>
+		</author>
+		<ptr target="https://huggingface.co/datasets/laion/OIG" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<monogr>
+		<title level="m" type="main">Pythia: A suite for analyzing large language models across training and scaling</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Biderman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Schoelkopf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Anthony</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Bradley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>O'brien</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Hallahan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A</forename><surname>Khan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Purohit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><forename type="middle">S</forename><surname>Prashanth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Raff</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.01373</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<monogr>
+		<title level="m" type="main">dolly-v2-12b</title>
+		<author>
+			<persName><surname>Databricks</surname></persName>
+		</author>
+		<ptr target="https://huggingface.co/databricks/dolly-v2-12b" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<monogr>
+		<title level="m" type="main">Stablelm</title>
+		<author>
+			<persName><forename type="first">Stablility-Ai</forename></persName>
+		</author>
+		<ptr target="https://github.com/Stability-AI/StableLM" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<analytic>
+		<title level="a" type="main">Exploring the limits of transfer learning with a unified text-to-text transformer</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Raffel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Matena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">J</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="5485" to="5551" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<analytic>
+		<title level="a" type="main">Spatial: A language and compiler for application accelerators</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Koeplinger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Feldman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Prabhakar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hadjis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Fiszel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Nardi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Pedram</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Kozyrakis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 39th ACM SIGPLAN Conference on Programming Language Design and Implementation</title>
+		<meeting>the 39th ACM SIGPLAN Conference on Programming Language Design and Implementation</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="296" to="311" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b66">
+	<analytic>
+		<title level="a" type="main">Plasticine: A reconfigurable architecture for parallel paterns</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Prabhakar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Koeplinger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Feldman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hadjis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Pedram</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Kozyrakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Olukotun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM SIGARCH Computer Architecture News</title>
+		<imprint>
+			<biblScope unit="volume">45</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="389" to="402" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b67">
+	<analytic>
+		<title level="a" type="main">Sambanova sn10 rdu: Accelerating software 2.0 with dataflow</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Prabhakar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Jairath</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2021 IEEE Hot Chips 33 Symposium (HCS)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="1" to="37" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b68">
+	<analytic>
+		<title level="a" type="main">The relationship between precision-recall and roc curves</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Davis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Goadrich</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 23rd international conference on Machine learning</title>
+		<meeting>the 23rd international conference on Machine learning</meeting>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+			<biblScope unit="page" from="233" to="240" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b69">
+	<analytic>
+		<title level="a" type="main">Comparison of values of pearson&apos;s and spearman&apos;s correlation coefficients on the same sets of data</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hauke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kossowski</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Quaestiones geographicae</title>
+		<imprint>
+			<biblScope unit="volume">30</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="87" to="93" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

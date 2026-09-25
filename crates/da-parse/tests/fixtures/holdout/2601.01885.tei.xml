@@ -1,0 +1,1581 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Agentic Memory: Learning Unified Long-Term and Short-Term Memory Management for Large Language Model Agents</title>
+				<funder ref="#_6dfRUED #_zwfxEZn #_GzqaKnG #_VszPM8r">
+					<orgName type="full">unknown</orgName>
+				</funder>
+				<funder ref="#_pcq4p9t">
+					<orgName type="full">National Natural Science Foundation of China</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-07-23">23 Jul 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Yi</forename><surname>Yu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">School of Cyber Science and Engineering</orgName>
+								<orgName type="institution">Wuhan University</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Alibaba Group</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Liuyi</forename><surname>Yao</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Alibaba Group</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yuexiang</forename><surname>Xie</surname></persName>
+							<email>yuexiang.xyx@alibaba-inc.com</email>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Alibaba Group</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Qingquan</forename><surname>Tan</surname></persName>
+							<email>tanqingquan@whu.edu.cn</email>
+							<affiliation key="aff0">
+								<orgName type="department">School of Cyber Science and Engineering</orgName>
+								<orgName type="institution">Wuhan University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jiaqi</forename><surname>Feng</surname></persName>
+							<email>jiaqifeng@whu.edu.cn</email>
+							<affiliation key="aff0">
+								<orgName type="department">School of Cyber Science and Engineering</orgName>
+								<orgName type="institution">Wuhan University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yaliang</forename><surname>Li</surname></persName>
+							<email>yaliang.li@alibaba-inc.com</email>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Alibaba Group</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Libing</forename><surname>Wu</surname></persName>
+							<email>wu@whu.edu.cn</email>
+							<affiliation key="aff0">
+								<orgName type="department">School of Cyber Science and Engineering</orgName>
+								<orgName type="institution">Wuhan University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Agentic Memory: Learning Unified Long-Term and Short-Term Memory Management for Large Language Model Agents</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-07-23">23 Jul 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">545803621CCF4DF35A81D7E9E752936E</idno>
+					<idno type="arXiv">arXiv:2601.01885v3[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:16+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large language model (LLM) agents face fundamental limitations in long-horizon reasoning due to finite context windows, making effective memory management critical. Existing methods typically handle long-term memory (LTM) and short-term memory (STM) as separate components, relying on heuristics or auxiliary controllers, which limits adaptability and end-to-end optimization. In this paper, we propose Agentic Memory (AgeMem), a unified framework that integrates LTM and STM management directly into the agent's policy. AgeMem exposes memory operations as tool-based actions, enabling the LLM agent to autonomously decide what and when to store, retrieve, update, summarize, or discard information. To train such unified behaviors, we propose a three-stage progressive reinforcement learning strategy and design a step-wise GRPO to address sparse and discontinuous rewards induced by memory operations. Experiments on five long-horizon benchmarks demonstrate that AgeMem consistently outperforms strong memory-augmented baselines across multiple LLM backbones, achieving improved task performance, higher-quality long-term memory, and more efficient context usage.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="26" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="27" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>In long-horizon agentic tasks involving multi-step reasoning and complex workflows <ref type="bibr" target="#b1">(Chang et al., 2024)</ref>, the effectiveness of large language model (LLM) agents is fundamentally constrained by the information they can attend to at any given time, which we collectively refer to as the agent's memory <ref type="bibr">(Xiong et al., 2025;</ref><ref type="bibr" target="#b9">Goodyear et al., 2025)</ref>. Memory typically falls into two categories: longterm memory (LTM), which persistently stores user-or task-specific knowledge <ref type="bibr" target="#b43">(Zhong et al., 2024;</ref><ref type="bibr" target="#b13">Jiang et al., 2024)</ref>, and short-term memory (STM), which comprises the information contained in the current input context <ref type="bibr">(Wu et al., 2025b;</ref><ref type="bibr">Gao et al., 2025b)</ref>. High-quality LTM supports efficient retrieval of accumulated knowledge, while effective STM management reduces redundancy and preserves salient context. Together, they mitigate the limitations of finite context windows, making their joint management crucial for improving agent performance in complex reasoning settings.</p><p>However, existing research has predominantly treated LTM and STM as independent components. STM is commonly enhanced through retrievalaugmented generation (RAG) <ref type="bibr">(Pan et al., 2025b)</ref>, such as in MainRAG <ref type="bibr">(Chang et al., 2025)</ref> and ReSum <ref type="bibr">(Wu et al., 2025a)</ref>, which expand usable context via external retrieval or periodic summarization. Although effective in some tasks, these methods rely heavily on predefined schedules or heuristic rules, potentially causing infrequent but critical details to be overlooked, while introducing unnecessary noise <ref type="bibr" target="#b19">(Ma et al., 2025;</ref><ref type="bibr" target="#b5">Dong et al., 2025)</ref>. In contrast, LTM management has progressed along separate lines, typically categorized into trigger-based <ref type="bibr" target="#b15">(Kang et al., 2025;</ref><ref type="bibr" target="#b30">Wang and Chen, 2025;</ref><ref type="bibr">Wang et al., 2025c;</ref><ref type="bibr" target="#b4">Chhikara et al., 2025)</ref> and agent-based <ref type="bibr">(Yan et al., 2025;</ref><ref type="bibr" target="#b10">Hu et al., 2025;</ref><ref type="bibr" target="#b37">Xu et al., 2025)</ref> paradigms. The former executes fixed memory operations at predefined moments, whereas the latter incorporates a specialized memory manager to determine what and how to store. Despite offering more flexibility, most approaches still depend on handcrafted rules or auxiliary expert models, limiting adaptability and increasing system complexity <ref type="bibr">(Xiong et al., 2025)</ref>.</p><p>As a consequence, LTM and STM are typically treated as separate and loosely coupled modules. As illustrated in Figure <ref type="figure" target="#fig_0">1</ref>, existing architectures generally follow two patterns: (a) static STM with trigger-based LTM, or (b) static STM with agentbased LTM. In both settings, the two memory systems are optimized independently and later combined in an ad hoc way, leading to fragmented memory construction and suboptimal performance in long-horizon reasoning tasks. Thus, unifying the management of LTM and STM remains a necessary yet largely unexplored challenge. Nevertheless, achieving unified memory management poses three fundamental challenges. (C1) Functional heterogeneity coordination: LTM and STM serve distinct yet complementary purposes: LTM determines what to store, update, or discard, while STM governs what to retrieve, summarize, or remove from the active context <ref type="bibr">(Zhang et al., 2025b)</ref>. The challenge lies in designing a unified mechanism that orchestrates their interplay synergistically. (C2) Training paradigm mismatch: Existing reinforcement learning (RL) frameworks adopt markedly different training strategies for the two memory types <ref type="bibr" target="#b1">(Ma et al., 2024)</ref>. LTM-focused training often leverages session-level information available prior to interaction, whereas STM training typically injects distractors to simulate long-horizon contexts <ref type="bibr" target="#b27">(Sun et al., 2024)</ref>. Moreover, standard RL assumes continuous trajectories with stable rewards, which conflicts with the inherently fragmented and discontinuous experiences produced by memory operations <ref type="bibr">(Wu et al., 2025a)</ref>, making end-to-end optimization particularly challenging. (C3) Practical deployment constraints: Many agent systems rely on an auxiliary expert LLM for memory control, significantly increasing inference cost and training complexity. How to integrate unified memory management directly into an agent without dependence on external expert models remains an open problem.</p><p>To address these challenges, we propose Agentic Memory (AgeMem), a unified framework that jointly manages LTM and STM, illustrated in Figure <ref type="figure" target="#fig_0">1</ref> (right). Unlike prior designs that treat memory as an external component, AgeMem integrates both memory types directly into the agent's decision-making process. Through a unified toolbased interface, the LLM autonomously invokes and executes memory operations for both LTM and STM. Furthermore, we design a three-stage progressive RL strategy: the model first acquires LTM storage capabilities, then learns STM context management, and finally coordinates both forms of memory under full task settings. To address the fragmented experience issue across training stages, we design a step-wise Group Relative Policy Optimization (GRPO) <ref type="bibr">(Shao et al., 2024)</ref>, which propagates output rewards back to prior memory decisions, thereby alleviating the challenges posed by sparse and discontinuous rewards in RL. We evaluate AgeMem on five longcontext, reasoning-intensive benchmarks. Comprehensive results show that AgeMem consistently outperforms strong baselines, validating the effectiveness of unified memory management.</p><p>Our main contributions are as follows: • We propose Agentic Memory (AgeMem), a unified agentic memory framework that enables LLM-based agents to autonomously decide when, what, and how to manage both long-term and short-term memory.</p><p>• We develop a three-stage progressive RL strat-egy equipped with a step-wise GRPO mechanism, facilitating effective end-to-end learning of unified memory management behaviors.</p><p>• We conduct comprehensive evaluations across multiple models and long-horizon benchmarks, demonstrating the robustness and effectiveness of AgeMem in complex agentic tasks.</p><p>2 Background and Related Work</p><p>Long-term memory (LTM). Persistent LTM is crucial for LLM-based agents operating over extended horizons <ref type="bibr">(Wang et al., 2025b;</ref><ref type="bibr" target="#b17">Li et al., 2025)</ref>. Recent work has explored diverse architectural designs for modeling LTM. Lang-Mem (LangChain Team, 2025) provides a modular framework that supports multiple memory types, while A-Mem <ref type="bibr" target="#b37">(Xu et al., 2025)</ref> adopts a Zettelkasten-inspired design that links structured knowledge units to facilitate consolidation. Mem0 <ref type="bibr" target="#b4">(Chhikara et al., 2025)</ref> proposes a scalable extract-update pipeline and extends it to a graphbased variant for structured reasoning. Zep (Rasmussen et al., 2025) represents memory as a temporal knowledge graph to enable cross-session and time-aware reasoning. Although effective in organizing and retrieving information, these approaches largely rely on predefined memory structures or heuristic update rules. As memory grows, such designs commonly suffer from increased system complexity and lack adaptive, learning-based strategies for prioritization and forgetting. In contrast, our work aims to learn an adaptive memory policy that allows agents to dynamically decide what to store, update, or forget, depending on task demands and long-term utility.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Short-term memory (STM). STM in agentic</head><p>LLMs primarily concerns context selection and retrieval <ref type="bibr">(Wang et al., 2024;</ref><ref type="bibr" target="#b13">Jin et al., 2024)</ref>. Retrieval-Augmented Generation (RAG) <ref type="bibr">(Pan et al., 2025b;</ref><ref type="bibr" target="#b24">Salama et al., 2025;</ref><ref type="bibr" target="#b14">Kagaya et al., 2024)</ref> is the dominant paradigm, expanding usable context by injecting retrieved content into prompts. While effective, RAG does not fundamentally prevent context explosion in long-horizon settings and may introduce irrelevant or distracting information.</p><p>To address this issue, ReSum <ref type="bibr">(Wu et al., 2025a)</ref> periodically compresses interaction histories into compact reasoning states, allowing agents to operate beyond fixed context-window constraints. Yet its summarization schedule remains largely predefined, and aggressive compression risks discarding rare but crucial details. Our approach instead enables agents to learn when and how to retrieve, summarize, or filter context, achieving a more flexible balance between efficiency and information preservation.</p><p>Reinforcement learning for LLMs. Reinforcement learning has become an effective paradigm for improving the decision-making and reasoning capabilities of LLM-based agents <ref type="bibr" target="#b40">(Yao et al., 2023;</ref><ref type="bibr">Jin et al., 2025;</ref><ref type="bibr">Qian et al., 2025;</ref><ref type="bibr" target="#b2">Chaudhari et al., 2025)</ref>. Among recent advances, GRPO <ref type="bibr">(Shao et al., 2024)</ref> enhances stability by optimizing policies based on the relative quality of sampled trajectories, removing the need for an explicit value function. <ref type="bibr">GRPO and its variants (Gilabert et al., 2025;</ref><ref type="bibr">Wang et al., 2025a</ref>) have shown strong performance in complex reasoning tasks. However, existing RLbased systems generally treat memory as a static or external component, making them ill-suited for the discontinuous and fragmented trajectories associated with memory operations <ref type="bibr">(Yan et al., 2025;</ref><ref type="bibr">Zhang et al., 2025a)</ref>. In contrast, our work integrates RL directly into the memory management process, enabling unified training of both language generation and memory operations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Positioning relative to RL-based memory agents.</head><p>Recent work <ref type="bibr">(Yan et al., 2025;</ref><ref type="bibr">Zhang et al., 2025a</ref>) models memory operations as actions and applies RL to optimize them, which shares surface similarity with our approach. However, these methods typically optimize one aspect of memory at a time while treating retrieval, summarization, or short-term context handling as fixed heuristics or separately tuned modules. As a result, early storage decisions and later reasoning behavior are only loosely coupled, and the learning signal does not explicitly connect them. AgeMem instead formulates memory usage as a single learnable control problem under delayed supervision: a unified policy over heterogeneous memory actions (both persistent LTM operations and contextual STM operations) is trained end-to-end, so that storage, retrieval, filtering, and summarization decisions are all optimized jointly with respect to the same terminal task reward.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Method</head><p>We propose Agentic Memory (AgeMem), a unified memory framework that enables LLM agents to autonomously manage both LTM and STM in an endto-end manner. As illustrated in Figure <ref type="figure" target="#fig_0">1</ref> (right), AgeMem integrates memory management capabilities directly into the agent via a set of specialized tools, enabling the model to learn optimal strategies for unified memory management through a three-stage progressive strategy.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Problem Formulation</head><p>Unified RL formulation for AgeMem. At each time step t, the agent observes a state s t ∈ S composed of the conversation context (short-term memory) C t , the long-term memory store M t , and the task specification T : s t = (C t , M t , T ). The specification T includes the input query q, contextual information I q , and (for training only) the expected answer A q . This formulation enables the agent to ground its decision-making in both transient context and persistent knowledge. Given s t , the agent selects an action a t ∈ A from a hybrid action space that includes language generation as well as memory operations. The decision is governed by a parameterized policy π θ , defined as π θ (a t |s t ) = P (a t |s t ; θ), where θ denotes the LLM parameters and a t ∼ π θ (•|s t ). For a trajectory τ = (s 1 , a 1 , . . . , s T , a T ), the cumulative reward is defined as:</p><formula xml:id="formula_0">R(τ ) = i w i • R i (τ ) + P penalty (τ ), (1)</formula><p>where R i captures task performance and memory quality, and P penalty discourages redundant storage, excessive tool usage, and uncontrolled context expansion. The optimization objective is:</p><formula xml:id="formula_1">θ * = arg max θ E τ ∼π θ [R(τ )].<label>(2)</label></formula><p>This formulation treats memory management as an integral component of the agent's policy, replacing handcrafted heuristics with a learnable mechanism. Three-stage trajectory structure. To capture long-horizon interactions and progressively train memory capabilities, each trajectory is divided into three consecutive stages: τ = (τ (1) , τ (2) , τ (3) ), with a total length of T = T 1 + T 2 + T 3 . In Stage 1, the agent engages in casual interactions and may store useful information into LTM. Stage 2 introduces distracting or irrelevant content, requiring the agent to manage its STM through selective retention and compression. Stage 3 presents a task that depends on coordinated use of both retained context and earlier accumulated LTM. A key aspect of this design is that the long-term memory M t persists across all stages, allowing early knowledge to</p><p>Table 1: Memory management tools in AgeMem for manipulating long-term memory (LTM) and short-term memory (STM).</p><p>Tool Target Function ADD LTM Add new knowledge to Mt UPDATE LTM Modify entries in Mt DELETE LTM Remove entries from Mt RETRIEVE STM Retrieve entries from Mt to Ct SUMMARY STM Summarize segments in Ct FILTER STM Filter out irrelevant segments from Ct influence later decisions. In contrast, the context C t is reset between Stages 1 and 2 to prevent information leakage across phases. The reset before Stage 2 ensures the agent cannot solve the final task via residual context, thereby forcing proper retrieval from LTM and enabling effective training of memory operations.</p><p>At each step, we collect an experience tuple e t = (s t , a t , r t , log π θ old (a t |s t )), where r t is typically zero for intermediate steps and assigned after trajectory completion, and log π θ old (a t |s t ) denotes the log probability under the old policy π θ old . This representation enables step-wise credit assignment under GRPO <ref type="bibr">(Shao et al., 2024)</ref> and allows the agent to attribute long-term rewards to specific memory decisions across stages. By structuring trajectories in this staged yet continuous manner, the agent learns temporally coherent and task-adaptive memory policies essential for robust long-horizon reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Memory Management via Tool Interface</head><p>AgeMem exposes memory-related operations to the LLM agent through an explicit tool interface (Table <ref type="table">1</ref>). The agent can modify its persistent LTM using ADD, UPDATE, and DELETE, while exercising fine-grained control over STM through RETRIEVE, SUMMARY, and FILTER. Incorporating these tools into the action space transforms memory control from an external heuristic pipeline into an intrinsic component of decision-making. This design allows the agent to adaptively manage memory according to task structure, history, and context.</p><p>Each tool serves a distinct functional role in memory management. LTM operations: ADD inserts a new entry into the long-term store M t ; UPDATE modifies an existing entry identified by memory_id; DELETE removes an entry from M t to prevent accumulation of stale knowledge. STM operations: RETRIEVE brings the top-k semantically relevant memories from M t into the active context C t ; SUMMARY compresses a specified span of interaction history into a concise representation, reducing context size while preserving essential information; FILTER removes context messages whose semantic similarity to a given criterion exceeds a threshold θ f , suppressing irrelevant or distracting content. Together, these six operations provide the agent with expressive yet interpretable control over its memory lifecycle. Full formal definitions and system prompts are provided in Appendix A.1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Three-Stage Progressive RL Strategy</head><p>To learn unified and stable memory behaviors, we propose a progressive three-stage training strategy. For each task instance q ∈ T , the agent generates a complete trajectory:</p><formula xml:id="formula_2">τ (q) k = τ (1) k , τ (2) k , τ (3) k , k = 1, . . . , K, (3)</formula><p>where K denotes the number of independent rollouts, and each sub-trajectory τ (i) k corresponds to a specific training stage. Stage 1 (LTM construction). The agent is exposed to contextual information I q in a casual conversational setting. The goal is to identify salient information and store it into LTM M t . During the interaction, the short-term context C t evolves naturally, and the agent may invoke LTM-related tools when appropriate. Formally, this stage yields a subtrajectory τ (1) k = {e t } T 1 t=1 , where each experience tuple e t follows the definition in Section 3.1. Stage 2 (STM control under distractors). The short-term context is reset, while the constructed LTM M t is retained. The agent is then presented with distractor messages-natural-language utterances (e.g., questions or short statements) that resemble plausible conversational context but are deliberately unrelated to the target query-so that the agent must learn to filter or ignore them rather than rely on them for the final answer. The objective is to learn proactive STM control through tool-based operations, such as filtering or summarizing context, in order to suppress noise and preserve useful information. This process forms the sub-trajectory τ</p><p>(2)</p><formula xml:id="formula_3">k = {e t } T 1 +T 2 t=T 1 +1</formula><p>, which emphasizes context filtering and compression capability. Stage 3 (Integrated reasoning and memory coordination). Finally, the agent receives a formal query q requiring both accurate reasoning and effective memory retrieval. The agent must retrieve relevant knowledge from M t , appropriately man-age the context C t , and generate a final answer. This stage produces τ</p><formula xml:id="formula_4">(3) k = {e t } T t=T 1 +T 2 +1</formula><p>, which evaluates the ability of the agent to coordinate longterm memory, short-term context management, and task solution in an end-to-end manner.</p><p>All three segments form a complete trajectory:</p><formula xml:id="formula_5">τ (q) k = (e 1 , e 2 , . . . , e T ), T = T 1 +T 2 +T 3 , (<label>4</label></formula><formula xml:id="formula_6">)</formula><p>which is then used for policy optimization in the subsequent step-wise GRPO procedure. For a batch of B tasks, we further aggregate all experiences from K independent rollouts into a unified set</p><formula xml:id="formula_7">E = B q=1 K k=1 {e t | e t ∈ τ (q)</formula><p>k }, with a total size of |E| = B × K × T , where T denotes the average trajectory length. More detailed rollout processes are provided in the Appendix A.3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Generalizability of the three-stage curriculum.</head><p>The three-stage structure is not tied to QA-style supervision; it requires only a temporal separation between information exposure and task execution so that the usefulness of memory decisions can be evaluated under delayed outcomes. Each stage fulfills a functional role that can be instantiated in diverse tool-using settings: Stage 1 (information acquisition) requires any pre-task context from which the agent may selectively store information-this could be environment descriptions, retrieved documents, or prior dialogue history, not exclusively QA supporting facts. Stage 2 (interference and context pressure) is already generated synthetically via DISTRACTORGEN (detailed in Appendix A.3) and requires no dataset annotations. Stage 3 (task execution) provides the downstream objective whose delayed reward determines whether earlier storage and filtering decisions were useful. In this sense, the curriculum depends on information timing and delayed credit assignment rather than QA-style factual supervision.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">Step-wise GRPO for Unified Management</head><p>We adopt a step-wise variant of GRPO to connect long-range task rewards with memory decisions across all stages. For task q, let G q = {τ (q) 1 , . . . , τ (q) K } denote the group of parallel rollouts. Each trajectory yields a terminal reward r (k,q) T = R(τ (q) k ). We compute the groupnormalized advantage for the terminal step as:</p><formula xml:id="formula_8">A (k,q) T = r (k,q) T -µ Gq σ Gq + ϵ ,<label>(5)</label></formula><p>where µ Gq and σ Gq are the mean and standard deviation of rewards within G q , ϵ prevents division by zero. This advantage is then broadcast to all preceding steps of the same trajectory A (k,q) t = A (k,q) T , which assigns a consistent learning signal to all memory and reasoning actions along the trajectory, including those in Stage 1 and Stage 2. In doing so, the final task outcome supervises every intermediate memory decision, enabling long-range credit assignment across heterogeneous stages. We then augment the experience set with advantages,</p><formula xml:id="formula_9">E = B,K q,k {(e t , A t )|e t ∈ τ (q) k , A t = A (k,q) t }.</formula><p>Following GRPO, we maximize the expected objective over all experiences:</p><formula xml:id="formula_10">J(θ) = E (et,At)∼E ρ t A t -βD KL [π θ ∥π ref ] = 1 |E| B q=1 K k=1 T (q) k t=1 ρ (k,q) t A (k,q) t -βD (k,q) KL ,<label>(6)</label></formula><p>where the importance ratio ρ</p><formula xml:id="formula_11">(k,q) t = π θ (at|st)</formula><p>π θ old (at|st) controls the update magnitude under the new policy, D (k,q) KL denotes the KL divergence penalty between the current policy π θ and a fixed reference π ref , and β is a coefficient that balances exploration and training stability.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.5">Reward Function Design</head><p>We design a composite reward that evaluates both downstream task performance and the quality of memory management. The total trajectory-level reward is defined as</p><formula xml:id="formula_12">R(τ ) = w ⊤ R + P penalty ,<label>(7)</label></formula><p>where w = [w task , w context , w memory ] ⊤ are tunable coefficients, and R = [R task , R context , R memory ] ⊤ correspond to rewards for task completion, context management, and long-term memory management. The penalty term P penalty captures violations such as context overflow or exceeding the interaction limit. Below, we summarize each component, and precise formulas are provided in the Appendix A.2. Task completion reward R task . This term provides the primary learning signal by assessing whether the agent solves the task correctly. We obtain a scalar score using an LLM-based judge S judge (A pred , A q ) ∈ [0, 1], optionally applying a penalty when no answer is produced. This reward encourages accurate, complete task solutions and remains the dominant component to ensure alignment with task objectives.</p><p>Context management reward R context . This component evaluates STM behavior, focusing on how effectively the agent controls the active context C t . It combines three factors: (i) compression efficiency, promoting economical token usage; (ii) preventive actions, rewarding early summarization or filtering to avoid overflow; and (iii) information preservation, penalizing the loss of critical queryrelated content. Each factor is normalized, allowing the reward to balance context efficiency against retention of essential information.</p><p>Memory management reward R memory . This term evaluates LTM operations. It aggregates signals for: (i) storage quality, measured as the fraction of stored entries labeled as high-quality and reusable; (ii) maintenance, rewarding meaningful update or delete operations to mitigate memory staleness; and (iii) semantic relevance, computed using an LLM-based score between retrieved memories and the query. Together, these signals incentivize selective, high-value memory construction and responsible upkeep over time.</p><p>Penalty terms P penalty . Penalties discourage undesirable behaviors such as exceeding the maximum number of dialogue turns or triggering context overflow. Penalty coefficients are chosen so that such violations lead to a substantial reduction in the final trajectory reward, encouraging the agent to maintain safe and efficient memory practices.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Experimental Setup</head><p>Datasets. To comprehensively evaluate AgeMem, we select five widely-used datasets in LLM-based agent research: ALFWorld <ref type="bibr" target="#b26">(Shridhar et al., 2020)</ref>, SciWorld <ref type="bibr" target="#b29">(Wang et al., 2022)</ref>, PDDL <ref type="bibr" target="#b1">(Chang et al., 2024)</ref>, BabyAI <ref type="bibr" target="#b3">(Chevalier-Boisvert et al., 2018)</ref>, and HotpotQA <ref type="bibr" target="#b39">(Yang et al., 2018)</ref>. These datasets cover embodied action, game-based reasoning, and knowledge-intensive question answering, providing diverse evaluation scenarios. Since the Hot-potQA dataset contains both questions and supporting facts, automatically providing Stage 1 contextual information, AgeMem is fine-tuned with RL only on the HotpotQA training set and then evaluated directly on all datasets. Detailed dataset statistics are provided in Appendix C.1. Evaluation metrics. For the primary task completion metrics, we adopt Success Rate (SR) for ALFWorld, SciWorld, and BabyAI, Progress Rate (PR) for PDDL, and LLM-as-a-Judge (J) for Hot-potQA. Additionally, we employ an LLM-based evaluator to assess the quality of stored long-term memory during knowledge reasoning, measured by Memory Quality (MQ). The prompts of the LLMbased evaluation are provided in Appendix C.2.</p><p>Baselines &amp; LLM backbones. We compare Age-Mem against four representative agent LTM systems: LangMem (LangChain Team, 2025), A-Mem <ref type="bibr" target="#b37">(Xu et al., 2025)</ref>, Mem0 <ref type="bibr" target="#b4">(Chhikara et al., 2025)</ref>, and Mem0 g (a graph-based variant officially provided as part of Mem0). To better demonstrate the effectiveness of RL training, we also include AgeMem-noRL, which is not fine-tuned with RL.</p><p>In ablation studies on STM, we compare STM tools with the RAG approach. For the base agent models, we use Qwen2.5-7B-Instruct and Qwen3-4B-Instruct. More baseline configurations are in Appendix C.3. Implementation details. We build agents using the Agentscope framework <ref type="bibr">(Gao et al., 2025a)</ref> and finetune AgeMem using the Trinity framework <ref type="bibr">(Pan et al., 2025a)</ref>. Further implementation details are provided in Appendix C.4.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Main Results</head><p>Comparison with counterparts. Table <ref type="table" target="#tab_0">2</ref> shows that AgeMem achieves the highest average performance on both Qwen2.5-7B-Instruct (41.96%) and Qwen3-4B-Instruct (54.31%), outperforming all baselines across five datasets with relative gains of 49.59% and 23.52% over no-memory, respectively. Compared to the best baselines (Mem0 and A-Mem), AgeMem improves by 4.82 and 8.57 percentage points on average. RL training contributes 8.53 and 8.72 percentage points of improvement over AgeMem-noRL, validating the three-stage progressive RL strategy.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Quality of stored long-term memories.</head><p>To evaluate the quality of stored memories, we leverage the ground-truth facts provided in the HotpotQA dataset and assess the relevance between stored memories and these facts using an LLM-based evaluator. Figure <ref type="figure">2</ref> presents the Memory Quality (MQ) scores for different baselines. AgeMem achieves the highest memory quality on both model backbones, with MQ scores of 0.533 and 0.605, respectively. This indicates that the unified memory management framework not only improves task performance but also promotes the storage of highquality, reusable knowledge. The comparison with baseline methods further validates that AgeMem's tool-based memory operations lead to more selec-</p><formula xml:id="formula_13">LangMem A-Mem Mem0 Mem0 g AgeMem -noRL AgeMem<label>(</label></formula><p>a) Qwen2.5-7B-Instruct 0.3 0.4 0.5 0.6 Memory Quality (MQ) 0.498 0.512 0.527 0.460 0.364 0.533 Baselines AgeMem Avg. Baseline LangMem A-Mem Mem0 Mem0 g AgeMem -noRL AgeMem (b) Qwen3-4B-Instruct 0.4 0.5 0.6 0.7 Memory Quality (MQ) 0.465 0.587 0.543 0.534 0.430 0.605 Figure 2: Memory Quality scores for different methods on HotpotQA. Higher scores indicate better relevance between stored memories and ground-truth facts. 0 2 4 6 Token Reduction(%) 2.6% 2.6% 4.3% 3.0% 0.0% 0.0% 3.1% 5.1% Baseline: AgeMem-RAG Qwen2.5-7B Qwen3-4B AgeMem-noRL -RAG AgeMem -noRL AgeMem -RAG AgeMem (Ours) Configuration 2000 2250 Avg. Tokens 2128 2251 2092 2241 2186 2310 2117 2191 tive and higher-quality memory construction. Effectiveness of STM management. We evaluate the effectiveness of STM management by measuring the prompt token count under different configurations on HotpotQA. Figure <ref type="figure" target="#fig_1">3</ref> shows that AgeMem successfully reduces prompt token usage compared to variants without STM tools (-RAG). On Qwen2.5-7B-Instruct, AgeMem uses 2,117 tokens on average, compared to 2,186 tokens for AgeMem-RAG, representing a reduction of 3.1%. On Qwen3-4B-Instruct, the reduction is even more pronounced: AgeMem uses 2,191 tokens versus 2,310 tokens for AgeMem-RAG, a reduction of 5.1%. These results demonstrate that the learned STM management tools effectively control context expansion, enabling more efficient token usage while maintaining task performance. Tool usage analysis.</p><p>Table 3 reports tool usage statistics before and after RL fine-tuning on Hot-   Notably, the decrease in RETRIEVE frequency after RL training (Qwen2.5: 2.31 → 1.95; Qwen3: 4.62 → 4.35) reflects a qualitative shift in retrieval strategy rather than undertraining. Before RL, the agent retrieves reactively and repeatedly to compensate for suboptimal Stage-1 storage. After RL optimization, ADD/UPDATE frequencies increase (Table <ref type="table" target="#tab_1">3</ref>), improving LTM quality; retrieval then becomes more selective and query-driven, used primarily when previously stored information is genuinely needed. This reduction in retrieval frequency coincides with improved task performance and MQ, indicating greater efficiency rather than insufficient learning. Overall, these patterns suggest that RL training enables coordinated and adaptive memory management. Detailed case studies are provided in Appendix B.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Ablation Studies LTM-STM components.</head><p>To validate the contributions of individual components, we conduct ablation studies on LTM, STM, and RL training. Figure <ref type="figure" target="#fig_2">4</ref> presents results on three representative datasets using Qwen2.5-7B-Instruct as the backbone (results for Qwen3-4B-Instruct are provided in Appendix D.1). Adding LTM alone (+LT)</p><p>0 20 40 60 80 100 Training Step 0.0 0.2 0.4 0.6 0.8 1.0 Average Reward</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Qwen2.5-7B -GRPO Training Reward Convergence</head><p>All Returns Answer-Only yields substantial gains of +10.6%, +14.2%, and +7.4% over the baseline. Incorporating RL training (+LT/RL) further improves performance, particularly on HotpotQA (+6.3%), demonstrating the effectiveness of our reward-based optimization. The full AgeMem system (+LT/ST/RL) achieves the best results across all benchmarks, with overall improvements of +13.9%, +21.7%, and +16.1%. Notably, adding STM tools provides the most significant boost on SciWorld (+3.1%) and Hot-potQA (+2.4%), validating that learned context management outperforms static RAG approaches. These progressive improvements confirm that unified memory management with end-to-end RL is essential for optimal agent performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reward function.</head><p>To demonstrate the effectiveness of our multi-component reward function design, we compare the full reward function (All-Returns) against a variant using only R task (Answer-Only). Figure <ref type="figure" target="#fig_3">5</ref> shows the reward convergence curves of Qwen2.5-7B-Instruct during GRPO training on HotpotQA. The full reward function leads to significantly faster convergence and higher final performance compared to the task-only variant.</p><p>As detailed in</p><p>Table 4, the All-Returns strategy achieves higher LLM-as-a-Judge scores (0.544 v.s. 0.509) while maintaining substantially better memory quality (0.533 v.s. 0.479). Notably, despite using more tokens (2117 v.s. 2078), the All-Returns strategy achieves better overall performance, indicating that the additional context and memory operations contribute meaningfully to reasoning quality. Similar patterns are observed on Qwen3-4B-Instruct (see Appendix D.2). FILTER threshold θ f . Table 5 reports performance on HotpotQA as θ f varies. Performance is stable within θ f ∈ [0.4, 0.8], indicating that Age-Mem is not highly sensitive to precise threshold tuning. When θ f is too low, filtering becomes too aggressive, discarding potentially useful context and increasing reliance on later reconstruction. When θ f is too high, filtering becomes overly permissive, allowing marginal context to pass through STM and slightly degrading memory quality. Average token counts remain similar across settings, confirming that differences stem from selection quality rather than context length alone.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>In this work, we propose Agentic Memory (Age-Mem), a unified memory management framework that enables LLM-based agents to jointly control long-term and short-term memory through learnable, tool-based actions. By integrating memory operations directly into the agent's policy and training them with a progressive reinforcement learning strategy, AgeMem replaces heuristic memory pipelines with an end-to-end optimized solution.</p><p>Extensive experiments across diverse long-horizon benchmarks show that AgeMem improves both task performance and memory quality while maintaining efficient context usage. These results highlight the importance of unified, agent-centric memory policies and suggest a promising direction for building scalable and adaptive LLM agents capable of long-term reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitations</head><p>While AgeMem demonstrates strong performance across multiple settings, there remain opportunities for further extension. The current implementation adopts a fixed set of memory management tools, which provides a clear and effective abstraction but could be extended to support more fine-grained control in future work.</p><p>In addition, although we evaluate our approach on five representative long-horizon benchmarks and demonstrate zero-shot transfer across domains, these settings remain relatively controlled compared to open-ended real-world deployments. Evaluation in persistent, long-term dialogue or real-user interaction scenarios is an important next step, and we present our current study as establishing crossdomain transfer under controlled conditions as a foundation for such future work.</p><p>Finally, the training currently relies on Hot-potQA as the source of three-stage trajectories; extending the curriculum to other data sources with richer interaction structures would further broaden the framework's applicability.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Detailed Design and Implementation of AgeMem</head><p>This appendix provides full technical details omitted from the main text due to space constraints.</p><p>We first present precise definitions and pseudoformulations for each memory-management tool (Appendix A.1), then give implementable formulas for the reward components used in training (Appendix A.2). Finally, we provide the complete algorithmic specification (Appendix A.3).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 Memory Management Tools</head><p>AgeMem exposes a small set of structured tools that the agent may invoke as part of its action a t . Each tool is implemented as a deterministic or stochastic function that transforms the short-term context C t , the long-term memory store M t , or both. Unlike traditional memory systems that rely on external heuristics or predefined schedules, Age-Mem integrates these tools directly into the agent's action space, enabling the model to learn when and how to use each tool through reinforcement learning. Below we give precise operational definitions, implementation details, and the system prompts that guide tool usage.</p><p>Notation. Long-term memory store at time t is M t = {m i } |Mt| i=1 , where each memory m i contains a content string and optional metadata. Short-term context is C t = [u 1 , u 2 , . . . , u nt ] (message list), and enc(•) denotes a text encoder that returns a dense embedding. We use cosine similarity for semantic matching throughout the framework.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>RETRIEVE.</head><p>The RETRIEVE operation enables the agent to access relevant information from longterm memory based on semantic similarity. This operation is crucial for bringing stored knowledge into the active context when needed for reasoning. The retrieval operation returns the top-k most similar memories to the query q:</p><formula xml:id="formula_14">RETRIEVE(q, k) = TopK(M t , sim(q, m i ), k),<label>(8)</label></formula><p>where the similarity function is defined as:</p><formula xml:id="formula_15">sim(q, m i ) = enc(q) ⊤ enc(m i ) ∥enc(q)∥ ∥enc(m i )∥ . (<label>9</label></formula><formula xml:id="formula_16">)</formula><p>The retrieved memories are then inserted into the short-term context C t , making them available for immediate reasoning. The parameter k controls the number of memories retrieved, typically set to 3-5 in our experiments to balance relevance and context size.</p><p>ADD. The ADD operation allows the agent to store new information in long-term memory for future use. This operation is essential for accumulating knowledge across interactions and sessions.</p><p>A new memory entry is created by:</p><formula xml:id="formula_17">m new = c, enc(c), metadata ,<label>(10)</label></formula><p>where c is the content to be stored, enc(c) is its embedding vector, and metadata includes timestamp, source information, and optional tags. The memory store is then updated:</p><formula xml:id="formula_18">M t+1 = M t ∪ {m new }.<label>(11)</label></formula><p>The agent learns to identify salient information worth storing through the reward function, which encourages storing high-quality, reusable knowledge while penalizing redundant or irrelevant entries.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>UPDATE and DELETE.</head><p>Memory maintenance operations enable the agent to keep its long-term memory store current and relevant. The UPDATE operation modifies existing memories when new information supersedes or refines previous knowledge. For an existing memory m i , the update operation is defined as:</p><formula xml:id="formula_19">m i ← c ′ , enc(c ′ ), metadata ′ ,<label>(12)</label></formula><p>where c ′ is the updated content and metadata ′ reflects the modification timestamp. The DELETE operation removes obsolete or incorrect memories:</p><formula xml:id="formula_20">M t+1 = M t \ {m i }.<label>(13)</label></formula><p>These operations are particularly important in longhorizon tasks where information may become outdated or where the agent needs to correct earlier mistakes. The reward function encourages meaningful updates and deletions that improve memory quality over time.</p><p>SUMMARY. The SUMMARY operation compresses conversation history in the short-term context to prevent context overflow while preserving essential information. This operation is critical for managing long conversations that exceed context window limits. Given a subset of context indices s, the summary operation is defined as:</p><formula xml:id="formula_21">C ′ t = C t \ {u i | i ∈ s} ∪ {Summarize({u i } i∈s )},<label>(14)</label></formula><p>where Summarize(•) is implemented by LLM with a summarization system prompt. The agent can specify which messages to summarize using the 'span' parameter, which can be:</p><p>• "all": Summarize all non-system messages.</p><p>• "N": Summarize the last N messages.</p><p>The summarization process uses the following system prompt to ensure high-quality compression: ¨ You are a conversation summarization assistant. Your goal is to compress the given conversation span into a concise summary that preserves all important information, intentions, decisions, and unresolved questions. The summary will later be used to replace the original conversation in the context, so make sure nothing essential is lost.</p><p>Instructions: 1. Read the provided conversation rounds carefully. 2. Identify the main topics, actions, results, and open issues. 3. Write a clear, factual summary in natural language. 4. Do NOT include greetings, filler text, or redundant phrasing.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Input: -Conversation content: [CONVERSATION_TEXT]</head><p>Output:</p><p>-A concise yet comprehensive summary of the above conversation span.</p><p>Let's start the conversation summarization.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>©</head><p>The agent learns to invoke summarization proactively before context overflow occurs, balancing information preservation with efficiency.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>FILTER.</head><p>The FILTER operation filters out irrelevant or redundant messages from the short-term context based on semantic similarity. This operation helps maintain a focused context by filtering out noise and distractions. Specifically, it removes messages whose similarity to a given criteria c exceeds a threshold θ f :</p><formula xml:id="formula_22">C ′ t = {u i ∈ C t | sim(c, u i ) &lt; θ f } .<label>(15)</label></formula><p>In all experiments, we set θ f = 0.6 by default. The criteria c can be specified by the agent (e.g., a description of what to keep) or can be automatically derived from the current task context. This operation is particularly useful in Stage 2 of training, where distractors are introduced to test the agent's ability to filter irrelevant information.</p><p>Tool invocation as structured actions. Each tool is exposed via a schema specifying its function name and required arguments. The agent's policy outputs either language tokens (for text generation) or structured tool calls (for memory operations). The agent is guided by a system prompt that defines the tool-calling interface and response format. The system prompt used in AgeMem is as follows:</p><p>¨ You are an intelligent assistant that solves complex problems by managing context and memory with tools when needed. ## Available Tools:[TOOLS] ## Problem-Solving Workflow You must follow a structured reasoning and action process for every task: 1. **Think &amp; Plan** Always start with a &lt;think&gt;...&lt;/think&gt; block. Inside it, explain your reasoning, plan your next step, and decide whether you need to call a tool or provide a final answer. 2. **Tool Calls** If you decide to use one or more tools, follow your &lt;think&gt; block with a &lt;tool_call &gt;...&lt;/tool_call&gt; block. -You may call **one or multiple tools** in a single step. -List multiple tool calls as elements of a JSON array. -Each tool call must include "name" and " arguments". -Example:</p><p>&lt;tool_call&gt;[{{"name": "Retrieve_memory", " arguments": {{"query": "math problem solving strategies", "top_k": 3}}}}, {{"name": " Add_memory", "arguments": {{"content": " Strategy summary for reuse", "memory_type": "problem_solving</p><p>"}}}}]&lt;/tool_call&gt; 3. **Final Answer** When you no longer need tools and are ready to present your final output, follow your last &lt;think&gt; block with an &lt;answer&gt;...&lt;/ answer&gt; block containing the full response. 4. **Mutual Exclusivity Rule** After **each &lt;think&gt; block**, you must choose exactly **one** of the following: -a "&lt;tool_call&gt;" block (if you need tools), **or** -an "&lt;answer&gt;" block (if you are ready to respond). You must **never** include both "&lt;tool_call&gt;"</p><p>and "&lt;answer&gt;" immediately after the same "&lt;think&gt;" block. 5. **Iterative Solving** You may repeat this sequence as needed: "&lt;think&gt;" -&gt; "&lt;tool_call&gt;" -&gt; "&lt;think&gt;" -&gt; "&lt; tool_call&gt;" ... -&gt; "&lt;think&gt;" -&gt; "&lt;answer&gt;" until the problem is completely solved.</p><p>## Response Format (Strict) Your full output must follow these rules: -Every reasoning step must appear inside &lt;think &gt; tags. -Every tool usage must appear inside one &lt; tool_call&gt; tag (even if it includes multiple tool invocations). -The final solution must be wrapped in &lt;answer&gt; tags. -No text should appear outside these tags. ## Guidelines -Always start with reasoning (&lt;think&gt;). -After each reasoning step, decide: call tool(s ) or answer. -You can call multiple tools within one &lt; tool_call&gt; JSON array. -Be concise, logical, and explicit in reasoning. -Manage memory actively: retrieve, add, update, summarize, filter, or delete as needed. -Use &lt;answer&gt; only once when the final solution is ready. Let's start! ©</p><p>This prompt structure ensures that the agent follows a consistent format for reasoning, tool invocation, and final answers, which is essential for reliable parsing and reward computation during RL training. The structured format also enables the agent to coordinate multiple memory operations within a single reasoning step, supporting efficient unified memory management. Figure <ref type="figure">6</ref> and 7 present our tool schemas for shortterm memory and long-term memory management, showing the exact function signatures and argument types that the agent can invoke.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Reward Function Design</head><p>This section provides implementable formulas for the reward components described in the main text. All component scores are normalized to [0, 1] (unless noted) to enable stable weighting. Overview. The overall trajectory-level reward is defined as:</p><formula xml:id="formula_23">R(τ ) = w ⊤ R + P penalty ,<label>(16)</label></formula><p>where w = [w task , w context , w memory ] ⊤ are tunable weights, R = [R task , R context , R memory ] ⊤ denote task completion, context management, and memory management rewards respectively, and P penalty penalizes undesired behaviors. Task completion reward R task . Let the agent produce a final answer A pred . We obtain a judge score S judge (A pred , A q ) ∈ [0, 1] via an evaluator (LLM judge), where A q denotes the expected ground truth. Then the task reward R task is: R task = S judge (A pred , A q ), if has answer, P no-answer , otherwise,</p><p>with P no_answer = -1.0 by default. Context management reward R context . We decompose the overall context management reward into three normalized components that jointly evaluate how effectively the model maintains a compact yet information-preserving context state. Formally, we define:</p><formula xml:id="formula_25">R context = 3 i=1 α i R i ,<label>(18)</label></formula><p>where R i ∈ {R compression , R preventive , R preservation }, i α i = 1, and we use uniform weights α i = 1/3 unless otherwise specified. For compression efficiency, we evaluate the compactness of the final context C t by computing</p><formula xml:id="formula_26">R compression = max 0, 1 - T used T max ,<label>(19)</label></formula><p>where T used denotes the number of tokens present in the context when the final answer is generated, and T max is the allowed budget. For preventive management, we define R preventive to assess proactive behavior:</p><p>R preventive = 1[tool invoked before overflow], (20) which equals 1 when the model invokes a contextreduction tool before reaching the token limit, and 0 otherwise. For information preservation, we identify a set of key tokens or phrases K q extracted from the user query q, such as named entities or temporal and spatial expressions. Let 1 preserve indicate whether these items remain present (either directly or via a retained summary) at the time of answer generation. The preservation reward is therefore</p><formula xml:id="formula_27">R preservation = 1 preserve . (21)</formula><p>Memory management reward R memory . The memory management reward consists of three key components that evaluate storage quality, maintenance operations, and semantic relevance. We define it as:</p><formula xml:id="formula_28">R memory = 3 j=1 β j R j ,<label>(22)</label></formula><p>where R j ∈ {R storage , R maintenance , R relevance }, j β j = 1, and we use uniform weights β j = 1/3 unless otherwise specified. For Storage Quality, during the memory storage process in Stage 1, the agent may add N total memory entries, among which N high_quality are identified as high-quality based on an LLM's analysis of the input query q and its expected answer A q . The storage quality reward is defined as the proportion of high-quality memories:</p><formula xml:id="formula_29">R storage = N high_quality max(1, N total ) . (<label>23</label></formula><formula xml:id="formula_30">)</formula><p>This metric incentivizes the agent to store valuable information while avoiding the accumulation of redundant or low-quality memories. For Maintenance, to encourage the agent to actively maintain the memory bank, we reward update or delete operations:</p><p>R maintenance = 1[update or delete performed].</p><p>(24) This mechanism promotes dynamic memory management and timely cleanup. For Semantic Relevance, to quantify the semantic match between retrieved memories and the query, we introduce an LLM-based relevance assessment. Let S LLM (R, q) be the semantic relevance score of the retrieved memory set R with respect to query q, normalized to the interval [0, 1]. The semantic relevance reward is defined as:</p><formula xml:id="formula_31">R relevance = S LLM (R, q).<label>(25)</label></formula><p>This component ensures that retrieved memories are semantically aligned with the current task, enhancing overall reasoning quality. Penalty terms P penalty . We penalize major constraint violations to ensure the agent operates within specified limits:</p><formula xml:id="formula_32">P penalty = 2 k=1 P k • 1[violation k ],<label>(26)</label></formula><p>where P k ∈ {P rounds , P overflow } and violation k ∈ {1[N rounds &gt; N max ], 1[T used &gt; T max ]}. Here, N rounds denotes the number of interaction rounds, N max is the maximum allowed rounds, T used represents the total token usage, and T max is the token budget limit. The penalty coefficients are set to P rounds = -1 and P overflow = -0.5 by default.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3 AgeMem Algorithm</head><p>This section provides the complete algorithmic specification of AgeMem, our unified memory management framework for LLM-based agents. The training procedure integrates three progressive stages (long-term memory construction, shortterm context management under distractors, and integrated task execution) into a single end-to-end reinforcement learning loop. We present the main training algorithm using a two-column layout for compactness (Algorithm 1-2), followed by detailed rollout procedures for each stage (Algorithms 3-5).</p><p>Training overview (Algorithm 1-2). The core training loop follows a generate-then-optimize paradigm. For each task q in a training batch B, we generate K independent rollout trajectories {τ</p><formula xml:id="formula_33">(q) k } K k=1 using the current policy π θ . Each tra- jectory τ (q) k = (τ (1) k , τ (2) k , τ</formula><p>(3) k ) concatenates experiences from all three stages, forming a complete episode from initial memory construction to final task completion. The agent first builds longterm memory from contextual information I q (Algorithms 3), then learns to filter out distracting information while maintaining useful context (Algorithms 4), and finally retrieves stored knowledge to finish the target task (Algorithms 5). All experiences are collected into a unified buffer E spanning multiple tasks and rollouts.</p><p>After the rollout phase, we apply group-based advantage normalization to enable fair comparison across tasks with different reward scales. For each task group G q , terminal rewards {r</p><formula xml:id="formula_34">(k,q) T } K</formula><p>k=1 are normalized to zero mean and unit variance, yielding advantages A (k,q) T that reflect relative performance within the group. These terminal advantages are then broadcast uniformly to all timesteps within the same trajectory, establishing a consistent learning signal that connects early-stage memory decisions to final task outcomes. This step-wise GRPO mechanism enables long-range credit assignment across heterogeneous operations. The policy is then updated via gradient ascent on the expected advantage, regularized by a KL divergence term to maintain proximity to a reference policy π ref for training stability.</p><p>Stage-specific rollout procedures (Algorithm 3-5). The three-stage rollout design reflects the natural progression of memory-augmented task solving. Algorithm 3 implements the first stage, where the agent engages in casual conversation while being gradually exposed to the contextual information I q . During these T 1 exploratory turns, the agent must identify salient information and deter-mine when and which long-term memory tools to invoke-including ADD, UPDATE, DELETE-to construct an initial memory store M. To support informed memory decisions, the agent proactively performs memory retrieval at every step. This retrieval is not task-driven but serves as an introspective operation: it enables the agent to maintain awareness of the current LTM contents, facilitating decisions about updating or discarding stale entries and ensuring that newly stored information remains coherent with existing knowledge. Since the task query has not yet been revealed in Stage 1, the agent must rely on general cues about which information may become useful later. This encourages the formation of reusable, well-structured memory traces rather than query-specific shortcuts, laying the foundation for effective long-horizon memory management in later stages. Algorithm 4 describes the second stage, which deliberately stresses the agent's context management capabilities. The short-term context C is reset to avoid information leakage and facilitate the learning of STM management, while the constructed long-term memory M persists from Stage 1. Over T 2 turns, the agent receives semantically related but ultimately irrelevant distractor messages that could mislead downstream reasoning if left unmanaged. The agent must learn to proactively invoke FILTER to filter out low-relevance content based on semantic similarity thresholds, or SUMMARY to compress accumulated context when token budgets become constrained. This stage trains robust filtering strategies that generalize beyond simple heuristics, as the agent receives learning signals from the eventual task performance in Stage 3.</p><p>Algorithm 5 presents the final integrated execution stage. Upon receiving the target query q, the agent must coordinate retrieval from long-term memory M, context management operations on C, and multi-step reasoning to produce a final answer A pred . The agent may invoke RETRIEVE to fetch relevant stored facts, SUMMARY to maintain a tractable context window, and ultimately generate a structured response. Once the answer is produced or the maximum steps are reached, a composite reward function (Section A.2) evaluates the three-stage trajectory across multiple dimensions. This terminal reward R(τ ) is assigned to the final timestep and serves as the supervision signal that propagates back through all three stages during advantage computation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Algorithm 1 AgeMem Training (Part 1)</head><p>Require: Policy π θ , reference πref, batch B, rollouts K Ensure: Trained policy π θ * 1: Initialize θ and θold ← θ 2: for each training iteration do 3: E ← ∅ // Init experience buffer 4: // Rollout Phase 5:</p><p>for each task q ∈ B do 6:</p><p>Get context Iq for task q 7:</p><p>Mdis ← DISTRACTORGEN(q) 8:</p><formula xml:id="formula_35">for k = 1 to K do 9: M ← ∅ // Init LTM 10: τ (1) k ← STAGE1(Iq, π θ , θold, M) 11: C ← ∅ // Reset STM 12: τ (2) k ← STAGE2(Mdis, π θ , θold, M) 13: τ (3) k ← STAGE3(q, π θ , θold, M) 14: τ (q) k ← τ (1) k ⊕ τ (2) k ⊕ τ (3) k 15: E ← E ∪ τ (q) k<label>16</label></formula><p>: end for 17: end for 18: end for Algorithm 2 AgeMem Training (Part 2) 21: // Advantage Computation 22: for each group Gq = {τ</p><formula xml:id="formula_36">(q) k } K k=1 do 23: Extract rewards: {r (k,q) T } K k=1 24: µG q ← 1 K K k=1 r (k,q) T 25: σG q ← 1 K-1 K k=1 (r (k,q) T -µG q ) 2 26:</formula><p>for each trajectory τ</p><formula xml:id="formula_37">(q) k = (e1, . . . , eT ) do 27: A (k,q) T ← r (k,q) T -µ Gq σ Gq +ϵ 28: for t = 1 to T do 29: A (k,q) t ← A (k,q) T // Broadcast 30:</formula><p>end for 31:</p><p>end for 32: end for 33: // Policy Update 34: </p><formula xml:id="formula_38">J(θ) ← E (e t ,A t )∼E [ρtAt -βDKL[π θ ∥πref]] 35: θ ← θ + η∇ θ J(θ) 36: θold ← θ 37: return π θ</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Case Study: AgeMem in Action</head><p>This section presents three representative case studies demonstrating how AgeMem enables effective unified memory management through reinforcement learning. Each case compares agent behavior before and after RL training to highlight the learned memory strategies. We use a personal learning assistant scenario where the agent helps users plan customized study programs based on their preferences and constraints.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1 Case 1: Long-term Memory Construction and Maintenance</head><p>This case illustrates how AgeMem learns to selectively construct, update, and maintain long-term memory across extended conversations. The agent must identify salient user information from casual dialogue and manage memory entries as new information supersedes old preferences.</p><p>Before RL training. Prior to training, the baseline agent lacks strategic memory management. It either stores all information indiscriminately or fails to recognize when stored knowledge becomes obsolete.</p><p>User: Hello! I'm a visual learner who prefers 60minute study sessions. I have Python basics but zero ML experience. I'm particularly interested in computer vision applications like face recognition.</p><p>Assistant (Baseline):</p><p>&lt;think&gt;The user shared their learning preferences. I should respond directly without storing this.&lt;/think&gt; &lt;answer&gt;Great! I can help you learn machine learning with a focus on computer vision. Since you have Python experience, we can start with practical projects. Would you like to begin with a face recognition tutorial?&lt;/answer&gt; [Later in conversation...] User: Actually, I realize 60 minutes is too short. I work better with 120-minute deep focus blocks. Assistant (Baseline): &lt;think&gt;The user mentioned their new preference, but I don't have their old preference stored, so I'll just acknowledge this.&lt;/think&gt; &lt;answer&gt;Understood! We'll plan around 120-minute sessions. What topics would you like to cover first?&lt;/answer&gt;</p><p>Analysis: The baseline fails to store initial preferences and cannot recognize when information needs updating.</p><p>After RL training. After training with AgeMem, the agent demonstrates strategic memory management by selectively storing user preferences, recognizing when updates are needed, and maintaining clean, consistent memory.</p><p>Algorithm 3 Stage 1: LTM Construction Require: Contextual information I q , policy π θ , old params θ old , memory M, max turn number N max Ensure: Stage 1 trajectory τ (1) = (e (1) 1 , . . . , e (1) T 1 ) 1: Initialize τ (1) ← ∅ and C ← ∅ 2: for t = 1 to N max do 3: Sample message m t ∼ I q 4:</p><formula xml:id="formula_39">M ret ← RETRIEVE(M, m t , k) ∪ m t 5: C ← C ∪ M ret 6: s t ← (C, M, q) 7: a t ∼ π θ (• | s t ) 8:</formula><p>Update C with response from a t 9:</p><formula xml:id="formula_40">e (1) t ← (s t , a t , 0, log π θ old (a t | s t )) 10: τ (1) ← τ (</formula><p>1) ∪ {e (1) t } 11: Memory tool calls from a t // Memory Management 12: if Output Answer from a t then 13: Conversation Break 14: end if 15: end for 16: return τ (1) User: Hello! I'm a visual learner who prefers 60minute study sessions. I have Python basics but zero ML experience. I'm particularly interested in computer vision applications like face recognition.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Assistant (AgeMem):</head><p>&lt;think&gt;The user provided important learning preferences and background. This information will be valuable for future planning. I should store the key facts: visual learner, 60-min sessions, Python basics, CV interest.&lt;/think&gt; &lt;tool_call&gt;[{"name": "Add_memory", "arguments": {"content": "User is a visual learner who prefers 60-minute study sessions", "metadata": {"type": "user_preference", "category": "learning_style"}}}, {"name": "Add_memory", "arguments": {"content": "User has Python basics but zero ML experience, interested in computer vision and face recognition", "metadata": {"type": "user_background", "category":</p><p>"technical_skills"}}}]&lt;/tool_call&gt; &lt;think&gt;Memory stored successfully. Now I can provide a relevant response based on their preferences.&lt;/think&gt; &lt;answer&gt;Great to meet you! Given your visual learning style and interest in computer vision, I can design a hands-on learning path focused on face recognition projects. Your Python background will be very helpful. We'll structure sessions around 60-minute Algorithm 4 Stage 2: STM Control under Distractors Require: Distractors M dis , policy π θ , old params θ old , memory M, max turn number N max Ensure: Stage 2 trajectory τ (2) = (e (2) 1 , . . . , e</p><p>T 2 ) 1: Initialize τ (2) ← ∅ and C ← ∅ // M persists from Stage 1 2: for t = 1 to N max do 3:</p><formula xml:id="formula_42">C ← C ∪ {M dis [t]} // Inject distractor 4: s t ← (C, M, q) 5: a t ∼ π θ (• | s t ) 6: Update C with response from a t 7: e (2) t ← (s t , a t , 0, log π θ old (a t | s t )) 8: τ (2) ← τ (2) ∪ {e (2)</formula><p>t } 9: Memory tool calls from a t // Memory Management 10: if Output Answer from a t then 11: Conversation Break 12: end if 13: end for 14: return τ (2) Algorithm 5 Stage 3: Integrated Reasoning and Memory Coordination Require: User query q, policy π θ , old params θ old , memory M, max turn number N max Ensure: Stage 3 trajectory τ (3) = (e (3) 1 , . . . , e (3) T 3 ), answer A pred 1: Initialize τ (3) ← ∅ 2: C ← C ∪ {q} // C persists from Stage 2 and present query 3: A pred ← NULL // Init answer 4: for t = 1 to N max do 5: s t ← (C, M, q) 6: a t ∼ π θ (• | s t ) 7: Update C with response from a t 8: e (3) t ← (s t , a t , 0, log π θ old (a t | s t )) 9: τ (3) ← τ (3) ∪ {e (3) t } 10: Memory tool calls from a t // Memory Management 11: if Output Answer from a t then 12: A pred ← answer 13: Conversation Break 14: end if 15: end for 16: return τ (3) , A pred blocks. Would you like to start with a 3-day intensive course?&lt;/answer&gt; [Later in conversation...] User: Actually, I realize 60 minutes is too short. I work better with 120-minute deep focus blocks. Assistant (AgeMem):</p><p>&lt;think&gt;The user wants to change their session duration preference from 60 to 120 minutes. I should update the existing memory entry rather than creating a duplicate.&lt;/think&gt; &lt;tool_call&gt;[{"name": "Update_memory", "arguments": {"memory_id": "mem_a5b40d65", "content": "User is a visual learner who prefers 120-minute deep focus blocks (updated from 60 minutes)", "metadata": {"type": "user_preference", "category": "learning_style"}}}]&lt;/tool_call&gt; &lt;think&gt;Preference updated. I should acknowledge this change and offer to restructure any existing plans.&lt;/think&gt; &lt;answer&gt;Perfect! Would you like me to restructure the 3-day plan around these longer focus blocks?&lt;/answer&gt; [Much later, after several successful sessions...] User: I've been using 120-minute sessions consistently for a while now, and they're perfect for my learning style. I'm completely settled on this duration -no more experimenting with shorter sessions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Assistant (AgeMem):</head><p>&lt;think&gt;The user has confirmed that 120-minute sessions are their permanent, settled preference. I should check my memory to see the current state. I previously updated the entry from 60 to 120 minutes, but the update message still contains a historical reference to the old 60-minute preference ("updated from 60 minutes").</p><p>Since the user has definitively moved away from 60-minute sessions and confirmed 120 minutes as their permanent choice, I should clean up this historical reference by deleting the entry with outdated information and creating a fresh, clean entry that only reflects the current confirmed preference.&lt;/think&gt; &lt;tool_call&gt;[{"name": "Retrieve_memory", "arguments": {"query": "user preference session duration learning style", "top_k": 5}}]&lt;/tool_call&gt; &lt;think&gt;Found the entry mem_a5b40d65 which contains the updated preference with a reference to the old 60-minute value ("updated from 60 minutes"). Since the user has confirmed 120 minutes as their permanent choice and no longer needs any reference to the old preference, I should delete this entry and create a clean new one without historical references.&lt;/think&gt; &lt;tool_call&gt;[{"name": "Delete_memory", "arguments": {"memory_id": "mem_a5b40d65", "confirmed": true}}, {"name": "Add_memory", "arguments": {"content": "User is a visual learner who prefers 120-minute deep focus blocks for study sessions", "metadata": {"type": "user_preference", "category": "learning_style"}}}]&lt;/tool_call&gt; &lt;think&gt;Memory cleaned up. The old entry with historical reference has been removed, and a fresh entry now reflects only the current confirmed preference without any outdated information.&lt;/think&gt; &lt;answer&gt;That's wonderful to hear! Is there anything else about your learning preferences you'd like to adjust?&lt;/answer&gt; Analysis: The trained agent strategically uses ADD_MEMORY to store initial preferences, UPDATE_MEMORY to modify existing information, and DELETE_MEMORY followed by ADD_MEMORY to clean up memory when historical references become obsolete, maintaining clean and current memory state.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2 Case 2: Short-term Context Management Under Distraction</head><p>This case demonstrates how AgeMem learns to proactively manage short-term context when faced with irrelevant information that could interfere with task focus. The agent must recognize distractors and apply appropriate filtering or summarization strategies.</p><p>Before RL training. The baseline agent passively accumulates all conversation content in context, leading to dilution of task-relevant information and eventual context overflow.</p><p>User: I need a focused 3-day ML crash course for face recognition. By the way, I'm also exploring quantum computing, blockchain, robotics, and learning to bake sourdough bread and do latte art.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Assistant (Baseline):</head><p>&lt;think&gt;The user mentioned many interests. I should acknowledge them all before addressing the ML course request.&lt;/think&gt; &lt;answer&gt;That's wonderful that you're exploring so many fascinating areas! Quantum computing and blockchain are cutting-edge fields, robotics has incredible applications, and baking sourdough with latte art sounds like great creative hobbies. For your ML crash course focused on face recognition, let me outline a 3-day plan...&lt;/answer&gt;</p><p>Analysis: The baseline retains all information in context, treating distractors equally with taskrelevant content. As conversation continues, the context becomes bloated with irrelevant details about quantum computing, bread-making, etc., consuming token budget without contributing to the ML planning task.</p><p>After RL training. After training with Stage 2 rollouts, AgeMem learns to recognize and filter out distractors while preserving task focus. When context grows large (simulated here after several exchanges), the agent proactively applies context management tools.</p><p>User: I need a focused 3-day ML crash course for face recognition. By the way, I'm also exploring quantum computing, blockchain, robotics, and learning to bake sourdough bread and do latte art.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Assistant (AgeMem):</head><p>&lt;think&gt;The user mentioned many topics, but only the ML crash course and face recognition are relevant to the current task. Quantum computing, blockchain, robotics, bread, and coffee are distractors. I should filter these out to maintain focus.&lt;/think&gt; &lt;tool_call&gt;[{"name": "Filter_context", "arguments": {"criteria": "quantum computing blockchain robotics sourdough latte"}}]&lt;/tool_call&gt;</p><p>&lt;think&gt;Irrelevant topics filtered out from context. Now I can focus on the ML course planning.&lt;/think&gt; &lt;answer&gt;Understood! Let's focus on your ML crash course. I'll design a 3-day intensive program specifically for face recognition, building on your Python background and visual learning style...&lt;/answer&gt; [After several more exchanges, context has accumulated detailed daily schedules, tool lists, and resource links.] User: Can you now give me the final complete plan with all details integrated? Assistant (AgeMem):</p><p>&lt;think&gt;Context has grown large with detailed breakdowns for each day, repeated tool lists, and resource URLs. Before generating the final comprehensive plan, I should summarize the accumulated details to make room and maintain clarity.&lt;/think&gt; &lt;tool_call&gt;[{"name": "Summary_context", "arguments": {"span": "full"}}]&lt;/tool_call&gt; &lt;think&gt;Context summarized. Key information preserved: 3-day structure, 120-min sessions, Day 1 (ML intro + Python), Day 2 (linear regression), Day 3 (face recognition). Tools: Jupyter, Python3, NumPy, Pandas, scikit-learn, OpenCV. Now I can generate the comprehensive final plan without redundancy.&lt;/think&gt; &lt;answer&gt;Here is your complete 3-day machine learning crash course:...&lt;/answer&gt;</p><p>Analysis: The trained agent strategically uses FILTER_CONTEXT to remove distractors early, maintaining task focus, and later applies SUM-MARY_CONTEXT when context grows large, preventing overflow while preserving essential information. The baseline would have retained all content verbatim, leading to context dilution or overflow.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3 Case 3: Integrated Task Execution with Memory Coordination</head><p>This case demonstrates the complete AgeMem workflow where the agent must retrieve from longterm memory, manage short-term context, and solve a task requiring coordinated memory operations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Before RL training.</head><p>The baseline agent either fails to store information initially or cannot effectively retrieve it when needed, leading to incomplete or generic responses.</p><p>User: Based on everything I've told you about my learning style and preferences, create a personalized Day 1 study schedule with specific time blocks, topics, and resources.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Assistant (Baseline):</head><p>&lt;think&gt;The user asks for a personalized schedule, but I don't have their preferences readily available since I didn't store them systematically. I'll provide a generic schedule.&lt;/think&gt; &lt;answer&gt;Here's a Day 1 schedule for machine learning: 9:00-10:30 -Introduction to ML concepts 10:30-10:45 -Break 10:45-12:15 -Python basics review 12:15-1:00 -Lunch 1:00-2:30 -NumPy and Pandas tutorial 2:30-2:45 -Break</p><p>2:45-4:15 -Practice exercises This should give you a solid foundation!&lt;/answer&gt;</p><p>Analysis: The baseline produces a generic schedule that ignores the user's stated preference for 120-minute deep focus blocks and visual learning style.</p><p>After RL training. After completing AgeMem training across all three stages, the agent demonstrates integrated memory coordination: retrieving relevant user preferences from LTM, managing context efficiently, and generating personalized responses.</p><p>User: Based on everything I've told you about my learning style and preferences, create a personalized Day 1 study schedule with specific time blocks, topics, and resources.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Assistant (AgeMem):</head><p>&lt;think&gt;The user requests a personalized schedule. I need to retrieve their stored preferences to ensure the plan matches their learning style and constraints.&lt;/think&gt; &lt;tool_call&gt;[{"name": "Retrieve_memory", "arguments": {"query": "user learning preferences study duration visual", "top_k": 3}}]&lt;/tool_call&gt;</p><p>&lt;think&gt;Retrieved: (1) Visual learner, 120-min deep focus blocks, (2) Python basics, zero ML experience, (3) Interested in computer vision and face recognition. Now I can create a truly personalized schedule that respects their 120-minute session preference and visual learning style.&lt;/think&gt; &lt;answer&gt;Here's your personalized Day 1 schedule, designed for your 120-minute deep focus blocks and visual learning preference: **Morning Session (9:00 AM -11:00 AM): ML Foundations** -Visual introduction to ML concepts using diagrams and flowcharts -Interactive demonstrations of supervised vs unsupervised learning -Resources: 3Blue1Brown Neural Networks video series -No coding yet -pure concept visualization **Break (11:00 AM -11:30 AM)** **Afternoon Session (1:00 PM -3:00 PM): Python for ML** -Visual Python review: data structures with matplotlib plots -NumPy array operations with visual matrix representations -Pandas DataFrames with real datasets and visualization -Hands-on: Jupyter notebook with embedded plots -Resources: Python Data Science Handbook (visual chapters) **Evening (5:00 PM -7:00 PM): Optional practice** -Self-paced exercises with visual feedback -Prepare environment for Day 2 This structure honors your 120-minute focus blocks and emphasizes visual learning throughout. Each session includes diagrams, plots, and visual demonstrations rather than pure text.&lt;/answer&gt;</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Analysis:</head><p>The trained agent uses RE-TRIEVE_MEMORY to access stored user preferences from LTM, then synthesizes this information with the current task to generate a highly personalized response that respects the 120-minute session duration and emphasizes visual learning resources. The integration of retrieved memory with task execution produces superior, context-aware outputs compared to the baseline's generic approach.</p><p>Summary. These three cases demonstrate how AgeMem's three-stage progressive training enables agents to develop sophisticated memory management strategies. Case 1 shows selective storage and maintenance of long-term knowledge through ADD_MEMORY, UPDATE_MEMORY, and DELETE_MEMORY. Case 2 illustrates proactive short-term context control under distraction via FILTER_CONTEXT and SUMMARY_CONTEXT. Case 3 demonstrates the integration of these capabilities, where RETRIEVE_MEMORY enables the agent to access stored knowledge and coordinate memory systems to solve tasks effectively. In each case, the RL-trained agent significantly outperforms the baseline by learning when and how to apply memory tools, resulting in more focused, consistent, and personalized interactions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Experimental Implementation</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1 Dataset Details</head><p>We provide detailed statistics and characteristics of the five datasets used in our experiments: ALFWorld <ref type="bibr" target="#b26">(Shridhar et al., 2020</ref>) is an embodied AI benchmark in which agents must complete household tasks by following natural language instructions in a simulated environment. The dataset consists of several thousand training environments and multiple validation and test splits, covering six task types: pick and place, examine in light, clean and place, heat and place, cool and place, and pick two and place. These tasks require long-horizon interaction with objects, making ALFWorld well suited for evaluating planning and memory management capabilities. SciWorld <ref type="bibr" target="#b29">(Wang et al., 2022)</ref> is an interactive science experiment simulation environment where agents must perform multi-step experiments to answer scientific questions. The benchmark includes a diverse set of tasks spanning multiple scientific domains, such as physics, chemistry, and biology, and emphasizes procedural reasoning and hypothesis-driven exploration. Its complexity makes it suitable for testing an agent's ability to retain and retrieve relevant knowledge over extended interaction sequences. PDDL <ref type="bibr" target="#b1">(Chang et al., 2024)</ref> refers to a set of planning benchmarks formulated using the Planning Domain Definition Language. These benchmarks evaluate an agent's ability to solve symbolic planning problems across multiple domains by generating valid sequences of actions that achieve specified goal states. The tasks primarily test structured reasoning and the ability to maintain and utilize intermediate planning states. BabyAI (Chevalier-Boisvert et al., 2018) is a gridworld navigation benchmark with natural language instructions. The environment contains a large collection of instruction-following tasks (levels), where agents must navigate and interact with objects to satisfy compositional language commands. Due to its sequential decision-making structure, BabyAI is commonly used to evaluate short-term context tracking and instruction grounding. HotpotQA <ref type="bibr" target="#b39">(Yang et al., 2018</ref>) is a multi-hop question answering dataset that requires reasoning over multiple Wikipedia paragraphs. It contains approximately 90k training questions along with validation and test splits, and each question is annotated with supporting facts. This structure makes HotpotQA particularly suitable for evaluating long-term memory storage and retrieval. In our experiments, we use HotpotQA for reinforcement learning training, as its annotated supporting facts naturally provide structured contextual information for Stage 1 supervision.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.2 LLM-based Evaluation Details</head><p>For the Memory Quality (MQ) metric, we employ an LLM-based evaluator to assess the quality of supporting facts stored in memory by comparing predicted supporting facts with ground-truth expected facts. The evaluator uses the following prompt template:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>¨</head><p>You are an expert judge evaluating the quality of supporting facts for question answering.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Question: [QUESTION] Answer: [ANSWER]</head><p>Ground Truth Supporting Facts (the facts that should be identified): Expected Supporting Facts: -[FACT_1] -[FACT_2] ... Model Predicted Supporting Facts (the facts identified by the model and stored in the long-term memory): Predicted Supporting Facts: -[PREDICTED_FACT_1] -[PREDICTED_FACT_2] ... Please evaluate how well the predicted supporting facts match the ground truth expected facts: 1. Are all expected facts covered by the predictions? 2. Are the predicted facts actually relevant to answering the question? 3. Are there any irrelevant facts in the predictions?</p><p>Score on a scale of 0.0 to 1.0: -1.0: Perfect match -all expected facts are correctly identified, no irrelevant facts -0.8-0.9: Mostly correct with minor omissions or one irrelevant fact -0.6-0.7: Partially correct -some relevant facts identified but missing important ones -0.4-0.5: Some correct elements but significant errors or omissions -0.2-0.3: Mostly incorrect with few correct elements -0.0-0.1: Completely incorrect or irrelevant Respond with only a number between 0.0 and 1.0 ( e.g., "0.85").</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>©</head><p>The evaluator compares the stored memory entries (predicted supporting facts) with the groundtruth supporting facts provided in the HotpotQA dataset. The score reflects both the coverage of expected facts and the relevance of predicted facts to the question. We use Qwen-Max as the evaluator model, and each evaluation is performed independently to ensure consistency. For the LLM-as-a-Judge metric on HotpotQA, we use a similar approach, where Qwen-Max evaluates the correctness of the agent's answer by comparing it with the ground-truth answer. The evalua-tor uses the following prompt template:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>¨</head><p>You are an expert judge evaluating the correctness of answers to questions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Given the following information: -Question: [QUESTION] -Ground-truth Answer: [GROUND_TRUTH] -Agent's Answer: [AGENT_ANSWER]</head><p>Please evaluate the generated answer on a scale of 0.0 to 1.0: -1.0: Perfect match or equivalent correct answer -0.8-0.9: Mostly correct with minor differences -0.6-0.7: Partially correct or close approximation -0.4-0.5: Some correct elements but significant errors -0.2-0.3: Mostly incorrect with few correct elements -0.0-0.1: Completely incorrect or irrelevant Respond with only a number between 0.0 and 1.0 ( e.g., "0.85").</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>©</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.3 Baseline Configurations</head><p>All baseline implementations follow their respective official open-source codebases to ensure fair comparison. We provide the source links and implementation details below. LangMem (LangChain Team, 2025): We use the official implementation available at <ref type="url" target="https://langchain-ai.github.io/langmem/">https:  //langchain-ai.github.io/langmem/</ref> with default hyperparameters. LangMem employs a modular memory framework that supports multiple memory types. We configure it to use the default memory storage and retrieval mechanisms as specified in the official documentation.</p><p>A-Mem <ref type="bibr" target="#b37">(Xu et al., 2025)</ref>: We implement A-Mem following the Zettelkasten-inspired design described in the original paper, using the official codebase at <ref type="url" target="https://github.com/WujiangXu/A-mem-sys/">https://github.com/WujiangXu/  A-mem-sys/</ref>. The system links structured knowledge units to facilitate consolidation. We use the recommended hyperparameters for memory consolidation as provided in the repository. Mem0 <ref type="bibr" target="#b4">(Chhikara et al., 2025)</ref>: We use the official Mem0 implementation available at <ref type="url" target="https://github.com/mem0ai/mem0">https:  //github.com/mem0ai/mem0</ref> with the default extract-update pipeline. For the graph-based variant (Mem0 g ), we enable the graph structure option and use the recommended graph construction parameters as specified in the official implementation. AgeMem-noRL: This variant uses the same tool interface as AgeMem but without reinforcement learning. This baseline helps isolate the contribution of RL training to the overall performance.</p><p>RAG variants: For the RAG-based baselines (AgeMem-noRL-RAG and AgeMem-RAG), we replace the STM tools with a standard RAG pipeline that retrieves relevant memories at each step and appends them to the context. The retrieval is performed using cosine similarity between the current context and stored memories, following standard RAG practices. This comparison demonstrates the advantage of learned STM management over static retrieval-based approaches.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.4 Implementation Details</head><p>Training configuration. We use the Trinity RL framework <ref type="bibr">(Pan et al., 2025a)</ref> for policy optimization, implementing the step-wise GRPO algorithm as described in the method section. We use K = 8 independent rollouts per task for group normalization. The KL divergence coefficient β is set to 0.1. Reward weights. All reward weights are set to 1/3: w task = w context = w memory = 1/3. This uniform weighting ensures that all components contribute equally to the learning signal, allowing the agent to naturally balance task performance and memory management.</p><p>Model settings. The maximum context length is set to 8,192 tokens, and the maximum response length is set to 2,048 tokens. When the context exceeds this limit, the agent receives a penalty, encouraging proactive use of STM management tools.</p><p>All experiments are conducted on 8 NVIDIA RTX 4090 GPUs with 48GB memory each.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Additional Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.1 Ablation Study</head><p>This section provides complementary ablation study results for Qwen3-4B-Instruct. Figure <ref type="figure">9</ref> shows the progressive contribution of LTM, STM, and RL components on Qwen3-4B-Instruct across three representative datasets. The results demonstrate consistent trends with Qwen2.5-7B-Instruct, validating the generalizability of our approach across different model sizes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.2 Reward Function Ablation on Qwen3-4B</head><p>To validate the generalizability of our multicomponent reward design across different model architectures and scales, we conduct the same reward function ablation study as in the main text on Qwen3-4B-Instruct. This section provides a complete analysis parallel to the Qwen2.5-7B-Instruct results presented in the main paper.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Comparison between independent and unified memory management frameworks. (Left) Traditional framework with static STM and trigger-based LTM. (Middle) Independent framework with an additional Memory Manager controlling LTM in an agent-based manner, while STM remains static. (Right) The proposed AgeMem framework, where LTM and STM are jointly and intelligently managed via explicit tool-based operations.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Average prompt token counts under different STM management configurations on HotpotQA. The suffix "-RAG" indicates the adoption of RAG in place of STM tool-based management.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Ablation study on LTM, STM, and RL components (Qwen2.5-7B-Instruct). Base: No-memory baseline; +LT: AgeMem-noRL-RAG (LTM tools only); +LT/RL: AgeMem-RAG (RL with LTM tools); +LT/ST/RL: AgeMem (full AgeMem system with RL). Green arrows indicate performance gains over the baseline.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Training convergence curves on Qwen2.5-7B-Instruct comparing All-Returns (solid line) v.s. Answer-Only (dashed line) reward strategies.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 8 :</head><label>8</label><figDesc>Figure 8: Main training procedure of AgeMem. For clarity, we split the algorithm into two parts: the rollout phase (left) and the advantage computation with policy update (right).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 2 :</head><label>2</label><figDesc>Performance comparison across five benchmarks. The best and second-best results are marked.</figDesc><table><row><cell cols="3">LLM Backbone</cell><cell></cell><cell>Method</cell><cell cols="6">ALFWorld SciWorld PDDL BabyAI HotpotQA Average</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>No-Memory</cell><cell></cell><cell>27.16</cell><cell>13.80</cell><cell>10.15</cell><cell></cell><cell>50.80</cell><cell>38.36</cell><cell>28.05</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>LangMem</cell><cell></cell><cell>38.27</cell><cell>28.29</cell><cell>15.85</cell><cell></cell><cell>51.34</cell><cell>37.43</cell><cell>34.23</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>A-Mem</cell><cell></cell><cell>34.68</cell><cell>28.06</cell><cell>18.39</cell><cell></cell><cell>58.82</cell><cell>43.95</cell><cell>36.78</cell></row><row><cell cols="4">Qwen2.5-7B-Instruct</cell><cell>Mem0</cell><cell></cell><cell>37.49</cell><cell>26.99</cell><cell>13.96</cell><cell></cell><cell>60.58</cell><cell>46.66</cell><cell>37.14</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>Mem0 g</cell><cell></cell><cell>35.34</cell><cell>30.50</cell><cell>14.86</cell><cell></cell><cell>58.78</cell><cell>42.06</cell><cell>36.31</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>AgeMem-noRL</cell><cell></cell><cell>37.90</cell><cell>28.67</cell><cell>8.87</cell><cell></cell><cell>46.34</cell><cell>45.36</cell><cell>33.43</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>AgeMem (Ours)</cell><cell></cell><cell>41.07</cell><cell>35.55</cell><cell>17.31</cell><cell></cell><cell>61.42</cell><cell>54.44</cell><cell>41.96</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>No-Memory</cell><cell></cell><cell>38.51</cell><cell>47.89</cell><cell>30.14</cell><cell></cell><cell>55.83</cell><cell>47.48</cell><cell>43.97</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>LangMem</cell><cell></cell><cell>40.89</cell><cell>50.42</cell><cell>28.42</cell><cell></cell><cell>53.80</cell><cell>42.70</cell><cell>43.25</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>A-Mem</cell><cell></cell><cell>34.31</cell><cell>50.14</cell><cell>34.41</cell><cell></cell><cell>61.35</cell><cell>48.48</cell><cell>45.74</cell></row><row><cell cols="4">Qwen3-4B-Instruct</cell><cell>Mem0</cell><cell></cell><cell>41.17</cell><cell>51.38</cell><cell>31.72</cell><cell></cell><cell>60.05</cell><cell>39.16</cell><cell>44.70</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>Mem0 g</cell><cell></cell><cell>36.69</cell><cell>47.76</cell><cell>29.61</cell><cell></cell><cell>57.59</cell><cell>38.12</cell><cell>41.95</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>AgeMem-noRL</cell><cell></cell><cell>38.02</cell><cell>50.42</cell><cell>27.52</cell><cell></cell><cell>57.48</cell><cell>54.49</cell><cell>45.59</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>AgeMem (Ours)</cell><cell></cell><cell>48.97</cell><cell>59.48</cell><cell>35.07</cell><cell></cell><cell>72.56</cell><cell>55.49</cell><cell>54.31</cell></row><row><cell>Performance Score</cell><cell>0 20 40 60</cell><cell>Base 27.16</cell><cell cols="2">+LT +LT/RL +LT/ST/RL 37.73 +10.6 38.88 +11.7 41.07 +13.9</cell><cell>0 20 40 60</cell><cell>Base 13.80</cell><cell cols="2">+LT +LT/RL +LT/ST/RL 27.98 +14.2 32.49 +18.7 35.55 +21.7</cell><cell>0 20 40 60</cell><cell>Base 38.36</cell><cell>+LT +LT/RL +LT/ST/RL 45.76 +7.4 54.44 52.04 +13.7 +16.1</cell></row><row><cell></cell><cell></cell><cell></cell><cell cols="2">(a) ALFWorld</cell><cell></cell><cell></cell><cell>(b) SciWorld</cell><cell></cell><cell></cell><cell>(c) HotpotQA</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 3 :</head><label>3</label><figDesc>Tool usage statistics on HotpotQA. Numbers show average calls per episode.</figDesc><table><row><cell>Tool Category</cell><cell cols="2">Qwen2.5-7B</cell><cell cols="2">Qwen3-4B</cell></row><row><cell></cell><cell cols="4">noRL GRPO noRL GRPO</cell></row><row><cell cols="3">LTM Tool Statistics</cell><cell></cell><cell></cell></row><row><cell>ADD Memory</cell><cell>0.92</cell><cell>1.64</cell><cell>2.49</cell><cell>2.64</cell></row><row><cell>UPDATE Memory</cell><cell>0.00</cell><cell>0.13</cell><cell>0.13</cell><cell>0.34</cell></row><row><cell>DELETE Memory</cell><cell>0.00</cell><cell>0.08</cell><cell>0.00</cell><cell>0.22</cell></row><row><cell cols="3">STM Tool Statistics</cell><cell></cell><cell></cell></row><row><cell>RETRIEVE Memory</cell><cell>2.31</cell><cell>1.95</cell><cell>4.62</cell><cell>4.35</cell></row><row><cell>SUMMARY Context</cell><cell>1.08</cell><cell>0.82</cell><cell>0.11</cell><cell>0.96</cell></row><row><cell>FILTER Context</cell><cell>0.02</cell><cell>0.31</cell><cell>0.15</cell><cell>0.16</cell></row><row><cell>Total Calls</cell><cell>4.33</cell><cell>4.92</cell><cell>7.50</cell><cell>8.67</cell></row><row><cell cols="5">potQA. RL training substantially increases the use</cell></row><row><cell cols="5">of long-term memory tools, especially ADD and</cell></row><row><cell cols="5">UPDATE. On Qwen2.5-7B-Instruct, ADD opera-</cell></row><row><cell cols="5">tions rise from 0.92 to 1.64, and UPDATE opera-</cell></row><row><cell cols="5">tions appear after training (0.13 v.s. nearly zero).</cell></row><row><cell cols="5">Similar trends are observed on Qwen3-4B-Instruct,</cell></row><row><cell cols="5">with higher frequencies of both ADD and UP-</cell></row></table><note><p>DATE. For short-term memory tools, RL leads to more balanced tool usage. The frequency of FIL-TER increases notably (e.g., from 0.02 to 0.31 on Qwen2.5), indicating proactive context control.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 4 :</head><label>4</label><figDesc>Reward function ablation on HotpotQA using Qwen2.5-7B-Instruct. All-Returns v.s. Answer-Only reward strategies. "TN" is the token number, and "TC" denotes the number of tool calls.</figDesc><table><row><cell>Strategy</cell><cell>J(↑)</cell><cell cols="3">TN(↓) MQ(↑) TC(-)</cell></row><row><cell cols="2">Answer-Only 0.509</cell><cell>2078</cell><cell>0.479</cell><cell>3.93</cell></row><row><cell>All-Returns</cell><cell>0.544</cell><cell>2117</cell><cell>0.533</cell><cell>4.92</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 5 :</head><label>5</label><figDesc>Sensitivity of AgeMem to the FILTER threshold on HotpotQA.</figDesc><table><row><cell>θ f</cell><cell>J(↑)</cell><cell cols="2">MQ(↑) Avg. Tokens</cell></row><row><cell cols="2">0.4 0.524</cell><cell>0.511</cell><cell>2089</cell></row><row><cell cols="2">0.5 0.551</cell><cell>0.550</cell><cell>2116</cell></row><row><cell cols="2">0.6 0.544</cell><cell>0.533</cell><cell>2117</cell></row><row><cell cols="2">0.7 0.530</cell><cell>0.526</cell><cell>2149</cell></row><row><cell cols="2">0.8 0.531</cell><cell>0.510</cell><cell>2134</cell></row></table></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgments</head><p>This work was supported by the <rs type="funder">National Natural Science Foundation of China</rs> (<rs type="grantNumber">62441237</rs>, <rs type="grantNumber">U24A20336</rs>, <rs type="grantNumber">62272348</rs>, <rs type="grantNumber">U22B2022</rs>), and <rs type="projectName">Wuhan City Joint Innovation Laboratory for Next-Generation Wireless Communication Industry Featuring Satellite-Terrestrial Integration</rs> under Grant <rs type="grantNumber">4050902040448</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_pcq4p9t">
+					<idno type="grant-number">62441237</idno>
+				</org>
+				<org type="funding" xml:id="_6dfRUED">
+					<idno type="grant-number">U24A20336</idno>
+				</org>
+				<org type="funding" xml:id="_zwfxEZn">
+					<idno type="grant-number">62272348</idno>
+				</org>
+				<org type="funded-project" xml:id="_GzqaKnG">
+					<idno type="grant-number">U22B2022</idno>
+					<orgName type="project" subtype="full">Wuhan City Joint Innovation Laboratory for Next-Generation Wireless Communication Industry Featuring Satellite-Terrestrial Integration</orgName>
+				</org>
+				<org type="funding" xml:id="_VszPM8r">
+					<idno type="grant-number">4050902040448</idno>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Short-term Memory (STM) Management Tools</head><p>STM_TOOLS = [ { "name": "Summary_context", "description": "Summarizes conversation rounds to reduce tokens while preserving key information.", "parameters": { "properties": { "span": { "description": "The range of conversation rounds to summarize. Can be 'all' for entire context, or a number (e.g., '5') for the last N rounds. A system, user, assistant and 'tool' message are considered as one round.", "type": "string" } }, "required": ["span"] } }, { "name": "Filter_context", "description": "Filters out irrelevant or outdated content from the conversation context to improve task-solving efficiency. ", "parameters": { "properties": { "criteria": { "description": "The criteria for content removal. Can be keywords, phrases, or descriptions of content types to remove (e.g., 'the birthday of John', 'the age of Mary').", "type": "string" } }, "required": ["criteria"] } }, { "name": "Retrieve_memory", "description": "Retrieves relevant memories and adds them to current context.", "parameters": { "properties": { "query": { "description": "The search query to find relevant memories. Should describe what kind of information or context is needed.", "type": "string" }, "top_k": { "description": "The maximum number of memories to retrieve. Defaults to 3.", "type": "integer" }, "metadata_filter": { "description": "Optional metadata filters to narrow down memory search (e.g., {'type': 'user_info', 'domain': 'math'}).", "type": "object" } }, "required": ["query"] } } ]</p><p>Figure <ref type="figure">6</ref>: Short-term memory (STM) management tools for conversational context management. These tools enable summarization, selective filtering, and retrieval operations to maintain efficient context windows.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Long-term Memory (LTM) Management Tools</head><p>LTM_TOOLS = [ { "name": "Add_memory", "description": "Adds new information to external memory store for future reference.", "parameters": { "properties": { "content": { "description": "The content to store in memory.", "type": "string" }, "metadata": { "description": "Optional metadata tags to categorize and filter the memory.", "type": "object" }, "memory_type": { "description": "The type of memory being stored.", "type": "string" } }, "required": ["content"] } }, { "name": "Update_memory", "description": "Updates existing memory. Requires memory_id from prior retrieval.", "parameters": { "properties": { "memory_id": { "description": "The unique identifier of the memory to update. Must be obtained from a previous memory retrieval operation.", "type": "string" }, "content": { "description": "The new content to replace the existing memory content.", "type": "string" }, "metadata": { "description": "Updated metadata for the memory.", "type": "object" } }, "required": ["memory_id", "content"] } }, { "name": "Delete_memory", "description": "Removes memory from store. Requires confirmation.", "parameters": { "properties": { "memory_id": { "description": "The unique identifier of the memory to delete. Must be obtained from a previous memory retrieval operation.", "type": "string" }, "confirmation": { "description": "Confirmation that this memory should be permanently deleted.", "type": "boolean" } }, "required": ["memory_id", "confirmation"] } } ] </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Qwen3-4B -GRPO Training Reward Convergence</head><p>All Returns Answer-Only </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.2.1 Convergence Analysis</head><p>Figure <ref type="figure" target="#fig_6">10</ref> demonstrates the reward convergence patterns on Qwen3-4B-Instruct. Similar to Qwen2.5-7B-Instruct, the All-Returns strategy consistently outperforms Answer-Only throughout the training process. Several notable observations emerge: More Stable Dynamics: The convergence curve shows noticeably smoother progression with lower variance, particularly in the later training stages (steps 70-100). This stability suggests that Qwen3's architecture may have better inductive biases for the reward learning task.</p><p>Consistent Superiority: While the absolute improvement is smaller than Qwen2.5-7B-Instruct, the All-Returns strategy maintains its advantage throughout training, validating the robustness of our reward design.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.2.2 Quantitative Results</head><p>Table 6 reports the reward ablation results on Hot-potQA with Qwen3-4B-Instruct. Compared to the Answer-Only strategy, the All-Returns reward consistently improves overall performance. In particular, it yields higher LLM-as-a-Judge scores (0.555 </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.3 Augmented Baseline Comparison</head><p>To address the concern that AgeMem's gains may partly reflect the addition of STM tools or RL optimization rather than unified design, we augment each prior LTM-only baseline with the same ST/RL extensions used in AgeMem (denoted "+ST/RL") and report results on three benchmarks using Qwen2.5-7B-Instruct. Augmenting prior methods with the same ST/RL extensions ("+ST/RL" rows) improves their performance but still does not match the full AgeMem, suggesting that the advantage stems from the integrated policy over heterogeneous memory actions rather than any single added module.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.4 Hyperparameter Sensitivity Analysis</head><p>DistractorGen sensitivity. DISTRACTORGEN is implemented as a dedicated module that prompts an external LLM to generate short, user-style utterances conditioned on the target query while being explicitly constrained to remain semantically unrelated. The prompt enforces three properties: (i) no shared entities or key concepts with the target question, (ii) conversational plausibility (distractors resemble natural dialogue turns), and (iii) topical diversity. This design produces realistic multi-turn interference signals without leaking task-relevant information, allowing Stage 2 to focus specifically on STM control (filtering, summarization, and selective retrieval) rather than adversarial discrimination. Difficulty is governed primarily by the contextual load (the number of distractors N ) and their topical diversity, which determines how much competing information must be managed. Table <ref type="table" target="#tab_6">8</ref> reports performance on HotpotQA as N varies, with all other settings fixed. Performance remains stable between N = 3 and N = 5, with only a mild decline at N = 7, suggesting that Stage 2 learning is robust to distractor intensity rather than tuned to a specific configuration. The relatively unchanged token counts indicate that the effect stems from how context is managed, not from simple length variation.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 7 :Figure 9 :</head><label>79</label><figDesc>Long-term memory (LTM) management tools for persistent storage. These tools provide add, update, and delete capabilities for maintaining long-term information retention across conversations. Base +LT +LT/RL +LT/ST/RL Ablation study results for Qwen3-4B-Instruct. Base: No-Memory baseline; +LT: AgeMem-noRL-RAG (LTM tools only); +LT/RL: AgeMem-RAG (RL with LTM tools); +LT/ST/RL: AgeMem (full AgeMem system with RL). Green arrows indicate performance gains over the baseline.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 10 :</head><label>10</label><figDesc>Training convergence curves on Qwen3-4B-Instruct comparing All-Returns (solid line) v.s. Answer-Only (dashed line) reward strategies.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 6 :</head><label>6</label><figDesc>Reward function ablation results on HotpotQA using Qwen3-4B-Instruct. All-Returns v.s. Answer-Only reward strategies. "TN" is the token number, and "TC" denotes the number of tool calls.</figDesc><table><row><cell>Strategy</cell><cell>J(↑)</cell><cell cols="3">TN(↓) MQ(↑) TC(-)</cell></row><row><cell cols="2">Answer-Only 0.546</cell><cell>2164</cell><cell>0.415</cell><cell>7.21</cell></row><row><cell>All-Returns</cell><cell>0.555</cell><cell>2191</cell><cell>0.605</cell><cell>8.67</cell></row><row><cell cols="5">v.s. 0.546) and substantially better memory quality</cell></row><row><cell cols="5">(MQ: 0.605 v.s. 0.415), indicating that explicitly</cell></row><row><cell cols="5">rewarding memory-related behaviors leads to more</cell></row><row><cell cols="5">reliable memory organization. The All-Returns</cell></row><row><cell cols="5">strategy also encourages more active tool usage</cell></row><row><cell cols="5">(8.67 v.s. 7.21), suggesting that the agent learns</cell></row><row><cell cols="5">to leverage memory operations more effectively</cell></row><row><cell cols="5">when intermediate returns are optimized. This im-</cell></row><row><cell cols="5">provement comes with only a marginal increase</cell></row><row><cell cols="5">in token consumption (2191 v.s. 2164), implying</cell></row><row><cell cols="5">that the gains are not driven by excessive context</cell></row><row><cell cols="5">expansion but by more efficient memory utiliza-</cell></row><row><cell cols="5">tion. Overall, these results show that incorporating</cell></row><row><cell cols="5">memory-aware rewards significantly enhances both</cell></row><row><cell cols="5">memory quality and task performance on Qwen3-</cell></row><row><cell cols="5">4B-Instruct. The observed trends are consistent</cell></row><row><cell cols="5">with those obtained on Qwen2.5-7B-Instruct, con-</cell></row><row><cell cols="5">firming the robustness of the reward design across</cell></row><row><cell cols="3">different model backbones.</cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 7 :</head><label>7</label><figDesc>Unified comparison of baselines and augmented baselines. (Qwen2.5-7B-Instruct). The best and second-best results are marked.</figDesc><table><row><cell>Method</cell><cell cols="4">ALFWorld SciWorld HotpotQA Average</cell></row><row><cell>No-Memory</cell><cell>27.16</cell><cell>13.80</cell><cell>38.36</cell><cell>26.44</cell></row><row><cell>LangMem</cell><cell>38.27</cell><cell>28.29</cell><cell>37.43</cell><cell>34.66</cell></row><row><cell>+ ST/RL</cell><cell>41.32</cell><cell>33.58</cell><cell>49.77</cell><cell>41.56</cell></row><row><cell>A-Mem</cell><cell>34.68</cell><cell>28.06</cell><cell>43.95</cell><cell>35.56</cell></row><row><cell>+ ST/RL</cell><cell>39.86</cell><cell>31.71</cell><cell>53.52</cell><cell>41.70</cell></row><row><cell>Mem0</cell><cell>37.49</cell><cell>26.99</cell><cell>46.66</cell><cell>37.05</cell></row><row><cell>+ ST/RL</cell><cell>35.02</cell><cell>34.40</cell><cell>52.59</cell><cell>40.67</cell></row><row><cell>AgeMem</cell><cell>41.07</cell><cell>35.55</cell><cell>54.44</cell><cell>43.69</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 8 :</head><label>8</label><figDesc>Sensitivity of AgeMem to the number of distractors N in Stage 2 (HotpotQA).</figDesc><table><row><cell cols="2"># Distractors (N ) J (↑)</cell><cell cols="2">MQ (↑) Avg. Tokens</cell></row><row><cell>3</cell><cell>0.549</cell><cell>0.541</cell><cell>2105</cell></row><row><cell>5</cell><cell>0.544</cell><cell>0.533</cell><cell>2117</cell></row><row><cell>7</cell><cell>0.537</cell><cell>0.532</cell><cell>2113</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Mahashweta Das, and 1 others. 2025. Main-rag: Multiagent filtering retrieval-augmented generation</title>
+		<author>
+			<persName><forename type="first">Chia-Yuan</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhimeng</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineeth</forename><surname>Rakesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Menghai</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chin-Chia</forename><surname>Michael Yeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanchu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingzhi</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhichao</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Zheng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 63rd Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="2607" to="2622" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Agentboard: An analytical evaluation board of multi-turn llm agents</title>
+		<author>
+			<persName><forename type="first">Ma</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junlei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujiu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaohui</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenzhong</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingpeng</forename><surname>Kong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxian</forename><surname>He</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="74325" to="74362" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Rlhf deciphered: A critical analysis of reinforcement learning from human feedback for llms</title>
+		<author>
+			<persName><forename type="first">Shreyas</forename><surname>Chaudhari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranjal</forename><surname>Aggarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vishvak</forename><surname>Murahari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tanmay</forename><surname>Rajpurohit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Kalyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ameet</forename><surname>Deshpande</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bruno Castro Da</forename><surname>Silva</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<publisher>ACM Computing Surveys</publisher>
+			<biblScope unit="volume">58</biblScope>
+			<biblScope unit="page" from="1" to="37" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Babyai: A platform to study the sample efficiency of grounded language learning</title>
+		<author>
+			<persName><forename type="first">Maxime</forename><surname>Chevalier-Boisvert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dzmitry</forename><surname>Bahdanau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Salem</forename><surname>Lahlou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Willems</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chitwan</forename><surname>Saharia</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1810.08272</idno>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>Thien Huu Nguyen, and Yoshua Bengio</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Saket Aryan, Taranjeet Singh, and Deshraj Yadav</title>
+		<author>
+			<persName><forename type="first">Prateek</forename><surname>Chhikara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dev</forename><surname>Khant</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.19413</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Mem0: Building production-ready ai agents with scalable long-term memory</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yihong</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xue</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaru</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tian</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kechi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2508.00083</idno>
+		<title level="m">A survey on code generation with llm-based agents</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Shen Li, and 1 others. 2025a. Agentscope 1.0: A developer-centric framework for building agentic applications</title>
+		<author>
+			<persName><forename type="first">Dawei</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zitao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuexiang</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weirui</forename><surname>Kuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liuyi</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bingchen</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhijian</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haohao</forename><surname>Luo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2508.16279</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">2025b. An efficient context-dependent memory framework for llm-centric agents</title>
+		<author>
+			<persName><forename type="first">Pengyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinming</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyue</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilin</forename><surname>Long</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2025 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</title>
+		<meeting>the 2025 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</meeting>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page" from="1055" to="1069" />
+		</imprint>
+	</monogr>
+	<note>Industry Track)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Terminology-constrained translation from monolingual data using grpo</title>
+		<author>
+			<persName><forename type="first">Javier</forename><surname>Garcia Gilabert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><surname>Escolano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xixian</forename><surname>Liao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maite</forename><surname>Melero</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Tenth Conference on Machine Translation</title>
+		<meeting>the Tenth Conference on Machine Translation</meeting>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="1335" to="1343" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Lyle</forename><surname>Goodyear</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rachel</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ramesh</forename><surname>Johari</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2506.15624</idno>
+		<title level="m">The effect of state representation on llm agent behavior in dynamic routing games</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuanzhe</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Mcauley</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.05257</idno>
+		<title level="m">Evaluating memory in llm agents via incremental multiturn interactions</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Xavier Tang, and 1 others. 2024. Long term memory: The foundation of ai self</title>
+		<author>
+			<persName><forename type="first">Xun</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahao</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaying</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shihao</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiling</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.15665</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Bowen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hansi</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenrui</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinsung</forename><surname>Yoon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sercan</forename><surname>Arik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hamed</forename><surname>Zamani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Han</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.09516</idno>
+		<title level="m">Search-r1: Training llms to reason and leverage search engines with reinforcement learning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Llm maybe longlm: Self-extend llm context window without tuning</title>
+		<author>
+			<persName><forename type="first">Hongye</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaotian</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingfeng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhimeng</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zirui</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chia-Yuan</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huiyuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xia</forename><surname>Hu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.01325</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Rap: Retrieval-augmented planning with contextual memory for multimodal llm agents</title>
+		<author>
+			<persName><forename type="first">Tomoyuki</forename><surname>Kagaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thong</forename><surname>Jing Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jayashree</forename><surname>Karlekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sugiri</forename><surname>Pranata</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akira</forename><surname>Kinose</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Koki</forename><surname>Oguri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Wick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>You</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.03610</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jiazheng</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingming</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ting</forename><surname>Bai</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2506.06326</idno>
+		<title level="m">Memory os of ai agent</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Langmem sdk for agent longterm memory</title>
+		<author>
+			<persName><forename type="first">Langchain</forename><surname>Team</surname></persName>
+		</author>
+		<ptr target="https://blog.langchain.com/langmem-sdk-launch/" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2025" to="2037" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Hello again! llmpowered personalized agent for long-term dialogue</title>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenghao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">An</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tat-Seng</forename><surname>Chua</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2025 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</title>
+		<meeting>the 2025 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="5259" to="5276" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Coevolving with the other you: Fine-tuning llm with sequential cooperative multi-agent reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqiang</forename><surname>Pu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liu</forename><surname>Boyin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaolin</forename><surname>Ai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanyan</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="15497" to="15525" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">What should we engineer in prompts? training humans in requirement-driven llm use</title>
+		<author>
+			<persName><forename type="first">Qianou</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weirui</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyang</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hua</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ken</forename><surname>Koedinger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tongshuang</forename><surname>Wu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Computer-Human Interaction</title>
+		<imprint>
+			<biblScope unit="volume">32</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="1" to="27" />
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Dawei Gao, and 1 others. 2025a. Trinity-rft: A general-purpose and unified framework for reinforcement fine-tuning of large language models</title>
+		<author>
+			<persName><forename type="first">Xuchen</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanxi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yushuo</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchang</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daoyuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuexiang</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilei</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.17826</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhuoshi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qianhui</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huiqiang</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xufang</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongsheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqing</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chin-Yew</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vicky</forename><surname>Zhao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.05589</idno>
+		<title level="m">Lili Qiu, and 1 others. 2025b. On memory construction and retrieval for personalized conversational agents</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">Emre</forename><surname>Cheng Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Can Acikgoz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongru</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiusi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dilek</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gokhan</forename><surname>Hakkani-Tür</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Tur</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ji</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.13958</idno>
+		<title level="m">Toolrl: Reward is all tool learning needs</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Preston</forename><surname>Rasmussen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pavlo</forename><surname>Paliychuk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Travis</forename><surname>Beauvais</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Ryan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Chalef</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.13956</idno>
+		<title level="m">Zep: a temporal knowledge graph architecture for agent memory</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Rana</forename><surname>Salama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michelle</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Currey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Monica</forename><surname>Sunkara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yassine</forename><surname>Benajiba</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.21760</idno>
+		<title level="m">Meminsight: Autonomous memory augmentation for llm agents</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.03300</idno>
+		<title level="m">Yang Wu, and 1 others. 2024. Deepseekmath: Pushing the limits of mathematical reasoning in open language models</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Shridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingdi</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc-Alexandre</forename><surname>Côté</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Trischler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Hausknecht</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2010.03768</idno>
+		<title level="m">Alfworld: Aligning text and embodied environments for interactive learning</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chuanneng</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Songjun</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Pompili</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.11106</idno>
+		<title level="m">Llm-based multi-agent reinforcement learning: Current and future directions</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">2025a. Grpo-ma: Multi-answer generation in grpo for stable and efficient chain-of-thought training</title>
+		<author>
+			<persName><forename type="first">Hongcheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinuo</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sukai</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanghui</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Dong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2509.24494</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Scienceworld: Is your agent smarter than a 5th grader?</title>
+		<author>
+			<persName><forename type="first">Ruoyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Jansen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc-Alexandre</forename><surname>Côté</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prithviraj</forename><surname>Ammanabrolu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2022 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="11279" to="11298" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.07957</idno>
+		<title level="m">Mirix: Multi-agent memory system for llm-based agents</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Karma: Augmenting embodied ai agents with long-and-short term memory systems</title>
+		<author>
+			<persName><forename type="first">Zixuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junzhe</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sai</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xing</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinhe</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Gan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2025 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="1" to="8" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Graham Neubig, and Daniel Fried. 2025c. Inducing programmatic skills for agentic tasks</title>
+		<author>
+			<persName><forename type="first">Zora</forename><surname>Zhiruo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Apurva</forename><surname>Gandhi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.06821</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zora</forename><surname>Zhiruo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayuan</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.07429</idno>
+		<title level="m">Agent workflow memory</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xixi</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yida</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liwen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Litu</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huifeng</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongwang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinmiao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dingchu</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2509.13313</idno>
+		<title level="m">Yong Jiang, and 1 others. 2025a. Resum: Unlocking long-horizon search intelligence via context summarization</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yaxiong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sheng</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongyue</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huifeng</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiming</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.15965</idno>
+		<title level="m">From human memory to ai memory: A survey on memory mechanisms in the era of llms</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Jiliang Tang, Himabindu Lakkaraju, and Zhen Xiang. 2025. How memory management impacts llm agents: An empirical study of experience-following behavior</title>
+		<author>
+			<persName><forename type="first">Zidi</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuping</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenya</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zirui</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.16067</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">A-mem: Agentic memory for llm agents</title>
+		<author>
+			<persName><forename type="first">Wujiang</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zujie</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Mei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juntao</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongfeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.12110</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sikuan</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiufeng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zuchao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ercong</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zifeng</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zonggen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaowen</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kristian</forename><surname>Kersting</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><forename type="middle">Z</forename><surname>Pan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2508.19828</idno>
+		<title level="m">Hinrich Schütze, and 1 others. 2025. Memory-r1: Enhancing large language model agents to manage and utilize memories via reinforcement learning</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Hotpotqa: A dataset for diverse, explainable multi-hop question answering</title>
+		<author>
+			<persName><forename type="first">Zhilin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saizheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruslan</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2018 conference on empirical methods in natural language processing</title>
+		<meeting>the 2018 conference on empirical methods in natural language processing</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="2369" to="2380" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">React: Synergizing reasoning and acting in language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Karthik R Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The eleventh international conference on learning representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiangming</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ye</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueyuan</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2510.12635</idno>
+		<title level="m">Shangxi Wu, and Jitao Sang. 2025a. Memory as action: Autonomous context curation for long-horizon agentic tasks</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">A survey on the memory mechanism of large language model-based agents</title>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quanyu</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohe</forename><surname>Bo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jieming</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenhua</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji-Rong</forename><surname>Wen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Information Systems</title>
+		<imprint>
+			<biblScope unit="volume">43</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="1" to="47" />
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Memorybank: Enhancing large language models with long-term memory</title>
+		<author>
+			<persName><forename type="first">Wanjun</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lianghong</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiqi</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">He</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanlin</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page" from="19724" to="19731" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

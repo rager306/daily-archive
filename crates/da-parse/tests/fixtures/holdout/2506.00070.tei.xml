@@ -1,0 +1,2615 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Robot-R1: Reinforcement Learning for Enhanced Embodied Reasoning in Robotics</title>
+				<funder ref="#_xh7xSpA">
+					<orgName type="full">Korea government(MSIT)</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">RLWRLD, Inc.</orgName>
+				</funder>
+				<funder ref="#_FNmpcBb">
+					<orgName type="full">Intelligence Graduate School Program(KAIST)</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">Institute for Information &amp; communications Technology Promotion</orgName>
+					<orgName type="abbreviated">IITP</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-01-16">16 Jan 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Dongyoung</forename><surname>Kim</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Sumin</forename><surname>Park</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Huiwon</forename><surname>Jang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Jinwoo</forename><surname>Shin</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Jaehyung</forename><surname>Kim</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Younggyo</forename><surname>Seo</surname></persName>
+						</author>
+						<author>
+							<persName><surname>Kaist</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Yonsei</forename><surname>University</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">U</forename><forename type="middle">C</forename><surname>Berkeley</surname></persName>
+						</author>
+						<title level="a" type="main">Robot-R1: Reinforcement Learning for Enhanced Embodied Reasoning in Robotics</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-01-16">16 Jan 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">ACD3111CAC29BF55A08F095FED955F89</idno>
+					<idno type="arXiv">arXiv:2506.00070v3[cs.RO]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:07+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large Vision-Language Models (LVLMs) have recently shown great promise in advancing robotics by combining embodied reasoning with robot control. A common approach involves training on embodied reasoning tasks related to robot control using Supervised Fine-Tuning (SFT). However, SFT datasets are often heuristically constructed and not explicitly optimized for improving robot control. Furthermore, SFT often leads to issues such as catastrophic forgetting and reduced generalization performance. To address these limitations, we introduce ROBOT-R1, a novel framework that leverages reinforcement learning to enhance embodied reasoning specifically for robot control. ROBOT-R1 learns to predict the next keypoint state required for task completion, conditioned on the current scene image and environment metadata derived from expert demonstrations. Inspired by the DeepSeek-R1 learning approach, ROBOT-R1 samples reasoning-based responses and reinforces those that lead to more accurate predictions. To rigorously evaluate ROBOT-R1, we also introduce a new benchmark that demands the diverse embodied reasoning capabilities for the task. Our experiments show that models trained with Robot-R1 outperform SFT methods on embodied reasoning tasks. Despite having only 7B parameters, ROBOT-R1 even surpasses GPT-4o on reasoning tasks related to low-level action control, such as spatial and movement reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>* Equal advising 39th Conference on Neural Information Processing Systems (NeurIPS 2025).</head></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="26" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="27" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="28" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="29" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Recently, Large Vision-Language Models (LVLMs) have shown significant promise in robotics <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b1">2]</ref>. By jointly processing visual inputs and natural language, LVLMs offer a powerful interface for interpreting complex real-world scenarios and enabling high-level reasoning on robot control <ref type="bibr" target="#b2">[3]</ref><ref type="bibr" target="#b3">[4]</ref><ref type="bibr" target="#b4">[5]</ref><ref type="bibr" target="#b5">[6]</ref>. Specifically, they have been employed in robotics by providing high-level actions in the form of textual descriptions <ref type="bibr" target="#b6">[7]</ref> and latent representations <ref type="bibr" target="#b7">[8,</ref><ref type="bibr" target="#b8">9]</ref> to generate low-level actions, or by directly generating low-level actions <ref type="bibr" target="#b9">[10]</ref>. These capabilities not only improve the performance and generalization of robotic systems but also enhance the human-robot interaction interface by enabling intuitive, language-driven control.</p><p>Despite these advances, LVLMs often struggle to translate their general commonsense into the nuanced embodied reasoning required for controlling robots. For example, they often fail to accurately understand the spatial relationships crucial for low-level control <ref type="bibr" target="#b10">[11]</ref> or fail to generate high-level plans <ref type="bibr" target="#b11">[12]</ref>. Consequently, achieving high performance in robotic tasks typically requires additional training in domain-specific data. A common approach involves Supervised Fine-Tuning (SFT) using question-answering datasets that pair task instructions with descriptions of various embodied reasoning types, such as action planning and spatial reasoning <ref type="bibr" target="#b12">[13]</ref><ref type="bibr" target="#b13">[14]</ref><ref type="bibr" target="#b14">[15]</ref>. However, embodied reasoning tasks for SFT are often heuristically designed and thus not fully optimized for actual robot action These data are reformulated into three different multiple-choice question answering (MCQA) tasks: predicting next states, current states, and movements. (c) During training, an LVLM solves MCQA tasks with reasoning which is then optimized using the GRPO algorithm <ref type="bibr" target="#b16">[17]</ref> to reinforce reasoning pathways. prediction; for instance, the linguistic expressions in SFT datasets often fail to capture the precise quantitative details essential for low-level robot control. Moreover, models trained via SFT often struggle with input and output formats they were not trained on (i.e., distribution shifts), which leads to catastrophic forgetting that degrades previously acquired knowledge, including general conversational abilities <ref type="bibr" target="#b15">[16]</ref>.</p><p>Meanwhile, recent advances led by Deepseek-R1 <ref type="bibr" target="#b16">[17]</ref> have demonstrated the effectiveness of reinforcement learning (RL) in eliciting and reinforcing reasoning pathways, often achieving superior performance and generalization compared to SFT methods. Inspired by this, we introduce ROBOT-R1, a novel framework that employs RL to effectively train LVLMs with embodied reasoning capabilities tailored specifically for robotic control (see Figure <ref type="figure" target="#fig_0">1</ref>).</p><p>The key idea of ROBOT-R1 is to train LVLMs to predict the next keypoint state necessary for task completion through a reasoning process, and to optimize this reasoning via RL to maximize prediction accuracy. However, since the keypoint lies in a continuous space, the action space is vast, making exploration particularly challenging. This makes it difficult for the model to efficiently learn reasoning strategies through trial and error. To address this, Robot-R1 reformulates the next-state prediction problem as a multiple-choice question-answering (QA) problem. This discrete formulation narrows the action space, making the learning process more efficient. To further enhance state understanding, we add two auxiliary QA tasks: (i) current state prediction QA, where the model predicts the robot's current state from visual observations, and (ii) movement prediction QA, where the model predicts rule-based linguistic descriptions of state changes (e.g., "move up", "move down").</p><p>To analyze how ROBOT-R1 improves embodied reasoning capabilities in trained models, we design a novel benchmark called the ROBOT-R1 Bench (see Figure <ref type="figure" target="#fig_1">2</ref>). Through this benchmark, we observe that models trained with ROBOT-R1 achieve over a 28% improvement in embodied reasoning tailored for low-level action control. In particular, despite having only the 7B parameters, ROBOT-R1 outperforms several major commercial models, including GPT-4o <ref type="bibr" target="#b17">[18]</ref>, in this domain. To evaluate whether the embodied reasoning abilities acquired through ROBOT-R1 transfer effectively to other tasks, we conduct evaluations on two external benchmarks. First, on EmbodiedBench Manipulation <ref type="bibr" target="#b18">[19]</ref>, a vision-driven robot agent benchmark, ROBOT-R1 yields a 31% improvement in task performance. Moreover, on SpatialRGPTbench <ref type="bibr" target="#b19">[20]</ref>, which tests 3D spatial reasoning, ROBOT-R1 achieves approximately 40% improvement in quantitative metrics and about 60% improvement in qualitative metrics. These results contrast with conventional SFT approaches, which show limited improvement in embodied reasoning and tend to exhibit performance degradation when applied to out-of-distribution tasks. This suggests that ROBOT-R1 can effectively learn generalizable and diverse embodied reasoning capabilities simply by next-state prediction.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related Work</head><p>Embodied reasoning for robot control. Integrating Large Vision-Language Models (LVLMs) into robotic systems has recently emerged as a promising direction <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b1">2]</ref>. These models leverage their vision-language understanding capabilities to interpret task instructions and process visual observations. Based on this understanding, LVLMs have been used to generate low-level actions directly <ref type="bibr" target="#b9">[10,</ref><ref type="bibr" target="#b20">21]</ref> or to produce high-level action <ref type="bibr">[3-7, 12, 22]</ref>. Recent efforts have focused on enhancing the embodied reasoning capabilities of LVLMs to improve performance in complex longhorizon tasks <ref type="bibr" target="#b22">[23,</ref><ref type="bibr" target="#b23">24]</ref>. For instance, their ability to reason over language and visual inputs has been exploited for action planning, high-level action prediction, and spatial reasoning <ref type="bibr" target="#b24">[25]</ref><ref type="bibr" target="#b25">[26]</ref><ref type="bibr" target="#b26">[27]</ref>. A common approach involves constructing embodied reasoning question-answering (QA) datasets, which are designed to aid robot control <ref type="bibr" target="#b10">[11,</ref><ref type="bibr" target="#b14">15,</ref><ref type="bibr" target="#b27">[28]</ref><ref type="bibr" target="#b28">[29]</ref><ref type="bibr" target="#b29">[30]</ref><ref type="bibr" target="#b30">[31]</ref>. These datasets are then used to fine-tune models via supervised fine-tuning (SFT). However, a notable limitation is that such embodied reasoning datasets are often heuristically constructed and may not be explicitly optimized for robot control.</p><p>Reinforcement learning for encourage reasoning. In large language models (LLMs), generating intermediate reasoning steps -commonly known as Chain-of-Thought (CoT) reasoning -has proven to be an effective strategy for improving performance across a wide range of tasks <ref type="bibr" target="#b31">[32]</ref>. This success has motivated substantial research into enhancing reasoning abilities through various ways, such as prompting techniques or the distillation of reasoning paths from stronger models <ref type="bibr" target="#b32">[33]</ref><ref type="bibr" target="#b33">[34]</ref><ref type="bibr" target="#b34">[35]</ref><ref type="bibr" target="#b35">[36]</ref>. More recently, reinforcement learning (RL) has emerged as a strong alternative to SFT for training reasoning models. In particular, research such as DeepSeek-R1 <ref type="bibr" target="#b16">[17]</ref> has introduced RL-based frameworks where the model first generates a reasoning trace, then produces an answer based on this trace, and is optimized using reward signals based on answer correctness. This RL-based approach not only improves reasoning quality but also enhances sample efficiency and generalization across a variety of tasks <ref type="bibr" target="#b36">[37]</ref><ref type="bibr" target="#b37">[38]</ref><ref type="bibr" target="#b38">[39]</ref>. Consequently, it has been successfully applied to domains such as mathematics <ref type="bibr" target="#b39">[40,</ref><ref type="bibr" target="#b40">41]</ref>, agentic tasks <ref type="bibr" target="#b41">[42,</ref><ref type="bibr" target="#b42">43]</ref>, and even vision-related problems <ref type="bibr" target="#b43">[44,</ref><ref type="bibr" target="#b44">45]</ref>, yielding substantial performance gains. These advances suggest that applying RL to train embodied reasoning for robot control could effectively address key limitations of SFT-based approaches.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Method</head><p>In this section, we present the components in the following order:</p><p>• Preliminaries: Definition of robot state, and GRPO <ref type="bibr" target="#b45">[46]</ref> algorithm for RL training.</p><p>• Data Generation: How to prepare training dataset for ROBOT-R1.</p><p>• Multiple-choice QA Base Training: How to train LVLM via RL with the generated datasets.</p><p>• ROBOT-R1 Bench: Introduce a new evaluation benchmark for embodied reasoning that assesses various reasoning capabilities (e.g. spatial understanding) in robotic control scenarios.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Preliminaries</head><p>Robot state. In this work, we utilize a Franka Panda robot whose state is represented as a 7dimensional vector consisting of the end-effector's 3D cartesian position (x, y, z), orientation (roll, pitch, yaw), and a binary gripper state (open/closed). For simplicity, following Liang et al. <ref type="bibr" target="#b21">[22]</ref>, we consider only the Cartesian position (x, y, z) of the end-effector as the robot state s.</p><p>Problem setup. We denote the LLM policy as π θ that generates an answer o ∼ π θ (q) in response to a question q. A reward r = f reward (o) is obtained by evaluating the generated answer through a pre-defined reward model. This reward model is designed to assign higher values to answers that more accurately predict the next state. The LLM policy is then optimized to maximize this reward.</p><p>Group relative policy optimization. We employ the Group Relative Policy Optimization (GRPO) algorithm <ref type="bibr" target="#b16">[17]</ref> to optimize the policy. Specifically, for a given query q, we generate G different responses o = {o 1 , o 2 , ..., o G } from the current policy π θold . Each response o i is evaluated using the reward model to produce a corresponding reward r i , resulting in the set r = {r 1 , r 2 , ..., r G }. For each response, we compute an advantage score A i , using the mean and standard deviation of the rewards for that query, i.e.,</p><formula xml:id="formula_0">A i = ri-mean(r) std(r)</formula><p>. Finally, GRPO updates the policy by maximizing this advantage while applying a KL penalty, through the following objective:</p><formula xml:id="formula_1">J GRPO (θ) = E q∼P (Q),{oi} G i=1 ∼πold(Q|q) 1 G G i=1 min π θ (o i |q) π θold (o i |q) A i , clip π θ (o i |q) π θold (o i |q) , 1 -ε, 1 + ε A i -βD KL (π θ ∥π ref ) ,</formula><p>where ε and β are hyperparameters.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Data Generation</head><p>For training ROBOT-R1, we use multiple-choice question answering (QA) data, which includes a primary task of predicting next waypoint (i.e., keypoint), along with two auxiliary tasks: (i) estimating the current state from an image and (ii) determining the necessary movements to reach the next waypoint. These tasks are constructed using information extracted from expert demonstrations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>MetaData extraction.</head><p>Without any contextual information, LVLMs struggle to infer low-level states. To address this, we utilize metadata M , which encodes details about the current task and the robot's low-level state, and use it to generate question prompts. The metadata M encompasses three essential types of information. First, it includes details about fixed reference points within the robot's environment, such as the center of a table in table-top manipulation scenarios. Second, it defines the 3D coordinate system, including the positive direction of each axis, which helps interpret how spatial changes are reflected in numerical state changes. Third, it incorporates the dimensions (x, y, z) of a consistently present object, such as the robot's end-effector, to provide a reference for scale estimation. This metadata M is subsequently used as conditional input during question generation.</p><p>Waypoint prediction QA. The goal of this task is to predict a future waypoint state. We represent a demonstration as a sequence of frames D = {(o 0 , s 0 ), (o 1 , s 1 ), . . . , (o N , s N )}, where each frame consists of an observation o t and its corresponding robot state s t . A subset of these frames is designated as keypoints, denoted by indices K = {k 0 , k 1 , . . . , k M }, which mark significant changes in the trajectory or completion of crucial subgoals <ref type="bibr" target="#b46">[47]</ref>. The task is to predict the state s k * of the next keypoint following the current time step t, where k * = min{k j ∈ K | k j &gt; t}. Each training example is thus represented as a tuple (s t , o t , s k * ). To make a multiple-choice question, we randomly sample three distractor states s d1 , s d2 , s d3 from the robot's valid state space. These candidates, along with the correct next waypoint s k * , are shuffled to create the final question input Q waypoint (M, s t , o t , shuffle({s k * , s d1 , s d2 , s d3 })) where the correct answer is A = s k * .</p><p>Current state prediction QA. The goal is to identify the correct current state s t . The question prompt includes the metadata M and the current visual observation o t . To construct a multiplechoice question, we randomly sample three distractor states {s ′ d1 , s ′ d2 , s ′ d3 } from the state space. The question is formulated as Q state (M, o t , shuffle({s t , s ′ d1 , s ′ d2 , s ′ d3 })) where the answer is A = s t .</p><p>Movement prediction QA. The goal of this task is to predict the movement (e.g., "move up", "move right") that the robot should take to move from the current state toward the next waypoint. To extract labels for these movement, we apply rule-based heuristics based on the change in 3D Cartesian space. Specifically, we compute the difference in position between the current and next waypoint states, s k * -s t , and identify the primary direction of movement along the x, y, and z axes. If there is a nonzero change along an axis, a corresponding directional command is generated (e.g., "move forward" for a positive change in the x-axis); this label is denoted as a t . If the change along an axis is less than or equal to half of the largest change across all axes, the adverb "slightly" is added (e.g., "Slightly move backward"). To construct a multiple-choice question, we randomly sample three adjacent movement = {a ′ d1 , a ′ d2 , a ′ d3 }. The question is formulated as Q movement (M, o t , s t , shuffle({a t , a ′ d1 , a ′ d2 , a ′ d3 })) where the answer is A = a t .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Multiple-choice QA Base Training</head><p>Following DeepSeek-R1-Zero <ref type="bibr" target="#b16">[17]</ref>, we train LVLMs to explicitly generate their reasoning process. During training, the policy is instructed to output its thought process enclosed within &lt;think&gt; and &lt;/think&gt; tags, followed by the final answer enclosed within &lt;answer&gt; and &lt;/answer&gt; tags. The Table <ref type="table">1</ref>: Example of the ROBOT-R1 Bench question and response.</p><p>Question: What is the immediate next meaningful subtask (i.e., a single step within a larger sequence) that should be performed given the current scene?</p><p>Model Answer : &lt;think&gt;robot appears to be positioned above a saucepan with a lid. The task is to take the lid off the saucepan. The immediate next step would involve moving the gripper towards the lid to grasp it. &lt;/think&gt; &lt;answer&gt;the gripper towards the lid of the saucepan.&lt;/answer&gt; policy is optimized using GRPO. The reward signal R for RL consists of two components: a format reward r f and an answer correctness reward r a , combined as R = r f + r a . The format reward r f encourages adherence to the specified output structure. The answer reward r a provides rule-based positive feedback if the model's answer, within &lt;answer&gt;...&lt;/answer&gt;, exactly matches the correct option in the multiple-choice QA problem.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">ROBOT-R1 Bench: A Novel Benchmark for Evaluating Embodied Reasoning</head><p>Existing visual question answering (VQA) benchmarks for embodied reasoning primarily focus on general visual understanding, without explicitly evaluating the nuanced reasoning processes behind robotic behavior <ref type="bibr" target="#b47">[48]</ref><ref type="bibr" target="#b48">[49]</ref><ref type="bibr" target="#b49">[50]</ref>. Meanwhile, robotics-focused benchmarks often rely on simulation-based evaluation <ref type="bibr" target="#b18">[19,</ref><ref type="bibr" target="#b50">51,</ref><ref type="bibr" target="#b51">52]</ref>, prioritize task successes as the main metric, or focus on tasks that are not aligned with the table-top manipulation scenarios central to our work. While these benchmarks provide valuable insights, they do not directly assess a model's ability to reason about robot actions.</p><p>To address this gap, we introduce ROBOT-R1 Bench, a new benchmark designed to evaluate embodied reasoning through open-ended answering grounded in robot demonstrations.</p><p>Design features of ROBOT-R1 Bench. In practical applications, models typically face open-ended decisions rather than selecting from pre-defined options. To better reflect this, ROBOT-R1 Bench adopts an open-ended QA format that more closely resembles practical use cases. All questions are based on images from expert demonstrations, ensuring visually grounded and realistic robotic scenarios. ROBOT-R1 Bench supports fine-grained evaluation across four key reasoning types: planning, high-level action reasoning, movement reasoning, and spatial reasoning. Each question is crafted to assess one of these abilities, allowing for evaluation across both high-level decision making (planning and high-level action reasoning) and low-level control reasoning (movement reasoning and spatial reasoning).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Dataset construction.</head><p>The ROBOT-R1 Bench dataset consists of 10 tasks from RLBench <ref type="bibr" target="#b52">[53]</ref>. For each task, we randomly sample five frames from expert demonstrations, resulting in a total of 50 images. For each image, experienced researchers manually created questions and detailed reference answers, targeting the four key reasoning abilities. The final dataset consists of 215 open-ended questions in total: 65 for spatial reasoning and 50 for each of the other three reasoning types.</p><p>Evaluation. Model responses are evaluated against reference answers. For consistent and objective scoring, we adopt an "LLM-as-judge" approach using GPT-4o <ref type="bibr" target="#b17">[18,</ref><ref type="bibr" target="#b53">54,</ref><ref type="bibr" target="#b54">55]</ref>. Based on a predefined rubric tailored to each reasoning type, GPT-4o assesses the model's answers for accuracy, logical coherence, and completeness, and assigns a numeric score in [0, 3]. This allows for fine-grained quantitative analysis of the model's embodied reasoning capabilities (See Figure <ref type="figure" target="#fig_1">2</ref> and Table <ref type="table">1</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiment</head><p>This section details the experimental setup for training ROBOT-R1, and the evaluation results. Our goal is to validate the effectiveness of ROBOT-R1 in learning embodied reasoning for robot manipulation tasks. We utilize the Qwen2.5-7b-VL-Ins <ref type="bibr" target="#b55">[56]</ref> as the base model for all experiments. Training data. The training data used in our experiments are generated using the built-in data generator in RLBench <ref type="bibr" target="#b52">[53]</ref>. We collect 50 demonstrations per task from the variation 0 settings, rendering them at 224 × 224 resolution using OpenGL3. Waypoints from these demonstrations are extracted using the waypoint extraction functionality provided in the ARM [47] repository<ref type="foot" target="#foot_0">foot_0</ref> . The tasks selected from RLBench for training our model include: pick_up_cup, push_button, put_rubbish_in_bin, phone_on_base, and take_lid_off_saucepan. For generating the waypoint prediction QA training data, as described in Section 3, a frame extraction interval of t = 10 was used between the current frame (o t , s t ) and the selected future keypoint frame (s k * ), similar to demonstration augmentation proposed in ARM. Consequently, each task contains approximately 2.5K questions, resulting in a total of around 7.5K QA pairs across the three QA tasks used for training. Baseline models. The proposed ROBOT-R1 learns to predict the next waypoint state from expert demonstrations by generating an explicit reasoning process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Experimental Setup</head><p>To evaluate the importance of this learned reasoning, we establish two baseline models trained via Supervised Fine-tuning (SFT):</p><p>• Direct SFT: This model is fine-tuned on a QA dataset to directly predict the next waypoint state (s k * ) from the current observation (o t ) and state (s t ), without any intermediate reasoning steps. This baseline helps assess the performance gain achieved by incorporating reasoning.</p><p>• CoT SFT: This model is fine-tuned on a QA dataset where the input prompt includes a manually structured Chain-of-Thought (CoT) path. This CoT path sequentially incorporates planning, highlevel action reasoning, and movement components to guide the prediction of the next waypoint state, similar to Zawalski et al. <ref type="bibr" target="#b14">[15]</ref>. This baseline enables comparison between the reasoning learned via ROBOT-R1 against reasoning guided by a predefined, structured thought process.</p><p>By comparing ROBOT-R1 against these baselines, we aim to highlight the importance of (i) incorporating reasoning at all (v.s. Direct SFT) and the adaptiveness of reasoning learned through reinforcement learning (v.s. CoT SFT). See Appendix B for details.</p><p>Implementation detail. ROBOT-R1 is trained using GRPO as described in Section 3. We use the hyperparameter configurations in the EasyR1 workspace. <ref type="foot" target="#foot_1">2</ref> For the training process, we utilize a batch size of 128 over 5 epoch. During GRPO updates, 5 samples were generated per prompt with a sampling temperature of 1.0. The rollout batch size is set to 512. We use a learning rate of 1.0 × 10 -6 with a weight decay of 1.0 × 10 -2 . For the SFT baselines, we use the same batch size, but learning rate is 1.0 × 10 -5 . We use the hyperparameters provided in the Qwen2-VL-Finetune workspace. <ref type="foot" target="#foot_2">3</ref> Setup. To reduce variance in benchmark results, all models generate responses with a temperature setting of 0. To ensure the robustness of our benchmark and allow for relative performance comparisons, we evaluate the performance of several widely used commercial models across different versions, including GPT <ref type="bibr" target="#b17">[18]</ref>, Claude <ref type="bibr" target="#b56">[57,</ref><ref type="bibr" target="#b58">[59]</ref><ref type="bibr" target="#b59">[60]</ref><ref type="bibr" target="#b60">[61]</ref>, and Gemini <ref type="bibr" target="#b57">[58,</ref><ref type="bibr" target="#b61">62,</ref><ref type="bibr" target="#b62">63]</ref>. Furthermore, we evaluate the performance of our own models: the base Qwen2.5-VL-7B-Instruct model <ref type="bibr" target="#b55">[56]</ref>, its variant fine-tuned via SFT, and the model trained using our proposed ROBOT-R1 method (see Appendix B for details).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Robot-R1 Bench</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Results.</head><p>Table <ref type="table" target="#tab_0">3</ref> presents the results across the reasoning benchmarks focused on low-level control, and Figure <ref type="figure" target="#fig_2">3</ref> provides its visualization to help understanding. We find that commercial model performance improves consistently with their version updates, indicating the benchmark's sensitivity to model quality. Notably, the ROBOT-R1-trained model achieves the highest performance across both the overall benchmark and its individual components, outperforming all commercial models evaluated. Specifically, in movement prediction, our method outperforms even the SFT-trained model, which is explicitly trained to predict accurate actions. Table <ref type="table" target="#tab_1">2</ref> further shows the performance in reasoning tasks tailored for high-level control. Here, the correlation between model version and benchmark performance is less pronounced. We hypothesize that this is due to the inherently high variability in valid high-level actions for robotic control. Nevertheless, we still observe a general trend of increasing benchmark performance as model quality improves. Importantly, our ROBOT-R1 exhibits significant performance gains in high-level action reasoning compared to the base and the SFT-trained model. This suggests that effective high-level reasoning can emerge from training exclusively on low-level control information, even without explicit high-level action supervision. Interestingly, we find that performance on planning slightly decreases, likely because our training objective focuses primarily on next keypoint prediction rather than long-horizon planning. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">EmbodiedBench Manipulation</head><p>Next, to evaluate whether ROBOT-R1 not only enhances embodied reasoning capabilities but also leads to improved performance in an actual robotic agent environment, we consider the Embod-iedBench Manipulation benchmark <ref type="bibr" target="#b18">[19]</ref>, a vision-driven agent assessment platform built upon the RLBench simulation environment <ref type="bibr" target="#b52">[53]</ref>. This benchmark evaluates a model's ability to complete manipulation tasks by predicting low-level actions (a 7-dimension action vector) using in-context learning. A reward is awarded only if a task is completed successfully.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Setup.</head><p>We evaluate the model performance on four different tasks: Pick &amp; Place Objects, Stack Objects, Shape Sorter Placement, and Table Wiping. To comprehensively assess instruction-following capabilities, the benchmark categorizes task instructions into five groups: (i) Base, which requires fundamental task-solving skills, (ii) Common Sense, which requires general world knowledge to resolve indirect objective references, (iii) Complex instructions, which involves longer, possibly distracting context that obscures the primary command, (iv) Spatial reasoning, where objects are referred to by their spatial relationships to other objects, and (v) Visual understanding, which requires recognizing objects based on visual attributes such as color or shape. All models are evaluated with a sampling temperature of 0. For comparison, the experimental results of GPT-4o-mini <ref type="bibr" target="#b17">[18]</ref> and Gemini-1.5-flash <ref type="bibr" target="#b61">[62]</ref> are adopted directly from the values reported in their paper.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Result.</head><p>In Table <ref type="table" target="#tab_2">4</ref>, the model trained with the ROBOT-R1 framework achieves an approximate 31% performance increase over the baseline Qwen2.5-7B-Instruct model. In particular, in the Base category, which utilizes instructions similar to those used during ROBOT-R1 training, the model achieves nearly double the performance (6.3% → 12.5%). This indicates that the embodied reasoning capabilities learned via ROBOT-R1 transfer effectively to downstream tasks, even in setups that differ significantly from the training distribution. In contrast, the models fine-tuned with SFT failed to complete any tasks, highlighting the limitations of SFT approaches.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Ablation Study and Analysis</head><p>Spatial reasoning ability. To further evaluate whether enhanced spatial reasoning abilities of ROBOT-R1 -as shown in Section 4.2 and acquired through RL for optimizing reasoning paths in action prediction -generalize to broader spatial understanding scenarios, we evaluate the model's performance on the SpatialRGPT benchmark <ref type="bibr" target="#b19">[20]</ref>. This benchmark is designed to evaluate 3D spatial comprehension capabilities in LVLMs. SpatialRGPT consists of two main components: a qualitative evaluation, which tests understanding of relative positional relationships between objects in an image, and a quantitative evaluation, which requires accurate prediction of numerical spatial values. As shown in Table <ref type="table">5</ref>, the model trained with ROBOT-R1 achieves substantial performance gains, with an approximate improvement of 40% in qualitative tasks and around 60% improvement in quantitative tasks. These improvements are particularly notable when compared to the performance of models trained solely with SFT, highlighting the effectiveness of RL-optimized reasoning in developing transferrable spatial understanding.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Validation of the ROBOT-R1 bench.</head><p>To confirm the validity of the ROBOT-R1 Bench's LLM-asjudge, we measure the Pearson correlation between LLM and human assigned score. Considering Table <ref type="table">5</ref>: SpatialRGPT-Bench results. Accuracy (%) of ROBOT-R1, SFT baselines in evaluating the performance of VQA tasks from SpatialRGPT-Bench <ref type="bibr" target="#b19">[20]</ref>, which measures (a) how LVLMs accurately predict the positional relations between objects, and (b) how LVLMs precisely estimate the absolute object positions, where the prediction is considered correct if it lies within ±25% of the ground-truth values. In contrast to SFT models that struggle to generalize to novel spatial reasoning tasks, ROBOT-R1 effectively transfers to these spatial reasoning tasks.</p><p>(a) Quantitative results the cost for collecting human annotations, we sample 40 problems from the ROBOT-R1 Bench and collect judgments from 8 participants with expertise in robotics. The experiment is conducted as a blind evaluation of responses produced by ROBOT-R1 and GPT-4o on a total of 80 problems. We define the human score as the median across the 8 participants. As shown in Table <ref type="table" target="#tab_3">6</ref>, the Pearson correlations between LLM and human scores are close to 0.9 for all tasks except planning, supporting the reliability of ROBOT-R1 Bench. For the planning task, we observe a lower correlation, likely because its longer and more open-ended responses allow multiple valid solutions, making precise automatic judging inherently more challenging. Notably, the tasks with higher correlations, such as high-level action, movement and spatial, are also where ROBOT-R1 achieves the largest performance gains, further supporting the validity of the improvements achieved by ROBOT-R1. Effect of different RL algorithms. We evaluate the effectiveness of GRPO used to train ROBOT-R1 by training additional models with RLOO <ref type="bibr" target="#b63">[64]</ref> and REINFORCE++ <ref type="bibr" target="#b64">[65]</ref>, two RL algorithms commonly employed for LLM optimization. We use the default hyperparameters provided by the workspace <ref type="foot" target="#foot_3">4</ref> and evaluate all models on the Robot-R1 Bench. Table <ref type="table" target="#tab_4">7</ref> shows that RLOO achieves performance comparable to GRPO; however, REINFORCE++ performs worse on average across tasks. We hypothesize that this is due to weaker reward normalization. Specifically, REINFORCE++ performs batch-level reward normalization, which often induces higher variance than the prompt-query-level normalization applied in GRPO and RLOO, leading to less stable learning and limited performance improvements. These findings indicate that RL algorithms that incorporate variance-reducing mechanisms, such as GRPO or RLOO, are beneficial for ROBOT-R1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Model</head><p>Robustness across random seeds. To evaluate whether ROBOT-R1 consistently yields performance gains across different random seeds, we conduct two additional experimental runs on the same dataset while changing only the random seed for online-sampling. We then evaluate all models on the Robot-R1 Bench. As shown in Table <ref type="table" target="#tab_5">8</ref>, ROBOT-R1 consistently achieves higher performance than non-finetuned model across all seeds. The improvements remain significant when accounting for variance. These results demonstrate that training with ROBOT-R1 is robust to seed variability.</p><p>Impact of QA design on performance. Table <ref type="table" target="#tab_6">9</ref> demonstrates the effects of different QA design choices on model performance. Our results show that adding auxiliary tasks progressively improves overall performance. We also evaluate an alternative approach that uses open-ended generation instead of multiple-choice question answering (MCQA). In this setup, the model directly generates next waypoint values in an open-ended format and uses clip(1 -L1, 0, 1) as the reward function, where the L1 represents the distance between the predicted and ground-truth states. While the open-ended approach initially outperforms single-task MCQA, it exhibits significant performance degradation when auxiliary tasks -such as current-state prediction -are introduced. Consequently, the MCQA framework demonstrates superior results. These findings highlight the critical role of question structure design in reinforcement learning for embodied reasoning.</p><p>Qualitative analysis. We find that the evolution of reasoning patterns during ROBOT-R1 training diverges notably from trends reported in Deepseek-R1 <ref type="bibr" target="#b16">[17]</ref>. While reasoning models for mathematical and coding tasks tend to develop longer reasoning chains over time, ROBOT-R1 exhibits the opposite pattern of producing progressively shorter and more focused reasoning (see Appendix D for detailed examples). Qualitatively, the model initially generates broad planning or high-level action reasoning in an overview format. Over time, these are gradually replaced by more concise, logically structured reasoning traces that directly link relevant embodied reasoning components.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>We have proposed ROBOT-R1, a novel training framework that enhances the embodied reasoning capabilities of Large Vision-Language Models in robotic domains. Our approach trains models to predict the next state based on image observations and current states from expert demonstrations, using explicit reasoning process optimized through reinforcement learning. Our extensive experiments demonstrate that models trained with ROBOT-R1 not only outperform Supervised Fine-Tuning (SFT) based approaches on embodied reasoning tasks but also exhibit consistent performance improvements across diverse embodied tasks while SFT methods often suffer from performance degradation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Limitation and Social Impact</head><p>Limitation. In this paper, we only considered the xyz positions as state, without considering the rotation of the end-effector and the manipulation of the gripper. Therefore, ROBOT-R1 is hard to achieve reasoning about rotation or gripper movement, which are essential for complex tasks. Integrating these additional state dimensions would enhance ROBOT-R1's embodied reasoning ability for complex tasks.</p><p>Social impact. ROBOT-R1 proposes a method that enhances embodied reasoning for robot control using small LVLMs (under 10B parameters) with limited data. This approach is easily accessible to research labs and small companies working on robotics. We expect ROBOT-R1 to accelerate robotics research, facilitating faster application and adoption of robotic technologies in society. However, there is a potential risk that robots trained by reinforcement learning execute unintended actions to achieve their goals. This potentially leads to diminished human oversight, hence the design of complementary reward to mitigate such risk should be also explored in the future.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Experiment Details</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1 Computing Cost</head><p>All experiments are conducted on a single node consisting of four A100 80GB GPUs. Training ROBOT-R1 task approximately 12 hours for 5 epoch using the 7.5K prompts.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2 Prompt Template for Generating Training Dataset</head><p>In this section, we provide the prompt templates used to generate the training datasets. To generate the Multiple-Choice Question Answering (MCQA) dataset as denoted in Section 3.2, we utilize three different prompt templates: the waypoint prediction MCQA prompt template (Figure <ref type="figure">4</ref>), the state prediction MCQA prompt template (Figure <ref type="figure">5</ref>), and the movement prediction MCQA prompt template (Figure <ref type="figure">6</ref>). These templates take the current state, task instructions, and question about problem.</p><p>For generating the SFT dataset, we employ a prompt structure analogous to the MCQA format. Specifically, we use two different prompt templates for both Direct SFT and CoT SFT: the waypoint prediction SFT prompt template (Figure <ref type="figure" target="#fig_3">7</ref>) and the current state prediction SFT prompt template (Figure <ref type="figure">8</ref>). However, the SFT dataset, unlike the ROBOT-R1 dataset, includes not only prompts but also answers. The Direct SFT dataset is structured to generate immediate answers, while the CoT SFT dataset incorporates a reasoning path for the waypoint prediction task. The CoT SFT dataset is designed to perform planning, high-level action reasoning, and movement prediction sequentially before predicting the final answer. The planning and high-level action reasoning components were defined using human-created scripts.</p><p>Waypoint prediction MCQA # You are Franka Robot Assistant: Task Planning and Execution System ## Task description {task_description} ## Visual Input You will receive a single combined image for scene understanding: -&lt;image&gt;: front view of the workspace ## Coordinate System The world coordinate frame follows these conventions: -This is based on the front view. (Wrist view has the Y-axis (left and right) opposite) -X-axis: Front of table (positive) to back of table (negative) -Y-axis: Left (negative) to right (positive) -Z-axis: Down toward floor (negative) to up toward ceiling (positive) -World origin [0.25, 0, 0.752] is at the center of the table surface ## Robot Specifications -Gripper dimensions: 0.06m width (x-direction) × 0.2 length (y-direction) × 0.09 height (z-direction), with fingers 0.04 in length ## Current Robot State Position: [{x}, {y}, {z}] ### Choice Question Based on the provided image and current robot state, predict the next waypoint position [x, y, z] Choose the most accurate option: [[A]] {A} [[B]] {B} [[C]] {C} [[D]] {D} ## Output Format You FIRST think about the reasoning process as an internal monologue and then provide the final answer. The reasoning process MUST BE enclosed within &lt;think&gt; &lt;/think&gt; tags. The final answer MUST BE enclosed within &lt;answer&gt; &lt;/answer&gt; tags. Example output format: &lt;think&gt; [detailed reasoning process] &lt;/think&gt; &lt;answer&gt; [[A]] &lt;/answer&gt; Figure 4: Waypoint prediction MCQA prompt template Current State prediction MCQA # You are Franka Robot Assistant: Task Planning and Execution System ## Robot Task description {task_description} ## Visual Input You will receive a single combined image for scene understanding: -&lt;image&gt;: front view of the workspace ## Coordinate System The world coordinate frame follows these conventions: -This is based on the front view. (Wrist view has the Y-axis (left and right) opposite) -X-axis: Front of table (positive) to back of table (negative) -Y-axis: Left (negative) to right (positive) -Z-axis: Down toward floor (negative) to up toward ceiling (positive) -World origin [0.25, 0, 0.752] is at the center of the table surface ## Robot Specifications -Gripper dimensions: 0.06m width (x-direction) × 0.2 length (y-direction) × 0.09 height (z-direction), with fingers 0.04 in length ### Choice Question Let's predict the current robot state base on image [[A]] {A} [[B]] {B} [[C]] {C} [[D]] {D} ## Output Format You FIRST think about the reasoning process as an internal monologue and then provide the final answer. The reasoning process MUST BE enclosed within &lt;think&gt; &lt;/think&gt; tags. The final answer MUST BE enclosed within &lt;answer&gt; &lt;/answer&gt; tags. Example output format: &lt;think&gt; [detailed reasoning process] &lt;/think&gt; &lt;answer&gt; [[A]] &lt;/answer&gt; Figure 5: Current state prediction MCQA prompt template Movement prediction MCQA # You are Franka Robot Assistant: Task Planning and Execution System ## Task description {task_description} ## Visual Input You will receive a single combined image for scene understanding: -&lt;image&gt;: front view of the workspace ## Coordinate System The world coordinate frame follows these conventions: -This is based on the front view. -X-axis: Front of table (positive) to back of table (negative) -Y-axis: Left (negative) to right (positive) -Z-axis: Down toward floor (negative) to up toward ceiling (positive) ### Choice Question What movements are needed to get to the next keypoint to perform the task? [[A]] {A} [[B]] {B} [[C]] {C} [[D]] {D} ## Output Format You FIRST think about the reasoning process as an internal monologue and then provide the final answer. The reasoning process MUST BE enclosed within &lt;think&gt; &lt;/think&gt; tags. The final answer MUST BE enclosed within &lt;answer&gt; &lt;/answer&gt; tags. Example output format: &lt;think&gt; [detailed reasoning process] &lt;/think&gt; &lt;answer&gt; [[A]] &lt;/answer&gt; Figure 6: Movement prediction MCQA prompt template Waypoint prediction QA for SFT Prompt # You are Franka Robot Assistant: Task Planning and Execution System ## Task description {task_description} ## Visual Input You will receive a single combined image for scene understanding: -&lt;image&gt;: front view of the workspace ## Coordinate System The world coordinate frame follows these conventions: -This is based on the front view. (Wrist view has the Y-axis (left and right) opposite) -X-axis: Front of table (positive) to back of table (negative) -Y-axis: Left (negative) to right (positive) -Z-axis: Down toward floor (negative) to up toward ceiling (positive) -World origin [0.25, 0, 0.752] is at the center of the table surface ## Robot Specifications -Gripper dimensions: 0.06m width (x-direction) × 0.2 length (y-direction) × 0.09 height (z-direction), with fingers 0.04 in length ## Current Robot State Position: [Current State] Let's determine the next robot state to execute task Answer for CoT SFT Plan: 1. Move the gripper to align vertically and position just above the red button. 2. Move the gripper down for pressing the button. Subtask: Move the gripper to align vertically and position just above the red button. Move: slightly move front, slightly move left, and move down. Answer: [Answer] Answer for Direct SFT [Answer] Table 10: Example of the working process of ROBOT-R1 Bench Question: What is the complete sequence of high-level actions needed to turn on the lamp?</p><p>Model Raw Answer: &lt;think&gt;To determine the sequence of actions needed to turn on the lamp, we need to consider the typical steps required for such a task. The lamp appears to be a standalone object with no visible control panel or buttons in the image provided. Assuming the lamp can be turned on by a remote control or a switch, the following steps would be logical: 1. Identify the lamp's location relative to the robot. 2. Determine if there is a remote control or switch accessible to the robot. 3. If a remote control or switch is present, use the robot's arm to interact with it. 4. If the lamp is directly accessible, move the robot's arm close to the lamp and interact with it. Since the image does not show a remote control or switch, and the lamp itself is not directly accessible, the robot might need to perform a series of actions to reach the lamp, such as moving towards it, interacting with it, and possibly using a tool to activate it.&lt;/think&gt; &lt;answer&gt;1. Move the robot arm towards the lamp. 2. Interact with the lamp to turn it on.&lt;/answer&gt;</p><p>Model Answer: 1. Move the robot arm towards the lamp. 2. Interact with the lamp to turn it on.</p><p>Ground Truth: 1. Position the robot's gripper near the lamp switch. 2. Press the lamp switch.</p><p>LLM-as-Judge Result: The model's answer correctly captures the intent and sequence of actions (approaching and turning on the lamp), but it uses more general terms ("move arm towards the lamp" and "interact with the lamp to turn it on") rather than explicitly stating positioning near the lamp switch and pressing it. While the core meaning is mostly preserved, the model omits the specific details of positioning near the switch and pressing it, making it slightly less precise.</p><p>Score: 2 identical to the original benchmark, but we use 100 randomly sampled images from real-robot demonstration videos in BridgeV2 <ref type="bibr" target="#b65">[66]</ref>. Table <ref type="table" target="#tab_7">11</ref> shows the evaluation results on the ROBOT-R1 Bridge Bench. Despite being trained only on RLBench simulation images, the model trained with ROBOT-R1 demonstrates notable performance gains, indicating that the high-level embodied reasoning ability acquired through ROBOT-R1 successfully transfers to real-robot environments. However, improvements in the embodied reasoning tailored for low-level action are relatively limited, which we attribute to differences in camera viewpoints and coordinate systems between RLBench and BridgeV2.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Evaluation on VLABench.</head><p>We further evaluate whether the model trained with ROBOT-R1 generalizes to other robot agent environments beyond RLBench, using the VLABench <ref type="bibr" target="#b66">[67]</ref> evaluation pipeline under the CoT setup. As shown in Table <ref type="table" target="#tab_8">12</ref>, the performance improves on the Mesh &amp; Texture (M&amp;T) and Spatial tasks, while it decreases slightly on the Physical Law and Complex Reasoning tasks. We hypothesize that this performance drop stems from the fundamental gap between these task types and the abilities learned via ROBOT-R1. For instance, Physical Law tasks include questions such as "We have three objects with different densities. Choose the object with the smallest density," while Complex Reasoning tasks include questions such as "Please rearrange these books in chronological order starting from the first published to the latest." These tasks primarily require reasoning unrelated to embodied manipulation. In contrast, the M&amp;T and Spatial tasks involve instructions such as "Add salt to the dish" or "Add the second condiment from the bottom to the dish," which demand spatial understanding and movement prediction directly targeted by ROBOT-R1. These findings demonstrate that the embodied reasoning capabilities learned through ROBOT-R1 can be effectively transferred to new robotic environments beyond RLBench.</p><p>Cold-start strategy. Training with high-quality SFT reasoning data followed by RL is a promising direction, as demonstrated in Guo et al. <ref type="bibr" target="#b16">[17]</ref>. To evaluate whether ROBOT-R1 remains effective in such a cold-start scenario, we conducted experiments using GPT-4.1-mini <ref type="bibr" target="#b67">[68]</ref> to generate highquality CoT-SFT data and then applied ROBOT-R1 fine-tuning on top of the SFT trained model with high-quality CoT-SFT data. Specifically, the SFT data are generated by conditioning on humanannotated ground-truth planning and high-level action information, and prompting the model to produce CoT-style responses under the MCQA prompt used for RL. All SFT training settings followed those in the main experiment. As shown in Table <ref type="table" target="#tab_9">13</ref>, ROBOT-R1 demonstrates consistent performance improvements even on top of the SFT model, indicating the effectiveness on cold-start settings. 'However, SFT-only training still shows decreased planning task performance and limited improvement in spatial tasks, implying that even with high-quality supervision, models remain vulnerable to forgetting and poor generalization.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D More Quantitative Results</head><p>In this section, we present quantitative metrics observed during the ROBOT-R1 training process. Specifically, we examine how the reward and response length change during training. Additionally, we include results for the Open-End approach trained ROBOT-R1 in Section 4.4. Open-End approach, unlike MCQA approach, directly generats next waypoint values and use L1 distance for reward which is define between the predicted and ground-truth states. Figure <ref type="figure" target="#fig_0">11a</ref> illustrates how the MCQA accuracy and the accuracy reward obtained from 1-L1 distance change during the training process. These results show that GRPO training is being performed effectively. As shown in Figure <ref type="figure" target="#fig_0">11b</ref>, ROBOT-R1 also demonstrates that the response character length decreases throughout the training process. We hypothesize that this occurs as the reasoning process transitions from a summary format to a narrative format, during which redundant or unnecessary information is removed from the responses. Detailed analysis is provided in Section E.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E Qualitative Results</head><p>This section presents the differences between model responses with ROBOT-R1 and Qwen2.5-VL-7b-ins (ROBOT-R1's base model). Figure <ref type="figure" target="#fig_1">12</ref> shows response examples of ROBOT-R1 trained with the MCQA approach. Figure <ref type="figure" target="#fig_2">13</ref> shows response examples of ROBOT-R1 trained with the Open-End approach from Section 4.4. Commonly, Qwen2.5-VL-7b-Ins demonstrates weak connections between reasoning process components and tends to generate responses in a summary format rather than a </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F Experiments on Vision-Language-Action Models</head><p>Finally, we evaluate whether training with ROBOT-R1 not only improves embodied reasoning but also enhances downstream robot control performance. We utilize the GR00T-N1.5 <ref type="bibr" target="#b68">[69]</ref> repository for attaching a new diffusion policy head top on the LVLM backbone. Experiments are conducted in both the LIBERO simulation <ref type="bibr" target="#b69">[70]</ref> environment and on a real robot.</p><p>LIBERO simulation. In LIBERO simulation, the environment is simulated using a Franka Panda Arm and includes four evaluation categories, such as, Spatial, Object, Goal, and Long. Each category consists of 10 tasks, and every task is evaluated over 50 rollouts. The action policy is trained using all given fine-tuning data with a batch size of 32 for 60k steps, following the original diffusion policy training setup while keeping all other hyperparameters identical to the GR00T-N1.5 repository. Table <ref type="table" target="#tab_10">14</ref> presents the success rates in the four LIBERO categories. The model trained with ROBOT-R1 outperforms the baseline on average. In particular, the Goal category shows a remarkable performance improvement, which we attribute to its complex manipulation requirements that are closely aligned with the reasoning enhancements encouraged by ROBOT-R1. Although the Objective category shows a slight performance drop, we attribute this to the limited object diversity in RLBench during ROBOT-R1's training stage.</p><p>Real robot experiment. In real robot experience, we utilize a Franka Research 3 arm to perform four different pick-and-place tasks, each involving four distinct objects: a teddy bear, box, cup, and sponge. Each task is evaluated 24 times, resulting in 96 total trials to calculate the success rate. For training, each object has 60 demonstration trajectories, leading to 240 training examples per task. For each task, we train a separate action diffusion policy using its corresponding demonstrations for 30k steps with a batch size of 32, while keeping all other hyperparameters consistent with the simulation setup. Table <ref type="table" target="#tab_11">15</ref> shows that training the action diffusion policy with ROBOT-R1 improves the average success rate from 16.67% to 23.96%, confirming ROBOT-R1 effectiveness in enhancing real-world robot control performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Evaluation Rubric and LLM-as-Judge prompt</head><p>Rubric 0 points: Meaning completely different from ground truth -Answer has a completely different meaning from ground truth -Key concepts and ideas are misinterpreted -Contains information that contradicts ground truth 1 point: Partially matches but with significant meaning differences -Some key points match but main meaning is different -Contains significant misunderstandings of core concepts -Has some correct information but overall meaning is incorrect 2 points: Mostly matches in meaning but with minor differences -Main meaning and key points are correct -Minor details or expressions are different -Overall context and intent are preserved 3 points: Meaning is equivalent to or more detailed than ground truth -Any expression that conveys the same basic meaning as ground truth -Any description that leads to the same functional outcome -Any expression that maintains the same spatial relationship between objects -Any description that achieves the same goal through equivalent means -Any expression that preserves the core meaning while using different words -Any description that maintains the same context and intent -Any expression that describes the same target location and action Additional Notes: 1. Focus on semantic equivalence rather than exact wording 2. Different expressions are acceptable if they convey the same meaning 3. Consider the overall context and intent of the answer 4. Minor differences in expression are acceptable if the core meaning is maintained 5. Paraphrasing is considered a perfect match if the meaning is preserved 6. Different ways of describing the same action (e.g., 'press' vs 'flip' a switch) should be considered equivalent 7. The specific actor (robot vs human) should not affect the score if the action described is functionally equivalent 8. Different ways of expressing the same spatial relationship (e.g., 'over' vs 'toward') should be considered equivalent 9. Focus on whether the answer achieves the same functional outcome as the ground truth 10. Consider the answer as a 3 if it describes the same action or state using different but equivalent words</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>System Prompt</head><p>You are an expert in evaluating the consistency between model's answer and ground truth answer. Please assign a score between 0-3 based on the given rubric and explain the reason in detail. You must respond in the format 'Score: [0-3] Reason: [explanation]' in a single line. You may use line breaks, but Score and Reason must be clearly separated and identifiable.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>User Prompt</head><p>Please evaluate how well the model's answer matches the ground truth answer. Evaluation Criteria: {rubric} Question: {question} Model's Answer: {model_answer} Ground Truth Answer: {ground_truth} Please assign a score between 0-3 and explain the reason in detail. 0 10 20 30 40 50 60 Step 0.3 0.4 0.5 0.6 0.7 0.8 QA Accuracy MCQA Open-End QA 0.60 0.65 0.70 0.75 0.80 0.85 1 -L1 Distance (a) Avg reward change during ROBOT-R1 training 0 10 20 30 40 50 60 Step 200 250 300 350 Mean Response Length Open-End QA MCQA (b) response length change during ROBOT-R1 training Figure 11: Training metrics for ROBOT-R1 across two learning approaches: Open-End QA and MCQA. We conducted 10 epoch training for Open-End QA and 5 epoch training for MCQA (note that all models reported in the paper are based on 5 epoch training). Due to differences in dataset sizes between the two tasks, the graphs are plotted based on training steps. (a) Shows accuracy metrics for the MCQA task (left axis) and 1 -L1 distance for Open-End QA (right axis). (b) Shows mean response length over training steps for both task types.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Illustration of the ROBOT-R1 framework. (a) ROBOT-R1 uses robot states and image observations from expert demonstrations to create a dataset. (b) These data are reformulated into three different multiple-choice question answering (MCQA) tasks: predicting next states, current states, and movements. (c) During training, an LVLM solves MCQA tasks with reasoning which is then optimized using the GRPO algorithm [17] to reinforce reasoning pathways.</figDesc><graphic coords="2,123.29,179.71,62.66,62.57" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Illustration of the ROBOT-R1 Bench. (a) ROBOT-R1 Bench consists of human-written questions paired with corresponding ground truth (reference) answers. (b) The LVLM under evaluation takes each question along with its associated image as input and generates an answer. (c) The generated answers are scored using GPT-4o, based on predefined rubrics and ground truth answers.</figDesc><graphic coords="5,113.64,320.48,59.75,59.75" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure3: ROBOT-R1 Bench results. In embodied reasoning tailored for low-level control, ROBOT-R1 outperforms all previously reported models.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Waypoint prediction QA template for SFT</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 10 :Figure 11 :</head><label>1011</label><figDesc>Figure10: Evaluation rubric and LLM-as-Judge prompt for model answer assessment.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 3 :</head><label>3</label><figDesc>ROBOT-R1 Bench results. Performance on embodied reasoning tasks tailored for low-level control evaluated using the ROBOT-R1 Bench. ROBOT-R1 achieves the highest overall performance, outperforming leading commercial models across benchmark scores.</figDesc><table><row><cell></cell><cell></cell><cell>Movement</cell><cell></cell><cell></cell><cell>Spatial</cell><cell></cell></row><row><cell>Model</cell><cell>In</cell><cell>Out</cell><cell>Avg</cell><cell>In</cell><cell>Out</cell><cell>Avg</cell></row><row><cell>GPT-4o-mini [18]</cell><cell cols="6">0.64 0.56 0.60 1.73 1.14 1.48</cell></row><row><cell>GPT-4o [18]</cell><cell cols="6">0.92 0.52 0.72 1.70 1.07 1.43</cell></row><row><cell>Claude-3-Opus [59]</cell><cell cols="6">0.40 0.24 0.32 0.97 0.43 0.74</cell></row><row><cell>Claude-3.5-Haiku [60]</cell><cell cols="6">0.68 0.48 0.58 1.41 0.71 1.11</cell></row><row><cell cols="7">Claude-3.5-Sonnet-v2 [61] 0.96 0.28 0.62 1.49 0.75 1.17</cell></row><row><cell>Claude-3.7-Sonnet [57]</cell><cell cols="5">0.76 0.48 0.62 1.65 1.07</cell><cell>1.4</cell></row><row><cell>Gemini-1.5-Flash [62]</cell><cell cols="6">0.60 0.16 0.38 1.57 0.93 1.29</cell></row><row><cell>Gemini-1.5-Pro [62]</cell><cell cols="6">0.76 0.40 0.58 1.49 1.14 1.34</cell></row><row><cell>Gemini-2.0-Flash [58]</cell><cell cols="6">0.52 0.40 0.46 1.76 1.14 1.49</cell></row><row><cell>Qwen2.5-VL-7B-Ins [56]</cell><cell cols="6">0.64 0.52 0.58 1.62 1.11 1.40</cell></row><row><cell>w/ Direct SFT</cell><cell>0.12</cell><cell>0</cell><cell cols="4">0.06 0.08 0.04 0.06</cell></row><row><cell>w/ CoT SFT</cell><cell cols="6">0.84 0.56 0.70 0.46 0.07 0.29</cell></row><row><cell>w/ ROBOT-R1 (Ours)</cell><cell cols="6">0.96 0.56 0.76 1.76 1.18 1.51</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Summary of ROBOT-R1 Bench results.In embodied reasoning tailored for high-level control, ROBOT-R1 significantly outperforms SFT, the baseline training method.</figDesc><table><row><cell>Model</cell><cell cols="2">Planning High-level Action</cell></row><row><cell>GPT-4o [18]</cell><cell>1.96</cell><cell>2.02</cell></row><row><cell>Cluade-3-7-sonnet [57]</cell><cell>1.72</cell><cell>1.58</cell></row><row><cell>Gemini-2.0-flash [58]</cell><cell>1.84</cell><cell>1.12</cell></row><row><cell>Qwen2.5-VL-7B-Ins [56]</cell><cell>1.66</cell><cell>1.04</cell></row><row><cell>w/ Direct SFT</cell><cell>0</cell><cell>0.04</cell></row><row><cell>w/ CoT SFT</cell><cell>0.60</cell><cell>1.28</cell></row><row><cell>w/ ROBOT-R1 (Ours)</cell><cell>1.44</cell><cell>1.30</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 4 :</head><label>4</label><figDesc>EmbodiedBench Manipulation results.Success rate (%) of ROBOT-R1, SFT baselines, and various commercial models in evaluating the performance of EmbodiedBench Manipulation<ref type="bibr" target="#b18">[19]</ref>, which evaluates LVLM performance for vision-based robotic agents.</figDesc><table><row><cell>Model</cell><cell>Base</cell><cell cols="3">Common Complex Spatial</cell><cell>Visual</cell><cell>Avg.</cell></row><row><cell>GPT-4o-mini [18]</cell><cell>4.2</cell><cell>6.3</cell><cell>2.1</cell><cell>10.4</cell><cell>0</cell><cell>4.6</cell></row><row><cell>Cluade-3.5-Haiku [59]</cell><cell>12.5</cell><cell>12.5</cell><cell>12.5</cell><cell>16.7</cell><cell>13.9</cell><cell>13.6</cell></row><row><cell>Gemini-1.5-flash [63]</cell><cell>14.6</cell><cell>10.4</cell><cell>4.2</cell><cell>10.4</cell><cell>8.3</cell><cell>9.6</cell></row><row><cell>Qwen2.5-VL-7B-Ins [56]</cell><cell>6.3</cell><cell>6.3</cell><cell>6.3</cell><cell>14.6</cell><cell>11.1</cell><cell>8.92</cell></row><row><cell>w Direct SFT</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>0</cell></row><row><cell>w CoT SFT</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>0</cell></row><row><cell>w ROBOT-R1 (Ours)</cell><cell>12.5</cell><cell>8.3</cell><cell>6.3</cell><cell>14.6</cell><cell>16.7</cell><cell>11.68</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 6 :</head><label>6</label><figDesc>Pearson correlation between human and GPT-4o<ref type="bibr" target="#b17">[18]</ref> judgments on ROBOT-R1 Bench.</figDesc><table><row><cell></cell><cell>Direct Dist.</cell><cell cols="3">Horiz. Dist. Vert. Dist.</cell><cell>Width</cell><cell>Height</cell><cell>Direction</cell><cell>Quant. Avg</cell></row><row><cell>Qwen2.5-VL-7B-Ins [56]</cell><cell>1.35</cell><cell>9.02</cell><cell></cell><cell>8.49</cell><cell>6.77</cell><cell>9.77</cell><cell>28.04</cell><cell>9.88</cell></row><row><cell>w Direct SFT</cell><cell>4.05</cell><cell>3.28</cell><cell></cell><cell>0.94</cell><cell>0.75</cell><cell>4.51</cell><cell>42.06</cell><cell>8.41</cell></row><row><cell>w CoT SFT</cell><cell>1.35</cell><cell>2.46</cell><cell></cell><cell>0</cell><cell>3.01</cell><cell>6.77</cell><cell>38.32</cell><cell>7.88</cell></row><row><cell>w ROBOT-R1 (Ours)</cell><cell>6.08</cell><cell>14.75</cell><cell></cell><cell>22.64</cell><cell>21.8</cell><cell>19.55</cell><cell>12.15</cell><cell>15.89</cell></row><row><cell></cell><cell></cell><cell cols="4">(b) Qualitative results</cell><cell></cell><cell></cell></row><row><cell>Model</cell><cell cols="3">Below/Above Left/Right</cell><cell cols="5">Big/Small Tall/Short Wide/Thin Behind/Front Qual. Avg</cell></row><row><cell>Qwen2.5-VL-7B-Ins [56]</cell><cell>35</cell><cell>50.48</cell><cell></cell><cell>6.6</cell><cell>17.86</cell><cell>27.88</cell><cell>36.36</cell><cell>29.07</cell></row><row><cell>w Direct SFT</cell><cell>3.33</cell><cell>17.14</cell><cell></cell><cell>0</cell><cell>9.82</cell><cell>0</cell><cell>0</cell><cell>5.02</cell></row><row><cell>w CoT SFT</cell><cell>15.83</cell><cell>33.33</cell><cell></cell><cell>45.28</cell><cell>39.28</cell><cell>47.12</cell><cell>35.45</cell><cell>35.62</cell></row><row><cell>w ROBOT-R1 (Ours)</cell><cell>42.5</cell><cell>41.9</cell><cell></cell><cell>31.13</cell><cell>37.5</cell><cell>38.46</cell><cell>52.72</cell><cell>40.79</cell></row><row><cell cols="9">Computed over 80 responses (from ROBOT-R1 and GPT-4o), where human scores are defined as the</cell></row><row><cell cols="3">median of 8 human expert annotations.</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell cols="2">Planning</cell><cell cols="3">High-level Action</cell><cell cols="2">Movement</cell><cell>Spatial</cell></row><row><cell>Pearson Correlation</cell><cell>0.3315</cell><cell></cell><cell></cell><cell>0.8974</cell><cell></cell><cell>0.8931</cell><cell></cell><cell>0.8961</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 7 :</head><label>7</label><figDesc>ROBOT-R1 Bench results on different RL algorithms.</figDesc><table><row><cell>Model</cell><cell cols="4">Planning High-level Action Movement Spatial</cell></row><row><cell>GRPO [46]</cell><cell>1.44</cell><cell>1.30</cell><cell>0.76</cell><cell>1.51</cell></row><row><cell>RLOO [64]</cell><cell>1.56</cell><cell>1.54</cell><cell>0.68</cell><cell>1.52</cell></row><row><cell>REINFORCE++ [65]</cell><cell>1.40</cell><cell>1.08</cell><cell>0.62</cell><cell>1.38</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 8 :</head><label>8</label><figDesc>Robot-R1 Bench results across random seeds. ROBOT-R1 consistently improves performance over the non-finetuned original model (Qwen2.5-VL-7B-Ins<ref type="bibr" target="#b55">[56]</ref>) across different random seeds, showing strong robustness to seed variability.</figDesc><table><row><cell>Model</cell><cell>Planning</cell><cell>High-level Action</cell><cell>Movement</cell><cell>Spatial</cell></row><row><cell>Qwen2.5-VL-7B-Ins [56]</cell><cell>1.66</cell><cell>1.04</cell><cell>0.58</cell><cell>1.40</cell></row><row><cell>w ROBOT-R1 (Ours) 1st Seed</cell><cell>1.44</cell><cell>1.30</cell><cell>0.76</cell><cell>1.51</cell></row><row><cell>w ROBOT-R1 (Ours) 2nd Seed</cell><cell>1.70</cell><cell>1.46</cell><cell>0.64</cell><cell>1.66</cell></row><row><cell>w ROBOT-R1 (Ours) 3rd Seed</cell><cell>1.56</cell><cell>1.50</cell><cell>0.54</cell><cell>1.60</cell></row><row><cell>Seed Avg.</cell><cell>1.57</cell><cell>1.42</cell><cell>0.65</cell><cell>1.59</cell></row><row><cell>Seed Std.</cell><cell>0.13</cell><cell>0.11</cell><cell>0.11</cell><cell>0.08</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 9 :</head><label>9</label><figDesc>Ablation study. Evaluation results on the ROBOT-R1 Bench comparing different dataset designs, varying auxiliary tasks, i.e., waypoint prediction (WP), current state prediction (SP), and movement prediction (MP), and the question format.</figDesc><table><row><cell>QA Type</cell><cell></cell><cell></cell><cell>Task Type</cell><cell></cell><cell cols="2">Low Level Control</cell><cell></cell><cell></cell><cell>High Level Control</cell><cell></cell></row><row><cell cols="11">Open-End MCQA WP SP MP Movement Spatial Avg Planning High-level Action Avg</cell></row><row><cell>✓</cell><cell>-</cell><cell>✓</cell><cell>✗</cell><cell>✗</cell><cell>0.68</cell><cell>1.37</cell><cell>1.03</cell><cell>1.60</cell><cell>1.26</cell><cell>1.43</cell></row><row><cell>✓</cell><cell>-</cell><cell>✓</cell><cell>✓</cell><cell>✗</cell><cell>0.48</cell><cell>1.03</cell><cell>0.76</cell><cell>1.48</cell><cell>1.16</cell><cell>1.17</cell></row><row><cell>-</cell><cell>✓</cell><cell>✓</cell><cell>✗</cell><cell>✗</cell><cell>0.40</cell><cell>1.42</cell><cell>0.91</cell><cell>1.44</cell><cell>1.22</cell><cell>1.33</cell></row><row><cell>-</cell><cell>✓</cell><cell>✓</cell><cell>✓</cell><cell>✗</cell><cell>0.54</cell><cell>1.51</cell><cell>1.03</cell><cell>1.50</cell><cell>1.24</cell><cell>1.37</cell></row><row><cell>-</cell><cell>✓</cell><cell>✓</cell><cell>✓</cell><cell>✓</cell><cell>0.76</cell><cell>1.51</cell><cell>1.14</cell><cell>1.44</cell><cell>1.30</cell><cell>1.37</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_7"><head>Table 11 :</head><label>11</label><figDesc>Robot-R1 Bridge Bench results</figDesc><table><row><cell>Model</cell><cell>Planning</cell><cell>High-level Action</cell><cell>Movement</cell><cell>Spatial</cell></row><row><cell>Gemini-1.5 Pro [62]</cell><cell>1.70</cell><cell>1.16</cell><cell>0.39</cell><cell>1.65</cell></row><row><cell>Qwen2.5-VL-7B-Ins [56]</cell><cell>1.20</cell><cell>0.89</cell><cell>0.46</cell><cell>1.53</cell></row><row><cell>w ROBOT-R1 (Ours)</cell><cell>1.38</cell><cell>1.10</cell><cell>0.45</cell><cell>1.56</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_8"><head>Table 12 :</head><label>12</label><figDesc>VLABench LVLM Bench results</figDesc><table><row><cell>Model</cell><cell>M&amp;T</cell><cell>Common-</cell><cell cols="2">Semantic Spatial</cell><cell>Physical-</cell><cell>Complex</cell></row><row><cell></cell><cell></cell><cell>Sense</cell><cell></cell><cell></cell><cell>Law</cell><cell></cell></row><row><cell>Qwen2.5-VL-7B-Ins [56]</cell><cell>39.02</cell><cell>40.78</cell><cell>37.64</cell><cell>35.83</cell><cell>39.20</cell><cell>38.51</cell></row><row><cell>w ROBOT-R1 (Ours)</cell><cell>46.58</cell><cell>41.5</cell><cell>37.62</cell><cell>40.33</cell><cell>25.33</cell><cell>33.87</cell></row><row><cell>w CoT-SFT</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>0</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_9"><head>Table 13 :</head><label>13</label><figDesc>Results of the cold start experiment on ROBOT-R1 Bench</figDesc><table><row><cell>Model</cell><cell>Planning</cell><cell>High-level Action</cell><cell>Movement</cell><cell>Spatial</cell></row><row><cell>Qwen2.5-VL-7B-Ins [56]</cell><cell>1.66</cell><cell>1.04</cell><cell>0.58</cell><cell>1.40</cell></row><row><cell>+ High Quality CoT-SFT</cell><cell>0.98</cell><cell>1.34</cell><cell>0.88</cell><cell>1.4</cell></row><row><cell>+ ROBOT-R1 (Ours)</cell><cell>1.22</cell><cell>1.44</cell><cell>0.88</cell><cell>1.43</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_10"><head>Table 14 :</head><label>14</label><figDesc>VLA performance on LIBERO</figDesc><table><row><cell>Model</cell><cell>Long</cell><cell>Goal</cell><cell>Objective</cell><cell>Spatial</cell><cell>Avg.</cell></row><row><cell>Qwen2.5-VL-7B-Ins [56]</cell><cell>44.0</cell><cell>61.6</cell><cell>83.4</cell><cell>86.8</cell><cell>69.0</cell></row><row><cell>w ROBOT-R1 (Ours)</cell><cell>45.8</cell><cell>73.8</cell><cell>80.4</cell><cell>87.0</cell><cell>71.8</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_11"><head>Table 15 :</head><label>15</label><figDesc>VLA performance on real robot</figDesc><table><row><cell>Model</cell><cell>PnP 1</cell><cell>PnP 2</cell><cell>PnP 3</cell><cell>PnP 4</cell><cell>Avg.</cell></row><row><cell>Qwen2.5-VL-7B-Ins [56]</cell><cell>25</cell><cell>0</cell><cell>20.83</cell><cell>20.83</cell><cell>16.67</cell></row><row><cell>w ROBOT-R1 (Ours)</cell><cell>25</cell><cell>29.17</cell><cell>25</cell><cell>16.67</cell><cell>23.96</cell></row><row><cell cols="6">narrative format. However, after ROBOT-R1 training, the reasoning processes become coherently</cell></row><row><cell cols="4">connected and shift toward a narrative format in their responses.</cell><cell></cell><cell></cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>https://github.com/stepjam/ARM</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>https://github.com/hiyouga/EasyR1</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>https://github.com/2U1/Qwen2-VL-Finetune</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_3"><p>https://github.com/hiyouga/EasyR1</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><p>Acknowledgements This work was supported by <rs type="funder">Institute for Information &amp; communications Technology Promotion(IITP)</rs> grant funded by the <rs type="funder">Korea government(MSIT)</rs> (No.<rs type="grantNumber">RS-2019-II190075</rs> Artificial <rs type="funder">Intelligence Graduate School Program(KAIST)</rs>; No. <rs type="grantNumber">RS-2024-00509279</rs>, <rs type="institution">Global AI Frontier Lab)</rs> and <rs type="funder">RLWRLD, Inc.</rs></p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_xh7xSpA">
+					<idno type="grant-number">RS-2019-II190075</idno>
+				</org>
+				<org type="funding" xml:id="_FNmpcBb">
+					<idno type="grant-number">RS-2024-00509279</idno>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>To reduce variance in all benchmarks, we set the temperature of the model being evaluated to 0. Meanwhile, the ROBOT-R1 Bench uses GPT-4o <ref type="bibr" target="#b17">[18]</ref> for LLM-as-judge, and we set the temperature of GPT-4o to 1 (default temperature) for judgment tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ROBOT-R1 Bench details.</head><p>The evaluation dataset consists of (1) images corresponding to observations, (2) questions related to embodied reasoning, and (3) human-written ground truth answers. The evaluated models receive the images and questions as input to generate responses. To improve the accuracy of answer generation, each model receives the following system prompt for every sampling process (see Figure <ref type="figure" target="#fig_9">9</ref>). The evaluator, GPT-4o, provides scores between 0 and 3 points using the LLM-as-judge template prompt (see Figure <ref type="figure">10</ref>) with the question, the response of the evaluated model, the predefined ground truth answer and the evaluation rubric. To sum up, full evaluation process is conducted as shown in Table <ref type="table">10</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Additional Evaluation and Analysis</head><p>In this section, we present additional evaluations and analyses to further validate the effectiveness of ROBOT-R1. For efficiency, all experiments in this section are trained for one epoch before evaluation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Robot-R1 Bench on real robot.</head><p>To further investigate whether the embodied reasoning capability learned by ROBOT-R1 can transfer to real-world robot settings, we extend the ROBOT-R1 Bench to the ROBOT-R1 Bridge Bench <ref type="bibr" target="#b65">[66]</ref>. The problem construction and evaluation procedure remain</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>System Prompt for Sampling in ROBOT-R1 Bench</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>System Prompt Format</head><p>You are an AI that accurately answers questions about robot actions and spatial relationships. Follow these rules strictly: 1. Answer ONLY what is asked in the question. 2. Do not include any purpose or objective of actions (remove all 'to...' phrases). </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Task Description Examples</head><p>Task Type: "spatial" -Focus only on relative positions and spatial relationships between objects.</p><p>-Do not describe any action or movement.</p><p>-Only describe the current spatial configuration.</p><p>-Example Answer: "The gripper is above the cup, offset to the right." Task Type: "planning" -List major actions in chronological order (1., 2., 3., ...).</p><p>-Each step should describe only the action, without mentioning the purpose.</p><p>-Example Answer: "1. Move the robot arm above the cup. 2. Lower the gripper to grasp the cup.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Lift the cup upward."</head><p>Task Type: "high_level action" -Focus on the immediate next meaningful subtask (a single self-contained action).</p><p>-Describe WHAT needs to be done, not HOW to do it. Question: You are Franka Robot Assistant: Task Planning and Execution System Task description: lift the lid off the pan [...] Current Robot State: Position [0.265, -0.112, 1.154] Choice Question: Based on the provided image and current robot state, predict the next waypoint position [x, y, z]. Choose the most accurate option: [[A]] [0.072, 0.243, 0.996] [[B]] [-0.07, 0.247, 0.937] [[C]] [0.254, -0.197, 0.894] [[D]] [0.187, -0.065, 1.144] [...]</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>GT Answer: [[C]]</head><p>Qwen2.5-VL-Ins Answer: &lt;think&gt; To predict the next waypoint position for the robot to lift the lid off the pan, we need to consider the current position and the desired action. The robot is currently positioned above the pan, and the lid is on top of the pan. The goal is to lift the lid, which means the robot should move closer to the lid while maintaining a position that allows it to grasp the lid.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Let's analyze the options:</head><p>Option A: [0.072, 0.243, 0.996] -positioned above the lid, reasonable for grasping action Option B: [-0.07, 0.247, 0.937] -further to the left, not efficient path Option C: [0.254, -0.197, 0.894] -further back, not aligned with lid position Option D: [0.187, -0.065, 1.144] -further up, not necessary for grasping Option A has x and y coordinates close to the lid's position, and the z-coordinate is slightly lower than the current position, which is necessary for the robot to reach the lid. Therefore, the most accurate option is A. &lt;/think&gt; &lt;answer&gt; [[A]] &lt;/answer&gt; reward: 0 ROBOT-R1 Answer: &lt;think&gt; To predict the next waypoint position for the robot to lift the lid off the pan, we need to consider the current position of the pan and the lid, as well as the robot's current position and orientation. The lid is currently on the pan, and the robot is positioned above the pan.</p><p>Given the current robot position [0.265, -0.112, 1.154], the pan is located close to the robot, and the lid is on top of the pan. We need to move the robot to a position where it can grasp the lid and lift it off the pan. The most accurate position to predict for the next waypoint would be one that allows the robot to reach the lid on the pan.</p><p>Looking at the coordinates of the pan and the lid, the most suitable position for the robot to reach the lid would be a position above the lid, but not directly on top of it, to ensure the robot can grasp the lid without hitting the pan. The option [[C]] [0.254, -0.197, 0.894] is the closest to the lid while still being above it, making it the most accurate choice for the next waypoint. &lt;/think&gt; &lt;answer&gt; [[C]] &lt;/answer&gt; reward: 1   Qwen2.5-VL-Ins Answer: &lt;think&gt; The task is to chuck away rubbish on the table. From the visual input, we can see that there are two red objects (possibly apples) and a crumpled piece of paper on the table. The black trash bin is present, indicating where the rubbish should be placed. The robot's gripper dimensions need to be considered to determine if it can pick up the paper. The gripper can easily pick up the paper, but the apples are larger and may require a different strategy or a second task. For this task, the focus is on the crumpled paper. The robot's current position is [0.275, -0.009, 1.448]. The next step would be to move towards the crumpled paper, pick it up, and then move it to the trash bin.</p><p>1. Move the robot's arm towards the crumpled paper. 2. Open the gripper to pick up the crumpled paper. 3. Move the gripper to the trash bin. 4. Close the gripper and drop the paper into the trash bin. 5. Move the robot's arm back to its starting position.</p><p>Let's calculate the coordinates for the paper and the trash bin: -The crumpled paper is located at approximately [0.2, -0.1, 0.75].</p><p>-The trash bin is located at approximately [0.4, -0.1, 0.75].</p><p>The robot will move from its current position to the paper and then to the trash bin. &lt;/think&gt; &lt;answer&gt; [0.2, -0.1, 0.75] &lt;/answer&gt; L1 distance between target: 0.191</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ROBOT-R1 Answer: &lt;think&gt;</head><p>The task is to remove any rubbish from the table. Observing the image, there are two apples and a piece of paper on the table. The paper appears to be the "rubbish" as it is not a food item. The robot's gripper is positioned above the table, and the basket is nearby, suggesting it can be used to collect the rubbish. The robot needs to grab the paper and drop it into the basket. The robot's current position is above the paper, and it needs to move closer to the paper to grab it. Once the paper is picked up, it should be moved to the basket and released.</p><p>Steps: 1. Move the robot's gripper closer to the paper. 2. Grasp the paper. 3. Move the paper towards the basket. 4. Release the paper in the basket. &lt;/think&gt; &lt;answer&gt; [0.275, -0.009, 0.85] # Move closer to the paper &lt;/answer&gt; L1 distance between target: 0.117 </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Current</head><figDesc>State prediction QA for SFT Prompt # You are Franka Robot Assistant: Task Planning and Execution System ## Task description {task_description} ## Visual Input You will receive a single combined image for scene understanding: -&lt;image&gt;: front view of the workspace ## Coordinate System The world coordinate frame follows these conventions: -This is based on the front view. (Wrist view has the Y-axis (left and right) opposite) -X-axis: Front of table (positive) to back of table (negative) -Y-axis: Left (negative) to right (positive) -Z-axis: Down toward floor (negative) to up toward ceiling (positive) -World origin [0.25, 0, 0.752] is at the center of the table surface</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>#</head><figDesc># Robot Specifications -Gripper dimensions: 0.06m width (x-direction) × 0.2 length (y-direction) × 0.09 height (z-direction), with fingers 0.04 in length Let's predict the current robot state base on image Answer [Answer]</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 8 :</head><label>8</label><figDesc>Current state prediction QA template for SFT B.3 Benchmark Setup</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>3 .</head><label>3</label><figDesc>Do not include any additional descriptive information. 4. Keep answers concise and focused on the core information. 5. Remove all unnecessary details about the current state or conditions. 6. Direction should be judged based on the viewpoint in the image. * up: away from the ground * down: toward the ground * forward: toward the camera (where the image was taken from) * backward: away from the camera * right: to the right side from the camera's perspective * left: to the left side from the camera's perspective TASK GUIDELINES: {task_description} Additional Style Requirements: -Use simple and clear English. -Focus on semantic correctness, not stylistic variation. -Keep sentences short and remove unnecessary details. -If multiple directions are involved, combine them clearly (e.g., 'Move down and slightly right').</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>-Figure 9 :</head><label>9</label><figDesc>Only the immediate next step, not the final goal. -Example Answer: "Move the gripper closer to the button." Task Type: "movement" -Specify only mechanical movements and gripper state changes. -Use the robot's perspective for directions: -Describe only the very next physical movement. -Example Answer: "Move down and slightly right." System prompt for sampling in ROBOT-R1 Bench</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 12 :</head><label>12</label><figDesc>Example of model response (MCQA) Question: You are Franka Robot Assistant: Task Planning and Execution System Task description: chuck way any rubbish on the table rubbish</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><figDesc>[...] Current Robot State: Position [0.275, -0.009, 1.448]</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><figDesc>[...] Let's determine the next robot state to execute task GT Answer: [0.179, -0.026, 0.846]</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><head>Figure 13 :</head><label>13</label><figDesc>Example of model response (Open-End QA)</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Rt-1: Robotics transformer for real-world control at scale</title>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Justice</forename><surname>Carbajal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><surname>Dabis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keerthana</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Herzog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jasmine</forename><surname>Hsu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.06817</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Rt-2: Vision-languageaction models transfer web knowledge to robotic control</title>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Justice</forename><surname>Carbajal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Krzysztof</forename><surname>Choromanski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianli</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Driess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Avinava</forename><surname>Dubey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.15818</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mengjiao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kamyar</forename><surname>Ghasemipour</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.06114</idno>
+		<title level="m">Learning interactive real-world simulators</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">1</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Inner monologue: Embodied reasoning through planning with language models</title>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harris</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacky</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Chebotar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2207.05608</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Language models as zero-shot planners: Extracting actionable knowledge for embodied agents</title>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deepak</forename><surname>Pathak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on machine learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="9118" to="9147" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yingdong</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fanqi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Yi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Gao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.17842</idno>
+		<title level="m">Look before you leap: Unveiling the power of gpt-4v in robotic vision-language planning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Driess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">M</forename><surname>Mehdi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Corey</forename><surname>Sajjadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Lynch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ayzaan</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Wahid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quan</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhe</forename><surname>Vuong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Huang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.03378</idno>
+		<title level="m">Palm-e: An embodied multimodal language model</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">A vision-language-action flow model for general robot control</title>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Black</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Driess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adnan</forename><surname>Esmail</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Equi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niccolo</forename><surname>Fusai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lachy</forename><surname>Groom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ichter</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.24164</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">0</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Cogact: A foundational vision-language-action model for synergizing cognition and action in robotic manipulation</title>
+		<author>
+			<persName><forename type="first">Qixiu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaobo</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mozheng</forename><surname>Liao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangyun</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sicheng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhong</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2411.19650</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Moo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siddharth</forename><surname>Pertsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Karamcheti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suraj</forename><surname>Balakrishna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rafael</forename><surname>Nair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Rafailov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Grace</forename><surname>Foster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pannag</forename><surname>Lam</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sanketi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.09246</idno>
+		<title level="m">An open-source vision-language-action model</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Spatialvlm: Endowing vision-language models with spatial reasoning capabilities</title>
+		<author>
+			<persName><forename type="first">Boyuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuo</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Kirmani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brain</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dorsa</forename><surname>Sadigh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leonidas</forename><surname>Guibas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="14455" to="14465" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Michael Ahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Byron</forename><surname>Cortes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuyuan</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keerthana</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hausman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.01691</idno>
+		<title level="m">Do as i can, not as i say: Grounding language in robotic affordances</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Hi robot: Open-ended instruction following with hierarchical vision-language-action models</title>
+		<author>
+			<persName><forename type="first">Lucy Xiaoyang</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Equi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyiming</forename><surname>Ke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Pertsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quan</forename><surname>Vuong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Tanner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Walling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haohuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niccolo</forename><surname>Fusai</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.19417</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Vision-language foundation models as effective robot imitators</title>
+		<author>
+			<persName><forename type="first">Xinghang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minghuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanbo</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cunjun</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongtao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chilam</forename><surname>Cheang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ya</forename><surname>Jing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weinan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huaping</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.01378</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Robotic control via embodied chain-of-thought reasoning</title>
+		<author>
+			<persName><forename type="first">Michał</forename><surname>Zawalski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Pertsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oier</forename><surname>Mees</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.08693</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhongyi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichen</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minjie</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weibin</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ran</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaxin</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaomin</forename><surname>Shen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.14420</idno>
+		<title level="m">Unified multimodal understanding and robot control with vision-language-action model</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Daya Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoyu</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shirong</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.12948</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Hurst</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Lerer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><forename type="middle">P</forename><surname>Goucher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Perelman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aidan</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akila</forename><surname>Ostrow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Welihinda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Hayes</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Radford</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.21276</idno>
+		<title level="m">Gpt-4o system card</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Embodiedbench: Comprehensive benchmarking multi-modal large language models for vision-driven embodied agents</title>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanyang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kangrui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qineng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teja</forename><surname>Venkat Koripella</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marziyeh</forename><surname>Movahedi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manling</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.09560</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">An-Chieh</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongxu</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiushan</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruihan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Kautz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaolong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sifei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Spatialrgpt</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.01584</idno>
+		<title level="m">Grounded spatial reasoning in vision language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Seonghyeon</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joel</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Byeongguk</forename><surname>Jeon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sejune</forename><surname>Joo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianwei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baolin</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Mandlekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reuben</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu-Wei</forename><surname>Chao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Yuchen Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.11758</idno>
+		<title level="m">Latent action pretraining from videos</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Code as policies: Language model programs for embodied control</title>
+		<author>
+			<persName><forename type="first">Jacky</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zeng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2023 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="9493" to="9500" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Calvin: A benchmark for language-conditioned policy learning for long-horizon robot manipulation tasks</title>
+		<author>
+			<persName><forename type="first">Oier</forename><surname>Mees</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukas</forename><surname>Hermann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erick</forename><surname>Rosete-Beas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wolfram</forename><surname>Burgard</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Robotics and Automation Letters</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="7327" to="7334" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Interactive language: Talking to robots in real time</title>
+		<author>
+			<persName><forename type="first">Corey</forename><surname>Lynch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ayzaan</forename><surname>Wahid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianli</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Betker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Baruch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Travis</forename><surname>Armstrong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Florence</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Robotics and Automation Letters</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Large language models for robotics: Opportunities, challenges, and perspectives</title>
+		<author>
+			<persName><forename type="first">Jiaqi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Enze</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huawen</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuhui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yincheng</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bao</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shu</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Automation and Intelligence</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruohan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunzhu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiajun</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.05973</idno>
+		<title level="m">Composable 3d value maps for robotic manipulation with language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xiaowen</forename><surname>Haoyu Zhen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peihao</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jincheng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yining</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuang</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.09631</idno>
+		<title level="m">A 3d vision-language-action generative world model</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">3</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Diffusion-vla: Scaling robot foundation models via unified diffusion and autoregression</title>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minjie</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichen</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhibin</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinming</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongyi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengmeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaxin</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaomin</forename><surname>Shen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.03293</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">From llms to actions: latent codes as bridges in hierarchical robot control</title>
+		<author>
+			<persName><forename type="first">Yide</forename><surname>Shentu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philipp</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aravind</forename><surname>Rajeswaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2024 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="8539" to="8546" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Dexvla: Vision-language model with plug-in diffusion expert for general robot control</title>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichen</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinming</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhibin</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaomin</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feifei</forename><surname>Feng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.05855</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jaden</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suvir</forename><surname>Mirchandani</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.03729</idno>
+		<title level="m">Dorsa Sadigh, and Suneel Belkhale. Action-free reasoning for policy generalization</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24824" to="24837" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Self-consistency improves chain of thought reasoning in language models</title>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.11171</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Tree of thoughts: Deliberate problem solving with large language models. Advances in neural information processing systems</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="11809" to="11822" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">The cot collection: Improving zero-shot and few-shot learning of language models via chain-of-thought fine-tuning</title>
+		<author>
+			<persName><forename type="first">Seungone</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">June</forename><surname>Se</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Doyoung</forename><surname>Joo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joel</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Seonghyeon</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamin</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minjoon</forename><surname>Shin</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Seo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.14045</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Advancing llm reasoning generalists with preference trees</title>
+		<author>
+			<persName><forename type="first">Lifan</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ganqu</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanbin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boji</forename><surname>Shan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huimin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruobing</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.02078</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zitong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weijia</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lisa</forename><surname>Xiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Liang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.19393</idno>
+		<title level="m">Emmanuel Candès, and Tatsunori Hashimoto. s1: Simple test-time scaling</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Reinforcement learning for reasoning in large language models with one training example</title>
+		<author>
+			<persName><forename type="first">Yiping</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qing</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liliang</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baolin</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuehai</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Gao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.20571</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Dapo: An open-source llm reinforcement learning system at scale</title>
+		<author>
+			<persName><forename type="first">Qiying</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruofei</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufeng</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaochen</forename><surname>Zuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tiantian</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaohong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingjun</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.14476</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<author>
+			<persName><forename type="first">Kimi</forename><surname>Team</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Angang</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bofei</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowei</forename><surname>Xing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changjiu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenjun</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenzhuang</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chonghua</forename><surname>Liao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.12599</idno>
+		<title level="m">Kimi k1. 5: Scaling reinforcement learning with llms</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<author>
+			<persName><forename type="first">Weihao</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuzhen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keqing</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zejun</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxian</forename><surname>He</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.18892</idno>
+		<title level="m">Simplerl-zoo: Investigating and taming zero reinforcement learning for open base models in the wild</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Search-r1: Training llms to reason and leverage search engines with reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Bowen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hansi</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenrui</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinsung</forename><surname>Yoon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sercan</forename><surname>Arik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hamed</forename><surname>Zamani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Han</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.09516</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Ui-r1: Enhancing action prediction of gui agents by reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Zhengxi</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Chai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaxuan</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanjing</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongsheng</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.21620</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<author>
+			<persName><forename type="first">Wenxuan</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bohan</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijie</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaosheng</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheyu</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaohui</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.06749</idno>
+		<title level="m">Vision-r1: Incentivizing reasoning capability in multimodal large language models</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Vlm-r1: A stable and generalizable r1-style large vision-language model</title>
+		<author>
+			<persName><forename type="first">Haozhan</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingcheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunxin</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yibo</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiajia</forename><surname>Liao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiaoli</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kangjia</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qianqian</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.07615</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.03300</idno>
+		<title level="m">Pushing the limits of mathematical reasoning in open language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Q-attention: Enabling efficient learning for vision-based robotic manipulation</title>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>James</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">J</forename><surname>Davison</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Robotics and Automation Letters</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="1612" to="1619" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Multimodal long-horizon reasoning for robotics</title>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Sermanet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianli</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Debidatta</forename><surname>Dwibedi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keerthana</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christine</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Dulac-Arnold</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharath</forename><surname>Maddineni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Nikhil</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Joshi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2024 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="645" to="652" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<title level="m" type="main">Realworldqa: A benchmark for real-world understanding</title>
+		<ptr target="https://huggingface.co/datasets/xai-org/RealworldQA" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note>Released alongside Grok-1.5 Vision Preview</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Embodied question answering</title>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Das</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samyak</forename><surname>Datta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Georgia</forename><surname>Gkioxari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Devi</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dhruv</forename><surname>Batra</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE conference on computer vision and pattern recognition</title>
+		<meeting>the IEEE conference on computer vision and pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="1" to="10" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Vlmbench: A compositional benchmark for vision-and-language manipulation</title>
+		<author>
+			<persName><forename type="first">Kaizhi</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaotong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Odest Chadwicke</forename><surname>Jenkins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="665" to="678" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianjie</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iat</forename><surname>Long Iong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xixuan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shudan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanyu</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanlin</forename><surname>Zhao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.06327</idno>
+		<title level="m">Towards large multimodal models as visual foundation agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Rlbench: The robot learning benchmark &amp; learning environment</title>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>James</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zicong</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Rovick Arrojo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">J</forename><surname>Davison</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Robotics and Automation Letters</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="3019" to="3026" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Judging llm-as-a-judge with mt-bench and chatbot arena</title>
+		<author>
+			<persName><forename type="first">Lianmin</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Lin</forename><surname>Chiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhanghao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonghao</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuohan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dacheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Xing</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="46595" to="46623" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<title level="m" type="main">Prometheus 2: An open source language model specialized in evaluating other language models</title>
+		<author>
+			<persName><forename type="first">Seungone</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juyoung</forename><surname>Suk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shayne</forename><surname>Longpre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Yuchen Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamin</forename><surname>Shin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Welleck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moontae</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyungjae</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minjoon</forename><surname>Seo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.01535</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keqin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuejing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenbin</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sibo</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Tang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.13923</idno>
+		<title level="m">Qwen2. 5-vl technical report</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<title level="m" type="main">Claude 3.7 sonnet. Anthropic Blog</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/news/claude-3-7-sonnet" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<analytic>
+		<title level="a" type="main">Gemini 2.0: Google&apos;s new ai model for the agentic era</title>
+		<author>
+			<persName><forename type="first">Demis</forename><surname>Hassabis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Koray</forename><surname>Kavukcuoglu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Google</forename><surname>Deepmind</surname></persName>
+		</author>
+		<ptr target="https://blog.google/technology/google-deepmind/google-gemini-ai-update-december-2024/" />
+	</analytic>
+	<monogr>
+		<title level="j">Google Blog</title>
+		<imprint>
+			<date type="published" when="2024-12">December 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<analytic>
+		<title level="a" type="main">Introducing the claude 3 family: State-of-the-art models in intelligence, speed, and vision</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/news/claude-3-family" />
+	</analytic>
+	<monogr>
+		<title level="m">Anthropic Blog</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<monogr>
+		<title level="m" type="main">Claude 3.5 haiku. Anthropic Blog</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/claude/haiku" />
+		<imprint>
+			<date type="published" when="2024-10">October 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<monogr>
+		<title level="m" type="main">Claude 3.5 sonnet. Anthropic Blog</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/news/claude-3-5-sonnet" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<monogr>
+		<title level="m" type="main">Gemini 1.5: Unlocking multimodal understanding across millions of tokens of context</title>
+		<author>
+			<persName><forename type="first">Gemini</forename><surname>Team</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Petko</forename><surname>Georgiev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ian</forename><surname>Ving</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Libin</forename><surname>Burnell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anmol</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Garrett</forename><surname>Gulati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Damien</forename><surname>Tanzer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhufeng</forename><surname>Vincent</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shibo</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.05530</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<monogr>
+		<author>
+			<persName><forename type="first">Gemini</forename><surname>Team</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Anil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Borgeaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean-Baptiste</forename><surname>Alayrac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahui</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Radu</forename><surname>Soricut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johan</forename><surname>Schalkwyk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">M</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anja</forename><surname>Hauth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katie</forename><surname>Millican</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.11805</idno>
+		<title level="m">a family of highly capable multimodal models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<monogr>
+		<author>
+			<persName><forename type="first">Arash</forename><surname>Ahmadian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Cremer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Gallé</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marzieh</forename><surname>Fadaee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julia</forename><surname>Kreutzer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Pietquin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmet</forename><surname>Üstün</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sara</forename><surname>Hooker</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.14740</idno>
+		<title level="m">Back to basics: Revisiting reinforce style optimization for learning from human feedback in llms</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<monogr>
+		<title level="m" type="main">Reinforce++: An efficient rlhf algorithm with robustness to both prompt and reward models</title>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><forename type="middle">Klein</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Shen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.03262</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<analytic>
+		<title level="a" type="main">Bridgedata v2: A dataset for robot learning at scale</title>
+		<author>
+			<persName><forename type="first">Homer</forename><surname>Rich Walke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Black</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tony</forename><forename type="middle">Z</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quan</forename><surname>Vuong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongyi</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philippe</forename><surname>Hansen-Estruch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andre</forename><forename type="middle">Wang</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vivek</forename><surname>Myers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Moo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Max</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Du</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="1723" to="1736" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b66">
+	<analytic>
+		<title level="a" type="main">Vlabench: A large-scale benchmark for languageconditioned robotics manipulation with long-horizon reasoning tasks</title>
+		<author>
+			<persName><forename type="first">Shiduo</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiju</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaopeng</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qinghui</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoye</forename><surname>Fei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhangyue</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zuxuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu-Gang</forename><surname>Jiang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF International Conference on Computer Vision</title>
+		<meeting>the IEEE/CVF International Conference on Computer Vision</meeting>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="11142" to="11152" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b67">
+	<monogr>
+		<title level="m" type="main">Introducing gpt-4.1. OpenAI Blog</title>
+		<ptr target="https://openai.com/index/gpt-4-1/" />
+		<imprint>
+			<date type="published" when="2024-11">November 2024</date>
+		</imprint>
+		<respStmt>
+			<orgName>OpenAI</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b68">
+	<monogr>
+		<author>
+			<persName><surname>Nvidia Gear</surname></persName>
+		</author>
+		<ptr target="https://research.nvidia.com/labs/gear/gr00t-n1_5/" />
+		<title level="m">Gr00t n1.5: An improved open foundation model for generalist humanoid robots</title>
+		<imprint>
+			<date type="published" when="2025-06">June 2025</date>
+			<biblScope unit="page" from="2025" to="2029" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b69">
+	<analytic>
+		<title level="a" type="main">Libero: Benchmarking knowledge transfer for lifelong robot learning</title>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifeng</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongkai</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihao</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuke</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Stone</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="44776" to="44791" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

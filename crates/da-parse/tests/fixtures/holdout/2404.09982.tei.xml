@@ -1,0 +1,1473 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">INMS: Memory Sharing for Large Language Model based Agents</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-03-04">4 Mar 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Hang</forename><surname>Gao</surname></persName>
+							<email>h.gao@rutgers.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Rutgers University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yongfeng</forename><surname>Zhang</surname></persName>
+							<email>yongfeng.zhang@rutgers.edu</email>
+							<affiliation key="aff1">
+								<orgName type="institution">Rutgers University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">INMS: Memory Sharing for Large Language Model based Agents</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-03-04">4 Mar 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">A54F67A0901A8A69C94372CE59E93F3B</idno>
+					<idno type="arXiv">arXiv:2404.09982v3[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:40+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>While Large Language Model (LLM) based agents excel at complex tasks, their performance in open-ended scenarios is often constrained by isolated operation and reliance on static databases, missing the dynamic knowledge exchange of human dialogue. To bridge this gap, we propose the INteractive Memory Sharing (INMS) framework, an asynchronous interaction paradigm for multi-agent systems. By integrating real-time memory filtering, storage, and retrieval, INMS establishes a shared conversational memory pool. This enables continuous, dialogue-like memory sharing among agents, promoting collective self-enhancement and dynamically refining the retrieval mediator based on interaction history. Extensive experiments across three datasets demonstrate that INMS significantly improves agent performance by effectively modeling multi-agent interaction and collective knowledge sharing.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>The emergence of Large Language Model (LLM) based agents has significantly advanced machine learning and conversational AI. In particular, the advent of In-Context Learning (ICL) <ref type="bibr" target="#b3">(Brown et al., 2020)</ref> has enabled LLM-based agents to perform tasks using natural language prompts and fewshot examples without explicit retraining or finetuning, thus broadening their applicability across diverse domains <ref type="bibr" target="#b1">(Ahmed and Devanbu, 2022;</ref><ref type="bibr" target="#b10">Izacard et al., 2023)</ref>. Building upon ICL, the development of Chain-of-Thought (CoT) prompting further enhanced agents' ability to handle complex reasoning and arithmetic tasks <ref type="bibr">(Wei et al., 2022)</ref>. Recent advances such as PAL <ref type="bibr" target="#b5">(Gao et al., 2023)</ref>, integration with symbolic solvers <ref type="bibr">(He-Yueya et al., 2023)</ref>, and continuous skill acquisition <ref type="bibr" target="#b33">(Wang et al., 2023)</ref> have further improved LLM-based agents' reasoning and adaptability. Despite these advancements, generating desired responses for open-ended questions remains challenging when agents operate in strict isolation. Human intelligence highly relies on social interaction and continuous dialogue to construct collective knowledge; however, most current agents lack this interactive dynamic, restricting their performance to the limited scope of isolated reasoning and statically provided examples.</p><p>To address this challenge, Retrieval-Augmented Generation (RAG) <ref type="bibr">(Lewis et al., 2020)</ref> has been introduced, significantly increasing the availability of relevant examples for open-domain queries <ref type="bibr" target="#b22">(Mao et al., 2021)</ref>. Additionally, self-learning mechanisms have been integrated with retrieval methods to dynamically improve text generation quality <ref type="bibr" target="#b29">(Rubin et al., 2022;</ref><ref type="bibr" target="#b34">Wang et al., 2024)</ref>. However, RAG primarily functions as a one-way static information lookup rather than a dynamic conversational process. Its effectiveness heavily depends on the quality, availability, and up-to-date status of external databases. The scarcity and obsolescence of these static databases become even more pronounced in specialized and rapidly evolving fields, where knowledge is ideally constructed and refined through continuous, interactive discourse rather than rigid, isolated retrievals.</p><p>Furthermore, existing memory enhancement methods primarily focus on agents independently utilizing stored historical information to inform responses. This isolated paradigm neglects the profound potential of inter-agent interactions and collective memory utilization. Current approaches often fail to model the asynchronous dialogue and knowledge exchange that naturally occurs in complex multi-agent environments, missing out on the inherent diversity and complementarity of agents that hold unique conversational histories and specialized training. Motivated by the need to model effective multiagent communication and overcome these limitations, we introduce the INteractive Memory Sharing (INMS) framework. INMS shifts the paradigm from isolated reasoning to an implicit, highly efficient asynchronous dialogue mechanism. By facilitating dynamic memory sharing through interactive learning, INMS establishes a shared conversational ground without reliance on external static databases. Figure <ref type="figure" target="#fig_0">1</ref> illustrates the INMS workflow, emphasizing how this continuous, asynchronous interaction among agents enriches the shared memory pool and promotes the evolution from individual problem solvers toward an interactive, collectively intelligent society.</p><p>Specifically, within INMS, interactions between agents generate Prompt-Answer (PA) pairs, conceptualized as asynchronous communicative acts or interactive memories. These PA pairs are rigorously evaluated by a dedicated LLM scorer acting as a dialogue moderator, filtering out ambiguous or irrelevant content to maintain a high-quality interaction history. Accepted PA pairs continuously expand the shared memory pool. Crucially, an autonomous retriever dynamically updates and refines its capabilities based on this growing pool, acting as an adaptable mediator of this implicit dialogue. This mechanism ensures that the most relevant experiential context is curated for each query, significantly mitigating "echo chamber" biases from initial interactions and promoting progressively higher response accuracy and relevance.</p><p>Moreover, we constructed a novel dataset specifically targeting the multifaceted nature of openended tasks-such as poetry generation, unconventional logical problem-solving, and plan creation domains where interaction, nuance, and rich language generation are paramount. Through extensive experimentation across three diverse domains, each involving three specialized agents, we demonstrated that INMS significantly enhances response precision and effectively models multi-agent communication. In summary, the primary contributions of this paper include:</p><p>• Introducing the INMS framework, an asynchronous interaction paradigm that leverages dynamically generated and shared conversational memories among agents, evaluated through rigorous scoring criteria, to enhance collective performance and retriever accuracy.</p><p>• Addressing the limitations of static external datasets by modeling continuous, interactive memory generation, thereby facilitating a dialogue-driven evolution from isolated agents to collective intelligence.</p><p>• Constructing a novel dataset and conducting extensive experiments to validate INMS's efficacy across diverse open-ended scenarios, demonstrating the its capability to sustain high-quality multi-agent discourse and dynamically build reliable interaction histories.</p><p>2 Related Work</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Memory Operations</head><p>Equipping Large Language Model (LLM)-based agents with memory mechanisms has gained significant research interest, primarily aiming to enhance conversational consistency, behavioral stability, and experience accumulation. For example, generative agents utilize memory features to store extensive experiential records, facilitating deeper selfunderstanding <ref type="bibr" target="#b25">(Park et al., 2023)</ref>. VOYAGER introduces an evolving skill library that incorporates successful action programs, optimizing task resolution capabilities <ref type="bibr" target="#b33">(Wang et al., 2023)</ref>. Similarly, Ghost in the Minecraft employs a text-based memory system for efficient plan formulation based on historical references <ref type="bibr" target="#b33">(Zhu et al., 2023)</ref>. Memochat adopts a "memorization-retrieval-response" model to sustain coherent, long-range conversations <ref type="bibr" target="#b20">(Lu et al., 2023)</ref>. MemGPT presents a hierarchical memory system tailored for processing extensive textual data and maintaining long-term memory <ref type="bibr" target="#b24">(Packer et al., 2023)</ref>, while TiM supports continuous memory evolution by storing historical conversational streams <ref type="bibr">(Liu et al., 2023a)</ref>. Reflexion <ref type="bibr" target="#b31">(Shinn et al., 2023)</ref> and SYNAPSE <ref type="bibr" target="#b40">(Zheng et al., 2023)</ref> further utilize episodic memory buffers and exemplar memory for enhanced decision-making and generalization of successful behaviors, respectively.</p><p>However, the aforementioned methods primarily focus on enhancing individual agent performance through internal memory operations, without considering interactive memory sharing among multiple agents. In contrast, our proposed INMS framework introduces an interactive memory-sharing mechanism, enabling collective self-enhancement among agents. INMS facilitates memory sharing and mutual learning, fostering collective intelligence beyond individual memory capacities.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">In-Context Learning</head><p>In-Context Learning (ICL) significantly enhances the problem-solving capabilities of LLMs by integrating few-shot examples directly into prompts <ref type="bibr" target="#b3">(Brown et al., 2020;</ref><ref type="bibr" target="#b13">Levine et al., 2021;</ref><ref type="bibr" target="#b41">Zhou et al., 2022;</ref><ref type="bibr">Liu et al., 2023b;</ref><ref type="bibr" target="#b36">White et al., 2023;</ref><ref type="bibr" target="#b4">Gao and Zhang, 2024)</ref>. Recent studies illustrate ICL's effectiveness in promoting creative outputs <ref type="bibr" target="#b32">(Swanson et al., 2021)</ref>, improving logical reasoning through optimized input designs <ref type="bibr" target="#b37">(Wiegreffe et al., 2022;</ref><ref type="bibr" target="#b38">Wu et al., 2022)</ref>, and refining task execution via crowdsourced instructions <ref type="bibr" target="#b23">(Mishra et al., 2022)</ref>. Moreover, explicitly highlighting relationships between provided examples and targeted tasks substantially benefits LLM comprehension <ref type="bibr" target="#b12">(Lampinen et al., 2022)</ref>. Approaches such as Chainof-Thought (CoT) prompting <ref type="bibr">(Wei et al., 2022)</ref> and PAL <ref type="bibr" target="#b5">(Gao et al., 2023)</ref> further augment reasoning capabilities by introducing intermediate reasoning steps. Despite these advancements, open-ended question handling remains challenging due to insufficient problem descriptions and the limited availability of high-quality external knowledge bases. Our INMS framework directly addresses these challenges by dynamically generating and sharing highquality memories among multiple agents, providing rich, diverse reference examples, thereby significantly enhancing agents' performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">Retrieval-Augmented Generation</head><p>Retrieval-Augmented Generation (RAG) methods aim to enhance LLM-generated responses by integrating retrieval techniques such as BM25 <ref type="bibr" target="#b21">(Luo et al., 2023;</ref><ref type="bibr" target="#b15">Liu et al., 2022)</ref> or SBERT <ref type="bibr" target="#b27">(Reimers and Gurevych, 2019)</ref>, improving content accuracy and timeliness <ref type="bibr">(Lewis et al., 2020;</ref><ref type="bibr">Ram et al., 2023;</ref><ref type="bibr" target="#b30">Shi et al., 2023)</ref>. Recent studies further boost performance by employing dense retrievers trained via contrastive learning <ref type="bibr" target="#b29">(Rubin et al., 2022)</ref>. Additionally, iterative retriever training can enhance retrieval effectiveness <ref type="bibr" target="#b34">(Wang et al., 2024)</ref>. Nev-ertheless, most retrievers in current RAG implementations undergo training only once before deployment, limiting their adaptability to dynamically evolving data. Unlike previous approaches, the INMS framework incorporates a continuously updated retriever, dynamically retrained as new memories are integrated into the memory pool. This approach ensures sustained improvement in retrieval quality and adaptability to evolving data, thereby significantly reducing dependence on external databases and enhancing overall performance.</p><p>3 The Interactive Memory Sharing</p><p>This section details the Interactive Memory Sharing (INMS) framework, designed to improve agent performance through dynamically shared memories, while preserving agent creativity and versatility. Figure.2 illustrates the overall INMS architecture. Agents engage in interactions via a Prompt-Answer (PA) pair, generating results that undergo rigorous evaluation. High-quality PA pairs become shared memories, enriching a common memory pool accessible to all agents. These memories subsequently enhance agent responses and continuously improve the memory retriever. Over successive interactions, the shared memory pool evolves, improving response quality and facilitating a shift from individual to collective intelligence. The core components of INMS are detailed below.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Memory Generation and Selection</head><p>A memory is essentially a Prompt-Answer (PA) pair. In some cases, it is permissible for a PA pair to lack a prompt, typically applicable in initial scenarios. These PA pairs are stored in natural language, which serves as the shared memories. These shared memories can be used to improve the response quality of agents. The dynamic expansion of the shared memory pool ensures a continuous influx of new memories, thereby enriching the datasets of agents.</p><p>In addressing open-ended questions, these shared memories provide agents with a broader perspective and deeper understanding, which is crucial for generating high quality answers. After each interaction, the PA pair is scored by a LLM scorer. For each newly generated memory, an LLM scorer will grade it and decide whether to add it to the pool. Before grading, we will establish grading rubrics for each domain, which will be shared among agents within the same domain. To generate these rubrics, we first query LLM several  <ref type="formula">2</ref>) The retriever take the original query from agent as the input, retrieve the suitable memories from the memory pool and concatenate them to the query to form the prompt.</p><p>(3) The Agent (Sonnet) takes the prompt and makes an answer, pack them as (Prompt, Answer). (4) Scorer generates a score according to the designed rubric for (Prompt, Answer), while (Prompt, Answer) pairs with high scores will be added into the Memory Pool. All agents share the same Memory Pool; they can write memories into the pool and retrieve memories from the pool so that they can share memories with each other. For a specific example, please refer to Appendix D.</p><p>times to obtain various sets of rubrics. Then, we let the LLM evaluate these sets and extract the most reasonable rubrics, synthesizing a complete and useful set. This set of rubrics undergoes a manual review phase to assess the relevance of potential memories to the current focal task and their domainspecific utility, providing additional precision and consideration for the users' specific needs, particularly in specialized application scenarios. The final scoring criteria are constructed by combining individual rubric into a comprehensive criteria. Once this set of rubrics is finalized, every new memory generated will be combined with the corresponding rubric and submitted to the LLM scorer. If the score of PA pair exceeds a preset threshold, the answer and its corresponding prompt are packaged as a useful memory and stored in the memory. During the grading phase, different from the traditional method of directly giving a total score, we prompt LLM to assign a score range for each single rubric in the scoring criteria. Once the score ranges for all rubrics are collected, the final score will be given by the following formula:</p><formula xml:id="formula_0">S final = 1 2 n i=1 L i + n i=1 H i (<label>1</label></formula><formula xml:id="formula_1">)</formula><p>where n be the number of rubrics in the scoring criteria. L i represents the lowest score in the range for rubric i, and H i is the highest score in the range for rubric i.</p><p>The different scoring criteria for various domains ensure the specificity of scoring. While the autonomously generated grading criteria by the LLM based on the assumption that the LLM-based agents can better grasp criteria it designed. Therefore, these scoring criteria are established prior to the deployment of the framework to ensure consistency in the LLM's scoring process, thereby guaranteeing fair evaluation of memories from agents. And the manual review phase of rubrics, assessing the relevance of potential memories to the current focal task and their relevance within the domain to ensure their utility, provide additional precision and special consideration to align with specific needs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Memory Retrieval and Training</head><p>Prior to the deployment of INMS, a small subset of instances, already graded by the same LLM scorer and surpassing the preset threshold, was manually archived within the memory pool as a preliminary step to eliminate potential bias. These instances fulfill a dual purpose: firstly, they provide a diversified array of memories upon which agents may experiment with novel prompts in the face of new queries; secondly, they constitute the preliminary training corpus for our retriever. This foundational training regimen mirrors the methodology by which subsequently archived memories will be assimilated into our model in real time, thereby facilitating the model's ongoing adaptive learning and optimization. During the answering phase, agents retrieves memories from the shared memory pool based on the question with the help of a dense retriever, which are more similar to the target question in terms of cosine similarity. These retrieved memories, combined with question, form a prompt that is submitted to agents, which then generates an answer. The memories extracted from the shared memory are used as context to enhance the quality of the agents' response, a typical ICL method that usually improves the answer quality.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Memory Train.</head><p>Whenever a new PA pair (memory), denoted as (X, Y ), is added into the memory pool, it will also be used to train our retriever, which help the retriever to continuously update itself and continuously adapt to new memory. Based on the new generated memory (X, Y ), the classical method BM25 ascertain the most pertinent top-n candidate pairs {(x i , y i )} n i=1 , sourced from the diverse and extensive memory pool, denoted as C. Each candidate within C will undergo a evaluation process utilizing the comprehensive scoring capabilities of LLM. The scoring mechanism employed is defined as following:</p><formula xml:id="formula_2">p(x i , y i ) = P(¬Y | (x i , y i ), X), i ∈ {1, ..., n}</formula><p>(2) This equation seeks to determine, given a inputoutput pair (x i , y i ) in C as a condition, the probability that the response generated for the input in the new memory contradicts the output in the new memory. This grading part serves as a preparatory step for the subsequent labeling of each candidate example. It is noteworthy that making ¬Y as the result part is trying to make sure that the memory that the retriever gets from agents is of reference value, but it does not have to be the most relevant to the current question, which means that it can help the current agent to learn from new examples. This approach diverges from a simplistic reliance on Y as the outcome, which tends to restrict the retrieval process to memory previously stored by agents.</p><p>Within the defined set C = {(x i , y i )} n i=1 , each candidate now is ascribed a score. We sort them from the lowest to the highest score and we select v memory in total to label. The top v 2 candidates (lowest score) in C are identified as being the pair with the reference value to (X, Y ) and accordingly, their labels are set to positive. Conversely, the bottom v 2 candidates are deemed as the least reference value to (X, Y ), and their labels are thus designated as negative. Those labeled data will be used to minimize the following function:</p><formula xml:id="formula_3">loss(x, y) = - 1 v v i=1 [y i • log( 1 1 + e -x i )+ (1 -y i ) • log(1 - 1 1 + e -x i</formula><p>)]</p><p>(3)</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Interactive Learning</head><p>INMS employs an interactive learning strategy to rapidly expand and update the memory pool, particularly addressing initial memory scarcity. Initially, a small number of PA pairs (as few as 100 or even one) are stored in the memory pool. Agents iteratively generate prompts based on provided answers, subsequently answering these prompts to create additional PA pairs. High-quality pairs identified through scoring are added to the memory pool, accelerating memory growth and agent selfenhancement. This interactive approach also underpins the construction of our experimental datasets, allowing continuous evaluation and refinement of agent performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Baseline</head><p>We evaluate INMS from two perspectives. First, we analyze generator sensitivity by testing multiple LLMs while varying the number of retrieved memories k ∈ {0, 1, 2, 3}; when k = 0, the model receives only the task prompt, and as k increases, the top-k retrieved memories are included as contextual examples. Second, we compare INMS with retrieval baselines under a fixed generator setting. The baselines include Random, which samples memories uniformly; BM25 <ref type="bibr" target="#b28">(Robertson et al., 2009)</ref>, a sparse lexical retriever; Contriever <ref type="bibr" target="#b9">(Izacard et al., 2021)</ref>, an unsupervised dense retriever trained with momentum contrast; SBERT <ref type="bibr" target="#b27">(Reimers and Gurevych, 2019)</ref> using the all-mpnetbase-v2 model; TAS-B <ref type="bibr" target="#b8">(Hofstätter et al., 2021)</ref>, a topic-aware dense retriever trained with balanced margin sampling; and SimCSE <ref type="bibr" target="#b6">(Gao et al., 2021)</ref>, a contrastive sentence-embedding framework.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Implementation Details</head><p>We aim to assess the efficacy of the INMS in processing open-ended questions across three domains: Literary Creation, Unconventional Logic Problemsolving, and Plan Generation. Separate memory pools were allocated for each of the three domains because these domains are unrelated and have no overlapping content. Within the Literary Creation domain, three agents were assigned the tasks of generating Wuyanlvshi (a classical form of Chinese poetry), Limericks, and Sonnets, respectively.</p><p>In the Logic Problem-solving domain, three agents were tasked with solving Puzzles, Riddles, and Puns separately. Table 2: Comparison of INMS with baselines under both F1 and LLM Judge (LLM-J) metrics.</p><p>agents were employed to create Study Plans, Travel Plans, and Fitness Plans individually. Each of these nine agents were associated with a corresponding dataset used for evaluation. Across all nine datasets, comprising a total of 1000 instances (details provided in Appendix B), we partitioned the data within each dataset into three subsets: 20% was allocated for constructing the initial memory pool, 40% was used to extract queries that were then input back into the agents to generate memory, and the remaining 40% was reserved as the test set. For our scoring LLM, we use gpt-4o. As the backbones of our agents, we first consider three LLMs: two close-source LLMs (gpt-3.5-turbo and gpt-4o) <ref type="bibr">(Achiam et al., 2023)</ref> and one open-source LLM (open-mistral-7b) <ref type="bibr" target="#b11">(Jiang et al., 2023)</ref>. We use the BERTScore <ref type="bibr" target="#b39">(Zhang et al., 2019)</ref> and F1 score as our metric to measure the performance of each agent. Besides, we adopt an LLM Judge (LLM-J)evaluation, where an LLM determines whether a model's answer is semantically consistent with the ground truth, providing a reliable alternative to surface-based metrics <ref type="bibr">(Gu et al., 2024)</ref>. The threshold for selecting PA pairs is set at 81, determined by scoring all instances in the datasets and taking the average value, with the score being 100. We report the experiment results with extra metrics in the Apendix C. It is worth noting that, before the experiment, none of the agents have a suitable database for reference. While after the interactive learning stage, a continuously expanding memory pool with high quality memories is successfully be a database for agents to refer. The INMS framework help agents get rid of the dependence on external databases, and agents can interactively expand the memory pool without taking a lot of effort.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Main Results</head><p>For each agent, we first tested them with using the same backbone and the metric BertScore, that is, in each domain, all memory was generated by agents utilizing the same Large Language Model, and in subsequent task execution, the memory generated by the previous execution of other agents could be used. Table.1 shows the result of each agent. We can observe that, for all agents among all the tasks, compare to no use of the shared memories, the performance of all the agents has been significantly improved. This suggests that the shareable memories from other tasks can help agents get desired answers, rather than interfering with the agents' learning ability. our previous hypothesis that the INMS framework could enhance collective intelli- gence through multi-agent interactions, thereby advancing from individual to collective intelligence, has been confirmed. And employing more shared memories leads to further performance enhancements across nearly all agents. This improvement underscores the effectiveness of shared memories, attributable to the constantly updated retriever's ability to adjust as the memory pool expands. Consequently, retrievers can consistently retrieve the most relevant PA pairs for each query. Besides, when using the same number of shared memories, the closed-source LLM demonstrates superior performance compared to the open-source LLM, likely due to its enhanced understanding and reasoning capabilities. Additionally, since using three shared memories yields the best performance, all subsequent experiments utilize three shared memories during testing and gpt-4o as the backbone.</p><p>As shown in Table .2, INMS consistently surpasses both sparse and dense retrieval baselines. Traditional methods such as BM25 and Random exhibit limited ability to generalize across diverse query types, while contrastive-based dense retrievers achieve moderate gains but remain constrained by static embeddings that fail to adapt to evolving memory contexts. In contrast, INMS demonstrates robust improvements in both F1 and LLM-judge metrics across literary, logical, and planning tasks, indicating that interactive memory sharing effectively enhances retrieval relevance and generation quality. The adaptive retriever plays a key role in this improvement by continuously aligning the embedding space with newly admitted memories, allowing agents to draw on more contextually useful information. Moreover, INMS achieves the most balanced performance across creative and reasoning-oriented domains, highlighting its capacity to integrate collective memory without overfitting to any single task type. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Does Domain-Specific Memory Outperform Integrated Memory?</head><p>Besides, since memories from agents in other domains may help agents better understand queries from different angles and enrich the diversity of the memory pool, we constructed an additional pool, the integrated pool, which combines all shareable memories from all agents across all domains into a single pool. However, as shown in Figure .3, although the integrated pool can enhance the diversity of shared memories, the domain-specific pool more effectively enables agents to produce reliable answers, regardless of the LLM used by the agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5">Can Shareable Memories Benefit Agents Utilizing Different LLM Backbones?</head><p>To verify that shareable memories generated by agents utilizing different LLMs during task execution can still aid current agent in processing queries, we deployed agents based on three distinct LLMs to execute an equal number of queries in each domain, thereby expanding the memory pool. Also, those potential shareable memories only after being scored by the LLM scorer will be decided whether they can be added to the memory pool. The results in Figure Table.1, the cross LLMs shareable memories can still boost the performance for all the agents in answering the open-ended questions, which means that those heterologous shared memories still be useful for agents. Although the performance of agents do not always appear the same trend compared to the use of same amount 0 25 50 75 100 Proportion of memory added(%) 0.5 0.6 0.7 0.8 BERTScore Limerick Wuyanlvshi Sonnet 0 25 50 75 100 Proportion of memory added(%) 0.40 0.45 0.50 0.55 0.60 0.65 BERTScore Puzzle Pun Riddle 0 25 50 75 100 Proportion of memory added(%) 0.42 0.44 0.46 0.48 0.50 0.52 0.54 BERTScore Fitness Study Travel  shared memories from itself, that is, either rising or falling, they all ultimately improve agents' answers, but the degree varies.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.6">Dynamics of Interaction Accumulation and Mitigating the Echo Chamber Effect</head><p>Next, we investigate whether an extensive accumulation of interaction history impedes the agents' conversational quality, and whether an initial "echo chamber", a shared memory pool dominated by biased early interactions, can be effectively dismantled as the system evolves. This recovery is facilitated by the LLM-scorer (acting as a dialogue moderator) and the continuously updated retriever. We measure agent performance across five phases of interaction accumulation-0, 25%, 50%, 75%, 100% expansion of the shared memory pool. To simulate an initial echo chamber, we deliberately constructed a biased starting pool for each domain, where 75% of the prompt-answer (PA) pairs exhibit significant bias. The LLM scorer evaluated these biased communicative acts, with half receiving scores near 0 and the other half near 50. We then tracked the agents' performance through the same five evolutionary phases. The results presented in Fig. <ref type="figure" target="#fig_5">5</ref> highlight that as high-quality interactive memories are continuously infused into the shared pool, the collective performance of the agents steadily improves. For several tasks, performance plateaus in the later stages. We hypothesize that this stabilization occurs because the shared conversational ground has reached a temporary saturation of optimal examples; further expansion or diversification of the interaction topology may be required to break this stagnation. Crucially, Fig. <ref type="figure" target="#fig_6">6</ref> demonstrates the system's resilience against the echo chamber effect.</p><p>Although the initially biased pool heavily interfered with the agents' responses during early interactions (as they repeatedly retrieved and mirrored flawed examples), the continuous influx of new, dynamically filtered memories steadily diluted this bias. Consequently, the agents' performance rebounded, ultimately approaching the peak scores observed in the unbiased scenario (Fig. <ref type="figure" target="#fig_5">5</ref>). These findings successfully confirm that the LLM scorer and dynamic retriever in INMS can break the cycle of biased knowledge reinforcement. The scoring mechanism acts as a robust moderator, effectively screening out degraded or discontinuous dialogue and curating a high-quality, collective interaction history.</p><p>5 Conclusions</p><p>This study introduces INMS, a novel framework modeling real-time memory sharing among agents as asynchronous dialogue via continuous storage and retrieval. This dynamically evolving shared memory acts as a conversational ground, enhancing agents' ability to collaboratively understand nuances and generate high-quality responses. Even for uncommon problems, INMS rapidly builds a robust interaction history. Experiments demonstrate its effectiveness in modeling multi-agent communication, successfully overcoming early-stage "echo chamber" biases as the pool stabilizes. Furthermore, our newly constructed dataset fills critical gaps in open-ended generation benchmarks. Ultimately, INMS paves the way for agents to evolve from isolated solvers into a collectively intelligent society driven by continuous dialogue and knowledge exchange. 6 Limitations Our INMS framework shows encouraging performance, but there remain several directions worth pursuing. First, this study emphasizes validating the core idea of Interactive Memory Sharing rather than exhaustive systems tuning. To keep the setup clear and reproducible, we evaluate on representative domains and defer broader generalization to later work. Second, although the framework applies memory filtering, the resulting organization can still be shaped by the capabilities of the underlying language models. Finally, our current prototype targets text-only interactions; extending it to multimodal inputs, e.g., images or audio, could supply richer context and is a natural avenue for future research. score indicates that the poem communicates effectively and its elements are well integrated. Criteria: Innovativeness Score Range: 0-5 Description: Rewards originality in theme, structure, or language use. High scores reflect a notable degree of creativity and the introduction of novel ideas or techniques. Criteria: Educational Value Score Range: 0-10 Description: Assesses the example's potential to teach about poetic forms, literary devices, and thematic exploration. High-scoring examples are rich in analyzable and teachable elements. Criteria: Metric Precision Score Range: 0-10 Description: Evaluates the adherence to the five-syllable structure per line, including rhythm and flow, emphasizing the importance of metric accuracy. Criteria: Imagery and Symbolism Score Range: 0-10 Description: Assesses the effectiveness of imagery and symbolism in conveying the poem's themes, highlighting the depth and sophistication of language use. Criteria: Humor and Wit Score Range: 0-10 Description: Rates the poem's humor, wit, and wordplay. High scores reflect effective use of language to entertain and amuse. Criteria: Rhyme Scheme Adherence Score Range: 0-10 Description: Assesses the AABBA rhyme scheme's quality and creativity, including how well the rhymes enhance the humor and effectiveness of the poem. Criteria: Structural Integrity Score Range: 0-10 Description: Evaluates adherence to sonnet structure, including rhyme scheme and division into octaves/sestets or quatrains/couplet, stressing formal precision. Criteria: Thematic Development Score Range: 0-10 Description: Looks at theme or argument development, especially through the volta, reflecting the poem's ability to engage with complex ideas persuasively. A.2 Rubrics for domain -Unconventional Logic Problem-solving Clarity and Understandability (20 points) Question Clarity (10 points): The question should be clearly stated, without ambiguity, and understandable without requiring additional context. Answer Clarity (10 points): The answer should be directly related to the question, clear, and easily understandable. Creativity and Originality (30 points) Question Creativity (15 points): The question should demonstrate creativity, originality, and should not be a common or easily found problem. Answer Creativity (15 points): The answer should be innovative and not just a straightforward or commonly known response. It should also add a layer of depth or a surprising twist to the question. Logical Consistency and Correctness (20 points) Logical Consistency (10 points):</p><p>The question and answer together should form a logically consistent pair where the answer correctly follows from the question. Correctness (10 points): The answer must be factually correct and provide a true solution or conclusion to the puzzle, riddle, or pun presented in the question.</p><p>Relevance and Engagement (20 points) Relevance (10 points): The question and answer should be relevant to the domain of Logic Problems, demonstrating an understanding of puzzles, riddles, or puns. Engagement (10 points): The pair should be engaging and interesting, capable of capturing attention and sparking curiosity or amusement.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Difficulty Level (10 points)</head><p>The difficulty level of the question should be appropriate for the intended audience. It should neither be too easy to solve without any thought nor too difficult to be practically unsolvable. This criterion requires a balanced approach to ensure the content is intellectually stimulating but accessible.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3 Rubrics for domain -Plan Generation</head><p>Specificity and Detail (20 points) Question Specificity (10 points): The question should be specific, providing enough detail to guide the generation of a relevant and tailored plan.</p><p>Plan Detail (10 points): The plan should include specific activities, steps, or recommendations that are clearly defined and actionable.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Feasibility and Practicality (20 points)</head><p>Plan Feasibility (20 points): The plan should be realistic and practical, considering available resources (time, money, equipment) and constraints. It should propose actions that can be realistically implemented by the user.</p><p>Comprehensiveness and Scope (20 points) Coverage of Key Components (20 points): The plan should comprehensively address all relevant aspects of the goal. For a study plan, this might include study sessions, breaks, and topics covered; for a fitness plan, workouts, rest days, and nutrition; and for a travel plan, transportation, accommodations, and activities.</p><p>Personalization and Relevance (20 points) Alignment with User Needs and Preferences (20 points): The plan should reflect an understanding of the user's specific needs, preferences, goals, and limitations. It should feel customized and directly applicable to the user, rather than being a generic template.</p><p>Plan Clarity (10 points): The plan should be articulated in a clear, organized, and easy-to-follow manner. It should avoid jargon or overly complex language, making it accessible to the user. Rationale Clarity (10 points): The plan should include clear reasoning or justification for the recommendations made, helping the user understand why specific actions or steps are suggested.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.4 Rubrics for Single Pool</head><p>Accuracy (25 Points) 25 points: The output is entirely accurate, with no factual errors or inaccuracies. 15-24 points: The output is mostly accurate, with minor errors that do not significantly impact the overall understanding. 5-14 points: The output contains several inaccuracies that could lead to misunderstandings. 0-4 points: The output is largely inaccurate, misleading, or irrelevant. Relevance (20 Points) 20 points: The output is highly relevant to the input question, directly addressing the query without diverging from the topic. 10-19 points: The output is relevant but includes some unnecessary or slightly off-topic information.</p><p>1-9 points: The output partially addresses the question but is significantly off-topic or tangential. 0 points: The output is completely irrelevant to the input question.</p><p>Completeness (20 Points) 20 points: The output provides a complete answer to the question, covering all essential aspects implied or directly asked. 10-19 points: The output covers most of the necessary information but lacks one or two minor details or aspects. 1-9 points: The output provides a partial answer, missing significant portions of the information needed to fully answer the question. 0 points: The output fails to provide any meaningful answer to the question.</p><p>Clarity and Coherence (20 Points) 20 points: The output is exceptionally clear and well-structured, making it easy to follow and understand. 10-19 points: The output is clear but may have minor issues with structure or coherence that slightly hinder understanding. 1-9 points: The output has significant clarity or coherence issues, making it difficult to understand without effort. 0 points: The output is incoherent or so poorly structured that it is unintelligible.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Creativity and Insight (15 Points)</head><p>15 points: The output demonstrates high levels of creativity or provides insights that add substantial value beyond the explicit question. 8-14 points: The output shows some creativity or insights but to a lesser extent, offering added value to the answer. 1-7 points: The output is standard, with minimal to no creativity or insightful additions. 0 points: The output is entirely generic, with no attempt at creativity or providing additional insights.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.5 Prompt for scoring Memory</head><p>For scoring a memory, the following instructions were provided to LLM:</p><p>Here is the rubrics for grading an (prompt, answer) pair-"grading_rubric". According to the rubrics, give me a final score of the pair. For the final score, first, for each rubric, according to its standard, give a score range for the current pair, such as 3-6 (3 is the lowest score and 6 is the highest score). After scoring all the rubrics, add up the lowest and highest scores. Then give the average of the two total scores. This score will be the final score. The final score should be a number between 0-100</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Datasets</head><p>For all those nine agents, they have their own dataset to evaluate. There are 1000 items in total for all datasets. In each datasets, the item contains a question and a answer. For each dataset, 20% will be taken randomly as a small subset of instances which was manually archived within the memory pool before the experiments. And 40% of the dataset, we will only capture the problem part and use it to generate real-time memory in agents.</p><p>As the rest 40%, they will be used as the test set.</p><p>For the tasks in the domain Literary Creation, in their datasets, the question part is a description, and the answer part is like a poetry which fullfills the requirements in the description, the question and answer in the dataset are like:</p><p>Tell me about a star that twinkles with a secret that shining brightly, mysteries to decrypt? -There once was a star that twinkles with a secret; With a tale both old and new; shining brightly, mysteries to decrypt; A legend through and through; In a world where magic grew.</p><p>For the tasks in the domain Unconventional Logic Problem-solving in their datasets, the question part is a logic problem, and the answer part is a reasonable solution of that problem, the question and answer in the dataset are like:</p><p>Why is it better to have round manhole covers than square ones? -A square manhole cover can be turned and dropped down the diagonal of the manhole. A round manhole cover cannot be dropped down the manhole. So for safety reasons, all manhole covers should be round For the tasks in the domain Plan Generation, in their datasets, the question part is a problem about how to achieve something, and the answer part is a executable plan, the question and answer in the dataset are like:</p><p>Start learning Python for data analysis? -Learn basics, then focus on data libraries like pandas, and practice on projects.</p><p>Specifically, the dataset of the Puzzle comes from <ref type="bibr">Liu et al. (2024)</ref>, and we expanded its size from 70 to 100. The new puzzles are based on some classic problems on the Internet. For other datasets, the standard "answer" was systematically harvested from the internet and subsequently input to the LLM to get the corresponding "question" part (through interactive learning). In particular, the selection of Wuyanlvshi-renowned and historically significant poems within Chinese literature-were meticulously chosen for their fame and widespread recognition. Furthermore, the sonnets incorporated into our study originate from the "quarto" collection authored by Shakespeare in 1609. We use the following similar format of prompt to generate "question" part:</p><p>Here is a sonnet -&gt; "From fairest creatures we desire increase, That thereby beauty's rose might never die, But as the riper should by time decrease, His tender heir mught bear his memeory: But thou, contracted to thine own bright eyes, Feed'st thy light'st flame with self-substantial fuel, Making a famine where abundance lies, Thyself thy foe, to thy sweet self too cruel. Thou that art now the world's fresh ornament, And only herald to the gaudy spring, Within thine own bud buriest thy content And, tender churl, makest waste in niggarding. Pity the world, or else this glutton be, To eat the world's due, by the grave and thee." According to this, can you give me a problem of it(like make a sonnet followed with some description), so the possible answer can be this sonnet . The output as a "question" from the LLM is like:</p><p>Craft a sonnet that explores the tension between personal vanity and the broader imperative to contribute to the continuation of beauty and life. Your poem should address how an individual's focus on their own allure can lead to a metaphorical barrenness, despite the inherent capacity for generational legacy. Conclude with a reflection on the choice between selfishness and altruism, using nature as a metaphor for this existential dilemma.</p><p>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Extra Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Zero One</head><p>Two Three Table 5: Performance across different LLM when equipped with the domain pool and single pool.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Case Study</head><p>Table.6 gives an detailed example about shared memory, newly generated prompt and the answer with the help of shared memory.</p><p>Query: Compose a sonnet that explores the theme of beauty as both a concealer and enhancer of flaws, reflecting on the beloved's ability to render their sins and vices seemingly innocuous through the sheer force of their allure. Begin by comparing the beloved's imperfections to a flaw in a rose, suggesting that even in blemish, there exists a form of beauty. Elaborate on how the beloved's misdeeds are sweetened by their charm, to the extent that even gossip and scandal become a form of flattery. Reflect on the notion that vice has found an ideal home within the beloved, where their external beauty acts as a cover that makes all imperfections appear attractive. Conclude with a caution to the beloved about the potential consequences of overrelying on their beauty and charm to excuse or obscure their faults, hinting at the possibility of losing their integrity or the genuine admiration of others if this privilege is abused.</p><p>Shared Memory: Elucidate on a mirror that reflects the soul, revealing truths, making one whole.-&gt;There once was a mirror that reflects the soul; with a tale both old and new, revealing truths, making one whole; a legend through and through; in a world where magic grew. Now, based on this question and answer, what is the answer to the question: Share the legend of a clock that can pause time in a moment's click, a pause sublime? The answer to the question "Share the legend of a clock that can pause time in a moment's click, a pause sublime?" would be the tale of a mystical clock rumored to have the power to pause time with just a simple click.</p><p>In this legend, the clock is said to possess the ability to grant individuals a moment of pause in their lives, allowing them to reflect, reset, and find serenity in the chaos of the world. Just like the mirror that reflects the soul, this clock is believed to reveal truths and make one feel whole again, offering a moment of clarity and peace in a busy and fast-paced world.</p><p>Prompt: Elucidate on a mirror that reflects the soul, revealing truths, making one whole.-&gt;There once was a mirror that reflects the soul; with a tale both old and new, revealing truths, making one whole; a legend through and through; in a world where magic grew. Now, based on this question and answer, what is the answer to the question: Share the legend of a clock that can pause time in a moment's click, a pause sublime? The answer to the question "Share the legend of a clock that can pause time in a moment's click, a pause sublime?" would be the tale of a mystical clock rumored to have the power to pause time with just a simple click. In this legend, the clock is said to possess the ability to grant individuals a moment of pause in their lives, allowing them to reflect, reset, and find serenity in the chaos of the world. Just like the mirror that reflects the soul, this clock is believed to reveal truths and make one feel whole again, offering a moment of clarity and peace in a busy and fast-paced world. Now, based on this question and answer, what is the answer to the question: Compose a sonnet that explores the theme of beauty as both a concealer and enhancer of flaws, reflecting on the beloved's ability to render their sins and vices seemingly innocuous through the sheer force of their allure. Begin by comparing the beloved's imperfections to a flaw in a rose, suggesting that even in blemish, there exists a form of beauty. Elaborate on how the beloved's misdeeds are sweetened by their charm, to the extent that even gossip and scandal become a form of flattery. Reflect on the notion that vice has found an ideal home within the beloved, where their external beauty acts as a cover that makes all imperfections appear attractive. Conclude with a caution to the beloved about the potential consequences of overrelying on their beauty and charm to excuse or obscure their faults, hinting at the possibility of losing their integrity or the genuine admiration of others if this privilege is abused.</p><p>Answer: The beloved, like a rose with flaws so rare; Imperfections blend with beauty fair; Their sins and vices sweetened by allure; Gossip and scandal turned to flattering cure; Vice finds a home within their charming grace; Where flaws are masked and faults find no disgrace; But caution to the beloved I impart; Overreliance may tarnish their heart; For beauty's cloak can only hide so much; Integrity and admiration as such; May wane if charm becomes their only shield; So let not beauty's power be revealed. Embrace true self; flaws and all with pride; For in authenticity, true beauty resides.</p><p>Table 6: Examples for creating a sonnet by agent with the help of shared memory</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: (a) In traditional setups, each agent interacts only with its own memory, limiting knowledge reuse. (b) In our proposed INMS framework, agents interact through a shared memory space that supports storing, retrieving, and cross-agent knowledge sharing, enabling collaborative improvement across agents.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure2: The architecture of INMS framework. (1) + (2) The retriever take the original query from agent as the input, retrieve the suitable memories from the memory pool and concatenate them to the query to form the prompt.(3) The Agent (Sonnet) takes the prompt and makes an answer, pack them as (Prompt, Answer). (4) Scorer generates a score according to the designed rubric for (Prompt, Answer), while (Prompt, Answer) pairs with high scores will be added into the Memory Pool. All agents share the same Memory Pool; they can write memories into the pool and retrieve memories from the pool so that they can share memories with each other. For a specific example, please refer to Appendix D.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Domain Pool vs Integrated Pool Performance</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Performance across agents by utilizing heterologous shared memories.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>.4 show that, compared to the non-use of shared memories in</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 5 :</head><label>5</label><figDesc>Figure5: Evaluating agents' performance on accumulation of memories in five phases.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Evaluating agents' performance on biased initial memory pool in five phases.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>For the Plan Generation domain, Performance across agents utilizing different amounts shared memories.</figDesc><table><row><cell></cell><cell></cell><cell></cell><cell cols="4">open-mistral-7b</cell><cell></cell><cell></cell><cell cols="3">gpt-3.5-turbo</cell><cell></cell><cell></cell><cell></cell><cell cols="2">gpt-4o</cell><cell></cell><cell></cell></row><row><cell>Agent</cell><cell></cell><cell cols="17">Zero One Two Three Zero One Two Three Zero One Two Three</cell></row><row><cell cols="2">Limerick</cell><cell cols="4">0.49 0.54 0.56</cell><cell cols="2">0.59</cell><cell cols="4">0.50 0.56 0.76</cell><cell>0.87</cell><cell cols="4">0.52 0.69 0.88</cell><cell></cell><cell>0.93</cell></row><row><cell cols="6">Wuyanlvshi 0.56 0.59 0.61</cell><cell cols="2">0.66</cell><cell cols="4">0.66 0.72 0.71</cell><cell>0.72</cell><cell cols="4">0.73 0.75 0.75</cell><cell></cell><cell>0.76</cell></row><row><cell>Sonnet</cell><cell></cell><cell cols="4">0.48 0.52 0.52</cell><cell cols="2">0.52</cell><cell cols="4">0.50 0.53 0.53</cell><cell>0.53</cell><cell cols="4">0.52 0.55 0.54</cell><cell></cell><cell>0.54</cell></row><row><cell>Puzzle</cell><cell></cell><cell cols="4">0.42 0.48 0.48</cell><cell cols="2">0.50</cell><cell cols="4">0.47 0.51 0.52</cell><cell>0.52</cell><cell cols="4">0.53 0.53 0.56</cell><cell></cell><cell>0.60</cell></row><row><cell>Pun</cell><cell></cell><cell cols="4">0.32 0.35 0.36</cell><cell cols="2">0.39</cell><cell cols="4">0.47 0.57 0.64</cell><cell>0.67</cell><cell cols="4">0.61 0.64 0.67</cell><cell></cell><cell>0.70</cell></row><row><cell>Riddle</cell><cell></cell><cell cols="4">0.34 0.36 0.37</cell><cell cols="2">0.37</cell><cell cols="4">0.40 0.42 0.48</cell><cell>0.52</cell><cell cols="4">0.64 0.70 0.86</cell><cell></cell><cell>0.88</cell></row><row><cell>Fitness</cell><cell></cell><cell cols="4">0.47 0.48 0.50</cell><cell cols="2">0.54</cell><cell cols="4">0.42 0.57 0.52</cell><cell>0.52</cell><cell cols="4">0.46 0.61 0.65</cell><cell></cell><cell>0.65</cell></row><row><cell>Study</cell><cell></cell><cell cols="4">0.41 0.45 0.46</cell><cell cols="2">0.46</cell><cell cols="4">0.49 0.56 0.53</cell><cell>0.51</cell><cell cols="4">0.55 0.60 0.63</cell><cell></cell><cell>0.65</cell></row><row><cell>Travel</cell><cell></cell><cell cols="4">0.44 0.48 0.50</cell><cell cols="2">0.53</cell><cell cols="4">0.47 0.54 0.54</cell><cell>0.54</cell><cell cols="4">0.53 0.55 0.71</cell><cell></cell><cell>0.71</cell></row><row><cell></cell><cell></cell><cell></cell><cell cols="2">Literary</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>Logic</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>Plan</cell><cell></cell><cell></cell></row><row><cell>Methods</cell><cell cols="2">Limerick</cell><cell cols="2">Wuyanlvshi</cell><cell cols="2">Sonnet</cell><cell cols="2">Puzzle</cell><cell></cell><cell>Pun</cell><cell cols="2">Riddle</cell><cell cols="2">Fitness</cell><cell cols="2">Study</cell><cell cols="2">Travel</cell></row><row><cell></cell><cell cols="18">F1 LLM-J F1 LLM-J F1 LLM-J F1 LLM-J F1 LLM-J F1 LLM-J F1 LLM-J F1 LLM-J F1 LLM-J</cell></row><row><cell>Random</cell><cell>0.21</cell><cell>0.15</cell><cell>0.00</cell><cell>0.40</cell><cell>0.16</cell><cell>0.50</cell><cell>0.17</cell><cell>0.14</cell><cell>0.25</cell><cell>0.15</cell><cell>0.28</cell><cell>0.38</cell><cell>0.14</cell><cell>0.15</cell><cell>0.09</cell><cell>0.03</cell><cell>0.11</cell><cell>0.02</cell></row><row><cell>BM25</cell><cell>0.44</cell><cell>0.90</cell><cell>0.00</cell><cell>0.50</cell><cell>0.18</cell><cell>0.55</cell><cell>0.19</cell><cell>0.22</cell><cell>0.41</cell><cell>0.20</cell><cell>0.65</cell><cell>0.60</cell><cell>0.20</cell><cell>0.30</cell><cell>0.13</cell><cell>0.08</cell><cell>0.18</cell><cell>0.08</cell></row><row><cell cols="2">Contriever 0.43</cell><cell>0.92</cell><cell>0.00</cell><cell>0.49</cell><cell>0.18</cell><cell>0.53</cell><cell>0.18</cell><cell>0.25</cell><cell>0.39</cell><cell>0.23</cell><cell>0.63</cell><cell>0.55</cell><cell>0.21</cell><cell>0.38</cell><cell>0.12</cell><cell>0.05</cell><cell>0.16</cell><cell>0.04</cell></row><row><cell>SBERT</cell><cell>0.43</cell><cell>0.88</cell><cell>0.00</cell><cell>0.46</cell><cell>0.17</cell><cell>0.58</cell><cell>0.16</cell><cell>0.27</cell><cell>0.40</cell><cell>0.18</cell><cell>0.65</cell><cell>0.58</cell><cell>0.19</cell><cell>0.23</cell><cell>0.12</cell><cell>0.04</cell><cell>0.15</cell><cell>0.05</cell></row><row><cell>TAS-B</cell><cell>0.44</cell><cell>0.93</cell><cell>0.00</cell><cell>0.52</cell><cell>0.14</cell><cell>0.52</cell><cell>0.14</cell><cell>0.21</cell><cell>0.35</cell><cell>0.15</cell><cell>0.63</cell><cell>0.50</cell><cell>0.19</cell><cell>0.23</cell><cell>0.13</cell><cell>0.15</cell><cell>0.15</cell><cell>0.07</cell></row><row><cell>SimCSE</cell><cell>0.41</cell><cell>0.93</cell><cell>0.00</cell><cell>0.47</cell><cell>0.17</cell><cell>0.58</cell><cell>0.15</cell><cell>0.19</cell><cell>0.40</cell><cell>0.18</cell><cell>0.64</cell><cell>0.58</cell><cell>0.21</cell><cell>0.32</cell><cell>0.11</cell><cell>0.09</cell><cell>0.19</cell><cell>0.12</cell></row><row><cell>INMS</cell><cell>0.51</cell><cell>0.97</cell><cell>0.00</cell><cell>0.55</cell><cell>0.24</cell><cell>0.67</cell><cell>0.18</cell><cell>0.31</cell><cell>0.38</cell><cell>0.24</cell><cell>0.69</cell><cell>0.71</cell><cell>0.23</cell><cell>0.34</cell><cell>0.13</cell><cell>0.11</cell><cell>0.21</cell><cell>0.15</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 4 :</head><label>4</label><figDesc>Agent performance with Domain pool vs. Single pool by utilizing three suitable memories for open-ended queries against the model gpt-4o.</figDesc><table><row><cell>Agent</cell><cell cols="10">ROUGE-2 ROUGE-L ROUGE-2 ROUGE-L ROUGE-2 ROUGE-L ROUGE-2 ROUGE-L</cell></row><row><cell>Limerick</cell><cell>0.06</cell><cell>0.15</cell><cell>0.25</cell><cell>0.37</cell><cell></cell><cell>0.44</cell><cell>0.52</cell><cell cols="2">0.75</cell><cell>0.77</cell></row><row><cell>Wuyanlvshi</cell><cell>0.00</cell><cell>0.00</cell><cell>0.00</cell><cell>0.00</cell><cell></cell><cell>0.00</cell><cell>0.00</cell><cell cols="2">0.00</cell><cell>0.00</cell></row><row><cell>Sonnet</cell><cell>0.02</cell><cell>0.14</cell><cell>0.02</cell><cell>0.13</cell><cell></cell><cell>0.10</cell><cell>0.15</cell><cell cols="2">0.10</cell><cell>0.15</cell></row><row><cell>Puzzle</cell><cell>0.07</cell><cell>0.19</cell><cell>0.09</cell><cell>0.21</cell><cell></cell><cell>0.09</cell><cell>0.25</cell><cell cols="2">0.09</cell><cell>0.26</cell></row><row><cell>Pun</cell><cell>0.27</cell><cell>0.43</cell><cell>0.20</cell><cell>0.35</cell><cell></cell><cell>0.30</cell><cell>0.43</cell><cell cols="2">0.24</cell><cell>0.37</cell></row><row><cell>Riddle</cell><cell>0.71</cell><cell>0.80</cell><cell>0.32</cell><cell>0.48</cell><cell></cell><cell>0.44</cell><cell>0.56</cell><cell cols="2">0.62</cell><cell>0.75</cell></row><row><cell>Fitness</cell><cell>0.02</cell><cell>0.06</cell><cell>0.04</cell><cell>0.15</cell><cell></cell><cell>0.06</cell><cell>0.18</cell><cell cols="2">0.07</cell><cell>0.19</cell></row><row><cell>Study</cell><cell>0.01</cell><cell>0.04</cell><cell>0.01</cell><cell>0.15</cell><cell></cell><cell>0.01</cell><cell>0.17</cell><cell cols="2">0.02</cell><cell>0.14</cell></row><row><cell>Travel</cell><cell>0.03</cell><cell>0.06</cell><cell>0.02</cell><cell>0.12</cell><cell></cell><cell>0.14</cell><cell>0.28</cell><cell cols="2">0.12</cell><cell>0.18</cell></row><row><cell cols="11">Table 3: Performance across agents with different numbers of PA pairs (0-3) evaluated by ROUGE-2 and ROUGE-L</cell></row><row><cell cols="2">against gpt-4o.</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell cols="10">Metric Limerick Wuyanlvshi Sonnet Puzzle Pun Riddle Fitness Study Travel</cell></row><row><cell></cell><cell>Rogue-2</cell><cell>0.75</cell><cell>0.00</cell><cell>0.10</cell><cell>0.09</cell><cell>0.24</cell><cell>0.62</cell><cell>0.07</cell><cell>0.02</cell><cell>0.12</cell></row><row><cell cols="2">Domain Rogue-L</cell><cell>0.77</cell><cell>0.00</cell><cell>0.15</cell><cell>0.26</cell><cell>0.37</cell><cell>0.75</cell><cell>0.19</cell><cell>0.14</cell><cell>0.18</cell></row><row><cell></cell><cell>Rouge-2</cell><cell>0.05 ↓</cell><cell>0.00</cell><cell>0.01 ↓</cell><cell cols="3">0.06 ↓ 0.26 0.60 ↓</cell><cell>0.02 ↓</cell><cell cols="2">0.005 ↓ 0.02 ↓</cell></row><row><cell>Single</cell><cell>Rogue-L</cell><cell>0.12 ↓</cell><cell>0.00</cell><cell>0.10 ↓</cell><cell cols="3">0.19 ↓ 0.43 0.71 ↓</cell><cell>0.11 ↓</cell><cell>0.07 ↓</cell><cell>0.10 ↓</cell></row><row><cell></cell><cell></cell><cell cols="2">open-mistral-7b</cell><cell cols="3">gpt-3.5-turbo</cell><cell></cell><cell></cell><cell>gpt-4o</cell></row><row><cell>Agent</cell><cell></cell><cell cols="9">Integrate Domain Integrate Domain Integrate Domain</cell></row><row><cell cols="2">Limerick</cell><cell>0.51</cell><cell>0.59</cell><cell cols="2">0.60</cell><cell>0.87</cell><cell></cell><cell>0.54</cell><cell></cell><cell>0.93</cell></row><row><cell cols="2">Wuyanlvshi</cell><cell>0.63</cell><cell>0.66</cell><cell cols="2">0.68</cell><cell>0.72</cell><cell></cell><cell>0.76</cell><cell></cell><cell>0.76</cell></row><row><cell>Sonnet</cell><cell></cell><cell>0.52</cell><cell>0.52</cell><cell cols="2">0.49</cell><cell>0.53</cell><cell></cell><cell>0.54</cell><cell></cell><cell>0.54</cell></row><row><cell>Puzzle</cell><cell></cell><cell>0.48</cell><cell>0.50</cell><cell cols="2">0.49</cell><cell>0.52</cell><cell></cell><cell>0.50</cell><cell></cell><cell>0.60</cell></row><row><cell>Pun</cell><cell></cell><cell>0.38</cell><cell>0.39</cell><cell cols="2">0.61</cell><cell>0.67</cell><cell></cell><cell>0.61</cell><cell></cell><cell>0.70</cell></row><row><cell>Riddle</cell><cell></cell><cell>0.35</cell><cell>0.37</cell><cell cols="2">0.50</cell><cell>0.52</cell><cell></cell><cell>0.51</cell><cell></cell><cell>0.88</cell></row><row><cell>Fitness</cell><cell></cell><cell>0.54</cell><cell>0.54</cell><cell cols="2">0.46</cell><cell>0.52</cell><cell></cell><cell>0.52</cell><cell></cell><cell>0.65</cell></row><row><cell>Study</cell><cell></cell><cell>0.46</cell><cell>0.46</cell><cell cols="2">0.49</cell><cell>0.51</cell><cell></cell><cell>0.51</cell><cell></cell><cell>0.65</cell></row><row><cell>Travel</cell><cell></cell><cell>0.50</cell><cell>0.53</cell><cell cols="2">0.54</cell><cell>0.54</cell><cell></cell><cell>0.52</cell><cell></cell><cell>0.71</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Appendix A Rubrics and Prompt for scoring Memory</head><p>In order to judge whether a memory can be added into the memory pool, we set three scoring rubrics for three domains respectively. For Single Pool, we set up a set of rubrics from a global perspective.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 Rubrics for domain -Literary Creation</head><p>General Evaluation Criteria (Total: 100) Criteria: Literary Quality Score Range: 0-5 Description: Assesses creativity, use of language, and emotional impact. High-quality examples should demonstrate mastery of language and evoke a strong reader response.</p><p>Criteria: Authenticity Score Range: 0-10 Description: Evaluates adherence to the form's traditional standards, including structure, rhythm, and themes. High scores indicate that the poem respects genre conventions creatively.</p><p>Criteria: Clarity and Cohesion Score Range: 0-10 Description: Considers the poem's clarity of expression and the cohesion of its parts. A high</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Adler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lama</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilge</forename><surname>Akkaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florencia</forename><surname>Leoni Aleman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Janko</forename><surname>Altenschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Altman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.08774</idno>
+		<title level="m">Shyamal Anadkat, and 1 others. 2023. Gpt-4 technical report</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Few-shot training llms for project-specific codesummarization</title>
+		<author>
+			<persName><forename type="first">Toufique</forename><surname>Ahmed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Premkumar</forename><surname>Devanbu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 37th</title>
+		<meeting>the 37th</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m">IEEE/ACM International Conference on Automated Software Engineering</title>
+		<imprint>
+			<biblScope unit="page" from="1" to="5" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Amanda Askell, and 1 others</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongfeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.04573</idno>
+		<title level="m">Vrsd: Rethinking similarity and diversity for retrieval in large language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Pal: Program-aided language models</title>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamie</forename><surname>Callan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="10764" to="10799" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingcheng</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danqi</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2104.08821</idno>
+		<title level="m">Simcse: Simple contrastive learning of sentence embeddings</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Solving math word problems by combining language models with symbolic solvers</title>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuhui</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhichao</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hexiang</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuehao</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengjin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinghan</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengjie</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">;</forename><surname>Gabriel Poesia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rose</forename><forename type="middle">E</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">D</forename><surname>Goodman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2411.15594</idno>
+		<idno>arXiv:2304.09102</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Honghao Liu, and 1 others. 2024. A survey on llm-as-a-judge</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>Joy He-Yueya</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Efficiently teaching an effective dense retriever with balanced topic aware sampling</title>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Hofstätter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sheng-Chieh</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jheng-Hong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Allan</forename><surname>Hanbury</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 44th international ACM SIGIR conference on research and development in information retrieval</title>
+		<meeting>the 44th international ACM SIGIR conference on research and development in information retrieval</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="113" to="122" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Gautier</forename><surname>Izacard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mathilde</forename><surname>Caron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Hosseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Riedel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Bojanowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armand</forename><surname>Joulin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edouard</forename><surname>Grave</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2112.09118</idno>
+		<title level="m">Unsupervised dense information retrieval with contrastive learning</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Atlas: Few-shot learning with retrieval augmented language models</title>
+		<author>
+			<persName><forename type="first">Gautier</forename><surname>Izacard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Hosseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armand</forename><surname>Joulin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Riedel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edouard</forename><surname>Grave</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">24</biblScope>
+			<biblScope unit="issue">251</biblScope>
+			<biblScope unit="page" from="1" to="43" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">Albert Qiaochu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandre</forename><surname>Sablayrolles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Mensch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Bamford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florian</forename><surname>Bressand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gianna</forename><surname>Lengyel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guillaume</forename><surname>Lample</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucile</forename><surname>Saulnier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Renard</forename><surname>Lélio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marie-Anne</forename><surname>Lavaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teven</forename><surname>Stock</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thibaut</forename><surname>Le Scao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothée</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">El</forename><surname>Lacroix</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sayed</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2310.06825</idno>
+		<title level="m">Devendra Singh Chaplot, Diego de Las Casas</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ishita</forename><surname>Andrew K Lampinen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Dasgupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">Y</forename><surname>Stephanie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kory</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><forename type="middle">Henry</forename><surname>Matthewson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonia</forename><surname>Tessler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><forename type="middle">L</forename><surname>Creswell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><forename type="middle">X</forename><surname>Mcclelland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hill</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.02329</idno>
+		<title level="m">Can language models learn from explanations in context? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yoav</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Wies</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Jannai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Navon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yedid</forename><surname>Hoshen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amnon</forename><surname>Shashua</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.04541</idno>
+		<title level="m">The inductive bias of in-context learning: Rethinking pretraining example design</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Tim Rocktäschel, and 1 others. 2020. Retrieval-augmented generation for knowledge-intensive nlp tasks</title>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Piktus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladimir</forename><surname>Karpukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heinrich</forename><surname>Küttler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="9459" to="9474" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">What makes good in-context examples for gpt-3?</title>
+		<author>
+			<persName><forename type="first">Jiachang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dinghan</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">B</forename><surname>Dolan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lawrence</forename><surname>Carin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The 3rd Workshop on Knowledge Extraction and Integration for Deep Learning Architectures</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="100" to="114" />
+		</imprint>
+	</monogr>
+	<note type="report_type">Dee-LIO 2022</note>
+	<note>Proceedings of Deep Learning Inside Out</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binbin</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqiang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinjie</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guannan</forename><surname>Zhang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<idno type="arXiv">arXiv:2311.08719</idno>
+		<title level="m">Think-in-memory: Recalling and post-thinking enable llms with long-term memory</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">2023b. Pretrain, prompt, and predict: A systematic survey of prompting methods in natural language processing</title>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhe</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinlan</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengbao</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hiroaki</forename><surname>Hayashi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Computing Surveys</title>
+		<imprint>
+			<biblScope unit="volume">55</biblScope>
+			<biblScope unit="issue">9</biblScope>
+			<biblScope unit="page" from="1" to="35" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Kejuan Yang, and 1 others. 2024. Agentbench: Evaluating llms as agents</title>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanchen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanyu</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanyu</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hangliang</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiwen</forename><surname>Men</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note>In ICLR</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Junru</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyu</forename><surname>An</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingbao</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriele</forename><surname>Pergola</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yulan</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Di</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xing</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunsheng</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.08239</idno>
+		<title level="m">Memochat: Tuning llms to use memos for consistent long-range open-domain conversation</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">Man</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuyun</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Panupong</forename><surname>Pasupat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mehran</forename><surname>Kazemi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chitta</forename><surname>Baral</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vaiva</forename><surname>Imbrasaite</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><forename type="middle">Y</forename><surname>Zhao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.14128</idno>
+		<title level="m">Dr. icl: Demonstration-retrieved in-context learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Generation-augmented retrieval for opendomain question answering</title>
+		<author>
+			<persName><forename type="first">Yuning</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengcheng</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yelong</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 59th Annual Meeting of the Association for Computational Linguistics and the 11th International Joint Conference on Natural Language Processing</title>
+		<meeting>the 59th Annual Meeting of the Association for Computational Linguistics and the 11th International Joint Conference on Natural Language Processing</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="4089" to="4100" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Cross-task generalization via natural language crowdsourcing instructions</title>
+		<author>
+			<persName><forename type="first">Swaroop</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Khashabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chitta</forename><surname>Baral</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 60th Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="3470" to="3487" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Packer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vivian</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Shishir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Patil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Wooders</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gonzalez</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.08560</idno>
+		<title level="m">Memgpt: Towards llms as operating systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Generative agents: Interactive simulacra of human behavior</title>
+		<author>
+			<persName><forename type="first">Sung</forename><surname>Joon</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O'</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carrie</forename><forename type="middle">Jun</forename><surname>Brien</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meredith</forename><forename type="middle">Ringel</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Morris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><forename type="middle">S</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bernstein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 36th annual acm symposium on user interface software and technology</title>
+		<meeting>the 36th annual acm symposium on user interface software and technology</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="1" to="22" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Kevin Leyton-Brown, and Yoav Shoham. 2023. In-context retrieval-augmented language models</title>
+		<author>
+			<persName><forename type="first">Ori</forename><surname>Ram</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoav</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Itay</forename><surname>Dalmedigos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dor</forename><surname>Muhlgay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amnon</forename><surname>Shashua</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="page" from="1316" to="1331" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Nils</forename><surname>Reimers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iryna</forename><surname>Gurevych</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1908.10084</idno>
+		<title level="m">Sentence-bert: Sentence embeddings using siamese bert-networks</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">The probabilistic relevance framework: Bm25 and beyond</title>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Robertson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Zaragoza</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Foundations and Trends® in Information Retrieval</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="333" to="389" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Learning to retrieve prompts for in-context learning</title>
+		<author>
+			<persName><forename type="first">Ohad</forename><surname>Rubin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Herzig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Berant</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2022 Conference of the North American Chapter</title>
+		<meeting>the 2022 Conference of the North American Chapter</meeting>
+		<imprint>
+			<publisher>Human Language Technologies</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="2655" to="2671" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Weijia</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sewon</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michihiro</forename><surname>Yasunaga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minjoon</forename><surname>Seo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rich</forename><surname>James</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2301.12652</idno>
+		<title level="m">Replug: Retrievalaugmented black-box language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Reflexion: Language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="8634" to="8652" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Story centaur: Large language model few shot learning as a creative writing tool</title>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Swanson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kory</forename><surname>Mathewson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Pietrzak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sherol</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Monica</forename><surname>Dinalescu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 16th Conference of the European Chapter</title>
+		<meeting>the 16th Conference of the European Chapter</meeting>
+		<imprint>
+			<publisher>the Association for Computational Linguistics: System Demonstrations</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="244" to="256" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">Guanzhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqi</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Mandlekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaowei</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuke</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linxi</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anima</forename><surname>Anandkumar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.16291</idno>
+		<title level="m">Voyager: An open-ended embodied agent with large language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Learning to retrieve in-context examples for large language models</title>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Furu</forename><surname>Wei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 18th Conference of the European Chapter</title>
+		<title level="s">the Association for Computational Linguistics</title>
+		<meeting>the 18th Conference of the European Chapter</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="1752" to="1767" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">others. 2022. Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24824" to="24837" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jules</forename><surname>White</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quchen</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Hays</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Sandborn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><surname>Olea</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henry</forename><surname>Gilbert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashraf</forename><surname>Elnashar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Spencer-Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Douglas</forename><forename type="middle">C</forename><surname>Schmidt</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.11382</idno>
+		<title level="m">A prompt pattern catalog to enhance prompt engineering with chatgpt</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Reframing human-ai collaboration for generating free-text explanations</title>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Wiegreffe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Hessel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swabha</forename><surname>Swayamdipta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Riedl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2022 Conference of the North American Chapter</title>
+		<meeting>the 2022 Conference of the North American Chapter</meeting>
+		<imprint>
+			<publisher>Human Language Technologies</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="632" to="658" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Ai chains: Transparent and controllable human-ai interaction by chaining large language model prompts</title>
+		<author>
+			<persName><forename type="first">Tongshuang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carrie</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2022 CHI conference on human factors in computing systems</title>
+		<meeting>the 2022 CHI conference on human factors in computing systems</meeting>
+		<imprint>
+			<date type="published" when="2022-06">Jun Cai. 2022</date>
+			<biblScope unit="page" from="1" to="22" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Varsha</forename><surname>Kishore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kilian</forename><forename type="middle">Q</forename><surname>Weinberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoav</forename><surname>Artzi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1904.09675</idno>
+		<title level="m">Bertscore: Evaluating text generation with bert</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Synapse: Trajectory-as-exemplar prompting with memory for computer control</title>
+		<author>
+			<persName><forename type="first">Longtao</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rundong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinrun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>An</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.07863</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yongchao</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrei</forename><forename type="middle">Ioan</forename><surname>Muresanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziwen</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keiran</forename><surname>Paster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silviu</forename><surname>Pitis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harris</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Ba</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.01910</idno>
+		<title level="m">Large language models are human-level prompt engineers</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Xiaogang Wang, and 1 others. 2023. Ghost in the minecraft: Generally capable agents for openworld environments via large language models with text-based knowledge and memory</title>
+		<author>
+			<persName><forename type="first">Xizhou</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuntao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenxin</forename><surname>Hao Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weijie</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyu</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lewei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.17144</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,1404 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">PLoP: Precise LoRA Placement for Efficient Finetuning of Large Models</title>
+				<funder>
+					<orgName type="full">Institute for Artificial CyberThreat Intelligence and OperatioN (ACTION)</orgName>
+				</funder>
+				<funder ref="#_8CB4kg2">
+					<orgName type="full">Simons Foundation</orgName>
+				</funder>
+				<funder ref="#_uFsMyMm #_pDVFZvS #_QwSsyGM #_8bxA8Kq #_2jbqB97 #_6vH2Jar">
+					<orgName type="full">National Science Foundation</orgName>
+					<orgName type="abbreviated">NSF</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">Foundations of Data Science Institute (FODSI)</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-06-25">25 Jun 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Soufiane</forename><surname>Hayou</surname></persName>
+							<email>hayou@berkeley.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Simons Institute UC Berkeley</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Nikhil</forename><surname>Ghosh</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Flatiron Institute</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Bin</forename><surname>Yu</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="department">Dept of Statistics</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">U</forename><forename type="middle">C</forename><surname>Berkeley</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="department">Dept of Statistics</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">PLoP: Precise LoRA Placement for Efficient Finetuning of Large Models</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-06-25">25 Jun 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">C2833D10A0338BBEBF20EFC0DE4D98CA</idno>
+					<idno type="arXiv">arXiv:2506.20629v1[cs.LG]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:09+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Low-Rank Adaptation (LoRA) is a widely used finetuning method for large models. Its small memory footprint allows practitioners to adapt large models to specific tasks at a fraction of the cost of full finetuning. Different modifications have been proposed to enhance its efficiency by, for example, setting the learning rate, the rank, and the initialization. Another improvement axis is adapter placement strategy: when using LoRA, practitioners usually pick module types to adapt with LoRA, such as Query and Key modules. Few works have studied the problem of adapter placement, with nonconclusive results: original LoRA paper suggested placing adapters in attention modules, while other works suggested placing them in the MLP modules. Through an intuitive theoretical analysis, we introduce PLoP (Precise LoRA Placement), a lightweight method that allows automatic identification of module types where LoRA adapters should be placed, given a pretrained model and a finetuning task. We demonstrate that PLoP consistently outperforms, and in the worst case competes, with commonly used placement strategies through comprehensive experiments on supervised finetuning and reinforcement learning for reasoning.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Low-Rank Adaptation (LoRA) is a widely adopted parameter-efficient fine-tuning (PEFT) methods for large language and vision models. Introduced by <ref type="bibr" target="#b0">[1]</ref>, LoRA significantly reduces the computational and memory requirements of finetuning by freezing the pretrained model weights and inserting low-rank matrices into the model. This approach has enabled the adaptation of production-scale models on limited hardware resources while achieving performance comparable to full finetuning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LoRA improvements.</head><p>Several works have considered improving LoRA performance by e.g. using different learning rates for LoRA modules <ref type="bibr" target="#b1">[2]</ref>, using normalized updates <ref type="bibr" target="#b2">[3]</ref>, setting adaptive LoRA rank <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b4">5]</ref>, improving initialization <ref type="bibr" target="#b5">[6]</ref>, and many other variants, e.g. <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b7">8,</ref><ref type="bibr" target="#b8">9,</ref><ref type="bibr" target="#b9">10,</ref><ref type="bibr" target="#b10">11,</ref><ref type="bibr" target="#b11">12]</ref>.</p><p>A critical aspect of LoRA is module selection -deciding which specific components of the model should receive the low-rank adaptation. In practice, instead of selecting individual modules, one selects module types such as "q_proj" (Query modules), "v_proj" (Value modules), etc. In <ref type="bibr" target="#b0">[1]</ref>, the authors suggested that inserting LoRA in attention modules (Query, Key, and Value) generally yields the best performance among other possible placements. However, in a recent note <ref type="bibr" target="#b12">[13]</ref>, the same authors further explained the difficulty encountered in LoRA adapter placement, and mentioned that optimal placement depends on pretrained model and the finetuning task. Another work <ref type="bibr" target="#b13">[14]</ref> found that for some models, placing LoRA adapters in MLP modules gives better performance. Faced with this confusion, practitioners generally follow one of these guidelines or insert LoRA adapters in all modules which comes at a higher finetuning cost. Therefore, it is natural to ask:</p><p>Given a model and a task, how can we select target module types for LoRA at a reasonable cost?</p><p>Memory footprint of LoRA. In practice, LoRA is used to finetune large models with relatively low cost. Consider Llama3.2-3B <ref type="bibr" target="#b14">[15]</ref>, processing sequences of 2048 tokens with a batch size of 8. With full finetuning, the memory requirements are substantial. The model parameters require 12GB in float32, while the Adam optimizer states add another 24GB. The activations for a single forward pass consume approximately 48GB of memory. This brings the total memory requirement to approximately 84GB necessitating high-end GPUs. This becomes more problematic with larger, production-scale models. With LoRA, the computational cost changes dramatically. Using rank-16 adapters on query and value modules introduces only 10 million trainable parameters (0.33% of the model). Notably, since gradients are only computed for the adapter weights, the memory overhead for gradient computation is reduced by over 99%. This enables finetuning on a single 24GB GPU with the same batch size and sequence length. These low memory footprint is what makes LoRA attractive for finetuning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Anatomy of a practical module selection method for LoRA finetuning.</head><p>Based on the computational constraints outlined above, any practical module selection method for LoRA adapter placement must operate within these resource limitations. We identify three main pillars of a practical method: (i) the method cannot require computing gradients with respect to the full model parameters, as this would defeat the primary purpose of using LoRA, (ii) the selection process should not necessitate multiple forward passes through different model configurations, as this would multiply the already significant activation memory requirements by the number of candidate configurations being evaluated, (iii) the method must avoid storing large intermediate computations or maintaining extensive state across different module evaluations, which would further strain memory resources. Only methods satisfying these stringent requirements can truly serve practitioners operating in the resource-constrained environments where LoRA provides its greatest value.</p><p>In this paper, we introduce PLoP (Precise LoRA Placement), a lightweight module placement method for LoRA based on a specific measure of module-data alignment that can be calculated with few forward passes (no gradients, no extensive forward passes, and no storage of intermediate calculations), and therefore, it checks all the three points above (see the compute cost paragraph in Section 3 for more details). The mechanism of PLoP is described in Fig. <ref type="figure">1</ref>. Specifically, our contributions are as follows:</p><p>1. We develop a theoretical framework to study module-data alignment in large neural networks, the core concept behind PLoP.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>2.</head><p>Based on our theoretical analysis of module-data alignment, we develop PLoP, which identifies which module types should be used for LoRA finetuning.</p><p>3. We validate our results with extensive experiments showing the benefits of PLoP with LoRA in three post-training scenarios: supervised finetuning for classification, supervised finetuning for text generation, and reinforcement learning for mathematical reasoning.</p><p>The paper is structured as follows. In Section 2, we introduce the main theoretical intuition behind our method. In Section 3, we present our method PLoP and provide a quantitative and qualitative analysis of our method. In Section 4, we report empirical results showing the benefit of PLoP in two post-training scenarios: supervised finetuning and reinforcement learning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.1">Related Work</head><p>The effectiveness of LoRA critically depends on the placement of adapter modules. Initially, Hu et al. <ref type="bibr" target="#b0">[1]</ref> studied the placement of adapters in attention modules, observing strong performance in various NLP tasks. He et al. <ref type="bibr" target="#b13">[14]</ref> showed that adapters placed in MLP modules can sometimes outperform attention-based placements. Fomenko et al. <ref type="bibr" target="#b12">[13]</ref> mentioned that optimal adapter placement varies significantly depending on the pretrained model architecture and the downstream task. The authors recommended the following general strategy for adapter placement: start with attention layers, then embeddings, then MLP blocks, and if further capacity is required, raise the LoRA rank. In machine translation, Gheini et al. <ref type="bibr" target="#b15">[16]</ref> found that tuning exclusively cross-attention parameters within encoder-decoder Transformers could achieve performance comparable to full-model tuning.</p><p>More adaptive approaches include sensitivity-based parameter selection methods. Zhang et al. <ref type="bibr" target="#b16">[17]</ref> proposed a gradient-based scoring approach that ranks parameters according to their importance to the task, tuning only the highest scoring subset. Similarly, He et al. <ref type="bibr" target="#b17">[18]</ref> developed a sensitivity-aware fine-tuning technique for vision models that dynamically assigns tunable parameters to layers based on local responsiveness. However, such methods require calculating and storing gradients of the full model which is suboptimal for LoRA finetuning (see discussion above). Another variant of LoRA <ref type="bibr" target="#b6">[7]</ref> introduces modifications to the adapter structure to adaptively distribute capacity between modules. However, our focus in this paper is on module type selection for LoRA. In our experiments, we compare with two baselines: Insertion in attention modules as recommended by <ref type="bibr" target="#b0">[1]</ref>, and Insertion in MLP modules as recommended by <ref type="bibr" target="#b13">[14]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Setup and Theory</head><p>Given a pretrained model and a finetuning task, our goal is to strategically place LoRA adapters in modules that would contribute most significantly to performance. In practice, we usually select module types instead of single weight matrices. For instance, for Llama3 models, we might choose to insert LoRA in Query ("q_proj") and Key ("k_proj") modules.</p><p>As we discussed in Section 1, for such a method to be useful, it should first be a lightweight method that operates efficiently in resource-constrained environments and ideally rely on existing computation pipelines. Ideally, the method should rely exclusively on standard forward propagation, as this computational pipeline is already necessary for inference and adds no significant overhead to the existing workflow.</p><p>Inspired by this, we investigated the behavior of the activation norms and discovered an interesting phenomenon: when models are trained on a specific dataset, feature norms of certain modules for inputs from the training data exhibit substantial increases during training, while the same metrics for other modules remain roughly constant. We show an example of such increase in feature norms in  Mechanisms behind the growth in feature norms. The reason behind this growth in feature norms for certain modules is non-trivial. The naive explanation to this phenomenon is that with training, weight norms grow for some modules and remain constant constant or decrease for others. However, as we will see in the next analysis, the mechanisms behind this phenomenon are more subtle, and the most important factor is a form of alignment that occurs between module weight and its input.</p><p>Specifically, we show that this growth in feature norms in some modules appears primarily as a result of two factors: 1) large-width in neural networks (large embedding dimension), a condition that is generally satisfied in practice, <ref type="foot" target="#foot_0">2</ref> , and 2) progressive alignment of modules weights with their respective inputs.</p><p>Consider a general neural network of the form</p><formula xml:id="formula_0">⎧ ⎪ ⎪ ⎪ ⎪ ⎨ ⎪ ⎪ ⎪ ⎪ ⎩ Y in (x) = W in x, Y l (x) = F l (W l , Y l-1 (x)), l ∈ [L], Y out (x) = W out Y L (x),<label>(1)</label></formula><p>where x ∈ R d is the input, L ≥ 1 is the network depth, (F l ) l∈[L] are mappings that define the layers, W l ∈ R n×n are the hidden weights, where n is the network width, and W in , W out are input and output embedding weights. Model (1) is pretrained on some data mixture D to minimize some loss function ℓ -the next-token prediction loss in the case of language models. We introduce some notation that will facilitate the presentation of our analysis.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Notation.</head><p>Hereafter, n will always denote model width. As n grows, given sequences c n ∈ R and d n ∈ R + , we write c n = O(d n ) to refer to c n &lt; κd n for some constant κ &gt; 0. We write</p><formula xml:id="formula_1">c n = Θ(d n ) if we have κ 1 d n ≤ c n ≤ κ 2 d n for some κ 1 , κ 2 &gt; 0. For vector sequences c n = (c i n ) 1≤i≤k ∈ R k (for some k &gt; 0), we write c n = O(d n ) when c i n = O(d i n )</formula><p>for all i ∈ [k], and same holds for other asymptotic notation. Finally, when the sequence c n is a vector of random variables, asymptotics are defined in the sense of the second moment (L 2 norm).</p><p>For a vector z ∈ R n , we will use the following norms: ∥z∥ = (∑ n i=1 z 2 i ) 1/2 (euclidean norm),</p><p>and</p><formula xml:id="formula_2">∥z∥ 1 = ∑ n i=1 |z i | (ℓ 1 norm).</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Intuitive theoretical analysis.</head><p>For the sake of tractability, we consider the case where a single weight matrix (module) in the model is trained and other modules are frozen. <ref type="foot" target="#foot_2">3</ref> We further simplify the analysis by assuming that the model is trained in a single datapoint x.</p><p>We later discuss the impact of batch training. The trainable module has the form</p><formula xml:id="formula_3">z out = W z in ,</formula><p>where z in ∈ R n is the input, and z out ∈ R n is the output that we call feature, both evaluated at the training datapoint x. <ref type="foot" target="#foot_3">4</ref> For Transformer models, the module can be for instance a single Query head, a Projection module in some MLP, etc.</p><p>The gradient of the loss with respect to the weight matrix W is given by</p><formula xml:id="formula_4">dW = dz out ⊗ z in ,</formula><p>where dz out = ∇ zout ℓ, the gradient of the loss with respect to feature z out .</p><p>In general, modern LLMs are trained with Adam <ref type="bibr" target="#b19">[20]</ref>, which normalizes gradients. In its momentum-less form, Adam becomes SignSGD <ref type="bibr" target="#b20">[21]</ref>, which is defined by</p><formula xml:id="formula_5">S(dW ij ) = { +1 dW ij ≥ 0 -1 dW ij &lt; 0.</formula><p>SignSGD is a nice simplification of Adam: it captures the property of normalization and allows tractable the theoretical analysis as we will see below. With SignSGD, feature updates<ref type="foot" target="#foot_4">foot_4</ref> are given by</p><formula xml:id="formula_6">W t+1 z in = W t z in -α × S(dz out ⊗ z in )z in = W t z in -α × ∥z in ∥ 1 S(dz t out ),<label>(2)</label></formula><p>where the superscript in z t out = W t z in refers to update step t. Note that we do not use such superscript for z in since it does not change when we update W .</p><p>The key trick used in Eq. ( <ref type="formula" target="#formula_6">2</ref>) is that the sign function S(.) can be expanded across outer product. This is one of the main observations behind the development of µP <ref type="bibr" target="#b18">[19]</ref>, which sets scaling exponents for initialization and learning rate with respect to model width n. Under µP, all weights in the model are initialized to have roughly 1/ √ n magnitude (or more precisely 1/ √ f an_in), which implies that features z out and their inputs z in to have Θ n (1) norm at initialization (i.e. n -1 ∥z in ∥ 1 = Θ n (1)).</p><p>Eq. ( <ref type="formula" target="#formula_6">2</ref>) describes the evolution of features z out as we update weights W . Ideally, we want both stability (W t z in does not grow in magnitude with n) and non-triviality (W t z in does not converge to 0 with n). These conditions are both satisfied when W t+1 z in -W t z in = Θ n (1) element-wise, which implies that the learning rate should scale as α = ηn -1 for some constant η &gt; 0, to compensate the growth in ∥z in ∥ 1 , which is exactly the µP scaling rule for the learning rate. See Appendix A for more details about the mechanisms of µP. With this parametrization of the learning rate, we obtain</p><formula xml:id="formula_7">∥W t+1 z in ∥ 2 2 = ∥W t z in ∥ 2 2 + η 2 n -1 ∥z in ∥ 2 1 -2ηn -1 ∥z in ∥ 1 × ⟨W t z in , S(dz t out )⟩.</formula><p>We can normalize by n so terms on both sides have Θ n (1) magnitude in width n,</p><formula xml:id="formula_8">n -1 ∥W t+1 z in ∥ 2 2 = n -1 ∥W t z in ∥ 2 2 + η 2 n -2 ∥z in ∥ 2 1 -2ηn -1 ∥z in ∥ 1 × n -1 ⟨W t z in , S(dz t out )⟩.</formula><p>The term n -1 ⟨W t z in , S(dz t out )⟩ measures the alignment between the features z t out = W t z in and the "signed" gradients S(dz out ). Intuitively, at the initial training stages, these two terms are roughly independent (as random variables) because of the randomness from the initialization weights. As a result, in those initial training stages, we have</p><formula xml:id="formula_9">⟨W t z in , S(dz out )⟩ ≈ O(n 1/2 ),<label>(3)</label></formula><p>which yields</p><formula xml:id="formula_10">n -1 ∥W t+1 z in ∥ 2 2 ≈ n -1 ∥W t z in ∥ 2 2 + α 2 n -2 ∥z in ∥ 2 1 + O(n -1/2 ) Since α 2 n -2 ∥z in ∥ 2 1 = Θ n (1)</formula><p>is positive and asymptotically non-zero, if the width n is large enough, we should expect the (normalized) feature norm n -1 ∥W t z in ∥ 2  2 to grow initially during training. The next results provides a rigorous description of this phenomenon for linear networks. Theorem 1 (Feature Norm Growth in Linear Networks (Informal)). Assume that the neural network is a linear MLP (see Appendix A for more details). Then, for any δ ∈ (0, 1/2), under some assumptions stated in Appendix B, there exists a universal constant λ &gt; 0 such that for any T and η satisfying T ≤ λη -1 , the following holds with probability at least</p><formula xml:id="formula_11">1 -2n -1+2δ sup 1≤t≤T | n -1 ∥W t z in ∥ 2 -Γ t | ≤ Cn -δ ,<label>(4)</label></formula><p>where</p><formula xml:id="formula_12">Γ t = Γ 0 + β 2 (1 + t(t -1)), β = η n -1 ∥z in ∥ 1 , and Γ 0 = n -1 ∥W 0 z in ∥ 2 .</formula><p>In other words, when the width n is large enough, n -1 ∥W t z in ∥ 2 exhibits quasi-quadratic growth at initial training stages.</p><p>Theorem 1 characterizes the growth in feature norms n -1 ∥W t z in ∥ 2 as training progresses.</p><p>The proof is provided in Appendix B. In this case, n -1 ∥W t z in ∥ 2 grows in a quasi-quadratic pattern, which becomes perfectly quadratic when n → ∞. This is the most important takeway from this result: this phenomenon is associated with large width. With more realistic models, we expect the growth property to hold, but not necessarily with the quadratic form. See next section for empirical results. Consider a three layers linear neural network given by f (x) = W 2 W 1 W 0 x, where x ∈ R d , W 0 ∈ R n×d , W 1 ∈ R n×n , and W 2 ∈ R 1×n . The training data consist of N = 1000 datapoints of dimension d generated from a linear model y = ω ⊺ x + ε with ε ∼ N (0, 0.025), ω i ∼ d -1 N (0, 1), and x are generated randomly as standard Gaussian random variables. We use n = d = 100 in our experiments and train the model with Adam. See Appendix C for results with SignSGD and more details about the experimental setup.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Evolution of Feature Norms</head><p>Figure <ref type="figure" target="#fig_3">3</ref> shows the growth in feature norms for the three modules (corresponding to the three layers in this case) as we train the model. We include a baseline (dashed lines) which shows the norms ∥W zin ∥ where zin is a random Gaussian vector with iid coordinates, normalized such that ∥z in ∥ = ∥z in ∥ (see next section for an intuitive explanation of this baseline). The baseline does not show any significant growth over the course of the training which further confirms that feature norms grow as a result of increasing alignment between module weights and module inputs, and not simply as a result of an increase in weight norms.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Most of the growth occurs early in training.</head><p>Interestingly, most of the growth in feature norms occurs in the first T = 200 steps, which also correlates with the most significant drop in training loss. After T = 200, feature norms remain roughly stable until convergence. This suggest that the norm growth is associated with an initial phase where significant feature learning occurs, and remains roughly unchanged after that initial growth phase. Intuitively, as we train the network, the dot product between z out and S(dz out ) (Eq. ( <ref type="formula" target="#formula_9">3</ref>)) grows from O(n 1/2 ) to roughly Θ 1 (n) (in absolute value) and therefore the argument behind the feature norm growth as explained in the discussion above no longer holds later in training. As a result, the growth plateaus after some number of steps T .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Different growth levels for different modules.</head><p>Although we use the same learning rate for all modules, the norm growth in the input layer (n -1 ∥W 0 z in0 ∥ 2 ) is much less significant than that observed in the second layer (n -1 ∥W 2 z in2 ∥ 2 ). To understand this difference, we should take into account that when training all modules (layers in this case), the inputs to W 1 and W 2 change with training. The update in feature are given by</p><formula xml:id="formula_13">W t+1 z t+1 in = W t z t in -η n -1 × ∥z t in ∥ 1 S(dz t out ) + W t+1 ∆z t+1 in , where ∆z t+1 in = z t+1 in -z t</formula><p>in is the input change after one step. Under µP scaling rule for the learning rate (η n -1 ), the magnitude of ∥z t in ∥ 1 remains Θ n (1) for all t, however the constant in Θ n (1) naturally depends on the layer. Additionally, the term W t+1 ∆z t+1 in introduces more complex update dynamics, and contribute in a non-trivial way to the change in the feature norms. See <ref type="bibr" target="#b21">[22]</ref> for a more detailed discussion on how feature learning changes from one layer to another. Both of these aspects lead to uneven growth in the feature norms for different layers.</p><p>Different growth levels for different inputs/tasks. In the setup of Theorem 1, we considered a batch size of 1, which results in feature updates of the form</p><formula xml:id="formula_14">W t+1 z in = W t z in - η ×n -1 ∥z in ∥ 1 S(dz out )</formula><p>, and we saw that with 1/ √ n initialization, we have n -1 ∥z in ∥ 1 = Θ n (1). In the realistic setting of batch training, feature updates for an input x ′ ∈ R d are given by</p><formula xml:id="formula_15">W t+1 z in (x ′ ) = W t z in (x ′ ) -η n -1 × S (<label>1</label></formula><formula xml:id="formula_16">|B| ∑ x∈B dz out (x) ⊗ z in (x)) z in (x ′ ),</formula><p>Therefore, we can no longer directly expand the sign function and obtain the ∥z in ∥ 1 term that leads to the Θ n (1) term. In this case, we need a strong correlation between</p><formula xml:id="formula_17">S ( 1 |B| ∑ x∈B dz out (x) ⊗ z in (x))</formula><p>and z in (x ′ ) to obtain the same effect. This translates to whether the datapoint x ′ has some similarity with the batch used for the update. As a result, we should expect to see higher scores for datapoints that are similar to the training dataset, and lower scores for significantly different datapoints.</p><p>⋆⋆ Intuition for our methodology⋆⋆: The two aspects above (different growth levels for different modules/datasets) provide a compelling approach to measure alignment between modules and datasets. In the next section, we refine this notion of alignment and use it to create a method for module type selection for LoRA finetuning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Methodology: Normalized Feature Norms as Alignment Scores</head><p>Several alignment measures exist in the literature. For instance, Baratin et al. <ref type="bibr" target="#b22">[23]</ref> introduced the centered tangent kernel alignment as a measure of how well aligned each layer is with the task, and Lou et al. <ref type="bibr" target="#b23">[24]</ref> provided a theoretical analysis of such alignment. He et al. <ref type="bibr" target="#b24">[25]</ref> studied the emergence of large feature norms in the network as a result of different training configurations. Our work introduces a new alignement measure based on the feature norm analysis from the previous section.</p><p>Given a pretrained model, and some finetuning dataset D, we calculate feature norms for all modules on the task D by averaging across a subset of D. This provides information on module alignment with the finetuning dataset D. However, note that the score naturally depends on the norm of W and z in . In order to capture only the alignment, we need to normalize the feature norm by a baseline feature norm for the same layer. See the discussion after Definition 1 for an intuitive explanation of this normalization.</p><p>0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 Layer Index attn.k_proj attn.o_proj attn.q_proj attn.v_proj mlp.down mlp.gate mlp.up Module Type 3.51 3.18 2.49 3.31 3.04 2.51 2.69 2.28 2.32 2.57 2.22 2.50 2.25 2.12 2.32 2.65 1.51 1.13 1.13 1.01 0.83 0.85 0.74 0.71 0.77 0.73 0.75 0.85 0.83 0.81 0.95 0.82 4.04 3.31 2.75 3.23 2.94 2.44 2.66 2.26 2.06 2.44 2.07 2.10 2.12 2.02 2.25 2.56 0.82 0.94 0.90 0.95 1.02 1.13 0.99 1.09 0.99 0.93 1.02 0.89 0.90 0.88 0.96 1.10 1.24 1.00 1.15 1.06 1.06 1.06 1.09 1.06 1.01 1.03 1.02 1.00 0.96 0.97 0.96 1.09 <ref type="formula" target="#formula_0">1.24 1.31 1.24 1.40 1.47 1.50 1.51 1.57 1.54 1.52 1.41 1.30 1.22 1.20 1.30 1.66  1.14</ref> Definition 1 (Normalized Feature Norm (NFN)). Given a pretrained model, a module with weight W in this model, and an input x, we define the Normalized Feature Norm as</p><formula xml:id="formula_18">NFN(W, x) = ∥W z in (x)∥ ∥W zin (x)∥ ,</formula><p>where zin (x) is a vector of the same dimension and norm of z in (x), with i.i.d coordinates distributed as centered Gaussian random variables.</p><p>By incorporating the random baseline ∥W zin (x)∥, NFN score removes the dependence on the norm of z in and the matrix norm of W . The intuition is simple: with zin , we should not expect any alignment with W , and therefore that should act as baseline score. More precisely, with the randomized input zin , we have</p><formula xml:id="formula_19">W t+1 zin = W t zin -η × S(dz out ⊗ z in )z in = W t zin -η × S(z in ) ⊺ zin S(dz out ).</formula><p>As a result, we obtain n -1 ∥W t+1 zin ∥ 2 2 = n -1 ∥W t zin ∥ 2 2 + O(n -1/2 ), which implies that no significant growth in n -1 ∥W zin ∥ 2 should be observed as we train the model, provided that model width is large n ≫ 1). This is empirically demonstrated in Fig. <ref type="figure" target="#fig_3">3</ref> in the previous section. For the NFN scores, intuitively, when the module is well aligned with the data, we expect to see scores NFN&gt; 1, while the NFN score should be ≈ 1 when alignment is not significant.</p><p>Under some assumptions on W and z in , we can prove that when the width is large enough, the NFN score can be approximated by NFN(W, x) ≈ ∥ W zin(x) ∥W ∥ F ∥zin(x)∥ ∥ where ∥W ∥ F = √ ∑ ij W 2 ij is the Frobenius norm of W . This approximation shows that division by ∥W zin ∥ essentially normalizes W and z in , although not in the standard way where the matrix norm is the operator norm. While both forms are cheap to calculate NFN scores, we prefer the form in Definition 1 for ease of interpretation.</p><p>From this analysis, we can now introduce PLoP, a method that leverages NFN scores to identify which modules should be prioritized for LoRA finetuning. Our method is described below.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>PLoP -Module Type Selection</head><p>Inputs: model M, finetuning dataset D. We can also think of the reverse PLoP method where instead of choosing module types with the lowest scores, we choose the ones with the highest scores. The intuition behind such choice would be that the module types with the highest scores are the "most" important for the task. We call this method PLoP -1 and we evaluate its performance in Section 4.</p><formula xml:id="formula_20">Step1 (Scores): calculate NFN(W, D) ← |D| -1 ∑ x∈D ∥W zin(x)∥ 2 /∥W zin(x)∥ 2 for all W . Step2 (Aggregation): Calculate NFN(T, D) = |N T | -1 ∑ W ∈T NFN(W,</formula><p>Figure <ref type="figure" target="#fig_4">4</ref> shows NFN scores for LLama-3.2-1B-Instruct for 4 tasks: math (GSM8K, <ref type="bibr" target="#b25">[26]</ref>), code (HumanEval, <ref type="bibr" target="#b26">[27]</ref>), history (MMLU high school european history, <ref type="bibr" target="#b27">[28]</ref>), and logic (MMLU logical fallacies). The NFN-map provides the most granular level of scoring and shows the NFN scores by module. We can see that key and query attention modules are most aligned with the task in this case, while MLP modules are less aligned, suggesting the need for adaptation in those modules. To see this by module type, we aggregate by averaging over all modules of the same type (step 2 in PLoP) and show the results in the Fig. <ref type="figure" target="#fig_5">5</ref> for different models. We observe significant variability of NFN scores accross model, module type, and dataset. For Llama3.2-1B, module types with the highest scores (Query, Key) average around 2-3X the baseline (≈ 1), and the lowest scores (Value, Gate, Down, Up) hovering around the baseline score of 1. In this case, PLoP indicates that adaptation should be focused on the (value, gate, down, up) modules rather than the attention query and key matrices. Note that this coincides with the recommendation of empirical work by <ref type="bibr" target="#b13">[14]</ref> for Llama models but is contradictory to the recommendations of <ref type="bibr" target="#b0">[1]</ref> to finetune mainly attention modules.</p><p>Qwen3-1.7B shows high alignment in Query, Key, and Gate modules, with lower alignment for other MLP modules, and a surprisingly low score for the Value module (≈ 0.75). This indicates that the Value modules in Qwen3-1.7 are "negatively" aligned with with all datasets, suggesting that inputs to the Value modules are aligned with the smallest singular directions of the Value weight matrices. The same pattern can be observed in Gemma3-1B, and we currently do not have an explanation for this phenomenon. In Appendix C, we provide NFN scores for additional Qwen, Gemma, and Llama models.</p><p>NFN scores are sensitive to tasks. The alignment scores differ between tasks. For instance, model weights show larger alignment with history compared to math, suggesting that q _ p r o j k _ p r o j v _ p r o j o _ p r o j g a t e _ p r o j d o w n _ p r o j u p _ p r o j 0.5 their training data consisted more of sequences similar to general natural language than math related tokens, which is expected. However, note that all tasks share some "base" alignment level given by the general magnitude of the NFN score for each module type. This is a more fundamental phenomenon that is independent of the task, and is related to some basic level of feature learning that is required for token processing. <ref type="foot" target="#foot_5">6</ref>NFN scores consistent across different model sizes. In Fig. <ref type="figure" target="#fig_5">5 (a</ref>) and (c), we show NFN scores for two model sizes of Llama3.2, 1B and 3B. The ranking of module types based on NFN scores is roughly the same for both models, suggesting consistency of NFN scores across different model sizes. Intuitively, having similar NFN score patterns suggests similar pretraining and post-training processes for these models, which is expected for models of the same family (Llama3.2 in this case).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Specialized Models show higher NFN scores.</head><p>In Fig. <ref type="figure" target="#fig_6">6</ref>, we compare NFN scores for instruction-tuned and more specialized version of the same model Qwen2.5-1.5B for math/code tasks. As expected, the specialized models show higher NFN scores overall which further confirms that NFN scores, while cheap to calculate, can be a reliable measure of module-data alignment.</p><p>Compute cost of PLoP. To obtain the results in Fig. <ref type="figure" target="#fig_4">4</ref>, we used a single forward pass with batch size 200, with a maximum sequence length of 256. NFN scores are calculated using the register_hook functionality of PyTorch. In summary, the computational cost of our method is roughly the same as a single batch forward pass, which makes it especially relevant in resource-constrained environments where LoRA is most useful.</p><p>In the next section, we run extensive experiments to show that PLoP consistently enhances final performance at virtually no added cost.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head><p>We conduct extensive experiments to verify the benefits of using PLoP in different scenarios. We consider three post-training scenarios: Supervised Finetuning (SFT) for classification, Supervised Finetuning for text generation, and Reinforcement Learning (GRPO, <ref type="bibr" target="#b28">[29]</ref>), all with LoRA adapters. We report results with Llama <ref type="bibr" target="#b14">[15]</ref>, Qwen <ref type="bibr" target="#b29">[30]</ref>, and Gemma <ref type="bibr" target="#b30">[31]</ref> models across different sizes. Our experiments are as follows:</p><p>1. SFT for classification: we finetune classifers on ANLI <ref type="bibr" target="#b31">[32]</ref>.</p><p>2. SFT for text generation: we train on MetaMathQA <ref type="bibr" target="#b32">[33]</ref> and evaluate the results on GSM8K <ref type="bibr" target="#b25">[26]</ref>. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">GRPO: we conduct a study on on the effect of RL on mathematical reasoning,</head><p>where the model is trained on MetaMathQA and evaluated on GSM8K.</p><p>We investigate the effect of different module placement strategies: our method PLoP(placing LoRA in module types with the lowest NFN scores), PLoP -1 (the inverse of our method, i.e. placing LoRA modules types with the highest NFN scores), Attn (inserting LoRA only in attention modules), MLP (inserting LoRA only in MLP modules), and ALL (inserting LoRA in all module types).</p><p>Hereafter, we use the following letters to denote specific modules: Q (Query), K (Key), V (Value), O (Out projection), U (Up projection), G (Gate projection), and D (Down projection). All module type NFN scores and experimental details are provided in Appendix C.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Supervised Finetuning for Classification</head><p>The Adversarial Natural Language Inference (ANLI) is a language classification task that is considered more challenging compared to similar tasks (e.g. MNLI). Using LoRA with different placement strategies, we finetune pretrained models on ANLI and report results in Fig. <ref type="figure" target="#fig_7">7</ref>. For Qwen2.5-0.5B, we observe a significant difference in performance between PLoP and other strategies. For Llama3.2-1B, PLoP and MLP yield roughly the same performance, while Attn is significantly worse. Note that for the Llama model, the MLP modules have small NFN scores, comparable to scores of modules selected by PLoP(V-O-D, see Fig. <ref type="figure" target="#fig_5">5</ref>), which could explain why we get similar performance with PLoP and MLP.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Supervised Finetuning for Text Generation</head><p>Supervised finetuning is an important component of the post-training pipeline as it plays an important role in improving model abilities such as mathematics, coding, and instruction following. Often, finetuning data is high-quality and specifically curated to provide dense signal for the model to acquire specific desirable skills. For challenging tasks such as mathematical reasoning, it is often used to "prime" the model for subsequent RL based finetuning which we investigate in the next section.</p><p>The finetuning task we consider is mathematics. We perform finetuning on the Meta-MathQA dataset <ref type="bibr" target="#b32">[33]</ref>. To evaluate the performance we measure the accuracy on the GSM8k benchmark <ref type="bibr" target="#b25">[26]</ref>. For a training configuration with LoRA rank r we set LoRA α = 2r and optimize using Adam. For each adapter placement we sweep over the learning rate in {1, 2, 3, 4, 5} × 10 -4 and report the result with the best accuracy. We provide additional experimental details regarding the training and evaluation configuration in Appendix C.3.</p><p>We perform finetuning on the Qwen3 models with 0.6B and 1.7B parameters. The results are shown in Tables <ref type="table" target="#tab_0">1</ref> and <ref type="table" target="#tab_1">2</ref> respectively. In both cases, the placement of adapters in only MetaMathQA → GSM8k  the attention layers is clearly suboptimal, demonstrating that for challenging tasks such as mathematics, adapting only the attention layers has limited effect. We see that the most competitive placements for both model sizes is to place adapters according to PLoP or in the MLP layers, even outperforming the placement of adapters in all layers which requires between 1.5-1.8× the number of trainable parameters. When adjusting for an equal number of trainable parameters, PLoP produces the best results with a slight edge over the MLP placement. For the 1.7B parameter model PLoP has a small edge over the MLP placement even with about 60% the number of parameters.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Reinforcement Learning for Enhanced Reasoning</head><p>Reinforcement Learning has emerged as a promising approach for test-time scaling. Algorithms such as GRPO work by incentivizing the model to follow a pattern of "thinking" before providing the final answer. This implicit approach to reasoning (versus the more explicit approaches such as MCTs <ref type="bibr" target="#b33">[34]</ref>) showed very promising results, especially with the impressive performance of DeepSeek-R1 <ref type="bibr" target="#b34">[35]</ref>. In this section, we experimented with "GRPO on a budget" using LoRA adapters (instead of training the full weights) to enhance mathematical reasoning. We select 3 module types for LoRA adapter placement using the three approaches stated above. We compare performance both during RL training (columns Rwd/Format and Rwd/Answer) and Eval (GSM8K 8shots prompting Pass@1). Note that because LoRA is a lightweight finetuning method, it would not be enough to induce reasoning in base models with GRPO, especially with a small rank r. For this purpose (and in contrast to DeepSeek-R1), we apply GRPO with LoRA to instruction-tuned models instead of base models. For more implementation details, see Appendix C. With GRPO, we define the think-then-answer pattern in similar way to DeepSeek-R1. The model is rewarded for placing the thinking process in between &lt;think&gt; and &lt;/think&gt;, and then giving the answer in between &lt;solution&gt; and &lt;/solution&gt;. This is encoded in the format reward function (Rwd/Format). The correctness of the solution is rewarded as well (Rwd/Answer). We track this reward as we train the model with GRPO and show the final results (at convergence).</p><p>Table <ref type="table" target="#tab_2">3</ref> shows the results of GRPO on the Qwen3-1.7B trained on MetaMathQA. PLoP yields better performance overall both during training (rewards) and evaluation (GSM8K). Compared to Attn, PLoP performs better even when equalizing the number of trainable parameters (Attn(r = 25) vs PLoP(r = 16)). Interestingly, PLoP performs better than MLP placement strategy even when using the same rank r = 16, in which case we have 6.88M trainable parameters with PLoP and 11.01M parameters with MLP. For the same number of parameters, the performance is further improved with PLoP(r = 25).</p><p>We experimented with Gemma3-1B as well, and we found that PLoP outperforms other alternatives, although the score on GSM8K is low due the inherent limitations of Gemma3-1B in mathematical reasoning. See Appendix C for more details.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">How-To-Use for Practitioners</head><p>The code for PLoP is available at: <ref type="url" target="https://github.com/soufiane001/plop">https://github.com/soufiane001/plop</ref>, and full code for GRPO and SFT experiments will be released soon.</p><p>To compute the NFN scores, practitioners can use our provided code with minimal setup. After installing dependencies, simply run the following command to compute NFN scores for the meta-llama/Llama-3.2-1B-Instruct model on a given dataset (in this case, math):</p><p>python main.py --model meta-llama/Llama-3.2-1B-Instruct \ --dataset math \ --batchsize 8 \ --nbsamples 100 \ --seqlen 256 \ --aggregation type \ --output_dir results/ This command will automatically download the specified model and dataset, process the data in batches, and compute the NFN scores for all modules, then aggregate them by module type. Of course, the dataset can be customized as needed.</p><p>An example of the aggregated NFN scores by module type is shown below: =========================== NFN Scores by Module Type =========================== q_proj: 2.58 k_proj: 2.63 v_proj: 0.97 o_proj: 0.90 gate_proj: 1.40 down_proj: 1.05 up_proj: 1.11 =========================== In this case, we should add LoRA adapters in module types v_proj, o_proj, and down_proj.</p><p>This workflow enables straightforward targeted LoRA finetuning across different architectures and datasets.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Discussion and Limitations</head><p>In this paper, we introduced PLoP, an intuitive module type selection method, designed specifically for LoRA fine-tuning and based on NFN scores -a notion of module-data alignment supported by theory. PLoP meets the computational criteria needed for efficient LoRA finetuning as articulated in the introduction: PLoP's lightweight nature makes it particularly valuable in resource-constrained environments where LoRA is most beneficial. PLoP is based on the NFN-map, which enables more granular selection beyond module types. However, we deliberately focused on module type selection as it represents the most widely adopted aggregation approach among practitioners, avoiding the additional implementation complexities of more fine-grained selection. While we explored using PLoP for layer-level selection by inserting LoRA into target layers with low NFN scores, we encountered inconsistent results and have reserved this question for future research.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Additional theoretical details</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 Infinite-width analysis and µP</head><p>Scaling remains the main paradigm to improve performance of language model (see e.g. <ref type="bibr" target="#b35">[36]</ref>). This includes model capacity which can be increased via width (embedding dimension) or depth (number of layers) or both, training data, number of training steps etc. In our theoretical analysis in Section 2, we mentioned the infinite-width n → ∞ and how our results hold in this limit. This is motivated by the fact that most state-of-the-art language and vision models have large width.</p><p>As the width n grows, most hyperparameters in the model such as the initialization and the learning should be adapted to avoid numerical instabilities and ensure efficient learning. For instance, the initialization variance should scale as 1/n to prevent arbitrarily large pre-activations as we increase model width n (e.g. He init <ref type="bibr" target="#b36">[37]</ref>). To derive such scaling rules, a principled approach consist of analyzing statistical properties of key quantities in the model (e.g. pre-activations) as n grows and then adjust the initialization, the learning rate, and the architecture itself to achieve desirable properties in the limit n → ∞ <ref type="bibr" target="#b37">[38,</ref><ref type="bibr" target="#b38">39]</ref>.</p><p>In this context, Yang and Hu <ref type="bibr" target="#b18">[19]</ref> introduces the Maximal Update Parameterization (or µP), a set of scaling rules for the initialization scheme, the learning rate, and the network architecture that ensure stability and maximal feature learning in the infinite width limit. Stability is defined by Y i l = Θ(1) for all l and i where the asymptotic notation 'Θ(.)' is with respect to width n (see next paragraph for a formal definition), and feature learning is defined by ∆Y l = Θ(1), where ∆ refers to the feature update after taking a gradient step. µP guarantees that these two conditions are satisfied at any training step t. Roughly speaking, µP specifies that hidden weights should be initialized with Θ(n -1/2 ) random weights, and weight updates should be of order Θ(n -1 ). Input weights should be initialized Θ(1) and the weights update should be Θ(1) as well. While the output weights should be initialized Θ(n -1 ) and updated with Θ(n -1 ). These rules ensure both stability and feature learning in the infinite-width limit, in contrast to standard parameterization (exploding features if the learning rate is well tuned), and kernel parameterizations (e.g. Neural Tangent Kernel parameterization where ∆Y l = Θ(n -1/2 ), i.e. no feature learning in the limit).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Proof of Theorem 1</head><p>In this section, we provide the full proof for Theorem 1. Forst, we prove a result on the sign of the derivative of the loss function with respect to z out , then proceed with the full proof.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1 Constant loss derivative sign in the initial training stage</head><p>Consider a linear network of the form</p><formula xml:id="formula_21">f (x) = W L W L-1 . . . W 0 x, x ∈ R d ,<label>(5)</label></formula><p>where L ≥ 1 is the network depth, W ℓ ∈ R n×n for all ℓ ∈ {1, 2, . . . , L -1} are hidden layers parameters, W L ∈ R 1×n is the projection layer weight, and W 0 ∈ R n×d is the input layer weight.</p><p>The network is trained with the setup described in Section 2, namely:</p><p>• Dataset: a single datapoint (x, ŷ) × R d × R.</p><p>• Training algorithm: SignSGD with learning rate ηn -1 .</p><p>• Single layer: only a single hidden layer that we denote W ∈ {W ℓ , ℓ = 1, 2, . . . , L-1} is trained, and other layers weights are fixed to their values at initialization. Without loss of generality, assume that the trainable layer is ℓ 0 , i.e. W = W ℓ0 .</p><p>• Training loss: quadratic loss given by L(W ) = 2 -1 (f W (x) -ŷ) 2 .</p><p>In this setting, the linear network training dynamics become tractable and we can obtain closed-form expressions in steps t and width n. Let us use the same notation as in Section 2 and denote the input and output of the trainable layer z out = W z in . More precisely, in this case, we can express the network output as f W (x) = V ⊺ z out = V ⊺ W z in , where z in = M x, with M = W ℓ0-1 . . . W 0 ∈ R n×d and V ⊺ = W L . . . W ℓ0+1 ∈ R 1×n are both non-trainable random matrices. In this case, the gradient of the loss with respect to z out is given by</p><formula xml:id="formula_22">dz out = (V ⊺ W z in -y)V.</formula><p>From now on, we will abuse the notation and use the subscript to denote the training step as well for the matrix W = W ℓ0 . When we use the notation W t , it should interpreted as W ℓ0,t . Taking one step with SignSGD yields</p><formula xml:id="formula_23">W t+1 = W t -η n -1 ∥z in ∥ 1 χ t S(V )</formula><p>, where S(.) = sign(.) and χ t = S(V ⊺ W t z in -ŷ).</p><p>Next, we prove a result that will be useful in the proof of Theorem 1. More precisely, we show that under mild assumptions, there exists a first initial training phase in which the sign of the loss function on the training datapoint does not change. The number of steps in this phase is bounded by η -1 up to some constant factor. Naturally, since we initialize with random variables, it should be expected that such result could only hold with high probability.</p><p>Theorem 2 (Constant loss derivative sign in the initial training phase). We assume that the weights W 0 , W 1 , . . . , W L are initialized such that the following holds:</p><formula xml:id="formula_24">• |z i in | ∈ [ Z, Z]</formula><p>for all i ∈ [1 ∶ n], where Z, Z &gt; 0 are constants independent of n.</p><formula xml:id="formula_25">• Mean-field Init: E[V i ] = 0 and Var(V i ) = n -2 (e.g. uniform distribution on [-n -1 , n -1 ]).</formula><p>Further assume that y ∈ [ Z, Z]. <ref type="foot" target="#foot_6">7</ref>Then, for any δ ∈ (0, 1), and T ≤ η -1 (n -δ + Z Z2 ), we have with probability at least 1 -n -1+δ , ∀t ≤ T, χ t = χ 0 .</p><p>The assumption on the weight initialization is mild and is satisfied by some standard initialized schemes, such as uniform init with n -1 variance for the hidden weights, d -1 variance for the input weights, and n -2 variance for the projection weights. The proof of Theorem 2 relies on standard concentration results.</p><formula xml:id="formula_26">Proof. Recall the definition of χ t χ t = S(V ⊺ W t z in -ŷ).</formula><p>We have the following from above,</p><formula xml:id="formula_27">W t z in = W t-1 z in -ηn -1 ∥z in ∥ 1 χ t-1 S(V ), and therefore, V ⊺ W t z in = V ⊺ W t-1 z in -ηn -1 ∥z in ∥ 1 ∥V ∥ 1 χ t-1 which implies that V ⊺ W t z in = V ⊺ W 0 z in -ηn -1 ∥z in ∥ 1 ∥V ∥ 1 ⎡ ⎢ ⎢ ⎢ ⎣ t-1 ∑ j=0 χ j ⎤ ⎥ ⎥ ⎥ ⎦ . Bounding V ⊺ W 0 z in :</formula><p>With Chebyshev's inequality we have:</p><formula xml:id="formula_28">P (|V ⊺ W 0 z in | ≥ Zn -δ ) &lt; Var(V ⊺ W 0 z in ) ( Zn -δ ) 2</formula><p>where</p><formula xml:id="formula_29">Var(V ⊺ W 0 z in ) = 1 n Var(W i 0 ⊺ z in ) = 1 n ⋅ ∥z in ∥ 2 n ≤ n -1 Z2</formula><p>As a result, we obtain:</p><formula xml:id="formula_30">P (|V ⊺ W 0 z in | ≥ Zn -δ ) &lt; n -1+2δ If V ⊺ W 0 z in -ŷ &lt; 0, we have V ⊺ W t z in -ŷ ≤ V ⊺ W 0 z in -ŷ + ηn -1 ∥z in ∥ 1 T ≤ V ⊺ W 0 z in -ŷ + η ZT</formula><p>With probability at least 1 -n -1+2δ , we have</p><formula xml:id="formula_31">V ⊺ W t z in -ŷ ≤ Zn -δ -ŷ + η ZT</formula><p>Therefore, we have <ref type="bibr">)</ref>). Similarly, we obtain with probability at least 1 -n -1+2δ ,</p><formula xml:id="formula_32">T ≤ η -1 ( ŷ Z -n -δ ) ⇒ ∀t ≤ T, χ t = χ 0 = -1. If V ⊺ W 0 z in -ŷ &gt; 0, asymptotically this implies that -ŷ &gt; 0 (assuming |ŷ| = Θ n (<label>1</label></formula><formula xml:id="formula_33">V ⊺ W t z in -ŷ ≥ V ⊺ W 0 z in -ŷ -η ZT, ≥ -Zn -δ -ŷ -η ZT,</formula><p>and therefore, we have that</p><formula xml:id="formula_34">T ≤ η -1 ( -ŷ Z -n -δ ) ⇒ ∀t ≤ T, χ t = χ 0 = 1.</formula><p>In summary, we have the following: Let δ ∈ (0, 1). Then, with T ≤ η -1 ( |ŷ| Z -n -δ ), we have for all t ≤ T , χ t = χ 0 .</p><p>The assumptions in Theorem 2 can be alleviated to include more generalization initialization schemes, such as non-clipped Gaussian initialization. However, this will require additional control on the asymptotics of ∥z in ∥, ∥z in ∥ 1 , and V . The result remains the same however.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2 Proof of Theorem 1</head><p>Theorem 1 .[Feature Norm Growth in Linear Networks] Assume that the neural network is linear. Then, for any δ ∈ (0, 1/2), under the assumptions on the initialization stated in Theorem 2, there exists a universal constant λ &gt; 0 such that for any T and η such that T ≤ λη -1 , the following holds with probability at least</p><formula xml:id="formula_35">1 -2n -1+2δ sup 1≤t≤T | n -1 ∥W t z in ∥ 2 -Γ t | ≤ Cn -δ ,<label>(6)</label></formula><p>where Γ t = Γ 0 + β 2 (1 + t(t -1)), β = η n -1 ∥z in ∥ 1 , and Γ 0 = n -1 ∥W 0 z in ∥ 2 . In other words, n -1 ∥W t z in ∥ 2 exhibits quasi-quadratic growth at early training phase, when the width is sufficiently large.</p><p>Training. We use Adam algorithm for training, and train the model for T = 300 steps with full batch.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.2 Experimental Setup for SFT (Classification)</head><p>For ANLI experiments, we use the following training configuration</p><p>• Training datasets: ANLI • Training algorithm: AdamW, no warmup, linear schedule, dropout (0.1).</p><p>• Max sequence length 256.</p><p>• LoRA α = 2r</p><p>• Precision: bf16.</p><p>We use r = 8 for MLP placement stratgy, and adapt r to match param count for other placement strategies. Specifically:</p><p>• Qwen3.5-0.5B: MLP (r = 8), Attn (r = 36), PLoP(r = 17)</p><p>• Llama3.2-1B: MLP (r = 8), Attn (r = 27), PLoP(r = 15)</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.3 Experimental Setup for SFT (Text Generation)</head><p>For the SFT experiments we use the following training configuration</p><p>• Training dataset: MetaMathQA • Training algorithm: Adam epochs: 2 -warmup: 0.1 fraction schedule: cosine no dropout • Max sequence length 1024.</p><p>• LoRA α = 2r • Precision: bf16.</p><p>For evaluation on GSM8k we use the script evaluate_chat_gsm8k.py in the official <ref type="url" target="https://github.com/QwenLM">QwenLM repo</ref>. We evaluate with 8-shot examples using the Qwen chat template. We apply a strict match for evaluating the accuracy and allow 512 generation tokens.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.4 Experimental Setup for GRPO</head><p>For GRPO, we use the following config:</p><p>• Training Dataset: Subset of MetaMathQA (50k samples).</p><p>• Training Alg: AdamW with warmup (0.1) and weight decay (0.01) and cosine schedule. We use LR 4e-6 for all training runs. We found this to be a good LR in our experiments. Unlike exps in SFT, we could not run sweeps over LR for GRPO due to limited computational resources and the high cost of GRPO runs, but we expect LR tuning to further improve the results. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.5 Additional Empirical Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.6 GRPO results for Gemma3</head><p>Table <ref type="table">4</ref>: GRPO results for Gemma3-1B trained on MetamathQA <ref type="bibr" target="#b32">[33]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Module Types Rwd/Format Rwd/Answer Eval/GSM8K</head><p>No RL --29.10% Attn (Q-K-V) (r = 16) 2.16 0.89 30.05% MLP (U-D-G) (r = 16) 2.11 0.88 29.81%</p><formula xml:id="formula_36">PLoP -1 (O-G-D) (r = 16)</formula><p>1.91 0.86 28.05% PLoP(K-V-U) (r = 16) 2.36 0.92 30.52%</p><p>Interestingly, for Gemma3 1B, we found that most of the RL rewards was accumulated in forms of format reward (placing the thinking process between &lt;think&gt; and &lt;/think&gt; and the solution between &lt;answer&gt; and &lt;/answer&gt;). This is reflected in Table <ref type="table">4</ref>. However, for eval on GSM8K, we found that accuracy after GRPO didn't change significantly which is probably due the fact that Gemma3-1B is weak on such tasks. In such cases, LoRA is probably not suitable, and full finetuning is needed to enhance reasoning capabilities.</p><p>C.7 Additional NFN-Maps C.7.1 Qwen3-1.7B-Instruct 0 1 2 <ref type="formula" target="#formula_9">3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26</ref>27 Layer Index attn.k_proj attn.o_proj attn.q_proj attn.v_proj mlp.down mlp.gate mlp.up Module Type 1.51 2.16 1.70 1.28 1.44 1.43 1.38 1.43 1.53 1.34 1.42 1.30 1.41 1.42 1. <ref type="formula">37 1.22 1.17 1.27 1.15 1.26 1.16 1.08 1.07 1.17 1.25 1.24 1.17 1.41  1.34 1.12 1.26 1.11</ref>  <ref type="formula">35 1.31 1.20 1.26 1.19 1.19 1.20 1.26 1.23 1.13 1.12 1.19 1.30 1.31 1.11</ref>  <ref type="formula">29 2.33 1.55 1.81 1.76 1.69 1.58 1.46 1.38 1.39 1.34 1.33 1.34 1.36 1.33 1.42 1</ref> C.7.2 Qwen2.5-3B-Instruct 0 1 2 <ref type="formula" target="#formula_9">3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34</ref>35 Layer Index attn.k_proj attn.o_proj attn.q_proj attn.v_proj mlp.down mlp.gate mlp.up Module Type 1.03 2. <ref type="formula">21 2.11 1.65 1.80 1.46 1.55 1.65 1.44 1.35 1.37 1.42 1.44 1.22 1.43 1.38 1.50 1.27 1.51 1.26 1.24 1.31 1.34 1.19 1.36 1.34 1.28 1.34 1.30 1.20 1.25 1.21 1.23 1.17 1.49 1.38</ref>1.40 1.43 1.19 0.91 1.08 1.06 0.99 1.00 1.04 0.99 0.93 0.87 0.87 0.88 0.86 0.88 0.93 0.98 0.99 0.94 0.79 1.16 0.95 0.92 1.01 0.93 0.95 1.14 1.07 1.00 0.89 1.01 0.85 0.80 0.89 0.82 1.54 1.90 1.75 1. <ref type="bibr" target="#b34">35</ref>  <ref type="formula" target="#formula_0">1.27 1.15 1.16 1.26 1.28 1.29 1.33 1.26 1.28 1.13 1.20 1.18 1.25 1.11 1.24 1.15 1.11 1.13 1.10 1.08 1.20 1.09 1.13 1.78 1.10 1.06 1</ref>  <ref type="formula">12 1.14 1.18 1.18 1.09 1.19 1.13 1.09 1.05 1.04 1.05 1.10 1.03 1.05 1.02 1.07 1.14 1.13 1.02 0.97 1.49   1.88 2.67 6.24 5.65 5.42 3.39 3.09 3.38 2.79 2.71 2.49 1.94 2.08 1.43 1.46 1.47 1.47 1.35 1.50 1.33 1.46 1.40 1.36 1.32 1.31 1.30 1.31 1.29 1.35 1.39 1.38 1.46 1.34 1.25 1.30 1.78   1.20 4.26 1.54 1</ref>  C.7.3 Qwen2.5-1.5B-Instruct 0 1 2 <ref type="formula" target="#formula_9">3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26</ref>27 Layer Index attn.k_proj attn.o_proj attn.q_proj attn.v_proj mlp.down mlp.gate mlp.up Module Type 0.97 1.67 1.43 1.47 1. <ref type="formula">29 1.38 1.31 1.45 1.36 1.29 1.38 1.32 1.19 1.35 1.08 1.28 1.32 1.37 1.27 1.27 1.38 1.28 1.31 1.20 1.21 1.25 1.12 1.17  1.11</ref>  <ref type="formula">32 1.43 1.25 1.36 1.45 1.32 1.23 1.17 1.26 1.24 1.14 1.26 1.05 2.04 1.13 1.23 1.19 1.13 1.11 1.15 1.09</ref>  <ref type="formula">39 2.49 2.16 2.31 1.54 1.38 1.39 1.32 1.37 1.47 1.43 1.34 1.33 1.35 1.36 1.35 1.27 1.34 1.33 1.56 1.53 1.45 1.37 1.27 1.24 1</ref> C.7.4 Qwen2.5-1.5B-Coder-Instruct 0 1 2 <ref type="formula" target="#formula_9">3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26</ref>27 Layer Index attn.k_proj attn.o_proj attn.q_proj attn.v_proj mlp.down mlp.gate mlp.up Module Type 1.03 2.00 1.68 1.70 1.49 1.54 1.46 1.62 1.74 1.63 1.76 1.67 1.48 1.61 1.34 1.49 1.54 1.56 1.49 1.56 1.58 1.46 1.53 1.50 1.46 1.45 1.29 1.25 1.26 1.08 1.03 1.04 1.00 0.94 0.99 0.97 0.87 0.89 0.78 0.93 0.80 0.89 0.74 0.88 0.80 0.77 0.77 0.93 0.87 1.01 0.94 0.96 1.00 0.95 1.02 0.97 <ref type="formula" target="#formula_6">2.72 2.23 1.59 1.62 1.39 1.50 1.68 1.51 1.36 1.38 1.36 1.41 1.24 1.40 1.24 2.71 1.14 1.27 1.30 1.25 1.13 1.15 1.16 1.04 1</ref> C.7.5 Gemma3-1B-Instruct 0 1 2 3 4 5 6 7 8 <ref type="formula">9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24</ref>25 Layer Index attn.k_proj attn.o_proj attn.q_proj attn.v_proj mlp.down mlp.gate mlp.up Module Type 1.17 1.13 1.04 1.18 1.62 1.06 1.41 0.93 1.02 1.21 1.01 1.01 1.12 1.14 1.05 1.03 1.03 0.85 1.08 1.06 1.11 1.13 1.36 0.81 1.15 1.39 1.76 1.61 1.74 2.23 1.39 2.03 1.35 1.31 1.02 0.96 1.21 1.90 1.09 2.01 1.12 1.08 1.27 2.31 1.38 2.08 1.72 2.32 2.28 1.59 1.85 1.93 1.60 1.60 1. <ref type="formula">17 1.36 1.58 1.13 1.40 1.29 1.56 1.32 1.02 1.77 1.33 1.29 1.19 1.19 1.11 1.09 1.10 1.14 1.21 1.22 1.30 1.18 1.26 1.20  0</ref>  <ref type="formula">28 1.28 1.27 1.17 1.13 1.09 1.22 1.24 1.40 1.37 1.33 1.38 1.53 1.64 1.66 1.60 1.75 1.36 1.38 1.95 1.30  1.21 1.44 1.54 1.31 1.53 1.48 1.40 1.37 1.33 1.32 1.20 1.32 1.33 1.33 1.30 1.35 1.48 1.42 1.41 1.34 1.29 1.29 1.35 1.30 1.33 1</ref> </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Inputs 1 )Figure 1 :</head><label>11</label><figDesc>Figure 1: Mechanism of PLoP. We calculate alignment scores called NFN (Normalized Feature Norms), rank them, and pick module types with the lowest alignment scores for LoRA insertion.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Fig. 2 (</head><label>2</label><figDesc>see Section 2.1 for more details).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 2 :</head><label>2</label><figDesc>Figure2: Illustration of feature norm growth during training. This shows the feature norms n -1 ∥W zin∥ 2 for a module W in the model (W ∈ R n×n ). See Section 2.1 for details about the model and training.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 3 :</head><label>3</label><figDesc>Figure3: Evolution of feature norms during training for the linear network described in Section 2.1. We train the model for 300 steps with Adam. Feature norms for different layers exhibit differential growth patterns as we train the model. We shifted the curves corresponding to different layers for better visualization.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: NFN-map for LLama-3.2-1B-Instruct on Math dataset (GSM8K). See Appendix C for NFN-maps of other models.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: NFN scores aggregated by module type for different models. The scores are for different datasets (math, code, history, and logic).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Module types NFN scores for general and specialized Qwen2.5 models. Specialized models (math, code) are finetuned on task-specific data. Scores are higher with the specialized models.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Results of LoRA finetuning on ANLI for different models. We use LoRA rank r = 8 for MLP strategy and adapt r for PLoP and Attn to match number of parameters for fair comparison. All curves are smoothened with EMA(α = 0.8) for better visualization. See Appendix C.3 for more details about the experimental setup. (Left) For Qwen2.5-0.5B, PLoP places adapters in V, O, and Up modules. (Right) For Llama3.2-1B, PLoP places adapters in V, O, and Down modules.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><figDesc>• Precision: bf16 • Number of generations: 8 • Maximum generation length: 512 • Batch size: 64 (16 with 4 steps for gradient accumulation) • LoRA dropout: 0.05 • Rewards: A combination of reward functions (correctness, format) • Hardware: 2xGH200 GPUs We use custom eval script for GSM8K (using the chat template of each model).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><figDesc>0.88 1.01 1.08 0.94 0.93 0.88 0.86 0.89 0.77 0.72 0.81 0.84 0.79 0.71 0.98 0.88 1.07 0.90 0.88 0.93 1.09 1.18 1.06 1.11 1.59 1.65 1.59 1.73 1.45 1.44 1.62 1.45 1.59 1.53 1.41 1.40 1.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><figDesc>1.36 0.97 0.79 0.78 0.87 0.89 0.82 0.88 0.88 1.06 0.81 0.87 0.77 0.98 0.87 0.85 0.71 0.67 0.58 0.64 0.67 0.64 0.63 0.64 0.63 0.66 0.66 0.68 0.70 1.19 1.12 0.96 0.87 0.98 1.01 0.97 0.96 0.95 0.94 1.08 0.96 0.90 0.91 0.90 0.88 0.97 0.90 0.93 0.89 0.91 0.96 0.97 1.00 0.98 1.04 0.89 0.93 1.87 3.05 2.51 2.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>33 NFNFigure 8 :C</head><label>338</label><figDesc>Figure 8: NFN scores for Qwen3-1.7B</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><figDesc>.00 0.95 0.89 1.02 1.<ref type="bibr" target="#b24">25</ref> 1.27 0.96 1.10 1.03 1.24 0.94 0.80 0.93 0.96 0.79 0.74 0.78 0.87 0.89 0.97 0.95 1.09 0.89 0.98 1.06 1.13 1.16 0.95 0.89 1.01 0.90 0.94 0.97 0.88 0.84 0.84 0.91 1.06 1.44 1.41 0.81 1.02 1.22 3.61 2.42 1.63 1.47 0.85 0.97 1.11 0.97 1.02 1.02 1.07 1.09 1.08 1.08 1.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><head>20 NFN</head><label>20</label><figDesc>.06 0.91 0.57 0.62 0.74 0.70 0.70 0.68 0.83 0.86 0.94 0.95 0.99 0.99 1.04 1.04 1.03 1.02 0.98 0.96 0.98 0.98 0.98 0.97 0.96 0.96 0.97 0.98 1.02 0.98 0.98 1.06 1.r o j k _ p r o j v _ p r o j o _ p r o j g a t e _ p r o j d o w n _ p r o j u p</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_14"><head>Figure 9 :C</head><label>9</label><figDesc>Figure 9: NFN scores for Qwen2.5-3B</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_15"><figDesc>0.92 1.00 1.03 1.00 0.95 0.95 0.92 0.89 0.90 0.86 1.07 0.90 0.97 0.82 1.00 1.06 0.85 0.88 0.94 1.11 0.95 0.93 0.88 0.84 0.72 0.87 0.84 3.09 1.67 1.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_16"><figDesc>0.98 1.06 0.85 0.96 1.01 0.79 1.00 0.90 0.71 0.69 0.76 0.79 0.92 0.90 0.95 1.01 0.92 1.04 1.02 0.99 0.94 0.92 0.92 0.95 0.93 0.80 0.75 0.86 0.85 0.94 1.33 1.17 1.24 1.13 0.86 0.93 0.86 1.02 1.05 1.09 1.09 1.10 1.09 1.11 1.10 1.10 1.09 1.13 1.14 1.08 1.06 1.03 1.07 1.05 1.02 1.16 1.06 1.05 0.98 0.97 1.58 1.89 2.41 2.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_17"><head>19 NFNFigure 10 :C</head><label>1910</label><figDesc>Figure 10: NFN scores for Qwen2.5-1.5B</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_18"><head>32 NFNFigure 11 :</head><label>3211</label><figDesc>Figure 11: NFN scores for Qwen2.5-1.5B-Coder</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_19"><figDesc>81 0.80 0.67 0.88 0.92 0.61 0.82 0.68 0.81 0.75 0.72 0.81 0.68 0.60 0.65 0.56 0.60 0.73 0.66 0.61 0.63 0.61 0.63 0.46 0.59 0.69 1.34 1.84 1.65 1.58 1.40 1.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_20"><head>Figure 12 :</head><label>12</label><figDesc>Figure 12: NFN scores for Gemma3-1B-Instruct</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Qwen3-0.6B</figDesc><table><row><cell>Module Types</cell><cell>#Params</cell><cell>Train</cell><cell>Eval</cell></row><row><cell></cell><cell>(M)</cell><cell>Loss</cell><cell>Acc</cell></row><row><cell>PLoP(D-U-V) (r = 76)</cell><cell>21.8</cell><cell>0.118</cell><cell>63.8%</cell></row><row><cell>PLoP(D-U-V) (r = 64)</cell><cell>18.4</cell><cell>0.116</cell><cell>62.0%</cell></row><row><cell>PLoP -1 (G-K-Q) (r = 64)</cell><cell>16.5</cell><cell>0.119</cell><cell>60.6%</cell></row><row><cell>MLP(D-G-U) (r = 64)</cell><cell>22.0</cell><cell>0.119</cell><cell>63.3%</cell></row><row><cell>Attn(K-Q-V) (r = 64)</cell><cell>12.8</cell><cell>0.130</cell><cell>58.6%</cell></row><row><cell>all (r = 64)</cell><cell>40.4</cell><cell>0.113</cell><cell>62.4%</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Qwen3-1.7B</figDesc><table><row><cell>Module Types</cell><cell>#Params</cell><cell>Train</cell><cell>Eval</cell></row><row><cell></cell><cell>(M)</cell><cell>Loss</cell><cell>Acc</cell></row><row><cell>PLoP(D-O-V) (r = 102)</cell><cell>43.9</cell><cell>0.109</cell><cell>75.4%</cell></row><row><cell>PLoP(D-O-V) (r = 64)</cell><cell>27.5</cell><cell>0.111</cell><cell>75.2%</cell></row><row><cell>PLoP -1 (G-K-Q) (r = 64)</cell><cell>27.5</cell><cell>0.113</cell><cell>74.6%</cell></row><row><cell>MLP(D-G-U) (r = 64)</cell><cell>44.0</cell><cell>0.108</cell><cell>75.0%</cell></row><row><cell>Attn(K-Q-V) (r = 64)</cell><cell>18.4</cell><cell>0.119</cell><cell>69.5%</cell></row><row><cell>all (r = 64)</cell><cell>69.7</cell><cell>0.105</cell><cell>73.9%</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>GRPO results for Qwen3-1.7B trained on MetaMathQA.</figDesc><table><row><cell>Module Types</cell><cell>#Params (M)</cell><cell>Rwd/Format</cell><cell>Rwd/Answer</cell><cell>Eval/GSM8K</cell></row><row><cell>No RL</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>65.50%</cell></row><row><cell>Attn(Q-K-V) (r = 16) Attn(Q-K-V) (r = 25) MLP(U-G-D) (r = 16) PLoP -1 (Q-K-G) (r = 16) PLoP(V-O-D) (r = 16) PLoP(V-O-D) (r = 25)</cell><cell>4.58 7.17 11.01 6.88 6.88 10.75</cell><cell>1.89 1.97 2.57 1.71 2.67 2.75</cell><cell>0.91 0.98 1.28 0.86 1.32 1.32</cell><cell>71.49% 72.13% 73.61% 71.41% 74.52% 75.03%</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_0"><p>From the literature on infinite-width theory, when we take the width to infinity, the training dynamics converge with a rate of roughly O(n -1/2 )<ref type="bibr" target="#b18">[19]</ref>,. In practice, a width of n ⪆ 10</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_1"><p>is generally considered large enough for the theoretical predictions to be a good approximation of practice.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>While this is unrealistic, it provides the right intuition behind our methodology, and makes the analysis more tractable.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_3"><p>Here we consider that zin and zout have the same dimension n. However, our analysis can be extended to the case where they have different dimensions.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_4"><p>Feature update is the change of the features zout after taking one training step.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_5"><p>The mechanisms of feature learning in deep neural networks are still largely misunderstood. Quantitative approaches such as<ref type="bibr" target="#b21">[22]</ref> offer some insights, but are far from being comprehensive.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="7" xml:id="foot_6"><p>This can satisfied with a simple adjustment of the constants Z, Z.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head n="7">Acknowledgment</head><p>We gratefully acknowledge partial support from <rs type="funder">NSF</rs> grants <rs type="grantNumber">DMS-2209975</rs> and <rs type="grantNumber">DMS-2413265</rs>, <rs type="funder">NSF</rs> grant <rs type="grantNumber">2023505</rs> on Collaborative Research: <rs type="funder">Foundations of Data Science Institute (FODSI)</rs>, the <rs type="funder">NSF</rs> and the <rs type="funder">Simons Foundation</rs> for the Collaboration on the Theoretical Foundations of <rs type="person">Deep Learning</rs> through awards <rs type="grantNumber">DMS-2031883</rs> and <rs type="grantNumber">814639</rs>, <rs type="funder">NSF</rs> grant <rs type="grantNumber">MC2378</rs> to the <rs type="funder">Institute for Artificial CyberThreat Intelligence and OperatioN (ACTION)</rs>, and <rs type="funder">NSF</rs> ACCESS grant <rs type="grantNumber">CIS250193</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_uFsMyMm">
+					<idno type="grant-number">DMS-2209975</idno>
+				</org>
+				<org type="funding" xml:id="_pDVFZvS">
+					<idno type="grant-number">DMS-2413265</idno>
+				</org>
+				<org type="funding" xml:id="_QwSsyGM">
+					<idno type="grant-number">2023505</idno>
+				</org>
+				<org type="funding" xml:id="_8CB4kg2">
+					<idno type="grant-number">DMS-2031883</idno>
+				</org>
+				<org type="funding" xml:id="_8bxA8Kq">
+					<idno type="grant-number">814639</idno>
+				</org>
+				<org type="funding" xml:id="_2jbqB97">
+					<idno type="grant-number">MC2378</idno>
+				</org>
+				<org type="funding" xml:id="_6vH2Jar">
+					<idno type="grant-number">CIS250193</idno>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Proof. Recall the update with SignSGD</p><formula xml:id="formula_37">W t+1 = W t -η n -1 χ t S(V ) ⊗ z in ,</formula><p>where S(.) = sign(.) and χ t = S(V ⊺ W t z in -ŷ).</p><p>Denoting α t = ⟨W t z in , S(V )⟩, we obtain</p><formula xml:id="formula_38">α t+1 = α t -βχ t × n = α 0 -β n t ∑ j=0 χ t .</formula><p>Therefore,</p><formula xml:id="formula_39">∥W t+1 z in ∥ 2 2 = ∥W t z in ∥ 2 2 + η 2 n -2 ∥z in ∥ 2 1 × n -2ηn -1 ∥z in ∥ 1 χ t × α t = ∥W t z in ∥ 2 2 + β 2 × n -2βχ t × α t .</formula><p>Let δ ∈ (0, 1/2). From Theorem 2, it is straightforward that there exists a constant λ &gt; 0 such that for any T &gt; 1 and η such that T ≤ λη -1 , with probability at least 1-n -1+δ , we have for all t ≤ T, χ t = χ 0 . In this case, for t ≤ T , we have</p><formula xml:id="formula_40">χ t ×α t = χ t ×α 0 -βn ∑ t-1 j=0 χ t ×χ j = χ t ×α 0 -βn×t. Therefore, n -1 ∥W t+1 z in ∥ 2 = n -1 ∥W t z in ∥ 2 + β 2 + 2β 2 t -2βχ t n -1 α 0 .</formula><p>Using Chebyshev's inequality, we can easily show that for any δ ∈ (0, 1), with probability at least 1 -n -1+2δ , we have |χ t n -1 α 0 | ≤ Zn -δ , which yields that with at least the same probability we have</p><formula xml:id="formula_41">|n -1 ∥W t z in ∥ 2 -Γ t | ≤ |n -1 ∥W t-1 z in ∥ 2 -Γ t-1 | + 2β Zn -δ ,</formula><p>where we define the sequence Γ t+1 = Γ t + β 2 (1 + 2t), with</p><formula xml:id="formula_42">Γ 0 = n -1 ∥W 0 z in ∥ 2 . Then, it is straightforward that for all t ≤ T |n -1 ∥W t z in ∥ 2 -Γ t | ≤ 2β ZT n -δ .</formula><p>With union bound, this occurs with probability at least 1 -2n -1+δ .</p><p>Note that the probability bound can be significantly improved by considering sub-gaussian concentration bounds instead of Chebyshev's inequality. Since our aim in this paper is mainly methodological, we do not include it here.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Additional Experimental Details</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1 Experimental Setup for the linear network</head><p>The linear network is given by</p><formula xml:id="formula_43">f (x) = W 2 W 1 W 0 x,</formula><p>where x ∈ R d , W 0 ∈ R n×d , W 1 ∈ R n×n , and W 2 ∈ R 1,n .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Dimensions.</head><p>We use d = n = 100 in our experiments.</p><p>Training Data. We generate a random vector w ∈ R d with iid coordinates w i ∼ d -1/2 N (0, 1) and fix it for the next step. Then, we generate N = 1000 samples from the following distribution:</p><p>• x ∼ R d random vector with iid coordinates x i ∼ N (0, 1)</p><p>• y = w ⊺ x + ϵ, where ϵ ∼ N (0, 0.025)</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Lora: Low-rank adaptation of large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Edward</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yelong</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phillip</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyuan</forename><surname>Wallis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Allen-Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shean</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ICLR</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page">3</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">LoRA+: Efficient low rank adaptation of large models</title>
+		<author>
+			<persName><forename type="first">Soufiane</forename><surname>Hayou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikhil</forename><surname>Ghosh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Yu</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=NEv8YqBROO" />
+	</analytic>
+	<monogr>
+		<title level="m">Forty-first International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Weight-decomposed low-rank adaptation</title>
+		<author>
+			<persName><forename type="first">Shih-Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chien-Yi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongxu</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pavlo</forename><surname>Molchanov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu-Chiang Frank</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kwang-Ting</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min-Hung</forename><surname>Chen</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=3d5CIRG1n2" />
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<meeting><address><addrLine>Dora</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Rankadaptive parameter-efficient fine-tuning for accurate 2-bit quantized large language models</title>
+		<author>
+			<persName><forename type="first">Minsoo</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sihwa</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wonyong</forename><surname>Sung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jungwook</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ra-Lora</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.findings-acl.933</idno>
+		<ptr target="https://aclanthology.org/2024.findings-acl.933/" />
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: ACL 2024</title>
+		<editor>
+			<persName><forename type="first">Lun-Wei</forename><surname>Ku</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Andre</forename><surname>Martins</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Vivek</forename><surname>Srikumar</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Bangkok, Thailand</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024-08">August 2024</date>
+			<biblScope unit="page" from="15773" to="15786" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Adaptive rank, reduced forgetting: Knowledge retention in continual learning visionlanguage models with dynamic rank-selective lora</title>
+		<author>
+			<persName><forename type="first">Haodong</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongyang</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lina</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kristen</forename><surname>Moore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Gong</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2412.01004" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">The impact of initialization on lora finetuning dynamics</title>
+		<author>
+			<persName><forename type="first">Soufiane</forename><surname>Hayou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikhil</forename><surname>Ghosh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Yu</surname></persName>
+		</author>
+		<ptr target="https://proceedings.neurips.cc/paper_files/paper/2024/file/" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Globerson</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">L</forename><surname>Mackey</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">D</forename><surname>Belgrave</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Fan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">U</forename><surname>Paquet</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Tomczak</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="117015" to="117040" />
+		</imprint>
+	</monogr>
+	<note>d4387c37b3b06e55f86eccdb8cd1f829-Paper-Conference.pdf</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Adalora: Adaptive budget allocation for parameter-efficient fine-tuning</title>
+		<author>
+			<persName><forename type="first">Qingru</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minshuo</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Bukharin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikos</forename><surname>Karampatziakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengcheng</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tuo</forename><surname>Zhao</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2303.10512" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Qlora: Efficient finetuning of quantized llms</title>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Dettmers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Artidoro</forename><surname>Pagnoni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ari</forename><surname>Holtzman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="10088" to="10115" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dawid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tijmen</forename><surname>Kopiczko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuki</forename><forename type="middle">M</forename><surname>Blankevoort</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Asano</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Vera</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2310.11454" />
+		<title level="m">Vector-based random matrix adaptation</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Lora-fa: Memoryefficient low-rank adaptation for large language models fine-tuning</title>
+		<author>
+			<persName><forename type="first">Longteng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaohuai</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaowen</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Li</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2308.03303" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Hydralora: An asymmetric lora architecture for efficient fine-tuning</title>
+		<author>
+			<persName><forename type="first">Chunlin</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhan</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhijiang</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengzhong</forename><surname>Xu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2404.19245" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ting</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaohan</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengyue</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haizhen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Furu</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiwei</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feng</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deqing</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fuzhen</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mora</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2405.12130" />
+		<title level="m">High-rank updating for parameter-efficient fine-tuning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">Vlad</forename><surname>Fomenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jongho</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stanley</forename><surname>Hsieh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.05086</idno>
+		<title level="m">A note on lora</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Towards a unified view of parameter-efficient transfer learning</title>
+		<author>
+			<persName><forename type="first">Junxian</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunting</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhe</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Taylor</forename><surname>Berg-Kirkpatrick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.04366</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">The llama 3 herd of models</title>
+		<author>
+			<persName><surname>Llama-Team</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2407.21783" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Cross-attention is all you need: Adapting pretrained transformers for machine translation</title>
+		<author>
+			<persName><forename type="first">Mozhdeh</forename><surname>Gheini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>May</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2104.08771</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Gradient-based parameter selection for efficient fine-tuning</title>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qizhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijun</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Renrui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ekaterina</forename><surname>Shutova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiji</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanghang</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="28566" to="28577" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Sensitivity-aware visual parameter-efficient fine-tuning</title>
+		<author>
+			<persName><forename type="first">Haoyu</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfei</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dacheng</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bohan</forename><surname>Zhuang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF International Conference on Computer Vision</title>
+		<meeting>the IEEE/CVF International Conference on Computer Vision</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="11825" to="11835" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Feature learning in infinite-width neural networks</title>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><forename type="middle">J</forename><surname>Hu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2011.14522" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Adam: A method for stochastic optimization</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Diederik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Kingma</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ba</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1412.6980" />
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">signsgd: Compressed optimisation for non-convex problems</title>
+		<author>
+			<persName><forename type="first">Jeremy</forename><surname>Bernstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu-Xiang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kamyar</forename><surname>Azizzadenesheli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anima</forename><surname>Anandkumar</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1802.04434" />
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Visualising feature learning in deep neural networks by diagonalizing the forward feature map</title>
+		<author>
+			<persName><forename type="first">Yoonsoo</forename><surname>Nam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Mingard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyeong</forename><surname>Seok</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soufiane</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ard</forename><surname>Hayou</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Louis</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2410.04264" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Implicit regularization via neural feature alignment</title>
+		<author>
+			<persName><forename type="first">Aristide</forename><surname>Baratin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>George</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">César</forename><surname>Laurent</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Devon</forename><surname>Hjelm</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guillaume</forename><surname>Lajoie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pascal</forename><surname>Vincent</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Lacoste-Julien</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2008.00938" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Feature learning and signal propagation in deep neural networks</title>
+		<author>
+			<persName><forename type="first">Yizhang</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><forename type="middle">E</forename><surname>Mingard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soufiane</forename><surname>Hayou</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+		<ptr target="https://proceedings.mlr.press/v162/lou22a.html" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 39th International Conference on Machine Learning</title>
+		<editor>
+			<persName><forename type="first">Kamalika</forename><surname>Chaudhuri</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Stefanie</forename><surname>Jegelka</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Le</forename><surname>Song</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Csaba</forename><surname>Szepesvari</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Gang</forename><surname>Niu</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sivan</forename><surname>Sabato</surname></persName>
+		</editor>
+		<meeting>the 39th International Conference on Machine Learning</meeting>
+		<imprint>
+			<date type="published" when="2022-07">Jul 2022</date>
+			<biblScope unit="volume">162</biblScope>
+			<biblScope unit="page" from="17" to="23" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Understanding and minimising outlier features in neural network training</title>
+		<author>
+			<persName><forename type="first">Bobby</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lorenzo</forename><surname>Noci</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniele</forename><surname>Paliotta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Imanol</forename><surname>Schlag</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Hofmann</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2405.19279" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.14168</idno>
+		<title level="m">Training verifiers to solve math word problems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henrique</forename><surname>Ponde De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harri</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Measuring massive multitask language understanding</title>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mantas</forename><surname>Mazeika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2009.03300" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Deepseekmath: Pushing the limits of mathematical reasoning in open language models</title>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daya</forename><surname>Guo</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2402.03300" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Qwen3 technical report</title>
+		<author>
+			<persName><forename type="first">Qwen</forename><surname>Team</surname></persName>
+		</author>
+		<ptr target="https://github.com/QwenLM/Qwen3/blob/main/Qwen3_Technical_Report.pdf" />
+		<imprint>
+			<date type="published" when="2025-04-29">April 2025. April 29, 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Gemma</forename><surname>Team</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2503" />
+		<title level="m">Gemma 3 technical report</title>
+		<imprint>
+			<date type="published" when="2025">2025. 19786</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Adversarial nli: A new benchmark for natural language understanding</title>
+		<author>
+			<persName><forename type="first">Yixin</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adina</forename><surname>Williams</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emily</forename><surname>Dinan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Douwe</forename><surname>Kiela</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 58th Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">Longhui</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weisen</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jincheng</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengying</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><forename type="middle">T</forename><surname>Kwok</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenguo</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adrian</forename><surname>Weller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Metamath</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.12284</idno>
+		<title level="m">Bootstrap your own mathematical questions for large language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Monte carlo tree search boosts reasoning via iterative preference learning</title>
+		<author>
+			<persName><forename type="first">Yuxi</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anirudh</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenyue</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min-Yen</forename><surname>Kan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><forename type="middle">P</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenji</forename><surname>Kawaguchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Shieh</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2405.00451" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Deepseek-Ai</forename></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2501.12948" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Jordan</forename><surname>Hoffmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Borgeaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Mensch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elena</forename><surname>Buchatskaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Trevor</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eliza</forename><surname>Rutherford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diego</forename><surname>De Las</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lisa</forename><forename type="middle">Anne</forename><surname>Casas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Hendricks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aidan</forename><surname>Welbl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Hennigan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katie</forename><surname>Noland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Millican</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bogdan</forename><surname>Van Den Driessche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aurelia</forename><surname>Damoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Guy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karen</forename><surname>Osindero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erich</forename><surname>Simonyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><forename type="middle">W</forename><surname>Elsen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oriol</forename><surname>Rae</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurent</forename><surname>Vinyals</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sifre</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note>Training compute-optimal large language models</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Delving deep into rectifiers: Surpassing human-level performance on imagenet classification</title>
+		<author>
+			<persName><forename type="first">Kaiming</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoqing</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Sun</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1502.01852" />
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">On the impact of the activation function on deep neural networks training</title>
+		<author>
+			<persName><forename type="first">Soufiane</forename><surname>Hayou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arnaud</forename><surname>Doucet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Judith</forename><surname>Rousseau</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+		<ptr target="https://proceedings.mlr.press/v97/hayou19a.html" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 36th International Conference on Machine Learning</title>
+		<editor>
+			<persName><forename type="first">Kamalika</forename><surname>Chaudhuri</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Ruslan</forename><surname>Salakhutdinov</surname></persName>
+		</editor>
+		<meeting>the 36th International Conference on Machine Learning</meeting>
+		<imprint>
+			<date type="published" when="2019-06">Jun 2019</date>
+			<biblScope unit="volume">97</biblScope>
+			<biblScope unit="page" from="9" to="15" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Scaling limits of wide neural networks with weight sharing: Gaussian process behavior, gradient independence, and neural tangent kernel derivation</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1902.04760</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,2128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">MEM-α: LEARNING MEMORY CONSTRUCTION VIA REINFORCEMENT LEARNING</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-09-30">30 Sep 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California San Diego</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ryuichi</forename><surname>Takanobu</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Zhiqi</forename><surname>Liang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California San Diego</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yuzhen</forename><surname>Mao</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Stanford University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yuanzhe</forename><surname>Hu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California San Diego</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Julian</forename><surname>Mcauley</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of California San Diego</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xiaojian</forename><surname>Wu</surname></persName>
+						</author>
+						<author>
+							<persName><surname>Anuttacon</surname></persName>
+						</author>
+						<title level="a" type="main">MEM-α: LEARNING MEMORY CONSTRUCTION VIA REINFORCEMENT LEARNING</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-09-30">30 Sep 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">AF9D4A701F6ADCB48EC9AC56DF2DB330</idno>
+					<idno type="arXiv">arXiv:2509.25911v1[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:13+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large language model (LLM) agents are constrained by limited context windows, necessitating external memory systems for long-term information understanding. Current memory-augmented agents typically depend on pre-defined instructions and tools for memory updates. However, language models may lack the ability to determine which information to store, how to structure it, and when to update it-especially as memory systems become more complex. This results in suboptimal memory construction and information loss. To this end, we propose Mem-α, a reinforcement learning framework that trains agents to effectively manage complex memory systems through interaction and feedback. We also construct a specialized training dataset spanning diverse multi-turn interaction patterns paired with comprehensive evaluation questions designed to teach effective memory management. During training, agents process sequential information chunks, learn to extract, store, and update the memory system. The reward signal derives from downstream question-answering accuracy over the full interaction history, directly optimizing for memory construction. To illustrate the effectiveness of our training framework, we design a memory architecture comprising core, episodic, and semantic components, equipped with multiple tools for memory operations. Empirical evaluation demonstrates that Mem-α achieves significant improvements over existing memory-augmented agent baselines. Despite being trained exclusively on instances with a maximum length of 30k tokens, our agents exhibit remarkable generalization to sequences exceeding 400k tokens-over 13× the training length, highlighting the robustness of Mem-α.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>Large language model (LLM) agents are fundamentally constrained by limited context windows when processing long information streams, leading to the development of memory-augmented agents <ref type="bibr">(Wang et al., 2025/02;</ref><ref type="bibr" target="#b11">Fang et al., 2025)</ref>. These agents are equipped with persistent, updatable memory systems that actively stores long-term information and manage the context seen by the language model <ref type="bibr" target="#b28">(Packer et al., 2023;</ref><ref type="bibr" target="#b22">Lin et al., 2025;</ref><ref type="bibr" target="#b5">Cai et al., 2025)</ref>. Most existing memory systems rely entirely on pre-defined instructions and fixed tool sets without any training to optimize memory construction, such as Mem0 <ref type="bibr" target="#b7">(Chhikara et al., 2025)</ref>, MemGPT <ref type="bibr" target="#b28">(Packer et al., 2023)</ref>, and MIRIX <ref type="bibr">(Wang &amp; Chen, 2025)</ref>. These memory systems provide agents with various memory update tools-ranging from simple fact extraction to complex multi-component memory architectures-but expect models to utilize these tools effectively out-of-the-box. However, models lack the inherent ability to determine what to store, how to structure, and when to update different memory components. Although complicated system prompts can partially mitigate this issue, manual adjustment of system prompts is challenging to address all scenarios. For small language models with weak instruction-following abilities, complicated instructions may even confuse the model <ref type="bibr" target="#b43">(Wen et al., 2024;</ref><ref type="bibr">Wang et al., 2025b)</ref>.</p><p>To address this challenge, we turn to reinforcement learning (RL) as a principled approach for training agents to learn effective memory management strategies. Unlike supervised fine-tuning, which requires ground-truth memory construction traces, RL enables agents to discover optimal memory strategies through trial and error. This approach is necessary across all model scales: even state-ofthe-art models like GPT-4o struggle with proper tool selection for memory updates <ref type="bibr">(Wang &amp; Chen, 2025)</ref>, while smaller models become completely overwhelmed by complex tool sets <ref type="bibr">(Wang &amp; Chen, 2025;</ref><ref type="bibr">Wang et al., 2025b</ref>). Since we cannot obtain reliable supervision signals from any existing model, we instead directly optimize for downstream task performance-using question-answering accuracy and memory quality metrics as reward signals. Through RL, language models learn to navigate complex memory systems effectively, discovering strategies that optimize memory construction without relying on potentially suboptimal predefined behaviors. Existing works including MEM1 <ref type="bibr" target="#b57">(Zhou et al., 2025)</ref>, MemAgent <ref type="bibr" target="#b50">(Yu et al., 2025)</ref> and Memory-R1 <ref type="bibr" target="#b47">(Yan et al., 2025)</ref> are the first works exploring this direction. However, they employ relatively simple memory structures (e.g., memory rewriting or maintaining a list of facts) that are insufficient for handling complex data such as long narratives, procedural rules, evolving knowledge, or even multi-modal information.</p><p>To this end, we propose Mem-α, a reinforcement learning framework that trains agents to effectively manage complex memory systems through interaction and feedback. Unlike existing approaches that either provide sophisticated tools without teaching models how to use them, or train models on simplistic memory operations, Mem-α enables agents to learn memory construction strategies for complex, multi-component memory architectures (as shown in Figure <ref type="figure" target="#fig_0">1</ref>). Our approach addresses three key challenges in memory-augmented agent training. First, we formulate the process of memory construction as a sequential decision-making problem where agents process information chunks, decide which memory operations to perform, and receive multiple rewards based on downstream question-answering accuracy over the full interaction history. This direct optimization for end-task performance naturally teaches agents to save the most important information and organize the existing memory effectively. Second, we construct a specialized training dataset spanning diverse multi-turn interaction patterns, including conversations, document sharing, pattern recognition, and storytelling, paired with comprehensive evaluation questions that require comprehensive memory to answer correctly. This design exposes agents to various scenarios of memory management during training. Lastly, we adopt a comprehensive memory architecture comprising core, episodic, and semantic components, each equipped with specialized tools for memory operations, providing sufficient expressiveness to handle diverse information types while remaining learnable through reinforcement.</p><p>Empirical evaluation demonstrates that Mem-α achieves significant improvements over existing memory-augmented agent baselines across diverse benchmarks. Most remarkably, despite being trained exclusively on instances with a maximum length of 30k tokens, our agents exhibit robust generalization to sequences exceeding 400k tokens, over 13× the training length. This exceptional length generalization suggests that reinforcement learning enables agents to learn fundamental memory management principles rather than merely memorizing specific patterns, highlighting the potential of learning-based approaches for long-context retention.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">RELATED WORK</head><p>Latent-Space Memory These methods encode new information directly into a model's internal components-such as hidden states <ref type="bibr" target="#b38">(Wang et al., 2024;</ref><ref type="bibr">2025a;</ref><ref type="bibr" target="#b3">Bulatov et al., 2022;</ref><ref type="bibr" target="#b14">He et al., 2024)</ref>, key-value caches <ref type="bibr" target="#b30">(Qian et al., 2025;</ref><ref type="bibr" target="#b19">Li et al., 2024;</ref><ref type="bibr">Zhang et al., 2023b;</ref><ref type="bibr" target="#b56">Zhong et al., 2023)</ref>, soft prompts <ref type="bibr" target="#b4">(Burtsev &amp; Sapunov, 2020;</ref><ref type="bibr" target="#b13">Ge et al., 2023)</ref>, model parameters <ref type="bibr" target="#b1">(Behrouz et al., 2024;</ref><ref type="bibr" target="#b2">Berges et al., 2024;</ref><ref type="bibr">Wang et al.;</ref><ref type="bibr" target="#b42">Wei et al., 2025)</ref>, or learnable external matrices <ref type="bibr" target="#b8">(Das et al., 2024)</ref>. The main advantage is efficient compression: for instance, SELF-PARAM <ref type="bibr">(Wang et al.)</ref> can memorize hundreds of contexts without external storage. However, these approaches face two key limitations. First, their memory capacity remains bounded-M+ <ref type="bibr">(Wang et al., 2025a)</ref> achieves retention of approximately 160k tokens, which falls short of state-of-the-art memory agents like MIRIX <ref type="bibr">(Wang &amp; Chen, 2025)</ref>. Second, they require direct access to model internals, making them incompatible with proprietary systems (e.g., GPT-4/5). Since open-weight alternatives typically underperform leading proprietary models, these constraints limit practical deployment.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LLM Agents with External Memory</head><p>An alternative approach equips language models with external memory systems built on databases or vector stores <ref type="bibr">(Zhang et al., 2025a)</ref>, as demonstrated by MemGAS <ref type="bibr">(Xu et al., 2025a)</ref>, SCM <ref type="bibr" target="#b35">(Wang et al., 2023)</ref>, A-MEM <ref type="bibr">(Xu et al., 2025b)</ref>, MemTree <ref type="bibr" target="#b33">(Rezazadeh et al., 2024)</ref> MemGPT <ref type="bibr" target="#b28">(Packer et al., 2023)</ref>, Mem0 <ref type="bibr" target="#b7">(Chhikara et al., 2025)</ref>, Zep <ref type="bibr" target="#b32">(Rasmussen et al., 2025)</ref>, Nemori <ref type="bibr" target="#b27">(Nan et al., 2025)</ref>, EgoMem <ref type="bibr" target="#b49">(Yao et al., 2025)</ref>, MIRIX <ref type="bibr">(Wang &amp; Chen, 2025)</ref>, Memobase<ref type="foot" target="#foot_0">foot_0</ref> , MemoChat <ref type="bibr" target="#b25">(Lu et al., 2023)</ref> and similar frameworks. These architectures offer two key advantages: they work seamlessly with proprietary frontier models (e.g., GPT-4/5, Claude family) and can efficiently organize, retrieve, and update large amounts of information through welldesigned schemas and controllers. However, their effectiveness depends heavily on the base model's ability to follow instructions and use tools (function-calling)-capabilities that smaller, more costeffective models often lack. Meanwhile, when the system becomes complex, even proprietary models may not update the memory systems well <ref type="bibr">(Wang &amp; Chen, 2025)</ref>. This limitation motivates approaches that explicitly train models to manage memory rather than relying purely on prompting.</p><p>Learning Memory Construction with Reinforcement Learning Recent work explores training language models to construct memory using reinforcement learning, though results remain preliminary. Early efforts such as MEM1 <ref type="bibr" target="#b57">(Zhou et al., 2025)</ref> and MemAgent <ref type="bibr" target="#b50">(Yu et al., 2025)</ref> train models to update simple, text-only memories. Memory-R1 <ref type="bibr" target="#b47">(Yan et al., 2025)</ref>, Learn-to-Memorize <ref type="bibr">(Zhang et al., 2025b)</ref> and REMEMBER <ref type="bibr">(Zhang et al., 2023a)</ref> introduce a slightly richer memory representation and a simplified tool-calling interface, but focuses on LoCoMo <ref type="bibr" target="#b26">(Maharana et al., 2024)</ref> settings with relatively short maximum context (less than ∼26k tokens) and train on subsets of the same distribution, which makes the task comparatively easier. In this paper, we develop an RL framework that trains a model to operate a substantially more capable memory system and demonstrate significant improvements across multiple dimensions of memory quality and efficiency.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">METHOD</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">REINFORCEMENT LEARNING FRAMEWORK</head><p>We formulate memory construction as a reinforcement learning problem where the agent learns to optimize memory building policies. The quality of the constructed memory is evaluated through a separate question-answering process using retrieval-augmented generation (RAG). The complete training framework is shown in Figure <ref type="figure" target="#fig_1">2</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.1">TASK SETUP</head><p>We consider a memory construction task where an agent processes a sequence of conversations C = {c 1 , . . . , c n } between a user and an assistant. These conversations span diverse formats, including casual discussions, storytelling, book sharing, and classification examples. At step t ∈ {1, . . . , n} the agent observes c t and the current memory M t-1 (here M is the memory and M 0 is initialized as an empty memory) and may issue a sequence of write operations before advancing to the next chunk. Formally, the action at step t is a t = a (1) t , . . . , a (Kt) t</p><p>where each a (k) t ∈ A write = {memory insert, memory update, memory delete} is a structured function call with arguments (e.g., record id, memory type, string content), and K t is the number of operations in this action. Then we apply these function calls on M t-1 :</p><formula xml:id="formula_0">M (0) t-1 = M t-1 , M (k) t-1 = T M (k-1) t-1 , a (k) t-1 ) for k = 1, . . . , K t , M t = M (Kt) t-1 ,</formula><p>After processing all the chunks in C, we obtain the final memory M n . Then we can calculate the rewards according to the final memory M n and all the actions A = {a 1 , • • • , a n } across the whole list of chunks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.2">REWARD FUNCTIONS</head><p>Correctness Reward (r 1 ) The correctness reward evaluates the comprehensiveness of the final memory M n through question-answering performance. Given questions Q = {q 1 , . . . , q m } and predicted answers AN S = {ans 1 , . . . , ans m } obtained via the RAG pipeline, we compute r 1 using dataset-specific metrics (Table <ref type="table" target="#tab_3">6</ref>). For example, on SQuAD: r 1 = l/m where l is the number of correctly answered questions.</p><p>Tool Call Format Reward (r 2 ) To ensure reliable function execution, we reward tool calls with the correct format. For each function call a (k) t , let s(a (k) t ) ∈ {0, 1} be a binary indicator where s(a</p><formula xml:id="formula_1">(k) t ) = 1 if a (k) t</formula><p>has the correct format and executes successfully and 0 otherwise. The reward is: r 2,t = Kt k=1 s(a (k) t )/K t , measuring the percentage of successfully executed function calls. Compression Reward (r 3 ) To encourage efficient memory usage, we define: r 3 = 1 -l m /l c , where l m is the total memory length and l c is the total length of the chunks. This promotes compact memory representations while preserving essential information.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Memory Content Reward (r 4 )</head><p>To ensure memory operations satisfy their semantic definitions, we use Qwen3-32b to validate memory updates (prompts in Appendix C.3). For each operation a</p><formula xml:id="formula_2">(k) t , let v(a (k) t ) ∈ {0, 1} be a binary indicator where v(a (k) t ) = 1 if a (k) t</formula><p>is semantically valid and 0 otherwise. The reward is: r 4,t = Kt k=1 v(a (k) t )/K t , measuring the fraction of valid operations. Formal mathematical definitions of all reward components are provided in Appendix B.</p><p>Then we combine four rewards together to obtain the final reward r t for action a t :</p><formula xml:id="formula_3">r t = r 1 + r 2,t + βr 3 + γr 4,t<label>(1)</label></formula><p>where β, γ are hyperparameters requiring tuning. We fix the weight of r 2,t at 1 (rather than varying it) because the function call success rate is critical for memory updates. The four reward components operate at different granularities: r 1 (correctness) and r 3 (compression) are computed globally based on the final memory state M n and thus share the same value across all actions in the sequence. In contrast, r 2,t (tool call success) and r 4,t (memory content quality) are evaluated at the action level, with each action a t = (a</p><formula xml:id="formula_4">t , • • • , a<label>(1)</label></formula><p>), t ∈ {1, • • • , n} receiving its own specific reward values based on the success rate of its function calls and the quality of its memory updates.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.3">MEMORY COMPREHENSIVENESS EVALUATION VIA RAG</head><p>As outlined in Section 3.1.2, the comprehensiveness of the learned memory is evaluated by a decoupled retrieval-augmented generation (RAG) pipeline, where only the write policy is learnable and both retrieval and generation components remain fixed. After processing all context chunks, the agent outputs the terminal memory state M n . For each question q j , evaluation proceeds in three stages: (1) Retrieval: For both semantic memory and episodic memory in M n , we use a fixed retriever ϕ that selects the top-k memory entries from the corresponding memory pool using the BM25 retriever. (2) Generation: A frozen generator g receives q j and the retrieved support set and produces an answer ans ′ j = g q j , ϕ(M n , q j ) . The system prompt is presented in Appendix C.3. (3) Scoring: We compare ans ′ j with the reference ans j to obtain correctness indicators, which induce the correctness reward r 1 described in Section 3.1.2.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">POLICY OPTIMIZATION</head><p>We employ Group Relative Policy Optimization (GRPO) <ref type="bibr" target="#b34">(Shao et al., 2024)</ref>. In section 3.1.2, we eventually obtain the rewards for each action a t at step t ∈ {1, • • • , n}. The advantage is:</p><formula xml:id="formula_6">A t = A(M t , c t , a t ) = r t -µ group σ group + ϵ = (r 1 + r 2,t + βr 3 + γr 4,t ) -µ group σ group + ϵ ,</formula><p>where r t is the obtained final reward for a t which consists of four different rewards. Then µ group and σ group are the mean and standard deviation of rewards within the sampled action group, and ϵ is a small constant for numerical stability. The objective of Mem-α is to maximize the expected reward over all actions in the sequence:</p><formula xml:id="formula_7">J (θ) = E C∼P (C),A∼πold(•|C,M0) n t=1 1 G G i=1 1 |a t | |at| j=1 min( π θ (a t,j |M t , c t , a t,&lt;j ) π old (a t,j |M t , c t , a t,&lt;j ) A t , clip( π θ (a t,j |M t , c t , a t,&lt;j ) π old (a t,j |M t , c t , a t,&lt;j ) , 1 -ϵ, 1 + ϵ)A t ) ,<label>(2)</label></formula><p>where C is a list of context chunks, and P (C) is the total set of possible lists. M 0 is the initial empty memory, and A is the obtained actions from the chunks C and the initial memory M 0 . We discard the KL term in GRPO to encourage policy exploration.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">MEMORY INSTANTIATION</head><p>We design a memory architecture comprising three complementary components, each serving distinct functional roles in long-term information management. (1) Core Memory: Following MemGPT <ref type="bibr" target="#b28">(Packer et al., 2023)</ref>, we maintain a persistent text summary (maximum 512 tokens) that remains continuously accessible in the agent's context. This component serves as a condensed representation of the most critical information, providing immediate access to essential context without retrieval overhead. (2) Semantic Memory: This component stores factual knowledge and declarative information about the world and user <ref type="bibr">(Li &amp; Li, 2024)</ref>. We implement semantic memory as a structured collection of discrete factual statements, where each entry represents an atomic piece of knowledge that can be independently retrieved and updated. (3) Episodic Memory: This component captures temporally-grounded events and experiences <ref type="bibr">(Li &amp; Li, 2024;</ref><ref type="bibr" target="#b23">Liu et al., 2025;</ref><ref type="bibr" target="#b0">Anokhin et al., 2024;</ref><ref type="bibr" target="#b29">Pink et al., 2025;</ref><ref type="bibr" target="#b12">Fountas et al., 2024)</ref>. We implement episodic memory as a chronologically-organized collection of timestamped events, enabling the agent to maintain temporal context and reconstruct interaction histories. Figure <ref type="figure" target="#fig_2">3</ref> illustrates the complete memory architecture and the interactions between these components. Each memory component is equipped with specialized operations tailored to its functional requirements. Semantic and episodic memories support fine-grained manipulation through three operations: memory insert (adding new entries), memory update (modifying existing entries), and memory delete (removing entries). In contrast, core memory supports only memory update, requiring complete rewriting to maintain coherence in its condensed representation. This design reflects the different update patterns: while semantic and episodic memories benefit from incremental modifications, core memory requires holistic revision to preserve its summarization quality. Importantly, our memory architecture is modular and decoupled from the reinforcement learning framework. Researchers can seamlessly substitute alternative memory designs-whether simpler or more complex-without modifying the training methodology, enabling flexible adaptation to diverse application requirements.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">TRAINING DATASET PREPARATION</head><p>MemoryAgentBench <ref type="bibr" target="#b16">(Hu et al., 2025)</ref> evaluates memory agents across four dimensions: (1) Accurate Retrieval: extracting correct information from historical data to address queries, encompassing both single-hop and multi-hop retrieval scenarios; (2) Test-Time Learning: acquiring new behaviors or capabilities during deployment;</p><p>(3) Long-Range Understanding: integrating information distributed across multiple segments to answer queries requiring comprehensive sequence analysis; and (4) Conflict Resolution: revising, overwriting, or removing previously stored information when encountering contradictory evidence. Our work focuses on the first three dimensions, excluding Conflict Resolution due to the lack of realistic evaluation benchmarks-existing datasets for this dimension remain predominantly synthetic and do not adequately capture real-world complexity. We compile a training dataset comprising 4,139 instances, with detailed statistics presented in Table <ref type="table" target="#tab_3">6</ref>. Each instance consists of multiple context chunks, each of which triggers a distinct write action, resulting in long action sequences per instance. Given the computational overhead of reinforcement learning and the significant class imbalance in the full dataset, we employ a stratified sampling approach to create a balanced subset of 562 instances. The resulting distribution is detailed in Table <ref type="table" target="#tab_4">7</ref>, with comprehensive dataset preprocessing procedures described in Appendix A.1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">EXPERIMENTS 4.1 EXPERIMENTAL SETUP</head><p>Evaluation Datasets and Metrics We follow MemoryAgentBench <ref type="bibr" target="#b16">(Hu et al., 2025)</ref> and select representative datasets from three categories to comprehensively evaluate our approach: (1) Accurate Retrieval: We use Single-Doc, Multi-Doc and LME(S*) as the evaluation tasks. (2) Test-Time Learning: We evaluate on five multi-class classification datasets: TREC-C, TREC-F, NLU, CLINIC, BANKING77.</p><p>(3) Long-Ran-Understanding, we use InfBench-Sum as the summarization task for evaluation. The detailed introduction of these datasets is in Appendix A.2.</p><p>Baselines We compare with the following baselines: (1) Long-Context: We simply use Qwen3-32B as the long-context model. In our experiments, this model always has the maximum context window as 32k. (2) RAG-Top2: We use BM25 as the retrieval method, and use the question as the query, retrieve top two chunks from all the previous chunks, and then use Qwen3-32B as the model Perf.: task-specific metrics (F1/Accuracy), Mem.: memory in thousands of tokens. AR: Accurate Retrieval, TTL: Time Time Learning, LRU: Long Range Understanding. Same as below.</p><p>to answer the questions. (3) MemAgent: We give the agent the specific task description, and then let the agent go over all the chunks, then ask the question according to the accumulated memory.</p><p>(4) MEM1: Given all the chunks, the agent is required to maintain a paragraph of memory, retrieve some chunks, update the memory, and then answer the question according to the memory. The implementation details of the baselines are shown in Appendix C.2.</p><p>Implementation Details Here we present the implementation details of Mem-α to ensure reproducibility. We use verl framework, choose Qwen3-4B as the backbone model<ref type="foot" target="#foot_1">foot_1</ref> , train on 32 H100 GPUs with learning rate as 1e-6, batch size as 32, grpo rollout n as 8 for three days. The complete training is 205 steps and we choose the best checkpoint according to the validation performance. In the main experiments, we choose the hyperparameters in Eq.( <ref type="formula" target="#formula_3">1</ref>) as β = 0.05, γ = 1. We show the performance variations with respect to different hyperparameter configurations in Section 4.4.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">OVERALL PERFORMANCE COMPARISON</head><p>We present performance comparisons on validation datasets (matching the training distribution) in Table <ref type="table" target="#tab_0">1</ref> and out-of-distribution test datasets (MemoryAgentBench) in Table <ref type="table" target="#tab_1">2</ref>. Our analysis yields four key findings: (1) Superior performance across tasks: Our method significantly outperforms existing baselines across all metrics. On MemoryAgentBench (</p><p>Table 2), we observe particularly substantial improvements on Accurate Retrieval (AR) and Long-Range Understanding (LRU) tasks, demonstrating robust generalization to unseen distributions. (2) Efficient memory compression: Compared to Long-Context and RAG-Top2, our approach reduces memory footprint by approximately 50(3) Structured memory architecture matters: The limited performance of flat memory baselines (MEM1 and MemAgent), which employ single-paragraph representations, highlights the inadequacy of unstructured memory for complex information processing. This performance gap validates our hierarchical memory design and reinforcement learning-based optimization strategy. (4) Strong length generalization: Despite training exclusively on documents averaging &lt;20K tokens, our method successfully generalizes to documents exceeding 400K tokens (up to 474K in Mem-oryAgentBench's Multi-Doc dataset), demonstrating the robustness of our training framework to extreme length extrapolation. 4.3 PERFORMANCE BOOST FROM REINFORCEMENT LEARNING To demonstrate that the performance improvements in Section 4.2 stem from our reinforcement learning approach rather than merely the memory structure, we conduct ablation studies comparing three configurations: (1) our RL-tuned model with RL framework Mem-α, (2) the base Qwen3-4B model with our memory framework, and (3) gpt-4.1-mini with our memory framework. Table 3 presents the validation dataset results. The base Qwen3-4B model achieves only 0.389 average performance-substantially below both RAG-Top2 (0.567) and Long-Context (0.588) from Table 1. While gpt-4.1-mini demonstrates stronger baseline performance (leveraging its superior instruction-following capabilities), our RL-tuned Mem-α achieves the highest performance, sur-AR TTL LRU Avg. Method Metric Single-Doc Multi-Doc LME(S) TREC-C NLU TREC-F Clinic Banking77 InfBench Long-Context Perf. 0.280 0.270 0.292 0.640 0.740 0.340 0.860 0.770 0.125 0.461 Mem. 33K 33K 33K 33K 33K 33K 33K 33K 33K 33K RAG-Top2 Perf. 0.690 0.450 0.581 0.690 0.650 0.210 0.700 0.750 0.065 0.502 Mem. 217K 474K 348K 124K 134K 126K 131K 128K 181K 207K MemAgent Perf. 0.070 0.160 0.050 0.370 0.260 0.210 0.250 0.370 0.043 0.198 Mem. 1.02K 1.02K 0.56K 1.02K 1.02K 0.77K 1.02K 1.02K 0.73K 0.92K MEM1 Perf. 0.070 0.180 0.090 0.180 0.000 0.000 0.090 0.000 0.029 0.071 Mem. 0.30K 0.38K 0.22K 0.16K 0.11K 0.13K 0.28K 0.11K 0.19K 0.21K Mem-α-4B Perf. 0.740 0.680 0.520 0.710 0.710 0.410 0.730 0.700 0.129 0.592 Mem. 160K 323K 127K 120K 142K 123K 18K 133K 19K 129K Table 3: Performance and memory consumption comparison across evaluation datasets. Perf.: taskspecific metrics (F1/Accuracy), Mem.: memory in thousands of tokens. All methods use BM25 retrieval with qwen3-32b. Bold indicates best results.</p><p>passing even gpt-4.1-mini. These results provide compelling evidence that our performance gains originate from the reinforcement learning optimization rather than the memory architecture alone. The dramatic improvement from base Qwen3-4B (0.389) to Mem-α (0.642) demonstrates that our RL framework successfully trains the model to effectively utilize the memory structure, transforming a relatively weak base model into a state-of-the-art memory-augmented agent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">ABLATION STUDIES</head><p>Our reward function, defined in Eq. ( <ref type="formula" target="#formula_3">1</ref>), comprises four components: r 1 (accuracy), r 2 (tool call format), r 3 (compression), and r 4 (memory content quality). We fix the weights of the primary components r 1 and r 2 to 1.0, as they directly measure task performance, and tune only the compression weight β and memory content weight γ. Our experiments employ β = 0.05 and γ = 0.1 as default values. Table <ref type="table" target="#tab_2">4</ref> presents ablation studies (The results on the test dataset MemoryAgent-Bench is shown in Appendix C.4.) examining the impact of these hyperparameters, yielding two key findings. First, the memory content reward (γ) proves critical for effective learning: setting γ = 0 leads to catastrophic performance degradation, as the model fails to acquire meaningful memory construction strategies, resulting in disorganized memory representations that cannot support downstream tasks. Second, the compression reward (β) exhibits task-dependent effects. While maintaining γ = 0.1, increasing β produces shorter memories at the cost of reduced performance. Notably, comparing configurations (β = 0.05, γ = 0.1) and (β = 0, γ = 0.1), we observe substantial memory reduction on BookSum (2.2K vs. 4.5K tokens) while maintaining comparable memory lengths on other datasets. This demonstrates that our chosen configuration (β = 0.05, γ = 0.1) achieves an optimal balance between memory efficiency and task performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5">CASE STUDIES</head><p>In this section, we report some memory construction traces obtained from Mem-α and compare them with baseline approaches to demonstrate the effectiveness of our memory management strategy.</p><p>Table 5 illustrates critical differences in how different models handle memory construction. Qwen3-4B exhibits severe limitations: it fails to update the core memory entirely (leaving it empty), and only maintains a single semantic memory entry, resulting in significant information loss as multiple distinct concepts are compressed into one generic statement. GPT-4.1-mini demonstrates better semantic organization with three distinct entries, but suffers from inefficient episodic memory man-AR TTL LRU Avg. β γ Metric SQuAD HotpotQA PerLTQA TREC-C NLU Pubmed BookSum 0.05 0.0 Perf. 0.701 0.802 0.652 0.423 0.542 0.501 0.183 0.543 Mem. 9.2K 8.2K 10.8K 3.0K 3.5K 11.0K 4.9K 7.5K 0.0 0.1 Perf. 0.817 0.853 0.678 0.605 0.629 0.572 0.183 0.630 Mem. 9.7K 8.1K 11.7K 3.7K 5.4K 12.5K 4.5K 7.9K 0.05 0.1 Perf. 0.786 0.832 0.659 0.666 0.658 0.545 0.187 0.642 Mem. 10.1K 8.7K 11.2K 4.0K 6.5K 12.3K 2.2K 7.9K 0.2 0.1 Perf. 0.822 0.838 0.615 0.558 0.176 0.401 0.193 0.525 Mem. 9.8K 7.8K 10.4K 0.4K 0.8K 0.4K 3.0K 4.7K 0.4 0.1 Perf. 0.691 0.810 0.533 0.475 0.405 0.455 0.201 0.509 Mem. 8.8K 8.1K 5.2K 0.7K 1.4K 1.3K 1.5K 3.6K Table 5: Comparison of Memory Management Strategies Across Models</p><p>agement by creating multiple entries with identical timestamps that should be merged to conserve memory space. Meanwhile, GPT-4.1-mini is only storing the user behavior, completely ignoring the responses from the assistant. In contrast, Mem-α demonstrates better memory construction by maintaining informative core memory, organizing semantic information into detailed, distinct entries, efficiently consolidating episodic events with the same timestamp into a single comprehensive entry, paying attention to both the user behavior and the assistant response. This superior memory organization enables Mem-α to retain more information while using memory space more efficiently.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">CONCLUSION, LIMITATION AND FUTURE WORK</head><p>In this work, we presented Mem-α, a reinforcement learning framework that enables LLM agents to learn effective memory management strategies through interaction and feedback. By moving beyond pre-defined heuristics, our approach allows agents to discover optimal memory operations for diverse scenarios through a carefully designed training dataset and reward mechanism based on question-answering correctness. Our experiments demonstrate that Mem-α achieves significant improvements over existing memory-augmented baselines, with agents developing robust memory management strategies that generalize well to much longer interaction patterns. While our framework shows strong performance, several promising directions remain for future exploration. Our current memory architecture could benefit from integration with more sophisticated systems like MIRIX, which may provide additional structural advantages for complex reasoning tasks. Furthermore, extending Mem-α from simulated environments to real-world applications would require connecting the reinforcement learning framework with actual databases and production systems, introducing challenges around latency, scalability, and safety that warrant careful investigation. These directions represent exciting opportunities to bridge the gap between learned memory management and practical deployment of memory-augmented LLM agents in real-world applications.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A DATASETS DETAILS</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 TRAINING DATASET</head><p>We organize our training data into three categories based on the memory capabilities they target, as illustrated in Section 3.4. The detailed dataset statistics are provided in Table <ref type="table" target="#tab_3">6</ref>. Accurate Retrieval (AR) This category focuses on training the model's ability to store and precisely retrieve information from memory. We employ the following datasets:</p><p>(1) SQuAD <ref type="bibr" target="#b31">(Rajpurkar et al., 2016)</ref>: We adapt this single-document question answering dataset by combining multiple documents into single instances. The agent must memorize these documents and subsequently answer questions based on the constructed memory, testing its ability to accurately retrieve specific information.</p><p>(2) HotPotQA <ref type="bibr" target="#b48">(Yang et al., 2018)</ref>: This multi-document question answering dataset presents the agent with sequential chunks, each potentially containing multiple documents. The agent must memorize the documents, identify relationships between them, and answer questions requiring information synthesis across independent chunks.</p><p>(3) PerLTQA <ref type="bibr" target="#b10">(Du et al., 2024)</ref>: This dataset challenges the agent to reason over memory chunks containing both episodic and semantic information about users. The agent must identify relevant memories, integrate information across different memory types, maintain user profile consistency, and perform multi-hop reasoning to answer questions.</p><p>(4) LongMemEval-Train <ref type="bibr" target="#b44">(Wu et al., 2024)</ref>: We construct a training subset from LongMemEval by collecting 200 questions from longmemeval oracle.json<ref type="foot" target="#foot_2">foot_2</ref> , ensuring no overlap with the evaluation data in MemoryAgentBench. We concatenate haystack dialogues into contexts ranging from 10K to 30K tokens, with each context paired with 4-5 questions, resulting in 50 training samples.</p><p>Test-Time Learning (TTL) This category trains the model's ability to learn new classification patterns from examples and apply them to new instances. We employ the following datasets:</p><p>(1) PubMed-RCT <ref type="bibr" target="#b9">(Dernoncourt &amp; Lee, 2017)</ref>: We adapt this large-scale dataset of randomized controlled trial abstracts from medical literature for test-time learning. Each sentence is originally annotated with semantic roles (Background, Objective, Method, Result, or Conclusion). We transform this into a classification learning task by segmenting the data into conversational chunks containing multiple sentence-label pairs as training examples. To evaluate the agent's ability to learn abstract patterns, we replace semantic labels with numeric labels (0-4). Each instance ensures coverage of all five categories across chunks, with questions prompting classification of new examples. (2) NLU and TREC-C: These datasets are adapted from MemoryAgentBench <ref type="bibr" target="#b16">(Hu et al., 2025)</ref>, containing documents with labeled sentences across 68 classes (NLU) and 6 classes (TREC-C).</p><p>Given the original instances contain approximately 100K tokens, we partition them into manageable chunks. We create 200 instances per dataset, each containing 10 chunks with roughly 500 ∼ 2,000 tokens distributed across chunks. Each instance preserves all original labels while redistributing training examples to ensure complete label coverage within each instance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Long Range Understanding (LRU)</head><p>This category focuses on training the model's ability to comprehend and summarize information across extended contexts. We employ the following dataset:</p><p>BookSum <ref type="bibr" target="#b17">(Kryściński et al., 2021)</ref>: We utilize the cleaned version of this dataset<ref type="foot" target="#foot_3">foot_3</ref> , where each item consists of a book chapter paired with its summary. We segment each chapter into 10-20 conversational chunks to simulate incremental information processing. For evaluation, we extract keywords from ground-truth summaries using the prompt shown in Figure <ref type="figure" target="#fig_3">4</ref>. The evaluation metric is the ratio of correctly identified keywords in generated summaries compared to the ground-truth keyword set.</p><p>Due to computational constraints and dataset imbalance, we limit each dataset to a maximum of 100 instances. Despite training for three days with 32 H100 GPUs, we could only process a small portion of the complete datasets. The final dataset composition and statistics are presented in Table <ref type="table" target="#tab_4">7</ref>. We process every chunk into the format of conversations, with the examples or formats of each dataset shown in Figure <ref type="figure">5</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 EVALUATION DATASET</head><p>To comprehensively evaluate our model's memory capabilities across different scenarios, we adopt the evaluation framework from MemoryAgentBench <ref type="bibr" target="#b16">(Hu et al., 2025)</ref> and select representative datasets from three core categories. This evaluation suite encompasses 9 datasets with 112 test instances, designed to assess accurate retrieval, test-time learning, and long-range understanding capabilities. The detailed statistics for each dataset are presented in Table <ref type="table">8</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Accurate Retrieval (AR)</head><p>This category evaluates the model's ability to precisely locate and retrieve specific information from memory. We employ the following datasets:</p><p>(1) RULER-QA1 (Single-Hop) and RULER-QA2 (Multi-Hop): These datasets test single-hop and multi-hop question answering capabilities respectively. RULER-QA1 (Hsieh et al., 2024) requires direct information retrieval, while RULER-QA2 demands reasoning across multiple memory chunks to synthesize answers. Dataset Category Evaluation Metric Test Set # of Ins. Avg. Chunks Avg. Tokens Avg. Q's per Instance per Chunk per Instance Banking77 ICL Source-based 1 111.0 1,150.3 100.0 Clinic150 ICL Source-based 1 38.0 3,440.5 100.0 NLU ICL EM 1 115.0 1,166.7 100.0 TREC-Coarse ICL EM 1 111.0 1,114.6 100.0 TREC-Fine ICL EM 1 108.0 1,163.3 100.0 InfBench-Sum LRU Source-based 100 88.9 2,034.1 1.0 LongMemEval AR LLM judge 5 218.6 1,591.4 60.0 RULER-QA1 AR Source-based 1 103.0 2,103.9 100.0 RULER-QA2 AR Source-based 1 219.0 2,163.5 100.0 Total 112 ---Table <ref type="table">8</ref>: Test dataset statistics across 9 data sources. Each dataset is evaluated with specific metrics suitable for its task type.</p><p>(2) LME(S*): Originally from LongMemEval <ref type="bibr" target="#b44">(Wu et al., 2024)</ref>, this dataset was processed by <ref type="bibr" target="#b16">Hu et al. (2025)</ref> to create a more evaluation-efficient format where multiple questions are posed against fewer contexts, testing the model's ability to maintain and query complex memory representations over extended interactions.</p><p>Test-Time Learning (TTL) This category assesses the model's ability to learn new classification patterns from examples and apply them to novel instances. The context used in this dataset includes thousands of labeled examples. Each example is labeled with a number to indicate the category. We employ the following datasets: The prompt used to measure the content of the Semantic Memory You are an expert memory analyst. Analyze the quality of semantic memory content. Semantic memory should contain: -Information or Knowledge about somebody or something -Definitions, theories, principles, or explanations -How-to knowledge or procedural information -Research findings or established facts Two other memories are Core memory (User Personalities) and Episodic memory (User Experiences). The information not suitable for these two memories should be considered as semantic memory. Respond ONLY with a JSON code block in this exact format: "'json "VALID": true/false, "ISSUES": [list any problems found], "EXPLANATION": "brief explanation of the assessment" "' Figure 9: The prompt used to measure the content of the Semantic Memory during training. AR TTL LRU Avg. β γ Metric Single-Doc Multi-Doc LME(S) TREC-C NLU TREC-F CLINIC BANKING77 InfBench-Sum</p><p>0.05 0.0 Perf. 0.420 0.340 0.527 0.480 0.640 0.200 0.720 0.550 0.108 0.445 Mem. 86K 123K 159K 75K 100K 65K 20K 97K 54K 87K 0.0 0.1 Perf. 0.770 0.610 0.387 0.690 0.730 0.370 0.780 0.770 0.109 0.580 Mem. 160K 362K 47K 124K 113K 127K 47K 119K 41K 127K 0.05 0.1 Perf. 0.740 0.680 0.520 0.710 0.710 0.410 0.730 0.700 0.129 0.592 Mem. 160K 323K 127K 120K 142K 123K 18K 133K 19K 129K 0.2 0.1 Perf. 0.710 0.730 0.367 0.810 0.270 0.280 0.140 0.020 0.113 0.351 Mem. 160K 344K 139K 3K 3K 3K 1K 5K 118K 87K 0.4 0.1 Perf. 0.590 0.610 0.453 0.500 0.360 0.190 0.170 0.380 0.119 0.375 Mem. 138K 312K 27K 1K 1K 1K 2K 1K 16K 55K</p><p>Table 9: Performance and memory consumption on MemoryAgentBench. Perf.: task-specific metrics (F1/Accuracy), Mem.: memory in thousands of tokens. AR: Accurate Retrieval, TTL: Time Time Learning, LRU: Long Range Understanding. Best performance values are shown in bold.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Reinforcement learning teaches agents to select appropriate memory tools and types. Before training (left), agents struggle with tool selection when given new information. After RL training (right), agents learn effective memory management policies.</figDesc><graphic coords="2,108.00,81.86,396.00,168.31" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Training Framework of Mem-α.</figDesc><graphic coords="4,108.00,81.86,396.00,185.00" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Memory Architecture: Core Memory stores a single paragraph (max 512 tokens), while Semantic Memory and Episodic Memory maintain expandable lists of sentences for facts and timestamped events, respectively.</figDesc><graphic coords="6,108.00,81.86,395.99,88.96" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: The prompt used to extract keywords in the summaries of BookSum and InfBench-Sum.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>PreprintFigure 8 :Figure 9 :</head><label>89</label><figDesc>Figure8: The prompt used to measure the content of the Episodic Memory during training.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Performance and the total number of tokens in the memory across validation datasets.</figDesc><table><row><cell>Method</cell><cell cols="5">AR Metric SQuAD HotpotQA PerLTQA TREC-C</cell><cell>TTL NLU</cell><cell cols="2">LRU Pubmed BookSum</cell><cell>Avg.</cell></row><row><cell>Long-Context</cell><cell>Perf. Mem.</cell><cell>0.742 10.6K</cell><cell>0.852 9.7K</cell><cell>0.605 13.1K</cell><cell>0.623 3.9K</cell><cell>0.708 6.1K</cell><cell>0.533 16.7K</cell><cell>0.052 15.4K</cell><cell>0.588 10.8K</cell></row><row><cell>RAG-Top2</cell><cell>Perf. Mem.</cell><cell>0.762 10.6K</cell><cell>0.849 9.7K</cell><cell>0.623 16.7K</cell><cell>0.612 3.9K</cell><cell>0.508 6.1K</cell><cell>0.570 16.7K</cell><cell>0.042 15.6K</cell><cell>0.567 11.3K</cell></row><row><cell>MemAgent</cell><cell>Perf. Mem.</cell><cell>0.091 0.79K</cell><cell>0.140 0.76K</cell><cell>0.052 0.29K</cell><cell>0.562 1.24K</cell><cell>0.290 0.99K</cell><cell>0.343 0.94K</cell><cell>0.103 0.59K</cell><cell>0.236 0.84K</cell></row><row><cell>MEM1</cell><cell>Perf. Mem.</cell><cell>0.039 0.16K</cell><cell>0.083 0.22K</cell><cell>0.068 0.14K</cell><cell>0.269 0.23K</cell><cell>0.056 0.22K</cell><cell>0.175 0.08K</cell><cell>0.085 0.16K</cell><cell>0.111 0.17K</cell></row><row><cell>Mem-α</cell><cell>Perf. Mem.</cell><cell>0.786 10.1k</cell><cell>0.832 8.7k</cell><cell>0.659 11.2k</cell><cell>0.666 4.0k</cell><cell>0.658 6.5k</cell><cell>0.545 12.3k</cell><cell>0.187 2.2k</cell><cell>0.642 7.9k</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Performance and the total number of tokens in the memory on MemoryAgentBench. Perf.: task-specific metrics (F1/Accuracy), Mem.: memory in thousands of tokens.</figDesc><table><row><cell>Method</cell><cell cols="8">AR Metric SQuAD HotpotQA PerLTQA TREC-C NLU Pubmed BookSum TTL LRU</cell><cell>Avg.</cell></row><row><cell>Qwen3-4B</cell><cell>Perf. Mem.</cell><cell>0.338 3.3K</cell><cell>0.637 4.8K</cell><cell>0.557 9.0K</cell><cell>0.416 2.3K</cell><cell>0.381 2.9K</cell><cell>0.281 4.4K</cell><cell>0.130 0.9K</cell><cell>0.389 3.9K</cell></row><row><cell>gpt-4.1-mini</cell><cell>Perf. Mem.</cell><cell>0.426 3.8K</cell><cell>0.749 4.9K</cell><cell>0.492 3.7K</cell><cell>0.637 3.4K</cell><cell>0.519 5.9K</cell><cell>0.544 10.6K</cell><cell>0.246 1.5K</cell><cell>0.517 4.8K</cell></row><row><cell>Qwen3-4B w/</cell><cell>Perf.</cell><cell>0.786</cell><cell>0.832</cell><cell>0.659</cell><cell>0.666</cell><cell>0.658</cell><cell>0.545</cell><cell>0.187</cell><cell>0.642</cell></row><row><cell>Mem-α</cell><cell>Mem.</cell><cell>10.1K</cell><cell>8.7K</cell><cell>11.2K</cell><cell>4.0K</cell><cell>6.5K</cell><cell>12.3K</cell><cell>2.2K</cell><cell>7.9K</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 4 :</head><label>4</label><figDesc>Performance and memory consumption comparison across evaluation datasets. Perf.: taskspecific metrics (F1/Accuracy), Mem.: memory in thousands of tokens. All methods use BM25 retrieval with qwen3-32b. Bold indicates best results.</figDesc><table><row><cell>Memory Type</cell><cell>Qwen3-4B</cell><cell>GPT-4.1-mini</cell><cell>Qwen3-4B w/ Mem-α</cell></row><row><cell></cell><cell></cell><cell>User is ... focusing on minimizing noise</cell><cell>User is looking to get some advice on</cell></row><row><cell>Core</cell><cell>∅ ✗ Should not be empty</cell><cell>pollution ... currently looking for condos,</cell><cell>condo living ... looking at options for</cell></row><row><cell></cell><cell></cell><cell>particularly in downtown areas ... ✓</cell><cell>condo in the downtown area ... ✓</cell></row><row><cell>Semantic</cell><cell>User is seeking advice on ... noise pollution ... amenities. ✗ Should record more</cell><cell>3 distinct entries: -Noise pollution tips -Neighborhood evaluation -Research importance (✓ Complete)</cell><cell>2 distinct entries: -Noise proof tips ... -Research methods ... (✓ Complete)</cell></row><row><cell></cell><cell></cell><cell>At 2023/03/08 01:55, Asked for noise tips</cell><cell></cell></row><row><cell></cell><cell></cell><cell>At 2023/03/08 01:55, Requested neighbor-</cell><cell></cell></row><row><cell>Episodic</cell><cell>At 2023/03/08 01:55, User asked ... Assistant provided ... (✓ Concise and Complete)</cell><cell>hood eval At 2023/03/08 01:55, Inquired about re-search ✗ Multiple events with same timestamps,</cell><cell>At 2023/03/08 (Wed) 01:55 user looked to get some advice on condo living... assis-tant responded with ... (✓ Concise and Complete)</cell></row><row><cell></cell><cell></cell><cell>can be consolidated; Only records user be-</cell><cell></cell></row><row><cell></cell><cell></cell><cell>havior, missing all assistant behaviors.</cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 6 :</head><label>6</label><figDesc>Dataset statistics across 8 data sources. Each dataset is evaluated with specific metrics suitable for its task type. Column abbreviations: Cat. = Category (AR: Accurate Retrieval, TTL: Test-Time-Learning, LRU: Long Range Understanding); Ins. = Number of Instances; Tok/Ch = Average Tokens per Chunk; Ch/Ins = Average Chunks per Instance; Q/Ins = Average Questions per Instance.</figDesc><table><row><cell>Dataset</cell><cell cols="2">Cat. Metric</cell><cell></cell><cell cols="2">Training Set</cell><cell></cell><cell></cell><cell cols="2">Validation Set</cell></row><row><cell></cell><cell></cell><cell></cell><cell>Ins.</cell><cell cols="7">Tok/Ch Ch/Ins Q/Ins Ins. Tok/Ch Ch/Ins Q/Ins</cell></row><row><cell>SQuAD</cell><cell>AR</cell><cell cols="2">SubEM 264</cell><cell>1,078</cell><cell>10.0</cell><cell>95.5</cell><cell>30</cell><cell>1,057</cell><cell>10.0</cell><cell>96.8</cell></row><row><cell>HotpotQA</cell><cell>AR</cell><cell cols="2">SubEM 1,966</cell><cell>1,051</cell><cell>9.3</cell><cell cols="2">17.0 219</cell><cell>1,052</cell><cell>9.2</cell><cell>17.0</cell></row><row><cell>PerLTQA</cell><cell>AR</cell><cell cols="2">SubEM 27</cell><cell>517</cell><cell cols="2">23.3 100.0</cell><cell>4</cell><cell>568</cell><cell cols="2">23.0 100.0</cell></row><row><cell cols="2">LME-Train AR</cell><cell>LLM-J</cell><cell>45</cell><cell>1,522</cell><cell>15.6</cell><cell>4.0</cell><cell>5</cell><cell>1,576</cell><cell>13.4</cell><cell>4.0</cell></row><row><cell>NLU</cell><cell cols="2">TTL EM</cell><cell>180</cell><cell>610</cell><cell cols="2">10.0 100.0</cell><cell>20</cell><cell>606</cell><cell cols="2">10.0 100.0</cell></row><row><cell>TREC-C</cell><cell cols="2">TTL EM</cell><cell>180</cell><cell>390</cell><cell cols="2">10.0 100.0</cell><cell>20</cell><cell>390</cell><cell cols="2">10.0 100.0</cell></row><row><cell>PubMed</cell><cell cols="2">TTL EM</cell><cell>90</cell><cell>1,676</cell><cell cols="2">10.0 100.0</cell><cell>10</cell><cell>1,673</cell><cell cols="2">10.0 100.0</cell></row><row><cell>BookSum</cell><cell cols="3">LRU KW Hit 1,387</cell><cell>1,916</cell><cell>8.0</cell><cell cols="2">1.0 155</cell><cell>1,914</cell><cell>8.1</cell><cell>1.0</cell></row><row><cell>Total</cell><cell></cell><cell></cell><cell>4,139</cell><cell>-</cell><cell>-</cell><cell cols="2">-463</cell><cell>-</cell><cell>-</cell><cell>-</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 7 :</head><label>7</label><figDesc>Dataset statistics across 8 data sources. Each dataset is evaluated with specific metrics suitable for its task type. Column abbreviations: Cat. = Category (AR: Accurate Retrieval, TTL: Test-Time-Learning, LRU: Long Range Understanding); Ins. = Number of Instances; Tok/Ch = Average Number of Tokens per Chunk; Ch/Ins = Average Number of Chunks per Instance; Q/Ins = Average Questions per Instance.</figDesc><table><row><cell>Dataset</cell><cell cols="2">Cat. Metric</cell><cell></cell><cell cols="2">Training Set</cell><cell></cell><cell></cell><cell cols="2">Validation Set</cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell cols="8">Ins. Ch/Ins Tok/Ch Q/Ins Ins. Ch/Ins Tok/Ch Q/Ins</cell></row><row><cell>SQuAD</cell><cell>AR</cell><cell cols="2">SubEM 100</cell><cell>9.9</cell><cell>1,084.1</cell><cell>94.8</cell><cell>30</cell><cell>10.0</cell><cell>1,057.0</cell><cell>96.8</cell></row><row><cell>HotpotQA</cell><cell>AR</cell><cell cols="2">SubEM 100</cell><cell>9.7</cell><cell>1,005.4</cell><cell cols="2">16.7 219</cell><cell>9.2</cell><cell>1,051.6</cell><cell>17.0</cell></row><row><cell>PerLTQA</cell><cell>AR</cell><cell cols="2">SubEM 27</cell><cell>23.3</cell><cell cols="2">517.1 100.0</cell><cell>4</cell><cell>23.0</cell><cell cols="2">567.8 100.0</cell></row><row><cell>LME-Train</cell><cell>AR</cell><cell>LLM-J</cell><cell>50</cell><cell>15.4</cell><cell>1527.7</cell><cell>4.0</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>NLU</cell><cell cols="2">TTL EM</cell><cell>49</cell><cell>10.0</cell><cell cols="2">610.9 100.0</cell><cell>20</cell><cell>10.0</cell><cell cols="2">606.2 100.0</cell></row><row><cell cols="3">TREC-Coarse TTL EM</cell><cell>51</cell><cell>10.0</cell><cell cols="2">390.1 100.0</cell><cell>20</cell><cell>10.0</cell><cell cols="2">390.2 100.0</cell></row><row><cell cols="3">PubMed-RCT TTL EM</cell><cell>90</cell><cell>10.0</cell><cell cols="2">1,676.1 100.0</cell><cell>10</cell><cell>10.0</cell><cell cols="2">1,673.3 100.0</cell></row><row><cell>BookSum</cell><cell cols="3">LRU KW Hit 100</cell><cell>7.8</cell><cell>1,909.7</cell><cell cols="2">1.0 155</cell><cell>8.1</cell><cell>1,914.3</cell><cell>1.0</cell></row><row><cell>Total</cell><cell></cell><cell></cell><cell>562</cell><cell>-</cell><cell>-</cell><cell cols="2">-463</cell><cell>-</cell><cell>-</cell><cell>-</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>https://github.com/memodb-io/memobase</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>We also tried Qwen3-8B but the performances are not as good, see details in Appendix C.1.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>(https://huggingface.co/datasets/xiaowu0162/longmemeval/tree/main)</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_3"><p>https://huggingface.co/datasets/ubaada/booksum-complete-cleaned</p></note>
+		</body>
+		<back>
+
+			
+			<div type="acknowledgement">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>The prompt used to extract keywords in the summaries of BookSum and InfBench-Sum Analyze the following book summary and extract the most important keywords. Focus on:</p></div>
+			</div>
+
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Preprint</head><p>Prompts Used for Memory Construction on Various Tasks Document Question Answering (SQuAD or HotpotQA): Dialogue between User and Assistant on 2024-01-01 00:00: ⟨User⟩: I have some interesting updates for you: The peninsular borough's maritime heritage ... one brother's gambling debts. ⟨Assistant⟩: Understood. I'll keep these facts for future reference.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>PerLTQA:</head><p>The following is the event happened about the user Xiong Fei on 2017: Summary: Sister is threatened Content: In 2017, a constitutional dispute involving freedom of speech ... behind freedom of speech.</p><p>The following are the dialogues.</p><p>Dialogue happened at 2022-05-12 08:30:00 ⟨Assistant⟩: Hello, how can I help you? ⟨Xiong Fei⟩: ... ⟨Assistant⟩: ... ...</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LME-Train:</head><p>Dialogue at timestamp 2023/05/25 (Thu) 17:08 ⟨User⟩: I'm looking to buy a house and ... ⟨Assistant⟩: Mortgage insurance (MI) can indeed ... Test-Time-Learning (Pubmed-RCT, NLU, Trec-C): Dialogue between User and Assistant on 2024-01-01 00:00 ⟨User⟩: The following are classification examples with their corresponding labels: ⟨Sample: xxx; Label: xxx⟩ ⟨Assistant⟩: Great! I've added this to my knowledge base.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>BookSum:</head><p>Event happened on 2024-01-01 The user is reading a book ⟨User⟩: ⟨chunk⟩. ⟨System⟩: Please remember what the user reads on 2024-01-01, save the details within the book, and retain a summary of the book the user has read so far.</p><p>Figure <ref type="figure">5</ref>: The examples in the training dataset. For SQuAD, HotpotQA, PerLTQA, LME-Train, we show the examples directly; for Test-Time-Learning datasets (Pubmed-RCT, NLU, and Trec-C) and BookSum, we demonstrate the format for clarity.</p><p>(1) TREC-Coerse: A question classification dataset with 6 broad categories, testing the model's ability to learn coarse-grained classification patterns from limited examples. The original dataset <ref type="bibr" target="#b20">(Li &amp; Roth, 2002</ref>) contains 5,452 training questions and 500 test questions and it is a standard benchmark for QA question-type classification.</p><p>(2) TREC-Fine: A fine-grained version with 50 specific question types, evaluating the model's capacity to distinguish between subtle classification boundaries. The original dataset <ref type="bibr" target="#b20">(Li &amp; Roth, 2002)</ref> keeps the same size (5,452 train / 500 test) but refines labels into 50 subtypes under the 6 top-level categories, increasing granularity for few-shot intent learning.</p><p>(3) NLU: A natural language understanding dataset with 68 intent categories, challenging the model to learn complex semantic patterns from conversational examples. The original released corpus has 25,715 utterances across 18 scenarios and 68 intents <ref type="bibr" target="#b24">(Liu et al., 2019)</ref>.</p><p>(4) CLINIC150: A medical intent classification dataset with 150 categories, testing domain-specific learning capabilities in healthcare scenarios. The official full split provides 150 in-scope intents across 10 domains with 100/20/30 train/validation/test examples per intent <ref type="bibr" target="#b18">(Larson et al., 2019)</ref>.</p><p>(5) Banking77: A financial services dataset with 77 intent categories, evaluating the model's ability to learn domain-specific classification patterns in banking contexts. <ref type="bibr" target="#b6">Casanueva et al. (2020)</ref> comprises 13,083 customer-service queries (77 intents) with a 10,003/3,080 train/test split and targets fine-grained single-domain intent detection. Preprint Long Range Understanding (LRU) This category evaluates the model's ability to comprehend and synthesize information across extended contexts. We employ the following dataset:</p><p>InfBench-Sum: A summarization dataset from InfBench <ref type="bibr" target="#b52">(Zhang et al., 2024)</ref>, requiring the model to process long-form content across multiple chunks and generate coherent summaries. This tests the model's capacity to maintain contextual understanding over extended sequences and synthesize information from distributed memory representations. This dataset includes 100 novels, with an average context length of 172k tokens. During evaluation, the model is required to read a long novel and generate a corresponding high-level summary.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B FORMAL DEFINITIONS OF REWARD COMPONENTS</head><p>This section provides the formal mathematical definitions of the four reward components used in our reinforcement learning framework.</p><p>Correctness Reward (r 1 ) Given a final memory state M n after processing all chunks C = {c 1 , . . . , c n }, and a set of questions Q = {q 1 , . . . , q m } with ground truth answers R = {r 1 , . . . , r m }, the correctness reward is defined as:</p><formula xml:id="formula_8">r 1 = 1 m m j=1 I[metric(r j , r j )]</formula><p>where</p><formula xml:id="formula_9">rj = g(q j , ϕ(M n , q j ))</formula><p>is the predicted answer generated by the RAG pipeline, metric(•, •) is the dataset-specific evaluation metric (e.g., exact match, F1 score), and I[•] is the indicator function.</p><p>Tool Call Format Reward (r 2 ) For each time step t ∈ {1, . . . , n} with action a t = (a</p><p>t , . . . , a</p><p>), define the tool call format correctness indicator:</p><formula xml:id="formula_12">s(a (k) t ) = 1 if function call a (k) t</formula><p>executes without error 0 otherwise</p><p>The tool call format reward at time step t is:</p><formula xml:id="formula_13">r 2,t = 1 K t Kt k=1 s(a (k) t )</formula><p>Compression Reward (r 3 ) Given the total length of input chunks l c = n i=1 |c i | and the total memory length l m = |M n | (sum of all memory entries), the compression reward is:</p><formula xml:id="formula_14">r 3 = 1 - l m l c</formula><p>This reward encourages the agent to maintain compact memory representations while preserving essential information. The reward approaches 1 when memory is highly compressed and approaches 0 when memory size equals input size.</p><p>Memory Content Reward (r 4 ) For each time step t ∈ {1, . . . , n} with action a t = (a</p><p>t , . . . , a (Kt) t</p><p>), define the validity indicator using a language model judge:  </p><formula xml:id="formula_16">v(a (k) t ) = 1 if operation a (k) t is</formula><formula xml:id="formula_17">r 4,t = 1 K t Kt k=1 v(a (k) t )</formula><p>The overall reward combines these components as: r = r 1 + r 2 + βr 3 + γr 4 , where r 1 and r 3 are global rewards shared across all time steps, while r 2 and r 4 are computed per time step.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C EXPERIMENTAL DETAILS</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1 JUSTIFICATION OF BACKBONE MODEL SELECTION</head><p>We also evaluated Qwen3-8B but encountered critical instruction-following issues that made it unsuitable for our experiments. Despite explicit function signature specifications requiring the argument memory type to accept only the values 'semantic', 'core', or 'episodic', Qwen3-8B consistently generated malformed function calls such as new memory insert(memory type='semantic memory'), appending an unnecessary ' memory' suffix to the argument values. This systematic failure to adhere to the specified API format occurred reliably across multiple trials. To investigate whether this was a formatting preference rather than a fundamental limitation, we modified our function signatures to accommodate the model's apparent preference, changing the valid arguments to 'semantic memory', 'core memory', and 'episodic memory'. While this adaptation did not impact Qwen3-4B's performance (which handled both formats correctly), Qwen3-8B continued to exhibit lower reward values compared to Qwen3-4B even with this accommodation. This counterintuitive result-where the larger model demonstrated both poorer instruction-following capabilities and lower overall performance than the 4B variant-led us to exclude Qwen3-8B from our final experiments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.2 BASELINE INTRODUCTION AND IMPLEMENTATION DETAILS</head><p>We compare with the following baselines:</p><p>(1) Long-Context: We simply use Qwen3-32B as the long-context model. In our experiments, this model always has the maximum context window as 32k. For the dataset with a total chunk length exceeding 32k, we truncate the combined chunk to keep the last 32k tokens.</p><p>(2) RAG-Top2: We use BM25 as the retrieval method, and use the question as the query, retrieve top two chunks from all the previous chunks, and then use Qwen3-32B as the model to answer the questions. Respond ONLY with a JSON code block in this exact format: "'json { "VALID": true/false, "ISSUES": [list any problems found], "EXPLANATION": "brief explanation of the assessment" } "'</p><p>Figure <ref type="figure">7</ref>: The prompt used to measure the content of the Core Memory during training.</p><p>(3) MemAgent: We adopt the code from <ref type="url" target="https://github.com/BytedTsinghua-SIA/MemAgent">https://github.com/BytedTsinghua-SIA/  MemAgent</ref> and use the 14B version BytedTsinghua-SIA/RL-MemoryAgent-14B to construct the memory.</p><p>(4) MEM1: We use the code from <ref type="url" target="https://github.com/MIT-MI/MEM1">https://github.com/MIT-MI/MEM1</ref> and use the model <ref type="url" target="https://huggingface.co/Mem-Lab/Qwen2.5-7B-RL-RAG-Q2-EM-Release">https://huggingface.co/Mem-Lab/Qwen2.5-7B-RL-RAG-Q2-EM-Release</ref> to construct the memory.</p><p>For both baselines MemAgent and MEM1, we let the model go over all the chunks C with the instruction including the task description, then with the obtained memory, we let the model answer questions. For MemAgent, we use the original model to answer the questions, for MEM1, after obtaining the memory, we use Qwen3-32B as the model to answer the questions based on the question and the obtained memory.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.3 PROMPTS USED IN TRAINING</head><p>Instruction to Memorize the Chunk In our training, we use a universal prompt for the whole dataset, and we show the prompt in Figure <ref type="figure" target="#fig_6">6</ref>. During update, when processing each chunk, we use this prompt to ask the agent to memorize the information in the chunk.</p><p>Prompt to Measure Memory Content When computing the memory content reward r 4 , we use the model Qwen3-32B as the judge. For Core Memory, Episodic Memory and Semantic Memory, we use the prompt in Figure <ref type="figure">7</ref>, 8, 9, respectively.</p><p>Prompt to Answer the Questions When using the final model Qwen3-32B to answer the questions, we use the prompt as shown in Figure <ref type="figure">10</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.4 ADDITIONAL ABLATION STUDY</head><p>In Section 4.4, we show the performance comparison of different β, γ on the validation dataset. We also compare these settings on the test dataset (MemoryAgentBench), shown in Table <ref type="table">9</ref>. The observations are consistent with Section 4.4.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Preprint</head><p>The system prompt used to answer questions You are a reasoning assistant with access to structured memory. Use the memories below to provide accurate, relevant, and comprehensive responses to user queries.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>MEMORY STRUCTURE:</head><p>-Core Memory: Fundamental facts about the user (preferences, roles, goals, etc.) -Semantic Memory: General knowledge, factual or conceptual information -Episodic Memory: Specific personal experiences or events with time and context </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><figDesc>semantically valid per LM judge 0 otherwise The memory content reward at time step t is: Preprint Universal Prompt of Mem-α Remember the following content chunk by completing these steps: 1. **Core Memory Update**: Maintain an understanding of the user, or a summary of what the user is reading, or a set of classification rules summarized from the classification examples (label 1: meaning; label 2: meaning, etc.). Keep updates brief (a few sentences maximum). 2. **Memory Storage**: -**Episodic Memory**: Record user actions, user's friends' actions and assistant actions with timestamps (format: "At timestamp t, user did X") -**Semantic Memory**: Record key facts and information (format: "John is User's 18-year-old friend", "Harry Potter author: J.K. Rowling", "Sample: xxx; Label: xxx") &lt;new chunk&gt; {context} &lt;/new chunk&gt; *Important**: Response limit is {max new tokens} tokens. Be concise and brief in all memory updates.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 6 :</head><label>6</label><figDesc>The universal prompt used in the training of Mem-α.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Preprint</head><figDesc>The prompt used to measure the content of the Core Memory You are an expert memory analyst. Analyze the quality of core memory content. The core memory is invalid if any of the following meets: (1) The literal content "core memory" appears in the memory such as "This is core memory ...", "The core memory has been updated ...". (2) The core memory is apparently a placeholder such as "Here we save the summary" while not stating what the "summary" is, "Here are some rules" and not stating what the "rules" are.Otherwise, the core memory is valid.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>CURRENT</head><figDesc>memories above to inform your responses -If information is available in memory, reference it appropriately -If memory is insufficient to answer a question, acknowledge this clearly -Provide helpful and contextual responses based on the available memory -Be concise but comprehensive in your answers Figure 10: The prompt used to answer questions in Mem-α.</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Arigraph: Learning knowledge graph world models with episodic memory for llm agents</title>
+		<author>
+			<persName><forename type="first">Petr</forename><surname>Anokhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikita</forename><surname>Semenov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Artyom</forename><surname>Sorokin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitry</forename><surname>Evseev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrey</forename><surname>Kravchenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikhail</forename><surname>Burtsev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evgeny</forename><surname>Burnaev</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.04363</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Behrouz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peilin</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vahab</forename><surname>Mirrokni</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Titans</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.00663</idno>
+		<title level="m">Learning to memorize at test time</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">Vincent-Pierre</forename><surname>Berges</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barlas</forename><surname>Oguz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Haziza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gargi</forename><surname>Ghosh</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.09764</idno>
+		<title level="m">Memory layers at scale</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Recurrent memory transformer</title>
+		<author>
+			<persName><forename type="first">Aydar</forename><surname>Bulatov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Kuratov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikhail</forename><forename type="middle">S</forename><surname>Burtsev</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Mikhail</forename><forename type="middle">S</forename><surname>Burtsev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Grigory</forename><forename type="middle">V</forename><surname>Sapunov</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2006.11527" />
+		<imprint>
+			<date type="published" when="2006">2006.11527. 2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">A scenario-driven cognitive approach to next-generation ai memory</title>
+		<author>
+			<persName><forename type="first">Linyue</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuyang</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoding</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huiming</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kang</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2509.13235</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Efficient intent detection with dual sentence encoders</title>
+		<author>
+			<persName><forename type="first">Iñigo</forename><surname>Casanueva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tadas</forename><surname>Temčinas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniela</forename><surname>Gerz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Henderson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ivan</forename><surname>Vulić</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2020.nlp4convai-1.5</idno>
+		<ptr target="https://aclanthology.org/2020.nlp4convai-1.5/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2nd Workshop on Natural Language Processing for Conversational AI</title>
+		<editor>
+			<persName><forename type="first">Tsung-Hsien</forename><surname>Wen</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Asli</forename><surname>Celikyilmaz</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Zhou</forename><surname>Yu</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Alexandros</forename><surname>Papangelis</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Mihail</forename><surname>Eric</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Anuj</forename><surname>Kumar</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Iñigo</forename><surname>Casanueva</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Rushin</forename><surname>Shah</surname></persName>
+		</editor>
+		<meeting>the 2nd Workshop on Natural Language Processing for Conversational AI</meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2020-07">July 2020</date>
+			<biblScope unit="page" from="38" to="45" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Prateek</forename><surname>Chhikara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dev</forename><surname>Khant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saket</forename><surname>Aryan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Taranjeet</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deshraj</forename><surname>Yadav</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.19413</idno>
+		<title level="m">Mem0: Building production-ready ai agents with scalable long-term memory</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Larimar: Large language models with episodic memory control</title>
+		<author>
+			<persName><forename type="first">Payel</forename><surname>Das</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Subhajit</forename><surname>Chaudhury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elliot</forename><surname>Nelson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Melnyk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarathkrishna</forename><surname>Swaminathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sihui</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aurélie</forename><forename type="middle">C</forename><surname>Lozano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Georgios</forename><surname>Kollias</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jirí</forename><surname>Vijil Chenthamarakshan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Navrátil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Soham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pin-Yu</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML. OpenReview.net</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Pubmed 200k rct: a dataset for sequential sentence classification in medical abstracts</title>
+		<author>
+			<persName><forename type="first">Franck</forename><surname>Dernoncourt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji</forename><surname>Young</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lee</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:1710.06071</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Perltqa: A personal long-term memory dataset for memory classification, retrieval, and fusion in question answering</title>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongru</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengyi</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baojun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanjun</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zezhong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kam-Fai</forename><surname>Wong</surname></persName>
+		</author>
+		<ptr target="https://aclanthology.org/2024.sighan-1.18/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 10th SIGHAN Workshop on Chinese Language Processing</title>
+		<meeting>the 10th SIGHAN Workshop on Chinese Language Processing<address><addrLine>Bangkok, Thailand</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024-08">August 2024</date>
+			<biblScope unit="page" from="152" to="164" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">A comprehensive survey of self-evolving ai agents: A new paradigm bridging foundation models and lifelong agentic systems</title>
+		<author>
+			<persName><forename type="first">Jinyuan</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanwen</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingxu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinhao</forename><surname>Yi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guibin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siwei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihao</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2508.07407</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Human-like episodic memory for infinite context llms</title>
+		<author>
+			<persName><forename type="first">Zafeirios</forename><surname>Fountas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><forename type="middle">A</forename><surname>Benfeghoul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adnan</forename><surname>Oomerjee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fenia</forename><surname>Christopoulou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gerasimos</forename><surname>Lampouras</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haitham</forename><surname>Bou-Ammar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.09450</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Si-Qing</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Furu</forename><surname>Wei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.06945</idno>
+		<title level="m">-context autoencoder for context compression in a large language model</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zexue</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leonid</forename><surname>Karlinsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donghyun</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Mcauley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitry</forename><surname>Krotov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rogerio</forename><surname>Feris</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Camelot</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.13449</idno>
+		<title level="m">Towards large language models with training-free consolidated associative memory</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">RULER: What&apos;s the Real Context Size of Your Long-Context Language Models?</title>
+		<author>
+			<persName><forename type="first">Preprint</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">-Ping</forename><surname>Hsieh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simeng</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><surname>Kriman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shantanu</forename><surname>Acharya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dima</forename><surname>Rekesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boris</forename><surname>Ginsburg</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.06654</idno>
+		<ptr target="http://arxiv.org/abs/2404.06654" />
+		<imprint>
+			<date type="published" when="2024-08">August 2024</date>
+		</imprint>
+	</monogr>
+	<note>cs</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Evaluating memory in llm agents via incremental multi-turn interactions</title>
+		<author>
+			<persName><forename type="first">Yuanzhe</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Mcauley</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.05257</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Booksum: A collection of datasets for long-form narrative summarization</title>
+		<author>
+			<persName><forename type="first">Wojciech</forename><surname>Kryściński</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nazneen</forename><surname>Rajani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Divyansh</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dragomir</forename><surname>Radev</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2105.08209</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">An evaluation dataset for intent classification and out-of-scope prediction</title>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Larson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anish</forename><surname>Mahendran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">J</forename><surname>Peper</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Clarke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Parker</forename><surname>Hill</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><forename type="middle">K</forename><surname>Kummerfeld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Leach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><forename type="middle">A</forename><surname>Laurenzano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingjia</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Mars</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/D19-1131</idno>
+		<ptr target="https://aclanthology.org/D19-1131/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing and the 9th International Joint Conference on Natural Language Processing (EMNLP-IJCNLP)</title>
+		<editor>
+			<persName><forename type="first">Kentaro</forename><surname>Inui</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Jing</forename><surname>Jiang</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Vincent</forename><surname>Ng</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Xiaojun</forename><surname>Wan</surname></persName>
+		</editor>
+		<meeting>the 2019 Conference on Empirical Methods in Natural Language Processing and the 9th International Joint Conference on Natural Language Processing (EMNLP-IJCNLP)<address><addrLine>Hong Kong, China</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="1311" to="1316" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jitang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinzheng</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.02509</idno>
+		<title level="m">Memory, consciousness and large language model</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Learning question classifiers</title>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Roth</surname></persName>
+		</author>
+		<ptr target="https://aclanthology.org/C02-1150/" />
+	</analytic>
+	<monogr>
+		<title level="m">COLING 2002: The 19th International Conference on Computational Linguistics</title>
+		<imprint>
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Snapkv: LLM knows what you are looking for before generation</title>
+		<author>
+			<persName><forename type="first">Yuhong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingbing</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bharat</forename><surname>Venkitesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Acyr</forename><surname>Locatelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanchen</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianle</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deming</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2404.14469</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2404.14469" />
+		<imprint>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charlie</forename><surname>Snell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Packer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Wooders</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Stoica</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.13171</idno>
+		<title level="m">Sleep-time compute: Beyond inference scaling at test-time</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Wentao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruohua</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aimin</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiali</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Echo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.16090</idno>
+		<title level="m">A large language model with temporal episodic memory</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Benchmarking natural language understanding services for building conversational agents</title>
+		<author>
+			<persName><forename type="first">Xingkun</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arash</forename><surname>Eshghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pawel</forename><surname>Swietojanski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Verena</forename><surname>Rieser</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1903.05566" />
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Memochat: Tuning llms to use memos for consistent long-range open-domain conversation</title>
+		<author>
+			<persName><forename type="first">Junru</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyu</forename><surname>An</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingbao</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriele</forename><surname>Pergola</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yulan</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Di</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xing</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunsheng</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.08239</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Evaluating very long-term conversational memory of llm agents</title>
+		<author>
+			<persName><forename type="first">Adyasha</forename><surname>Maharana</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong-Ho</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Tulyakov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francesco</forename><surname>Barbieri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuwei</forename><surname>Fang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.17753</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jiayan</forename><surname>Nan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenquan</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Nemori</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2508.03341</idno>
+		<title level="m">Self-organizing agent memory inspired by cognitive science</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Packer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vivian</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Shishir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Patil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Wooders</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Memgpt</surname></persName>
+		</author>
+		<title level="m">Towards llms as operating systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Position: Episodic memory is the missing piece for long-term llm agents</title>
+		<author>
+			<persName><forename type="first">Mathis</forename><surname>Pink</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qinyuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ai</forename><surname>Vy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Javier</forename><surname>Vo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianing</forename><surname>Turek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mariya</forename><surname>Huth</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Toneva</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.06975</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Boosting long context processing with global memory-enhanced retrieval augmentation</title>
+		<author>
+			<persName><forename type="first">Hongjin</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peitian</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kelong</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Defu</forename><surname>Lian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhicheng</forename><surname>Dou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tiejun</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Memorag</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ACM on Web Conference 2025</title>
+		<meeting>the ACM on Web Conference 2025</meeting>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2366" to="2377" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Squad: 100,000+ questions for machine comprehension of text</title>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Rajpurkar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Konstantin</forename><surname>Lopyrev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1606.05250</idno>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">Preston</forename><surname>Rasmussen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pavlo</forename><surname>Paliychuk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Travis</forename><surname>Beauvais</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Ryan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Chalef</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zep</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.13956</idno>
+		<title level="m">A temporal knowledge graph architecture for agent memory</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">From isolated conversations to hierarchical schemas: Dynamic tree memory representation for llms</title>
+		<author>
+			<persName><forename type="first">Alireza</forename><surname>Rezazadeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zichao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Bao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.14052</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.03300</idno>
+		<title level="m">Pushing the limits of mathematical reasoning in open language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Enhancing large language model with self-controlled memory framework</title>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinnian</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuangzhi</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peihao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zejun</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhoujun</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.13343</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.07957</idno>
+		<title level="m">Mirix: Multi-agent memory system for llm-based agents</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Selfupdatable large language models by integrating context into model parameters</title>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinshuang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiusi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean O'</forename><surname>Brien</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junda</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Mcauley</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiusi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoming</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingfeng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyu</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xian</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Yin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.04624</idno>
+		<title level="m">Towards self-updatable large language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">M+: Extending memoryLLM with scalable longterm memory</title>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitry</forename><surname>Krotov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhe</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wangchunshu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Mcauley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Gutfreund</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rogerio</forename><surname>Feris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zexue</forename><surname>He</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=OcqbkROe8J" />
+	</analytic>
+	<monogr>
+		<title level="m">Forty-second International Conference on Machine Learning, 2025a</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Towards lifespan cognitive systems</title>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tongtong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoxin</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wangchunshu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nafis</forename><surname>Sadeq</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiusi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zexue</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gholamreza</forename><surname>Haffari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji</forename><surname>Heng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><forename type="middle">J</forename><surname>Mcauley</surname></persName>
+		</author>
+		<idno>TMLR, 2025/02</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Mcp-bench: Benchmarking tool-using llm agents with complex real-world tasks via mcp servers</title>
+		<author>
+			<persName><forename type="first">Zhenting</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hemani</forename><surname>Patel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shashank</forename><surname>Biju</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cheng-En</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aolin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alireza</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ankit</forename><surname>Rezazadeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Shah</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2508.20453</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jiale</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Ying</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangyi</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingbo</forename><surname>Shang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.08102</idno>
+		<title level="m">Ai-native memory 2.0: Second me</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Benchmarking complex instruction-following with multiple constraints composition</title>
+		<author>
+			<persName><forename type="first">Bosi</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pei</forename><surname>Ke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaotao</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lindong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinfeng</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenchuang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binxin</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wendy</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxing</forename><surname>Xu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="137610" to="137645" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<author>
+			<persName><forename type="first">Di</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongwei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuwei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.10813</idno>
+		<title level="m">Longmemeval: Benchmarking chat assistants on long-term interactive memory</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Towards multi-granularity memory association and selection for long-term conversational agents</title>
+		<author>
+			<persName><forename type="first">Derong</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengyue</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingyi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huifeng</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiming</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Enhong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Xu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.19549</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<title level="m" type="main">A-mem: Agentic memory for llm agents</title>
+		<author>
+			<persName><forename type="first">Wujiang</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Mei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juntao</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zujie</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongfeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.12110</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sikuan</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiufeng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zuchao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ercong</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zifeng</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zonggen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaowen</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hinrich</forename><surname>Schütze</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunpu</forename><surname>Volker Tresp</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ma</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2508.19828</idno>
+		<title level="m">Memory-r1: Enhancing large language model agents to manage and utilize memories via reinforcement learning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhilin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saizheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">W</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruslan</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1809.09600</idno>
+		<title level="m">Hotpotqa: A dataset for diverse, explainable multi-hop question answering</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yiqun</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naitong</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjia</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuying</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aixin</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yequan</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2509.11914</idno>
+		<title level="m">Egomem: Lifelong memory agent for full-duplex omnimodal models</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<title level="m" type="main">Reshaping long-context llm with multi-conv rl-based memory agent</title>
+		<author>
+			<persName><forename type="first">Hongli</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tinghong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiangtao</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiangjie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weinan</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiying</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ya-Qin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Ying</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingjing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingxuan</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.02259</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<analytic>
+		<title level="a" type="main">Large language models are semi-parametric reinforcement learning agents</title>
+		<author>
+			<persName><forename type="first">Danyang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Situo</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongshen</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Yu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="78227" to="78239" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Extending long context evaluation beyond 100k tokens</title>
+		<author>
+			<persName><forename type="first">Xinrong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingfa</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengding</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihang</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junhao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moo</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Thai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="15262" to="15277" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Memengine: A unified and modular library for developing advanced memory of llm-based agents</title>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quanyu</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongyang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenhua</forename><surname>Dong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Companion Proceedings of the ACM on Web Conference 2025</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="821" to="824" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<title level="m" type="main">Learn to memorize: Optimizing llm-based agents with adaptive memory framework</title>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quanyu</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohe</forename><surname>Bo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenhua</forename><surname>Dong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2508.16629</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<analytic>
+		<title level="a" type="main">O: heavy-hitter oracle for efficient generative inference of large language models</title>
+		<author>
+			<persName><forename type="first">Zhenyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianlong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lianmin</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruisi</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuandong</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Ré</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clark</forename><forename type="middle">W</forename><surname>Barrett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhangyang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beidi</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<author>
+			<persName><forename type="first">Wanjun</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lianghong</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiqi</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Memorybank</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.10250</idno>
+		<title level="m">Enhancing large language models with long-term memory</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zijian</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ao</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoxuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sunghwan</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alok</forename><surname>Prakash</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniela</forename><surname>Rus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinhua</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan Kian Hsiang</forename><surname>Low</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><forename type="middle">Pu</forename><surname>Liang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2506.15841</idno>
+		<title level="m">Mem1: Learning to synergize memory and reasoning for efficient long-horizon agents</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<monogr>
+		<title level="m" type="main">Character names (main and supporting characters)</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<monogr>
+		<title level="m" type="main">Key events and plot points 3. Important locations/settings</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<analytic>
+		<title level="a" type="main">proposal, rejection, letter, prejudices, Pemberley, love, Pride and Prejudice themes, marriage, social class, first impressions, misunderstanding, character growth Now analyze this summary: ⟨Summary⟩ Extract keywords/phrases that capture the essential information in this summary, make sure they are complete and cover all aspects of the story. Return ONLY a comma-separated list of keywords, nothing else. Focus on concrete, specific terms rather than generic words</title>
+	</analytic>
+	<monogr>
+		<title level="m">Central themes and concepts 5</title>
+		<meeting><address><addrLine>Hertfordshire, proud, Wickham, Jane, Bingley,</addrLine></address></meeting>
+		<imprint/>
+	</monogr>
+	<note>Significant objects or symbols 6 Elizabeth Bennet meets Mr Key relationships between characters 8. Important actions or decisions Example: Summary Darcy at a ball in Hertfordshire. Initially, she finds him proud and disagreeable. After learning about his past with Wickham and his role in separating Jane and Bingley, her dislike intensifies. However, when Darcy proposes and she rejects him, he writes a letter explaining his actions. Elizabeth realizes her prejudices and eventually falls in love with him after visiting Pemberley Include both single words and short phrases (2-3 words max Prioritize proper nouns, specific events, and unique concepts</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,2976 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">G-Memory: Tracing Hierarchical Memory for Multi-Agent Systems</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-06-16">16 Jun 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Guibin</forename><surname>Zhang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Muxin</forename><surname>Fu</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Guancheng</forename><surname>Wan</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Miao</forename><surname>Yu</surname></persName>
+						</author>
+						<author role="corresp">
+							<persName><forename type="first">Kun</forename><surname>Wang</surname></persName>
+							<email>wang.kun@ntu.edu.sg</email>
+						</author>
+						<author>
+							<persName><forename type="first">Shuicheng</forename><surname>Yan</surname></persName>
+						</author>
+						<author>
+							<persName><surname>Nus</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Tongji</forename><surname>University</surname></persName>
+						</author>
+						<author>
+							<persName><surname>Ucla</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">A</forename><forename type="middle">*</forename><surname>Star</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Equal</forename><surname>Contribution</surname></persName>
+						</author>
+						<title level="a" type="main">G-Memory: Tracing Hierarchical Memory for Multi-Agent Systems</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-06-16">16 Jun 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">5BB9D4C02945ABC5F6AF24A99EF5C7D5</idno>
+					<idno type="arXiv">arXiv:2506.07398v2[cs.MA]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:08+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large language model (LLM)-powered multi-agent systems (MAS) have demonstrated cognitive and execution capabilities that far exceed those of single LLM agents, yet their capacity for self-evolution remains hampered by underdeveloped memory architectures. Upon close inspection, we are alarmed to discover that prevailing MAS memory mechanisms (1) are overly simplistic, completely disregarding the nuanced inter-agent collaboration trajectories, and (2) lack crosstrial and agent-specific customization, in stark contrast to the expressive memory developed for single agents. To bridge this gap, we introduce G-Memory, a hierarchical, agentic memory system for MAS inspired by organizational memory theory [1], which manages the lengthy MAS interaction via a three-tier graph hierarchy: insight, query, and interaction graphs. Upon receiving a new user query, G-Memory performs bi-directional memory traversal to retrieve both high-level, generalizable insights that enable the system to leverage cross-trial knowledge, and fine-grained, condensed interaction trajectories that compactly encode prior collaboration experiences. Upon task execution, the entire hierarchy evolves by assimilating new collaborative trajectories, nurturing the progressive evolution of agent teams. Extensive experiments across five benchmarks, three LLM backbones, and three popular MAS frameworks demonstrate that G-Memory improves success rates in embodied action and accuracy in knowledge QA by up to 20.89% and 10.12%, respectively, without any modifications to the original frameworks. Our codes are available at <ref type="url" target="https://github.com/bingreeky/GMemory">https://github.com/bingreeky/GMemory</ref>.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>As Large Language Models (LLMs) continue to redefine the frontier of artificial intelligence, LLMdriven agents have exhibited unprecedented prowess in perception <ref type="bibr" target="#b1">[2,</ref><ref type="bibr" target="#b2">3,</ref><ref type="bibr" target="#b3">4,</ref><ref type="bibr" target="#b4">5]</ref>, planning <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b6">7,</ref><ref type="bibr" target="#b7">8]</ref>, reasoning <ref type="bibr" target="#b8">[9,</ref><ref type="bibr" target="#b9">10]</ref>, and action <ref type="bibr" target="#b10">[11,</ref><ref type="bibr" target="#b11">12]</ref>, which have catalyzed remarkable progress across diverse downstream domains, including code generation <ref type="bibr" target="#b12">[13,</ref><ref type="bibr" target="#b13">14]</ref>, data analysis <ref type="bibr" target="#b14">[15]</ref>, embodied tasks <ref type="bibr">[16]</ref> and autonomous driving <ref type="bibr" target="#b2">[3,</ref><ref type="bibr" target="#b16">17,</ref><ref type="bibr" target="#b17">18]</ref>. Building upon the impressive competencies of single agents, LLMbased Multi-Agent Systems (MAS) have been demonstrated to push the boundaries of single model capacity <ref type="bibr" target="#b18">[19,</ref><ref type="bibr" target="#b19">20,</ref><ref type="bibr" target="#b20">21]</ref>. Similar to collective intelligence arising from human social collaboration <ref type="bibr" target="#b21">[22,</ref><ref type="bibr" target="#b22">23,</ref><ref type="bibr" target="#b23">24]</ref>, MAS orchestrates multiple agents <ref type="bibr" target="#b24">[25,</ref><ref type="bibr" target="#b25">26,</ref><ref type="bibr" target="#b26">27]</ref>, whether through cooperation <ref type="bibr" target="#b27">[28,</ref><ref type="bibr" target="#b28">29,</ref><ref type="bibr" target="#b29">30,</ref><ref type="bibr" target="#b30">31]</ref> or competition <ref type="bibr" target="#b31">[32,</ref><ref type="bibr" target="#b32">33,</ref><ref type="bibr" target="#b33">34]</ref>, to transcend the cognitive and specialized limitations of solitary agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Self-Evolving Agents.</head><p>What especially characterizes LLM agents is their self-evolving capacity, i.e., the ability to continuously adapt and improve through interactions with the environment, as seen in prior works where such adaptability has led to two-to three-fold quantitative improvements <ref type="bibr" target="#b34">[35]</ref>. The central driving force behind such self-evolving nature is memory mechanism of agents <ref type="bibr" target="#b35">[36,</ref><ref type="bibr" target="#b36">37,</ref><ref type="bibr" target="#b37">38]</ref>, which parallels human abilities to accumulate knowledge, process past experiences, and</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Insight Graph</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Query Graph Interaction Graph</head><p>Verify the state of objects before and after action...</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Insight</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Query</head><p>Check whether there is an apple in the garden Status Execution success! Query Check whether there are more than two oranges on the table of the kitchen? Status Execution fail! Unconvincing! You should .. I will reclaim the order more clearly... I found 2 apples, 1 orange. OK, my task is to check the garden... Insight Check all possible locations before reaching an conclusion on ... The answer now is YES! CoT (5.8e5 tokens) ComplexCoT (6.1e5 tokens) AutoGen (4.3e6 tokens) DyLAN (7.9e6 tokens) Token cost on ALFWorld benchmark Performance (%) Token cost (1e+6) retrieve relevant information. Previous successful memory mechanism designs, including both inside-trial memory (i.e., context retained within solving one single query) and cross-trial memory (i.e., experience accumulated across multiple tasks) <ref type="bibr" target="#b38">[39]</ref>, have empowered agents to excel in diverse applications such as personalized chat <ref type="bibr" target="#b35">[36,</ref><ref type="bibr" target="#b39">40,</ref><ref type="bibr" target="#b40">41]</ref>, recommendation <ref type="bibr" target="#b41">[42]</ref>, embodied action <ref type="bibr" target="#b42">[43,</ref><ref type="bibr">16]</ref>, and social simulation <ref type="bibr" target="#b18">[19,</ref><ref type="bibr" target="#b43">44,</ref><ref type="bibr" target="#b44">45]</ref>, enabling them to evolve into experiential learners that effectively leverage past experiences and world knowledge.</p><p>Self-Evolving MAS. However, such self-evolving capacity remains largely absent in multi-agent systems. Most existing MAS are still constrained by manually defined workflows, such as the Standard Operating Procedures (SOP) in MetaGPT <ref type="bibr" target="#b20">[21]</ref> and ChatDev <ref type="bibr" target="#b45">[46]</ref>, or rely on pre-defined communication topologies in MacNet <ref type="bibr" target="#b46">[47]</ref> and AgentPrune <ref type="bibr" target="#b29">[30]</ref>. More recent automated MASs, such as GPTSwarm <ref type="bibr" target="#b47">[48]</ref>, ADAS <ref type="bibr" target="#b48">[49]</ref>, AFlow <ref type="bibr" target="#b49">[50]</ref>, and MaAS <ref type="bibr" target="#b50">[51]</ref> have made it to automatically optimize inter-agent topologies or prompts, which, nevertheless, ultimately yield giant and cumbersome MAS architectures, lacking the agility to self-adjust with accumulated collaboration experience.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Memory for MAS.</head><p>The absence of the aforementioned self-evolving capacity is, in fact, rooted in the lack of memory mechanisms specifically tailored for MAS. One may challenge this claim from two perspectives: ❶ Do existing MASs lack memory mechanisms altogether? Not entirely. Classical MAS frameworks such as MetaGPT, ChatDev, and Exchange-of-Thought <ref type="bibr" target="#b51">[52]</ref> incorporate memory-related designs. However, these are often limited to inside-trial memory <ref type="bibr" target="#b51">[52]</ref>, while cross-trial memory, if present, remains rudimentary-typically involving the transmission of overly condensed artifacts (e.g., final solutions or execution results) <ref type="bibr" target="#b20">[21,</ref><ref type="bibr" target="#b45">46,</ref><ref type="bibr" target="#b46">47]</ref>, and failing to enable meaningful learning from collaborative experience. ❷ Why not directly transfer existing single-agent memory mechanisms to MAS? Unfortunately, such a transfer is far from straightforward. The inherent nature of MAS, i.e., multi-turn orchestration across multiple agents <ref type="bibr" target="#b25">[26,</ref><ref type="bibr" target="#b26">27]</ref>, leads to substantially longer task-solving trajectories compared to single-agent settings (up to 10× more tokens, as demonstrated by Figure <ref type="figure" target="#fig_0">1</ref> (Left)). This poses a significant challenge to traditional retrieval-based memory designs <ref type="bibr" target="#b35">[36,</ref><ref type="bibr" target="#b36">37,</ref><ref type="bibr">16]</ref>, as naive feeding of the entire long-context trajectory without proper abstraction from a collaborative perspective offers little benefit. Given the aforementioned challenges, a natural question arises:</p><p>How can we design a memory mechanism capable of storing, retrieving, and managing the lengthy interaction history of multi-agent systems, such that agent teams can benefit from concise and instructive experience and insights?</p><p>The Present Work: G-Memory. In response to the above question, we introduce a :</p><p>Graph-based Agentic ::::::: Memory Mechanism for LLM-based Multi-Agent Systems, dubbed G-Memory, which manages the complex and lengthy interaction history of MAS through a three-tier hierarchical graph structure:</p><p>✱ Insight Graph, which abstracts generalizable insights from historical experience; ✱ Query Graph, which encodes meta-information of task queries and their connectivity; ✱ Interaction Graph, which stores fine-grained textual communication logs among agents.</p><p>Figure <ref type="figure" target="#fig_0">1</ref> (Right) visualizes these structures, and their formal definitions are placed in Section 3. When a new query arrives, G-Memory efficiently retrieves relevant query records by leveraging the topology of the query graph, and then traverses upward (i.e., query→insight graph) to extract associated highlevel insights and downward (i.e., query→interaction graph) to identify core interaction subgraphs that are most pertinent to the task at hand, thereby mitigating information overload. Based on the retrieved memory, G-Memory offers actionable guidance to the MAS, e.g., division of labor, task decomposition, and lessons from past failures. Upon the completion of a task, all three levels of the memory hierarchy are updated in an agentic manner, with newly distilled insights, enriched query records, detailed MAS trajectories, and their level of detailed associations. Through this refinement, G-Memory functions as a plug-and-play module that can be seamlessly embedded into mainstream MAS frameworks, empowering evolving inter-agent collaboration and collective intelligence.</p><p>Our contributions are summarized as follows:</p><p>❶ Bottleneck Identification. We conduct a thorough review of existing multi-agent systems and identify a fundamental bottleneck in their self-evolving capabilities, which is largely attributed to the oversimplified memory architectures. ❷ Practical Solution. We propose G-Memory, a hierarchical agentic memory architecture for MAS, which models complex and prolonged inter-agent collaboration through a three-tier structure comprising insight, query, and interaction graphs. ❸ Experimental Evaluation. Extensive experiments across five benchmarks show that G-Memory is (I) high-performing, improving state-of-the-art MAS by up to 20.89% and 10.12% on embodied action and knowledge QA tasks, respectively; and (II) resource-friendly, maintaining comparable or even lower token usage than mainstream memory designs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related Works</head><p>Single-Agent Memory. Memory serves as a primary driving force for agents to accumulate experiences and explore the world through interactions with the environment <ref type="bibr" target="#b52">[53,</ref><ref type="bibr" target="#b53">54,</ref><ref type="bibr" target="#b54">55,</ref><ref type="bibr" target="#b55">56]</ref>. It plays a critical role in both task-solving and social simulation LLM agents, and this work primarily focuses on the former. Early research on agent memory was confined to simple inside-trial memory, mainly addressing limitations posed by the LLM context window in chatbot applications, including MemoryBank <ref type="bibr" target="#b35">[36]</ref>, ChatDB <ref type="bibr" target="#b39">[40]</ref>, MemoChat <ref type="bibr" target="#b40">[41]</ref>, and MemGPT <ref type="bibr" target="#b36">[37]</ref>, which typically adopt retrievalaugmented generation (RAG)-style, similarity-based chunk retrieval. Subsequent developments have progressed toward more cognitively inspired memory architectures, including (1) memory scope extended to cross-trial memory like ExpeL <ref type="bibr" target="#b42">[43]</ref> and Synapse <ref type="bibr" target="#b56">[57]</ref>; (2) application domains broadened to include computer control <ref type="bibr" target="#b56">[57]</ref>, embodied action <ref type="bibr" target="#b57">[58]</ref>, scientific discovery <ref type="bibr" target="#b58">[59]</ref>, coding and reasoning <ref type="bibr" target="#b59">[60]</ref>; and (3) management techniques evolved from coarse-grained textual similarity toward more sophisticated abstraction and summarization of acquired knowledge and experiences <ref type="bibr" target="#b18">[19]</ref>, as seen in A-Mem <ref type="bibr" target="#b60">[61]</ref>, Mem0 <ref type="bibr" target="#b61">[62]</ref> and MemInsight <ref type="bibr" target="#b62">[63]</ref>. More discussions are in Appendix D.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Memory in Multi-agent System.</head><p>However, the memory mechanisms tailored for MAS remain markedly underexplored. Some representative frameworks, such as LLM-Debate <ref type="bibr" target="#b19">[20,</ref><ref type="bibr" target="#b32">33]</ref> and Mixture-of-Agent <ref type="bibr" target="#b63">[64]</ref>, omit memory components altogether. Others merely adopt simplistic insidetrial memory schemes <ref type="bibr" target="#b46">[47,</ref><ref type="bibr" target="#b51">52]</ref>. Even in frameworks that attempt cross-trial memory <ref type="bibr" target="#b45">[46]</ref>, the memory is merely compressed as the final outcome artifacts, overlooking the nuanced agent interactions. Collectively, there is a pressing need for a principled memory architecture that can capture, organize, and retrieve the inherently intricate task-solving processes unique to MAS <ref type="bibr" target="#b38">[39]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LLM-based Multi-Agent Systems.</head><p>Our work focuses on task-solving MAS, which, unlike their single-agent counterparts, often lack the capacity for continual evolution through interaction with the environment <ref type="bibr" target="#b64">[65,</ref><ref type="bibr" target="#b65">66]</ref>. Early frameworks such as AutoGen <ref type="bibr" target="#b12">[13]</ref>, CAMEL <ref type="bibr" target="#b23">[24]</ref>, and AgentVerse <ref type="bibr" target="#b66">[67]</ref> rely entirely on pre-defined workflows. More recent efforts <ref type="bibr" target="#b67">[68,</ref><ref type="bibr" target="#b68">69,</ref><ref type="bibr" target="#b49">50,</ref><ref type="bibr" target="#b48">49,</ref><ref type="bibr" target="#b69">70,</ref><ref type="bibr" target="#b30">31]</ref> introduce a degree of adaptivity by generating dynamic MAS in response to environmental feedback. However, such evolution is often one-shot: for example, AFlow <ref type="bibr" target="#b49">[50]</ref> employs Monte Carlo Tree Search to construct a complex MAS tailored to a specific task domain, which yet lacks the capacity to evolve with increasing task exposure or transfer across domains <ref type="bibr" target="#b50">[51,</ref><ref type="bibr" target="#b70">71]</ref>. From this perspective, constructing MAS with genuine self-evolving capabilities remains an open and challenging research frontier.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Preliminary</head><p>In this section, we establish the notation and formalize key concepts of multi-agent systems and G-Memory's hierarchical memory architecture.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Multi-agent System Formalization.</head><p>Consider a multi-agent framework represented by a directed graph G = (V, E), where |V| = N is the number of agents and E ⊆ V×V defines their communication channels. Each node C i ∈ V corresponds to an individual agent described by the quadruple:</p><formula xml:id="formula_0">C i = (Base i , Role i , Mem i , Plugin i ),<label>(1)</label></formula><p>where Base i denotes the underlying large language model instance, Role i specifies the agent's designated role or persona, Mem i encapsulates its memory state, including past interactions or external knowledge stores, and Plugin i is the set of auxiliary tools (e.g., web-search engine).</p><p>Upon receiving a user query Q, the system evolves through T synchronous communication epochs. At each epoch t, we derive a topological ordering π = [π 1 , . . . , π N ] of the nodes such that if there is an edge from π j to π k , then j &lt; k, which guarantees that every agent processes its inputs only after all its predecessors have acted. For each agent C i in π, its output at iteration t is computed as:</p><formula xml:id="formula_1">r (t) i = C i P (t) sys , Q, {r (t) j : C j ∈ N -(C i )} ,</formula><p>where: r (t)</p><p>i denotes the response generated by C i (which may include reasoning steps, intermediate analyses, or final proposals), P (t) sys comprises global instructions (including each agent's R i ), N -(C i ) is the set of in-neighbors of C i , whose outputs serve as contextual inputs. After all agents have acted, a global aggregation operator A fuses the collection of responses into an interim solution a (t) :</p><formula xml:id="formula_2">a (t) = A(r (t) 1 , . . . , r (t) N ).</formula><p>Common implementations for A include majority voting schemes <ref type="bibr" target="#b47">[48]</ref>, hierarchical summarization via dedicated aggregator agents <ref type="bibr" target="#b12">[13,</ref><ref type="bibr" target="#b29">30]</ref>, or simply adopting the final agent's output as the answer <ref type="bibr" target="#b46">[47]</ref>. These epochs iterate for t = {1, . . . , T } until either a preset limit is reached or an early-stopping criterion is met <ref type="bibr" target="#b71">[72]</ref>, producing the final response a (T ) to the query Q.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Memory Architecture.</head><p>Our proposed G-Memory orchestrates and manages the memory of multiagent systems via the following three hierarchical graph structures:</p><formula xml:id="formula_3">[✱] Interaction Graph (Utterance Graph). For query Q, let G (Q) inter = (U (Q) , E (Q)</formula><p>u ) denote its interaction trajectory, where (i) nodes U (Q) = {u i } represent atomic utterances, with each u i ≜ (A i , m i ) containing A i ∈ V (speaking agent), and</p><formula xml:id="formula_4">m i (textual content), (ii) Edges E (Q) u ⊆ U (Q) × U (Q) follow temporal relationships: (u j , u k ) ∈ E (Q) u</formula><p>⇐⇒ u j is transmitted to and inspires u k .</p><p>[✱] Query Graph. The query graph, storing previously tackled queries and metadata, is as follows:</p><formula xml:id="formula_5">G query = (Q, E q ) = Q i , Ψ i , G (Qi) inter |Q| i=1 , E q ,<label>(2)</label></formula><p>where</p><formula xml:id="formula_6">Q = {q i } is the node set, node q i ≜ (Q i , Ψ i , G<label>(Qi)</label></formula><p>inter ) is composed of the original query Q i , task status Ψ i ∈ {Failed, Resolved}, and its associated interaction graph G (Qi) inter . The edges E q ⊆ Q × Q encode semantic relationships between queries. The query graph enables retrieval beyond coarse metrics such as embedding similarity, with its meticulous topology.</p><p>[✱] Insight Graph. The highest-level insight graph is featured as follows:</p><formula xml:id="formula_7">G insight = (I, E i ) = ⟨κ k , Ω k ι k ⟩ |I| k=1 , E i ,<label>(3)</label></formula><p>where the node set I = {ι k } represents distilled insights, each node ι k is composed of the insight content κ k and the set of supporting queries Ω k ⊆ Q. The edges E i ⊆ I × I × Q forming hyper-connections where (ι m , ι n , q j ) indicates insight ι m contextualizes ι n through query q j .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">G-Memory</head><p>This section outlines the management workflow of G-Memory, as illustrated in Figure <ref type="figure" target="#fig_1">2</ref>. Specifically, upon the arrival of a new query Q, G-Memory first conducts coarse-grained retrieval to identify pertinent trajectory records (▷ Section 4.1). It then performs bi-directional hierarchical memory traversal: upward to retrieve collective cognitive insights, and downward to distill concrete procedural trajectories (▷ Section 4.2). After the memory-augmented MAS completes the query execution, the hierarchical memory architecture is jointly updated based on environmental feedback, thereby achieving the institutionalization of group knowledge (▷ Section 4.3).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Query</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Similaritybased Retrival</head><p>1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Core Path Extraction</head><p>Are Deodato and Alejandro both film directors?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Insight</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Iteration</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Multi-agent System</head><p>🤔 Query/Task</p><p>Topic: Diffculty: Embodied Topic: Diffculty: Embodied You are in the middle of a room. Looking quickly around you, you see a cabinet 6, a cabinet 5, ... Your task is to: put a clean egg in microwave.</p><p>Your task is to find a butterfly egg in the outside. Move it to the green box in the bathroom.</p><p>Are both Lygodium or Maxillaria a genus of orchids?</p><p>Topic: Diffculty:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Web search</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Trajectory Condensation</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Collab. Experience</head><p>This history follows a chainstyle, collaboration strategy...</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Failure Lessons</head><p>Take care when summarizing the final result, DO NOT ...</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Distilled Insights</head><p>Insight 1: Clearly identify key entities and their roles, use specific names and titles Insight 2: Doublecheck the relevance of the search results</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>from from and</head><p>Ensure the search terms are precise and directly related to the specific entity or institution ...</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Memory Augmentation Output Solution</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Environment Feedback</head><p>Execution: Success Token cost: 3,345 Tool calls: 3 ...</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Update Interaction Update Insights</head><p>Since both are confirmed as film directors from their respective countries, the answer is Yes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Interaction Graphs</head><p>Query Graph Interactions CEO agent: assigning tasks... Thinker agent: OK, I will... Executor agent: ...</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Insight Graph</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Memory Augmentation</head><p>Black font: Notations</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Symbols</head><p>Red font: Operations</p><p>: Forward Process : Insight node : Query node : Agent utterance node : Edges btween nodes Topic: Diffculty: Game b1 is on b2., b2 is on b6., b3 is on b7., b5 is on b3. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Coarse-grained Memory Retrieval</head><p>As a plug-in designed for seamless integration into mainstream MAS, G-Memory is triggered when the MAS G encounters a new user query Q. As emphasized in organizational memory theory <ref type="bibr">[1]</ref>, efficient knowledge retrieval typically begins with broadly relevant schemas prior to more fine-grained access. Following this principle, G-Memory first performs a coarse-grained similarity-based retrieval over the query graph G query to efficiently obtain a sketched set of queries Q S :</p><formula xml:id="formula_8">Q S = arg top-k qi∈Q s.t. |Q S |=k v(Q) • v(q i ) |v(Q)| |v(q i )| ,<label>(4)</label></formula><p>where v(•) maps queries into fixed-length embeddings using models such as MiniLM <ref type="bibr" target="#b72">[73]</ref>. While Equation (4) retrieves semantically similar historical queries, the similarity may be only superficial or noisy. Therefore, G-Memory further enlarges the relevant set via hop expansion on the query graph:</p><formula xml:id="formula_9">QS = Q S ∪ Q k ∈ Q | ∃Q j ∈ Q S , Q k ∈ N + (Q j ) ∪ N -(Q j ) ,<label>(5)</label></formula><p>where QS is augmented with the 1-hop neighbors of Q S on the query graph G query . However, it is suboptimal to directly feed these relevant records as input akin to certain single-agent memory systems <ref type="bibr" target="#b40">[41,</ref><ref type="bibr" target="#b36">37]</ref>. On one hand, the excessive context length may overwhelm the LLM; on the other hand, agents in MAS play distinct roles and should be assigned specialized memory tailored to their functions. To address this, the next section introduces a bi-directional processing scheme in G-Memory that operates over both abstract and fine-grained memory levels.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Bi-directional Memory Traversal</head><p>Subsequent to identifying the expanded set of relevant query nodes QS within G query , G-Memory executes a bi-directional memory traversal to furnish multi-granularity memory support. Specifically, G-Memory first performs an upward traversal (G query → G insight ), retrieving insight nodes that may provide high-level guidance for the current task:</p><formula xml:id="formula_10">I S = Π Q→I ( QS ), Π Q→I (S q ) ≜ {ι k ∈ I | Ω k ∩ S q ̸ = ∅} ,<label>(6)</label></formula><p>where Π Q→I is a query-to-insight projector that identifies all the insight nodes whose supporting query sets intersect with the input query set, and the retrieved insights I S encapsulate distilled, generalized knowledge potentially relevant for orienting the MAS G's strategic approach to Q.</p><p>Beyond generalized insights, the fine-grained textual interaction history of the MAS is equally valuable, as it reveals the underlying reasoning patterns that led to successful or failed collaborations <ref type="bibr" target="#b67">[68,</ref><ref type="bibr" target="#b73">74,</ref><ref type="bibr" target="#b74">75]</ref>. To utilize these concisely, in the downward traversal (G query → G interaction ), G-Memory employs an LLM-facilitated graph sparsifier S LLM (•, •) to extract the core subgraph that encapsulates essential inter-agent collaboration:</p><formula xml:id="formula_11">{ ĜQi inter } |M | i=1 = S LLM (G (Qj ) inter , Q) | q j ∈ argtop-M {q ′ k ∈ QS } s.t. |•|=M R LLM (Q, q ′ k ) ,<label>(7)</label></formula><p>where R LLM (Q, q j ) rates the relevancy of historical queries w.r.t. Q, and the sparsifier</p><formula xml:id="formula_12">S LLM (G (Qj ) inter , Q) constructs a sparsified graph Ĝ(Qj) inter = ( Û(Qj) , Ê(Qj) u ) from the original G (Qj )</formula><p>inter by identifying and retaining dialogue elements. Please refer to Appendix C for their implementations.</p><p>Upon completing the bi-directional traversal, we obtain both generalizable insights (I S ) and detailed collaborative trajectories ({ ĜQi inter }</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>|M |</head><p>i=1 ). G-Memory then proceeds to provide specialized memory support for each agent C ∈ V within the MAS G.</p><formula xml:id="formula_13">Mem i ← Φ I S , { ĜQi inter } |M | i=1 ; Role i , Q , ∀C i = (Base i , Role i , Mem i , Plugin i ) ∈ V,<label>(8)</label></formula><p>where the operator Φ(•; •) evaluates the utility and relevance of each insight ι k ∈ I S and sparsified interaction graph Ĝ(Qj) inter concerning the agent's specific role Role i and the task Q (see Appendix C). Based on this evaluation, Φ intializes each agent's internal memory state Mem i with filtered insights, interaction snippets, summaries thereof, equipping it with pertinent historical context before it participates in the subsequent reasoning epochs of the MAS. It is worth noting that G-Memory is invoked at the onset of solving query Q in our implementation. However, practitioners may flexibly configure more fine-grained invocation strategies, such as at the beginning of each MAS dialogue round or selectively for specific agents, based on their needs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Hierarchy Memory Update</head><p>After completing memory augmentation for each agent, the system G is executed as outlined in Section 3, yielding a final solution a (T ) and receiving environmental feedback, including execution status Ψ i ∈ {Failed, Resolved}, token usage, and other performance metrics. Subsequently, G-Memory updates its hierarchical memory architecture to incorporate this new query. At the interaction level, G-Memory traces each agent's utterances to construct the interaction graph G (Q) inter , which is then stored. At the query level, a new query node is instantiated and added to the query graph Q query :</p><formula xml:id="formula_14">q new ← (Q, Ψ, G (Q) inter ), N conn ← Q R ∪ ι k ∈I S Ω k , E new ← {(q n , q new ) | q n ∈ N conn }, G next query ← (Q ∪ {q new }, E q ∪ E new ),<label>(9)</label></formula><p>where edges are established between q new and (ii) the set Q R containing the top-M relevant historical queries identified in Equation <ref type="bibr" target="#b6">(7)</ref>, and (ii) the set of queries ι k ∈Iret Ω k that support the insights I S utilized for solving Q. G next query denotes the updated query graph. Finally, at the insight level, G-Memory integrates the learning from the completed query Q into the insight graph G insight = (I, E i ). First, possible new insights summarizing the experience are generated and structurally linked via a summarization function J (•, •) (see prompt in Appendix C) as follows:</p><formula xml:id="formula_15">ι new = (J (G (Q) inter , Ψ), {q new }), E i, new ← {(ι k , ι new , q new ) | ι k ∈ I S } G ′ insight ← (I ∪ {ι new }, E i ∪ E i, new )<label>(10)</label></formula><p>where edges are added to connect the previously utilized insights which inspires the completion of Q in Equation <ref type="bibr" target="#b5">(6)</ref>. Afterward, the supporting query sets (Ω k ) for the utilized insights (I S ) are updated to include q new , reflecting their relevance to this successful (or failed) application:</p><formula xml:id="formula_16">I next ← (I \ I ret ) ∪ {(κ k , Ω k ∪ {q new }) | ι k = (κ k , Ω k ) ∈ I ret } ∪ {ι new } G next insight ← (I next , E i ∪ E i, new ),<label>(11)</label></formula><p>where the final node set I next incorporates the new insight and the updated versions of the utilized insights, and the resulting graph G next insight thus encapsulates the integrated knowledge. This continuous update cycle across all hierarchical levels enables G-Memory to learn and adaptively refine its collective memory based on ongoing experience. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Experiment</head><p>In this section, we conduct extensive experiments to answer: (RQ1) How does G-Memory perform compared to existing single/multi-agent memory architectures? (RQ2) Does G-Memory incur excessive resource overhead? (RQ3) How sensitive is G-Memory to its key components and parameters?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Experiment Setup Datasets and Benchmarks.</head><p>To thoroughly evaluate the effectiveness of G-Memory, we adopt five widely-adopted benchmarks across three domains: (1) Knowledge reasoning, including Hot-potQA <ref type="bibr" target="#b75">[76]</ref> and FEVER <ref type="bibr" target="#b76">[77]</ref>; (2) Embodied action, including ALFWorld <ref type="bibr" target="#b77">[78]</ref> and SciWorld <ref type="bibr" target="#b78">[79]</ref>;</p><p>(3) Game, namely PDDL <ref type="bibr" target="#b79">[80]</ref>. Details on these benchmarks are in Appendix A.1.</p><p>Baselines. We select four representative single-agent memory baselines, including non-memory, Voyager <ref type="bibr">[16]</ref>, MemoryBank <ref type="bibr" target="#b35">[36]</ref>, and Generative Agents <ref type="bibr" target="#b18">[19]</ref>, as well as three multi-agent memory implementations from MetaGPT <ref type="bibr" target="#b20">[21]</ref>, ChatDev <ref type="bibr" target="#b45">[46]</ref>, and MacNet <ref type="bibr" target="#b46">[47]</ref>, denoted as MetaGPT-M, ChatDev-M, and MacNet-M, respectively. Details are in Appendix A.2. MAS and LLM Backbones. We select three representative multi-agent frameworks to integrate with G-Memory and the baselines, including AutoGen . The number of the most relevant interaction graphs M in Equation ( <ref type="formula" target="#formula_11">7</ref>) is set among {2, 3, 4, 5}, and the number of relevant queries k in Equation ( <ref type="formula" target="#formula_8">4</ref>) is set among {1, 2}. The detailed ablation study on hyper-parameters is placed in Section 5.4.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Main Results (RQ1)</head><p>Tables 1, 2 and 3 comprehensively report the performance of different memory architectures across three LLM backbones and three MAS frameworks. We summarize the key observations as follows: Takeaway ➊: G-Memory consistently improves performance across all task domains and MAS frameworks. As shown in Table <ref type="table" target="#tab_1">2</ref>, when integrated with AutoGen and MacNet (powered by Qwen-2.5-7b), G-Memory surpasses the best-performing single-/multi-agent memory baselines by an average of 6.8% and 5.5%, respectively. With the more capable Qwen-2.5-14b, the improvement is even more pronounced: in Table <ref type="table" target="#tab_2">3</ref>, G-Memory boosts MacNet's performance on ALFWorld from 58.21% to 79.10%, achieving a substantial 20.89% gain.</p><p>Takeaway ➋: Multi-agent systems demand specialized memory designs. A thorough examination of existing baselines reveals a surprising insight: most memory mechanisms fail to consistently benefit MAS settings. In Table <ref type="table" target="#tab_1">2</ref>, baselines such as Voyager and MemoryBank degrade AutoGen's performance on PDDL by as much as 4.17% and 1.34%, respectively. We attribute this to the inability of these methods to provide agent role-specific memory support, which is essential in the PDDL strategic game tasks, where effective division of labor is critical to success. Even MAS-oriented designs, such as ChatDev-M, result in a 2.32% performance drop when applied to MacNet+SciWorld. We attribute this to ChatDev-M's narrow memory scope-storing only the execution results of past queries, which provides limited utility in embodied action environments. These findings highlight the necessity of G-Memory's core characteristics: role-specific memory cues, abstracted high-level insights, and trajectory condensation-all of which are critical for effective memory in MAS.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Cost Analysis (RQ2)</head><p>To evaluate the efficiency of G-Memory in terms of token consumption, we visualize the performance versus token cost trade-off across various settings, as shown in Figures <ref type="figure" target="#fig_3">3</ref> and <ref type="figure">7</ref>. Our findings are: Takeaway ➌: G-Memory achieves high-performing collective memory without excessive token consumption. As depicted in Figure <ref type="figure" target="#fig_3">3</ref>, G-Memory consistently delivers the highest performance improvement (10.32% ↑ over no-memory setting on PDDL+AutoGen) while maintaining a modest increase in token consumption (only 1.4 × 10 6 ). In contrast, MetaGPT-M incurred an additional 2.2 × 10 6 tokens for a mere 4.07% gain. This clearly demonstrates the token-efficiency of G-Memory.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.4">Framework Analysis (RQ3) Sensitivity Analysis.</head><p>Regarding the hop expansion, as shown in Figure <ref type="figure" target="#fig_5">4a</ref>, 1-hop expansion consistently yields the best or near-best performance across tasks, with peak accuracies of 85.82% (ALFWorld), 55.24% (PDDL) in AutoGen. In contrast, 2-hop and 3-hop settings often degrade performance, e.g., PDDL drops to 49.79% (2-hop). This suggests that excessive hop expansion may introduce irrelevant insights during memory upward traversal, impairing task-specific reasoning.</p><p>Similarly, Figure <ref type="figure" target="#fig_5">4b</ref> shows that the optimal k is among {1, 2}. Larger k values (e.g., k=5) can significantly degrade the system performance, e.g., 7.71% ↓ on ALFWorld+AutoGen and 2.5% ↓ on FEVER+DyLAN, indicating that retrieving more queries may introduce task-irrelevant noise. Collectively, we employ 1-hop expansion and k ∈ {1, 2} throughout the experiments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Ablation Study.</head><p>Figure <ref type="figure" target="#fig_5">4c</ref> presents an ablation of G-Memory by isolating the impact of the highlevel insight module (I S in Equation ( <ref type="formula" target="#formula_10">6</ref>)) and fine-grained interactions ({ ĜQi inter }</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>|M |</head><p>i=1 in Equation ( <ref type="formula" target="#formula_11">7</ref>)). As shown, removing either part leads to a consistent performance drop. When only fine-grained interactions are enabled, the average scores drop by 4.47% ↓ for AutoGen and 3.82% ↓ for DyLAN MAS Inter. Insi. PDDL FEVER AutoGen ✔ • 54.46 63.27 • ✔ 50.00 68.77 ✔ ✔ 55.24 71.43 DyLAN ✔ • 48.75 61.39 • ✔ 46.69 64.31 ✔ ✔ 51.12 66.66 (c) Ablation study on two variants of G-Memory. ALFWorld + AutoGen Query put a clean cloth in countertop</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>AutoGen Team</head><p>: Ensure all required items are accessible, clean them, and return them to their designated storage locations or the specified location after use.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Fine-grained Trajectory</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>High-level Insights</head><p>Solver agent Ground agent Action agent For : After cleaning an item, ensure it is placed in the designated storage location immediately to avoid confusion or loss.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>For</head><p>Task: put a clean egg in microwave.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Compressed Traj:</head><p>Go to Fridge &amp; Take Egg Execution Success ... Go to microwave Clean first! HotpotQA + DyLAN Query DyLAN Team Fine-grained Trajectory High-level Insights Task: Compressed Traj: Question: Are both Lygodium or Maxillaria a genus of orchids? verify that the search results are not mistakenly referring to similar entities with similar names or unrelated information. Avoid mistakenly referring Are Ruggero Deodato from Italy, and Mexican Alejandro Springall, both film directors?" Search for Deodato Identify Deodato Identify Warning! Re-search for Deodato Passed ... PDDL + MacNet Query MacNet Team Fine-grained Trajectory High-level Insights Task: Compressed Traj: The goal is to satisfy the following conditions: b2 is on b3., b3 is on b1. Unstack b2 from b3 Check b1 and b3 Unstack b3 from b1 ... b1 is on b2., b2 is on b6., b3 is on b7., b5 is on b3., b6 is on b5., b7 is on b4 edge agent For : Ensure that blocks are clear and in the correct positions before attempting to stack them on another block, because this prevents invalid actions and ensures the blocks are placed correctly. Check b3 and b2 Stack b2 on b3 compared to the full method. Conversely, enabling only insights leads to smaller drops of 3.95% and 3.39%. This indicates that while both components are contributive, interactions offer a slightly greater impact, likely due to their preserving more fine-grained, dialogue-level contextual grounding.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.5">Case Study</head><p>Figure <ref type="figure" target="#fig_6">5</ref> illustrates concrete memory cues provided by G-Memory across diverse tasks. For example, in the ALFWorld+AutoGen setting, given the task query "put a clean cloth in countertop", G-Memory successfully retrieves a highly analogous historical query, "put a clean egg in microwave"-both requiring the object to be in a clean state. Alongside this, G-Memory surfaces a critical trajectory segment where the solver agent attempts to place the egg in the microwave before cleaning, prompting the ground agent to intervene. This collaborative trajectory offers actionable guidance for the current task. Moreover, the high-level insights retrieved by G-Memory prove equally valuable for task execution. In the context of HotpotQA's web search task, G-Memory retrieves an insight warning against "mistakenly referring", which helps prevent agents from incorrectly answering based on similarly named individuals. Overall, G-Memory provides effective multi-level memory support across varied domains, including embodied action, knowledge reasoning, and game environments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion &amp; Limitation</head><p>In this paper, we conduct a thorough examination of existing memory architectures designed for multi-agent systems (MAS) and identify that their overly simplified designs fundamentally hinder the systems' capacity for self-evolution. To bridge this gap, we propose G-Memory, a hierarchical memory framework that organizes the complex and extended interaction trajectories of MAS into a three-tier graph hierarchy: the insight, query, and interaction graphs. G-Memory provides each agent with customized and hierarchical memory cues, ranging from abstract, generalizable insights to fine-grained, task-critical collaborative segments, and dynamically evolves its knowledge base across episodes. Extensive experiments demonstrate that G-Memory can be seamlessly integrated into state-of-the-art MAS frameworks, significantly enhancing their self-evolution capability, e.g., up to 20.89% ↑ improvement on embodied action tasks. Limitations: Although G-Memory has been evaluated across three domains and five benchmarks, further validation on more diverse tasks (e.g., medical QA) would strengthen its soundness, which we leave for future work.</p><p>[81] Wenhui Wang, Furu Wei, Li Dong, Hangbo Bao, Nan Yang, and Ming Zhou. Minilm: Deep self-attention distillation for task-agnostic compression of pre-trained transformers. Advances in Neural Information Processing Systems, 33:5776-5788, 2020.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Impact Statement</head><p>G-Memory introduces a structured, hierarchical memory architecture for multi-agent systems (MAS), enabling large language model (LLM)-based agents to store, recall, and reason over past experiences with enhanced task generalization and cooperation efficiency. The broader impacts of this work include advancing the development of scalable and adaptive collective intelligence, with potential applications in long-term robotic planning, real-world decision-making systems, and collaborative AI assistants. However, if the underlying language model is compromised or adversarially manipulated, the memory mechanisms could amplify incorrect reasoning. We urge responsible deployment of this architecture with appropriate safeguards, including continual validation, adversarial robustness checks, and alignment with human values.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Experimental Details</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 Dataset Descriptions</head><p>In this section, we describe the datasets used in our experiments:</p><p>• ALFWorld <ref type="bibr" target="#b77">[78]</ref> (available at <ref type="url" target="https://alfworld.github.io/">https://alfworld.github.io/</ref>, MIT license) is a textbased embodied environment featuring household tasks, where agents navigate and interact with objects via natural language commands.</p><p>• ScienceWorld <ref type="bibr" target="#b78">[79]</ref> (available at <ref type="url" target="https://github.com/allenai/ScienceWorld">https://github.com/allenai/ScienceWorld</ref>, Apache-2.0 license) is another text-based embodied environment designed for interactive science tasks. Agents must navigate rooms and conduct experiments, testing their ability to perform procedural reasoning and scientific exploration.</p><p>• PDDL is a game dataset from AgentBoard <ref type="bibr" target="#b79">[80]</ref> (available at <ref type="url" target="https://github.com/hkust-nlp/AgentBoard">https://github.com/  hkust-nlp/AgentBoard</ref>, Custom properties), comprising a variety of strategic games where agents use PDDL expressions to complete complex tasks.</p><p>• HotpotQA <ref type="bibr" target="#b75">[76]</ref> (available at <ref type="url" target="https://hotpotqa.github.io/">https://hotpotqa.github.io/</ref>, CC BY-SA 4.0 License) is a multi-hop question answering dataset with strong supervision on supporting facts. It evaluates the agent's ability to retrieve and synthesize information, especially through web search tools, for explainable reasoning.</p><p>• FEVER <ref type="bibr" target="#b76">[77]</ref> (available at <ref type="url" target="https://fever.ai/dataset/fever.html">https://fever.ai/dataset/fever.html</ref>, Creative Commons Attribution-ShareAlike License) is a knowledge-intensive dataset focused on fact verification. Agents must validate claims using web search APIs, making it a benchmark for evidence-based reasoning.</p><p>Evaluation Metrics. We use exact match accuracy for FEVER and HotpotQA. For ScienceWorld and PDDL, we report the progress rate, and for ALFWorld, we use the success rate as the evaluation metric.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Baseline Setup</head><p>In this section, we provide detailed descriptions of each baseline used in our comparison:</p><p>• Voyager: The Voyager memory is derived from the Voyager agent <ref type="bibr">[16]</ref>, where an embodied agent continuously interacts with the Minecraft environment and creates new artifacts. Memory serves as the core driver of the agent's evolution. As Voyager's memory design is tailored for a single-agent setting, we adapt it to the multi-agent scenario by implementing agent-specific history retrieval based on each agent's visible dialogue context. Other singleagent memory designs are adapted in a similar manner.</p><p>• MemoryBank: MemoryBank <ref type="bibr" target="#b35">[36]</ref> mimics anthropomorphic memory behaviors by selectively preserving and forgetting information. It incorporates a memory updating mechanism inspired by the Ebbinghaus Forgetting Curve, allowing the agent to reinforce or discard memory based on temporal decay and the relative importance of stored information.</p><p>• Generative: This memory baseline is based on <ref type="bibr" target="#b18">[19]</ref>, which includes both raw observational memory and high-level reflective memory. The latter captures abstract thoughts generated by the agent through reflection, providing a more structured and conceptualized representation of experience.</p><p>• MetaGPT-M: The memory design originates from MetaGPT <ref type="bibr" target="#b20">[21]</ref>, focusing solely on inside-trial memory-information stored internally during the resolution of a single task by multiple agents.</p><p>• ChatDev-M: This memory design is adapted from ChatDev <ref type="bibr" target="#b45">[46]</ref>, which incorporates both inside-trial and cross-trial memory. The inside-trial memory is passed from the central or initiating agent at the beginning of each round to provide guidance based on prior interactions. The cross-trial memory is relatively simple, storing past solutions to previous queries for future retrieval. However, in our task, it does not effectively manage the information-rich inter-agent collaboration.</p><p>• MacNet-M: This memory design is adopted from MacNet <ref type="bibr" target="#b46">[47]</ref>, where the inside-trial memory consists solely of the final answers generated in the previous round. All non-artifact dialogue contexts, i.e., the interaction trajectories among agents, are entirely discarded.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3 Multi-agent System Setup</head><p>In this section, we detail the setups of our three adopted MAS frameworks, AutoGen, DyLAN and MacNet:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3.1 AutoGen</head><p>AutoGen <ref type="bibr" target="#b12">[13]</ref> is a popular multi-agent orchestration framework, to coordinate interactions among specialized agents for problem-solving tasks. Specifically, we utilize their A3 : Decision Making structure, which is composed of: (1) a Solver Agent, responsible for generating solutions, initialized with the system prompt "You are a smart agent designed to solve problems."; (2) a Ground Truth Agent, which critically evaluates the solver's output and identifies potential errors based on a reference standard; and (3) an Executor Agent, tasked with translating validated solutions into executable commands. This modular design enables transparent, verifiable, and actionable multiagent collaboration.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3.2 DyLAN</head><p>DyLAN <ref type="bibr" target="#b71">[72]</ref> is a debate-style framework similar to LLM-Debate, but incorporates a more efficient agent-wise early stopping mechanism during multi-turn interactions. DyLAN utilizes an agent selection algorithm based on an unsupervised metric, namely the Agent Importance Score, which identifies the most contributive agents through a preliminary trial tailored to the specific task. In our implementation of DyLAN, three agents engage in the debate, while an additional ranker agent evaluates their relative importance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.4 MacNet</head><p>MacNet <ref type="bibr" target="#b46">[47]</ref> is a representative work that explores decentralized and scalable multi-agent systems.</p><p>Its key feature lies in the absence of a central agent; instead, it introduces edge agents, which are invoked between agent interactions to provide actionable instructions to the next agent based on the previous agent's outputs. In our implementation, we adopt the random graph topology from MacNet, shown to be robust across diverse scenarios, and employ five agents in addition to the edge agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Additional Experiment Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1 RQ1 Results</head><p>Tables 2 and 3 present additional experimental results using Qwen-2.5-7b and Qwen-2.5-14b as the LLM backbones. Appendix B.1 illustrates the success rate curves on ALFWorld as the number of trials increases, comparing different MAS frameworks combined with various memory architectures. As shown in Figures <ref type="figure">6b</ref> and <ref type="figure">6c</ref>, G-Memory consistently enables MAS frameworks to achieve success with fewer trials and leads to higher final performance ceilings. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2 RQ2 Results</head><p>Figure <ref type="figure">7</ref> provides additional comparisons of token cost across various benchmarks and MAS frameworks when combined with different memory architectures. Overall, G-Memory incurs only a marginal or no increase in token cost compared to classical baselines such as Generative and MetaGPT-M, while consistently delivering the most significant performance improvements.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3 Case Study</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3.1 Case Study on Insight Graphs</head><p>Figure <ref type="figure">8</ref> visualizes the high-level insights summarized by G-Memory on the ALFWorld benchmark across different MAS frameworks and LLM backbones. Given that ALFWorld naturally consists of diverse task categories, we further examine how insight nodes corresponding to different task types are interconnected. Overall, we observe dense intra-category connections among insights derived from similar tasks, while also noting the emergence of meaningful inter-category links, reflecting transferable patterns across task domains.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3.2 Case Study on Query Graphs</head><p>Figures 9 to 11 visualize the query graphs constructed by G-Memory on the ALFWorld, PDDL, and SciWorld benchmarks. Recall that a directed edge between two query nodes indicates that the historical trajectory of one query offers useful guidance for the execution of another. We observe emergent clustering patterns, where groups of semantically similar queries form densely connected subgraphs, while sparser inter-cluster edges capture cross-task inspirations. These patterns demonstrate G-Memory's ability to effectively organize and relate collaborative experiences through structured memory reasoning.   </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Figure 8: Visualizations of insight graphs across different LLM backbones, MAS, and benchmarks.</head><p>Your goal is to analyze these successful examples and extract clear , actionable insights that capture what contributed to their success . These insights will serve as guidance for future agents working on similar tasks .</p><p>## Requirements :</p><p>-All insights must be grounded in patterns or strategies observed across the successful trajectories . -Do not speculate or introduce steps not reflected in the provided examples .</p><p>-Focus on common behaviors , strategies , or decisions that consistently led to positive outcomes . -Keep each insight concise , specific , and impactful .</p><p>0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42  <ref type="formula">19  20   21  22  23   24   25   26  27   28  29 30 31  32   33  34   35   36  37</ref></p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: (Left) We report the token cost of several single-agent and MAS baselines on ALFWorld benchmark; (Right) The overview of G-Memory's three-tier hierarchical memory architecture, encompassing the insight graph, query graph and interaction (utterance) graph.</figDesc><graphic coords="2,117.75,74.34,117.59,94.07" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: The overview of our proposed G-Memory.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><figDesc><ref type="bibr" target="#b12">[13]</ref>, DyLAN<ref type="bibr" target="#b71">[72]</ref>, and MacNet<ref type="bibr" target="#b46">[47]</ref>. More details on the MAS setups are placed in Appendix A.3. For instantiating these MAS frameworks, we adopt two open-source LLMs, Qwen-2.5-7b and Qwen-2.5-14b, as well as one proprietary LLM, gpt-4o-mini. The deployment of Qwen series is via local instantiation using Ollama 1 , and GPT models are accessed via OpenAI APIs. Parameter Configurations. We implement the embedding function v(•) in Equation (4) with ALL-MINILM-L6-V2[81]</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Cost analysis of G-Memory. We showcase the performance versus the overall system token cost when combined with different memory architectures.</figDesc><graphic coords="8,378.71,80.57,125.30,143.51" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>(a) Sensitivity analysis on #hop. (b) Sensitivity analysis on parameter k.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: (a) Sensitivity analysis of the hop expansion in Equation (5); (b) Sensitivity analysis of the number of selected queries k in Equation (4); (c) We study two variants of G-Memory: merely providing high-level insights (i.e., the insights I S in Equation (6)) or fine-grained interactions (i.e., the core trajectories in Equation (7)). All the experiments here are done with Qwen-2.5-14b.</figDesc><graphic coords="9,108.00,77.93,118.80,89.10" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Case study of G-Memory.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><figDesc>(a) The performance trajectory of AutoGen on ALFWorld. (b) The performance trajectory of DyLAN on ALFWorld. (c) The performance trajectory of MacNet on ALFWorld.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><figDesc>Insight graph on gpt-4o-mini +Dy-LAN+ALFWorld.Insight graph on Qwen-14b +Dy-LAN+ALFWorld.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 9 :</head><label>9</label><figDesc>Figure 9: Query graph optimized from ALFWorld dataset.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Performance comparison with single/multi-agent memory architectures on five benchmarks. The underlying LLM backbone is GPT-4o-mini. We highlight the best and second best results.</figDesc><table><row><cell>MAS</cell><cell>Memory</cell><cell>ALFWorld</cell><cell>SciWorld</cell><cell>PDDL</cell><cell>HotpotQA</cell><cell>FEVER</cell><cell>Avg.</cell></row><row><cell></cell><cell>No-memory</cell><cell>77.61 ↑0.00</cell><cell>54.49 ↑0.00</cell><cell>23.53 ↑0.00</cell><cell>28.57 ↑0.00</cell><cell>57.13 ↑0.00</cell><cell>48.27 ↑0.00</cell></row><row><cell></cell><cell>Voyager</cell><cell>85.07 ↑7.46</cell><cell>62.36 ↑7.87</cell><cell>24.56 ↑1.03</cell><cell>32.32 ↑3.75</cell><cell>63.27 ↑6.14</cell><cell>53.52 ↑5.25</cell></row><row><cell>AutoGen</cell><cell>MemoryBank</cell><cell>74.96 ↓2.65</cell><cell>53.11 ↓1.38</cell><cell>20.41 ↓3.12</cell><cell>33.67 ↑5.10</cell><cell>61.22 ↑4.09</cell><cell>48.67 ↑0.40</cell></row><row><cell>COLM 2024</cell><cell>Generative</cell><cell>86.36 ↑8.75</cell><cell>61.19 ↑6.70</cell><cell>25.53 ↑2.00</cell><cell>31.63 ↑3.06</cell><cell>60.20 ↑3.07</cell><cell>52.98 ↑4.71</cell></row><row><cell></cell><cell>MetaGPT</cell><cell>81.34 ↑3.73</cell><cell>61.91 ↑7.42</cell><cell>21.63 ↓1.90</cell><cell>32.67 ↑4.10</cell><cell>62.67 ↑5.54</cell><cell>52.04 ↑3.77</cell></row><row><cell></cell><cell>ChatDev</cell><cell>79.85 ↑2.24</cell><cell>50.96 ↓3.53</cell><cell>16.65 ↓6.88</cell><cell>24.49 ↓4.08</cell><cell>59.18 ↑2.05</cell><cell>46.23 ↓2.04</cell></row><row><cell></cell><cell>MacNet</cell><cell>76.55 ↓1.06</cell><cell>55.44 ↑0.95</cell><cell>22.94 ↓0.59</cell><cell>28.36 ↓0.21</cell><cell>60.87 ↑3.74</cell><cell>48.83 ↑0.56</cell></row><row><cell></cell><cell>G-Memory (Ours)</cell><cell>88.81 ↑11.20</cell><cell>67.40 ↑12.91</cell><cell>27.77 ↑4.24</cell><cell>35.67 ↑7.10</cell><cell>66.24 ↑9.11</cell><cell>57.18 ↑8.91</cell></row><row><cell></cell><cell>No-memory</cell><cell>56.72 ↑0.00</cell><cell>55.38 ↑0.00</cell><cell>11.62 ↑0.00</cell><cell>31.69 ↑0.00</cell><cell>60.20 ↑0.00</cell><cell>43.12 ↑0.00</cell></row><row><cell></cell><cell>Voyager</cell><cell>66.42 ↑9.70</cell><cell>62.83 ↑7.45</cell><cell>15.10 ↑3.48</cell><cell>32.64 ↑0.95</cell><cell>62.24 ↑2.04</cell><cell>47.85 ↑4.73</cell></row><row><cell>DyLAN COLM 2024</cell><cell>MemoryBank Generative</cell><cell>55.22 ↓1.50 67.91 ↑11.19</cell><cell>54.74 ↓0.64 64.16 ↑8.78</cell><cell>8.08 ↓3.54 13.87 ↑2.25</cell><cell>29.59 ↓2.10 29.29 ↓2.40</cell><cell>59.13 ↓1.07 62.30 ↑2.10</cell><cell>41.35 ↓1.77 47.51 ↑4.39</cell></row><row><cell></cell><cell>MetaGPT-M</cell><cell>69.40 ↑12.68</cell><cell>62.37 ↑6.99</cell><cell>14.45 ↑2.83</cell><cell>32.34 ↑0.65</cell><cell>60.20 ↑0.00</cell><cell>47.75 ↑4.63</cell></row><row><cell></cell><cell>ChatDev-M</cell><cell>46.27 ↓10.45</cell><cell>53.35 ↓2.03</cell><cell>10.75 ↓0.87</cell><cell>22.45 ↓9.24</cell><cell>58.33 ↓1.87</cell><cell>38.23 ↓4.89</cell></row><row><cell></cell><cell>MacNet-M</cell><cell>53.44 ↓3.28</cell><cell>54.32 ↓1.06</cell><cell>12.11 ↑0.49</cell><cell>30.12 ↓1.57</cell><cell>61.10 ↑0.90</cell><cell>42.22 ↓0.90</cell></row><row><cell></cell><cell>G-Memory (Ours)</cell><cell>70.90 ↑14.18</cell><cell>65.64 ↑10.26</cell><cell>18.95 ↑7.33</cell><cell>34.69 ↑3.00</cell><cell>64.22 ↑4.02</cell><cell>50.88 ↑7.76</cell></row><row><cell></cell><cell>No-memory</cell><cell>51.49 ↑0.00</cell><cell>57.53 ↑0.00</cell><cell>12.18 ↑0.00</cell><cell>28.57 ↑0.00</cell><cell>60.29 ↑0.00</cell><cell>42.01 ↑0.00</cell></row><row><cell></cell><cell>Voyager</cell><cell>61.94 ↑10.45</cell><cell>64.53 ↑7.00</cell><cell>14.06 ↑1.88</cell><cell>32.65 ↑4.08</cell><cell>62.54 ↑2.25</cell><cell>47.14 ↑5.13</cell></row><row><cell>MacNet</cell><cell>MemoryBank</cell><cell>50.00 ↓1.49</cell><cell>60.15 ↑2.62</cell><cell>8.64 ↓3.54</cell><cell>33.67 ↑5.10</cell><cell>61.22 ↑0.93</cell><cell>42.74 ↑0.73</cell></row><row><cell>ICLR 2025</cell><cell>Generative</cell><cell>62.69 ↑11.20</cell><cell>65.49 ↑7.96</cell><cell>7.92 ↓4.26</cell><cell>29.59 ↑1.02</cell><cell>63.27 ↑2.98</cell><cell>45.79 ↑3.78</cell></row><row><cell></cell><cell>MetaGPT-M</cell><cell>63.70 ↑12.21</cell><cell>65.27 ↑7.74</cell><cell>16.03 ↑3.85</cell><cell>31.00 ↑2.43</cell><cell>59.33 ↓0.96</cell><cell>47.07 ↑5.06</cell></row><row><cell></cell><cell>ChatDev-M</cell><cell>49.25 ↓2.24</cell><cell>56.58 ↓0.95</cell><cell>13.51 ↑1.33</cell><cell>29.00 ↑0.43</cell><cell>59.18 ↓1.11</cell><cell>41.50 ↓0.51</cell></row><row><cell></cell><cell>MacNet-M</cell><cell>53.44 ↑1.95</cell><cell>56.14 ↓1.39</cell><cell>13.59 ↑1.41</cell><cell>27.89 ↓0.68</cell><cell>59.20 ↓1.09</cell><cell>42.05 ↑0.04</cell></row><row><cell></cell><cell>G-Memory (Ours)</cell><cell>67.16 ↑15.67</cell><cell>68.11 ↑10.58</cell><cell>24.33 ↑12.15</cell><cell>35.69 ↑7.12</cell><cell>64.44 ↑4.15</cell><cell>51.95 ↑9.94</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Performance comparison with single/multi-agent memory architectures on five benchmarks. The underlying LLM backbone is Qwen-2.5-7b. We highlight the best and second best results.</figDesc><table><row><cell>MAS</cell><cell>Memory</cell><cell>ALFWorld</cell><cell>SciWorld</cell><cell>PDDL</cell><cell>HotpotQA</cell><cell>FEVER</cell><cell>Avg.</cell></row><row><cell></cell><cell>No-memory</cell><cell>37.31 ↑0.00</cell><cell>23.49 ↑0.00</cell><cell>10.86 ↑0.00</cell><cell>20.26 ↑0.00</cell><cell>48.17 ↑0.00</cell><cell>28.02 ↑0.00</cell></row><row><cell>Vanilla LLM</cell><cell>Voyager MemoryBank</cell><cell>38.19 ↑0.88 40.30 ↑2.99</cell><cell>24.11 ↑0.62 21.64 ↓1.85</cell><cell>12.14 ↑1.28 14.36 ↑3.50</cell><cell>19.12 ↓1.14 18.79 ↓1.47</cell><cell>49.68 ↑1.51 47.66 ↓0.51</cell><cell>28.65 ↑0.63 28.55 ↑0.53</cell></row><row><cell></cell><cell>Generative</cell><cell>39.16 ↑1.85</cell><cell>26.10 ↑2.61</cell><cell>11.37 ↑0.51</cell><cell>23.48 ↑3.22</cell><cell>52.50 ↑4.33</cell><cell>30.52 ↑2.50</cell></row><row><cell></cell><cell>No-memory</cell><cell>52.99 ↑0.00</cell><cell>30.27 ↑0.00</cell><cell>16.17 ↑0.00</cell><cell>33.33 ↑0.00</cell><cell>58.74 ↑0.00</cell><cell>38.30 ↑0.00</cell></row><row><cell></cell><cell>Voyager</cell><cell>55.22 ↑2.23</cell><cell>26.70 ↓3.57</cell><cell>12.00 ↓4.17</cell><cell>34.29 ↑0.96</cell><cell>52.44 ↓6.30</cell><cell>36.13 ↓2.17</cell></row><row><cell></cell><cell>MemoryBank</cell><cell>53.37 ↑0.38</cell><cell>27.33 ↓2.94</cell><cell>14.83 ↓1.34</cell><cell>32.67 ↓0.66</cell><cell>59.45 ↑0.71</cell><cell>37.53 ↓0.77</cell></row><row><cell>AutoGen</cell><cell>Generative</cell><cell>62.69 ↑9.70</cell><cell>31.45 ↑1.18</cell><cell>17.88 ↑1.71</cell><cell>34.17 ↑0.84</cell><cell>61.25 ↑2.51</cell><cell>41.49 ↑3.19</cell></row><row><cell>COLM 2024</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Performance comparison with single/multi-agent memory architectures on five benchmarks. The underlying LLM backbone is Qwen-2.5-14b. We highlight the best and second best results.</figDesc><table><row><cell>MAS</cell><cell>Memory</cell><cell>ALFWorld</cell><cell>SciWorld</cell><cell>PDDL</cell><cell>HotpotQA</cell><cell>FEVER</cell><cell>Avg.</cell></row><row><cell></cell><cell>No-memory</cell><cell>74.63 ↑0.00</cell><cell>46.84 ↑0.00</cell><cell>44.92 ↑0.00</cell><cell>24.49 ↑0.00</cell><cell>63.27 ↑0.00</cell><cell>50.83 ↑0.00</cell></row><row><cell></cell><cell>Voyager</cell><cell>76.87 ↑2.24</cell><cell>59.00 ↑12.16</cell><cell>50.21 ↑5.29</cell><cell>31.33 ↑6.84</cell><cell>61.22 ↓2.05</cell><cell>55.73 ↑4.90</cell></row><row><cell>AutoGen COLM 2024</cell><cell>MemoryBank Generative</cell><cell>70.15 ↓4.48 74.63 ↑0.00</cell><cell>54.18 ↑7.34 57.37 ↑10.53</cell><cell>39.54 ↓5.38 54.46 ↑9.54</cell><cell>32.65 ↑8.16 33.21 ↑8.72</cell><cell>64.29 ↑1.02 63.27 ↑0.00</cell><cell>52.16 ↑1.33 56.59 ↑5.76</cell></row><row><cell></cell><cell>MetaGPT-M</cell><cell>82.09 ↑7.46</cell><cell>58.86 ↑12.02</cell><cell>48.99 ↑4.07</cell><cell>31.63 ↑7.14</cell><cell>62.27 ↓1.00</cell><cell>56.77 ↑5.94</cell></row><row><cell></cell><cell>ChatDev-M</cell><cell>67.16 ↓7.47</cell><cell>40.69 ↓6.15</cell><cell>43.11 ↓1.81</cell><cell>31.77 ↑7.28</cell><cell>61.28 ↓1.99</cell><cell>48.80 ↓2.03</cell></row><row><cell></cell><cell>MacNet-M</cell><cell>73.65 ↓0.98</cell><cell>42.14 ↓4.70</cell><cell>45.94 ↑1.02</cell><cell>26.72 ↑2.23</cell><cell>64.69 ↑1.42</cell><cell>50.63 ↓0.20</cell></row><row><cell></cell><cell>G-Memory (Ours)</cell><cell>85.82 ↑11.19</cell><cell>60.62 ↑13.78</cell><cell>55.24 ↑10.32</cell><cell>34.61 ↑10.12</cell><cell>71.43 ↑8.16</cell><cell>61.54 ↑10.71</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>http://github.com/ollama/ollama</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Prompt Set</head><p>Query Relevance Filtration t a s k _ r e l e v e n c y _ s y s t e m _ p r o m p t = """ You are an agent designed to score the relevance between two pieces of text .""" t a s k _ r e l e v e n c y _ u s e r _ p r o m p t = """ You will be given a successful case where you successfully complete the task . Then you will be given an ongoing task . Do not summarize these two cases , but rather evaluate how relevant and helpful the successful case is for the ongoing task , on a scale of 1 -10. Success Case : { trajectory } Ongoing task : { qu ery_sc enario } Score : """</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Graph Sparsifier</head><p>e x t r a c t _ t r u e _ t r a j _ s y s t e m _ p r o m p t = """ You are an agent skilled at extracting key points . Given a task and a successful execution trajectory , your job is to identify the critical steps needed to complete the task while filtering out less important steps .""" e x t r a c t _ t r u e _ t r a j _ u s e r _ p r o m p t = """ Note :</p><p>-Strictly follow the original trajectory ; absolutely no steps that are not in the trajectory should be added . -Keep each insight concise and impactful .</p><p>Output Format :</p><p>-Start immediately with a numbered list .</p><p>-No introduction or explanation .</p><p>-Use this exact format : 1. Insight You are an analysis -driven agent focused on learning from success . You will be provided with a set of successful trajectories that completed a similar task . </p><note type="other">44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 Tasks Graph</note></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Discussion with Related Works</head><p>In this section, we further discuss the relationship between G-Memory and several recent agent memory frameworks. For A-Mem <ref type="bibr" target="#b60">[61]</ref>, while both A-Mem and G-Memory aim to enhance the memory capabilities of LLM agents, they differ in two key aspects. First, A-Mem is tailored for single-agent scenarios, whereas G-Memory is designed for processing MAS's lengthy and nuanced interaction trajectory. Second, A-Mem emphasizes atomic memory construction for chatbot-style interactions, while G-Memory focuses on distilling reusable strategies from collaborative task execution, where fine-grained atomicity is neither required nor beneficial. For Mem0 <ref type="bibr" target="#b61">[62]</ref>, although it also employs a graph-based structure, it remains within the chatbot paradigm. Its graph is closer to a knowledge graph, where nodes represent factual entities and edges represent relations, fundamentally differing from G-Memory's agent-centric memory graphs that encode trajectories, decisions, and coordination patterns across agents.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 7 :</head><label>7</label><figDesc>Cost analysis of G-Memory. We showcase the performance versus the overall system token cost when combined with different memory architectures.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><figDesc>r n _ l e s s o n s _ u s e r _ p r o m p t _ c o m p a r e = "r n _ l e s s o n s _ s y s t e m _ p r o m p t _ a l l _ s u c c = """</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>Figure 10 :</head><label>10</label><figDesc>Query graph optimized from SciWorld dataset.Output Format : -Start immediately with a numbered list .-No introduction or explanation .-Use this exact format : 1r n _ l e s s o n s _ u s e r _ p r o m p t _ a l l _ s u c c = """ ## Successful trajectorys { true_trajs } NOTE -Your output must strictly follow the format below : 1j e c t _ i n s i g h t s _ u s e r _ p r o m p t : str = """ ### Trajectory { trajectory } ### Agent ' s Role : { role } ### General Insights : { insights } ### Your Output ( Personalized Insights for This Role ) : """</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">P</forename><surname>James</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gerardo</forename><surname>Walsh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rivera Ungson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Organizational memory. Academy of management review</title>
+		<imprint>
+			<biblScope unit="volume">16</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="57" to="91" />
+			<date type="published" when="1991">1991</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Palm-e: An embodied multimodal language model</title>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Driess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">M</forename><surname>Mehdi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Corey</forename><surname>Sajjadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Lynch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ayzaan</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Wahid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quan</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhe</forename><surname>Vuong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Huang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shihao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiding</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohui</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyi</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nadine</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Kautz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jose</forename><forename type="middle">M</forename><surname>Alvarez</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.01533</idno>
+		<title level="m">Omnidrive: A holistic llm-agent framework for autonomous driving with 3d perception, reasoning and planning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Steve-eye: Equipping llm-based embodied agents with visual perception in open worlds</title>
+		<author>
+			<persName><forename type="first">Sipeng</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiazheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yicheng</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zongqing</forename><surname>Lu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.13255</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Editable scene simulation for autonomous driving via collaborative llm-agents</title>
+		<author>
+			<persName><forename type="first">Yuxi</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changxing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siheng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanfeng</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="15077" to="15087" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuqi</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuofei</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixin</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shumin</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiwei</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinjie</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huajun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ningyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Knowagent</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.03101</idno>
+		<title level="m">Knowledge-augmented planning for llm-based agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Plan-and-act: Improving planning of agents for long-horizon tasks</title>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Lutfi Eren Erdogan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sehoon</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suhong</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hiroki</forename><surname>Moon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gopala</forename><surname>Furuta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kurt</forename><surname>Anumanchipalli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amir</forename><surname>Keutzer</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gholami</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.09572</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiwen</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaolong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingmei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Defu</forename><surname>Lian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasheng</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.02716</idno>
+		<title level="m">Ruiming Tang, and Enhong Chen. Understanding the planning of llm agents: A survey</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Agent q: Advanced reasoning and learning for autonomous ai agents</title>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Putta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edmund</forename><surname>Mills</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sumeet</forename><surname>Motwani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Divyansh</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rafael</forename><surname>Rafailov</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.07199</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tula</forename><surname>Masterman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandi</forename><surname>Besen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mason</forename><surname>Sawtell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Chao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.11584</idno>
+		<title level="m">The landscape of emerging ai agent architectures for reasoning, planning, and tool calling: A survey</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Embodied agent interface: Benchmarking llms for embodied decision making</title>
+		<author>
+			<persName><forename type="first">Manling</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qineng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kangrui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sanjana</forename><surname>Srivastava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cem</forename><surname>Gokmen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tony</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erran</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruohan</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="100428" to="100534" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Embodied multi-modal agent trained by an llm from a parallel textworld</title>
+		<author>
+			<persName><forename type="first">Yijun</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kanxue</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dapeng</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lusong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhui</forename><surname>Shi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF conference on computer vision and pattern recognition</title>
+		<meeting>the IEEE/CVF conference on computer vision and pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="26275" to="26285" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Autogen: Enabling next-gen llm applications via multi-agent conversation framework</title>
+		<author>
+			<persName><forename type="first">Qingyun</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gagan</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jieyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiran</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaokun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erkang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beibin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Wang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023-08-01">August 01. 2023 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Deepseek-coder: When the large language model meets programming -the rise of code intelligence</title>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Daya Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenda</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wentao</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanting</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fuli</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingfei</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenfeng</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Liang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Data interpreter: An llm agent for data science</title>
+		<author>
+			<persName><forename type="first">Sirui</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhang</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bangbang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binhao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ceyao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenxing</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danyang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaqi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.18679</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">Guanzhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqi</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Mandlekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaowei</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuke</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linxi</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anima</forename><surname>Anandkumar</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Voyager</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.16291</idno>
+		<title level="m">An Open-Ended Embodied Agent with Large Language Models. arXiv e-prints</title>
+		<imprint>
+			<date type="published" when="2023-05">May 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Driving with llms: Fusing object-level vector modality for explainable autonomous driving</title>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleg</forename><surname>Sinavski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Hünermann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alice</forename><surname>Karnsund</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">James</forename><surname>Willmott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Birch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Maund</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamie</forename><surname>Shotton</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2024 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="14093" to="14100" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Optimizing autonomous driving for safety: A human-centric approach with llm-enhanced rlhf</title>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Navid</forename><surname>Salami Pargoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jorge</forename><surname>Ortiz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Companion of the 2024 on ACM International Joint Conference on Pervasive and Ubiquitous Computing</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="76" to="80" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Generative agents: Interactive simulacra of human behavior</title>
+		<author>
+			<persName><forename type="first">Sung</forename><surname>Joon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">C</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carrie</forename><forename type="middle">J</forename><surname>O'brien</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meredith</forename><forename type="middle">Ringel</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Morris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><forename type="middle">S</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bernstein</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023-04-01">April 01, 2023 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Improving factuality and reasoning in language models through multiagent debate</title>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonio</forename><surname>Torralba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<idno>CoRR, abs/2305.14325</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Metagpt: Meta programming for multi-agent collaborative framework</title>
+		<author>
+			<persName><forename type="first">Sirui</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiawu</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ceyao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zili</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Ka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shing</forename><surname>Yau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijuan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyu</forename><surname>Ran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingfeng</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenglin</forename><surname>Wu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023-08-01">August 01. 2023 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">Marvin</forename><surname>Minsky</surname></persName>
+		</author>
+		<title level="m">Society of mind. Simon and Schuster</title>
+		<imprint>
+			<date type="published" when="1988">1988</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Examining the society of mind</title>
+		<author>
+			<persName><forename type="first">Push</forename><surname>Singh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Comput. Artif. Intell</title>
+		<imprint>
+			<biblScope unit="volume">22</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="521" to="543" />
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">CAMEL: communicative agents for &quot;mind&quot; exploration of large language model society</title>
+		<author>
+			<persName><forename type="first">Guohao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hasan</forename><surname>Hammoud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hani</forename><surname>Itani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitrii</forename><surname>Khizbullin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bernard</forename><surname>Ghanem</surname></persName>
+		</author>
+		<editor>NeurIPS</editor>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Unleashing cognitive synergy in large language models: A task-solving agent through multi-persona selfcollaboration</title>
+		<author>
+			<persName><forename type="first">Zhenhailong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoguang</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenshan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Furu</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023-07-01">July 01, 2023 2023</date>
+		</imprint>
+	</monogr>
+	<note>work in progress</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Large language model based multi-agents: A survey of progress and challenges</title>
+		<author>
+			<persName><forename type="first">Taicheng</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiuying</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaqi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruidi</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shichao</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Nitesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olaf</forename><surname>Chawla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangliang</forename><surname>Wiest</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhang</surname></persName>
+		</author>
+		<idno>CoRR, abs/2402.01680</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Reasoning capacity in multi-agent systems: Limitations, challenges and human-centered solutions</title>
+		<author>
+			<persName><forename type="first">Pouya</forename><surname>Pezeshkpour</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eser</forename><surname>Kandogan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikita</forename><surname>Bhutani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sajjadur</forename><surname>Rahman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Estevam</forename><surname>Hruschka</surname></persName>
+		</author>
+		<idno>CoRR, abs/2402.01108</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Giorgio</forename><surname>Piatti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhijing</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Max</forename><surname>Kleiman-Weiner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bernhard</forename><surname>Schölkopf</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.16698</idno>
+		<title level="m">Mrinmaya Sachan, and Rada Mihalcea. Cooperate or collapse: Emergence of sustainability behaviors in a society of llm agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Discovering causality for efficient cooperation in multi-agent environments</title>
+		<author>
+			<persName><forename type="first">Rafael</forename><surname>Pina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Varuna</forename><forename type="middle">De</forename><surname>Silva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Corentin</forename><surname>Artaud</surname></persName>
+		</author>
+		<idno>CoRR, abs/2306.11846</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Cut the crap: An economical communication pipeline for llm-based multi-agent systems</title>
+		<author>
+			<persName><forename type="first">Guibin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanwei</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhixun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sukwon</forename><surname>Yun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guancheng</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawei</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><forename type="middle">Xu</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianlong</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.02506</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yanwei</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guibin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guancheng</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawei</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiyan</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Masrouter</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.11133</idno>
+		<title level="m">Learning to route llms for multi-agent systems</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qinlin</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jindong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiqiao</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaijie</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xing</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Competeai</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.17512</idno>
+		<title level="m">Understanding the competition behaviors in large language model-based agents</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Encouraging divergent thinking in large language models through multi-agent debate</title>
+		<author>
+			<persName><forename type="first">Tian</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiwei</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenxiang</forename><surname>Jiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xing</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujiu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaopeng</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuming</forename><surname>Shi</surname></persName>
+		</author>
+		<idno>CoRR, abs/2305.19118</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Battleagentbench: A benchmark for evaluating cooperation and competition capabilities of language models in multi-agent systems</title>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Tang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.15971</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Progressive-hint prompting improves reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Chuanyang</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengying</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Enze</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenguo</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Li</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023-04-01">April 01, 2023 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Tech Report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Memorybank: Enhancing large language models with long-term memory</title>
+		<author>
+			<persName><forename type="first">Wanjun</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lianghong</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiqi</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">He</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanlin</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page" from="19724" to="19731" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Packer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vivian</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shishir_G</forename><surname>Patil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Wooders</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph_E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Memgpt</surname></persName>
+		</author>
+		<title level="m">Towards llms as operating systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Memllm: Finetuning llms to use an explicit read-write memory</title>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Modarressi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abdullatif</forename><surname>Köksal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ayyoob</forename><surname>Imani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohsen</forename><surname>Fayyaz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hinrich</forename><surname>Schütze</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.11672</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohe</forename><surname>Bo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quanyu</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jieming</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenhua</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji-Rong</forename><surname>Wen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.13501</idno>
+		<title level="m">A survey on the memory mechanism of large language model based agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chenxu</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenzhuang</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simian</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junbo</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chatdb</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.03901</idno>
+		<title level="m">Augmenting llms with databases as their symbolic memory</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Memochat: Tuning llms to use memos for consistent long-range open-domain conversation</title>
+		<author>
+			<persName><forename type="first">Junru</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyu</forename><surname>An</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingbao</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriele</forename><surname>Pergola</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yulan</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Di</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xing</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunsheng</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.08239</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yancheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyan</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingxue</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eunah</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xing</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojiang</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanbin</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingzhen</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Recmind</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.14296</idno>
+		<title level="m">Large language model powered agent for recommendation</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Expel: Llm agents are experiential learners</title>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quentin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthieu</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong-Jin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gao</forename><surname>Huang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page" from="19632" to="19642" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lichao</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Metaagents</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.06500</idno>
+		<title level="m">Simulating interactions of human behaviors for llm-based task-oriented coordination via collaborative generative agents</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaochong</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinzhu</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinghua</forename><surname>Piao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huandong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Depeng</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.14984</idno>
+		<title level="m">S3: Social-network simulation system with large language model-empowered agents</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Communicative agents for software development</title>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juyuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023-07-01">July 01, 2023 2023</date>
+		</imprint>
+	</monogr>
+	<note>25 pages, 9 figures, 2 tables</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<title level="m" type="main">Scaling large-language-model-based multi-agent collaboration</title>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufan</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuoyun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.07155</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Gptswarm: Language agents as optimizable graphs</title>
+		<author>
+			<persName><forename type="first">Mingchen</forename><surname>Zhuge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Kirsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francesco</forename><surname>Faccio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitrii</forename><surname>Khizbullin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jürgen</forename><surname>Schmidhuber</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Forty-first International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<title level="m" type="main">Automated design of agentic systems</title>
+		<author>
+			<persName><forename type="first">Shengran</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cong</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Clune</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.08435</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinyu</forename><surname>Xiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoyang</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fengwei</forename><surname>Teng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xionghui</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaqi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchen</forename><surname>Zhuge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sirui</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bingnan</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuyu</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenglin</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.10762</idno>
+	</analytic>
+	<monogr>
+		<title level="j">AFlow: Automating Agentic Workflow Generation</title>
+		<imprint>
+			<date type="published" when="2024-10">October 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<title level="m" type="main">Multi-agent architecture search via agentic supernet</title>
+		<author>
+			<persName><forename type="first">Guibin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luyang</forename><surname>Niu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junfeng</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.04180</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<analytic>
+		<title level="a" type="main">Exchange-of-thought: Enhancing large language model capabilities through cross-model communication</title>
+		<author>
+			<persName><forename type="first">Zhangyue</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiushi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qipeng</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junqi</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuan-Jing</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xipeng</forename><surname>Qiu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2023 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="15135" to="15153" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">A survey on large language model based autonomous agents</title>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueyang</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingsen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiakai</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wayne</forename><forename type="middle">Xin</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhewei</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji-Rong</forename><surname>Wen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Front. Comput. Sci</title>
+		<imprint>
+			<biblScope unit="volume">18</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<title level="m" type="main">Xipeng Qiu, Xuanjing Huan, and Tao Gui. The rise and potential of large language model based agents: A survey</title>
+		<author>
+			<persName><forename type="first">Zhiheng</forename><surname>Xi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenxiang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiwen</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyang</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junzhe</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Senjie</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Enyu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoran</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Limao</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhao</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiran</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changhao</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yicheng</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhangyue</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shihan</forename><surname>Dou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rongxiang</forename><surname>Weng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wensen</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjuan</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongyan</forename><surname>Zheng</surname></persName>
+		</author>
+		<idno>abs/2309.07864</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arxiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<title level="m" type="main">Large language models empowered agent-based modeling and simulation: A survey and perspectives</title>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaochong</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nian</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingtao</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhilun</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fengli</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Li</surname></persName>
+		</author>
+		<idno>CoRR, abs/2312.11970</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<analytic>
+		<title level="a" type="main">A survey on llm-based multi-agent systems: workflow, infrastructure, and challenges</title>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sai</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siqi</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Vicinagearth</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">9</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<title level="m" type="main">Synapse: Trajectory-as-exemplar prompting with memory for computer control</title>
+		<author>
+			<persName><forename type="first">Longtao</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rundong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinrun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>An</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.07863</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<monogr>
+		<title level="m" type="main">Ghost in the minecraft: Generally capable agents for open-world environments via large language models with text-based knowledge and memory</title>
+		<author>
+			<persName><forename type="first">Xizhou</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuntao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenxin</forename><surname>Hao Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weijie</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyu</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lewei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaogang</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.17144</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xiangru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muyang</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanjun</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xunjian</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siru</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wangchunshu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuosheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Zhao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.06590</idno>
+		<title level="m">Self-updating library in large language models improves chemical reasoning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<monogr>
+		<title level="m" type="main">Reflexion: an autonomous agent with dynamic memory and self-reflection</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beck</forename><surname>Labash</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<idno>abs/2303.11366</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<monogr>
+		<title level="m" type="main">A-mem: Agentic memory for llm agents</title>
+		<author>
+			<persName><forename type="first">Wujiang</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Mei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juntao</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zujie</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongfeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.12110</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<monogr>
+		<author>
+			<persName><forename type="first">Prateek</forename><surname>Chhikara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dev</forename><surname>Khant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saket</forename><surname>Aryan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Taranjeet</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deshraj</forename><surname>Yadav</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.19413</idno>
+		<title level="m">Mem0: Building production-ready ai agents with scalable long-term memory</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<monogr>
+		<author>
+			<persName><forename type="first">Rana</forename><surname>Salama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michelle</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Currey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Monica</forename><surname>Sunkara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yassine</forename><surname>Benajiba</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.21760</idno>
+		<title level="m">Meminsight: Autonomous memory augmentation for llm agents</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<monogr>
+		<author>
+			<persName><forename type="first">Junlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Athiwaratkun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ce</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Zou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.04692</idno>
+		<title level="m">Mixture-of-agents enhances large language model capabilities</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<monogr>
+		<title level="m" type="main">Symbolic learning enables self-evolving agents</title>
+		<author>
+			<persName><forename type="first">Wangchunshu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixin</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengwei</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tiannan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiamin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohua</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ningyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.18532</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xuechen</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meiling</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinghui</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingsong</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.00872</idno>
+		<title level="m">Self-evolving agents with reflective and memory-augmented abilities</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b66">
+	<monogr>
+		<title level="m" type="main">Agentverse: Facilitating multi-agent collaboration and exploring emergent behaviors in agents</title>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingwei</forename><surname>Zuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenfei</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi-Min</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaxi</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruobing</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Zhou</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b67">
+	<monogr>
+		<title level="m" type="main">Self-evolving multi-agent collaboration networks for software development</title>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuzhu</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaxin</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangrui</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijie</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuo</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siheng</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.16946</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b68">
+	<monogr>
+		<author>
+			<persName><forename type="first">Guibin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanwei</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangguo</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guancheng</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junfeng</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianlong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawei</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><surname>G-Designer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.11782</idno>
+		<title level="m">Architecting multi-agent communication topologies via graph neural networks</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b69">
+	<monogr>
+		<title level="m" type="main">Evoagent: Towards automatic multi-agent generation via evolutionary algorithms</title>
+		<author>
+			<persName><forename type="first">Siyu</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaitao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiangjie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongsheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deqing</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.14228</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b70">
+	<monogr>
+		<author>
+			<persName><forename type="first">Guibin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaijie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guancheng</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hong</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyue</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Bai</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.07373</idno>
+		<title level="m">Evoflow: Evolving diverse agentic workflows on the fly</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b71">
+	<monogr>
+		<title level="m" type="main">Dynamic llm-agent network: An llm-agent collaboration framework with agent team optimization</title>
+		<author>
+			<persName><forename type="first">Zijun</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanzhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diyi</forename><surname>Yang</surname></persName>
+		</author>
+		<idno>CoRR, abs/2310.02170</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b72">
+	<analytic>
+		<title level="a" type="main">Microsoft academic graph: When experts are not enough</title>
+		<author>
+			<persName><forename type="first">Kuansan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chiyuan</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chieh-Han</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiao</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anshul</forename><surname>Kanakia</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Quantitative Science Studies</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="396" to="413" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b73">
+	<monogr>
+		<author>
+			<persName><forename type="first">Wanjia</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mert</forename><surname>Yuksekgonul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shirley</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Zou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.04780</idno>
+		<title level="m">Sirius: Self-improving multiagent systems via bootstrapped reasoning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b74">
+	<monogr>
+		<title level="m" type="main">Reso: A reward-driven selforganizing llm-based multi-agent system for reasoning tasks</title>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hejia</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyuan</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenfei</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Bai</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.02390</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b75">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhilin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saizheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">W</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruslan</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1809.09600</idno>
+		<title level="m">Hotpotqa: A dataset for diverse, explainable multi-hop question answering</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b76">
+	<monogr>
+		<title level="m" type="main">Fever: a large-scale dataset for fact extraction and verification</title>
+		<author>
+			<persName><forename type="first">James</forename><surname>Thorne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Vlachos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christos</forename><surname>Christodoulopoulos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arpit</forename><surname>Mittal</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1803.05355</idno>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b77">
+	<monogr>
+		<title level="m" type="main">Alfworld: Aligning text and embodied environments for interactive learning</title>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Shridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingdi</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc-Alexandre</forename><surname>Côté</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Trischler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Hausknecht</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2010.03768</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b78">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ruoyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Jansen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc-Alexandre</forename><surname>Côté</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prithviraj</forename><surname>Ammanabrolu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Scienceworld</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.07540</idno>
+		<title level="m">Is your agent smarter than a 5th grader? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b79">
+	<monogr>
+		<title level="m" type="main">Agentboard: An analytical evaluation board of multi-turn llm agents</title>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junlei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujiu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaohui</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenzhong</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingpeng</forename><surname>Kong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxian</forename><surname>He</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.13178</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b80">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">G-Memory</forename></persName>
+		</author>
+		<idno>67.91 ↑14.92 34.89 ↑4.62 21.01 ↑4.84 37.34 ↑4.01 64.34 ↑5.60 45.10 ↑6.80</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b81">
+	<analytic>
+		<title/>
+		<idno>memory 41.34 ↑0.00</idno>
+	</analytic>
+	<monogr>
+		<title level="j">DyLAN COLM</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b82">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">G-Memory</forename></persName>
+		</author>
+		<idno>52.99 ↑11.65 33.81 ↑3.97 20.71 ↑7.15 29.33 ↑5.04 63.67 ↑7.44 40.10 ↑7.05</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b83">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">G-Memory</forename></persName>
+		</author>
+		<idno>54.48 ↑10.45</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b84">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">G-Memory</forename></persName>
+		</author>
+		<idno>81.34 ↑5.22</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b85">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">G-Memory</forename></persName>
+		</author>
+		<idno>79.10 ↑20.89 61.74 ↑9.53 45.76 ↑4.02 32.33 ↑3.73 70.33 ↑5.68 57.85 ↑8.77</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b86">
+	<monogr>
+		<title level="m" type="main">Even in a successful trajectory , there may be some incorrect steps . Pay attention to actions that correspond to &quot; Nothing happens &quot; observations , as these actions are likely incorrect . Filter out these actions for me . -You need to ensure that each step is at the finest granularity . -You should strictly follow the output format in the example . _ c o m p a r e =</title>
+		<imprint/>
+	</monogr>
+	<note>You are an analysis -driven agent focused on learning from experience . You will be provided with : -A failed trajectory and its outcome , -A successful trajectory completing a similar task . Your task is to analyze both trajectories and generate clear , actionable insights Your insights should highlight what the failed trajectory missed and how the successful one addressed or avoided these pitfalls</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b87">
+	<monogr>
+		<title level="m" type="main">All insights must be derived directly from contrasting the two trajectories . consolidate similar insights ** , and output a refined version that is ** clear , actionable , and concise **. follow . Output Format : -Start your response directly with the numbered list , no preamble or explanations</title>
+		<author>
+			<persName><forename type="first">##</forename><surname>Requirements</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note>Each insight should be a short sentence . -Use the following format exactly</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b88">
+	<monogr>
+		<title level="m" type="main">Please consolidate and rewrite them into ** no more than { l imite d_numb er } refined insights **</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b89">
+	<monogr>
+		<title level="m" type="main">You are a thoughtful and context -aware agent . You will be provided with a successfully executed trajectory , a specific agent ** role ** , and a set of ** general insights ** applicable across all roles . Your task is to ** adapt these general insights ** into ** personalized insights ** that are specifically tailored to the given role and its trajectory . These personalized insights should help the agent improve future performance by aligning with their unique background , responsibilities , and perspective</title>
+		<imprint/>
+	</monogr>
+	<note>Your output Customizing Memory for Agents o m p t : str = As the summarizing agent , remove redundancies , combine similar ideas , and ensure clarity Make sure your output reflects an understanding of the role &apos; s context and promotes actionable , role -relevant advice</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

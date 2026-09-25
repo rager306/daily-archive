@@ -1,0 +1,2212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">A Pair Programming Framework for Code Generation via Multi-Plan Exploration and Feedback-Driven Refinement</title>
+				<funder>
+					<orgName type="full">Collaborative Innovation Center of Novel Software Technology &amp; Industrialization</orgName>
+				</funder>
+				<funder ref="#_RSMJjtA">
+					<orgName type="full">National Natural Science Foundation of China</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-09-08">8 Sep 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Huan</forename><surname>Zhang</surname></persName>
+							<email>zhanghuan.nju@gmail.com</email>
+							<affiliation key="aff0">
+								<orgName type="laboratory">State Key Laboratory for Novel Software Technology Nanjing University Nanjing</orgName>
+								<address>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Wei</forename><surname>Cheng</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="laboratory">State Key Laboratory for Novel Software Technology Nanjing University Nanjing</orgName>
+								<address>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yuhan</forename><surname>Wu</surname></persName>
+							<idno type="ORCID">0009-0001-9065-5523</idno>
+							<affiliation key="aff2">
+								<orgName type="laboratory">State Key Laboratory for Novel Software Technology Nanjing University Nanjing</orgName>
+								<address>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Wei</forename><surname>Hu</surname></persName>
+							<idno type="ORCID">0000-0003-3635-6335</idno>
+							<affiliation key="aff3">
+								<orgName type="laboratory">State Key Laboratory for Novel Software Technology</orgName>
+								<orgName type="institution">National Institute of Healthcare Data Science Nanjing University Nanjing</orgName>
+								<address>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">A Pair Programming Framework for Code Generation via Multi-Plan Exploration and Feedback-Driven Refinement</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-09-08">8 Sep 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">5F1220E5B943037EB96BC6BA6B9B0A3A</idno>
+					<idno type="DOI">10.1145/3691620.3695506</idno>
+					<idno type="arXiv">arXiv:2409.05001v1[cs.SE]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:46+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>CCS CONCEPTS</term>
+					<term>Software and its engineering → Automatic programming Code generation</term>
+					<term>Large language model</term>
+					<term>Agent</term>
+					<term>Pair programming</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large language models (LLMs) have achieved impressive performance on code generation. Although prior studies enhanced LLMs with prompting techniques and code refinement, they still struggle with complex programming problems due to rigid solution plans. In this paper, we draw on pair programming practices to propose PairCoder, a novel LLM-based framework for code generation. PairCoder incorporates two collaborative LLM agents, namely a Navigator agent for high-level planning and a Driver agent for specific implementation. The Navigator is responsible for proposing promising solution plans, selecting the current optimal plan, and directing the next iteration round based on execution feedback. The Driver follows the guidance of Navigator to undertake initial code generation, code testing, and refinement. This interleaved and iterative workflow involves multi-plan exploration and feedback-based refinement, which mimics the collaboration of pair programmers. We evaluate PairCoder with both open-source and closed-source LLMs on various code generation benchmarks. Extensive experimental results demonstrate the superior accuracy of PairCoder, achieving relative pass@1 improvements of 12.00%-162.43% compared to prompting LLMs directly.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>Code generation aims to automatically generate executable source code that conforms to given requirements, typically expressed in natural language. Recent progress in large language models (LLMs) has significantly improved software development productivity by reducing repetitive programming efforts <ref type="bibr" target="#b22">[23,</ref><ref type="bibr" target="#b34">35]</ref>. The success of commercial models like ChatGPT <ref type="bibr" target="#b32">[33]</ref> and Claude <ref type="bibr" target="#b0">[1]</ref>, along with powerful open-source models like Code Llama <ref type="bibr" target="#b39">[40]</ref> and DeepSeek Coder <ref type="bibr" target="#b13">[14]</ref>, has attracted substantial interest from both academia and industry. These advancements demonstrate the remarkable capabilities of LLMs in code generation and have great potential to influence the field of intelligent software engineering <ref type="bibr" target="#b8">[9,</ref><ref type="bibr" target="#b12">13,</ref><ref type="bibr" target="#b47">48]</ref>.</p><p>As requirements become more complex, it becomes challenging for LLMs (and even humans) to directly generate code that meets the given requirements <ref type="bibr" target="#b9">[10]</ref>. One key focus of existing work is prompting techniques, which guide LLMs to produce intermediate reasoning steps for problem descriptions. This line of work <ref type="bibr" target="#b21">[22,</ref><ref type="bibr" target="#b24">25,</ref><ref type="bibr" target="#b45">46]</ref> focuses on designing different types of prompts to stimulate the reasoning abilities of LLMs, enabling them to generate intermediate steps before producing the final code. Another important aspect is that generating the correct code is rarely a one-time effort <ref type="bibr" target="#b6">[7]</ref>. Several studies <ref type="bibr" target="#b4">[5,</ref><ref type="bibr" target="#b26">27,</ref><ref type="bibr" target="#b30">31]</ref> employ sampling-based approaches to filter or rank the numerous responses generated by LLMs, relying on a substantial number of samples. Other works <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b31">32,</ref><ref type="bibr" target="#b44">45]</ref> attempt to refine the generated code using feedback from LLMs themselves or external sources. They introduce a debugging process to make the generated program behave as expected. Furthermore, a few works <ref type="bibr" target="#b9">[10,</ref><ref type="bibr" target="#b15">16,</ref><ref type="bibr" target="#b36">37]</ref> explore the use of collaborative LLM agents to simulate human software development processes.</p><p>Although existing approaches have improved code generation, they still have significant limitations. First, most approaches focus</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Problem description</head><p>Given an integer sequence a 1 , a 2 , …, a n , you can perform the operation any number of times: * Select any positive integer k, then insert k into the sequence at any position. Find the minimum number of operations to make the sequence satisfy: a i ≤ i (1 ≤ i ≤ n).</p><p>... incorrectly calculates the difference between a i and (i + 1) ...</p><p>... operations += max(0, a[i] -(i + 1)) ... ••• ... operations = 0 for i in range(n): if a[i] &gt; i + 1: operations += a[i] -(i + 1) ... Wrong answer Plan A ... Iterate over the sequence: 1. If a i &gt; i+1, calculate the diff : a i -(i+1); 2. Increment operations by diff ... ... for i in range(n): max_diff = max(max_diff, \ a[i] -(i + 1)) print(max_diff) ... Passed Don't beat a dead horse! We need change another plan! Plan B ... Iterate over the sequence: 1. If a i &gt; i+1, calculate the diff : a i -(i+1); 2. keep track of the max diff so far; 3. print the max diff as the result ... ... a[i] = i+1 ... repaired code ... sequence not been updated, fix a[i]=i+1 analysis iterative repair Don't put all eggs in one basket. We need backup plans!</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Failed Succeeded</head><p>Figure <ref type="figure">1</ref>: A competitive programming problem excerpted from the CodeContest benchmark (#test87) <ref type="bibr" target="#b26">[27]</ref>. Both the plans and codes are generated by GPT-3.5-Turbo.</p><p>too narrowly on generating a single solution plan, lacking highlevel planning and problem decomposition capabilities. Due to the inherent complexity of real-world problems, a single solving path often fails to produce correct code directly. Second, if the initially generated code follows a flawed plan, the feedback-based repair process is likely to be misguided by the initial incorrect direction, failing to address fundamental issues. This deviates from how human developers tackle programming problems in practice. Human developers typically start with high-level problem analysis and propose multiple potential solution plans. Then, they evaluate these plans based on continuous implementation and testing feedback. If the current plan is deemed infeasible or reaches an impasse, they will decisively abandon it and explore alternatives. This iterative cycle of "multi-plan exploration and practical feedback" ensures that human developers can efficiently solve complex problems without being constrained by a single flawed plan.</p><p>To overcome these limitations, we propose PairCoder, a novel code generation framework inspired by pair programming practices <ref type="bibr" target="#b46">[47]</ref> in software engineering. In pair programming, two developers play the roles of "navigator" and "driver": the former is responsible for high-level planning and direction, while the latter focuses on implementing the current task. We adapt pair programming practices to LLM-based code generation by introducing two intelligent agents: Navigator and Driver. The Navigator's role includes starting with high-level problem analysis (referred to as reflection), generating multiple potential solution plans, selecting the best current plan, and directing the subsequent process based on the Driver's execution feedback. The Driver generates or repairs the code according to the Navigator's guidance and provides execution feedback for subsequent adjustment.</p><p>This Navigator-Driver framework mimics the iterative and adaptive strategies employed by human developers. By starting with reflection and generating multiple plans, it avoids the constraints of a single flawed plan. Continuous feedback interaction between the Navigator and the Driver allows for dynamic plan adjustment, enabling the abandonment of infeasible plans and exploring new directions when necessary. This iterative cycle significantly improves the robustness and quality of code generation for realworld tasks. We conduct extensive experiments to evaluate our PairCoder on five diverse code generation benchmarks using both open-source (DeepSeek-Coder <ref type="bibr" target="#b13">[14]</ref>) and closed-source (GPT-3.5-Turbo <ref type="bibr" target="#b33">[34]</ref>) LLMs. The results show that on the pass@1 metric, PairCoder achieves superior accuracy over competitive baselines across all benchmarks for both LLMs.</p><p>In summary, the key contributions in this paper are outlined as follows:</p><p>• We are the first to adapt pair programming practices into LLM-based code generation and propose a new framework called PairCoder that comprises two collaborative agents: a Navigator for high-level planning and a Driver for specific implementation. (Sect. 3.1) • PairCoder integrates two key mechanisms: (i) multi-plan exploration achieved by the Navigator through adjusting diverse solution plans, and (ii) feedback-driven refinement based on execution feedback from the Driver and historical memory. (Sects. 3.2 and 3.3) • PairCoder significantly outperforms all competitive baselines on five benchmarks. It gains relative improvements of 16.97%-162.43% on GPT-3.5-Turbo and 12.00%-128.76% on DeepSeek-Coder-Instruct 33B compared to prompting LLMs directly. (Sect. 4) The source code is publicly available on GitHub.<ref type="foot" target="#foot_0">foot_0</ref> </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">MOTIVATING EXAMPLE</head><p>Fig. <ref type="figure">1</ref> shows a programming problem from the CodeContest benchmark <ref type="bibr" target="#b26">[27]</ref>: given an integer sequence 𝑎 1 , 𝑎 2 , . . . , 𝑎 𝑛 , find the minimum number of insertions to ensure ∀1 ≤ 𝑖 ≤ 𝑛, 𝑎 𝑖 ≤ 𝑖.</p><p>The prompting approaches <ref type="bibr" target="#b21">[22,</ref><ref type="bibr" target="#b24">25,</ref><ref type="bibr" target="#b45">46]</ref> generate intermediate reasoning steps based on the problem description to guide code generation, as excerpted in Plan A. Considering an input sequence "1, 3, 4" in public test cases, it is evident that a single operation is sufficient to satisfy the requirement, i.e., inserting '2' between '1' and '3'. Guided by Plan A, the first code snippet on the left side of Fig. <ref type="figure">1</ref> incorrectly assumes that two insertions are required. This feedback from code testing can help LLMs repair the generated code <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b31">32,</ref><ref type="bibr" target="#b44">45]</ref>. However, iterative repairs do not yield the right answers as they stubbornly follow the flawed Plan A, which incorrectly accumulates operations. For example, LLMs would mistake the bug as an incorrect calculation of the difference between 𝑎 𝑖 and (𝑖 + 1), or that the sequence has not been updated. We believe this dilemma arises from an inherent pitfall of the single-path approach: once an incorrect blueprint is initially established, LLMs struggle to identify the root cause of the error and thus mislead subsequent repairs.</p><p>In contrast, human programmers do not put all eggs in one basket. If the current plan is deemed ineffective, they will explore alternative plans. Plan B correctly solves the problem by tracking the maximum difference between 𝑎 𝑖 and (𝑖 + 1). With the proper solution plan, LLMs generate the correct code instead of getting stuck in a refinement loop under Plan A.</p><p>In practice, solving complex problems often requires exploring multiple solution plans, and timely adjustment can mitigate wasted effort on flawed plans. The role of multi-plan exploration and flexible adjustment is analogous to that of the "navigator-driver" in pair programming, serving as the key inspiration for our work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">FRAMEWORK 3.1 Overview</head><p>We first formulate the realistic problem of code generation as generating a program 𝐶 from a natural language description Q and a set of public (visible) test cases T 𝑣 = (𝐼 𝑖 , 𝑂 𝑖 ) 𝑚 𝑣 𝑖=1 , where 𝑂 𝑖 denotes the desired output for the input 𝐼 𝑖 . Based on the execution feedback from T 𝑣 , LLMs can iteratively refine the generated program 𝐶, having a maximum number of iterations 𝑟 to control cost and efficiency. Finally, 𝐶 is considered correct if its behavior is consistent with the test oracle <ref type="bibr" target="#b16">[17]</ref>, which is usually represented by a set of private (hidden) test cases T ℎ = (𝐼 𝑖 , 𝑂 𝑖 ) 𝑚 ℎ 𝑖=1 , i.e., satisfying that ∀ (𝐼 𝑖 , 𝑂 𝑖 ) ∈ T ℎ , 𝐶 (𝐼 𝑖 ) = 𝑂 𝑖 . Note that the accessible T 𝑣 is not a complete test, while T ℎ is invisible during the code generation and refinement stages.</p><p>Fig. <ref type="figure" target="#fig_0">2</ref> illustrates the workflow of PairCoder. Both the Navigator and Driver agents are powered by an LLM with generalpurpose capabilities, such as GPT-3.5-Turbo <ref type="bibr" target="#b32">[33]</ref>. The Navigator guides the Driver by generating solution plans and repair strategies. Therefore, the Driver focuses all its attention on specific code tasks, including code generation, code testing, and refinement. The workflow of the two agents is interleaved and iterates until the generated program 𝐶 passes all public test cases T 𝑣 or the maximum number of iterations 𝑟 is reached. To clearly describe the details of PairCoder, we present Algorithm 1 throughout this section.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Navigator Agent</head><p>The Navigator agent serves as the main controller in deeply understanding the problem and providing strategic direction. Its role is to propose multiple promising plans (Step 1 in Fig. <ref type="figure" target="#fig_0">2</ref></p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>), select the currently best solution plan (Step 2), and direct the next iteration based on execution feedback and historical memory (Step 5).</head><p>Propose promising plans. The Navigator first reflects on the given natural language description Q (Line 1 in Algorithm 1). The prompt for LLMs is shown in Fig. <ref type="figure">3</ref>. It stimulates LLMs to explicitly analyze the details of the problem, consider possible valid inputs and edge cases, and explain public test cases. This reflection process enables the Navigator to gain a comprehensive understanding of the core logic, constraints, and requirements for effective problem solving.</p><p>With the comprehensive reflection on the problem, the Navigator further comes up with specific solution plans (Line 2). As shown in Fig. <ref type="figure" target="#fig_6">4</ref>, we include brief examples in prompts to guide the proposal and emphasize the functional correctness of the proposed plans. Each plan outlines a high-level solution and key implementation steps in concise natural language. To obtain diverse solution plans, we set a non-zero temperature for multiple nucleus sampling <ref type="bibr" target="#b14">[15]</ref> and ask LLMs to generate multiple plans in each batch <ref type="bibr" target="#b7">[8]</ref>, which improves sampling efficiency while reducing duplicate plans. After brainstorming through multiple sampling, we select 𝑘 representative plans as candidates. Specifically, we first divide    all 𝑛 samples into 𝑘 clusters using a text embedding model and the classical k-means++ algorithm <ref type="bibr" target="#b1">[2]</ref>, and then select the plan closest to the cluster centroid from each cluster (Line 3). Intuitively, the Navigator groups similar plans together and selects representative ones, ensuring a diverse set of high-level solution plans. These can involve techniques like brute force search, greedy algorithm, or other problem-solving strategies.</p><p>Select optimal plan. In each iteration, there is a determined solution plan to guide code generation or refinement. Whenever a plan needs to be initially selected or discarded, the Navigator selects the optimal plan from the remaining candidates (Line 7). Following the previous studies <ref type="bibr" target="#b20">[21,</ref><ref type="bibr" target="#b51">52]</ref>, we also make choices through LLMs, where the prompt template is shown in Fig. <ref type="figure">5</ref>. Considering the problem description and reflection together, the Navigator leverages the reasoning capabilities of LLMs to consolidate multiple key factors in code quality, including correctness, efficiency, and robustness. Note that functional correctness takes precedence over efficiency. We prefer to try an inefficient but intuitive solution plan first, such as a direct brute force method, which is in line with the common practice of human programmers to prioritize problemsolving before optimization. Once a plan is selected, it is removed from the candidates, preventing it from being selected again in subsequent iterations (Line 8).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Direct next iteration.</head><p>Once the generated code 𝐶 in the last iteration does not pass all the public test cases T 𝑣 , it is the Navigator's turn to direct the next iteration. Instead of stubbornly persisting in system= """\ You are an experienced programmer.</p><p>You ar &lt;&lt;Prob Given langua 1. ref -For and no overth -For coveri handle descri 2. For explai based</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Re &lt;&lt;Reflection&gt;&gt;</head><p>This problem requires finding the minimum operations to modify a sequence so each element is less than or equal to its index ... Simple inputs where the sequence meets the condition, complex inputs needing multiple operations, and edge cases like an empty sequence ... You are given a coding problem: &lt;&lt;Problem Description&gt;&gt; Given the coding problem, you have two tasks using natural language: 1. reflect on the problem: -For simple problems, briefly provide a concise explanation and note all possible valid inputs and edge cases. Avoid overthinking.</p><p>-For complex problems, provide a comprehensive analysis covering all aspects, details, nuances, and how to properly handle all possible valid inputs and edge cases per problem description. 2. For provided public test case(s) in description, briefly explain how the specified input yields the expected output based on the problem description.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ReflectPrompt</head><p>Figure <ref type="figure">3</ref>: The prompt template used by the Navigator to reflect on the given problem description and an output example of the reflection.</p><p>You a Self-Provi Each 1.Hav 2.Out -For conci do it -For graph (e.g. with. If probl hash 3.Ens valid</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>P</head><p>You are given a coding problem: &lt;&lt;Problem Description&gt;&gt; Self-reflection on the problem: &lt;&lt;Relfection&gt;&gt; Provide up to 3 possible solution plans to the problem. Each solution plan should: 1.Have a descriptive name. 2.Outline the solution approach: -For simple problems (e.g., reversing a list), provide a concise solution (e.g., we can directly use list1[::-1] to do it.).</p><p>-For complex problems (e.g., finding the shortest path in a graph), provide a problem-solving plan with high-level steps (e.g., we can use BFS to solve it. First, Initialize a queue with... Second, ...).</p><p>If necessary, select an appropriate algorithm through problem analysis such as brute force, simulation, greedy, hash map, two pointers, DFS/BFS, stack/queue, DP, etc. 3.Ensure functional correctness by addressing all possible valid inputs and edge cases per problem description.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>PlanPrompt</head><p>&lt;&lt;Solution Plans&gt;&gt; (1) Greedy Approach -Initialize `operations` to 0.</p><p>-Iterate through the sequence.</p><p>-For each a i at position i, if a i &gt; i, calculate `diff` as a i -i and track the max`diff`.</p><p>-Output the final value of `operations`.</p><p>(2) Brute Force Approach -Set `min_operations` to infinity.</p><p>-Generate all possible sequences.</p><p>-For each sequence, check conditions and count operations.</p><p>-Update `min_operations` if fewer operations are needed.</p><p>(3) ... a single solving path to repair the incorrect code <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b41">42,</ref><ref type="bibr" target="#b44">45,</ref><ref type="bibr" target="#b53">54]</ref>, the Navigator can timely adjust the solution plan to seek a turnaround. We observe that code refinement tends to get stuck in a dead-end You are given a coding problem: &lt;&lt;Problem Description&gt;&gt; Self-reflection on the problem: &lt;&lt;Relfection&gt;&gt; Here is a list of &lt;&lt;k&gt;&gt; possible solutions to the problem: &lt;&lt;k candidates&gt;&gt; Choose the most robust and correct solution and provide a brief explanation for your choice. The selected solution should: -Prioritize functional correctness over efficiency. If there is a simulation method or a direct brute force method available, prefer it.</p><p>-Fully solve the problem and correctly handle all possible valid inputs and edge cases as per the problem description.</p><p>-Consider more efficient methods only if they do not compromise correctness.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>SelectPrompt</head><p>1. Prioritize functional correctness over efficiency. If there is a simulation method or a direct brute force method available, prefer it. 2. Fully solve the problem and correctly handle all possible valid inputs and edge cases as per the problem description. 3. Consider more efficient methods only if they do not compromise correctness.</p><p>-Ensure functional correctness first; such as brute force or direct simulation methods are acceptable, then aiming for efficiency while preserving correctness.</p><p>-Fully solve the problem and correctly handle all possible valid inputs and edge cases, as per the problem description.</p><p>Figure <ref type="figure">5</ref>: The prompt template for selecting the optimal solution plan from the candidates. loop if the generated code or execution feedback has already occurred in the past. Therefore, we introduce a long-term memory module to systematically store and maintain the coding and execution history under the current solution plan (Line 12). It consists of the generated programs H 𝑐 = {𝐶 𝑖 } 𝑟 𝑖=1 and the execution feedback H 𝑓 = {𝐹 𝑖 } 𝑟 𝑖=1 , where 𝐹 𝑖 is the execution feedback of the generated code 𝐶 𝑖 in the 𝑖-th round of iteration, comprising specific error type and execution details. We apply a simple but effective heuristic strategy to determine whether to change the solution plan. Given the buggy code and its execution feedback, the current solution plan will be considered unpromising if any of them has already occurred in the historical memory H 𝑐 and H 𝑓 (Line 6), leading to a re-selection of the optimal plan in Step 2. Whenever a new solution plan is selected, the historical memory module is cleared to start fresh (Line 9).</p><p>Another potential iteration direction is to repair the buggy code, which pursues gradual progress without abandoning a promising solution plan. Based on the execution feedback, the Navigator leverages the reasoning ability of LLMs to propose a directive repair strategy (Line 13). As shown in Fig. <ref type="figure">6</ref>, the prompt for LLMs comprises the problem description, the buggy code, and specific execution feedback. For different types of execution feedback, we slightly adjust the prompts to remind LLMs to focus on specific aspects. Specifically, Runtime Error can suggest repairs that involve syntax error or exception handling, e.g., array index out of bounds. Wrong Answer indicates logic errors in the code, which may inspire repair strategies like adjusting condition handling and data flow. For the inefficient solution plans flagged by Time Limit Exceeded, the Navigator may recommend optimizations to improve computational performance. The customized repair strategy will guide the code refinement in Step 6 of the next iteration.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Driver Agent</head><p>In contrast to the high-level planning of the Navigator, the Driver agent focuses all its attention on specific code tasks, including</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>generating initial code guided by a new plan (Step 3), testing code on public test cases (Step 4), and repairing the buggy code (Step 6).</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Generate initial code.</head><p>Once a new solution plan is selected, the Driver first generates an initial code implementation guided by the You are given a coding problem: &lt;&lt;Problem Description&gt;&gt; A Python code solution for the problem: &lt;&lt;Buggy Code&gt;&gt; However, the code solution failed to produce the expected output: &lt;&lt;Execution feedback&gt;&gt; Identify the specific part(s) of the code that contain logical errors or incorrect functional function(s) in the code. Briefly explain the root causes of the identified code section(s) that prevent it from producing the expected output for the specified input. Provide a step-by-step approach to fix the issues, ensuring the corrected code can handle all valid inputs correctly. Keep the fix steps concise for minor issues, but provide more detailed steps if major revisions are required.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>AnalyzePrompt</head><p>Figure <ref type="figure">6</ref>: The prompt template used to propose a repair strategy. This is customized for Wrong Answer and is slightly different from the other types of execution feedback.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>plan (Line 10).</head><p>To align with the high-level planning of the Navigator, the Driver concatenates the problem description and current solution plan together, making the prompt shown in Fig. <ref type="figure">7</ref>. Existing LLMs <ref type="bibr" target="#b13">[14,</ref><ref type="bibr" target="#b32">33]</ref> already have impressive abilities to comprehend the context in prompts and convert solution plans expressed in natural language into corresponding executable programs <ref type="bibr" target="#b21">[22,</ref><ref type="bibr" target="#b25">26,</ref><ref type="bibr" target="#b45">46]</ref>. We expect, but do not mandate, that the generated code is an exact match to the solution plan. Incorrect implementation is tolerated at this step, which would be recognized and refined in subsequent iterations.</p><p>Perform code testing. Generating correct code is rarely a one-time effort, and recent studies indicate that LLMs struggle to self-correct their responses without external feedback <ref type="bibr" target="#b18">[19,</ref><ref type="bibr" target="#b43">44]</ref>. Therefore, we follow previous works <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b31">32]</ref> to introduce an executor that evaluates the generated program 𝐶 on the public test cases T 𝑣 (Line 15). We categorize the execution feedback into four types:</p><p>• Pass. It indicates that 𝐶 successfully passes all public test cases, i.e., satisfying that ∀ (𝐼 𝑖 , 𝑂 𝑖 ) ∈ T 𝑣 , 𝐶 (𝐼 𝑖 ) = 𝑂 𝑖 .</p><p>• Runtime Error. It indicates that the execution is terminated prematurely due to unhandled exceptions or errors.</p><p>• Wrong Answer. It indicates that 𝐶 gives unexpected outputs in some cases, i.e., satisfying that ∃ (𝐼 𝑖 , 𝑂 𝑖 ) ∈ T 𝑣 , 𝐶 (𝐼 𝑖 ) ≠ 𝑂 𝑖 . This type takes precedence over Time Limit Exceeded.</p><p>• Time Limit Exceeded. It indicates that 𝐶 fails to produce outputs within the specified time limit. If the execution feedback is Pass, we will terminate the iterative process and consider 𝐶 as the final output (Line 16); Otherwise, the Driver will deliver the current program and execution feedback to the Navigator, which are used to direct the next iteration in Step 5. Code testing marks the end of an iteration round, so the iterative process will also be terminated after performing the 𝑟 -th test, outputting the last generated code (Line 17).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Repair buggy code.</head><p>If the Navigator assumes that the current solution plan remains promising, the Driver will attempt to repair the buggy code based on the given repair strategy (Line 14). As shown in Fig. <ref type="figure">8</ref>, the prompt for LLMs comprises the problem description, the buggy code, the execution feedback, and the repair strategy. The Driver aims to address the issues identified in the repair strategy, such as logic errors and performance bottlenecks. You are given a coding problem: &lt;&lt;Problem Description&gt;&gt; A Python code solution for the problem: &lt;&lt;Buggy Code&gt;&gt; However, when running the following input example, the code solution above failed to produce the expected output: &lt;&lt;Execution Feedback&gt;&gt; Please fix the code using the following approach: &lt;&lt;Repair Strategy&gt;&gt; RepairPrompt Figure 8: The prompt template for repairing buggy code. Similar to the code generation in Step 3, we do not claim that the repair is a complete success, and the generated code can be further refined in subsequent iterations. Complexity analysis. The time complexity of Algorithm 1 is determined by the number of iterations 𝑟 and the cost of operations within each iteration. Let 𝑐 denote the constant factor representing the cost of operations, such as model inference and code testing within each iteration. Then, the overall time complexity of Pair-Coder is 𝑂 (𝑟 × 𝑐). Similarly, the space complexity of PairCoder is 𝑂 (𝑟 ), since the Navigator needs to store the historical memory H 𝑐 and H 𝑓 , which grow linearly with the iteration count. While the multi-plan exploration and iterative refinement introduce additional computational overhead, the superior accuracy of PairCoder in code generation justifies the trade-off in Sect. 4.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">EXPERIMENTS AND RESULTS</head><p>We evaluate PairCoder by defining the following research questions (RQs) and outlining how we propose to answer them:</p><p>• RQ1. How does the accuracy of PairCoder in code generation compare to other approaches? We aim to evaluate the effectiveness of our PairCoder framework in code generation compared to existing approaches. We conduct comprehensive experiments across diverse benchmarks and foundation models.</p><p>• RQ2. How do critical hyperparameters impact the accuracy of PairCoder? We thoroughly investigate the effect of iteration count on PairCoder compared to other iterative refinement-based approaches, as well as the impact of cluster number on PairCoder.</p><p>• RQ3. What are the individual contributions of the major components in PairCoder? We aim to analyze the effectiveness of two major components in PairCoder: multiplan exploration and feedback-driven refinement facilitated by Navigator-Driver collaboration. By disabling each component in ablation studies, we isolate their effects and validate their contributions to the overall accuracy.</p><p>• RQ4. What are the findings of cost and error analyses for PairCoder? The cost analysis focuses on quantifying </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Experiment Settings</head><p>Benchmarks. Following the prior works <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b44">45]</ref>, we conduct comprehensive experiments on five widely used benchmarks of code generation: HumanEval <ref type="bibr" target="#b5">[6]</ref>, HumanEval+ <ref type="bibr" target="#b27">[28]</ref>, MBPP <ref type="bibr" target="#b3">[4]</ref>, MBPP+ <ref type="bibr" target="#b27">[28]</ref>, and CodeContest <ref type="bibr" target="#b26">[27]</ref>. The statistics of these benchmarks are shown in Table <ref type="table" target="#tab_0">1</ref>. HumanEval, MBPP, and their extended versions (Plus) aim at simple function-level code generation, while Code-Contest consists of competition-level programming problems. Both the validation and test sets of CodeContest are considered.</p><p>Furthermore, we put effort into providing public test cases T 𝑣 for execution feedback. For the benchmarks <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b26">27,</ref><ref type="bibr" target="#b27">28]</ref> where public test cases are provided in problem descriptions, we extract T 𝑣 using hand-written rules. For the benchmarks lacking public test cases in the descriptions, we follow <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b30">31,</ref><ref type="bibr" target="#b53">54]</ref> by treating the first private case as T 𝑣 for MBPP, while for MBPP+, we use the original three private cases before extension as T 𝑣 .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Metrics.</head><p>In line with previous works <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b9">10,</ref><ref type="bibr" target="#b21">22,</ref><ref type="bibr" target="#b29">30]</ref>, we use the greedy pass@1 <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b48">49]</ref> to assess the functional correctness of the generated program. A program is regarded correct only if it passes all private test cases 𝑇 ℎ . Compared to pass@K with multiple nucleus sampling, the greedy pass@1 represents a more realistic scenario, where developers are not required to review the correct one from multiple solutions.</p><p>Comparative methods. We compare PairCoder with two main categories of existing approaches for code generation. We briefly describe them as follows.</p><p>Prompting techniques. This category focuses on prompts to steer LLMs towards generating more accurate code solutions for requirements. Notable approaches include:</p><p>• Direct prompting <ref type="bibr" target="#b5">[6]</ref> takes the original requirements directly as inputs to prompt LLMs for code generation.</p><p>• Chain-of-Thought (CoT) prompting <ref type="bibr" target="#b45">[46]</ref> elicits LLMs to generate a chain of intermediate natural language reasoning steps before producing the final code. We use the classical CoT instruction "Let's think step by step. " to guide LLMs in zero-shot <ref type="bibr" target="#b23">[24]</ref>.</p><p>• SCoT prompting <ref type="bibr" target="#b24">[25]</ref> asks LLMs using three basic program structures (i.e., sequence, branch, and loop structures) to build intermediate reasoning steps. Then, LLMs generate the final code based on the structured CoT.</p><p>• Self-planning <ref type="bibr" target="#b21">[22]</ref> consists of planning and implementation phases. In the planning phase, LLMs plan out the solution steps from the intent with few-shot demonstrations. In the implementation phase, LLMs generate code step by step, guided by the planned solution steps. Refinement-based approaches. Approaches in this category refine the generated code based on feedback, either from the LLM itself or external sources, such as compilers and interpreters.</p><p>• Self-collaboration <ref type="bibr" target="#b9">[10]</ref> enables multiple LLM agents to act as distinct roles (i.e., analyst, coder, and tester) within a virtual team. These roles interact and collaborate in a specified manner to address code generation tasks.</p><p>• Self-repair <ref type="bibr" target="#b31">[32]</ref> employs a feedback model to generate textual explanations for errors encountered during unit test execution. The code model then uses these explanations to repair the initial code.</p><p>• Self-debugging <ref type="bibr" target="#b6">[7]</ref> teaches LLMs to perform iterative rubber duck debugging by explaining the generated code lineby-line with few-shot demonstrations.</p><p>• INTERVENOR <ref type="bibr" target="#b44">[45]</ref> prompts LLMs to play two distinct roles.</p><p>The Code Teacher iteratively crafts the interactive chain of repair based on compiler feedback, which guides the Code Learner to generate or repair code.</p><p>• Reflexion <ref type="bibr" target="#b41">[42]</ref> uses CoT prompting to generate its own test suites. It then iteratively generates code and verbal selfreflections based on this self-generated test feedback, which guide subsequent implementations.</p><p>• LDB <ref type="bibr" target="#b53">[54]</ref> segments programs into basic blocks and tracks intermediate variable values during runtime execution for iterative program repair.</p><p>• MetaGPT <ref type="bibr" target="#b15">[16]</ref> is a multi-agent system that simulates a complete software company by defining five roles and leveraging human-like standard operating procedures.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Implementation details.</head><p>We apply both open-source and closedsource LLMs to PairCoder, including DeepSeek-Coder-Instruct with 33B parameters <ref type="bibr" target="#b13">[14]</ref> and GPT-3.5-Turbo (gpt-3.5-turbo-0613) <ref type="bibr" target="#b32">[33]</ref>, where the maximum context window is 16K tokens for all approaches. Moreover, the Navigator employs text-embedding-3large 2 to vectorize the 𝑛 = 15 sampled solution plans and divides them into 𝑘 = 3 clusters. Programs taking longer than 3 seconds to execute on any test case are marked as Time Limit Exceeded. We adopt a temperature of 0.8 to sample diverse solution plans and use greedy decoding by setting the temperature to 0 in other steps. For the comparative methods, we reproduce them according to the source code or provided prompts; otherwise, we quote the results directly from their papers <ref type="bibr" target="#b9">[10,</ref><ref type="bibr" target="#b15">16,</ref><ref type="bibr" target="#b53">54]</ref>. Following the prior works <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b21">22,</ref><ref type="bibr" target="#b29">30,</ref><ref type="bibr" target="#b53">54]</ref>, we use greedy decoding in the reproduced methods unless otherwise specified. The maximum number of iterations 𝑟 is set to 10 for PairCoder and other iterative refinement-based approaches, i.e., up to 10 times the code is generated or refined.</p><p>To ensure a fair comparison, all approaches are given identical problem descriptions and public test cases for code generation.</p><p>2 <ref type="url" target="https://platform.openai.com/docs/guides/embeddings">https://platform.openai.com/docs/guides/embeddings</ref> The generated code is then executed and evaluated in a consistent Python 3.9 environment. This guarantees that the code generated by different approaches will receive consistent external feedback, thereby enabling unbiased and rigorous comparisons.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">RQ1: Accuracy Comparison</head><p>The accuracy comparison results are presented in Table <ref type="table" target="#tab_1">2</ref>. Our PairCoder achieves the best pass@1 scores across all benchmarks and foundation models. In comparison to prompting LLMs directly, PairCoder shows significant relative improvement of 12.00% to 162.43%. The prompting techniques would accumulate errors in intermediate thoughts and single code generation, causing relatively weak accuracy on code generation. CoT and SCoT prompting are even worse than direct generation in some settings, which is consistent with the findings of prior works <ref type="bibr" target="#b19">[20,</ref><ref type="bibr" target="#b25">26]</ref>. The poor performance of Reflexion is likely due to the model generating incorrect test cases, which leads to self-reflections based on false negative evaluations of the code <ref type="bibr" target="#b41">[42]</ref>. In contrast, other refinement-based approaches using provided public test cases achieve overall accuracy gains, since the reliable test feedback can guide the refinement in more promising directions. However, they are confined to a single solving path, lacking the flexibility to explore alternative solution plans when stuck. To overcome these limitations, PairCoder combines the advantages of multi-plan exploration and feedback-driven refinement.</p><p>Accuracy discrepancies across benchmarks are worth examining. Most approaches perform well on the relatively simple HumanEval and MBPP benchmarks. However, all approaches exhibit a substantial accuracy decrease on the challenging CodeContest benchmark. This reflects that current code generation techniques still have room for improvement in tackling complex programming problems. Note that the direct prompting with DeepSeek-Coder even outperforms that with GPT-3.5-Turbo on HumanEval, HumanEval+, and CodeContest-test. We speculate this may be due to data leakage issues, which will be further analyzed in Sect. 4.6.</p><p>We further evaluate PairCoder with one of the most advanced LLMs, GPT-4 (gpt-4-0613) <ref type="bibr" target="#b33">[34]</ref>, and cite the results of several powerful approaches <ref type="bibr" target="#b9">[10,</ref><ref type="bibr" target="#b15">16,</ref><ref type="bibr" target="#b41">42]</ref> from their original papers. The comparison results are shown in Table <ref type="table" target="#tab_2">3</ref>. PairCoder still significantly improves accuracy over direct prompting and outperforms existing multi-agent approaches.</p><p>Answer to RQ1: PairCoder outperforms all baselines across five benchmarks with two advanced LLMs. Compared with direct generation, it gains remarkable relative improvements ranging from 16.97% to 162.43% on GPT-3.5-Turbo, and from 12.00% to 128.76% on DeepSeek-Coder. The largest improvement is achieved on the most challenging CodeContest benchmark.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">RQ2: Hyperparameter Impact</head><p>We investigate the impact of two critical hyperparameters: the maximum number of iterations 𝑟 and the number of clusters 𝑘.  Iteration count impact. Given 1 ≤ 𝑟 ≤ 10, we compare Pair-Coder with two iterative refinement-based approaches, INTER-VENOR and Self-debugging. We report the experimental results on HumanEval and the test set of CodeContest with GPT-3.5-Turbo.</p><p>Fig. <ref type="figure" target="#fig_8">9</ref> depicts the line plots that show the variation in the pass@1 metric with increasing iteration count for different approaches. As the iteration count increases, all approaches exhibit accuracy improvements, but the extent of these improvements varies. On HumanEval, while Self-debugging and INTERVENOR show modest gains of around 10 percentage points in pass@1 scores after 10 iterations, PairCoder shows a substantially larger improvement of over 21 points. A similar pattern emerges on CodeContest-test, where PairCoder's pass@1 score raises by nearly 10 points, outpacing the limited improvements of the two baselines.</p><p>Notably, Self-debugging and INTERVENOR appear to reach an accuracy plateau after a certain number of iterations, e.g., 𝑟 ≥ 5 on CodeContest-test. This observation aligns with prior findings <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b53">54]</ref>. In contrast, PairCoder consistently maintains an upward trajectory across all iteration counts on both benchmarks, suggesting its ability to leverage more iterations for continuous accuracy improvement. Furthermore, we examine when PairCoder typically switches to a new solution plan during iterative refinement. Fig. <ref type="figure" target="#fig_8">9</ref> also labels the average iteration counts at which PairCoder transitions to its next plan, denoted by the colored demarcations, e.g.,</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>PairCoder</head><p>Self-debugging INTERVENOR 3.8 and 6.7 on HumanEval. They also reflect the average count of code repairs under each plan. We observe that the demarcations roughly align with the iteration counts where Self-debugging and INTERVENOR appear to plateau. This correlation suggests that multi-plan exploration based on the long-term memory module enables PairCoder to effectively identify and abandon unpromising plans. Within the same maximum number of iterations, PairCoder can timely explore multiple candidate plans based on execution feedback, achieving superior accuracy by expanding the search space away from local optima.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Cluster number impact.</head><p>To investigate the impact of the cluster number 𝑘 on PairCoder, we vary 𝑘 from 1 to 5. We also report the results on HumanEval and CodeContest-test with GPT-3.5-Turbo.</p><p>As shown in Fig. <ref type="figure" target="#fig_9">10</ref>, the line plots reflect the changes in pass@1, and the bar charts are for the proportion of problems where all 𝑘 plans are attempted. As the cluster number 𝑘 increases, the pass@1 score of PairCoder improves but reaches a bottleneck after 𝑘 = 3. Intuitively, a larger 𝑘 can bring more candidate solution plans for iterative refinement, leading to a positive correlation with the accuracy of PairCoder. However, only 4.88% and 14.55% of the problems in HumanEval and CodeContest-test, respectively, attempt more than three plans. This is because the iterative process would stop early due to passing public test cases or reaching the maximum number of iterations, resulting in a plateau in accuracy. It suggests that a moderate cluster number 𝑘 = 3 appears to be optimal for PairCoder with the maximum number of iterations 𝑟 = 10. We think that a larger iteration count and cluster number may bring more improvement for PairCoder, but it is a trade-off between effectiveness and cost. The proportions of attempting all 𝑘 plans differ significantly between the two benchmarks. For the simpler HumanEval, only 21.34% of problems attempt the second plan with 𝑘 = 2, while this value is 82.42% for CodeContest-test. CodeContest consists of competition-level programming problems, where an initial solution plan is likely to fail to solve the problem. This observation on complex problems supports our design for multi-plan exploration.</p><p>Answer to RQ2: The iteration count and cluster number significantly affect the accuracy of PairCoder. The increase in iteration count brings a substantial and consistent improvement to PairCoder versus the baselines. With a maximum of 10 iteration rounds, the optimal cluster number is 3, which is a trade-off for cost efficiency.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">RQ3: Ablation Study</head><p>To analyze the individual effectiveness of multi-plan exploration and feedback-driven refinement in PairCoder, we conduct ablation studies in Table <ref type="table" target="#tab_3">4</ref>. "w/o MP" disables the capability of multi-plan exploration, making the Navigator always choose to repair the current code rather than adjust the solution plan in Step 5. "w/o RF" is the opposite, which disables the feedback-driven refinement process, making the Navigator always choose to attempt another candidate plan. The Driver's behavior changes according to different directions of the Navigator.</p><p>The ablation results demonstrate that the complete PairCoder achieves the best accuracy, and both multi-plan exploration and feedback-driven refinement play a positive role in code generation. Multi-plan exploration effectively expands the search space away from local optima, leading to considerable improvements. Feedbackdriven refinement brings more significant improvement than multiplan exploration across all benchmarks and foundation models. It indicates that even with a proper solution plan, advanced LLMs still struggle to generate the correct code in one attempt. The two components are more effective for complex problems, yielding substantial relative improvements of 38.86% and 56.35% using GPT-3.5-Turbo on CodeContest-test, respectively, compared to 8.26% and 18.03% on the simpler HumanEval. This is in line with real-world programming practices, where complex problem-solving requires more exploration and refinement.</p><p>Answer to RQ3: Both multi-plan exploration and feedback-driven refinement contribute to PairCoder for code generation. They bring more significant improvements for complex problems in CodeContest, which is in line with real-world programming practices.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5">RQ4: Cost and Error Analyses</head><p>For this RQ, we further investigate the usage of PairCoder.</p><p>Cost analysis. We perform a cost analysis for PairCoder and all reproduced approaches on HumanEval, MBPP, and the test set of CodeContest. The cost is measured by two key metrics: the average number of API calls per problem and the average token consumption per problem. For each approach, we record its API requests and responses using GPT-3.5-Turbo. This provides the number of API calls and token consumption, including input tokens and generated output tokens of LLMs. Note that we count API calls to assess the efficiency in code generation, since the time spent is susceptible to uncontrollable factors such as network fluctuation.</p><p>For the fairness of comparison, we extend the comparative methods to conduct additional experiments using GPT-3.5-turbo: (i) For prompting techniques, we repeat sampling with a temperature of 0.8 until the generated code passes all public test cases or 10 attempts are reached. (ii) For Self-repair, we also allow up to 10 iterations. This setup ensures that these approaches have the same maximum number of attempts as the iterative approaches in Sect. 4.1. As shown in Table <ref type="table" target="#tab_4">5</ref>, the results demonstrate that simple repetitive sampling can indeed enhance these approaches, but PairCoder remains dominant. It confirms that the effectiveness of PairCoder beyond merely increased computation.  Table <ref type="table" target="#tab_5">6</ref> presents the cost comparison results. Among prompting techniques, Direct and CoT prompting generally have lower costs compared to other approaches, while SCoT and Self-planning demonstrate higher costs due to their complex prompting strategies. For refinement-based approached, Reflexion shows high API call and token consumption on both benchmarks. LDB, reported only for HumanEval, demonstrates the highest token consumption among all approaches. Collaborating the Navigator and the Driver, PairCoder requires more API calls than most approaches except Reflexion. Nevertheless, PairCoder maintains moderate token consumption, particularly when compared to LDB, Reflexion, and Self-debugging across different benchmarks. Furthermore, we observe that all approaches spend higher cost on the challenging CodeContest-test than simpler benchmarks, due to the fact that complex problem-solving requires more model interactions. Despite moderate cost increase, PairCoder significantly improves accuracy across all settings (as shown in Tables <ref type="table" target="#tab_1">2</ref> and <ref type="table" target="#tab_4">5</ref>), justifying the minor increase cost. Overall, PairCoder achieves better accuracy in code generation while maintaining reasonable costs compared to existing approaches.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Error analysis.</head><p>We conduct a detailed analysis of the error types encountered by PairCoder using GPT-3.5-Turbo on three benchmarks. Table <ref type="table" target="#tab_6">7</ref> presents the analysis results. Overall, Wrong Answer Based on the above findings, the evolution of code generation approaches and the expansion of public test cases are both crucial and orthogonal. PairCoder seems powerful enough for simple programming problems, and broader public test cases such as edge cases would bring the accuracy closer to that on the current 𝑇 𝑣 . For complex problems, it is imperative to enhance the reasoning and programming capabilities inherent in LLMs. Besides, retrieval augmentation <ref type="bibr" target="#b19">[20,</ref><ref type="bibr" target="#b37">38,</ref><ref type="bibr" target="#b42">43]</ref> and test case generation <ref type="bibr" target="#b4">[5,</ref><ref type="bibr" target="#b38">39,</ref><ref type="bibr" target="#b41">42,</ref><ref type="bibr" target="#b50">51]</ref> are potential future improvements in code generation.</p><p>Answer to RQ4: Compared to existing approaches, Pair-Coder achieves superior accuracy with comparable and reasonable cost. Wrong Answer is the main error cause, yet efficiency and robustness also deserve concerns for complex problems. In addition to enhancing code generation, test case generation is a promising orthogonal direction.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.6">Threats to Validity</head><p>The first potential threat relates to the generalizability of our evaluation. To mitigate this concern, we carefully select five widely used and representative benchmarks and both closed-source and open-source LLMs for our experiments. Under all these settings, consistently superior accuracy demonstrates the effectiveness of PairCoder. In future work, we plan to further validate the generalizability of PairCoder across a broader range of LLMs and benchmarks, such as multilingual code generation <ref type="bibr" target="#b2">[3,</ref><ref type="bibr" target="#b52">53]</ref>.</p><p>Another potential threat is data leakage in pre-trained LLMs. For example, DeepSeek-Coder was released after benchmarks like HumanEval were collected, raising the possibility that benchmark samples were unintentionally included in its pre-training corpus. However, any such leakage would affect all baselines equally since they use the same model. Therefore, while leakage may inflate overall accuracy, it does not affect the fairness of our comparative analysis and the relative gains of PairCoder, which consistently shows the largest improvements across all settings.</p><p>The third potential threat arises from the zero-shot prompting used in our experiments. Although zero-shot prompting achieves superior accuracy while largely reducing token consumption, we do not rule out the possibility that other instructions or few-shot demonstrations could further improve performance. However, the selection of demonstrations for in-context learning poses a significant challenge, which can greatly influence the behavior of LLMs <ref type="bibr" target="#b11">[12]</ref>. We leave the exploration of effective few-shot prompting techniques in future work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">RELATED WORK</head><p>Recent advancements in LLMs have shown remarkable capabilities in code generation tasks by training on vast amounts of codecontaining corpora. Open-source models like InCoder <ref type="bibr" target="#b10">[11]</ref>, Code Llama <ref type="bibr" target="#b39">[40]</ref>, WizardCoder <ref type="bibr" target="#b28">[29]</ref>, and DeepSeek-Coder <ref type="bibr" target="#b13">[14]</ref>, have depicted performance that matches or even surpasses closed-source commercial models like ChatGPT <ref type="bibr" target="#b32">[33]</ref>, GPT-4 <ref type="bibr" target="#b33">[34]</ref>, and Claude <ref type="bibr" target="#b0">[1]</ref>. This development has significantly improved software productivity <ref type="bibr" target="#b22">[23,</ref><ref type="bibr" target="#b34">35]</ref> and profoundly affected the progress of intelligent software engineering, attracting substantial work focused on enhancing the code generation capabilities of LLMs.</p><p>A key focus is on prompting techniques that guide LLMs to produce intermediate reasoning steps from problem descriptions. Prompting techniques have been proven to effectively improve the code generation performance of LLMs in a plug-and-play manner <ref type="bibr" target="#b17">[18,</ref><ref type="bibr" target="#b21">22,</ref><ref type="bibr" target="#b24">25,</ref><ref type="bibr" target="#b25">26,</ref><ref type="bibr" target="#b45">46]</ref>. SCoT <ref type="bibr" target="#b24">[25]</ref> and Self-planning <ref type="bibr" target="#b21">[22]</ref> design different formats of intermediate steps, while BRAINSTORM <ref type="bibr" target="#b25">[26]</ref> trains a neural ranker model to select the best thought. They leverage prompting techniques to stimulate the reasoning capabilities of LLMs, guiding them to generate more accurate code. However, generating correct code is rarely a one-time effort <ref type="bibr" target="#b6">[7]</ref>. Some approaches <ref type="bibr" target="#b4">[5,</ref><ref type="bibr" target="#b20">21,</ref><ref type="bibr" target="#b26">27,</ref><ref type="bibr" target="#b30">31,</ref><ref type="bibr" target="#b40">41,</ref><ref type="bibr" target="#b51">52]</ref> first generate multiple code solutions and then filter or rank them based on consistency or execution results to obtain the final code. They require substantial computational resources to generate code candidates, which is inefficient and orthogonal to our framework.</p><p>Another line of work focuses on refining the generated code <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b31">32,</ref><ref type="bibr" target="#b44">45,</ref><ref type="bibr" target="#b49">50,</ref><ref type="bibr" target="#b53">54]</ref>, where the feedback is obtained from LLMs themselves or external sources. Self-edit <ref type="bibr" target="#b49">[50]</ref> trains a fault-aware code editor that employs error messages to refine the generated code. Self-repair <ref type="bibr" target="#b31">[32]</ref> investigates the effects of leveraging feedback from diverse sources for code repair, such as humans or LLMs. Selfdebugging <ref type="bibr" target="#b6">[7]</ref> utilizes explanations generated by LLMs to repair code. INTERVENOR <ref type="bibr" target="#b44">[45]</ref> emulates the interactive code repair processes based on compiler feedback. LDB <ref type="bibr" target="#b53">[54]</ref> mainly focuses on debugging by leveraging runtime execution information, which is orthogonal to our work. It can be integrated into our PairCoder framework to enhance code repair in Steps 5 and 6. We include competitive baselines in our experiments <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b21">22,</ref><ref type="bibr" target="#b24">25,</ref><ref type="bibr" target="#b31">32,</ref><ref type="bibr" target="#b44">45,</ref><ref type="bibr" target="#b53">54]</ref>, as shown in Table <ref type="table" target="#tab_1">2</ref>, exclude Self-Edit <ref type="bibr" target="#b49">[50]</ref> due to its additional training requirements.</p><p>Additionally, several works <ref type="bibr" target="#b9">[10,</ref><ref type="bibr" target="#b15">16,</ref><ref type="bibr" target="#b36">37]</ref> employ collaborative LLM agents to simulate the full software development lifecycle such as the waterfall model <ref type="bibr" target="#b35">[36]</ref>, spanning from high-level tasks like requirements analysis and architecture design <ref type="bibr" target="#b15">[16,</ref><ref type="bibr" target="#b36">37]</ref>, to lowlevel roles like coder and tester <ref type="bibr" target="#b9">[10]</ref>. A notable example is MetaGPT <ref type="bibr" target="#b15">[16]</ref>. In contrast, our PairCoder focuses specifically on the critical coding stage, essentially corresponding to the Engineer agent in MetaGPT. Instead of attempting to simulate the entire development lifecycle, PairCoder uses collaborative agents to emulate pair programming, a well-established and proven software practice directly targeting efficient and high-quality code generation. While differing in scope, our work complements those broader development lifecycle simulations by concentrating on the essential coding component.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">CONCLUSION</head><p>In this paper, we propose the PairCoder framework, which is the first to adapt pair programming practices into LLM-based code generation. It comprises a Navigator agent for high-level planning and a Driver agent for specific implementation, collaborating on code generation via multi-plan exploration and feedback-driven refinement. The Navigator explores multiple plans based on execution feedback from the Driver and historical memory. The Driver follows the guidance of the Navigator to undertake initial code generation, code testing, and refinement. Extensive experiments on diverse benchmarks and LLMs demonstrate the superior accuracy of PairCoder. Our work represents a promising step towards leveraging collaborative agents to facilitate intelligent software development. In future work, we plan to integrate human feedback or external knowledge sources to further enhance the high-level planning capabilities of the Navigator. We will also explore applications of the PairCoder framework to other domains beyond code generation.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Overview of our PairCoder, in which a Navigator agent and a Driver agent collaborate on code generation.</figDesc><graphic coords="3,235.52,262.58,134.69,67.20" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Algorithm 1 : 8 𝑆 ← 𝑆 \ {𝑝𝑙𝑎𝑛}; 9 H</head><label>189</label><figDesc>PairCoderInput: problem description Q, public test cases T 𝑣 [Agents]: Navigator model M 𝑁 , Driver model M 𝐷 [Memories]: code history H 𝑐 , feedback history H 𝑓 [Hyperparameters]: the maximum number of iterations 𝑟 , the number of sampled plans 𝑛, the number of clusters 𝑘 Output: generated code 𝐶 1 𝑟𝑒 𝑓 𝑙𝑒𝑐𝑡𝑖𝑜𝑛 ← M 𝑁 (• | ReflectPrompt, Q); 2 {𝑃 𝑖 } 𝑛 𝑖=1 ← M 𝑁 (• | PlanPrompt, Q, 𝑟𝑒 𝑓 𝑙𝑒𝑐𝑡𝑖𝑜𝑛); 3 𝑆 ← ClusterPlans({𝑃 𝑖 } 𝑛 𝑖=1 , 𝑘); // 𝑆 ⊆ {𝑃 𝑖 } 𝑛 𝑖=1 ∧ ∥𝑆 ∥ = 𝑘 4 𝐶 ← 𝑁𝑈 𝐿𝐿; 𝐹 ← 𝑁𝑈 𝐿𝐿; 5 for 𝑗 := 1 to 𝑟 do 6 if ( 𝑗 = 1) ∨ (𝐶 ∈ H 𝑐 ) ∨ (𝐹 ∈ H 𝑓 ) then // select a new solution plan 7 𝑝𝑙𝑎𝑛 ← M 𝑁 (• | SelectPrompt, Q, 𝑟𝑒 𝑓 𝑙𝑒𝑐𝑡𝑖𝑜𝑛, 𝑆); 𝑐 ← ∅; H 𝑓 ← ∅; 10 𝐶 ← M 𝐷 (• | CodePrompt, Q, 𝑝𝑙𝑎𝑛);</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>11 else // stick to the current plan 12 H</head><label>1112</label><figDesc>𝑐 ← H 𝑐 ∪ {𝐶}; H 𝑓 ← H 𝑓 ∪ {𝐹 }; 13 𝑠𝑡𝑟𝑎𝑡𝑒𝑔𝑦 ← M 𝑁 (• | AnalyzePrompt, Q, 𝐶, 𝐹 );</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>14 𝐶</head><label>14</label><figDesc>← M 𝐷 (• | RepairPrompt, Q, 𝐶, 𝑠𝑡𝑟𝑎𝑡𝑒𝑔𝑦);</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>15 𝐹←</head><label>15</label><figDesc>ExecuteTests(𝐶, T 𝑣 ); 16 if 𝐹 = Pass then break ; 17 return 𝐶;</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><figDesc>For input [1, 3, 4], 1 operation is needed. Insert 2 to get [1, 2, 3, 4].</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 4 :</head><label>4</label><figDesc>Figure4: The prompt template for sampling multiple plans and an output example of solution plans.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 7 :RepairPromptFigure 8 :</head><label>78</label><figDesc>Figure 7: The prompt template used by the Driver to generate initial code guided by a new solution plan.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 9 :</head><label>9</label><figDesc>Figure 9: Accuracy changes with the maximum number of iterations, which evaluates PairCoder, Self-debugging, and INTERVENOR using GPT-3.5-Turbo on (a) HumanEval and (b) CodeContest-test benchmarks. The colored demarcations denote the average iteration counts at which PairCoder transitions to its next plan.</figDesc><graphic coords="8,464.60,335.29,94.16,54.74" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 10 :</head><label>10</label><figDesc>Figure 10: Accuracy changes with the number of clusters, which evaluates PairCoder by pass@1 score and the proportion of problems where all 𝑘 plans are attempted.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Benchmark statistics, including the number of programming problems Q, the average number of public test cases 𝑚 𝑣 , and the average number of private test cases 𝑚 ℎ .</figDesc><table><row><cell>Features</cell><cell cols="2">HumanEval</cell><cell cols="2">MBPP</cell><cell cols="2">CodeContest</cell></row><row><cell></cell><cell>Orig</cell><cell cols="2">Plus Orig</cell><cell cols="2">Plus Valid</cell><cell>Test</cell></row><row><cell># Q</cell><cell>164</cell><cell>164</cell><cell>500</cell><cell>399</cell><cell>117</cell><cell>165</cell></row><row><cell>Avg. 𝑚 𝑣</cell><cell>2.8</cell><cell>2.8</cell><cell>1.0</cell><cell>3.0</cell><cell>1.5</cell><cell>1.7</cell></row><row><cell>Avg. 𝑚 ℎ</cell><cell cols="2">9.6 764.1</cell><cell cols="4">3.1 108.5 202.9 202.1</cell></row><row><cell cols="7">the API calls and token consumption, providing insights into</cell></row><row><cell cols="7">the computational resources required to deploy PairCoder</cell></row><row><cell cols="7">in real-world scenarios. We also analyze the causes of errors</cell></row><row><cell cols="7">in failed test cases, indicating potential future improvements</cell></row><row><cell cols="3">in code generation.</cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Comparison of pass@1 with two LLMs on code generation benchmarks. " † " denotes the value is directly cited from the respective original work, and "-" denotes the empty result due to reproducibility issues.</figDesc><table><row><cell></cell><cell></cell><cell></cell><cell cols="2">GPT-3.5-Turbo</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">DeepSeek-Coder</cell><cell></cell><cell></cell></row><row><cell>Approaches</cell><cell cols="2">HumanEval</cell><cell cols="2">MBPP</cell><cell cols="2">CodeContest</cell><cell cols="2">HumanEval</cell><cell cols="2">MBPP</cell><cell cols="2">CodeContest</cell></row><row><cell></cell><cell>Orig</cell><cell>Plus</cell><cell>Orig</cell><cell>Plus</cell><cell>Valid</cell><cell>Test</cell><cell>Orig</cell><cell>Plus</cell><cell>Orig</cell><cell>Plus</cell><cell>Valid</cell><cell>Test</cell></row><row><cell>Direct prompting</cell><cell>67.68</cell><cell>60.98</cell><cell>66.80</cell><cell>66.42</cell><cell>6.84</cell><cell>6.06</cell><cell>76.22</cell><cell>67.78</cell><cell>66.40</cell><cell>64.41</cell><cell>5.98</cell><cell>6.67</cell></row><row><cell>CoT prompting</cell><cell>68.90</cell><cell>62.80</cell><cell>69.00</cell><cell>67.17</cell><cell>5.13</cell><cell>5.45</cell><cell>77.27</cell><cell>68.90</cell><cell>67.60</cell><cell>67.67</cell><cell>5.45</cell><cell>6.67</cell></row><row><cell>SCoT prompting</cell><cell>68.29</cell><cell>61.59</cell><cell>62.60</cell><cell>61.40</cell><cell>5.98</cell><cell>4.24</cell><cell>73.17</cell><cell>65.85</cell><cell>61.80</cell><cell>60.15</cell><cell>4.27</cell><cell>6.06</cell></row><row><cell>Self-planning</cell><cell>72.56</cell><cell>64.63</cell><cell>69.60</cell><cell>67.67</cell><cell>7.69</cell><cell>6.06</cell><cell>74.39</cell><cell>68.90</cell><cell>65.80</cell><cell>68.17</cell><cell>6.84</cell><cell>9.09</cell></row><row><cell>Self-collaboration  †</cell><cell>74.40</cell><cell>-</cell><cell>68.20</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>Self-repair</cell><cell>73.17</cell><cell>65.24</cell><cell>70.60</cell><cell>69.42</cell><cell>7.69</cell><cell>6.67</cell><cell>77.44</cell><cell>70.12</cell><cell>70.00</cell><cell>70.43</cell><cell>5.98</cell><cell>7.27</cell></row><row><cell>Self-debugging</cell><cell>78.05</cell><cell>72.56</cell><cell>72.80</cell><cell>70.43</cell><cell>9.40</cell><cell>11.52</cell><cell>79.27</cell><cell>73.78</cell><cell>72.20</cell><cell>71.12</cell><cell>8.55</cell><cell>13.33</cell></row><row><cell>INTERVENOR</cell><cell>77.44</cell><cell>69.51</cell><cell>73.40</cell><cell>71.93</cell><cell>8.55</cell><cell>9.09</cell><cell>79.88</cell><cell>72.56</cell><cell>72.60</cell><cell>72.43</cell><cell>7.69</cell><cell>10.30</cell></row><row><cell>Reflexion</cell><cell>69.57</cell><cell>-</cell><cell>67.76</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>81.99</cell><cell>-</cell><cell>74.31</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>LDB  †</cell><cell>82.90</cell><cell>-</cell><cell>76.00</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>PairCoder (ours)</cell><cell>87.80</cell><cell>77.44</cell><cell>80.60</cell><cell>77.69</cell><cell>17.95</cell><cell>15.15</cell><cell>85.37</cell><cell>76.22</cell><cell>78.80</cell><cell>75.69</cell><cell>13.68</cell><cell>14.55</cell></row></table><note><p>Relative improvement ↑ 29.73% 26.99% 20.66% 16.97% 162.43% 150.00% 12.00% 12.45% 18.67% 17.51% 128.76% 118.14%</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Additional comparison of pass@1 with GPT-4 on the original HumanEval and the sanitized MBPP<ref type="bibr" target="#b3">[4]</ref>.</figDesc><table><row><cell>Approaches</cell><cell cols="2">HumanEval MBPP</cell></row><row><cell>Direct prompting</cell><cell>84.76</cell><cell>82.71</cell></row><row><cell>MetaGPT  †</cell><cell>85.9</cell><cell>87.7</cell></row><row><cell>Reflexion  †</cell><cell>91.0</cell><cell>77.1</cell></row><row><cell>Self-collaboration  †</cell><cell>90.2</cell><cell>78.9</cell></row><row><cell>PairCoder</cell><cell>93.90</cell><cell>91.23</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 :</head><label>4</label><figDesc>Ablation results for multi-plan exploration (MP) and feedback-driven refinement (RF).</figDesc><table><row><cell>Models</cell><cell>Variants</cell><cell cols="2">HumanEval</cell><cell cols="2">MBPP</cell><cell>CodeContest</cell></row><row><cell></cell><cell></cell><cell>Orig</cell><cell>Plus</cell><cell>Orig</cell><cell>Plus Valid</cell><cell>Test</cell></row><row><cell>GPT-3.5 -Turbo</cell><cell cols="5">PairCoder 87.80 77.44 80.60 77.69 17.95 15.15 w/o MP 81.10 73.78 76.20 71.68 11.97 10.91 w/o RF 74.39 68.29 72.20 68.92 8.55 9.69</cell></row><row><cell>DeepSeek -Coder</cell><cell cols="5">PairCoder 85.37 76.22 78.80 75.69 13.68 14.55 w/o MP 78.86 73.17 73.40 71.93 9.40 12.12 w/o RF 75.61 69.51 68.60 67.92 7.69 10.91</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 5 :</head><label>5</label><figDesc>Accuracy comparison of prompting approaches and Self-repair using GPT-3.5-Turbo with up to 10 iterations. Hu-manEval and MBPP are the original versions (the same below unless otherwise specified).</figDesc><table><row><cell>Approaches</cell><cell cols="3">HumanEval MBPP CodeContest-test</cell></row><row><cell>Direct prompting</cell><cell>75.61</cell><cell>72.80</cell><cell>9.09</cell></row><row><cell>CoT prompting</cell><cell>76.83</cell><cell>73.00</cell><cell>7.88</cell></row><row><cell>SCoT prompting</cell><cell>75.61</cell><cell>73.94</cell><cell>8.48</cell></row><row><cell>Self-planning</cell><cell>79.27</cell><cell>76.36</cell><cell>10.90</cell></row><row><cell>Self-repair</cell><cell>78.65</cell><cell>75.00</cell><cell>9.09</cell></row><row><cell>PairCoder</cell><cell>87.80</cell><cell>80.60</cell><cell>15.15</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 6 :</head><label>6</label><figDesc>Average number of API calls and tokens (in thousands) using GPT-3.5-Turbo. Note that all approaches are allowed up to 10 iterations.</figDesc><table><row><cell>Approaches</cell><cell cols="2">HumanEval</cell><cell cols="2">MBPP</cell><cell cols="2">CodeContest-test</cell></row><row><cell></cell><cell cols="4">API Token API Token</cell><cell>API</cell><cell>Token</cell></row><row><cell cols="2">Direct prompting 2.43</cell><cell>1.19</cell><cell>2.31</cell><cell>1.23</cell><cell>8.73</cell><cell>9.79</cell></row><row><cell>CoT prompting</cell><cell>2.43</cell><cell>1.36</cell><cell>2.37</cell><cell>1.41</cell><cell>8.62</cell><cell>10.16</cell></row><row><cell>SCoT prompting</cell><cell>4.63</cell><cell>4.46</cell><cell>4.61</cell><cell>4.49</cell><cell>17.30</cell><cell>26.57</cell></row><row><cell>Self-planning</cell><cell>4.16</cell><cell>3.27</cell><cell>4.67</cell><cell>2.78</cell><cell>17.02</cell><cell>20.03</cell></row><row><cell>Self-repair</cell><cell>2.37</cell><cell>2.40</cell><cell>2.36</cell><cell>2.02</cell><cell>8.85</cell><cell>19.82</cell></row><row><cell>Reflexion</cell><cell>8.47</cell><cell>9.68</cell><cell cols="2">9.58 10.28</cell><cell>-</cell><cell>-</cell></row><row><cell>LDB  †</cell><cell>-</cell><cell>23</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>Self-debugging</cell><cell>2.74</cell><cell>7.74</cell><cell>2.55</cell><cell>6.47</cell><cell>9.07</cell><cell>38.40</cell></row><row><cell>INTERVENOR</cell><cell>3.85</cell><cell>2.05</cell><cell>3.77</cell><cell>1.83</cell><cell>17.06</cell><cell>13.72</cell></row><row><cell>PairCoder</cell><cell>5.28</cell><cell>5.98</cell><cell>5.37</cell><cell>5.09</cell><cell>17.56</cell><cell>24.06</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 7 :</head><label>7</label><figDesc>Analysis of passes on public test cases 𝑇 𝑣 , private test cases 𝑇 ℎ , and specific error types on 𝑇 ℎ , i.e., Runtime Error (RE), Wrong Answer (WA), and Time Limit Exceeded (TLE).RuntimeError and Time Limit Exceeded are rare. However, on the challenging CodeContest-test benchmark, the accuracy largely decreases. Although the causes of errors are still dominated by Wrong Answer, there is a notable increase in Runtime Error and Time Limit Exceeded. The analysis results are consistent with realistic programming practices, where simple problems generally do not encounter unexpected exceptions and efficiency issues. We emphasize the urgent need to further improve the functional correctness of code generation, and also focus on the efficiency and robustness for complex programming problems.Since only the public test cases 𝑇 𝑣 are visible during the code generation and refinement stages, their quality directly impacts the final performance. On HumanEval and MBPP, the pass rates on public test cases are over 93%, and 91.72% (87.80/95.73) and 86.48% (80.60/93.20) of them also pass the private test cases 𝑇 ℎ , respectively. However, on the challenging CodeContest-test, the pass rate on𝑇 𝑣 is only 21.21%, and 71.43% (15.15/21.21) of them eventually pass 𝑇 ℎ . As with code testing, public test cases can provide real feedback from the executor, revealing the vulnerability of a program to specific inputs. Referring to Table1, the low coverage of public test cases limits the ability of PairCoder to facilitate code generation.</figDesc><table><row><cell>Benchmarks</cell><cell cols="2">Pass 𝑇 𝑣 Pass 𝑇 ℎ</cell><cell></cell><cell>Not pass 𝑇 ℎ</cell></row><row><cell></cell><cell></cell><cell></cell><cell>RE</cell><cell>WA</cell><cell>TLE</cell></row><row><cell>HumanEval</cell><cell>95.73%</cell><cell>87.80%</cell><cell>0</cell><cell cols="2">11.59% 0.61%</cell></row><row><cell>MBPP</cell><cell>93.20%</cell><cell>80.60%</cell><cell cols="2">0.80% 18.60%</cell><cell>0</cell></row><row><cell cols="2">CodeContest-test 21.21%</cell><cell cols="4">15.15% 16.36% 60.00% 8.48%</cell></row><row><cell cols="6">is the most common error type, indicating that generating function-</cell></row><row><cell cols="6">ally correct programs remains a key challenge for code generation.</cell></row><row><cell cols="6">On the relatively simple HumanEval and MBPP benchmarks, Pair-</cell></row><row><cell cols="5">Coder solves over 80% programming problems, where</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>https://github.com/nju-websoft/PairCoder</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>ACKNOWLEDGMENTS</head><p>We thank the anonymous reviewers for their valuable comments. This work was supported by the <rs type="funder">National Natural Science Foundation of China</rs> (No. <rs type="grantNumber">62272219</rs>) and the <rs type="funder">Collaborative Innovation Center of Novel Software Technology &amp; Industrialization</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_RSMJjtA">
+					<idno type="grant-number">62272219</idno>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/claude/" />
+		<title level="m">Meet Claude</title>
+		<imprint>
+			<date type="published" when="2023-05-30">2023. May 30, 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">2007. k-means++: The Advantages of Careful Seeding</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Arthur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergei</forename><surname>Vassilvitskii</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SODA. SIAM</title>
+		<meeting><address><addrLine>New Orleans, LA, USA</addrLine></address></meeting>
+		<imprint>
+			<biblScope unit="page" from="1027" to="1035" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Murali Krishna Ramanathan, and Ramesh Nallapati. 2023. Multi-lingual Evaluation of Code Generation Models</title>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Athiwaratkun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Krishna</forename><surname>Sanjay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijian</forename><surname>Gouda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaopeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uddin</forename><surname>Wasi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiqi</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qing</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingyue</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sujan</forename><surname>Shang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hantian</forename><surname>Kumar Gonugondla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Varun</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arash</forename><surname>Fulton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siddhartha</forename><surname>Farahani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haifeng</forename><surname>Giaquinto</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Qian</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">In ICLR. OpenReview.net</title>
+		<imprint>
+			<biblScope unit="page" from="1" to="19" />
+			<pubPlace>Kigali, Rwanda</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Program Synthesis with Large Language Models</title>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Augustus</forename><surname>Odena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><forename type="middle">I</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carrie</forename><forename type="middle">J</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Sutton</surname></persName>
+		</author>
+		<idno>CoRR 2108.07732</idno>
+		<imprint>
+			<date type="published" when="2021">2021. 2021</date>
+			<biblScope unit="page" from="1" to="34" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fengji</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anh</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daoguang</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeqi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian-Guang</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">CodeT: Code Generation with Generated Tests. In ICLR. OpenReview.net</title>
+		<imprint>
+			<biblScope unit="page" from="1" to="19" />
+			<date type="published" when="2023">2023</date>
+			<pubPlace>Kigali, Rwanda</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henrique</forename><surname>Pondé De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harrison</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raul</forename><surname>Puri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Petrov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heidy</forename><surname>Khlaaf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brooke</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikhail</forename><surname>Pavlov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alethea</forename><surname>Power</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clemens</forename><surname>Winter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philippe</forename><surname>Tillet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felipe</forename><forename type="middle">Petroski</forename><surname>Such</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dave</forename><surname>Cummings</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fotios</forename><surname>Chantzis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elizabeth</forename><surname>Barnes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ariel</forename><surname>Herbert-Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Hebgen Guss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Nichol</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Paino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolas</forename><surname>Tezak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Babuschkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suchir</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shantanu</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Saunders</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">N</forename><surname>Carr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vedant</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evan</forename><surname>Morikawa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Knight</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miles</forename><surname>Brundage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mira</forename><surname>Murati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katie</forename><surname>Mayer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Welinder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bob</forename><surname>Mcgrew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wojciech</forename><surname>Zaremba</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="1" to="35" />
+		</imprint>
+	</monogr>
+	<note>Evaluating Large Language Models Trained on Code. CoRR 2107.03374 (2021</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Teaching Large Language Models to Self-Debug</title>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">In ICLR. OpenReview.net</title>
+		<imprint>
+			<biblScope unit="page" from="1" to="80" />
+			<date type="published" when="2024">2024</date>
+			<pubPlace>Vienna, Austria</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Batch Prompting: Efficient Inference with Large Language Model APIs</title>
+		<author>
+			<persName><forename type="first">Zhoujun</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jungo</forename><surname>Kasai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Yu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP. ACL</title>
+		<meeting><address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="792" to="810" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Large Language Models are Edge-Case Generators: Crafting Unusual Programs for Fuzzing Deep Learning Libraries</title>
+		<author>
+			<persName><forename type="first">Yinlin</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dylan</forename><surname>Shizhuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shujing</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICSE</title>
+		<meeting><address><addrLine>Lisbon, Portugal</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">70</biblScope>
+			<biblScope unit="page">13</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Self-collaboration Code Generation via ChatGPT</title>
+		<author>
+			<persName><forename type="first">Yihong</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xue</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<idno>CoRR 2304.07590</idno>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+			<biblScope unit="page" from="1" to="38" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">InCoder: A Generative Model for Code Infilling and Synthesis</title>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armen</forename><surname>Aghajanyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jessy</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sida</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Wallace</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Freda</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiqi</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ICLR. OpenReview.net</title>
+		<imprint>
+			<biblScope unit="page" from="1" to="26" />
+			<date type="published" when="2023">2023</date>
+			<pubPlace>Kigali, Rwanda</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">What Makes Good In-Context Demonstrations for Code Intelligence Tasks with LLMs?</title>
+		<author>
+			<persName><forename type="first">Shuzheng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin-Cheng</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cuiyun</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenxuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><forename type="middle">R</forename><surname>Lyu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ASE. IEEE</title>
+		<meeting><address><addrLine>Kirchberg, Luxembourg</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="761" to="773" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Large Language Models are Few-Shot Summarizers: Multi-Intent Comment Generation via In-Context Learning</title>
+		<author>
+			<persName><forename type="first">Mingyang</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shangwen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dezun</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoguang</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangke</forename><surname>Liao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICSE</title>
+		<meeting><address><addrLine>Lisbon, Portugal</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">39</biblScope>
+			<biblScope unit="page">13</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Daya Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenda</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wentao</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanting</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fuli</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingfei</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenfeng</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Liang</surname></persName>
+		</author>
+		<idno>CoRR 2401.14196</idno>
+		<title level="m">DeepSeek-Coder: When the Large Language Model Meets Programming -The Rise of Code Intelligence</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+			<biblScope unit="page" from="1" to="23" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">The Curious Case of Neural Text Degeneration</title>
+		<author>
+			<persName><forename type="first">Ari</forename><surname>Holtzman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Buys</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Forbes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">In ICLR. OpenReview.net</title>
+		<imprint>
+			<biblScope unit="page" from="1" to="16" />
+			<date type="published" when="2020">2020</date>
+			<pubPlace>Addis Ababa, Ethiopia</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">MetaGPT: Meta Programming for A Multi-Agent Collaborative Framework</title>
+		<author>
+			<persName><forename type="first">Sirui</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchen</forename><surname>Zhuge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiawu</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ceyao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zili</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Ka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shing</forename><surname>Yau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijuan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyu</forename><surname>Ran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingfeng</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenglin</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jürgen</forename><surname>Schmidhuber</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">In ICLR. OpenReview.net</title>
+		<imprint>
+			<biblScope unit="page" from="1" to="26" />
+			<date type="published" when="2024">2024</date>
+			<pubPlace>Vienna, Austria</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Theoretical and Empirical Studies of Program Testing</title>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">E</forename><surname>Howden</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. Softw</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="page" from="293" to="298" />
+			<date type="published" when="1978">1978. 1978</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">CodeCoT: Tackling Code Syntax Errors in CoT Reasoning for Code Generation</title>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingwen</forename><surname>Bu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhao</forename><surname>Qing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heming</forename><surname>Cui</surname></persName>
+		</author>
+		<idno>CoRR 2308.08784</idno>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+			<biblScope unit="page" from="1" to="20" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Large Language Models Cannot Self-Correct Reasoning Yet</title>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swaroop</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Huaixiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adams</forename><forename type="middle">Wei</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinying</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">In ICLR. OpenReview.net</title>
+		<imprint>
+			<biblScope unit="page" from="1" to="17" />
+			<date type="published" when="2024">2024</date>
+			<pubPlace>Kigali, Rwanda</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Knowledge-Aware Code Generation with Large Language Models. In ICPC</title>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Lyu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE/ACM</title>
+		<imprint>
+			<biblScope unit="page" from="52" to="63" />
+			<date type="published" when="2024">2024</date>
+			<pubPlace>Lisbon, Portugal</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Fault-Aware Neural Code Rankers</title>
+		<author>
+			<persName><forename type="first">Jeevana</forename><surname>Priya Inala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenglong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrés</forename><surname>Codas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Encarnación</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Shuvendu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Madanlal</forename><surname>Lahiri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Musuvathi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<meeting><address><addrLine>New Orleans, LA, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="13419" to="13432" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Selfplanning Code Generation with Large Language Model</title>
+		<author>
+			<persName><forename type="first">Xue</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihong</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lecheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiwei</forename><surname>Shang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<idno>CoRR 2303.06689</idno>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+			<biblScope unit="page" from="1" to="19" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Studying the effect of AI Code Generators on Supporting Novice Learners in Introductory Programming</title>
+		<author>
+			<persName><forename type="first">Majeed</forename><surname>Kazemitabaar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Justin</forename><surname>Chow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carl</forename><surname>Ka To</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barbara</forename><forename type="middle">J</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Ericson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tovi</forename><surname>Weintrop</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Grossman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CHI</title>
+		<meeting><address><addrLine>Hamburg, Germany</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">455</biblScope>
+			<biblScope unit="page">23</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Large Language Models are Zero-Shot Reasoners</title>
+		<author>
+			<persName><forename type="first">Takeshi</forename><surname>Kojima</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shane</forename><surname>Shixiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Machel</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutaka</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusuke</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Iwasawa</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<meeting><address><addrLine>New Orleans, LA, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="22199" to="22213" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Structured Chain-of-Thought Prompting for Code Generation</title>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongmin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+		<idno>CoRR 2305.06599</idno>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+			<biblScope unit="page" from="1" to="12" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Think Outside the Code: Brainstorming Boosts Large Language Models in Code Generation</title>
+		<author>
+			<persName><forename type="first">Xin-Ye</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiang-Tian</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Li</surname></persName>
+		</author>
+		<idno>CoRR 2305.10679</idno>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+			<biblScope unit="page" from="1" to="13" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyoung</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nate</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rémi</forename><surname>Leblond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Eccles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Keeling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Gimeno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Agustin</forename><forename type="middle">Dal</forename><surname>Lago</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Hubert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Choy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cyprien</forename><surname>De Masson D'autume</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Babuschkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Po-Sen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Welbl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sven</forename><surname>Gowal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexey</forename><surname>Cherepanov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Molloy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">J</forename><surname>Mankowitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Esme</forename><surname>Sutherland Robson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pushmeet</forename><surname>Kohli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Koray</forename><surname>Nando De Freitas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oriol</forename><surname>Kavukcuoglu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Vinyals</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Competition-Level Code Generation with AlphaCode. Science</title>
+		<imprint>
+			<biblScope unit="volume">378</biblScope>
+			<biblScope unit="page" from="1092" to="1097" />
+			<date type="published" when="2022">2022. 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Is Your Code Generated by ChatGPT Really Correct? Rigorous Evaluation of Large Language Models for Code Generation</title>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<meeting><address><addrLine>New Orleans, LA, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="21558" to="21572" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">WizardCoder: Empowering Code Large Language Models with Evol-Instruct</title>
+		<author>
+			<persName><forename type="first">Ziyang</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Can</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingfeng</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiubo</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenxiang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongyang</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingwei</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daxin</forename><surname>Jiang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR. OpenReview.net</title>
+		<meeting><address><addrLine>Kigali, Rwanda</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="1" to="21" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">ClarifyGPT: Empowering LLM-based Code Generation with Intention Clarification</title>
+		<author>
+			<persName><forename type="first">Fangwen</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Song</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuohao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binquan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenxue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shichao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qing</forename><surname>Wang</surname></persName>
+		</author>
+		<idno>CoRR 2310.10996</idno>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+			<biblScope unit="page" from="1" to="21" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">LEVER: Learning to Verify Language-to-Code Generation with Execution</title>
+		<author>
+			<persName><forename type="first">Ansong</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Srini</forename><surname>Iyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dragomir</forename><surname>Radev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Veselin</forename><surname>Stoyanov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen</forename><surname>Tau Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sida</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Victoria</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<meeting><address><addrLine>Honolulu, HI, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="26106" to="26128" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Is Self-Repair a Silver Bullet for Code Generation?</title>
+		<author>
+			<persName><forename type="first">Theo</forename><forename type="middle">X</forename><surname>Olausson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeevana</forename><surname>Priya Inala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenglong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armando</forename><surname>Solar-Lezama</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">In ICLR. OpenReview.net</title>
+		<imprint>
+			<biblScope unit="page" from="1" to="49" />
+			<date type="published" when="2024">2024</date>
+			<pubPlace>Vienna, Austria</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://openai.com/index/chatgpt/.Ac-cessed" />
+		<title level="m">Introducing ChatGPT</title>
+		<imprint>
+			<date type="published" when="2022-05-30">2022. May 30, 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<idno>2303.08774</idno>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+			<biblScope unit="page" from="1" to="100" />
+		</imprint>
+	</monogr>
+	<note type="report_type">GPT-4 Technical Report. CoRR</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">The Impact of AI on Developer Productivity: Evidence from GitHub Copilot</title>
+		<author>
+			<persName><forename type="first">Sida</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eirini</forename><surname>Kalliamvakou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Cihon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mert</forename><surname>Demirer</surname></persName>
+		</author>
+		<idno>2302.06590</idno>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+			<biblScope unit="page" from="1" to="19" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">The Waterfall Model in Large-Scale Development</title>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Petersen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claes</forename><surname>Wohlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dejan</forename><surname>Baca</surname></persName>
+		</author>
+		<editor>PROFES. Springer</editor>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="386" to="400" />
+			<pubPlace>Oulu, Finland</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">ChatDev: Communicative Agents for Software Development</title>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongzhang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nuo</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufan</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juyuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dahai</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL. ACL</title>
+		<meeting><address><addrLine>Bangkok, Thailand</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="15174" to="15186" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">From Misuse to Mastery: Enhancing Code Generation with Knowledge-Driven AI Chaining</title>
+		<author>
+			<persName><forename type="first">Xiaoxue</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyuan</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dehai</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenchang</forename><surname>Xing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohu</forename><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ASE</title>
+		<meeting><address><addrLine>Luxembourg</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="976" to="987" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Code Generation with AlphaCodium: From Prompt Engineering to Flow Engineering</title>
+		<author>
+			<persName><forename type="first">Tal</forename><surname>Ridnik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dedy</forename><surname>Kredo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Itamar</forename><surname>Friedman</surname></persName>
+		</author>
+		<idno>CoRR 2401.08500</idno>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+			<biblScope unit="page" from="1" to="10" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Baptiste Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabian</forename><surname>Gehring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sten</forename><surname>Gloeckle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Itai</forename><surname>Sootla</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Xiaoqing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yossi</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyu</forename><surname>Adi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tal</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jérémy</forename><surname>Remez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Artyom</forename><surname>Rapin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ivan</forename><surname>Kozhevnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joanna</forename><surname>Evtimov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manish</forename><surname>Bitton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cristian</forename><surname>Bhatt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Canton-Ferrer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhan</forename><surname>Grattafiori</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandre</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jade</forename><surname>Défossez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Faisal</forename><surname>Copet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Azhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Martin</surname></persName>
+		</author>
+		<idno>CoRR 2308.12950</idno>
+		<title level="m">Nicolas Usunier, Thomas Scialom, and Gabriel Synnaeve. 2023. Code Llama: Open Foundation Models for Code</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="1" to="48" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Natural Language to Code Translation with Execution</title>
+		<author>
+			<persName><forename type="first">Freda</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marjan</forename><surname>Ghazvininejad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sida</forename><forename type="middle">I</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP. ACL</title>
+		<meeting><address><addrLine>Abu Dhabi, United Arab Emirates</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="3533" to="3546" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Reflexion: Language Agents with Verbal Reinforcement Learning</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">In NeurIPS</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="8634" to="8652" />
+			<date type="published" when="2023">2023</date>
+			<publisher>Curran Associates, Inc</publisher>
+			<pubPlace>New Orleans, LA, USA</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">ARKS: Active Retrieval in Knowledge Soup for Code Generation</title>
+		<author>
+			<persName><forename type="first">Hongjin</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyang</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhang</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoyuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boao</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Che</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Yu</surname></persName>
+		</author>
+		<idno>CoRR 2402.12317</idno>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+			<biblScope unit="page" from="1" to="16" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">Can Large Language Models Really Improve by Self-critiquing Their Own Plans?</title>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Valmeekam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Marquez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Subbarao</forename><surname>Kambhampati</surname></persName>
+		</author>
+		<idno>CoRR 2310.08118</idno>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+			<biblScope unit="page" from="1" to="6" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">INTERVENOR: Prompt the Coding Ability of Large Language Models with the Interactive Chain of Repairing</title>
+		<author>
+			<persName><forename type="first">Hanbin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenghao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ganqu</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Yu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of ACL. ACL</title>
+		<meeting><address><addrLine>Bangkok, Thailand</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="2081" to="2107" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Chain-of-Thought Prompting Elicits Reasoning in Large Language Models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Quoc V Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<meeting><address><addrLine>New Orleans, LA, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="24824" to="24837" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Integrating pair programming into a software development process</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Williams</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">14th Conference on Software Engineering Education and Training</title>
+		<meeting><address><addrLine>Charlotte, NC, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2001">2001</date>
+			<biblScope unit="page" from="27" to="36" />
+		</imprint>
+	</monogr>
+	<note>In search of a software engineering profession Cat. No. PR01059</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Exploring and Unleashing the Power of Large Language Models in Automated Code Translation</title>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongxing</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacky</forename><forename type="middle">Wai</forename><surname>Keung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuo</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoxue</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proc. ACM Softw. Eng</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="1585" to="1608" />
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note>FSE</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">CoderEval: A Benchmark of Pragmatic Code Generation with Generative Pre-trained Models</title>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dezhi</forename><surname>Ran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guangtai</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qianxiang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Xie</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICSE</title>
+		<meeting><address><addrLine>Lisbon, Portugal</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page">12</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Self-Edit: Fault-Aware Code Editor for Code Generation</title>
+		<author>
+			<persName><forename type="first">Kechi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuo</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL. ACL</title>
+		<meeting><address><addrLine>Toronto, Canada</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="769" to="787" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">ALGO: Synthesizing Algorithmic Programs with LLM-generated Oracle Verifiers</title>
+		<author>
+			<persName><forename type="first">Kexun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danqing</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingtao</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<meeting><address><addrLine>New Orleans, LA, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Curran Associates Inc</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="54769" to="54784" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<analytic>
+		<title level="a" type="main">Coder Reviewer Reranking for Code Generation</title>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tatsunori</forename><surname>Hashimoto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sida</forename><surname>Wang</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<meeting><address><addrLine>Honolulu, HI, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">202</biblScope>
+			<biblScope unit="page" from="41832" to="41846" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">CodeGeeX: A Pre-Trained Model for Code Generation with Multilingual Benchmarking on HumanEval-X</title>
+		<author>
+			<persName><forename type="first">Qinkai</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiao</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufei</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhilin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Tang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">KDD</title>
+		<meeting><address><addrLine>Long Beach, CA, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="5673" to="5684" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Debug like a Human: A Large Language Model Debugger via Verifying Runtime Execution Step by Step</title>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingbo</forename><surname>Shang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of ACL. ACL</title>
+		<meeting><address><addrLine>Bangkok, Thailand</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="851" to="870" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

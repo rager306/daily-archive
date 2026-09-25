@@ -1,0 +1,1794 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Plan, Eliminate, and Track -Language Models are Good Teachers for Embodied Agents</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Yue</forename><surname>Wu</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">So</forename><forename type="middle">Yeon</forename><surname>Min</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Ruslan</forename><surname>Salakhutdinov</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Amos</forename><surname>Azaria</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Yuanzhi</forename><surname>Li</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Tom</forename><forename type="middle">M</forename><surname>Mitchell</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Shrimai</forename><surname>Prabhumoye</surname></persName>
+						</author>
+						<title level="a" type="main">Plan, Eliminate, and Track -Language Models are Good Teachers for Embodied Agents</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">17AC907CD05F99CAC149A52B24674AD5</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:29+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Pre-trained large language models (LLMs) capture procedural knowledge about the world. Recent work has leveraged LLM's ability to generate abstract plans to simplify challenging control tasks, either by action scoring, or action modeling (fine-tuning). However, the transformer architecture inherits several constraints that make it difficult for the LLM to directly serve as the agent: e.g. limited input lengths, fine-tuning inefficiency, bias from pre-training, and incompatibility with nontext environments. To maintain compatibility with a low-level trainable actor, we propose to instead use the knowledge in LLMs to simplify the control problem, rather than solving it.</p><p>We propose the Plan, Eliminate, and Track (PET) framework. The Plan module translates a task description into a list of high-level sub-tasks. The Eliminate module masks out irrelevant objects and receptacles from the observation for the current sub-task. Finally, the Track module determines whether the agent has accomplished each sub-task. On the Alf-World instruction following benchmark, the PET framework leads to a significant 15% improvement over SOTA for generalization to human goal specifications.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>Humans can abstractly plan their everyday tasks without execution; for example, given the task "Make breakfast", we can roughly plan to first pick up a mug and make coffee, before grabbing eggs to scramble. Embodied agents, endowed with this capability will generalize more effectively by leveraging common-sense reasoning. Recent work <ref type="bibr">(Huang et al., 2022a;</ref><ref type="bibr">b;</ref><ref type="bibr" target="#b0">Ahn et al., 2022;</ref><ref type="bibr" target="#b39">Yao et al., 2020)</ref> has used LLMs <ref type="bibr" target="#b5">(Bommasani et al., 2021)</ref> for abstract planning for embodied or gaming agents. These have shown incipient success in extracting procedural world knowledge from LLMs in linguistic form with posthoc alignment to executable actions in the environment. However, they treat LLMs as the actor, and focus on adapting LLM outputs to executable actions either through fine-tuning <ref type="bibr" target="#b23">(Micheli &amp; Fleuret, 2021)</ref> or constraints <ref type="bibr" target="#b0">(Ahn et al., 2022)</ref>. Using LLM as the actor works for pure-text environments with limited interactions <ref type="bibr">(Huang et al., 2022b;</ref><ref type="bibr" target="#b0">Ahn et al., 2022)</ref> (just consisting of "picking/placing" objects), but limits generalization to other modalities. In addition, the scenarios considered have been largely simplified from the real world. <ref type="bibr" target="#b0">Ahn et al. (2022)</ref> provides all available objects and possible interactions at the start and limits tasks to the set of provided objects/interactions. <ref type="bibr">Huang et al. (2022b)</ref> limits the environment to objects on a single table.</p><p>On the other hand, to successfully "cut some lettuce" in a real-world room, one has to "find a knife", which can be non-trivial since there can be multiple drawers or cabinets <ref type="bibr" target="#b7">(Chaplot et al., 2020;</ref><ref type="bibr" target="#b24">Min et al., 2021;</ref><ref type="bibr" target="#b4">Blukis et al., 2021)</ref>. A more realistic scenario leads to a diverse, complicated set of tasks or large and changing action space. Furthermore, the text description of the observation increases as a function of the number of receptacles and objects the agent sees. Combined with growing roll-outs, the state becomes too verbose to fit into any LLM.</p><p>In this work, we explore alternative mechanisms to leverage the prior knowledge encoded in LLMs without impacting the trainable nature of the actor. We propose a 3-step framework (Figure <ref type="figure" target="#fig_0">1</ref>): Plan, Eliminate, and Track (PET). Plan module simplifies complex tasks by breaking them down into sub-tasks. It uses a pretrained LLM to generate a list of sub-tasks for an input task description employing example prompts from the training set similar to <ref type="bibr">Huang et al. (2022a)</ref>; <ref type="bibr" target="#b0">Ahn et al. (2022)</ref>. The Eliminate module addresses the challenge of long observations. It uses a zero-shot QA language model to score and mask objects and receptacles that are irrelevant to the current sub-task. The Track module uses a zero-shot QA language model to determine if the current sub-task is complete and moves to the next sub-task. Finally, the Action Attention agent uses a transformer-based architecture to accommodate for long roll-out and variable length action space. The agent observes the masked observation and takes an action conditioned on the current sub-task.</p><p>We focus on instruction following in indoor households on the AlfWorld <ref type="bibr">(Shridhar et al., 2020b</ref>) interactive text environment benchmark. Our experiments and analysis demonstrate that LLMs not only remove 40% of taskirrelevant objects in observation through common-sense QA, but also generate high-level sub-tasks with 99% accuracy. In addition, multiple LLMs may be used in coordination with each other to assist the agent from different aspects.</p><p>Our contributions are as follows:</p><p>1. PET: A novel framework for leveraging pretrained LLMs with embodied agents; our work shows that each of P, E, T serves a complementary role and should be simultaneously addressed to tackle control tasks. 2. An Action Attention agent that handles the changing action space for text environments. 3. A 15% improvement over SOTA for generalization to human goals via sub-task planning and tracking.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Related Work</head><p>Language Conditioned Policies A considerable portion of prior work studies imitation learning <ref type="bibr" target="#b38">(Tellex et al., 2011;</ref><ref type="bibr" target="#b22">Mei et al., 2016;</ref><ref type="bibr" target="#b26">Nair et al., 2022;</ref><ref type="bibr" target="#b36">Stepputtis et al., 2020;</ref><ref type="bibr" target="#b16">Jang et al., 2022;</ref><ref type="bibr" target="#b33">Shridhar et al., 2022;</ref><ref type="bibr" target="#b30">Sharma et al., 2021)</ref> or reinforcement learning <ref type="bibr" target="#b25">(Misra et al., 2017;</ref><ref type="bibr" target="#b17">Jiang et al., 2019;</ref><ref type="bibr" target="#b8">Cideron et al., 2020;</ref><ref type="bibr" target="#b12">Goyal et al., 2021;</ref><ref type="bibr" target="#b26">Nair et al., 2022;</ref><ref type="bibr" target="#b1">Akakzia et al., 2020)</ref> policies conditioned on natural language instruction or goal <ref type="bibr" target="#b21">(MacMahon et al., 2006;</ref><ref type="bibr" target="#b18">Kollar et al., 2010)</ref>. While some prior research has used pre-trained language embeddings to improve generalization to new instructions <ref type="bibr" target="#b26">(Nair et al., 2022)</ref>, they lack domain knowledge that is captured in LLMs. Our PET framework enables planning, progress tracking, and observation filtering through the use of LLMs, and is designed to be compatible with any language conditional policies above.</p><p>LLMs for Control LLMs have recently achieved success in high-level planning. <ref type="formula">Huang et al. (2022a)</ref>shows that pre-trained LLMs can generate plausible plans for day-to-day tasks, but the generated sub-tasks cannot be directly executed in an end-to-end control environment. <ref type="bibr" target="#b0">Ahn et al. (2022)</ref> solves the executability issue by training an action scoring model to re-weigh LLM action choices and demonstrates success on a robot. However, LLM scores work for simple environments with actions limited to pick/place <ref type="bibr" target="#b0">(Ahn et al., 2022)</ref>, but fails with environments with more objects and diverse actions <ref type="bibr">(Shridhar et al., 2020b)</ref>. Song et al. (2022) uses GPT3 to generate step-by-step lowlevel commands, which are then executed by respective control policies. the work improves Ahn et al. (2022) with more action diversity and on-the-fly re-plan. In addition, all the above LLMs require few-shot demonstrations of up to 17 examples, making the length of the prompt infeasible for AlfWorld. Micheli &amp; Fleuret (2021) fine-tuned a GPT2-medium model on expert trajectories in AlfWorld and demonstrated impressive evaluation results. However, LM fine-tuning requires a fully text-based environment, consistent expert trajectories, and a fully text-based action space. Such requirements greatly limit the generalization to other domains, and even to other forms of task specification.</p><p>We show that our PET framework achieves better generalization to human goal specifications which the agents were not trained on.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Hierarchical Planning with Natural Language</head><p>Due to the structured nature of natural language, Andreas et al. (2017) explored associating each task description to a modular sub-policy. Later works extend the above approach by using a single conditional policy <ref type="bibr" target="#b22">(Mei et al., 2016)</ref>, or by matching sub-tasks to templates <ref type="bibr" target="#b27">(Oh et al., 2017)</ref>. Recent works have shown that LLMs are proficient high-level planners <ref type="bibr">(Huang et al., 2022a;</ref><ref type="bibr" target="#b0">Ahn et al., 2022;</ref><ref type="bibr" target="#b19">Lin et al., 2022)</ref>, and therefore motivates us to revisit the idea of hierarchical task plan-ning with progress tracking. To our knowledge, PET is the first work combining a zero-shot subtask-level LLM planner and zero-shot LLM progress tracker with a low-level conditional sub-task policy.</p><p>Text Games Text-based games are complex, interactive simulations where the game state and action space are in natural lanugage. They are fertile ground for language-focused machine learning research. In addition to language understanding, successful play requires skills like memory and planning, exploration (trial and error), and common sense. The AlfWorld <ref type="bibr">(Shridhar et al., 2020b)</ref> simulator extends a common text-based game simulator, TextWorld <ref type="bibr">Côté et al. (2018a)</ref>, to create text-based analogs of each ALFRED scene.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Agents for Large Action Space</head><p>He et al. (2015) learns representation for state and actions with two different models and computes the Q function as the inner product of the representations. While this could generalize to large action space, they only considered a small number of actions. Fulda et al. (2017); Ahn et al. (2022) explore action elimination in the setting of affordances. Zahavy et al. (2018) trains a model to eliminate invalid actions on Zork from external environment signals. However, the functionality depends on the existence of external elimination signal.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Plan, Eliminate, and Track</head><p>In this section, we explain our 3-step framework: Plan, Eliminate, and Track (PET). In Plan module (M P ), a pre-trained LLM generates a list of sub-tasks for an input task description using samples from the training set as in-context examples. The Eliminate module (M E ) uses a zero-shot QA language model to score and mask objects and receptacles that are irrelevant to the current sub-task. The Track module (M T ) uses a zeroshot QA language model to determine if the current sub-task is complete and moves to the next sub-task. Note that Plan is a generative task and Eliminate and Track are classification tasks.</p><p>We also implement an attention-based agent (Action Attention), which scores each permissible action and is trained on imitation learning on the expert. The agent observes the masked observation and takes an action conditioned on the current sub-task.</p><p>Problem Setting We define the task description as T , the observation string at time step t as O t , and the list of permissible actions {a t i |a t i can be executed} as A t . For each observation string O t , we define the receptacles and objects within the observation as r t i and o t i respectively. The classification between receptacles and objects is defined by the environment <ref type="bibr">(Shridhar et al., 2020b)</ref>. For a task T , we assume there exists a list of sub-tasks S T = {s 1 , . . . s k } that solves T .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.">Plan</head><p>Tasks in the real world are often complex and need more than one step to be completed. Motivated by the ability of humans to plan high-level sub-tasks given a complex task, we design the Plan module (M P ) to generate a list of high-level sub-tasks for a task description T .</p><p>Inspired by the contextual prompting techniques for planning with LLMs <ref type="bibr">(Huang et al., 2022a)</ref>, we use an LLM as our plan module M P . For a given task description T , we compose the query question Q T as "What are the middle steps required to T ?", and require M P to generate a list sub-tasks S T = {s 1 , . . . s k }.</p><p>Specifically, we select the top 5 example tasks T E from the training set based on RoBERTa <ref type="bibr" target="#b20">(Liu et al., 2019)</ref> embedding similarity with the query task T . We then concatenate the example tasks with example sub-tasks in a query-answer format to build the prompt P T for M P (Fig. <ref type="figure" target="#fig_1">2</ref>):</p><formula xml:id="formula_0">P T = concat(Q T E 1 , S T E 1 , . . . , Q T E 5 , S T E 5 , Q T )</formula><p>An illustration of our prompt format is shown in Figure 2, where T ="heat some apple and put it in fridge", and Q T E 1 ="What are the middle steps required to put two spraybottles on toilet", S T E 1 ="take a spraybottle, place the spraybottle in/on toilet, take a spraybottle, place the spraybottle in/on toilet". The expected list of sub-tasks to achieve this task T is s 1 ='take an apple', s 2 ='heat the apple', and s 3 ='place the apple in/on fridge'</p><p>Figure <ref type="figure">3</ref>. Eliminate Module (Receptacle Masking). We use a pre-trained QA model to filter irrelevant receptacles/objects in the observation of each scene. As we can see, the original observation is too long and the receptacles shown in red are not relevant for task completion. These receptacles are filtered by the QA model making the observation shorter.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.">Eliminate</head><p>Typical Alfworld scenes can start with around 15 receptacles, each containing up to 15 objects. In some close-to-worst cases, there can be around 30 open-able receptacles (e.g. a kitchen with many cabinets and drawers), and it easily takes an agent with no prior knowledge more than 50 steps for the agent to find the desired object (repeating the process of visiting each receptacle, opening it, closing it). We observe that many receptacles and objects are irrelevant to specific tasks during both training and evaluation, and can be easily filtered with common-sense knowledge about the tasks. For example, in Fig. <ref type="figure">3</ref> the task is to heat some apple. By removing the irrelevant receptacles like the coffeemachine, garbagecan, or objects like knife, we could significantly shorten our observation. We therefore propose to leverage commonsense knowledge captured by large pre-trained QA models to design our Eliminate module M E to mask out irrelevant receptacles and objects.</p><p>For task T , we create prompts in the format P r ="Your task is to: T . Where should you go to?" for receptacles and P o ="Your task is to: T . Which objects will be relevant?" for objects. Using the pre-trained QA model M E in a zero-shot manner, we compute score µ oi = M E (P o , o i ) for each object o i and µ ri = M E (P o , r i ) for each receptacle r j in observation at every step. µ represents the belief score of whether the common-sense QA model believes the object/receptacle is relevant to T . We then remove o i from observation if µ oi &lt; τ o , and remove r i if µ ri &lt; τ r . Threshold τ o , τ r are hyperparameters. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.">Track</head><p>For the agent to utilize the high-level plan, it first needs to know which sub-task to execute. A human actor typically starts from the first item and check-off the tasks one by one until completion. Therefore, similar to Section 3.2, we use a pre-trained QA model to design the Track module M T to perform zero-shot sub-task completion detection. <ref type="foot" target="#foot_4">1</ref>Specifically, as illustrated in Figure <ref type="figure" target="#fig_2">4</ref>, for sub-task list S T = {s 1 , . . . s k }, we keep track of a progress tracker p (initialized at 1) that indicates the sub-task the agent is currently working on (s p ). We then compose the context as the last d steps of the agent observation for the current sub-task and the question as "Did you finish the task of s p ?". For efficiency, we set d := min(d + 1, 3) at each step. Note that d is reset to 1 whenever the progress tracker updates. Hence, the template P a = concat(O t-d , . . . , O t-1 , "Did you finish the task of s p ?"). We feed P a to a pre-trained zeroshot QA model M T and compute the probability of tokens 'Yes' and 'No' as follows: p M T ("Y es"|P a ) and p M T ("N o"|P a ). If p M T ("Y es"|P a ) &gt; p M T ("N o"|P a ) then we increment the tracker p to track the next subtask.</p><p>If the tracking ends prematurely, meaning that p &gt; len(S T ) but the environment has not returned "done", we fall back to conditioning with T . We study the rate of pre-mature ends in Section 4.4 in terms of precision and recall.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4.">Agent</head><p>Since the number of permissible actions can vary a lot by the environment, the agent needs to handle arbitrary dimensions of action space. While <ref type="bibr">Shridhar et al. (2020b)</ref> addresses this challenge by generating actions token-by-token, such a generation process leads to degenerate performance even on the training set.</p><p>We draw inspiration from the field of text summarization, where models are built to handle variable input lengths. <ref type="bibr" target="#b29">See et al. (2017)</ref> generates a summary through an attention-like "pointing" mechanism that extracts the output word by word. Similarly, an attention-like "pointing" model could be used to select an action from the list of permissible actions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Action Attention</head><p>We are interested in learning a policy π that outputs the optimal action among permissible actions. We eschew the long rollout/ large action space problems by (1) representing observations by averaging over history, and (2) individually encoding actions (Fig <ref type="figure" target="#fig_3">5</ref>). In our proposed action attention framework, we first represent historical observations H t as the average of embeddings of all individual observations through history (Eq. 1), and H A as the list of embeddings of all the current permissible actions (Eq. 2). Then, in Eq. 3, we compute the query Q using a transformer with a "query" head (M Q ) on task embedding (H t ), the current observation embedding (O t ), and the list of action embeddings (H A ). In Eq. 4 we compute the key K i for each action a i using the same transformer with a "key" head (M K ) on task embedding (H t ), the current observation embedding (O t ), and embedding of action (a i ).</p><p>Finally, we compute the dot-product of the query and keys as action scores for the policy π (Eq. 5).</p><formula xml:id="formula_1">H t = avg j∈[1,t-1] Embed(O j )<label>(1)</label></formula><formula xml:id="formula_2">H A = Embed(a t 1 ), ..., Embed(a t n ) (2) Q = M Q Embed(T ), H t , Embed(O t ), H A<label>(3)</label></formula><formula xml:id="formula_3">K i = M K Embed(T ), H t , Embed(O t ), Embed(a t i )<label>(4)</label></formula><formula xml:id="formula_4">π = softmax ([Q • K i |i ∈ all permissible actions])<label>(5)</label></formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Experiments and Results</head><p>We present our experiments as follows. First, we explain the environment setup and baselines for our experiments. Then we compare PET to the baselines on different splits of the environment. Finally, we conduct ablation studies and analyze the PET framework part by part. We show that PET generalizes better to human goal specification under efficient behavior cloning training.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.">Experimental Details</head><p>AlfWorld Environment ALFWorld <ref type="bibr">(Shridhar et al., 2020b)</ref> is a set of TextWorld environments <ref type="bibr">(Côté et al., 2018b)</ref> that are parallels of the ALFRED embodied dataset <ref type="bibr">(Shridhar et al., 2020a)</ref>. ALFWorld includes 6 task types that each require solving multiple compositional sub-goals. There are 3553 training task instances ({tasktype, object, receptacle, room}), 140 in-distribution evaluation task instances (seen splittasks themselves are novel but take place in rooms seen during training) and 134 out-of-distribution evaluation task instances (unseen split -tasks take place in novels rooms). An example of the task could be: "Rinse the egg to put it in the microwave." Each training instance in AlfWorld comes with an expert, from which we collected our training demonstration.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Human Goal Specification</head><p>The crowd-sourced human goal specifications for evaluation contain 66 unseen verbs and 189 unseen nouns <ref type="bibr">(Shridhar et al., 2020b)</ref>.</p><p>In comparison, the template goals use only 12 ways of goal specification. In addition, the sentence structure for human goal specification is more diverse compared to the template goals. Therefore, human goal experiments are good for testing the generalization of models to out-of-distribution scenarios.</p><p>Pre-trained LMs. For the Plan module (sub-task generation), we experimented with the open-source GPT-Neo-2.7B <ref type="bibr" target="#b3">(Black et al., 2021)</ref>, and an industryscale LLM with 530B parameters <ref type="bibr" target="#b34">(Smith et al., 2022)</ref>.  For the Eliminate module (receptacle/object masking), we choose Macaw-11b <ref type="bibr" target="#b37">(Tafjord &amp; Clark, 2021)</ref>, which is reported to have common sense QA performance on par with GPT3 <ref type="bibr" target="#b6">(Brown et al., 2020)</ref> while being orders of magnitudes smaller. We use a decision threshold of 0.4 for Macaw score below which the objects are masked out. For the Track module (progress tracking), we use the same Macaw-11b model as the Eliminate module answer to Yes/No questions.</p><p>Actor Model Design. Our Action Attention agent (M Q and M K ) is a 12-layer transformer with 12 heads and hidden dimension 384. The last layer is then fed into two linear heads to generate K and Q. For embedding of actions and observations, we use pre-trained RoBERTa-large <ref type="bibr" target="#b20">(Liu et al., 2019)</ref> with embedding dimension 1024. For sub-task generation, we use ground-truth sub-tasks for training, and generated sub-tasks from Plan module for evaluation.</p><p>Experimental Setup. Unlike the original benchmark <ref type="bibr">(Shridhar et al., 2020b)</ref>, we experiment with models trained with behavior cloning. Although Shridhar et al. (2020b) observe that models benefit greatly from DAgger training, DAgger assumes an expert that is well-defined at all possible states, which is inefficient and impractical. In our experiments, training is 100x slower with DAgger compared to behavior cloning (3 weeks for DAgger v.s. 6 hours for Behavior Cloning). In addition, we demonstrate that our models surpass the DAgger training performance of the BUTLER (Shridhar et al., 2020b) agents trained with DAgger, even when our agent does not have the option to interact with the environment.</p><p>Baselines. Our first baseline is the BUT-LER::BRAIN (BUTLER) agent <ref type="bibr">(Shridhar et al., 2020b)</ref>, which consists of an encoder, an aggregator, and a decoder. At each time step t, the encoder takes initial observation s 0 , current observation s t , and task string s task and generates representation r t . The recurrent aggregator combines r t with the last recurrent state h t-1 to produce h t , which is then decoded into a string a t representing action. In addition, the BUTLER agent uses beam search to get out of stuck conditions in the event of a failed action.</p><p>Our second baseline GPT <ref type="bibr" target="#b23">(Micheli &amp; Fleuret, 2021)</ref> is a fine-tuned GPT2-medium on 3553 demonstrations from the AlfWorld training set. Specifically, the GPT is fined-tuned to generate each action step word-by-word to mimic the rule-based expert using the standard maximum likelihood loss.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2.">Overall Results on Template and Human Goals</head><p>We compare the performance of action attention assisted by PET with BUTLER <ref type="bibr">(Shridhar et al., 2020b)</ref> and fine-tuned GPT <ref type="bibr" target="#b23">(Micheli &amp; Fleuret, 2021)</ref> in Table 1. For human goal specifications, PET outperforms SOTA (GPT) by 25% on seen and 5% on the unseen split.</p><p>Although PET under-performs GPT on Template goal specifications, GPT requires fine-tuning on fully textbased expert trajectory and thus loses adaptability to different environment settings. Qualitatively, on human goal specification tasks, where the goal specifications are out-of-distribution, GPT often gets stuck repeating the same action after producing a single wrong move.</p><p>On the other hand, since the Plan module of PET is not trained on the task, it generalizes to the variations for human goal specifications as shown in Section 4.5. Quantitatively, GPT suffers from a relative 50% performance drop transferring from template to human-goal specifications, whereas PET incurs only a 15 ∼ 25% drop.</p><p>The setting closest to PET is BUTLER with behavior cloning (BUTLER + BC). Since BUTLER + BC performs poorly, we also include DAgger training results. Nevertheless, action attention assisted by PET outperforms BUTLER with DAgger by more than 2x while being much more efficient. (Section 4.1)</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.">Ablations for Plan, Eliminate, and Track</head><p>In Table <ref type="table">3</ref>, we analyze the contribution of each PET module by sequentially adding each component to the action attention agent on 140 training trajectories sampled from the training set. The data set size is chosen to match the size of the seen validation set, for an efficient and sparse setting. Note that we treat Plan and Track as a single module for this ablation since they cannot work separately.</p><p>Adding Plan and Track greatly improves the completion rate relatively by 60%, which provides evidence to our hypothesis that solving some embodied tasks stepby-step reduces the complexity. We observe a relatively insignificant 3% improvement in absolute performance when adding Eliminate without sub-task tracking. On the other hand, when applying Eliminate to sub-tasks with Plan and Track, we observe more than 60% relative improvement over just Plan and Track alone. We, therefore, deduce that Plan and Track boost the performance of Eliminate during evaluation, since it is easier to remove irrelevant objects when the objective is more focused on sub-tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4.">Automated Analysis of PET modules</head><p>Plan Module We experiment with different LLMs such as GPT2-XL <ref type="bibr" target="#b28">(Radford et al., 2019)</ref>, GPT-Neo-2.7B <ref type="bibr" target="#b3">(Black et al., 2021)</ref>, and the 530B parameter MT-NLG <ref type="bibr" target="#b34">(Smith et al., 2022)</ref> models. Table <ref type="table">2</ref> reports the generation accuracy and the RoBERTa <ref type="bibr" target="#b20">(Liu et al., 2019)</ref> embedding cosine similarity against ground-truth sub-tasks. We observe that all LLMs achieve high accuracy on template goal specifications, where there is no variation in sentence structures. For human goal specification, MT-NLG generates subtasks similar to ground truth in terms of embedding similarity, while the other smaller models perform significantly worse.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Eliminate module</head><p>We evaluate the zero-shot receptacle/object masking performance of Macaw on the three splits of AlfWorld. In Fig <ref type="figure" target="#fig_4">6</ref>, we illustrate the AUC curve of the relevance score that the model assigns to the objects v.s. objects that the rule-based expert interacted with when completing each task. Since the Macaw QA model is queried in a zero-shot manner, it demonstrates consistent masking performance on all three splits of the environment, even on the unseen split. In addition, we note that object receptacle accuracy is generally lower than object accuracy because of the counter-intuitive spawning locations described in Section 4.5. In our experiments, a decision threshold of 0.4 has a recall of 0.91 and reduces the number of objects in observation by 40% on average.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Track module</head><p>Since sub-task alignment information is not provided by the environment, we explore an alternative performance metric for the detection of the event of completion. Ideally, a sub-task tracker should record the last sub-task as "finished" if and only if the environment is "fully solved" by the expert. As an agreement measure, we report a precision of 0.99 and a recall of 0.78 for Macaw-11B and a precision of 0.96 and a recall of 0.96 for Macaw-large. The larger model (Macaw-11b) is more precise but misses more detection, therefore limiting the theoretical performance to 78%. The smaller model is much less accurate according to human evaluation but does not limit the overall model performance in theory. In our experiments, we find that both models produce similar overall results, which may suggest that the overall results could be improved with LLMs doing better on both precision and recall.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5.">Qualitative Analysis</head><p>Plan Module We show two types of failure examples for sub-task generation in Table 2. Evaluation of different LLMs for Plan module in terms of accuracy and RoBERTa embedding cosine similarity (in brackets) against ground-truth sub-tasks, per evaluation split (seen and unseen), with and without human annotated goals. The MT-NLG with 530B parameters achieves the overall best performance on all dataset splits and greatly exceeds the performance of smaller models on hard tasks with human goal specification. In addition, MT-NLG generates sub-tasks with almost perfect embedding similarity for all tasks. Model Ablations seen unseen Action Attention 25 9 Action Attention + Eliminate 25 11 Action Attention + Plan &amp; Track 35 15 Action Attention + PET 52.5 27.5</p><p>Table 3. Comparison of different ablations of PET trained on a sampled set of 140 demonstrations from the training set, in terms of completion rate per evaluation split (seen and unseen). Applying Eliminate module alone has an insignificant effect on overall performance compared to Plan &amp; Track. However, applying Eliminate module on sub-tasks together with Plan &amp; Track results in a much more significant performance improvement.</p><p>racies in the human goal specifications. Note that our Action Attention framework uses RoBERTa <ref type="bibr" target="#b20">(Liu et al., 2019)</ref> embedding for sub-tasks, known to be robust to synonym variations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Eliminate Module</head><p>We observe that the main source of elimination error occurs when the module incorrectly masks a receptacle that contains the object of interest so the agent fails to find such receptacles. This is often because some objects in the AI2Thor simulator do not spawn according to common sense.</p><p>As noted in the documentation of the environment<ref type="foot" target="#foot_5">foot_5</ref> , objects like Apple or Egg has a chance of spawning in unexpected receptacles like GarbageCan, or TVStand. However, such generations in AI2Thor are unlikely in real deployment; thus, the "mistakes" of our Eliminate module are reasonable.</p><p>Track Module Experimentally, we find that subtask planning/tracking is particularly helpful for tasks that require counting procedures. As shown in Table ??, PET breaks the task of "Place two soapbar in cabinet" into two repeating set of sub-tasks: "take soapbar→place soapbar in/on cabinet". Sub-task planning and tracking, therefore, simplify the hard problem of counting.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Human Goal Specification Examples</head><p>Task Chill a cup and place it in the cabinet.</p><p>GT cool the mug→place the mug in/on coffeemachine Gen chill the mug→return the mug to coffeemachine Task Take the pencil from the desk, put it on the other side of the desk GT take a pencil→place the pencil in/on shelf</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Gen pick up the white pencil on the desk→put the white pencil on another spot on the desk</head><p>Table <ref type="table" target="#tab_1">4</ref>. Failure examples from the Plan module on human goal specifications (Task), ground-truth (GT) v.s. generated (Gen). In the first example, generated plan differs from the ground truth but the meaning agrees. In the second example, the generated plan largely differs from the ground truth due to the mistake in human goal specification -"another side on the desk" instead of "shelf".</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Conclusion, Limitations, and Future Work</head><p>In this work, we propose the Plan, Eliminate, and Track (PET) framework that uses pre-trained LLMs to assist an embodied agent in three steps. Our PET framework requires no fine-tuning and is designed to be compatible with any goal-conditional embodied agents.</p><p>In our experiments, we combine PET with a novel Action Attention agent that handles the dynamic action space in AlfWorld. Our Action Attention agent greatly outperforms the BUTLER baseline. In addition, since the PET framework is not trained to fit the training set tasks, it demonstrates better generalization to unseen human goal specification tasks. Finally, our ablation studies show the Plan and Track modules together improve the performance of Eliminate module to achieve the best performance.</p><p>Our results show that LLMs can be a good source of common sense and procedural knowledge for embodied agents, and multiple LLMs may be used in coordination with each other to further improve effectiveness.</p><p>One of the major limitations of our current system design is that the Track module (progress tracker) does not re-visit finished sub-tasks. If for example, the agent is executing sub-tasks [picked up a pan, put the pan on countertop], and it picked up a pan but put it in the fridge (undo pickup action). Since the progress tracker does not take into consideration previous progress being undone, the system may break in this situation. Future work can focus on adding sub-task-level dynamic replanning to address this limitation or explore other ways in which LLMs can assist the learning of the policy (i.e., reading an instruction manual about the environment).</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 .</head><label>1</label><figDesc>Figure 1. PET framework. Plan module uses LLM to generate a high-level plan. Eliminate Module uses a QA model to mask irrelevant objects in observation. Track module uses a QA model to track the completion of sub-tasks.</figDesc><graphic coords="1,313.43,204.76,218.70,146.59" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 .</head><label>2</label><figDesc>Figure 2. Plan Module (Sub-task Generation). 5 full examples are chosen from the training set based on RoBERTa embedding similarity with the task query description. Then the examples are concatenated with the task query to get the prompt. Finally, we prompt the LLM to generate the desired sub-tasks.</figDesc><graphic coords="3,307.44,61.39,243.01,176.06" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 .</head><label>4</label><figDesc>Figure 4. Track Module (Progress Tracking). At every step, we take the last 3 steps of roll-out as context and append a query (about whether the current sub-task is completed) to get the prompt. A pre-trained QA model generates a Yes/No answer to the prompt. For the answer "Yes", we update the tracker to the next sub-task.</figDesc><graphic coords="4,307.44,108.99,243.00,321.38" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5 .</head><label>5</label><figDesc>Figure 5. Agent (Action Attention). Action Attention block is a transformer-based framework that computes a key Ki for each permissible action and output action scores as dot-product between key and query Q from the observations.</figDesc><graphic coords="6,78.08,61.39,437.40,143.91" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 6 .</head><label>6</label><figDesc>Figure 6. Plot of AUC scores of zero-shot relevance identification across all tasks in the Alfworld-Thor environment, with the Macaw-11b model. The ground truth is obtained as receptacles/objects accessed by the rule-based expert. Top: Receptacle relevance identification. Bottom: Object relevance identification. The QA model achieves an average AUC-ROC score of 65 for receptacles and 76 on objects.</figDesc><graphic coords="8,74.76,296.69,145.80,105.54" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 .</head><label>1</label><figDesc>Comparison of different models in terms of completion rate per evaluation split (seen and unseen), with and without human annotated goals. PET under-performs GPT on Template goal specifications but generalizes better to human goal specifications. * We include the performance of BUTLER with DAgger for completeness. All other rows are trained without interaction with the environment, MLE for GPT and behavior cloning for BUTLER+BC and PET.</figDesc><table><row><cell></cell><cell cols="4">Template Goal Specification Human Goal Specification</cell></row><row><cell>Model</cell><cell>seen</cell><cell>unseen</cell><cell>seen</cell><cell>unseen</cell></row><row><cell>BUTLER + DAgger* (Shridhar et al., 2020b)</cell><cell>40</cell><cell>35</cell><cell>8</cell><cell>3</cell></row><row><cell>BUTLER + BC (Shridhar et al., 2020b)</cell><cell>10</cell><cell>9</cell><cell>-</cell><cell>-</cell></row><row><cell>GPT (Micheli &amp; Fleuret, 2021)</cell><cell>91</cell><cell>95</cell><cell>42</cell><cell>57</cell></row><row><cell>PET + Action Attention (Ours)</cell><cell>70</cell><cell>67.5</cell><cell>52.5</cell><cell>60</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 4 .</head><label>4</label><figDesc>The first type of error is caused by generating synonyms of the ground truth, and the second type of error is caused by inaccu-</figDesc><table><row><cell></cell><cell cols="2">Template Goals</cell><cell cols="2">Human Goals</cell></row><row><cell>LLM</cell><cell>seen</cell><cell>unseen</cell><cell>seen</cell><cell>unseen</cell></row><row><cell>GPT-2 (Radford et al., 2019)</cell><cell>94.29 (0.97)</cell><cell>87.31 (0.94)</cell><cell>10.07 (0.62)</cell><cell>7.98 (0.58)</cell></row><row><cell>GPT-Neo-2.7B (Black et al., 2021)</cell><cell cols="2">99.29 (1.00) 96.27 (0.98)</cell><cell>4.70 (0.82)</cell><cell>9.16 (0.80)</cell></row><row><cell>MT-NLG (Smith et al., 2022)</cell><cell>98.57 (0.99)</cell><cell>100 (1.00)</cell><cell cols="2">40.04 (0.94) 49.3 (0.94)</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>Carnegie Mellon University</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>Ariel University</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>Microsoft Research</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_3"><p>Nvidia Research. Correspondence to: Yue Wu &lt;ywu5@andrew.cmu.edu&gt;.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_4"><p>Note that the current system design does not allow re-visiting finished sub-tasks, so the agent has no means to recover if it undoes its previous sub-task at test time.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_5"><p>ai2thor.allenai.org/ithor/documentation/objects/objecttypes/</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Cortes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Herzog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ibarz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Irpan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Ruano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Jeffrey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Jesmonth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">J</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Julian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kalashnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Kuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K.-H</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Luu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Parada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Pastor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Quiambao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Rettinghouse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Reyes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sermanet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Sievers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Toshev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Vanhoucke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeng</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2204.01691" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note>Do as i can, not as i say: Grounding language in robotic affordances</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Grounding language to autonomously-acquired skills via goal generation</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Akakzia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Colas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P.-Y</forename><surname>Oudeyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chetouani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Sigaud</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2006.07185</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Modular multitask reinforcement learning with policy sketches</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Andreas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Klein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="166" to="175" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Black</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Leahy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Biderman</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gpt-Neo</surname></persName>
+		</author>
+		<idno type="DOI">10.5281/zenodo.5297715</idno>
+		<ptr target="https://doi.org/10.5281/zenodo.5297715" />
+		<title level="m">Large Scale Autoregressive Language Modeling with Mesh-Tensorflow</title>
+		<imprint>
+			<date type="published" when="2021-03">March 2021</date>
+		</imprint>
+	</monogr>
+	<note>If you use this software, please cite it using these metadata</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">A persistent spatial semantic representation for highlevel natural language instruction execution</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Blukis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Paxton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fox</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Artzi</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2107.05612" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">On the opportunities and risks of foundation models</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Bommasani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">A</forename><surname>Hudson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Adeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Altman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Von Arx</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">S</forename><surname>Bernstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bohg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bosselut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Brunskill</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Brynjolfsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Buch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Card</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Castellon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Chatterji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Creel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">Q</forename><surname>Davis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Demszky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Donahue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Doumbouya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Durmus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ermon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Etchemendy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ethayarajh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Gale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Gillespie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Goel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goodman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Grossman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Guha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Hashimoto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Henderson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hewitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">E</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Icard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Jurafsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Kalluri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Karamcheti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Keeling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Khani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Khattab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">W</forename><surname>Koh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Krass</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Krishna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Kuditipudi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Ladhak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Leskovec</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Levent</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">L</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Malik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mirchandani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Munyikwa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Nair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Narayan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Narayanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Newman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">C</forename><surname>Niebles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Nilforoshan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Nyarko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Ogut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Orr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Papadimitriou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">S</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Piech</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Portelance</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Potts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Raghunathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Reich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Rong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Roohani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Ruiz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ryan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Ré</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Sadigh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sagawa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Santhanam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Shih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Srinivasan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Tamkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Taori</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">W</forename><surname>Thomas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Tramèr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">E</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">M</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yasunaga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>You</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zaharia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2108.07258" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Askell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Object goal navigation using goal-oriented semantic exploration</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">S</forename><surname>Chaplot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Gandhi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2007.00643" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Higher: Improving instruction following with hindsight generation for experience replay</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Cideron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Seurin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Strub</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Pietquin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2020 IEEE Symposium Series on Computational Intelligence (SSCI)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="225" to="232" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Textworld: A learning environment for text-based games</title>
+		<author>
+			<persName><forename type="first">M.-A</forename><surname>Côté</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kádár</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kybartas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Barnes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Fine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Moore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hausknecht</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">E</forename><surname>Asri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Adada</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Workshop on Computer Games</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="41" to="75" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Textworld: A learning environment for text-based games</title>
+		<author>
+			<persName><forename type="first">M.-A</forename><surname>Côté</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kádár</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kybartas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Barnes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Fine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Moore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hausknecht</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">E</forename><surname>Asri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Adada</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Workshop on Computer Games</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="41" to="75" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">What can you do with a rock? affordance extraction via word embeddings</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Fulda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ricks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Murdoch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wingate</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1703.03429</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Pixl2r: Guiding reinforcement learning using natural language by mapping pixels to rewards</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Niekum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Mooney</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="485" to="497" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Deep reinforcement learning with a natural language action space</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ostendorf</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1511.04636</idno>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Language models as zero-shot planners: Extracting actionable knowledge for embodied agents</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Pathak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Mordatch</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2201.07207" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Inner monologue: Embodied reasoning through planning with language models</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Mordatch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sermanet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Jackson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Luu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ichter</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2207.05608" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Bc-z: Zeroshot task generalization with robotic imitation learning</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Irpan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Khansari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kappler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Ebert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lynch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="991" to="1002" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Language as an abstraction for hierarchical deep reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">S</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">P</forename><surname>Murphy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">32</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Toward understanding natural language directions</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kollar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Tellex</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Roy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Roy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2010 5th ACM/IEEE International Conference on Human-Robot Interaction (HRI)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="259" to="266" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">On grounded planning for embodied tasks with language models</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">Y</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sommerer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ren</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2209.00465</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Levy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Stoyanov</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Roberta</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1907.11692</idno>
+		<title level="m">A robustly optimized bert pretraining approach</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Walk the talk: Connecting language, knowledge, and action in route instructions</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Macmahon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Stankiewicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kuipers</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Def</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">attend, and walk: Neural mapping of navigational instructions to action sequences</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Mei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R</forename><surname>Walter</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Listen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Thirtieth AAAI Conference on Artificial Intelligence</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Language models are fewshot butlers</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Micheli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Fleuret</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2104.07972</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">Y</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">S</forename><surname>Chaplot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Ravikumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Film</surname></persName>
+		</author>
+		<title level="m">Following instructions in language with modular methods</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Mapping instructions and visual observations to actions with reinforcement learning</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Langford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Artzi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1704.08795</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Learning language-conditioned robot behavior from offline data and crowd-sourced annotation</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Nair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="1303" to="1315" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Zero-shot task generalization with multi-task deep reinforcement learning</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Oh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Kohli</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="2661" to="2670" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Language models are unsupervised multitask learners</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Child</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Luan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Sutskever</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Get to the point: Summarization with pointer-generator networks</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>See</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1704.04368</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Skill induction and planning with latent language</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Torralba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.01517</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Alfred: A benchmark for interpreting grounded instructions for everyday tasks</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Shridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Thomason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Gordon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Mottaghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fox</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF conference on computer vision and pattern recognition</title>
+		<meeting>the IEEE/CVF conference on computer vision and pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="10740" to="10749" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Shridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-A</forename><surname>Côté</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Trischler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hausknecht</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Alfworld</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2010.03768</idno>
+		<title level="m">Aligning text and embodied environments for interactive learning</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Cliport: What and where pathways for robotic manipulation</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Shridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Manuelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fox</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="894" to="906" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Using deepspeed and megatron to train megatron-turing NLG 530b, A large-scale generative language model</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Patwary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Norick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Legresley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Rajbhandari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Casper</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Prabhumoye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Zerveas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Korthikanti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Child</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">Y</forename><surname>Aminabadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bernauer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Shoeybi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Houston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Tiwary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Catanzaro</surname></persName>
+		</author>
+		<idno>CoRR, abs/2201.11990</idno>
+		<ptr target="https://arxiv.org/abs/2201.11990" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">H</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Washington</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">M</forename><surname>Sadler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-L</forename><surname>Chao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Su</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.04088</idno>
+		<title level="m">Llm-planner: Few-shot grounded planning for embodied agents with large language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Language-conditioned imitation learning for robot manipulation tasks</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Stepputtis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Campbell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Phielipp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Baral</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ben Amor</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="13139" to="13150" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">General-purpose question-answering with macaw</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Tafjord</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Clark</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2109.02593</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Understanding natural language commands for robotic navigation and mobile manipulation</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Tellex</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kollar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Dickerson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Walter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Banerjee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Teller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Roy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="volume">25</biblScope>
+			<biblScope unit="page" from="1507" to="1514" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Keep calm and explore: Language models for action generation in text-based games</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hausknecht</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2010.02903" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Learn what not to learn: Action elimination with deep reinforcement learning. Advances in neural information processing systems</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zahavy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Haroush</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Merlis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">J</forename><surname>Mankowitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mannor</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page">31</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

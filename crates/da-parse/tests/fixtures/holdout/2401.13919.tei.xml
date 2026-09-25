@@ -1,0 +1,1789 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">WebVoyager : Building an End-to-End Web Agent with Large Multimodal Models</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-06-06">6 Jun 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Hongliang</forename><surname>He</surname></persName>
+							<email>hehongliang@westlake.edu.cn</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Zhejiang University</orgName>
+							</affiliation>
+							<affiliation key="aff2">
+								<orgName type="institution">Westlake University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Wenlin</forename><surname>Yao</surname></persName>
+							<email>wenlinyao@global.tencent.com</email>
+							<affiliation key="aff1">
+								<orgName type="department">Tencent AI Lab</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Kaixin</forename><surname>Ma</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Tencent AI Lab</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Wenhao</forename><surname>Yu</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Tencent AI Lab</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yong</forename><surname>Dai</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Tencent AI Lab</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hongming</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Tencent AI Lab</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhenzhong</forename><surname>Lan</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">Westlake University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Tencent AI Lab</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">WebVoyager : Building an End-to-End Web Agent with Large Multimodal Models</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-06-06">6 Jun 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">005E657C41228B688643193FA050A163</idno>
+					<idno type="arXiv">arXiv:2401.13919v4[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:37+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>The rapid advancement of large language models (LLMs) has led to a new era marked by the development of autonomous applications in real-world scenarios, which drives innovation in creating advanced web agents. Existing web agents typically only handle one input modality and are evaluated only in simplified web simulators or static web snapshots, greatly limiting their applicability in real-world scenarios. To bridge this gap, we introduce WebVoyager, an innovative Large Multimodal Model (LMM) powered web agent that can complete user instructions end-to-end by interacting with real-world websites. Moreover, we establish a new benchmark by compiling real-world tasks from 15 popular websites and introduce an automatic evaluation protocol leveraging multimodal understanding abilities of GPT-4V to evaluate open-ended web agents. We show that WebVoyager achieves a 59.1% task success rate on our benchmark, significantly surpassing the performance of both GPT-4 (All Tools) and the WebVoyager (text-only) setups, underscoring the exceptional capability of WebVoyager. The proposed automatic evaluation metric achieves 85.3% agreement with human judgment, indicating its effectiveness in providing reliable and accurate assessments of web agents. 1  </p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="26" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="27" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>The recent advancement of large language models (LLMs), such as ChatGPT and <ref type="bibr">GPT-4 (OpenAI, 2023)</ref>, have sparked significant interest in developing LLM-based autonomous agents (AutoGPT, 2022) for complex task execution <ref type="bibr" target="#b28">(Qin et al., 2023;</ref><ref type="bibr" target="#b30">Schick et al., 2023)</ref>. Recent studies have explored the construction of text-based web browsing environments and how to instruct large language model agents to perform web navigation <ref type="bibr" target="#b25">(Nakano et al., 2021;</ref><ref type="bibr" target="#b15">Gur et al., 2023;</ref><ref type="bibr" target="#b47">Zhou et al., 2023;</ref><ref type="bibr" target="#b22">Lu et al., 2023)</ref>. The primary challenge in these works lies in managing complex and verbose HTML texts, and solutions include simplifying and structuring HTML <ref type="bibr" target="#b25">(Nakano et al., 2021;</ref><ref type="bibr" target="#b47">Zhou et al., 2023;</ref><ref type="bibr" target="#b15">Gur et al., 2023;</ref><ref type="bibr" target="#b9">Deng et al., 2023)</ref>.</p><p>However, existing approaches overlook a critical functionality of browsing: rendering HTML into visual webpages. Particularly, vision capability is crucial for utilizing tools such as web browsers, as rendered web pages are inherently designed with user experience (UX), emphasizing intuitive information and structured presentation. This design principle of rendering makes visual analysis more effective than mere HTML representation. At present, large multimodal models (LMMs), particularly GPT-4V(ision) (OpenAI, 2023) and Gemini <ref type="bibr" target="#b34">(Team et al., 2023)</ref>, demonstrate a remarkable ability to integrate intricate visual cues with textual information. Existing studies such as Pix2Struct <ref type="bibr" target="#b18">(Lee et al., 2023)</ref> and WebArena <ref type="bibr" target="#b47">(Zhou et al., 2023)</ref>, have initiated explorations into using screenshots as inputs for decision-making in web navigation, yet these are preliminary and do not represent a deep exploration. Therefore, building multimodal web agents to leverage the environment rendered by browsers through screenshots, thus mimicking human web browsing behavior, is now a viable approach to enhance web navigation abilities.</p><p>We introduce WebVoyager (Figure <ref type="figure" target="#fig_1">1</ref>), a multimodal web agent designed to autonomously accomplish web tasks online from start to finish, managing the entire process end-to-end without any intermediate human intervention. WebVoyager processes the user query by making observations from screenshots and textual content in interactive web elements, formulates a thought on what action to take (such as clicking, typing, or scrolling, etc.), and then executes that action on the websites. Inspired by Set-of-Mark Prompting <ref type="bibr">(Yang et al., 2023a)</ref>, we mark interactive web elements on screenshots (see Figure <ref type="figure">2</ref>) to facilitate decision-Available Websites Screenshot (Image) Web Elements (Text)  of the web element and its contents). Once the task is completed, the answers will be returned to the user. For example, for a user query: "Find the cost of a 2-year protection for PS4 on Amazon.", the agent interacts with Amazon online, locates the PS4, identifies the 2-year protection price, and returns "$30.99" to the user. making for WebVoyager.</p><p>Another challenge is the evaluation of an endto-end web agent. Existing benchmarks, such as Mind2Web <ref type="bibr" target="#b9">(Deng et al., 2023)</ref>, primarily focus on stepwise and offline evaluation, where agents follow a predefined "golden" trajectory for action selection. This approach, however, may not fully account for the variety of viable strategies to accomplish a task, as it only reflects one possible plan. This limitation could lead to a biased evaluation and difficulties in fairly comparing different methods. To accurately evaluate the capabilities of web agents in end-to-end task completion, we propose an automated evaluation protocol using GPT-4V. Specifically, we save screenshots throughout the online navigation process and then use GPT-4V to evaluate these trajectories together with the final results automatically. Human evaluations are also conducted to verify the results and the analysis shows that our evaluation protocol achieves 85.3% agreement with human judges, indicating GPT-4V can serve as a reliable evaluator for online agents.</p><p>We conduct evaluations on a newly collected dataset, which is semi-automatically generated using a self-instruct <ref type="bibr" target="#b35">(Wang et al., 2022</ref>) method, comprising 643 web tasks from 15 commonly accessed websites. We also evaluate WebVoyager on 90 webrelated tasks of level 1 and level 2 from the GAIA <ref type="bibr" target="#b24">(Mialon et al., 2023)</ref>, and 50 interactive open-web tasks from SeeAct <ref type="bibr" target="#b46">(Zheng et al., 2024)</ref>. We compare our WebVoyager with 1) GPT-4 (All Tools) 2 , and 2) WebVoyager in a text-only setting which employs the textual accessibility tree proposed in We-bArena <ref type="bibr" target="#b47">(Zhou et al., 2023)</ref> to describe web pages.</p><p>2 GPT-4 (All Tools) is an integrated tool-based agent released by OpenAI in Oct. 2023. See <ref type="url" target="https://chat.openai.com/">https://chat.openai.com/</ref> The results show that WebVoyager achieves a Task Success Rate of 59.1% on our new benchmark, significantly outperforming GPT-4 (All Tools) with a rate of 30.8% and the text-only setting with a rate of 40.1%, demonstrating the effectiveness of our method. Our research demonstrates the effectiveness of the WebVoyager method for web tasks, offering insights into the development of more intelligent and efficient web automation solutions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related Work</head><p>Autonomous web navigation <ref type="bibr" target="#b32">(Shi et al., 2017;</ref><ref type="bibr">Yang et al., 2023b</ref>) requires an agent to follow instructions, construct plans, comprehend complex web structures, and decompose tasks into step-by-step decisions <ref type="bibr" target="#b37">(Weng, 2023)</ref>. To study web agents in a controlled environment, previous works constructed web simulators that contain simplified websites <ref type="bibr" target="#b32">(Shi et al., 2017;</ref><ref type="bibr">Yao et al., 2022a)</ref>. More recently, there has been a surge of interest in building more challenging and realistic benchmarks such as Mind2Web <ref type="bibr" target="#b9">(Deng et al., 2023)</ref> and We-bArena <ref type="bibr" target="#b47">(Zhou et al., 2023)</ref>.</p><p>Along with these new benchmarks, numerous efforts have been made to build autonomous web agents. WebGPT <ref type="bibr" target="#b25">(Nakano et al., 2021)</ref> constructs a text-based web browsing environment and finetunes GPT-3 as a web agent. WebAgent <ref type="bibr" target="#b15">(Gur et al., 2023)</ref> pretrains a T5 model to extract HTML snippets and leverages Flan-U-PaLM <ref type="bibr" target="#b6">(Chowdhery et al., 2023)</ref> to generate Python code to interact with the environment. Besides fine-tuning, another line of work tries to build web agents by prompting LLMs <ref type="bibr">(Yao et al., 2022b;</ref><ref type="bibr" target="#b33">Shinn et al., 2023;</ref><ref type="bibr" target="#b23">Ma et al., 2023)</ref>. Multimodal web agents that integrate visual signals have also been explored, WebGUM <ref type="bibr" target="#b13">(Furuta et al., 2023)</ref> combines T5 <ref type="bibr" target="#b29">(Raffel et al., 2020)</ref> with a Vision Transformer (ViT) to navigate using both screenshots and HTML text. PIX2ACT <ref type="bibr" target="#b31">(Shaw et al., 2023)</ref> instead solely relies on web screenshots as inputs to predict agent actions. Unlike previous works that only consider a single modality or simplified web environments, we build a multimodal agent that can complete tasks on real-world websites in this work. Concurrently with our work, SeeAct <ref type="bibr" target="#b46">(Zheng et al., 2024)</ref> also leverages Large Multimodal Models (LMMs) for integrated visual understanding and actions on websites. However, the best SeeAct agent still relies on a finetuned cross-encoder model to select candidate elements for interaction. In contrast, WebVoyager does not require any additional modules.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">WebVoyager</head><p>We aim to build an agent that can browse the open web autonomously without human intervention to complete user instructions. Given an instruction, our WebVoyager first instantiates a web browser and then performs actions with visual (i.e., screenshots) and textual (i.e., HTML elements) signals from the web. The agent produces an action based on the inputs at every step, which is then executed in the browser environment. The process continues until the agent decides to stop. The details of Web-Voyager, including environment, interaction cycle, observation space, and action space, are as follows.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Browsing Environment</head><p>We develop an automated web-browsing environment using Selenium 3 . Unlike WebArena <ref type="bibr" target="#b47">(Zhou et al., 2023)</ref>, we do not host any websites locally and allow the agent to explore the open web instead, which poses unique challenges such as floating ads, pop-up windows, constant updates, etc. 4 Still, we opt for online interaction with real websites as we believe that this setting truly reflects the real-world use cases (e.g., the agent needs access to real-time information from the web), and a successful web agent should be able to adapt to these challenges and consistently solve the problem robustly.</p><p>3 <ref type="url" target="https://www.selenium.dev/">https://www.selenium.dev/</ref> 4 Regarding CAPTCHAs (Completely Automated Public Turing test to tell Computers and Humans Apart) challenges, we believe it is important to respect the rules of these websites and prompt the agent to retrieve information from alternative sources.</p><p>Figure <ref type="figure">2</ref>: Examples of webpage screenshots provided to the agent. We add borders to most of the interactive elements on the web pages and label them with numerical tags in the top left corner.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Interaction Formulation</head><p>Formally, we denote the Environment as E, the large Multimodal Model as M, the Observation Space as O, and the Action Space as A. At time step t, the model receives the context c t as inputs, which consist of historical actions a i and observations o i , defined as: c t = (o 1 , a 1 , ..., o t-1 , a t-1 , o t , I) The the model produces the action a t at time t, a t = M(c t ), which is then executed in the environment. After execution, the environment sends back the observation at time t + 1, o t+1 = E(o t , a t ). Then the context will be updated and this interaction process continues until the model generates a terminating action or the maximum step is reached.</p><p>Inspired by the paradigm of ReAct Prompting <ref type="bibr">(Yao et al., 2022b)</ref>, we also prompt our agent to generate a thought process first before generating the action code. Hence a t can be further composed into (s t , ât ) where s t and ât represent the natural language thought and action code respectively. Figure <ref type="figure" target="#fig_6">7</ref> in Appendix A presents the System Prompt we designed for the action prediction step. Also, it's worth noting that excessive observations of web pages from longer episodes may confuse the agent. Therefore, we perform context clipping to remove outdated web page information and only keep the three most recent observations in the inputs, and we keep the entire history of thoughts and actions to better guide the agent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Observation Space</head><p>Similar to how humans browse the web, our agent also takes the visual information from the web (screenshots) as the primary source of input. Using screenshots allows us to avoid the burden of processing HTML DOM tree or accessibility tree to portray the overall structure of webpages, which can lead to overly verbose texts and impact the decision-making process of the agent. Inspired by Set-of-Mark Prompting <ref type="bibr">(Yang et al., 2023a)</ref>, we overlay bounding boxes of the interactive elements on the websites to better guide the agent's action prediction. Unlike <ref type="bibr">Yang et al. (2023a)</ref>, we do not need any object detection module <ref type="bibr" target="#b48">(Zou et al., 2023)</ref>. Instead, we utilize GPT-4V-ACT<ref type="foot" target="#foot_0">foot_0</ref> , a Javascript tool to extracts the interactive elements based on web element types and then overlays bounding boxes with numerical labels on the respective regions of the elements. GPT-4V-Act is efficient since it is rule-based without incorporating any object detection model.</p><p>As illustrated in Figure <ref type="figure">2</ref>, the nature of webpages allows us to locate and outline each interactive element using this tool precisely. The numerical labels assigned to each element are also essential for the model to identify the elements requiring interaction, thereby facilitating accurate action determination. We empirically choose black color for the borders and the background of the labels to enhance clarity. We observe that using a single black color yields higher success rates than using multiple colors. We also provide the agent with auxiliary text as inputs, including the textual content embedded within the interactive element, the type of the element, and possibly some comment text in the aria-label attribute. To simplify the observation, we have disabled multiple tabs, i.e., all interactions occur within the current tab instead of opening new ones.</p><p>At every step, the agent receives the current screenshot, auxiliary text, and history as inputs, as discussed in ( §3.2). In case the agent's action raised an exception during execution, we additionally incorporated the error messages in the prompt and asked the model to regenerate the response. Note that each error correction attempt also consumes one step from the total exploration budget.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">Action Space</head><p>We define the action space of our agent similar to how humans browse the web. To this end, we implement the most commonly used mouse and keyboard actions, sufficient for the agent to browse various web pages and locate the content required for the task. With the help of numerical labels in screenshots, we enable the agent to respond with a concise Action Format. This approach precisely locates the elements requiring interaction and executes the corresponding actions. The usage of actions is as follows (more details in Appendix C): 1) Click. This action involves clicking on an element within a webpage, typically a link or a button. 2) Input. This composite action involves selecting a text box, deleting any existing content within it, and then inputting new content. 3) Scroll. Scrolling is a common operation for browsing webpages, usually involving the vertical movement of the entire page. 4) Wait. Action execution requires time, and this action is often used to wait for web pages to load. 5) Back. This action is used to return to the previous page. 6) Jump to Search Engine. There are often situations where agents get stuck at a certain website without finding an answer. This action enables the agent to jump to a search engine and start anew. 7) Answer. Once all questions in the task are resolved, this action concludes the iteration and provides an answer in line with the task requirements.</p><p>4 Benchmark for WebVoyager</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Website Selection</head><p>We select 15 representative websites that cover different aspects of our daily life to ensure diversity in our evaluation, including Allrecipes, Amazon, Apple, ArXiv, BBC News, Booking, Cambridge Dictionary, Coursera, ESPN, GitHub, Google Flights, Google Map, Google Search, Huggingface, and Wolfram Alpha. Due to technical limitations, we regretfully omit websites requiring login or CAPTCHA to access their content. Additionally, Google Search is a universal website that can serve as a starting point for any website, making our framework applicable to various scenarios.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Data Construction</head><p>We employ a combination of self-instruct <ref type="bibr" target="#b35">(Wang et al., 2022)</ref> and human verification to construct our evaluation set. Figure <ref type="figure" target="#fig_2">3</ref> illustrates our data creation process. Initially, we manually sample and rewrite some tasks from <ref type="bibr">Mind2Web (Yin et al., 2023;</ref><ref type="bibr" target="#b9">Deng et al., 2023)</ref> for websites including Google Flights, Google Map, Google Search, Booking, and Wolfram Alpha. This process yields initial seed tasks in the Task Pool for subsequent generation. In step two, we sample tasks from Task Pool as in-context</p><p>Step 1: Tasks written by Human (for 3 -5 webs) GPT-4 Several tasks for 15 webs Manual Filtering Task Pool (15 webs) GPT-4 M a n u a l F il t e r in g (F in d a n s w e r s o n W e b ) Final Web Tasks In-context examples (Quality of Tasks) Filtered tasks In-context examples Step 2: seed tasks for each web Generated tasks Step 3: Generate web tasks and check answers online. examples <ref type="bibr" target="#b10">(Dong et al., 2022)</ref> and prompt GPT-4 Turbo to generate approximately 100 new tasks (20 iterations). Then we manually verify each generated task and rewrite them if necessary to ensure its high quality and the answers can be found on the corresponding website, then we add them to the Task Pool as additional seed tasks. This step allows us to create human-validated seed tasks for each website. Finally, in step three, we sample more diverse in-context examples in the Task Pool and directly add the generated tasks to the Task Pool in each iteration. We manually verify that the generated tasks have low repetition, and the answers to the generated tasks can be found on the websites. In total, we collected 40+ tasks per website, resulting in a total of 643 tasks.</p><p>To further confirm that the generated tasks in the dataset have low repetition, We use the all-mpnetbase-v2<ref type="foot" target="#foot_1">foot_1</ref> model to calculate pairwise similarity for 643 ques. Out of a total of 206,403 pairs, only 49 pairs have a similarity greater than 0.8, and 140 pairs have a similarity between 0.7 and 0.8. All of these have been manually checked and found to be acceptable. 99.68% of pairs have a similarity of less than 0.6. This demonstrates the diversity of our tasks and the robustness of our approach.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Annotation Process</head><p>After collecting the full task pool, we annotate answers for each task. Since some questions are openended and the web information may change, these questions may not have a fixed golden response. Thus, we label each data entry with an answer, categorized as "Possible" or "Golden." For answers 5 Experiment Dataset and Metrics Besides the benchmark introduced in Section 4, we also evaluated on 90 web browsing tasks (Level 1 and Level 2) from the GAIA dataset <ref type="bibr" target="#b24">(Mialon et al., 2023)</ref>, which also come with golden responses. Since GAIA does not provide specific websites, we instruct the agent to start with Google Search. We further evaluated our agent on the 50 tasks used in SeeAct agent's online evaluation <ref type="bibr" target="#b46">(Zheng et al., 2024</ref>) and compared with their results. Following WebArena <ref type="bibr" target="#b47">(Zhou et al., 2023)</ref>, the primary evaluation metric we adopt is the Task Success Rate, measuring the successful completion of tasks without considering whether the steps are optimal.</p><p>Experimental Details We employ GPT-4 Turbo with vision (gpt-4-vision-preview) as the backbone model of our agent, which showcases strong semantic and visual understanding capabilities equivalent to GPT-4V (OpenAI, 2023). Furthermore, we incorporate two additional backbone models, namely Claude 3 Opus (Anthropic, 2024) and GPT-4o (GPT-4 Omni, OpenAI, 2024), to augment the diversity of our research. We include the GPT-4 (All Tools) for baselines, which integrates vision, web browsing, code analysis, and various plugins in one model. Additionally, we consider a text-only baseline where the agent only receives the websites' accessibility tree as input to prediction actions. We used a fixed browser window size of 1024 * 768 pixels for our environment, ensuring a consistent size for the screenshots in our observations. We set the temperature to 1 during generation and allow the agent to explore at most 15 steps.</p><p>Step 1: Cilck [10] Step 2: Type [17]: Smart Folio for iPad Step 3: Cilck [46] Step 4: Cilck [22] Step 5: Type [0]: 90038 Step 6: ANSWER [10]: Accessories [17]: Search accessories [46]: Smart Folio ... [22]: Apple Valley Fair [0]: City or Zip </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Evaluation Methods</head><p>We adopt human evaluation as our main evaluation metric since most of the questions in our benchmark have open-ended answers. In particular, we provide the human evaluators with the complete trajectories of the agent's interaction with the web (all screenshots and all actions), and ask them to provide a binary judgment of whether the agent successfully completed the task. For a subset of 300 tasks, we invite three annotators to judge each trajectory to understand the agreement among human annotators.</p><p>Even though human evaluations are accurate, they are often not scalable. Hence, we want to see if leveraging an LMM for automatic evaluation is feasible. To this end, we propose to use GPT-4V as an auto-evaluator that emulates the behavior of human evaluators to evaluate the navigation trajectories of WebVoyager. In particular, we provide the task, the responses from WebVoyager, and the last k screenshots to the evaluator and ask it to judge whether the agent has completed the task, where k is a hyper-parameter. The prompt of the GPT-4V evaluator is shown in Appendix B.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Result</head><p>Figure <ref type="figure" target="#fig_3">4</ref> presents an example that demonstrates how the agent interacts with the Apple website step by step in an online fashion to complete a task. In the final screenshot, the Agent acquires the desired information, then selects the "ANSWER" action to respond and conclude the navigation. Additional examples are provided in the Appendix D.</p><p>We present the results for our dataset and the extracted GAIA web tasks in Table <ref type="table" target="#tab_0">1</ref> and Figure <ref type="figure" target="#fig_4">5</ref>. WebVoyager outperforms text-only and GPT-4 (All Tools) baselines by large margins in most website tasks, while it is slightly lower than Textonly on Allrecipes and similar to Text-only on Github, ESPN, Cambridge Dictionary and Wolfram Alpha. This is primarily because these websites are more text-heavy than others. Since WebVoyager mostly relies on web screenshots for decisionmaking, dense text might not be easily recognizable from the image. We think extracting such text from the HTML to augment the input could be a potential solution to this problem, suggesting a direction for future work. In Figure <ref type="figure" target="#fig_4">5</ref>, WebVoyager also achieves much stronger performance than both baselines. Finally, WebVoyager has a success rate of 30% on the SeeAct online test set whereas the best SeeAct autonomous agent has 26%, showing the efficacy of our proposed agent.</p><p>We report the Agreement (the ratio of overlap) and <ref type="bibr">Kappa (κ;</ref><ref type="bibr" target="#b7">Cohen 1960</ref>) between consolidated human labels<ref type="foot" target="#foot_2">foot_2</ref> and GPT-4V's judgments on the subset of 300 tasks in Table <ref type="table">2</ref>. Here, k denotes the number of screenshots provided to GPT-4V, with "full" implying the full trajectory. GPT-4V's agreement with human annotators gradually improves as Table 2: Consistency between GPT-4V and Human. Success Rate is the overall success rate of all tasks given by GPT-4V. Based on the annotations given by GPT-4V and Human (after alignment), we compute Agreement, i.e., the label overlap, and the Kappa values.</p><p>it receives more information, and its final Kappa score also reaches 0.7, which is on par with the agreement among human annotators. The consistency between GPT-4V and humans suggests that GPT-4V is a promising automatic evaluator for multi-modal web agents. Accordingly, we report the automatic evaluation results based on GPT-4V in Table <ref type="table" target="#tab_0">1</ref>. The automatic evaluation results of three backbone models, GPT-4V, Claude 3 Opus, and GPT-4o, are relatively close, and their performance is significantly better than the Text-only setting (with GPT-4 as the backbone). However, there is a performance decline for both Claude and GPT-4o on Google Flights. Upon reviewing the trajectories, it is observed that GPT-4o falls into a cognitive bias, where it fails to correctly select the 'one way' option for one-way trip tasks, mistakenly assuming that only the departure date needs to be entered. On the other hand, Claude-3-Opus</p><p>WebVoyager Backbone Evaluator GPT-4V Claude-3-Opus GPT-4o GPT-4V 57.1 55.1 63.0 Claude-3-Opus 52.8 61.6 55.4 GPT-4o 55.5 54.9 64.1</p><p>Table <ref type="table">3</ref>: Overall Task Success Rate of WebVoyager using automatic evaluation. We employ GPT-4V, Claude-3-Opus, and GPT-4o as backbones for WebVoyager and run all tasks, followed by automatic evaluation using these three models.</p><p>encounters difficulties in correctly interacting with web elements while inputting basic flight information. Modifying the system prompt for GPT-4o or Claude may potentially improve the performance. Besides, we conduct the Claude-3-Opus based evaluation and the GPT-4o based evaluation. When provided with the full trajectory, the Claude-3-Opus achieves a kappa value of 0.6 with humans, indicating that it is less reliable than the GPT-4V. And the kappa value between GPT-4o and humans is 0.72, slightly higher than that of GPT-4V. Table <ref type="table">3</ref> illustrates the Task Success Rate when using GPT-4V, Claude-3-Opus, and GPT-4o as backbones and auto evaluators. We observe that GPT-4o exhibits a more lenient attitude towards task performance results, while GPT-4V tends to be relatively strict. However, both models agree that Claude-3-Opus performs the worst. Claude-3-Opus, on the other hand, demonstrates a clear preference for its own results, believing that GPT-4V and GPT-4o are simi- lar but considers itself to have the best performance. GPT-4o and GPT-4V also exhibit a certain bias towards their own results, with each considering itself to be superior to the other.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Discussions</head><p>Direct interaction with the websites is necessary From our experience of using GPT-4 (All Tools), the primary limitation of GPT-4 (All Tools)'s performance is rooted in its reliance on Bing search for web browsing, predominantly depending on web pages fetched by Bing. It cannot directly access certain websites (such as Apple, Amazon, BBC News, etc.) for searching, clicking, or utilizing their sorting functions. This greatly limits the agent's ability to complete certain types of tasks. Both text and vision are necessary for generalist web agents. As discussed earlier, WebVoyager struggles with text-heavy websites. On the other hand, we observe that the text-only agent demonstrates significantly poorer performance on websites with complex visual elements, such as Booking and Flights, which require interactions with calendars and other intricate components. In these scenarios, the textual input such as the accessibility tree becomes highly complex and verbose, making it far less intuitive than using screenshots. Hence it's necessary to incorporate both modalities of inputs when building the general purpose agents. Websites with more interactable elements are more challenging for agents. We also calculate the average trajectory length of tasks completed within the maximum number of iterations, as well as the average number of interactive web elements present on the webpage screenshots. Figure <ref type="figure" target="#fig_5">6</ref> illustrates their relationship with the Task Success Rate. We posit that the average trajectory length serves as a measure of a task's complexity to some extent, while the average number of numerical labels related to the decision-making process reflects</p><p>3 4 5 6 7 8 9 10 Average Trajectory Length 20 30 40 50 60 70 Average elements num per step Allrecipes Amazon Apple ArXiv BBC News Booking Cambridge Dict. Coursera ESPN GitHub Google Flights Google Map Google Search Huggingface Wolfram Alpha 30 40 50 60 70 80 Task Success Rate the complexity of a webpage. Intuitively, websites depicted in the lower-left corner of Figure <ref type="figure" target="#fig_5">6</ref>, characterized by relatively simple webpages and shorter trajectory lengths, are expected to exhibit higher Task Success Rates. As observed in Figure <ref type="figure" target="#fig_5">6</ref>, the results largely align with this intuition.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Why not use Open Source models.</head><p>There are a few critical limitations of the existing open-sourced LMMs that prevent us from exploring other alternatives. Specifically, the web navigation task requires the agent to process fine-grained details from web page screenshots to make decisions, hence highresolution is required to preserve the information from the web. However, most open-sourced LMMs such as LLaVA <ref type="bibr" target="#b20">(Liu et al., 2024)</ref> reduce the image resolution to 224x224 or 336x336, which makes text with smaller fonts unrecognizable, hence they are unsuitable for web navigation tasks. Moreover, models like LLaVA have a max context length of 4096. In our case, the agent needs to handle trajectories as long as 15 steps, and it requires approximately 7000+ tokens, which does not fit in those models' context size.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.4">Error Analysis</head><p>In this section, we discuss and summarize the primary issues encountered by WebVoyager in the task completion process. These challenges will serve as critical entry points for future enhancements of the Task Success Rate and for devising strategies to obtain an Optimal Trajectory. We sampled 300 tasks from our benchmark and manually labeled the error category for each failed case, we show the distribution of errors in table 4. In Appendix F, we also provide specific examples for each issue.</p><p>Main reasons for Failure Ratio Navigation Stuck 44.4% Visual Grounding Issue 24.8% Hallucination 21.8% Prompt Misalignment 9.0%</p><p>Table 4: Distribution of main failure reasons.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Navigation Stuck</head><p>The most common failure is running out of steps before completing the task. There are three failure scenarios: 1) When the agent's search query is not precise and explicit enough, it will be overwhelmed by irrelevant search results. The agent may prefer to browse different results or wait for incorrect outcomes rather than correct its previous action; 2) When the scroll-able area is very small, the agent might not be able to locate the correct scrolling area and repeatedly request the execution of useless scrolling actions; 3) Sometimes in the middle of the page, the agent has trouble deciding whether to scroll up or down. The agent also tends to repeat its previous mistakes due to the input clipping, as mentioned in section 3.2. These meaningless or repetitive actions may hinder the completion of the task.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Visual Grounding Issue</head><p>The visual grounding ability of our agent still has a large room for improvement. We observe the following issues: 1) The agent cannot interpret less frequently observed patterns, such as misidentifying characters representing the pronunciations or math formulas; 2) The agent doesn't recognize the subtle difference between two observations and thinks the execution has failed; 3) The agent selects the wrong element for action execution due to proximity. For example, the model sometimes confuses adjacent elements and misinterprets numbers on a calendar as numerical labels. Sometimes textual information plays a significant role, offering valuable cues and assisting in distinguishing between overly dense web elements. We find that incorporating the text content included in Web Elements can alleviate these problems to some extent. However, a stronger visual encoder or additional text inputs might be needed.</p><p>Hallucination Agents sometimes produce seemingly correct answers, which may require checking carefully to identify errors. We mainly see the following two scenarios: 1) The agent may overlook certain task requirements and settle for an answer that is only partially correct. For instance, when asked for the cheapest product, the agent might respond with a cheap product visible in a screenshot, neglecting the need to sort the options first.</p><p>2) The agent might execute a seemingly correct action without raising any errors, which deviate it from the correct reasoning path. For example, inputting content to the wrong text box when there are many text boxes on the webpage is still valid, yet it would guide the agent to obtain a wrong answer.</p><p>Prompt Misalignment Understanding and following complex prompts, as illustrated in Figure <ref type="figure" target="#fig_6">7</ref>, often poses significant challenges. Moreover, longer trajectories may result in excessively lengthy contexts, hindering effective instruction following.</p><p>Although many of the errors in Navigation Stuck and Hallucination categories can also be attributed to prompt design, we use Prompt Misalignment to categorize the following situations: 1) the agent fails to generate outputs that can be parsed into executable actions, e.g. providing only the 'Thought' without the corresponding 'Action'; 2) Prematurely terminating the process using the ANSWER action, though agent knows that the task is not yet complete (explicitly mentioned in its answer).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>We introduce WebVoyager, an innovative web agent powered by large multimodal models (LMM) that can complete real-world web tasks end-toend by interacting with websites. We have shown through evaluations that WebVoyager outperforms several baselines by leveraging both visual and textual signals. We also propose an automatic evaluation protocol by leveraging GPT-4V as the evaluator for online agents. Our work demonstrates the promise of using advanced LMM capabilities in building intelligent web agents. We hope We-bVoyager provides a strong foundation for future research toward building more versatile and capable web assistants.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitations</head><p>We recognize the following limitations of our work. First, we haven't supported all possible actions in our environment compared to actions a human user might take when browsing the web. e.g. the Drag action on web pages. Supporting such an action is challenging since the degree of Drag is not a finite set. We may allow it to choose the pixel values to be dragged if the Visual Grounding capabilities of LMMs are further enhanced. Second, our agent currently can only analyze basic file formats (such as text files and PDF files) and doesn't support all file formats, especially videos. Enhancing support for additional file formats is a crucial step in the development of web agents and we leave it for future work.</p><p>Regarding the potential risks of our work, we believe that it requires a substantial amount of safety checks before deploying web agents like WebVoyagar into real-world applications, as the agent might unintentionally download malicious content from unauthorized websites, or input private/confidential information on public websites. Also the agent might send fake requests to website servers or generate fake user activities, which might be harmful to website owners. Therefore it's necessary to take extra caution when using and testing our agent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Ethics Statement</head><p>Our experiments have been designed to operate within strict ethical guidelines. Specifically, we restrict our web agent to perform only non-login tasks. This approach is in full compliance with the terms of service and user agreements of the websites our agent interacts with. Furthermore, we closely monitor the agent's activities during its online evaluations. This monitoring is designed to identify and prevent any actions that could lead to potentially harmful consequences. By taking these precautions, we ensure that our research does not cross ethical boundaries or cause unintended harm.</p><p>Additionally, all task queries for evaluation undergo thorough manual inspection to ensure they are harmless and ethically sound. This manual inspection process is aimed at ensuring that every query is harmless and does not promote or propagate harmful content or actions. Our work aims to enhance user experience and accessibility while mitigating potential negative societal impacts. By proactively addressing ethics concerns, we dedicate to conducting research that benefits society while upholding high ethical standards.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Prompt for WebVoyager</head><p>The System Prompt for WebVoyager is shown in Figure <ref type="figure" target="#fig_6">7</ref>. The Prompt's guidelines hold potential for optimization and should be generalist rather than website-specific in design. Incorporating specific issues from websites into the system prompt may compromise the agent's universality.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Prompt for Auto Evaluation</head><p>Figure <ref type="figure" target="#fig_7">8</ref> demonstrates using GPT-4V as an evaluator for web tasks, involving web task instruction, screenshots in the trajectory, and WebVoyager responses. We require GPT-4V to mark success or not success. The temperature is set to 0 to reduce randomness during evaluation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Action Space</head><p>We detail the interaction actions that WebVoyager employs to navigate and operate within web environments. These actions are fundamental to how the agent interacts with web pages, retrieves information, and performs specific tasks as part of its operational protocol. The actions range from basic web navigation to more complex operations, tailored to efficiently gather data and respond to queries. Each action is designed with a specific format for easy identification and execution.</p><p>• Click. This action involves clicking on an element within a webpage, typically a link or a button. If clicking a link results in the download of a PDF file, we automatically parse its content using the OpenAI Assistant API 8 and incorporate it into the Observation. Action Format: Click [Numerical_Label].</p><p>• Input. This is a composite action that involves selecting a text box, deleting any existing content within it, and then inputting new content. To minimize interaction frequency, an automatic ENTER key press follows the input completion. Action Format: Type [Numerical_Label]; [Content].</p><p>• Scroll. Scrolling is a common operation for browsing webpages, usually involving the vertical movement of the entire page. However, there are instances where only a specific section within the webpage is scrollable. In such 8 <ref type="url" target="https://platform.openai.com/docs/assistants/overview">https://platform.openai.com/docs/assistants/overview</ref> cases, we expect the Agent to select an element within the scrollable area and navigate to that particular region for scrolling. Action Format: Scroll [Numerical_Label or WINDOW]; [up or down].</p><p>• Wait. Action execution requires time, and this action is often used to wait for web pages to load. Action Format: Wait.</p><p>• Back. This action is used to return to the previous page. We consider the forward action unnecessary because it can be achieved by repeating previous actions. Action Format: GoBack.</p><p>• Jump to Search Engine. There are often situations where agents get stuck at a certain website, without finding an answer. This action enables the agent to jump to a search engine and start anew. In this work, we just adopt Google Search. Action Format: Google.</p><p>• Answer. Once all questions in the task are resolved, this action concludes the iteration and provides an answer in line with the task requirements. Action Format: ANSWER; [Content].</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Additional Trajectories</head><p>In Figure <ref type="figure" target="#fig_3">4</ref>, we demonstrate how WebVoyager automatically navigates the Apple website and accomplishes the task. In this section, we exhibit the trajectories for the remaining websites that complete web tasks successfully. We provide a screenshot for each step, accompanied by the action generated by WebVoyager. The specific navigation trajectories for each website are illustrated in Figures 9 to 22. In addition, we also explore the performance of WebVoyager on websites in other languages, and we provide two example trajectories in Chinese and Spanish in Figure <ref type="figure" target="#fig_15">23</ref> and Figure <ref type="figure" target="#fig_16">24</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E Additional Related Work</head><p>Vision-based Agents Concurrent to our work, a few related works also studied vision-based autonomous agents. VisualWebArena (Koh et al., 2024) extends WebArena with additional websites and tasks that focus on visual reasoning to facilitate research on vision-based web agents. SeeClick (Cheng et al., 2024) focused on finetuning an LMM to solely leverage screenshots as inputs to interact Imagine you are a robot browsing the web, just like humans. Now you need to complete a task. In each iteration, you will receive an Observation that includes a screenshot of a webpage and some texts. This screenshot will feature Numerical Labels placed in the TOP LEFT corner of each Web Element. Carefully analyze the visual information to identify the Numerical Label corresponding to the Web Element that requires interaction, then follow the guidelines and choose one of the following actions: 1. Click a Web Element. 2. Delete existing content in a textbox and then type content. 3. Scroll up or down. ... Correspondingly, Action should STRICTLY follow the format: -Click [Numerical_Label] -Type [Numerical_Label]; [Content] -Scroll [Numerical_Label or WINDOW]; [up or down] -Wait -GoBack -Google -ANSWER; [content] Key Guidelines You MUST follow: * Action guidelines * 1) Execute only one action per iteration. ... * Web Browsing Guidelines * 1) Don't interact with useless web elements like Login, Sign-in, donation that appear in Webpages. ... Your reply should strictly follow the format: Thought: {Your brief thoughts (briefly summarize the info that will help ANSWER)} Action: {One Action format you choose} Then the User will provide: Observation: {A labeled screenshot Given by User} with websites. WebVLN <ref type="bibr" target="#b4">(Chen et al., 2023)</ref> introduced a web simulator that provides both HTML text and screenshots to finetune supervised visionlanguage models. GPT-4V Wonderland <ref type="bibr" target="#b38">(Yan et al., 2023)</ref> and AppAgent <ref type="bibr">(Zhang et al., 2023)</ref> instead focus on building agents that can operate smartphone apps using the GPT-4V as the backbone. These works further underscore the promising prospects in this field.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Large Multimodal Models.</head><p>In recent years, significant strides have been made in unifying image and text representations within a single multimodal model through joint training with image and text <ref type="bibr" target="#b19">(Li et al., 2019;</ref><ref type="bibr" target="#b11">Dosovitskiy et al., 2020;</ref><ref type="bibr" target="#b36">Wang et al., 2021;</ref><ref type="bibr" target="#b8">Dai et al., 2022;</ref><ref type="bibr" target="#b0">Aghajanyan et al., 2022)</ref>. Large Multimodal Models (LMMs), following in the footsteps of Large Language Models <ref type="bibr" target="#b2">(Brown et al., 2020;</ref><ref type="bibr" target="#b3">Chen et al., 2021;</ref><ref type="bibr" target="#b6">Chowdhery et al., 2023)</ref>, attain the capability of instruction following <ref type="bibr" target="#b27">(Ouyang et al., 2022)</ref> and exhibit robust multimodal comprehension. Represented by GPT-4V (OpenAI, 2023) and Gemini <ref type="bibr" target="#b34">(Team et al., 2023)</ref>, LMMs have demonstrated impressive performance on benchmarks <ref type="bibr" target="#b14">(Goyal et al., 2017;</ref><ref type="bibr" target="#b21">Lu et al., 2022;</ref><ref type="bibr" target="#b44">Zellers et al., 2019;</ref><ref type="bibr" target="#b16">Hessel et al., 2022)</ref>, establishing a foundation for the construction of multimodal agents in subsequent research.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F Error Cases</head><p>In this section, we provide specific examples of the four types of errors mentioned in the Error Analysis section. Figure <ref type="figure" target="#fig_17">25</ref> illustrates a snippet of WebVoyager navigating on Google Flights and a Visual Grounding Issue appears. The task is to retrieve one-way flight information for January 22nd; however, it selects December 22nd on the Calendar and fails to make the necessary corrections. Although it attempts to modify the date in step 6, it ultimately fails to do so. Figure <ref type="figure" target="#fig_18">26</ref> illustrates a situation of WebVoyager navigating on Allrecipes, encountering the Navigation Stuck issue. The agent requires multiple downward scrolls to locate the correct ingredients. However, it experiences confu-As an evaluator, you will be presented with three primary components to assist you in your role:</p><p>1. Web Task Instruction: This is a clear and specific directive provided in natural language, detailing the online activity to be carried out. These requirements may include conducting searches, verifying information, comparing prices, checking availability, or any other action relevant to the specified web service (such as Amazon, Apple, ArXiv, BBC News, Booking etc).</p><p>2. Result Screenshots: This is a visual representation of the screen showing the result or intermediate state of performing a web task. It serves as visual proof of the actions taken in response to the instruction.</p><p>3. Result Response: This is a textual response obtained after the execution of the web task. It serves as textual result in response to the instruction.</p><p>--You DO NOT NEED to interact with web pages or perform actions such as booking flights or conducting searches on websites.</p><p>--You SHOULD NOT make assumptions based on information not presented in the screenshot when comparing it to the instructions.</p><p>--Your primary responsibility is to conduct a thorough assessment of the web task instruction against the outcome depicted in the screenshot and in the response, evaluating whether the actions taken align with the given instructions.</p><p>--NOTE that the instruction may involve more than one task, for example, locating the garage and summarizing the review. Failing to complete either task, such as not providing a summary, should be considered unsuccessful.</p><p>--NOTE that the screenshot is authentic, but the response provided by LLM is generated at the end of web browsing, and there may be discrepancies between the text and the screenshots.</p><p>--Note the difference: 1) Result response may contradict the screenshot, then the content of the screenshot prevails, 2) The content in the Result response is not mentioned on the screenshot, choose to believe the content.</p><p>You should elaborate on how you arrived at your final evaluation and then provide a definitive verdict on whether the task has been successfully accomplished, either as 'SUCCESS' or 'NOT SUCCESS'. sion during the process, and it is uncertain whether to scroll up or down. Figure <ref type="figure" target="#fig_19">27</ref> depicts the Hallucination issue encountered by WebVoyager on the Coursera website. In the task, we query the number of quizzes in the "Artificial Intelligence for Healthcare" course. However, the agent only identifies the quiz in module 1 of the course, which is not the optimal answer and does not fulfill the task requirements. Figure <ref type="figure" target="#fig_20">28</ref> illustrates the issue of Prompt Misalignment encountered while browsing BBC News. WebVoyager fails to fulfill all the task requirements. Instead of completing the navigation, it provides partial answers and tells me how to find complete answers, which is not end-to-end.</p><p>Step 1: Click [2] Step 2: Type [2]; Baked Salmon Step 3: Scroll down Step 4: Click [6] Step 5: Scroll down Step 6: ANSWER Step 1: Type [2]; green Xbox Wireless controller 4 stars Step 2: Click [33] Step 3: ANSWER Figure 10: Screenshots of a complete trajectory of browsing Amazon. Given the task: "Search for an Xbox Wireless controller with green color and rated above 4 stars." The agent interacts with the Amazon website and obtains the answer: "The green Xbox Wireless controller ("Xbox Core Wireless Gaming Controller -Velocity Green") rated above 4 stars has been found on Amazon with a rating of 4.7 out of 5 stars."</p><p>Step 1: Click [5] Step 2: Click [8] Step 3: Click [9] Step 4: Click [10] Step 5: Click [13] Step 6: Click [34] Step 7: ANSWER Step 1: Click [10] Step 2: Click [17] Step 3: ANSWER Figure 12: Screenshots of a complete trajectory of browsing BBC News. Given the task: "Find out which musician made the headlines in Music News." The agent interacts with the BBC News website and obtains the answer: "The musician who made the headlines in Music News is Taylor Swift."</p><p>Step 1: Type [15]; Jakarta Step 2: Click [60] Step 3: Click [63] Step 4: Click [99] Step 5: Scroll down Step 6: Scroll up Step 7: Click [41] Step 8: Click [54] Step 9: ANSWER Step 1: Click [24] Step 2: Click [25] Step 3: Click [21] Step 4: Click [3] Step 5: Click [22] Step 6: Click [25] Step 7: Click [27] Step 8: Click [26] Step 9: Click [25] Step 10: Click [27] Step 11: Click [26] Step 12: ANSWER Step 1: Click [2] Step 2: Type [0]; Introduction to Finance: The Basics Step 3: Click [17] Step 4: Type [2]; Xi Yang Step 5: ANSWER Figure 15: Screenshots of a complete trajectory of browsing Coursera. Given the task: "Identify a course on Coursera named 'Introduction to Finance: The Basics', who is the course instructor, and what other courses does he/she teach." The agent interacts with the Coursera website and obtains the answer: The course instructor for 'Introduction to Finance: The Basics' is Xi Yang. Xi Yang also teaches 'Introduction to Finance: The Role of Financial Markets' and 'Introduction to Financial Analysis -The "Why?"' Step 1: Click [16] Step 2: Click [23] Step 3: Scroll down Step 4: Scroll down Step 5: ANSWER Figure 16: Screenshots of a complete trajectory of browsing ESPN. Given the task: "How many NBA teams are there and list all the teams with 'New' in their name." The agent interacts with the ESPN website and obtains the answer: "There are 30 NBA teams. The teams with 'New' in their name are the New York Knicks and the New Orleans Pelicans."</p><p>Step 1: Click [5] Step 2: Type [0]; climate change data visualization Step 3: Click [29] Step 4: Click [52] Step 5: ANSWER Step 1: Click [2] Step 2: Type [7]; Boston Logan Airport Step 3: Type [8]; North Station Step 4: ANSWER Figure 18: Screenshots of a complete trajectory of browsing Google Map. Given the task: "Plan a trip from Boston Logan Airport to North Station." The agent interacts with the Google Map website and obtains the answer: "The fastest route from Boston Logan International Airport to North Station is via MA-1A S and takes approximately 8 minutes in current traffic conditions."</p><p>Step 1: Click [10] Step 2: Click [12] Step 3: Type [13]; Dublin Step 4: Type [14]; Athens, Greece Step 5: Click [16] Step 6: Click [41] Step 7: Click [78] Step 8: Click [19] Step 9: Click [34] Step 10: Click [2] Step 11: ANSWER Step 1: Type [7]; comedy movies sorted by user ratings Step 2: Click [29] Step 3: Scroll down Step 4: Scroll down Step 5: ANSWER Figure 20: Screenshots of a complete trajectory of browsing Google Search. Given the task: "Show me a list of comedy movies, sorted by user ratings. Show me the Top 5 movies." The agent interacts with the Google Search website and obtains the answer: "The Top 5 comedy movies sorted by user ratings are:Life Is Beautiful; Back to the Future; The Intouchables; City Lights; Modern Times"</p><p>Step 1: Click [1] Step 2: Click [15] Step 3: Click [30] Step 4: Click [68] Step 5: Click [70] Step 6: ANSWER Step 1: Type [8]; x^5-20x^4 +163x^3-676x^2+1424x-1209 Step 2: Scroll down Step 3: ANSWER Figure 22: Screenshots of a complete trajectory of browsing Wolfram Alpha. Given the task: "Simplify x^5-20x^4+163x^3-676x^2+1424x-1209 so that it has fewer items." The agent interacts with the Wolfram Alpha website and obtains the answer: "(x -4)^5 + 3(x -4)^3 + 7"</p><p>Step 1: Type [13]; 杭州 Step 2: Type [15]; 深圳 Step 3: Click [16] Step 4: Click [58] Step 5: Click [66] Step 6: Click [80] Step 7: Click [22] Step 8: ANSWER TASK: 请帮我查找一个航班，2024 年6月15日杭州飞往深圳，6月20日 返回，晚上出发，回答一个符合要 求的航班，并回答其具体出发时间， 航空公司以及价格。 ANSWER: 出发时间：17:35，航空 公司：深航，价格：HK$2,680 Step 1: Type [14]; sostenibilidad Step 2: Click [20] Step 3: ANSWER TASK: Busca la pronunciación y la definición de la palabra "sostenibilidad" en el diccionario.</p><p>(Look up the pronunciation and definition of the word "sustainability" in the dictionary.)</p><p>ANSWER: The pronunciation of "sostenibilidad" is /sosteniβiliˈðað/ and it is a feminine noun. The definition relates to the quality of being able to continue over a period of time, causing minimal damage to the environment, which implies the term is equivalent to "sustainability" in English. Step 1: Click [34] Step 2: Click [13] Step 3: Click [14] Step 4: Click [16] Step 5: Click [78] Step 6: Click [16] Step 1: Scroll down Step 2: Scroll down Step 3: Scroll down Step 4: Scroll up Step 6: Scroll down Step 5: Scroll up Step 1: Click [2] Step 2: Type [0]; Artificial Intelligence for Healthcare Step 3: Click [17] Step 4: Click [13] Step 5: Click [8] Step 6: ANSWER  </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><figDesc>on observation... Click? Type? Scroll? ...</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 1 :</head><label>1</label><figDesc>Figure1: The overall workflow of WebVoyager. WebVoyager takes web tasks assigned by a human and automatically browses the web online. At each step, WebVoyager selects actions based on screenshots and text (the 'type' of the web element and its contents). Once the task is completed, the answers will be returned to the user. For example, for a user query: "Find the cost of a 2-year protection for PS4 on Amazon.", the agent interacts with Amazon online, locates the PS4, identifies the 2-year protection price, and returns "$30.99" to the user.</figDesc><graphic coords="2,117.88,108.24,90.05,61.99" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Data creation process using self-instruct.</figDesc><graphic coords="5,136.58,166.82,64.75,51.46" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Screenshots of a complete trajectory of online web browsing. Given the task: 'Search Apple for the accessory Smart Folio for iPad and check the closest pickup availability next to zip code 90038.' The agent interacts with the Apple website and obtains the answer: 'Apple Tower Theatre.'</figDesc><graphic coords="6,109.89,181.50,122.98,92.23" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Success Rate for GAIA Level 1 and Level 2.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Factors related to task success rate. We show the average number of elements per page and the average trajectory length for each website type. The darker colors indicate a higher task success rate.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 7 :</head><label>7</label><figDesc>Figure7: System Prompt for WebVoyager. We instruct agents to perform web navigation, along with specific browsing actions and action formats. To enhance efficiency and accuracy, we can incorporate additional general into the prompts. These guidelines should be generic and not about a specific website to ensure generalizability.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 8 :</head><label>8</label><figDesc>Figure 8: System Prompt for Auto Evaluation by GPT-4V.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 9 :Figure 10 :</head><label>910</label><figDesc>Figure9: Screenshots of a complete trajectory of browsing Allrecipes. Given the task: "Find a recipe for Baked Salmon that takes less than 30 minutes to prepare and has at least a 4-star rating based on user reviews." The agent interacts with the Allrecipes website and obtains the answer: "The "Baked Dijon Salmon" recipe meets the user's criteria, with a 4.6-star rating and a preparation time of 15 minutes."</figDesc><graphic coords="16,226.63,248.36,135.96,101.97" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 11 :Figure 12 :</head><label>1112</label><figDesc>Figure11: Screenshots of a complete trajectory of browsing ArXiv. Given the task: "For non-English submissions, do I need to provide a multi-language abstract, if needed, answer the separator between the multiple abstracts." The agent interacts with the ArXiv website and obtains the answer: "Line ("-----")"</figDesc><graphic coords="17,73.16,353.05,141.83,106.37" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 13 :</head><label>13</label><figDesc>Figure13: Screenshots of a complete trajectory of browsing Booking. Given the task: "Find the cheapest available hotel room for a three-night stay from 1st Jan in Jakarta. The room is for 2 adults, just answer the cheapest hotel room and the price." The agent interacts with the Booking website and obtains the answer: "The cheapest hotel room is at OYO 3755 Sweet Home for US$14 for a three-night stay."</figDesc><graphic coords="18,74.29,460.82,137.91,103.43" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Figure 14 :Figure 15 :Figure 16 :</head><label>141516</label><figDesc>Figure 14: Screenshots of a complete trajectory of browsing Cambridge Dictionary. Given the task: "Go to the Plus section of Cambridge Dictionary, find Image quizzes and do an easy quiz about Animals and tell me your final score." The agent interacts with the Cambridge Dictionary website and obtains the answer: "The final score on the easy Animals quiz is 6 out of 6."</figDesc><graphic coords="19,74.86,524.20,137.39,103.04" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>Figure 17 :</head><label>17</label><figDesc>Figure 17: Screenshots of a complete trajectory of browsing GitHub. Given the task: "Search for an open-source project related to 'climate change data visualization' on GitHub and report the project with the most stars." The agent interacts with the GitHub website and obtains the answer: "resource-watch/resource-watch with 63 stars"</figDesc><graphic coords="21,74.59,221.61,140.02,105.01" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><head>Figure 19 :Figure 20 :</head><label>1920</label><figDesc>Figure 19: Screenshots of a complete trajectory of browsing Google Flights. Given the task: "Search a one-way flight from Dublin To Athens Greece for 1 Adult that leaves on December 30 and analyse the price graph for the next 2 months." The agent interacts with the Google Flights website and obtains the answer: "The price graph has been analyzed, and it shows the trends for flight prices from Dublin to Athens over the next two months."</figDesc><graphic coords="22,226.67,519.33,135.01,101.26" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_14"><head>Figure 21 :Figure 22 :</head><label>2122</label><figDesc>Figure 21: Screenshots of a complete trajectory of browsing Huggingface. Given the task: "Look up a model with a license of cc-by-sa-4.0 with the most likes on Huggingface." The agent interacts with the Huggingface website and obtains the answer: "The model with a license of cc-by-sa-4.0 with the most likes on Hugging Face is "replit/replit-code-v1-3b" with 703 likes."</figDesc><graphic coords="23,73.33,574.52,139.67,104.75" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_15"><head>Figure 23 :</head><label>23</label><figDesc>Figure 23: Screenshots of a complete trajectory of browsing Google Flights in Chinese. Given the task: "Find a flight from Hangzhou to Shenzhen on June 15, 2024, returning on June 20, departing at night, answer a flight that meets the requirements, and answer its specific departure time, airline and price." The agent interacts with the Google Flights website and obtains the answer: "Departure time: 17:35, airline: Shenzhen Airlines, price: HK$2,680"</figDesc><graphic coords="24,75.55,560.25,143.43,107.58" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_16"><head>Figure 24 :</head><label>24</label><figDesc>Figure 24: Screenshots of a complete trajectory of browsing Cambridge Dictionary in Spanish. The description of task and answer are shown in Figure.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_17"><head>Figure 25 :</head><label>25</label><figDesc>Figure25: An error case for Google Flights. Given the task:"Find the lowest fare from all eligible one-way flights for 1 adult from JFK to Heathrow on Jan. 22." Agent fails to select the correct numerical label though it really wants to select 22 January.</figDesc><graphic coords="25,73.32,557.34,139.45,104.58" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_18"><head>Figure 26 :</head><label>26</label><figDesc>Figure26: An error case for Allrecipes. Given the task:"Search for a recipe for Beef Wellington on Allrecipes that has at least 200 reviews and an average rating of 4.5 stars or higher. List the main ingredients required for the dish." Agent fails to scroll the page correctly and find ingredients.</figDesc><graphic coords="26,72.51,220.26,140.47,105.35" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_19"><head>Figure 27 :</head><label>27</label><figDesc>Figure 27: An error case for Coursera. Given the task: "Identify a course on Coursera related to 'Artificial Intelligence for Healthcare' and note the course duration along with the number of quizzes in Assessments." The agent provides the answer: "Module 1 includes 3 quizzes in the Assessments." However, we also require other Modules and agent fails to provide the results.</figDesc><graphic coords="26,74.48,568.65,141.13,105.85" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_20"><head>Figure 28 :</head><label>28</label><figDesc>Figure28: An error case for BBC News. Given the task: "Find out how many teams are in the Scottish Premiership of the Football Tournament and when did the Hibernian team's most recent match start?" The agent provides the answer: "There are 12 teams in the Scottish Premiership. To find out the exact start time of Hibernian's most recent match, further interaction with the website would be required." The Agent knows that the task is not yet complete, but it ends its navigation early, even though it can find the Hibernian team's most recent match.</figDesc><graphic coords="27,75.29,326.49,140.24,105.18" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>8% ±0.0% 43.1% ±1.4% 36.4% ±3.5% 50.4% ±1.4% 63.4% ±2.5% 2.3% ±0.0% 38.6% ±2.3% 24.6% ±1.4% WebVoyager * 51.1% ±2.2% 52.9% ±1.4% 62.8% ±2.3% 52.0% ±1.3% 59.3% ±3.7% 32.6% ±2.7% 47.0% ±1.3% 57.9% ±2.7% WebVoyager Claude * 45.9% ±3.4% 58.6% ±4.2% 58.1% ±4.0% 55.0% ±7.0% 56.9% ±1.4% 19.0% ±1.3% 46.2% ±1.3% 68.2% ±1.3% WebVoyager GPT-4o * 56.3% ±1.3% 53.7% ±2.5% 56.6% ±1.3% 60.5% ±0.0% 57.7% ±3.7% 43.9% ±3.5% 44.0% ±2.7% 65.1% ±2.8% ±3.6% 66.7% ±4.8% 15.1% ±5.5% 55.3% ±1.4% 72.9% ±1.3% 53.5% ±4.7% 51.5% ±5.4% 52.8% ±1.4% WebVoyager GPT-4o * 82.2% ±1.3% 54.8% ±2.4% 28.6% ±0.0% 56.9% ±2.8% 63.6% ±1.3% 42.6% ±3.6% 65.2% ±2.2% 55.5% ±0.8%The main result for WebVoyager. Each website contains 40 to 45 tasks, and we report the Task Success Rate in the table. We show the results of GPT-4 (All Tools), WebVoyager Text-only using the accessibility tree, and WebVoyager by comparing with human expert labels. WebVoyager * , WebVoyager Text-only * , WebVoyager Claude * and WebVoyager GPT-4o* are results evaluated by GPT-4V (full trajectory, kappa = 0.70). For each automatic evaluation, we run GPT-4V evaluator three times to calculate the performance mean and standard deviation.</figDesc><table><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>Allrecipes</cell><cell>Amazon</cell><cell>Apple</cell><cell>ArXiv</cell><cell>GitHub</cell><cell>Booking</cell><cell>ESPN</cell><cell>Coursera</cell></row><row><cell cols="2">GPT-4 (All Tools)</cell><cell></cell><cell></cell><cell>11.1%</cell><cell>17.1%</cell><cell>44.2%</cell><cell>14.0%</cell><cell>48.8%</cell><cell>22.7%</cell><cell>31.8%</cell><cell>31.0%</cell></row><row><cell cols="4">WebVoyager Text-only</cell><cell>55.6%</cell><cell>31.7%</cell><cell>34.9%</cell><cell>32.6%</cell><cell>61.0%</cell><cell>2.3%</cell><cell>36.4%</cell><cell>23.8%</cell></row><row><cell>WebVoyager</cell><cell></cell><cell></cell><cell></cell><cell>53.3%</cell><cell>58.5%</cell><cell>65.1%</cell><cell>51.2%</cell><cell>63.4%</cell><cell>43.2%</cell><cell>38.6%</cell><cell>73.8%</cell></row><row><cell cols="3">WebVoyager Text-only</cell><cell cols="2">Cambridge Dictionary</cell><cell>BBC News</cell><cell>Google Flights</cell><cell>Google Map</cell><cell>Google Search</cell><cell>Huggingface</cell><cell>Wolfram Alpha</cell><cell>Overall</cell></row><row><cell cols="2">GPT-4 (All Tools)</cell><cell></cell><cell></cell><cell>25.6%</cell><cell>9.5%</cell><cell>2.4%</cell><cell>53.7%</cell><cell>60.5%</cell><cell>37.2%</cell><cell>52.2%</cell><cell>30.8%</cell></row><row><cell cols="4">WebVoyager Text-only</cell><cell>62.8%</cell><cell>45.2%</cell><cell>7.1%</cell><cell>61.0%</cell><cell>67.4%</cell><cell>20.9%</cell><cell>58.7%</cell><cell>40.1%</cell></row><row><cell>WebVoyager</cell><cell></cell><cell></cell><cell></cell><cell>65.1%</cell><cell>61.9%</cell><cell>59.5%</cell><cell>70.7%</cell><cell>76.7%</cell><cell>44.2%</cell><cell>63.0%</cell><cell>59.1%</cell></row><row><cell cols="3">WebVoyager Text-only</cell><cell>*</cell><cell cols="2">66.7% ±3.6% 45.2% ±2.4%</cell><cell>7.1% ±0.0%</cell><cell cols="3">62.6% ±2.8% 75.2% ±1.3% 31.0% ±1.4% 60.2% ±1.3% 44.3% ±0.6%</cell></row><row><cell>WebVoyager  *</cell><cell></cell><cell></cell><cell></cell><cell cols="6">71.3% ±1.3% 60.3% ±2.8% 51.6% ±1.4% 64.3% ±2.8% 77.5% ±2.7% 55.8% ±2.3% 60.9% ±2.2% 57.1% ±0.2%</cell></row><row><cell>WebVoyager Claude</cell><cell>*</cell><cell cols="3">71.3% Success Rate</cell><cell cols="2">Consistency</cell><cell></cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>Agreement</cell><cell>κ</cell><cell></cell><cell></cell></row><row><cell>k=1</cell><cell></cell><cell></cell><cell></cell><cell>47.7%</cell><cell>75.3%</cell><cell>0.51</cell><cell></cell><cell></cell></row><row><cell>k=2</cell><cell></cell><cell></cell><cell></cell><cell>55.3%</cell><cell>79.7%</cell><cell>0.59</cell><cell></cell><cell></cell></row><row><cell>k=3</cell><cell></cell><cell></cell><cell></cell><cell>54.3%</cell><cell>81.3%</cell><cell>0.62</cell><cell></cell><cell></cell></row><row><cell>Full</cell><cell></cell><cell></cell><cell></cell><cell>58.3%</cell><cell>85.3%</cell><cell>0.70</cell><cell></cell><cell></cell></row></table><note><p>* 57.</p></note></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_0"><p>https://github.com/ddupont808/GPT-4V-Act</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_1"><p>https://huggingface.co/sentence-transformers/all-mpnetbase-v2 labeled as "Golden," we provide a comprehensive listing of possible responses and consider them stable in the short term. The "Possible" category covers the following scenarios: 1) Answers for open-ended tasks where it's hard to find an exact match answer, such as summarization. 2) multiple answers satisfy the task, making it impractical to list all of them. Therefore, we provide a partial listing. 3) Tasks related to real-time information, where the answer might change, e.g., flight ticket prices. Hence, the "Possible" answers were also correct during our experiments. In total, 22.3% of questions are annotated with golden responses, and the rest only have possible answers.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="7" xml:id="foot_2"><p>the Fleiss's Kappa<ref type="bibr" target="#b12">(Fleiss, 1971)</ref> of human annotators before any discussion is 0.7, which is substantial agreement.</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Cm3: A causal masked multimodal model of the internet</title>
+		<author>
+			<persName><forename type="first">Armen</forename><surname>Aghajanyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bernie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Candace</forename><surname>Ross</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladimir</forename><surname>Karpukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hu</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmytro</forename><surname>Okhonko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mandar</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gargi</forename><surname>Ghosh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.07520</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>AI Anthropic. 2024. Introducing the next generation of claude</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Autogpt</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henrique</forename><surname>Ponde De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harri</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dileepa</forename><surname>Pitawela</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongyang</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gengze</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hsiang-Ting</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Wu</surname></persName>
+		</author>
+		<title level="m">Webvln: Vision-and-language navigation on websites</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Kanzhi</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiushi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yougang</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangzhi</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yantao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianbing</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyong</forename><surname>Wu</surname></persName>
+		</author>
+		<title level="m">Seeclick: Harnessing gui grounding for advanced visual gui agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Palm: Scaling language modeling with pathways</title>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaurav</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Barham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyung</forename><forename type="middle">Won</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Gehrmann</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">24</biblScope>
+			<biblScope unit="issue">240</biblScope>
+			<biblScope unit="page" from="1" to="113" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">A coefficient of agreement for nominal scales. Educational and psychological measurement</title>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Cohen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1960">1960</date>
+			<biblScope unit="volume">20</biblScope>
+			<biblScope unit="page" from="37" to="46" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Duyu</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liangxin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minghuan</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cong</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingquan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhangyin</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueyu</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuming</forename><surname>Shi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.06126</idno>
+		<title level="m">One model, multiple modalities: A sparsely activated approach for text, sound, image, video and code</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyuan</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><surname>Stevens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boshi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Su</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.06070</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Towards a generalist agent for the web</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qingxiu</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Damai</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ce</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baobao</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingjing</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhifang</forename><surname>Sui</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2301.00234</idno>
+		<title level="m">A survey for in-context learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">Alexey</forename><surname>Dosovitskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Beyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Kolesnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dirk</forename><surname>Weissenborn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohua</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Unterthiner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mostafa</forename><surname>Dehghani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Minderer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Georg</forename><surname>Heigold</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sylvain</forename><surname>Gelly</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2010.11929</idno>
+		<title level="m">An image is worth 16x16 words: Transformers for image recognition at scale</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Measuring nominal scale agreement among many raters</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Fleiss</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Psychological bulletin</title>
+		<imprint>
+			<biblScope unit="volume">76</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page">378</biblScope>
+			<date type="published" when="1971">1971</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hiroki</forename><surname>Furuta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Nachum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuang-Huei</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutaka</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shixiang</forename><surname>Shane Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izzeddin</forename><surname>Gur</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.11854</idno>
+		<title level="m">Multimodal web navigation with instruction-finetuned foundation models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Making the v in vqa matter: Elevating the role of image understanding in visual question answering</title>
+		<author>
+			<persName><forename type="first">Yash</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tejas</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Douglas</forename><surname>Summers-Stay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dhruv</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Devi</forename><surname>Parikh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE conference on computer vision and pattern recognition</title>
+		<meeting>the IEEE conference on computer vision and pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="6904" to="6913" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">Izzeddin</forename><surname>Gur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hiroki</forename><surname>Furuta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Austin</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mustafa</forename><surname>Safdari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutaka</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Douglas</forename><surname>Eck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Faust</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.12856</idno>
+		<title level="m">A real-world webagent with planning, long context understanding, and program synthesis</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">The abduction of sherlock holmes: A dataset for visual abductive reasoning</title>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Hessel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jena</forename><forename type="middle">D</forename><surname>Hwang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jae</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sung</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rowan</forename><surname>Zellers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chandra</forename><surname>Bhagavatula</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Rohrbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kate</forename><surname>Saenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">European Conference on Computer Vision</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="558" to="575" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Yu Koh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lawrence</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vikram</forename><surname>Duvvur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><forename type="middle">Chong</forename><surname>Lim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Po-Yu</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruslan</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<title level="m">Visualwebarena: Evaluating multimodal agents on realistic visual web tasks</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Pix2struct: Screenshot parsing as pretraining for visual language understanding</title>
+		<author>
+			<persName><forename type="first">Kenton</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mandar</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iulia</forename><surname>Raluca Turc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hexiang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangyu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Martin Eisenschlos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Urvashi</forename><surname>Khandelwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Shaw</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kristina</forename><surname>Toutanova</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="18893" to="18912" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Visualbert: A simple and performant baseline for vision and language</title>
+		<author>
+			<persName><forename type="first">Liunian</forename><surname>Harold</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Yatskar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cho-Jui</forename><surname>Da Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Hsieh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1908.03557</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Visual instruction tuning</title>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong Jae</forename><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page">36</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Learn to explain: Multimodal reasoning via thought chains for science question answering</title>
+		<author>
+			<persName><forename type="first">Pan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swaroop</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tanglin</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Song-Chun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oyvind</forename><surname>Tafjord</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Kalyan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="2507" to="2521" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">Pan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baolin</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michel</forename><surname>Galley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><forename type="middle">Nian</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Song-Chun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Gao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.09842</idno>
+		<title level="m">Chameleon: Plug-and-play compositional reasoning with large language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Laser: Llm agent with state-space exploration for web navigation</title>
+		<author>
+			<persName><forename type="first">Kaixin</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongwei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoman</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.08172</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Gaia: a benchmark for general ai assistants</title>
+		<author>
+			<persName><forename type="first">Grégoire</forename><surname>Mialon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clémentine</forename><surname>Fourrier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Craig</forename><surname>Swift</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Wolf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Lecun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Scialom</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.12983</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suchir</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christina</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shantanu</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Saunders</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2112.09332</idno>
+		<title level="m">Webgpt: Browser-assisted questionanswering with human feedback</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<title level="m">Gpt-4 technical report. OpenAI. 2024. Hello gpt-4o</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Training language models to follow instructions with human feedback</title>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carroll</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katarina</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="27730" to="27744" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shihao</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yining</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kunlun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lan</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaxi</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Qian</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.16789</idno>
+		<title level="m">Toolllm: Facilitating large language models to master 16000+ real-world apis</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Exploring the limits of transfer learning with a unified text-to-text transformer</title>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Raffel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katherine</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Matena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanqi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><forename type="middle">J</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="5485" to="5551" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberta</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicola</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Scialom</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.04761</idno>
+		<title level="m">Toolformer: Language models can teach themselves to use tools</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Shaw</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mandar</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Cohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Berant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Panupong</forename><surname>Pasupat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hexiang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Urvashi</forename><surname>Khandelwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenton</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kristina</forename><surname>Toutanova</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.00245</idno>
+		<title level="m">From pixels to ui actions: Learning to follow instructions via graphical user interfaces</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">World of bits: An open-domain platform for web-based agents</title>
+		<author>
+			<persName><forename type="first">Tianlin</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrej</forename><surname>Karpathy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linxi</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Hernandez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="3135" to="3144" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Reflexion: Language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Karthik R Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Thirty-seventh Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Gemini</forename><surname>Team</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Anil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Borgeaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonghui</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean-Baptiste</forename><surname>Alayrac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahui</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Radu</forename><surname>Soricut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johan</forename><surname>Schalkwyk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">M</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anja</forename><surname>Hauth</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.11805</idno>
+		<title level="m">Gemini: a family of highly capable multimodal models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Self-instruct: Aligning language model with self generated instructions</title>
+		<author>
+			<persName><forename type="first">Yizhong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yeganeh</forename><surname>Kordi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swaroop</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alisa</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Khashabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.10560</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zirui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahui</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adams</forename><forename type="middle">Wei</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihang</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yulia</forename><surname>Tsvetkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2108.10904</idno>
+		<title level="m">Simvlm: Simple visual language model pretraining with weak supervision</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Llm-powered autonomous agents</title>
+		<author>
+			<persName><forename type="first">Lilian</forename><surname>Weng</surname></persName>
+		</author>
+		<ptr target="lilianweng.github.io" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Gpt-4v in wonderland: Large multimodal models for zero-shot smartphone gui navigation</title>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanrong</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linjie</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianwei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiwu</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Mcauley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zicheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lijuan</forename><surname>Wang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jianwei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueyan</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Gao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.11441</idno>
+		<title level="m">Set-of-mark prompting unleashes extraordinary visual grounding in gpt-4v</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhengyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linjie</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chung-Ching</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zicheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lijuan</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.17421</idno>
+		<title level="m">The dawn of lmms: Preliminary explorations with gpt-4v (ision)</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">9</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Howard</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<title level="m">Webshop: Towards scalable real-world web interaction with grounded language agents</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03629</idno>
+		<title level="m">Synergizing reasoning and acting in language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<author>
+			<persName><forename type="first">Faeze</forename><surname>Da Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhilasha</forename><surname>Brahman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Khyathi</forename><surname>Ravichander</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Chandu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Yuchen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.05657</idno>
+		<title level="m">Lumos: Learning agents with unified data, modular design, and open-source llms</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">From recognition to cognition: Visual commonsense reasoning</title>
+		<author>
+			<persName><forename type="first">Rowan</forename><surname>Zellers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Farhadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF conference on computer vision and pattern recognition</title>
+		<meeting>the IEEE/CVF conference on computer vision and pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="6720" to="6731" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yucheng</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zebiao</forename><surname>Huang</surname></persName>
+		</author>
+		<title level="m">Bin Fu, and Gang Yu. 2023. Appagent: Multimodal agents as smartphone users</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<author>
+			<persName><forename type="first">Boyuan</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyu</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jihyung</forename><surname>Kil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Su</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.01614</idno>
+		<title level="m">Gpt-4v (ision) is a generalist web agent, if grounded</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuhui</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abishek</forename><surname>Sridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianyi</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.13854</idno>
+		<title level="m">Webarena: A realistic web environment for building autonomous agents</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Object detection in 20 years: A survey</title>
+		<author>
+			<persName><forename type="first">Zhengxia</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keyan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenwei</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhong</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jieping</forename><surname>Ye</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE</title>
+		<meeting>the IEEE</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

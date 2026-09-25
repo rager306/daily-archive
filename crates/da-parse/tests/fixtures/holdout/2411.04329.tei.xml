@@ -1,0 +1,1842 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">CodeTree: Agent-guided Tree Search for Code Generation with Large Language Models</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-11-12">12 Nov 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Jierui</forename><surname>Li</surname></persName>
+							<email>jierui@cs.utexas.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">The University of Texas at Austin</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hung</forename><surname>Le</surname></persName>
+							<email>hungle@salesforce.com</email>
+							<affiliation key="aff1">
+								<orgName type="department">Salesforce Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yingbo</forename><surname>Zhou</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Salesforce Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Salesforce Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Silvio</forename><surname>Savarese</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Salesforce Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Doyen</forename><surname>Sahoo</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Salesforce Research</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">CodeTree: Agent-guided Tree Search for Code Generation with Large Language Models</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-11-12">12 Nov 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">B772C6AAAE09C684EC35FF7CD64D4B91</idno>
+					<idno type="arXiv">arXiv:2411.04329v2[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:50+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Pre-trained on massive amounts of code and text data, large language models (LLMs) have demonstrated remarkable achievements in performing code generation tasks. With additional execution-based feedback, these models can act as agents with capabilities to self-refine and improve generated code autonomously. However, on challenging coding tasks with extremely large search space, current agentic approaches still struggle with multi-stage planning, generating, and debugging. To address this problem, we propose CodeTree, a framework for LLM agents to efficiently explore the search space in different stages of the code generation process. Specifically, we adopted a unified tree structure to explicitly explore different coding strategies, generate corresponding coding solutions, and subsequently refine the solutions. In each stage, critical decision-making (ranking, termination, expanding) of the exploration process is guided by both the environmental executionbased feedback and LLM-agent-generated feedback. We comprehensively evaluated CodeTree on 7 code generation benchmarks and demonstrated the significant performance gains of CodeTree against strong baselines. Using GPT-4o as the base model, we consistently achieved top results of 95.1% on HumanEval, 98.7% on MBPP, and 43.0% on CodeContests. On the challenging SWEBench benchmark, our approach led to significant performance gains.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Recently, we have witnessed significant impacts of large language models (LLMs) beyond the NLP domain such as in coding tasks <ref type="bibr">(Achiam et al., 2023;</ref><ref type="bibr">Touvron et al., 2023a;</ref><ref type="bibr" target="#b37">Wang et al., 2023;</ref><ref type="bibr" target="#b30">Rozière et al., 2023)</ref>. However, different from traditional NLP tasks, coding tasks require generated code to be fully executable and functionally correct i.e. * The work was done while Jierui Li was a research intern in Salesforce Research Asia.</p><p>containing no programmatic syntax errors and passing all possible test cases <ref type="bibr" target="#b5">(Chen et al., 2021;</ref><ref type="bibr" target="#b1">Austin et al., 2021;</ref><ref type="bibr" target="#b11">Hendrycks et al., 2021)</ref>. Given the extremely large search space in code, early methods propose to sample a very large number of generation outputs (for example, <ref type="bibr" target="#b22">Li et al. (2022)</ref> generated up to 1 million samples per problem) to increase the chance of generating a correct code solution.</p><p>More recently, several approaches adopted a "vertical" strategy in which LLMs first generate one (or very few) generation output, and then iteratively refine this output multiple times, often conditioned by some forms of external feedback <ref type="bibr" target="#b19">(Le et al., 2022;</ref><ref type="bibr">Chen et al., 2023b;</ref><ref type="bibr" target="#b32">Shinn et al., 2023)</ref>. While these approaches are more cost-effective by focusing only on a small subset of the search space (i.e. starting from an initial output candidate), the performances of these approaches are bounded by the local optima of the chosen search space. Related to our work, several methods for NLP reasoning tasks were introduced to control and enhance the generation procedure of LLMs. For example, <ref type="bibr" target="#b36">Wang et al. (2022)</ref> proposed to enhance LLMs with chains of thought and statistically select the right solutions based on majority voting. <ref type="bibr" target="#b44">Zhou et al. (2023)</ref> decomposed a task into smaller sub-tasks and addressed them by increasing the order of difficulty. <ref type="bibr" target="#b41">Yao et al. (2024)</ref> proposed to improve LLMs by adopting a tree-based structure to explicitly simulate the exploration of thoughts in a tree. We are motivated by this line of research and proposed CodeTree, a new generation framework to effectively explore the search space of code generation tasks through a tree-based structure. An overview of CodeTree is given in Figure <ref type="figure" target="#fig_1">1</ref>.</p><p>We define 3 standard agents, Thinker, Solver, and Debugger, to equip the strategy-planning, solution implementation, and solution improvement correspondingly, posing comprehensive roles needed for code generation. A CodeTree starts from the input problem as the tree root and subse-</p><p>Approach Explore Exploit Execution feedback AI feedback Multiagent Action CodeRanker (Inala et al., 2022) ✓ ✓ AlphaCode <ref type="bibr" target="#b22">(Li et al., 2022)</ref>, MBR-Exec <ref type="bibr" target="#b31">(Shi et al., 2022)</ref>, CodeT <ref type="bibr">(Chen et al., 2023b)</ref> ✓ ✓ LEVER <ref type="bibr" target="#b25">(Ni et al., 2023)</ref>, Coder-Reviewer <ref type="bibr">(Zhang et al., 2023b</ref>)</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>✓ ✓ ✓</head><p>Self-correct <ref type="bibr" target="#b39">(Welleck et al., 2023)</ref>, ILF <ref type="bibr">(Chen et al., 2023a)</ref>, Self-refine <ref type="bibr" target="#b24">(Madaan et al., 2023)</ref> ✓ ✓ CodeChain <ref type="bibr" target="#b18">(Le et al., 2024</ref>) ✓ ✓ Self-debug <ref type="bibr">(Chen et al., 2023d)</ref>, <ref type="bibr">Self-repair (Olausson et al., 2023)</ref>, Reflexion <ref type="bibr" target="#b32">(Shinn et al., 2023)</ref> </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>✓ ✓ ✓</head><p>CAMEL <ref type="bibr">(Li et al., 2023a</ref>) ✓ ✓ ChatDev <ref type="bibr" target="#b29">(Qian et al., 2024)</ref>, MetaGPT <ref type="bibr" target="#b12">(Hong et al., 2023)</ref>, AgentVerse <ref type="bibr">(Chen et al., 2023c)</ref> </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>✓ ✓ ✓</head><p>Self-collaboration <ref type="bibr" target="#b13">(Dong et al., 2023)</ref>, AgentCoder <ref type="bibr" target="#b13">(Huang et al., 2023</ref>)</p><formula xml:id="formula_0">✓ ✓ ✓ ✓ CodeTree (ours) ✓ ✓ ✓ ✓ ✓ ✓</formula><p>Table 1: We compare CodeTree with related methods in 6 aspects: (1) Explore which adopts a brute-force approach to independently generate a large number of code candidates; (2) Exploit which focuses on self-refinement using a small subset of output solutions; (3) Execution feedback which uses code execution outcomes to improve code qualities; (4) AI feedback which enables synthetic feedback generated by LLMs to improve output code; (5) Multi-agent which adopts multiple LLM agents to play different roles in the code generation process; and (6) Action where LLM agents can take different actions and facilitate decision-making. quent nodes represent code solutions. At any node of the tree, one can either explore sibling nodes (other strategies from the same parent node) or its children (refinements of this node). Within Code-Tree, agents can interact with each other through a tree expansion guided by a Critic Agent, searching for the optimal code solution.</p><p>Rather than following heuristic rules or classic tree traversal methods, we use Critic Agent to selfevaluate the status of tree nodes at each tree expansion step by executing the following tasks:</p><p>• Node scoring: Evaluate the test case outputs of generated code and assess whether the tree nodes faithfully follow their corresponding coding strategies.</p><p>• Solution verification &amp; evaluation: For a solution that passes visible test cases, verify if it should be further improved; for a solution that fails, evaluate if it is a promising direction to debug and refine the solution.</p><p>Based on the outputs of the above evaluation tasks, Critic Agent can take action to either refine, abort, or accept the current solution, which automatically expands or terminates the tree search. CodeTree is flexible and efficient, avoiding duplicated or redundant exploration of functionally similar or unfeasible solutions. We comprehensively evaluated CodeTree on diverse code generation benchmarks from beginner-to competition-level coding tasks. Our results demonstrated the significant and consistent performance gains of CodeTree against strong baselines. Using GPT-4o as the base models, we achieved the top results on HumanEval+, MBPP+ <ref type="bibr" target="#b23">(Liu et al., 2023)</ref>, and CodeContests <ref type="bibr" target="#b22">(Li et al., 2022)</ref> respectively. On the challenging SWEBench benchmark, our approach led to significant performance gains. We also conducted comprehensive ablation and qualitative analysis to derive the best practices and any limitations of the current method.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related Work</head><p>Our work is broadly related to the research of large language models (LLMs) <ref type="bibr" target="#b36">(Chowdhery et al., 2022;</ref><ref type="bibr">Achiam et al., 2023;</ref><ref type="bibr">Touvron et al., 2023a)</ref>. Roz- <ref type="formula">ière et al. (2023); Li et al. (2023b); Wang et al.  (2023); Chen et al. (2021</ref>) extended this line of research by allowing LLMs to learn from large-scale code-related data such as open-sourced Github repositories and code commits. Treating code generation as an autoregressive generation tasks, LLMs can generate code that correctly follow programming syntactic rules and are functionally correct <ref type="bibr" target="#b5">(Chen et al., 2021;</ref><ref type="bibr" target="#b10">Gunasekar et al., 2023;</ref><ref type="bibr" target="#b26">Nijkamp et al., 2023)</ref>. Early approaches <ref type="bibr" target="#b5">(Chen et al., 2021;</ref><ref type="bibr" target="#b1">Austin et al., 2021;</ref><ref type="bibr" target="#b11">Hendrycks et al., 2021)</ref> adopted a brute-force principle by independently generating a very large number of output code candidates, so one of which might be the optimal code solution. Subsequently, <ref type="bibr" target="#b22">Li et al. (2022)</ref>; <ref type="bibr">Chen et al. (2023b)</ref>; <ref type="bibr" target="#b25">Ni et al. (2023)</ref> proposed to utilize unit test outcomes to filter for more prospective generated code samples.</p><p>Also related to our work is the studies of selfrefinement capabilities of LLMs. These studies leverage the inherent ability of LLM to perceive arbitrary natural language contexts, including information such as environmental feedback, to iteratively fix problematic code and improve its correctness. For example, <ref type="bibr">Zhang et</ref>  <ref type="formula">al. (2023a)</ref>  <ref type="bibr" target="#b29">Chen et al. (2024)</ref> introduced a tree structure to explore sub-functions in generated code. Different from prior approaches, we introduce a tree-based structure as a unified search space for LLM agents to efficiently perform exploration throughout different stages of code generation. See Table <ref type="table">1</ref> for a more systematic comparison with related methods.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Method</head><p>To apply LLMs to code generation, we can define this task as a sequence-to-sequence task. The input sequence consists of a problem description D, usually in the form of a function docstring (including expected input and output) or the textual explanation of the problem. The output is a corresponding code solution, flattened into a sequence of tokens Ŵ = ( ŵ1 , ..., ŵT ) with ŵt ∈ V.</p><p>Generated codes are evaluated against hidden test cases to check the functional correctness <ref type="bibr" target="#b11">(Hendrycks et al., 2021;</ref><ref type="bibr" target="#b5">Chen et al., 2021;</ref><ref type="bibr" target="#b22">Li et al., 2022)</ref>. The test cases are a set of input-output pairs</p><formula xml:id="formula_1">{(i j , o j )} = {(i j , o j ) v } ∪ {(i j , o j ) h }. Visible test cases are denoted as {(i j , o j ) v } while hidden test cases are denoted as {(i j , o j ) h }. An output code Ŵ is correct when Ŵ (i j ) = o j ∀j.</formula><p>Please refer to Figure <ref type="figure" target="#fig_1">1</ref> for an overview of our method and Figure <ref type="figure" target="#fig_2">2</ref> for a simplified version of instruction prompts to our LLM agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Coding Task-Specific Agents</head><p>We first introduce three unit LLM agents, specifically targeting different parts of the code generation process, including strategy thinking, code implementation, and code debugging.</p><p>Strategy Generation with Thinker Agent Conventional approaches such as <ref type="bibr" target="#b5">(Chen et al., 2021;</ref><ref type="bibr" target="#b1">Austin et al., 2021;</ref><ref type="bibr" target="#b11">Hendrycks et al., 2021)</ref> directly generate output code candidates given a problem description. However, these approaches do not fully exploit the advantage of LLMs in generating more expressive outputs in text. <ref type="bibr" target="#b38">Wei et al. (2022)</ref> showed that allowing LLMs to generate natural language step-by-step thoughts can lead to significant performance gains in downstream NLP tasks. Following the setting in <ref type="bibr" target="#b41">Yao et al. (2024)</ref>, requesting LLMs to generate a list of different natural language thoughts can enhance the diversity of solutions. We propose to adapt this technique to allow an LLM θ T (denoted as "Thinker" agent) to sequentially generate a set of high-level strategies given an input coding problem. Each strategy Ŝi is generated autoregressively given previously generated strategies following:</p><formula xml:id="formula_2">Ŝi ∼ p θ T (.| Ŝ1:i-1 , D)<label>(1)</label></formula><p>By allowing models to first generate coding strategies, we enable LLMs to tackle coding problems using their reasoning capabilities learned from the text domain. The expressiveness of generated strategies in a natural language can potentially guide the code-generation process toward more diverse exploration paths. Notably, we let Thinker Agent dynamically decide the number of generated coding strategies, given the fact that different coding problems can have more or fewer feasible strategies.</p><p>Solution Generation with Solver Agent Given a complete generated strategy Ŝi , we let an LLM θ S (denoted as "Solver" agent) generate a set of initial code solutions. Since LLMs are often fine-tuned to follow arbitrary instructions in natural language, these models can understand novel unseen tasks</p><p>Initial code Initial code Initial code Initial code Problem Specification Strategy Strategy Strategy Refined code Refined code Thinker agent Solver agent Debugger agent Critic agent • Scoring • Expanding • Terminating Action: Execution Agent-guided tree search Reflection Refined code Refined code Refined code Refined code Reflection Reflection Reflection Reflection Reflection Reflection Accept Abort Refine Strategy Strategy Solver: Your goal is to implement the solution for a programming problem based on the user's instructions… [Problem]: &lt;problem description&gt; [Instruction]: &lt;strategy&gt; Thinker: Your goal is to think of multiple strategies in English on how to [approach and solve this problem)]/[improve this solution]. You should decide how many and what strategies are feasible and list and number them line by line. … [Problem]: &lt;problem description&gt; [Solution]: &lt;previous solution&gt; [Feedback] if any Debugger: Your goal is to improve the following solution for a programming problem, based on its execution feedback on test cases, including evaluation/reflection for the solution and instruction. … [Problem]: &lt;problem description&gt; [Solution]: &lt;previous solution&gt; [Feedback]: &lt;execution feedback&gt;, &lt;Critic Agent feedback&gt; [Instruction]: &lt;reflection&gt; Critic Agent Scoring &amp; Evaluation: Your task is to evaluate a strategy and corresponding implementation for solving a programming problem. The solution fails on test cases. You should score from 1 to 5 on how well the execution outputs match the expected ones. …</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>-----------------------------------------------You should</head><p>score from 1 to 5 on how well the solution implements the strategy and solve the task. Evaluate if one should keep refining this solution or try other strategies. [problem] [solution] [exe feedback] Critic Agent Solution Verification: You are given a programming task along with a user's solution that passes all visible tests. Your job is to verify whether this solution will pass the hidden test cases. Answer True if it's an acceptable solution, Answer False if it's not. Your answer should be a single word True/False. … [problem][solution][exe feedback] during test time <ref type="bibr" target="#b28">(Ouyang et al., 2022;</ref><ref type="bibr">Touvron et al., 2023b;</ref><ref type="bibr" target="#b37">Wang et al., 2023)</ref>. Therefore, by including the strategy as part of the input instruction, we can condition Solver Agent to produce strategy-specific code candidates. For each candidate, the generation objective is defined as:</p><formula xml:id="formula_3">Ŵi ∼ p θ S ( Ŝi , D)<label>(2)</label></formula><p>Solution Refining with Thinker &amp; Debugger Agents Prior approaches such as <ref type="bibr">(Chen et al., 2023a,d;</ref><ref type="bibr" target="#b32">Shinn et al., 2023;</ref><ref type="bibr" target="#b24">Madaan et al., 2023)</ref> found that syntactic mistakes or even logical flaws in generated code can be fixed by allowing LLMs to iteratively refine and regenerate the code. This self-refinement capability is typically strengthened by some forms of feedback about the code qualities (e.g. execution results, compiler signals):</p><formula xml:id="formula_4">F exe,i = Ŵi ({(i j , o j ) v })<label>(3)</label></formula><formula xml:id="formula_5">F cri,i = θ C ( Ŵi , Ŝi , F exe,i , D)<label>(4)</label></formula><p>where θ C is Critic Agent. Denoting the collective feedback as F i = {F exe,i , F cri,i }, a set of reflections R i about the code candidates are generated by Thinker Agent.</p><formula xml:id="formula_6">Ri,j ∼ p θ T (.| Ri,1:j-1 , F i , Ŵi , Ŝi , D) (5) Ŵi,j ∼ p θ D (.| Ri,j , F i , Ŵi , Ŝi , D)<label>(6)</label></formula><p>Ri,j denotes the jth reflection that "Thinker" generates for Ŵi . An LLM θ D ("Debugger" Agent) will modify Ŵi , referring this reflection, generating a new program correspondingly.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Tree Expanding with Critic Agent</head><p>CodeTree builds a heterogeneous tree for each problem, where the tree root represents a problem specification (D, {(i j , o j )}) and every subsequent tree node represents a generated code solution Ŵi . Each node has relevant attributes including its collective code feedback F i and its corresponding strategy and reflections: S i and R i . Typically, adding a tree node is a two-step process: 1) generate a code solution from the corresponding strategy (Eq. <ref type="formula" target="#formula_3">2 or Eq. 6)</ref>, 2) evaluate the generated solution Ŵi and obtain environmental feedback (Eq. 4).</p><p>Unlike previous tree-structure search methods <ref type="bibr" target="#b41">(Yao et al., 2024;</ref><ref type="bibr" target="#b15">Islam et al., 2024)</ref>, we do not construct the entire tree in the beginning. Instead, we introduce a Critic Agent to dynamically expand the tree based on potential strategies. It will guide the expansion and spanning of the tree, taking actions based on its evaluation of the current node.</p><p>Node Scoring and Evaluation For a given solution and corresponding F exe , Critic Agent performs an evaluation, measuring how promising it is through equation 4, which results in F cri . We separately evaluate how well: 1) the execution outputs of test cases match expected outputs on visible test cases; and 2) the solution robustly implements its corresponding strategy towards problem-solving. For one program Ŵi and its corresponding feedback F i , the Critic Agent will evaluate whether the current solution is worth refining, or it should not be explored, making decision between refinement and abort. The critic score is calculated following the equation:</p><formula xml:id="formula_7">Score( Ŵi ) = Score(F exe,i ) + Score(F cri,i ) (7)</formula><p>Solution Verification For one Ŵi that passes all visible test cases, it might potentially over-fit the visible test cases and could fail hidden test cases. Hence, the critic agent θ C will verify if this solution is robust and generalizable to unseen test cases.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Decision-Making by Critic Agent</head><p>Starting from the initial S i , W i , F i , Critic Agent guides the search for a correct solution. At each node, it has an action space of three actions: Refine: Continue exploring from the current node by generating multiple reflections for this node; Abort: Prune this node due to its low evaluation score, and retrace the exploration to its sibling nodes; and Accept: Accept the current node as the final solution and terminate the search early.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Multi-agent Collaboration</head><p>Throughout the expansion of the tree, the taskspecific agents collaborate with Critic Agent, utilizing its feedback, and follow its guidance to perform exploration. The flexibility of the tree expansion and search is determined by LLM agents' decisionmaking, e.g. determining the number of strategies and deciding the search path. During inference time, practically, we limit the number of exploration steps to avoid large computation overhead. Whenever a termination signal (i.e. to accept a code solution) is found or the maximum number of exploration steps is reached, a code candidate is selected based on its evaluation score Score ˆ (W i ). Please refer to Appendix A for all example instruction prompts of our LLM agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Experimental Setup</head><p>We applied pass@1 <ref type="bibr" target="#b5">(Chen et al., 2021)</ref> as our evaluation metric: only one code candidate can be selected and submitted for the final evaluation with hidden test cases. We set the generation budget to be 20 samples per coding task. To fairly compare our approach with other baselines, we adopted the same generation budget in all methods. For ablation experiments without using Critic Agent, we followed similar strategies from <ref type="bibr" target="#b32">(Shinn et al., 2023;</ref><ref type="bibr">Chen et al., 2023d)</ref>: we select a solution which passes all visible test cases as the final solution to be evaluated with hidden test cases.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Benchmarks</head><p>We conducted experiments on 2 categories of code generation tasks: 1) Function implementation where a coding task is to complete a single function following a specific function signature: HumanEval <ref type="bibr" target="#b5">(Chen et al., 2021)</ref>, MBPP <ref type="bibr" target="#b1">(Austin et al., 2021)</ref>, and their EvalPlus variants from <ref type="bibr" target="#b23">(Liu et al., 2023)</ref>, denoted as Hu-manEval+ and MBPP+; and 2) Program implementation where a coding task is to solve an algorithmic problem: CodeContests <ref type="bibr" target="#b22">(Li et al., 2022)</ref> and APPS <ref type="bibr" target="#b11">(Hendrycks et al., 2021)</ref>. The sizes of test set are 164, 378 and 165 for HumanEval(+), MBPP(+) and CodeContests respectively. For APPS, we randomly sampled 150 samples (50 for each level of difficulty) from the test split.</p><p>Baselines We introduce the following baselines: Direct instructs the model to generate code directly from the input problem; CoT <ref type="bibr" target="#b38">(Wei et al., 2022)</ref> instructs the model to provide chain-of-thought reasoning before giving the solution program; Reflexion <ref type="bibr" target="#b32">(Shinn et al., 2023</ref>) utilizes solution's execution feedback to generate self-reflections. The reflections are used to iteratively refine the solution; MapCoder (Islam et al., 2024) proposes an agent collaboration system to plan, solve, test, and refine the solution. We set #plans=4, #debug-round=5 and generation budget=20; and Resample follows a similar principle as <ref type="bibr" target="#b22">Li et al. (2022)</ref>: resample solutions repeatedly and filter them with visible test cases. <ref type="foot" target="#foot_0">1</ref>Models We studied our method on three models with different model sizes and capacities. We experimented on large language models from the GPT and Llama 3.1 family. Specifically we use GPT-4o-mini, GPT-4o 2 , and Llama-3.1-8B 3 .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Main Results</head><p>We compared CodeTree with other baselines in Table <ref type="table" target="#tab_0">2</ref>. We noticed that Reflexion and Resampling serve as strong baselines for HumanEval and MBPP datasets given the same solution generation budget, comparable to CodeTree-BFS/DFS. CodeTree with Critic Agent outperforms all other baselines in 4 out of 5 benchmarks for GPT-4omini and GPT-4o. For instance, CodeTree achieves pass@1=43.0% on competition-level coding tasks in the Codecontests benchmark (i.e. 22.4% performance gain over the Resampling baseline), showing its advantage in solving hard problems.</p><p>We found that CodeTree-BFS almost always per-2 <ref type="url" target="https://openai.com/index/hello-gpt-4o/">https://openai.com/index/hello-gpt-4o/</ref> 3 <ref type="url" target="https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct">https://huggingface.co/meta-llama/Llama-3.  1-8B-Instruct</ref>. Note that we reported our replicated results which might be different from the original reported ones.</p><p>forms better than CodeTree-DFS, suggesting that exploring diverse strategies is more effective than iteratively refining from one solution. Interestingly, on Llama-3.1-8B model, Resampling achieves the best results on 4 benchmarks. This observation indicates that small language models may not be suitable for multi-agent frameworks like CodeTree, where models are required to follow task-specific roles and instructions and perform distinct tasks with reasonable accuracy.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Analysis of Search Strategies</head><p>Given the performance gaps between CodeTree-BFS and DFS, we conducted additional experiments to analyze these tree search strategies without Critic Agent. We reported the results on HumanEval/HumanEval+ with GPT-4o-mini and Codecontests with GPT-4o in Table <ref type="table">3</ref>. Compared to DFS/BFS strategies with d = 3 and w = 3, we observed that forcing the model to search wider (i.e. more diverse strategies with w &gt; 3) in BFS and only debug up to 1 iteration (i.e. d = 2) im- Model GPT-4o-mini GPT-4o Benchmark HumanEval HumanEval+ CodeContests CodeTree-BFS d = 3, w = 3 93.3% 82.3% 36.4% d = 2, w = 4 95.1% 84.1% 37.6% d = 2, w = 5 94.5% 83.4% 39.4% CodeTree-DFS d = 3, w = 3 92.7% 81.1% 36.4% d = 4, w = 2 92.1% 81.1% 37.0% d = 5, w = 2 92.1% 81.7% 36.4%</p><p>Table 3: Pass@1 results of CodeTree-BFS/DFS on Hu-manEval, HumanEval+, and CodeContests: d indicates max search depth while b indicates max search width.</p><p>proved the performance of pass@1. However, for DFS, prioritizing deeper search (i.e. larger number of iterations for refinement with d &gt; 3) does not boost the performance significantly. Finally, we noted that w = 4 works better for HumanEval and w = 5 works better for CodeContests, indicating that more complex problems can benefit from exploring a larger number of coding strategies. This finding supports our proposed CodeTree in which Critic Agent can dynamically determine the number of child nodes to explore given the context.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Analysis by Problem Difficulty</head><p>We further evaluated CodeTree against coding problems with diverse difficulty levels. We randomly sampled 50 problems from each level of difficulty ("introductory", "interview", and "competition") from the test split of the APPS benchmark, creating a total test set of 150 problems. We reported the results in Figure <ref type="figure" target="#fig_3">3</ref>. The results demonstrate that CodeTree performs better for simpler problems (Introductory for GPT-4o-mini; Introductory and Interview for GPT-4o), but still struggles to solve very hard problems (e.g.,</p><p>Model GPT-4o-mini Benchmark HumanEval HumanEval+ CodeTree 94.5% 84.8% w/o verification 91.5% 81.7% w/o node abort 91.5% 81.1% w/o scoring 92.7% 82.1%</p><p>Table 4: Ablation study for different tasks of Critic Agent. We used GPT-4o-mini to evaluate corresponding settings and reported the pass@1 on the HumanEval and HumanEval+ benchmarks.</p><p>Competition-level). We hypothesized that while CodeTree improves the search efficiency towards the correct solution, a generation budget= 20 is still limited for highly complex problems.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5">Ablation Study</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Results in</head><p>Table 2 indicate, Critic Agent plays a crucial role in CodeTree over naive search methods like BFS/DFS. We further analyzed which task in Section 3.2 is the most crucial for Critic Agent. Specifically, we conducted the following ablation experiments: (1) w/o Solution Verification, where we excluded the verification task for any solution passing visible tests; (2) w/o Node Abort Evaluation, where we let the agents keep exploring till we reach the max depth or whenever a solution is accepted; (3) w/o Node Scoring, where the environmental feedback is solely execution outputs, without Critic Agent's evaluation.</p><p>The results in Table <ref type="table">4</ref> show that all proposed tasks are crucial for Critic Agent to guide the tree expanding and solution search. Among these tasks, node abort and solution verification tasks are the most effective and have significant impacts on final performances. We include a qualitative study on a real example in Appendix A. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.6">Search Efficiency</head><p>While the performance of CodeTree is very strong with a generation budget of 20 samples, it is important to understand how our tree search strategy are more efficient than other related methods. Specifically, we conducted experiments when limiting the solution generation budget between 1 to 20 samples. In Figure <ref type="figure">4</ref>, we plot the pass@1 curves w.r.t the number of sampled solutions: (a) shows results on CodeContests with GPT-4o; (b) shows results on HumanEval+ with GPT-4o-mini. In both figures, not only does our proposed CodeTree perform better than other methods, but also achieves a relatively high pass@1 even when the generation budget is small (e.g. &lt; 9 samples). On Code-Contests, even when CodeTree starts with a lower performance with limited generation budgets (i.e. &lt; 5 samples), its performance soon improves significantly during later exploration of the tree. This observation shows that CodeTree has the potential to continue solving more problems given larger solution generation budgets.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.7">Results on SWEBench</head><p>Recently, <ref type="bibr" target="#b16">Jimenez et al. (2024)</ref> introduced a novel coding task for generating code patches given an input Github repository and the corresponding pull request. We attempted to adapt CodeTree to this benchmark by making two major changes: first, we replaced the problem specification with the textual description of input pull request; secondly, we adapted the strategy generation stage as the retrieval stage where we instructed the Thinker agent to explore relevant code contexts (by code files, methods, or lines of code) from the input Github repository. We extended the implementation of the   <ref type="table" target="#tab_1">5</ref>, we observed that CodeTree can lead to significant performance gains as compared to related approaches like CoT <ref type="bibr" target="#b38">(Wei et al., 2022)</ref> and Reflexion <ref type="bibr" target="#b32">(Shinn et al., 2023)</ref>. The results also demonstrate the versatility of our method on complex coding tasks like repo-level code generation which often requires extremely large search space to find an optimal solution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>We introduce CodeTree, a new framework of agentguided tree search for code generation tasks. Introducing a tree-based structure as a unified search space, CodeTree includes a Critic agent to guide the tree search and make critical decisions such as termination, expanding and scoring of tree nodes. CodeTree facilitates multi-agent collaboration (among Thinker, Solver, and Debugger agents) to find the correct solution within a limited solution generation budget. In our comprehensive experiments, CodeTree exhibits consistent and strong performance against many baselines across diverse code generation benchmarks.</p><p>The main limitation of this work is the requirement for LLMs with strong reasoning and instructionfollowing capabilities. Empirically, we found that smaller models such as those with 8B parameters struggle at following complex instructions to play different agentic roles. For instance, to play the role of the Critic agent, smaller models may generate unexpected output for some tasks like node scoring or self-reflection, resulting in misleading or noisy feedback to guide other LLM agents. In addition, incorporating agent-generated guidance will incur additional cost as it requires LLMs to extract information from long code context and generating more output tokens. Finally, this work focuses on the functionality correctness of code generation tasks while ignoring other qualities of generated code such as its readability or efficiency. To improve these qualities of output code, CodeTree can be further enhanced to incorporate more holistic LLM-generated feedback and perform diverse exploration to find optimal code solutions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Ethical Considerations</head><p>The primary ethical concern of this paper is that directly executing the pipeline may pose a risk of information leakage or compromise the security of one's system.</p><p>• Directly passing the execution error information to commercial large language models might cause the leak of private information like the execution paths, username and package versions in the environment.</p><p>• Running AI-generated programs locally might put one's system and data at risk.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Critic Agent -Test Output Scoring:</head><p>&lt;system&gt;: Your task is to evaluate the execution outputs of a code implementation. The statement and code is given by the user, and the output/expected output on a set of test cases. You should analyze the expected outputs and execution outputs. From a 0 to 5 range, give a score on how good the execution outputs are matching the expected ones (higher score means a better match). Standards are below: 0: Errors or time out when executing. 1: No pattern found when comparing pairs of &lt;output, expected_output&gt;, errors are hard to interpret. 2: Results abnormal for a part of cases(e.g., cannot handle negative elements; only half of it sorted).</p><p>3: Mismatches have clear patterns to interpret the error. For examples, all elements ojset by 1; all elements + 1; reverse all elements etc., 4: Lack consideration of edge condition/corner cases(e.g., error only when elements are equal), otherwise correct 5: Results exactly matched.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>-----------------------------------Your answer should be formatted as below:</head><p>In the first line, give your brief comparison.</p><p>In the second line, give A SINGLE INTEGER NUMBER as your final score(0 to 5) &lt;user&gt;: [problem] [solution] [execution results on visible test cases]</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Critic Agent -Solution Scoring:</head><p>&lt;system&gt;: Your task is to evaluate a strategy and corresponding implementation for solving a programming problem. You should score from 1 to 5(higher means better) on how well do the solution implement the strategy and solve the task?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>-----------------------------------</head><p>Your answer should be formatted as below: In the first line, give your brief analysis.</p><p>In the second line, give A SINGLE INTEGER NUMBER as your final score(0 to 5) &lt;user&gt;: [problem] [solution] [execution results on visible test cases]</p><p>Thinker Agent Reflection:</p><p>&lt;system&gt;: You are a programming assistant. You goal is to help the user to correct their buggy code. You will be given an incorrect function implementation and a series of unit tests &amp; execution results. There could be multiple ways to fix the error, you should provide reflection alternatives using various strategies. The number of reflection alternatives depends on the situation(e.g., if you are certain about where the bug is, you can provide only one). Each self-reflection should be complete and self-contained. If there are more than one bugs, they should be presented in one reflection rather than separately.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>-----------------------------------</head><p>Your answer should be formatted as below: List and Number your strategies line by line using "1. "; "2. "; "3. " and so on.</p><p>Describe each strategy with a FEW sentences in a SINGLE Line.</p><p>&lt;user&gt;: [problem] [solution] [execution results on visible test cases] [agent feedback] if any </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><figDesc>utilized test outcomes as a form of feedback while<ref type="bibr" target="#b39">Welleck et al. (2023)</ref>;<ref type="bibr" target="#b19">Le et al. (2022)</ref> introduced LLM-generated feedback from predicted probabilities about code correctness.Shinn et al. (2023); Chen et al. (2023d); Madaan et al. (2023)focused on more natural forms of feedback such as reflections and explanations of the code. Le et al. (2024) proposed to cluster sub-module representations of code as a form of collective feedback. More related to our work is the research for enhancing and controlling the generation procedure of LLMs. Yao et al. (2024); Koh et al. (2024) simulated the step-by-step exploration of thoughts as a tree search to support NLP and multimodal tasks respectively. In the code domain, Song et al. (2024) used tree search to guide the debugging of generated code. Islam et al. (2024) adopted multi-agent system to support different stages of code generation but the exploration is not explicitly defined.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: CodeTree creates a unified search space for exploration throughout the multi-stage code generation process: strategy generation by a "Thinker" agent, initial code generation by a "Solver" agent, and code improvement by a "Debugger" agent. To effectively perform exploration within the tree structure, we incorporate both environmental execution-based feedback as well as AI-generated feedback (generated by a "Critic" LLM agent).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Simplified versions of instruction prompts used for Thinker, Solver, Debugger, and Critic agents. Some details are omited for illustration purposes.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Results of pass@1 on the APPS test subsets. We randomly select 50 samples from Introductory, Interview, and Competition separately. We apply Resample and our methods with GPT-4o, GPT-4o-mini, Llama-3.1-8B.</figDesc><graphic coords="7,82.21,70.87,430.86,142.48" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>Figure 4: Cumulative pass@1 curves while new solutions are generated within budget= 20.</figDesc><graphic coords="8,70.87,70.86,222.24,148.16" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><figDesc>al., 2024) 24.2% (Xia et al., 2024) + CoT 23.6% (Xia et al., 2024) + Reflexion 25.3% (Xia et al., 2024) + CodeTree 27.6%</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 8 :</head><label>8</label><figDesc>Figure 8: Prompts for Critic Agent-test cases scoring, solution scoring, as well as Thinker Agent Reflection.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 2 :</head><label>2</label><figDesc>Experimental results by pass@1 on HumanEval, MBPP, EvalPlus, and CodeContests: methods are baseline methods that generate program solution only once, are methods with solution generation budget of 20 samples like our methods. are CodeTree variants with or without Critic Agent to guide the tree search. Note that MapCoder does not work with Llama-3.1-8B as noted by Islam et al. (2024).</figDesc><table><row><cell>Model</cell><cell>Method</cell><cell cols="5">HumanEval HumanE+ MBPP MBPP+ Codecontests</cell><cell>Avg.</cell></row><row><cell></cell><cell>Direct</cell><cell>86.6%</cell><cell>78.7%</cell><cell>87.8%</cell><cell>73.3%</cell><cell>10.3%</cell><cell>67.3%</cell></row><row><cell></cell><cell>CoT</cell><cell>84.8%</cell><cell>78.0%</cell><cell>89.2%</cell><cell>74.3%</cell><cell>12.7%</cell><cell>67.8%</cell></row><row><cell></cell><cell>Reflexion</cell><cell>92.1%</cell><cell>83.5%</cell><cell>96.6%</cell><cell>78.6%</cell><cell>21.8%</cell><cell>74.5%</cell></row><row><cell>GPT-4o-mini</cell><cell>MapCoder Resample</cell><cell>91.5% 89.0%</cell><cell>78.0% 80.5%</cell><cell>90.0% 94.3%</cell><cell>-76.8%</cell><cell>-18.2%</cell><cell>-71.8%</cell></row><row><cell></cell><cell>CodeTree-BFS</cell><cell>93.3%</cell><cell>82.1%</cell><cell>91.5%</cell><cell>72.3%</cell><cell>20.6%</cell><cell>72.0%</cell></row><row><cell></cell><cell>CodeTree-DFS</cell><cell>92.7%</cell><cell>81.1%</cell><cell>87.6%</cell><cell>71.4%</cell><cell>20.6%</cell><cell>70.7%</cell></row><row><cell></cell><cell>Strategy List</cell><cell>90.2%</cell><cell>80.5%</cell><cell>90.5%</cell><cell>69.6%</cell><cell>22.4%</cell><cell>70.6%</cell></row><row><cell></cell><cell>CodeTree</cell><cell>94.5%</cell><cell>84.8%</cell><cell>96.8%</cell><cell>77.0%</cell><cell>26.4%</cell><cell>75.9%</cell></row><row><cell></cell><cell>Direct</cell><cell>88.4%</cell><cell>81.7%</cell><cell>92.3%</cell><cell>75.9%</cell><cell>20.6%</cell><cell>71.8%</cell></row><row><cell></cell><cell>CoT</cell><cell>92.1%</cell><cell>84.1%</cell><cell>93.7%</cell><cell>77.2%</cell><cell>24.8%</cell><cell>74.4%</cell></row><row><cell></cell><cell>Reflexion</cell><cell>94.5%</cell><cell>84.8%</cell><cell>97.9%</cell><cell>79.6%</cell><cell>41.8%</cell><cell>79.7%</cell></row><row><cell>GPT-4o</cell><cell>MapCoder Resample</cell><cell>92.7% 93.9%</cell><cell>81.7% 84.8%</cell><cell>90.9% 96.2%</cell><cell>-77.0%</cell><cell>-32.7%</cell><cell>-76.9%</cell></row><row><cell></cell><cell>CodeTree-BFS</cell><cell>94.5%</cell><cell>84.1%</cell><cell>93.9%</cell><cell>70.7%</cell><cell>35.8%</cell><cell>75.8%</cell></row><row><cell></cell><cell>CodeTree-DFS</cell><cell>95.1%</cell><cell>83.5%</cell><cell>91.5%</cell><cell>76.2%</cell><cell>36.4%</cell><cell>76.5%</cell></row><row><cell></cell><cell>Strategy List</cell><cell>95.1%</cell><cell>82.3%</cell><cell>92.6%</cell><cell>73.3%</cell><cell>36.4%</cell><cell>75.9%</cell></row><row><cell></cell><cell>CodeTree</cell><cell>94.5%</cell><cell>86.0%</cell><cell>98.7%</cell><cell>80.7%</cell><cell>43.0%</cell><cell>80.6%</cell></row><row><cell></cell><cell>Direct</cell><cell>63.4%</cell><cell>54.3%</cell><cell>73.4%</cell><cell>63.8%</cell><cell>6.1%</cell><cell>52.2%</cell></row><row><cell></cell><cell>CoT</cell><cell>65.9%</cell><cell>56.1%</cell><cell>74.6%</cell><cell>65.3%</cell><cell>4.2%</cell><cell>53.2%</cell></row><row><cell></cell><cell>Reflexion</cell><cell>79.9%</cell><cell>69.5%</cell><cell>90.2%</cell><cell>72.0%</cell><cell>13.5%</cell><cell>65.0%</cell></row><row><cell>Llama-3.1-8B</cell><cell>Resample</cell><cell>82.3%</cell><cell>71.3%</cell><cell>91.0%</cell><cell>73.8%</cell><cell>15.2%</cell><cell>66.7%</cell></row><row><cell></cell><cell>CodeTree-BFS</cell><cell>80.5%</cell><cell>68.3%</cell><cell>91.0%</cell><cell>69.3%</cell><cell>15.8%</cell><cell>65.0%</cell></row><row><cell></cell><cell>CodeTree-DFS</cell><cell>80.5%</cell><cell>68.9%</cell><cell>89.7%</cell><cell>70.4%</cell><cell>15.2%</cell><cell>64.9%</cell></row><row><cell></cell><cell>Strategy List</cell><cell>82.3%</cell><cell>70.1%</cell><cell>91.0%</cell><cell>72.5%</cell><cell>13.9%</cell><cell>66.0%</cell></row><row><cell></cell><cell>CodeTree</cell><cell>82.3%</cell><cell>72.0%</cell><cell>90.5%</cell><cell>73.3%</cell><cell>12.1%</cell><cell>66.0%</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 5 :</head><label>5</label><figDesc>Results on the SWEBench benchmark: All methods using GPT4o-mini as the base model. Compared to CoT and Reflexion, CodeTree can lead to more significant performance gain.</figDesc><table><row><cell>retrieval and code patch generation stages from Xia</cell></row><row><cell>et al. (2024) and integrated our CodeTree frame-</cell></row><row><cell>work for the exploration of different trajectories</cell></row><row><cell>(from context retrieval to code patch generation and</cell></row><row><cell>ranking). From Table</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>We set sampling temperature=1 for Resample, and report the best results over</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>runs. For other methods, we report the single run's results with deterministic inference.</p></note>
+		</body>
+		<back>
+
+			
+			<div type="acknowledgement">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>We will address the above issues by adding implementation of virtual environment for code execution by the time we publish our codebase.</p></div>
+			</div>
+
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Appendix</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 Qualitative Results</head><p>Here we show one real example using GPT-4o-mini to solve the problem: HumanEval-36. We keep the actual prompts and the model's responses in <ref type="bibr">Figure 5,</ref><ref type="bibr">6,</ref><ref type="bibr">and 7</ref>. We find that the initial solution W 1 generated, which passes all visible test cases, is rejected by the critic agent, who also suggest improvements. Debugger follows critic agent's suggestion and implement W 2 . We evaluate W 1 and W 2 on the hidden test cases, where W 2 passes and W 1 fails. This indicates that the Critic Agent is making correct judgment for false positive solution(i.e., pass visible but fail on hidden test cases), and effectively guide to the correct solution.</p><p>In Figure <ref type="figure">5</ref>. The Thinker Agent decide to generate 5 strategies that potentially be the solutions. To start the tree search, the first strategy S 1 was sent to the solver agent to implement. After one solution is generated, it was sent to the Solver to be implemented. W 1 is immediately executed on visible test cases and observe the outputs.</p><p>In Figure <ref type="figure">6</ref>, for a W 1 that passes all visible test cases, it will go to the critic agent to be further verified if W 1 can be applied to more general test cases. The Critic Agent gives negative judgment and suggest to improve this solution by considering more situation like zeros and negative integers. We use oracle hidden test cases to evaluate W 1 , which is indeed incorrect, endorsing the decision made by Critic Agent.</p><p>In Figure <ref type="figure" target="#fig_7">7</ref>, the Debugger Agent will treat the judgement and reason from Critic Agent as additional environmental feedback, and then implement a new solution conditioned on: 1. the problem itself, 2.the solution to improve, 3. environmental feedback. Debugger Agent refines W 1 to W 2 , which is accepted by the Critic Agent. We evaluate W 2 on hidden test cases, it is correct.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Other Prompts</head><p>Critic Agent-test cases scoring, solution scoring, and Thinker Agent Reflection are not included in the above real case(HumanEval-36) solving, we presented the detailed prompts used for these agents in Figure <ref type="figure">8</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Thinker Agent (Strategy):</head><p>&lt;system&gt;: You are an AI assistant that provides strategy for Python programmers to code. You will be given a function signature and its docstring by the user. Your goal is to think of multiple distinct strategies in English(Not Code) on how to approach this problem and solve it. The number of alternatives should be determined for this specific problem.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>-----------------------------------</head><p>Your answer should be formatted as below: List and Number your strategies line by line using "1. "; "2. "; "3. " and so on. Describe each strategy with a FEW sentences in a SINGLE Line. &lt;user&gt;: [problem description]: ``` def fizz_buzz(n: int):</p><p>"""Return the number of times the digit 7 appears in integers less than n which are divisible by 11 or 13. &gt;&gt;&gt; fizz_buzz(50) 0 &gt;&gt;&gt; fizz_buzz(78) 2 &gt;&gt;&gt; fizz_buzz(79) 3 """ ``` &lt;assistant&gt;:</p><p>1. Start by understanding the problem requirements and constraints, focusing on the need to count occurrences of the digit '7' in specific integers.</p><p>2. Identify the range of integers to consider, which is from 0 to n-1, and clarify the conditions for divisibility by 11 or 13.</p><p>3. Create a loop to iterate through all integers from 0 to n-1, checking each integer for divisibility by 11 or 13. 4. For each integer that meets the divisibility condition, convert it to a string to facilitate counting occurrences of the digit '7' . 5. Use the string method `.count('7')` to count how many times '7' appears in the string representation of the integer.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Solver Agent:</head><p>&lt;system&gt;: You are an AI that only responds with python code, NOT ENGLISH. You will be given a function signature and its docstring by the user. Write your full implementation (restate the function signature). Don't include test cases or printing statements in the code block.</p><p>&lt;user&gt;: ```</p><p>def fizz_buzz(n: int): """Return the number of times the digit 7 appears in integers less than n which are divisible by 11 or 13. &gt;&gt;&gt; fizz_buzz(50) 0 &gt;&gt;&gt; fizz_buzz(78) 2 &gt;&gt;&gt; fizz_buzz(79) 3 """ ``` To solve the problem, You can follow the hint given by an expert: Start by understanding the problem requirements and constraints, focusing on the need to count occurrences of the digit '7' in specific integers.</p><p>&lt;assistant&gt;: ```</p><p>def fizz_buzz(n: int): """Return the number of times the digit 7 appears in integers less than n which are divisible by 11 or 13. &gt;&gt;&gt; fizz_buzz(50) 0 &gt;&gt;&gt; fizz_buzz(78) 2 &gt;&gt;&gt; fizz_buzz(79) 3 """ count = 0 for i in range(n): if i % 11 == 0 or i % 13 == 0: count += str(i).count('7') return count ```</p><p>Figure <ref type="figure">5</ref>: GPT-4o-mini as the Thinker and Solver Agents to solve HumanEval-36. The thinker agent generates 5 distinct strategies and the solver agent implements the first one. By oracle evaluation, the resulted solution can pass visible but fail on hidden test cases.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Critic Agent -Solution Verification:</head><p>&lt;system&gt;: The user will give you a programming task and a solution that passes all visible tests. Your task is to verify whether the solution can pass hidden test cases. Focus only on functionality correctness. If the solution is correct, no improvement is necessary. Assume all inputs follow formats and constraints described in the examples. Answer "True" if you think this solution is acceptable, Answer "False" if you think necessary modification is needed for it to cover more test cases. <ref type="figure">-----------------------------------</ref>Your answer should be formatted as below: In the first line, answer a single word (True/False). In the second line, indicate your reason.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>&lt;user&gt;: [Problem description]: ```</head><p>def fizz_buzz(n: int):</p><p>"""Return the number of times the digit 7 appears in integers less than n which are divisible by 11 or 13. &gt;&gt;&gt; fizz_buzz(50) 0 &gt;&gt;&gt; fizz_buzz(78) 2 &gt;&gt;&gt; fizz_buzz(79) 3 """ ```</p><p>[Implementation]: ``` def fizz_buzz(n: int):</p><p>"""Return the number of times the digit 7 appears in integers less than n which are divisible by 11 or 13. &gt;&gt;&gt; fizz_buzz(50) 0 &gt;&gt;&gt; fizz_buzz(78) 2 &gt;&gt;&gt; fizz_buzz(79) 3 """ # Start by understanding the problem requirements and constraints, focusing on the need to count occurrences of the digit '7' in specific integers.</p><formula xml:id="formula_8">count = 0 for i in range(n): if i % 11 == 0 or i % 13 == 0: count += str(i).count('7') return count ``` [Execution Feedback on Visible Test Cases]: Tested passed: assert fizz_buzz(50) == 0 assert fizz_buzz(78) == 2 assert fizz_buzz(79) == 3</formula><p>Tests failed: &lt;assistant&gt;: False The solution does not account for numbers that are divisible by both 11 and 13, and it may also miss edge cases where the input is less than 11 or 13. Additionally, it does not handle negative inputs or zero, which could lead to incorrect results.</p><p>Figure <ref type="figure">6</ref>: GPT-4o-mini as the Critic Agent to verify a solution of HumanEval-36 given by Solver Agent. It decides to reject this solution and suggest improvements.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Debugger Agent:</head><p>&lt;system&gt;: You are an AI Python assistant. You will be given a program implementation to improve, a series of unit tests and execution feedback, and a hint to change the implementation appropriately. Write your full implementation (restate the function signature). &lt;user&gt;: [Implementation to Improve]: ``` def fizz_buzz(n: int):</p><p>"""Return the number of times the digit 7 appears in integers less than n which are divisible by 11 or 13. &gt;&gt;&gt; fizz_buzz(50) 0 &gt;&gt;&gt; fizz_buzz(78) 2 &gt;&gt;&gt; fizz_buzz(79) 3 """ # Start by understanding the problem requirements and constraints, focusing on the need to count occurrences of the digit '7' in specific integers.</p><p>count = 0 for i in range</p><p>(n): if i % 11 == 0 or i % 13 == 0: count += str(i).count('7') return count ``` [Execution Feedback on Visible Test Cases]: Tested passed: ``` assert fizz_buzz(50) == 0 assert fizz_buzz(78) == 2 assert fizz_buzz(79) == 3 ``` Tests failed: [AI-generated Feedback]:</p><p>The solution does not account for numbers that are divisible by both 11 and 13, and it may also miss edge cases where the input is less than 11 or 13. Additionally, it does not handle negative inputs or zero, which could lead to incorrect results. &lt;assistant&gt;: Here is the improved implementation of the `fizz_buzz` function, incorporating the suggested changes: ```python def fizz_buzz(n: int) -&gt; int:</p><p>"""</p><p>Return the number of times the digit 7 appears in integers less than n which are divisible by 11 or 13. &gt;&gt;&gt; fizz_buzz(50) 0 &gt;&gt;&gt; fizz_buzz(78) 2 &gt;&gt;&gt; fizz_buzz(79) 3 &gt;&gt;&gt; fizz_buzz(10) 0 &gt;&gt;&gt; fizz_buzz(-5) 0 """ if n &lt;= 0: return 0 count = 0 for i in range(11, n): if i % 11 == 0 or i % 13 == 0: count += str(i).count('7') return count ``` ### Changes Made: 1. **Edge Case Handling**: Added a check for `n &lt;= 0` to return 0 immediately for negative inputs and zero. 2. **Loop Starting Point**: The loop now starts from 11, as numbers less than 11 cannot be divisible by 11 or 13. 3. **Documentation**: Updated the docstring to clarify the function's behavior and added additional test cases for edge cases. This implementation should now correctly handle all specified cases and edge conditions. </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 7 :</head><label>7</label><figDesc>GPT-4o-mini as the Debugger agent to refine a solution of HumanEval-36 given by Solver Agent. It refers to Critic Agent's suggestion and correct the solution successfully.</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Adler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lama</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilge</forename><surname>Akkaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florencia</forename><surname>Leoni Aleman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Janko</forename><surname>Altenschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Altman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.08774</idno>
+		<title level="m">Shyamal Anadkat, et al. 2023. Gpt-4 technical report</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Augustus</forename><surname>Odena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carrie</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2108.07732</idno>
+		<title level="m">Program synthesis with large language models</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">2023a. Improving code generation by training with natural language feedback</title>
+		<author>
+			<persName><forename type="first">Angelica</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jérémy</forename><surname>Scheurer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomasz</forename><surname>Korbak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jon</forename><surname>Ander Campos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Shern Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyunghyun</forename><surname>Samuel R Bowman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Perez</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.16749</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">2023b. Codet: Code generation with generated tests</title>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fengji</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anh</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daoguang</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeqi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian-Guang</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jingchang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongxuan</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qianglong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zekun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Qin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.20092</idno>
+		<title level="m">Divide-and-conquer meets consensus: Unleashing the power of functions in code generation</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henrique</forename><surname>Ponde De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harri</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">2023c. Agentverse: Facilitating multi-agent collaboration and exploring emergent behaviors</title>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingwei</forename><surname>Zuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenfei</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi-Min</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heyang</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaxi</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi-Hsin</forename><surname>Hung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Qian</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.05128</idno>
+		<title level="m">Teaching large language models to self-debug</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaurav</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Barham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyung</forename><forename type="middle">Won</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Gehrmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Parker</forename><surname>Schuh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kensen</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sasha</forename><surname>Tsvyashchenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><surname>Maynez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Parker</forename><surname>Barnes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emily</forename><surname>Vinodkumar Prabhakaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Reif</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reiner</forename><surname>Hutchinson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Pope</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Bradbury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guy</forename><surname>Isard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengcheng</forename><surname>Gur-Ari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Toju</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anselm</forename><surname>Duke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sanjay</forename><surname>Levskaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sunipa</forename><surname>Ghemawat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Dev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vedant</forename><surname>Garcia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liam</forename><surname>Robinson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Fedus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daphne</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Ippolito</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyeontaek</forename><surname>Luan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barret</forename><surname>Lim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Zoph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Spiridonov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Sepassi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shivani</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katherine</forename><surname>Omernick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zongwei</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brennan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Saeta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Orhan</forename><surname>Diaz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michele</forename><surname>Firat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Catasta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kathy</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Douglas</forename><surname>Meier-Hellstern</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Eck</surname></persName>
+		</author>
+		<editor>M. Dai, Thanumalayan Sankaranarayana Pillai, Marie Pellat, Aitor Lewkowycz, Erica Moreira, Rewon Child, Oleksandr Polozov,</editor>
+		<imprint>
+			<pubPlace>Jeff Dean, Slav Petrov</pubPlace>
+		</imprint>
+	</monogr>
+	<note>and Noah Fiedel. 2022. Palm: Scaling language modeling with pathways. CoRR, abs/2204.02311</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Self-collaboration code generation via chatgpt</title>
+		<author>
+			<persName><forename type="first">Yihong</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xue</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.07590</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">Suriya</forename><surname>Gunasekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jyoti</forename><surname>Aneja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caio</forename><surname>César</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teodoro</forename><surname>Mendes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Allie</forename><surname>Del Giorno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sivakanth</forename><surname>Gopi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mojan</forename><surname>Javaheripi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piero</forename><surname>Kauffmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gustavo</forename><surname>De Rosa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olli</forename><surname>Saarikivi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.11644</idno>
+		<title level="m">Textbooks are all you need</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Measuring coding challenge competence with apps</title>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurav</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mantas</forename><surname>Mazeika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akul</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samir</forename><surname>Puranik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Horace</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<publisher>NeurIPS</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sirui</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiawu</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ceyao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zili</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Ka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shing</forename><surname>Yau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijuan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyang</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.00352</idno>
+		<title level="m">Metagpt: Meta programming for multi-agent collaborative framework</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingwen</forename><surname>Bu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Jie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heming</forename><surname>Luck</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cui</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.13010</idno>
+		<title level="m">Agentcoder: Multi-agentbased code generation with iterative testing and optimisation</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Faultaware neural code rankers</title>
+		<author>
+			<persName><forename type="first">Jeevana</forename><surname>Priya Inala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenglong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andres</forename><surname>Codas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Encarnación</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Shuvendu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Madanlal</forename><surname>Lahiri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Musuvathi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Mapcoder: Multi-agent code generation for competitive problem solving</title>
+		<author>
+			<persName><forename type="first">Ashraful</forename><surname>Md</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammed</forename><forename type="middle">Eunus</forename><surname>Islam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Md</forename><surname>Ali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Parvez</forename><surname>Rizwan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.11403</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">SWE-bench: Can language models resolve real-world github issues?</title>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Karthik R Narasimhan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Yu Koh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Mcaleer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruslan</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.01476</idno>
+		<title level="m">Tree search for language model agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Codechain: Towards modular code generation through chain of self-revisions with representative sub-modules</title>
+		<author>
+			<persName><forename type="first">Hung</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hailin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amrita</forename><surname>Saha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akash</forename><surname>Gokul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Doyen</forename><surname>Sahoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shafiq</forename><surname>Joty</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Coderl: Mastering code generation through pretrained models and deep reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Hung</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akhilesh</forename><surname>Deepak Gotmare</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvio</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hong</forename><surname>Hoi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="21314" to="21328" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">2023a. Camel: Communicative agents for&quot; mind&quot; exploration of large language model society</title>
+		<author>
+			<persName><forename type="first">Guohao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hasan</forename><surname>Hammoud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hani</forename><surname>Itani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitrii</forename><surname>Khizbullin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bernard</forename><surname>Ghanem</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="51991" to="52008" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">Raymond</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Loubna</forename><surname>Ben Allal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangtian</forename><surname>Zi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denis</forename><surname>Kocetkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenghao</forename><surname>Mou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Marone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Akiki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jenny</forename><surname>Chim</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.06161</idno>
+		<title level="m">Starcoder: may the source be with you! arXiv preprint</title>
+		<imprint/>
+	</monogr>
+	<note>et al. 2023b</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyoung</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nate</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rémi</forename><surname>Leblond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Eccles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Keeling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Gimeno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Agustin</forename><surname>Dal Lago</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.07814</idno>
+		<title level="m">Competition-level code generation with alphacode</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Is your code generated by chat-GPT really correct? rigorous evaluation of large language models for code generation</title>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Thirty-seventh Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niket</forename><surname>Tandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prakhar</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Skyler</forename><surname>Hallinan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Wiegreffe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouha</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shrimai</forename><surname>Prabhumoye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.17651</idno>
+		<title level="m">Self-refine: Iterative refinement with self-feedback</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Lever: Learning to verify language-to-code generation with execution</title>
+		<author>
+			<persName><forename type="first">Ansong</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Srini</forename><surname>Iyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dragomir</forename><surname>Radev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Veselin</forename><surname>Stoyanov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sida</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Victoria</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="26106" to="26128" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Erik</forename><surname>Nijkamp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hiroaki</forename><surname>Hayashi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvio</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingbo</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.02309</idno>
+		<title level="m">Lessons for training llms on programming and natural languages</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Demystifying gpt self-repair for code generation</title>
+		<author>
+			<persName><forename type="first">Jeevana</forename><surname>Theo X Olausson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenglong</forename><surname>Priya Inala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armando</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Solar-Lezama</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.09896</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carroll</forename><forename type="middle">L</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katarina</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.02155</idno>
+		<title level="m">Training language models to follow instructions with human feedback</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Chatdev: Communicative agents for software development</title>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongzhang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nuo</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufan</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="15174" to="15186" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Baptiste Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabian</forename><surname>Gehring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sten</forename><surname>Gloeckle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Itai</forename><surname>Sootla</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Xiaoqing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yossi</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyu</forename><surname>Adi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tal</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jérémy</forename><surname>Remez</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rapin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.12950</idno>
+		<title level="m">Code llama: Open foundation models for code</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Natural language to code translation with execution</title>
+		<author>
+			<persName><forename type="first">Freda</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marjan</forename><surname>Ghazvininejad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sida</forename><forename type="middle">I</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2022.emnlp-main.231</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2022 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Abu Dhabi</addrLine></address></meeting>
+		<imprint>
+			<publisher>United Arab Emirates. Association for Computational Linguistics</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="3533" to="3546" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Reflexion: Language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beck</forename><surname>Labash</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.11366</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jialin</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Raiman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan</forename><surname>Catanzaro</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.19055</idno>
+		<title level="m">Effective large language model debugging with best-first tree search</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thibaut</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gautier</forename><surname>Izacard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Martinet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marie-Anne</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothée</forename><surname>Lacroix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baptiste</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Hambro</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.13971</idno>
+		<title level="m">Faisal Azhar, et al. 2023a. Llama: Open and efficient foundation language models</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Albert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amjad</forename><surname>Almahairi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasmine</forename><surname>Babaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolay</forename><surname>Bashlykov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soumya</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prajjwal</forename><surname>Bhargava</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.09288</idno>
+		<title level="m">Shruti Bhosale, et al. 2023b. Llama 2: Open foundation and fine-tuned chat models</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Self-consistency improves chain of thought reasoning in language models</title>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.11171</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hung</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akhilesh</forename><surname>Deepak Gotmare</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">Q</forename><surname>Nghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junnan</forename><surname>Bui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven Ch</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hoi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.07922</idno>
+		<title level="m">Codet5+: Open code large language models for code understanding and generation</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24824" to="24837" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Generating sequences by learning to self-correct</title>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Welleck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ximing</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>West</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Faeze</forename><surname>Brahman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianxiao</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Khashabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinlin</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soren</forename><surname>Dunn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.01489</idno>
+		<title level="m">Agentless: Demystifying llm-based software engineering agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Tree of thoughts: Deliberate problem solving with large language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="page">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">2023a. Self-edit: Fault-aware code editor for code generation</title>
+		<author>
+			<persName><forename type="first">Kechi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuo</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.04087</idno>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">2023b. Coder reviewer reranking for code generation</title>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tatsunori</forename><surname>Hashimoto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sida</forename><surname>Wang</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<biblScope unit="page" from="41832" to="41846" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Least-to-most prompting enables complex reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claire</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Bousquet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><forename type="middle">H</forename><surname>Quoc V Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

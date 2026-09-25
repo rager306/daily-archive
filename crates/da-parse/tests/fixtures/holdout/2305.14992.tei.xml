@@ -1,0 +1,1809 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Reasoning with Language Model is Planning with World Model</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2023-10-23">23 Oct 2023</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Shibo</forename><surname>Hao</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Florida ♠ Mohamed bin Zayed University of Artificial Intelligence {s5hao</orgName>
+								<address>
+									<addrLine>yig025, jjhong, zhw085</addrLine>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yi</forename><surname>Gu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Florida ♠ Mohamed bin Zayed University of Artificial Intelligence {s5hao</orgName>
+								<address>
+									<addrLine>yig025, jjhong, zhw085</addrLine>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Haodi</forename><surname>Ma</surname></persName>
+							<email>ma.haodi@ufl.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Florida ♠ Mohamed bin Zayed University of Artificial Intelligence {s5hao</orgName>
+								<address>
+									<addrLine>yig025, jjhong, zhw085</addrLine>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Joshua</forename><forename type="middle">Jiahua</forename><surname>Hong</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Florida ♠ Mohamed bin Zayed University of Artificial Intelligence {s5hao</orgName>
+								<address>
+									<addrLine>yig025, jjhong, zhw085</addrLine>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhen</forename><surname>Wang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Florida ♠ Mohamed bin Zayed University of Artificial Intelligence {s5hao</orgName>
+								<address>
+									<addrLine>yig025, jjhong, zhw085</addrLine>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">♣</forename><forename type="middle">♠</forename><surname>Daisy</surname></persName>
+							<email>daisyw@ufl.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Florida ♠ Mohamed bin Zayed University of Artificial Intelligence {s5hao</orgName>
+								<address>
+									<addrLine>yig025, jjhong, zhw085</addrLine>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhiting</forename><surname>Hu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Florida ♠ Mohamed bin Zayed University of Artificial Intelligence {s5hao</orgName>
+								<address>
+									<addrLine>yig025, jjhong, zhw085</addrLine>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">San</forename><surname>Diego</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Florida ♠ Mohamed bin Zayed University of Artificial Intelligence {s5hao</orgName>
+								<address>
+									<addrLine>yig025, jjhong, zhw085</addrLine>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Reasoning with Language Model is Planning with World Model</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2023-10-23">23 Oct 2023</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">232EB9378FF4B6E2E3C9B910704B3EA9</idno>
+					<idno type="arXiv">arXiv:2305.14992v2[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:30+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large language models (LLMs) have shown remarkable reasoning capabilities, particularly with chain-of-thought (CoT) prompting. However, LLMs sometimes still struggle with problems that are easy for humans, such as generating action plans to achieve given goals in an environment, or performing complex math or logical reasoning. The deficiency stems from the key fact that LLMs lack an internal world model to predict the world state (e.g., environment status, intermediate variable values) and simulate long-term outcomes of actions. This prevents LLMs from performing deliberate planning akin to human brains, which involves exploring alternative reasoning paths, anticipating future states and rewards, and iteratively refining existing reasoning steps. To overcome the limitations, we propose a new LLM reasoning framework, Reasoning via Planning (RAP). RAP repurposes the LLM as both a world model and a reasoning agent, and incorporates a principled planning algorithm based on Monte Carlo Tree Search for strategic exploration in the vast reasoning space. During reasoning, the LLM (as agent) incrementally builds a reasoning tree under the guidance of the LLM (as world model) and rewards, and efficiently obtains a high-reward reasoning path with a proper balance between exploration vs. exploitation. We apply RAP to various challenging reasoning problems including plan generation, math reasoning, and logical inference, and demonstrate its superiority over strong baselines. RAP with LLaMA-33B even surpasses CoT with GPT-4, achieving 33% relative improvement in a plan generation setting. 1  </p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Large language models (LLMs) have exhibited emergent reasoning abilities in a wide range of tasks <ref type="bibr" target="#b2">(Brown et al., 2020;</ref><ref type="bibr" target="#b6">Chowdhery et al., 2022;</ref><ref type="bibr"></ref> * equal contribution 1 The code is available at <ref type="url" target="https://github.com/Ber666/llm-reasoners">https://github.com/Ber666/  llm-reasoners</ref>  <ref type="bibr" target="#b35">OpenAI, 2023)</ref>. Recent approaches further boost their ability by prompting LLMs to generate intermediate reasoning steps, e.g., Chain-of-Thought, CoT <ref type="bibr" target="#b52">(Wei et al., 2022)</ref> or answer a series of subquestions, e.g., least-to-most prompting <ref type="bibr" target="#b57">(Zhou et al., 2022)</ref>. However, LLMs still face difficulties with tasks that humans find easy. For example, in creating action plans to move blocks to a target state, GPT-3 <ref type="bibr" target="#b2">(Brown et al., 2020)</ref> achieves a success rate of only 1%, compared to 78% for humans <ref type="bibr" target="#b49">(Valmeekam et al., 2022)</ref>; these models also struggle with complex tasks that require multiple steps of math, logical, or commonsense reasoning <ref type="bibr" target="#b19">(Huang and Chang, 2022;</ref><ref type="bibr" target="#b34">Mialon et al., 2023)</ref>.</p><p>Humans possess an internal world model, a mental representation of the environment <ref type="bibr" target="#b24">(Johnson-Laird, 1983</ref><ref type="bibr" target="#b23">, 2010;</ref><ref type="bibr" target="#b11">Gentner and Stevens, 2014)</ref>, which enables humans to simulate actions and their effects on the world's state for deliberate planning for complex tasks of motor control, imagery, inference, and decision making <ref type="bibr" target="#b46">(Tolman, 1948;</ref><ref type="bibr" target="#b1">Briscoe, 2011;</ref><ref type="bibr" target="#b41">Schulkin, 2012;</ref><ref type="bibr" target="#b28">LeCun, 2022)</ref>. For example, to make an action plan towards a goal, planning with the world model involves exploring various alternative courses of actions, assessing the likely outcomes by rolling out possible future scenarios, and iteratively refining the plan based on the assessment <ref type="bibr" target="#b21">(Huys et al., 2012;</ref><ref type="bibr" target="#b10">Gasparski and Orel, 2014;</ref><ref type="bibr" target="#b18">Ho et al., 2021)</ref>. This is in stark contrast to the current LLM reasoning, which instinctively generates a reasoning trace in an autoregressive manner. In particular, we identify several key limitations of the current reasoning with LLMs, including (1) the lack of an internal world model to simulate the state of the world (e.g., the configuration of blocks, the values of intermediate variables), which is the foundation of human planning; (2) the absence of a reward mechanism to assess and guide the reasoning towards the desired state; and due to both limitations, (3) the incapability of balancing exploration vs. exploitation to efficiently explore vast reasoning space.</p><p>To address these limitations, this paper proposes a new framework, Reasoning via Planning (RAP), that enables LLMs to reason in a manner close to humans' conscious planning. RAP augments the LLM with a world model, and reasons with principled planning (specifically Monte Carlo Tree Search, MCTS) to produce high-reward reasoning traces after efficient exploration (Figure <ref type="figure" target="#fig_0">1</ref>). Notably, we acquire the world model by repurposing the LLM itself with appropriate prompts. During the reasoning, the LLM strategically builds a reasoning tree by iteratively considering the most promising reasoning steps (actions) and using the world model (the same, repurposed LLM) to look ahead for future outcomes. The estimated future rewards are then backpropagated to update the LLM's beliefs about the current reasoning steps, guiding it to refine the reasoning by exploring better alternatives. Our MCTS-based planning effectively maintains a proper balance between exploration (of unvisited reasoning traces) and exploitation (of the best reasoning steps identified so far).</p><p>We show RAP is a general framework applicable to a diverse range of challenging problems and achieves substantial improvements over recent popular LLM reasoning methods. For plan generation, particularly in 2/4/6-step problems of Blocksworld <ref type="bibr" target="#b50">(Valmeekam et al., 2023)</ref>, RAP achieves an average success rate of 64% while CoT fails almost completely. Moreover, LLaMA-33B with RAP surpasses GPT-4 with CoT by 33% relative improvement. In the domains of mathematical reason-ing, such as GSM8K <ref type="bibr" target="#b7">(Cobbe et al., 2021)</ref> and logical inference exemplified by PrOntoQA <ref type="bibr" target="#b38">(Saparov and He, 2022)</ref>, RAP also consistently improves over strong baselines, including CoT, least-to-most prompting, and their self-consistency variants.</p><p>2 Related Work Reasoning with LLMs. LLM reasoning typically involves decomposing complex questions into sequential intermediate steps (a.k.a. chains) before producing the final answer, exemplified by Chainof-Thought (CoT) prompting and its variants <ref type="bibr" target="#b52">(Wei et al., 2022;</ref><ref type="bibr" target="#b27">Kojima et al., 2022)</ref>. The basic CoT generates chains all at once and can induce additional errors as the step count increases. Self-Consistency <ref type="bibr" target="#b51">(Wang et al., 2022)</ref> samples multiple chains to choose the best answer via majority voting. Least-to-most prompting <ref type="bibr" target="#b57">(Zhou et al., 2022)</ref> reduces the question into simpler subquestions and answers them sequentially. Similar to our reward formulation, recent works have explored self-evaluation approaches to provide feedback for intermediate steps <ref type="bibr" target="#b53">(Welleck et al., 2022;</ref><ref type="bibr" target="#b43">Shinn et al., 2023;</ref><ref type="bibr" target="#b36">Paul et al., 2023)</ref>. Aligned with our state formulation, <ref type="bibr" target="#b29">Li et al. (2022)</ref> incorporate latent "situations" into LLMs, referring to the state of entities from the context. More relevantly, recent works have started to explore more complex structures guided by some search algorithms. For instance, CoRe <ref type="bibr" target="#b58">(Zhu et al., 2022)</ref> fine-tunes reasoning step generator and verifier for math word problems with MCTS for decoding. Concurrently to our work, Yao et al. (2023) apply heuristic-based Pickup orange (r = 0.6) (r = 0.4) Pickup blue Stack it on blue Stack it on orange … … { } Initial State: The orange block is on the table, the blue block is on the table, and the red block… Goal: The orange block is on the blue block, and the yellow block is on the orange block. Julie is reading… She wants to read half of the remaining pages tomorrow. How many pages should she read? (r = 0.7) Q1: How many pages has she read? (r = 0.5) Q1: How many pages did Julie read today? Q1: How … read? A1: 30 Q1: How …Today? A1: 24 Q2: How many pages has Julie read till now? (r = 0.8) (r = 0.3) Q2: How many pages should she read tomorrow? Q1: … Q2: How …now? A2: 36 Q1: How… today? A1: 24 … QT: How ... tomorrow? AT: 42 (r = 0.3) (r = 0.9) … (Answer: 42) (1) Carnivores are carnivorous (2) Animals are not unicellular (3) Carnivores are mammals … Fact: Fae is a feline Hypothesis: Fae is unicellular? (1) Carnivores are carnivorous (4) Every cat is a feline (r = 0.8) (r = 0.1) (3) Carnivores are mammals (r = 0.8) (r = 0.8) … Fae is a mammal Fae is a not unicellular (The hypothesis is false) Fae is a feline Fae is a cat (5) Each feline is a carnivores Fae is a carnivore (Goal achieved) search, like depth-/breadth-first search, for better reasoning paths. However, none of the above methods formally introduce the world model and instantiates the reward and state into a unified framework.</p><p>Compared with these search-guided methods, RAP is a more principled framework to combine world model and reward with advanced planning. Planning with LLMs. Planning, a central ability in intelligent agents, involves generating a series of actions to achieve a specific goal <ref type="bibr" target="#b33">(McCarthy, 1963;</ref><ref type="bibr" target="#b4">Bylander, 1994)</ref>. Classical planning methods have been widely adopted in robots and embodied environments <ref type="bibr" target="#b5">(Camacho and Alba, 2013;</ref><ref type="bibr" target="#b22">Jiang et al., 2019)</ref>. Recently, prompting LLMs to do planning directly has gained attention and shown potential <ref type="bibr">(Huang et al., 2022;</ref><ref type="bibr" target="#b45">Singh et al., 2022;</ref><ref type="bibr" target="#b9">Ding et al., 2023)</ref>. Moreover, based on LLMs' powerful programming ability <ref type="bibr" target="#b31">(Lyu et al., 2023;</ref><ref type="bibr" target="#b25">Jojic et al., 2023;</ref><ref type="bibr" target="#b30">Liu et al., 2023)</ref>, recent works first translate natural language instructions into the executable programming languages, such as Planning Domain Description Language (PDDL), and runs classical planning algorithms, such as LLM+P <ref type="bibr" target="#b30">(Liu et al., 2023)</ref>. However, code-based planning is constrained by its narrow domains and the environment, while RAP can handle open-domain problems, such as math and logical reasoning. More related works on world models and planning are discussed in the Appendix D.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Reasoning via Planning (RAP)</head><p>In this section, we present the Reasoning via Planning (RAP) framework that enables LLMs to strategically plan a coherent reasoning trace for solving a wide range of reasoning tasks. We first build the world model by repurposing the LLM with prompting (Section 3.1). The world model serves as the foundation for deliberate planning, by allowing the LLM to plan ahead and seek out the expected outcomes in the future. We then introduce the rewards for assessing each state during reasoning in Section 3.2. Guided by the world model and rewards, the planning with Monte Carlo Tree Search (MCTS) efficiently explores the vast reasoning space and finds optimal reasoning traces (Section 3.3). Finally, when multiple promising reasoning traces are acquired during planning, we further introduce an aggregation method in Section 3.4 that yields an ensembled result and further boosts the reasoning performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Language Model as World Model</head><p>In general, a world model predicts the next state of the reasoning after applying an action to the current state <ref type="bibr">(Ha and Schmidhuber, 2018b;</ref><ref type="bibr" target="#b27">Matsuo et al., 2022)</ref>. RAP enables us to instantiate the general concepts of state and action in different ways depending on the specific reasoning problems at hand (Figure <ref type="figure" target="#fig_1">2</ref>). For example, in Blocksworld, it is natural to define a state as the configuration of blocks (described in natural language), and an action to be a behavior of moving a block (e.g., "pickup the orange block"). In a math reasoning problem, we use the state to represent the values of intermediate variables, and set an action to be a subquestion that drives the reasoning to derive new values. In logical reasoning, a state is a fact we are focusing on, and an action is to choose a rule for the next deduction.</p><p>With the definition of state and action, the reasoning process can thus be described as a Markov decision process (MDP): given the current state s t,t=0,1,...,T , e.g., the initial state s 0 , the LLM (as a reasoning agent) generates an action space by sampling from its generative distribution a t ∼ p(a|s t , c), where c is a proper prompt (e.g., incontext demonstrations). Once an action is chosen, the world model then predicts the next state s t+1 of the reasoning. Specifically, we repurpose the same LLM to obtain a state transition distribution p(s t+1 |s t , a t , c ′ ), where c ′ is another prompt to guide the LLM to generate a state. For instance, in Blocksworld, the LLM (as the world model) generates text s t+1 to describe the new configuration of blocks, given previous state s t and the action a t .</p><p>Continuing the process results in a reasoning trace, which consists of a sequence of interleaved states and actions (s 0 , a 0 , s 1 , . . . , a T -1 , s T ). This differs from the previous reasoning methods, such as Chain-of-Thought <ref type="bibr" target="#b52">(Wei et al., 2022)</ref>, where the intermediate reasoning steps consist of only a sequence of actions, e.g., (a 0 = "pickup red block", a 1 = "stack on yellow block", . . . ) (see comparisons in Figure <ref type="figure" target="#fig_0">1</ref>). Augmenting the reasoning with the (predicted) world states helps the LLM with a more grounded and coherent inference. Note that the full reasoning trace is simulated by the LLM itself (as a reasoning agent with an internal world model) without interacting with the external real environment. This resembles humans contemplating a possible plan in their minds. The capability of simulating future states, by introducing the world model, allows us to incorporate principled planning algorithms to efficiently explore the vast reasoning space as described in Section 3.3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Reward Design</head><p>During reasoning, we want to assess the feasibility and desirability of each reasoning step, and guide the reasoning based on the assessment (Section 3.3). The assessment of each reasoning step (i.e., applying an action a t to the state s t ) is performed by a reward function r t = r(s t , a t ) ∈ R. Similar to the state and action, the reward function can be specified in different ways to accommodate any knowledge or preferences about the reasoning problem of interest. Here we introduce several common rewards applicable to different tasks and shown to be effective in our experiments. Likelihood of the action. When an action is generated by the LLM conditioning on the in-context demonstration and the current state, the probability of the specific action reflects the LLM's preference.</p><p>We thus can incorporate the log probability of the action as a reward. This reward reflects the "instinct" of LLMs as an agent, and can be also used as a prior for which action to explore. Confidence of the state. State prediction is nontrivial in some problems, e.g., in math reasoning (Figure <ref type="figure" target="#fig_1">2</ref>, middle), given an action (i.e., a subquestion), the world model predicts the next state by answering the subquestion. We incorporate the confidence of the state (i.e., answers in this case) as a reward. Specifically, we draw multiple sample answers from the world model, and use the proportion of the most frequent answer as the confidence. Higher confidence indicates that the state prediction is more consistent with the world knowledge of LLMs <ref type="bibr">(Hao et al., 2023b)</ref>, which typically leads to a more reliable reasoning step. Self-evaluation by the LLM. It's sometimes easier to recognize the errors in reasoning than avoid generating them in advance. Thus, it's beneficial to allow the LLM to criticize itself with the question "Is this reasoning step correct?", and use the next-word probability of the token "Yes" as a reward. The reward evaluates LLM's own estimation of the correctness of reasoning. Note that the specific problems for self-evaluation can be different depending on the tasks. Task-specific heuristics. RAP also allows us to flexibly plug in other task-specific heuristics into the reward function. For example, in plan generation for Blocksworld, we compare the predicted current state of blocks with the goal to calculate a reward (Section 4.1). The reward encourages the plan of movements to actively pace towards the target.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Planning with Monte Carlo Tree Search</head><p>Once equipped with the world model (Section 3.1) and rewards (Section 3.2), LLMs can reason with any planning algorithms. We adopt Monte Carlo Tree Search (MCTS) <ref type="bibr" target="#b26">(Kocsis and Szepesvári, 2006;</ref><ref type="bibr" target="#b8">Coulom, 2007)</ref>, a powerful planning algorithm that strategically explores the space of reasoning trees and strikes a proper balance between exploration and exploitation to find high-reward reasoning traces efficiently.</p><p>Specifically, MCTS builds a reasoning tree iteratively, where each node represents a state, and each edge represents an action and the transition from the current state to the next state after applying the action (Figure <ref type="figure" target="#fig_0">1</ref>). To guide the LLM agent to expand and explore the most promising nodes of the tree, the algorithm maintains a state-action value function Q : S × A → R, where Q(s, a) estimates the expected future reward of taking action a in state s. Selection. The first phase selects a portion of the existing tree that is most promising for further expansion in the next phase. Starting from the root node (i.e., initial state s 0 ), at each level of the tree, the algorithm selects a child node as the next node.</p><p>The phase finishes when a leaf node of the current tree is reached. Figure <ref type="figure" target="#fig_2">3(a)</ref> highlights the selected path in red. To balance between exploration (of less-visited nodes) and exploitation (of high-value nodes), we use the well-known Upper Confidence bounds applied to Trees (UCT) <ref type="bibr" target="#b26">(Kocsis and Szepesvári, 2006)</ref> to select each child node. Specifically, at node s, we select the action in the tree by considering both the Q value (for exploitation) and uncertainty (for exploration):</p><formula xml:id="formula_0">a * = arg max a∈A(s) Q(s, a) + w ln N (s) N (c(s, a)) ,<label>(1)</label></formula><p>where N (s) is the number of times node s has been visited in previous iterations, and c(s, a) is the child node of applying a in state s. The less a child node was visited before (i.e., the more uncertain about this child node), the higher the second term in the equation. The weight w controls the balance between exploration and exploitation.</p><p>Expansion. This phase expands the tree by adding new child nodes to the leaf node selected above.</p><p>Given the state of the leaf node, we use the LLM (as agent) to sample d possible actions (e.g., subquestions in math reasoning), and then use the LLM (as world model) to predict the respective next state, resulting in d child nodes. Note that if the leaf node selected above is a terminal node (the end of a reasoning chain) already, we will skip expansion and jump to back-propagation.</p><p>Simulation. To estimate the expected future rewards (Q values), this phase simulates the future situations of the current node using the world model.</p><p>Starting from the current node as above, at each node s, we create an action following a roll-out policy and use the world model to predict the next state. The roll-out process continues until a terminal state is reached. There could be many ways to define the roll-out policy (e.g., by adding different randomness). In our experiments, for simplicity and reduced noises, we follow a similar process as in the expansion above, i.e., generating d candidate actions and picking one of the largest local reward a ′ = max a ′ r(s, a). In practice, for efficiency, we discard the computationally costly components in r (e.g., the reward from the confidence of state requires sampling the answer multiple times), and use the resulting lightweight reward function for selecting actions during simulation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Back-propagation.</head><p>Once we reach a terminal state in the above phases, we obtain a reasoning path from the root node to the terminal node. We now back-propagate the rewards on the path to update the Q value of each state-action pair along the path. Specifically, we update Q(s, a) by aggregating the rewards in all future steps of node s.</p><p>Once a predetermined number of MCTS iterations is reached, we terminate the algorithm and select the final reasoning trace from the constructed tree for evaluation. There are various ways for the selection. One is to start from the root node and iteratively choose the action with the highest Q value until reaching a terminal. Also, one can directly select the path from the iterations that yielded the highest reward, or opt to choose the leaf node (and the respective root-to-leaf path) that has been visited the most. In practice, we observed that the second strategy often yields the best results.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">RAP-Aggregation</head><p>For problems, such as math reasoning (Section 4.2) where only the final answer is required, RAP could produce multiple traces and answers from different MCTS iterations, which will be aggregated to produce the final answer. We refer to such a mechanism as RAP-Aggregation. Note that problems like plan generation or logical inference require a complete reasoning trace as output; thus, RAP-Aggregation will not be applied.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head><p>In this section, we demonstrate the flexibility and effectiveness of our RAP framework by applying it to a wide range of problems, including plan generation in an embodied environment (4.1), mathematical reasoning for solving math word problems (4.2), and logical reasoning for verifying hypotheses (4.3). The subsequent sections demonstrate how the world model formulation in RAP enables a versatile design of the state and action, catering to various reasoning contexts.</p><p>We primarily compare RAP with chain-ofthought (CoT) <ref type="bibr" target="#b52">(Wei et al., 2022)</ref>, and its variants like least-to-most prompting <ref type="bibr" target="#b57">(Zhou et al., 2022)</ref> as baselines. We also consider ensembling multiple reasoning paths if applicable (also known as selfconsistency <ref type="bibr" target="#b51">(Wang et al., 2022)</ref>). Moreover, we compare RAP with GPT-4 (OpenAI, 2023) when computation resources allow. By default, we use the LLaMA-33B model <ref type="bibr">(Touvron et al., 2023a)</ref> as the base LLM for both our methods and baselines, with a sampling temperature of 0.8. All prompts are listed in Appendix C.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Plan Generation</head><p>The plan generation task aims to produce a sequence of actions to achieve a given goal, possibly with additional constraints. The ability to generate plans is important for intelligent embodied agents, e.g. household robots <ref type="bibr" target="#b37">(Puig et al., 2018)</ref>. Task setup. To explore the viability of the RAP framework for plan generation tasks, we adapt and evaluate RAP on the Blocksworld benchmark <ref type="bibr" target="#b49">(Valmeekam et al., 2022)</ref>, where an agent is asked to rearrange the blocks into stacks in a particular order. We define a state as the current orientation of the blocks and an action as an instruction that moves blocks. Specifically, an action is composed of one of the 4 verbs (i.e., STACK, UNSTACK, PUT, and PICKUP) and manipulated objects. For the action space, we generate the currently valid actions given the domain restrictions on actions and the current orientation of the blocks. To transit between states, we take the current action and query the LLM to predict the state changes to the relevant blocks. We then update the current state by adding the new block conditions and removing the conditions that are no longer true. Once a state has met all conditions in the goal or the depth limit of the tree is reached, we terminate the associated node.</p><p>To assess the quality of actions within this domain, we use two separate rewards. First, we prompt the LLM with some example test cases along with their solutions, and then calculate the log probability of the action given the current state ("Likelihood of action" reward in Section 3.2), denoted as r 1 . This reward reflects the intuition of the LLM as the reasoning agent. It's typically indicative when there are few steps left to the goal, while not as reliable for a distant goal. Additionally, we compare the new state after performing an action with the goal and provide a reward, r 2 , scaling with the number of conditions met ("Task-specific heuristics" reward). Specifically, when all the conditions are met, we assign a super large reward to make sure this plan will be selected as the solution.</p><p>Results. We use test cases from the Blocksworld dataset <ref type="bibr" target="#b50">(Valmeekam et al., 2023)</ref> and group them by minimum number of actions required, resulting in 30 cases solvable within 2 steps, 57 cases within 4 steps, and 114 cases within 6 steps. There are at most 5 blocks in each test case. As the baseline method, we prompt the LLM with 4 test cases with corresponding solutions, and ask it to generate a</p><p>CoT unstack the orange block from on top of the yellow block stack the orange block on top of the red block pick up the yellow block stack the yellow block on top of the blue block (Goal: The red block is on blue block; the orange block is on the red block) RAP I have that, the red block is clear, the blue block is clear, the orange block is clear, the hand is empty, the orange block is on top of the yellow block, the red block is on the table, the blue block is on the table and the yellow block is on the table.</p><p>Pick up the red block.</p><p>I have that, the blue block is clear, the orange block is clear, the red block is in the hand, the hand is holding the red block, the orange block is on top of the yellow block, the blue block is on the table, and the yellow block is on the table.</p><p>Stack the red block on top of the blue block.</p><p>I have that, the orange block is clear, the red block is clear, the hand is empty, the orange block is on top of the yellow block, the red block is on top of the blue block, the blue block is on the table, and the yellow block is on the table.</p><p>Unstack the orange block from on top of the yellow block.</p><p>I have that, the orange block is in the hand, the red block is clear, the yellow block is clear, the hand is holding the orange block, the red block is on top of the blue block, the blue block is on the table, and the yellow block is on the table.</p><p>Stack the orange block on top of the red block.</p><p>I have that, the orange block is clear, the yellow block is clear, the hand is empty, the orange block is on top of the red block, the red block is on top of the blue block, the blue block is on the table, and the yellow block is on the table. Method 2-step 4-step 6-step CoT 0.17 0.02 0.00 CoT -pass@10 0.23 0.07 0.00 CoT (GPT-4) 0.50 0.63 0.40 RAP (10)</p><p>1.00 0.86 0.26 RAP (20)  1.00 0.88 0.42</p><p>Table 1: Results on Blocksworld. RAP (10) and RAP (20)  refer to our method where the iteration number is set to 10 and 20, respectively. "pass@10" means 10 plans are sampled for each test case, and the test case is regarded as solved if at least one plan is correct. All other settings including RAP, only evaluate a single plan.</p><p>plan for a new question. This setting is the same as one described in <ref type="bibr" target="#b49">Valmeekam et al. (2022)</ref>, and we denote it as Chain-of-Thought (CoT) as the solution is generated step by step. For RAP, the same prompt is shown to help LLMs calculate r 1 .</p><p>As shown in Table <ref type="table">1</ref>, CoT with LLaMA-33B can only generate successful plans for a few 2-step cases, and completely fails on harder problems. RAP substantially improves over CoT by nearly solving all problems within 4 steps, and a part of 6-step problems, achieving an average success rate of 64%. It's worth noting that the searching space of 6-step problems can be as large as 5 6 , while our algorithm can find a successful plan 42% of the time within 20 iterations. Even more, our framework allows LLaMA-33B to outperform GPT-4 by 33% relative gain, which is known to have much stronger reasoning ability <ref type="bibr" target="#b3">(Bubeck et al., 2023)</ref>. Case study. We compare the reasoning paths from CoT and RAP in Figure <ref type="figure" target="#fig_4">4</ref>. We summarize the reasons accounting for the improvement: (1) By maintaining the world state during reasoning, RAP can recognize valid actions for the current state, avoiding generating illegal plans. (2) RAP is capable of backtracking and trying out other solutions when the first intuition from the LLM doesn't work. Specifically, CoT attempts to achieve the second goal, i.e. "orange on red", and achieve that with the first two steps. However, accomplishing the second goal first would prevent the first goal from being satisfied. On the contrary, even though RAP makes the same mistakes in the first iterations, our framework drives the agent to explore other possible paths (as described in Section 3.3) and finally generate a successful plan. (3) When calculating r t , we can only feed the current state to the LLM and hide the history. E.g., in the case of Figure <ref type="figure" target="#fig_4">4</ref>, to calculate the reward for a 2 , the LLM is provided with a "new" test case, in which s 2 is the initial state. This significantly lowers the difficulties of the last few steps, and saves more iterations for harder decisions of the first few steps.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Math Reasoning</head><p>Task setup. Math reasoning tasks, such as GSM8k <ref type="bibr" target="#b7">(Cobbe et al., 2021)</ref>, often include a description and a final question. To arrive at the answer to the final question, it is necessary to undertake multi-step mathematical calculations based on the problem's context. It is thus natural to decompose the final question into a sequence of smaller sub-questions (Figure <ref type="figure" target="#fig_1">2</ref>, right). We define a state as the values of intermediate variables, and an action as to propose an incremental sub-question about a unknown intermediate variable. The world model then responds to the sub-question using the intermediate variables and the problem description, adding the new intermediate variable value into the next state. We combine the self-evaluation of helpfulness by LLM r t,1 and the confidence of state r t,2 using weighted geometric mean r t = r α t,1 * r 1-α t,2 as the reward function. This reward encourages more relevant and useful sub-questions. To account for the</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Method Accuracy (%)</head><p>Chain-of-Thought 29.4 + SC (10)  46.8 Least-to-Most 25.5 + SC (10)  42.5 RAP (1) 40.0 RAP (10)  48.6 + aggr 51.6  impact of the reasoning path's length on the reward, we compute the Q value by using the maximum of average rewards in future steps. As a related work, Least-to-Most prompting <ref type="bibr" target="#b57">(Zhou et al., 2022)</ref> shares a similar idea to us in sub-question decomposition, but they generate subquestions all at once. On the contrary, RAP considers each action a t based on the current state s t , which enables more informed decisions. Results. We evaluate our framework on GSM8k, a dataset of grade school math word problems. We also evaluate the base model with CoT prompting <ref type="bibr" target="#b52">(Wei et al., 2022)</ref>, Least-to-Most prompting <ref type="bibr" target="#b57">(Zhou et al., 2022)</ref>, and their self-consistency <ref type="bibr" target="#b51">(Wang et al., 2022)</ref> variants, as the baselines. We use the same 4-shot examples demonstrations for all methods.</p><p>As shown in Table <ref type="table" target="#tab_0">2</ref>, our RAP framework answers 48.8% of the problems correctly, outperforming both the Chain-of-Thought and the Least-to-Most prompting with Self-Consistency. Notably, this result is achieved when RAP only selects only one reasoning trace based on the reward. The introduction of RAP-Aggregate further improves the accuracy by ∼ 3%. We also calculate the accuracy with different numbers of iterations in MCTS and self-consistency samples in baselines, as illustrated in Figure <ref type="figure" target="#fig_5">5</ref>. We find that across all numbers of iterations/samples, RAP-Aggregation outperforms baselines consistently, which indicates that when only a few iterations/samples are allowed, our framework is significantly better at finding reliable reasoning paths with the guide of reward.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Logical Reasoning</head><p>Task setup. A logical reasoning task (e.g. PrOn-toQA <ref type="bibr" target="#b38">(Saparov and He, 2022)</ref>) typically provides a set of facts and logical rules, and a model is required to verify if a hypothesis fact is true or false by applying the logical rules to the given facts, as illustrated in Figure <ref type="figure" target="#fig_1">2</ref>. These tasks not only require the correct final answer (true/false), but also a detailed proof demonstrating the result. To apply our framework, we define the state as a fact we are focusing on, analogous to the human's working memory <ref type="bibr" target="#b0">(Baddeley, 1992)</ref> for inference. An action is defined as selecting a rule from the fact set. The world model performs a one-hop reasoning step to get a new fact as the next state. The reward is calculated with Self-evaluation (Section 3.2. Specifically, we prompt the LLM with a few examples with their labels to help it better understand the quality of reasoning steps. We use the average reward of future steps to update the Q function, the same as Equation (2) for GSM8k.</p><p>Results. We assess the performance of our RAP framework on PrOntoQA <ref type="bibr" target="#b38">(Saparov and He, 2022)</ref> and adopt their settings of "true" ontology (using real-world knowledge), "random" ordering of rules.</p><p>We mix the examples requiring 3, 4, and 5 reasoning hops in a correct proof to prevent LLM from memorizing when to finish the reasoning. We sample 500 examples from the generation script released by <ref type="bibr" target="#b38">Saparov and He (2022)</ref>. We compare both the prediction accuracy of the final answer and the accuracy of the entire proof. We do 20 iterations for MCTS and 20 samples for self-consistency.</p><p>As the results presented in</p><p>Table 3, our framework achieves a correct answer rate of 94.2% and a proof accuracy of 78.8%, surpassing the CoT baseline by 14% proof accuracy and the selfconsistency CoT baseline by 4.4% prediction accuracy. Such substantial improvements clearly Setting Method 2-step 4-step 6-step 8-step 10-step 12-step All Easy CoT 0.49 0.18 0.06 0.01 0.01 0.00 0.08 RAP (10) 1.00 0.99 0.75 0.61 0.32 0.32 0.65 Hard CoT 0.22 0.14 0.02 0.02 0.00 0.00 0.05 RAP (10) 0.67 0.76 0.74 0.48 0.17 0.09 0.51 Table 4: Results on the full Blocksworld with Llama-2 70B.</p><p>demonstrate the effectiveness of RAP in solving logical reasoning problems in PrOntoQA. Also, as the case illustrated in Figure <ref type="figure" target="#fig_1">2</ref>, RAP can effectively recognize when a reasoning chain comes to a dead end, and propagate the signal back to earlier reasoning steps, with the planning algorithm allowing it to explore alternatives to the previous steps. The selfevaluation reward further helps RAP to recognize potential incorrect reasoning steps, encouraging the agent to avoid them in future iterations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Analysis 5.1 Complex problems</head><p>To further study whether RAP can help stronger LLMs to solve more complex problems, we conduct experiments on the full Blocksworld <ref type="bibr" target="#b50">(Valmeekam et al., 2023)</ref> dataset using a more capable LLM, Llama-2 70B <ref type="bibr">(Touvron et al., 2023b)</ref>. The full Blocksworld <ref type="bibr" target="#b50">(Valmeekam et al., 2023</ref>) comprises 602 test cases. We group them based on the minimum number of actions required for each test case. Our experiments are conducted in two distinct settings: Easy and Hard. In Easy setting, we assume prior knowledge of the minimum number of actions for each case. Leveraging this information, we use demonstration cases that share the same minimum number of actions as the test case. For each group of cases, we randomly select 10 cases to create a pool of demonstration cases, leaving the remaining cases as the test set. During inference, we randomly sample 4-shot demonstration cases from this pool and utilize them to formulate prompts. In the Hard setting, we randomly select 10 cases from the full dataset to form a demonstration pool and subsequently exclude these cases from the test set. During inference, we randomly sample 4-shot demonstration cases from this global pool, irrespective of the minimum number of actions required for the test case.</p><p>We employ chain-of-thought prompting <ref type="bibr" target="#b52">(Wei et al., 2022)</ref> as a baseline, and evaluate our RAP (10)  (with 10 iterations) with an improved prompting technique (Appendix E). Our experimental results are summarized in Table <ref type="table">4</ref>. In both the Easy and Hard settings, RAP demonstrates superior performance over CoT by a substantial margin. Notably, when the test case necessitates a larger number of steps (six or more) to solve, CoT exhibits a severe drop in success rates, whereas RAP maintains a relatively high success rate. Comparing these results with Section 4.1, we additionally conclude that RAP is a general framework able to enhance the reasoning abilities of LLMs, regardless of their intrinsic capabilities.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Reward Choice</head><p>In our main experiments, we choose the combination of rewards in our current experiments based on heuristics and our exploratory experiments. To understand the effects of the reward choice for LLM reasoning, we supplement comprehensive experiments on rewards for plan generation (Table <ref type="table" target="#tab_2">5</ref>) and math reasoning (Table <ref type="table" target="#tab_3">6</ref>).</p><p>Generally, the combination of multiple rewards contributes to the performance. However, the effects of a reward depends on the nature of tasks. For example, the action likelihood reward is essential for plan generation, but not very helpful to mathmatical reasoning. More discussions are in Appendix F.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>In this paper, we present Reasoning via Planning (RAP), a novel LLM reasoning framework that equips LLMs with an ability to reason akin to human-like strategic planning. Our framework, which repurposes the LLM to act as both a world model and a reasoning agent, enables the LLM to simulate states of the world and anticipate action outcomes, and achieve an effective balance between exploration and exploitation via Monte-Carlo Tree Search. Extensive experiments on a variety of challenging reasoning problems demonstrate RAP's superiority over several contemporary CoT-based reasoning approaches, and even the advanced GPT-4 in certain settings.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A MCTS Planning</head><p>We adapt MCTS to search for the optimal reasoning path (Algorithm 1). Compared with traditional applications of MCTS, we are faced with a large reasoning space, and the heavy computational cost of LLMs. Thus, we made several modifications to the classic MCTS in our implementation: (1) For open domain problems, e.g., math problems, it's impossible to enumerate all actions (subquestions), so we reduce the action space by sampling a fixed number of potential actions from LLMs, conditioned on a prompt of the current state and incontext demonstration. (2) In the selection phase, if there are actions that haven't been visited before, we estimate the Q value with lightweight local rewards, e.g., self-evaluation reward, and then select the action with UCT. This provides prior knowledge for the exploration, which is crucial given the limited iteration budgets.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Experiment Settings</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1 Language Model Decoding</head><p>We use random sampling with a temperature of 0.8. The generation is cut off at the maximum length of 2048 or a newline token.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2 Computing Resources</head><p>All of our experiments run on 4 × NVIDIA A5000 GPUs with 24GB memory.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Prompt</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1 Plan Generation</head><p>We show the prompt to calculate the action likelihood for RAP below. The same prompt is also applied in CoT baseline. &lt;init_state&gt; and &lt;goals&gt; would be instantiated by the problem to solve.</p><p>I am playing with a set of blocks where I need to arrange the blocks into stacks. Here are the actions I can do Pick up a block Unstack a block from on top of another block Put down a block Stack a block on top of another block I have the following restrictions on my actions: I can only pick up or unstack one block at a time. I can only pick up or unstack a block if my hand is empty. I can only pick up a block if the block is on the table and the block is clear. A block is clear if the block has no other blocks on top of it and if the block is not picked up. I can only unstack a block from on top of another block if the block I am unstacking was really on top of the other block. I can only unstack a block from on top of another block if the block I am unstacking is clear. Once I pick up or unstack a block, I am holding the block. I can only put down a block that I am holding. I can only stack a block on top of another block if I am holding the block being stacked. I can only stack a block on top of another block if the block onto which I am stacking the block is clear. Once I put down or stack a block, my hand becomes empty. [STATEMENT] As initial conditions I have that, the red block is clear, the yellow block is clear, the hand is empty, the red block is on top of the blue block, the yellow block is on top of the orange block, the blue block is on the table and the orange block is on the table. My goal is to have that the orange block is on top of the red block. My plan is as follows: [PLAN] unstack the yellow block from on top of the orange block put down the yellow block pick up the orange block Algorithm 1 RAP-MCTS Require: Initial state s0, state transition probability function p θ , reward function r θ , action generator p ϕ , number of generated actions d, depth limit L, number of roll-outs N , and exploration weight w 1: Initialize memory of actions A : S → A, children c : S × A → S and rewards r : S × A → R 2: Initialize the state-action value function Q : S × A → R and visit counter N : S → N 3: for n ← 0, . . . , N -1 do 4: t ← 0 5: while N (st) &gt; 0 do ▷ Selection 6: N (st) ← N (st) + 1 7: at ← arg max a∈A(s t ) Q(st, a) + w ln N (s t ) N (c(s t ,a)) 8: rt = r(st, at), st+1 ← c(st, at) 9: t ← t + 1 10: end while 11: while st is not a terminal state ∧ t ≤ L do 12: for i ← 1, . . . , d do ▷ Expansion 13: Sample a (i) t ∼ p ϕ (a | st), s (i) t+1 ∼ p θ (st, a (i) t ), and r (i) t ∼ r θ (st, a (i) t ) 14: Update A(st) ← {a (i) t } d i=1 , c(st, a (i) t ) ← s (i) t+1 , and r(st, at) ← r (i) t 15: end for 16: at+1 ← arg max a∈A(s t ) r(st, at) ▷ Simulation 17: rt ← r(st, at), st+1 ← c(st, at) 18: t ← t + 1 19: end while 20: for t ′ ← t, . . . , 0 do ▷ Back propagation 21: Update Q(s t ′ , a t ′ ) with {r t ′ , r t ′ +1 , . . . , rt} 22: end for 23: end for stack the orange block on top of the red block [PLAN END] [STATEMENT] As initial conditions I have that, the orange block is clear, the yellow block is clear, the hand is empty, the blue block is on top of the red block, the orange block is on top of the blue block, the red block is on the table and the yellow block is on the table. My goal is to have that the blue block is on top of the red block and the yellow block is on top of the orange block. My plan is as follows: [PLAN] pick up the yellow block stack the yellow block on top of the orange block [PLAN END] [STATEMENT] As initial conditions I have that, the red block is clear, the blue block is clear, the orange block is clear, the hand is empty, the blue block is on top of the yellow block, the red block is on the table, the orange block is on the table and the yellow block is on the table. My goal is to have that the blue block is on top of the orange block and the yellow block is on top of the red block. My plan is as follows: [PLAN] unstack the blue block from on top of the yellow block stack the blue block on top of the orange block pick up the yellow block stack the yellow block on top of the red block [PLAN END] [STATEMENT] As initial conditions I have that, the red block is clear, the blue block is clear, the yellow block is clear, the hand is empty, the yellow block is on top of the orange block, the red block is on the table, the blue block is on the table and the orange block is on the table. My goal is to have that the orange block is on top of the blue block and the yellow block is on top of the red block. My plan is as follows: [PLAN] unstack the yellow block from on top of the orange block stack the yellow block on top of the red block pick up the orange block stack the orange block on top of the blue block [PLAN END] [STATEMENT] As initial conditions I have that, &lt;initial_state&gt; My goal is to have that &lt;goals&gt;.</p><p>My plan is as follows:</p><p>[PLAN]</p><p>For the next state prediction with the world model, we apply the prompts conditioned on the last action. Here we show the prompt to update the state after a "pick up" action as an example. Again, &lt;state&gt; and &lt;action&gt; would be instantiated with the current state and action.</p><p>I am playing with a set of blocks where I need to arrange the blocks into stacks. Here are the actions I can do Pick up a block Unstack a block from on top of another block Put down a block Stack a block on top of another block I have the following restrictions on my actions: I can only pick up or unstack one block at a time. I can only pick up or unstack a block if my hand is empty. I can only pick up a block if the block is on the table and the block is clear. A block is clear if the block has no other blocks on top of it and if the block is not picked up. I can only unstack a block from on top of another block if the block I am unstacking was really on top of the other block. I can only unstack a block from on top of another block if the block I am unstacking is clear. Once I pick up or unstack a block, I am holding the block. I can only put down a block that I am holding. I can only stack a block on top of another block if I am holding the block being stacked. I can only stack a block on top of another block if the block onto which I am stacking the block is clear. Once I put down or stack a block, my hand becomes empty. After being given an initial state and an action, give the new state after performing the action. [SCENARIO 1] [STATE 0] I have that, the white block is clear, the cyan block is clear, the brown block is clear, the hand is empty, the white block is on top of the purple block, the purple block is on the table, the cyan block is on the table and the brown block is on the table. [ACTION] Pick up the brown block. [CHANGE] The hand was empty and is now holding the brown block, the brown block was on the table and is now in the hand, and the brown block is no longer clear. [STATE 1] I have that, the white block is clear, the cyan block is clear, the brown block is in the hand, the hand is holding the brown block, the white block is on top of the purple block, the purple block is on the table and the cyan block is on the table. [SCENARIO 2] [STATE 0] I have that, the purple block is clear, the cyan block is clear, the white block is clear, the hand is empty, the white block is on top of the brown block, the purple block is on the table, the cyan block is on the table and the brown block is on the table. [ACTION] Pick up the cyan block. [CHANGE] The hand was empty and is now holding the cyan block, the cyan block was on the table and is now in the hand, and the cyan block is no longer clear. [STATE 1] I have that, the cyan block is in the hand, the white block is clear, the purple block is clear, the hand is holding the cyan block, the white block is on top of the brown block, the purple block is on the table and the brown block is on the table. [SCENARIO 3] [STATE 0] &lt;state&gt; [ACTION] &lt;action&gt; [CHANGE]</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.2 Math Reasoning</head><p>We show the prompt of RAP for math reasoning as below. The prompt is used for both action proposal and next state prediction. After instantiate &lt;question&gt;, we append a prefix Question 5.1 to the prompt, so that we can sample the first action with the LLM. The future actions are sampled similarly, except that all previous sub-questions and sub-answers need to be appended to the prompt, following the formats of in-context demonstration. The next state prediction, i.e., answering the subquestion, works in the same way.</p><p>Given a question, please decompose it into sub-questions. For each sub-question, please answer it in a complete sentence, ending with "The answer is". When the original question is answerable, please start the subquestion with "Now we can answer the question: ".</p><p>Question 1: Four years ago, Kody was only half as old as Mohamed. If Mohamed is currently twice as 30 years old, how old is Kody? Question 1.1: How old is Mohamed? Answer 1.1: He is currently 30 * 2 = 60 years old. The answer is 60. Question 1.2: How old was Mohamed four years ago? Answer 1.2: Four years ago, he must have been 60 -4 = 56 years old. The answer is 56. Question 1.3: How old was Kody four years ago? Answer 1.3: Kody was half as old as Mohamed four years ago. Thus, Kody was 56 / 2 = 28 years old. The answer is 28. Question 1.4: Now we can answer the question: How old is Kody? Answer 1.4: She is currently 28 + 4 = 32 years old. The answer is 32.</p><p>Question 2: On a moonless night, three fireflies danced in the evening breeze. They were joined by four less than a dozen more fireflies before two of the fireflies flew away. How many fireflies remained? Question 2.1: How many fireflies joined? Answer 2.1: The fireflies were joined by four less than a dozen more fireflies, which are 12 -4 = 8 fireflies. The answer is 8. Question 2.2: Now we can answer the question: How many fireflies remained? Answer 2.2: Three fireflies were dancing originally. They were joined by 8 fireflies before two of them flew away. So there were 3 + 8 -2 = 9 remaining. The answer is 9.</p><p>Question 3: Ali has four $10 bills and six $20 bills that he saved after working for Mr. James on his farm. Ali gives her sister half of the total money he has and uses 3/5 of the remaining amount of money to buy dinner. Calculate the amount of money he has after buying the dinner. Question 3.1: How much money does Ali have in total? Answer 3.1: Ali has four $10 bills and six $20 bills. So he has 4 * 10 + 6 * 20 = 160 dollars. The answer is 160. Question 3.2: How much money does Ali give to his sister? Answer 3.2: Ali gives half of the total money he has to his sister. So he gives 160 / 2 = 80 dollars to his sister. The answer is 80. Question 3.3: How much money does Ali have after giving his sister the money? Answer 3.3: After giving his sister the money, Ali has 160 -80 = 80 dollars left. The answer is 80. Question 3.4: How much money does Ali use to buy dinner? Answer 3.4: Ali uses 3/5 of the remaining amount of money to buy dinner. So he uses 80 * 3/5 = 48 dollars to buy dinner. The answer is 48. Question 3.5: Now we can answer the question: How much money does Ali have after buying the dinner? Answer 3.5: After buying the dinner, Ali has 80 -48 = 32 dollars left. The answer is 32.</p><p>Question 4: A car is driving through a tunnel with many turns. After a while, the car must travel through a ring that requires a total of 4 right-hand turns. After the 1st turn, it travels 5 meters. After the 2nd turn, it travels 8 meters. After the 3rd turn, it travels a little further and at the 4th turn, it immediately exits the tunnel. If the car has driven a total of 23 meters around the ring, how far did it have to travel after the 3rd turn?</p><p>Question 4.1: How far did the car travel except for the 3rd turn? Answer 4.1: It travels 5 meters after the 1st, 8 meters after the 2nd, and 0 meters after the 4th turn. It's a total of 5 + 8 + 0 = 13 meters. The answer is 13. Question 4.2: Now we can answer the question: How far did the car have to travel after the 3rd turn? Answer 4.2: The car has driven a total of 23 meters around the ring. It travels 13 meters except for the 3rd turn. So it has to travel 23 -13 = 10 meters after the 3rd turn.</p><p>The answer is 10.</p><p>Question 5: &lt;question&gt;</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.3 Logical Reasoning</head><p>We show the prompt for action proposal, action likelihood calculation, and next state prediction. &lt;fact&gt; and &lt;query&gt; would be instantiated with the problem.</p><p>Given a list of facts, and a current claim, output one possible fact as the next step. Be sure to copy the exact sentences in the facts. Do not change any wording. Do not create your own words.</p><p>Facts 1: Each lepidopteran is an insect. Each arthropod is a protostome. Every animal is multicellular. Protostomes are invertebrates. Each whale is bony.</p><p>Each painted lady is a butterfly. Invertebrates are animals. Butterflies are lepidopterans. Each insect is six-legged. Every insect is an arthropod. Arthropods are not bony. Query 1: True or false: Sally is not bony. Claim 1.1: Sally is an insect. Next 1.1: Each insect is six-legged. Claim 1.2: Sally is a butterfly. Next 1.2: Butterflies are lepidopterans. Claim 1.3: Sally is a lepidopteran. Next 1.3: Each lepidopteran is an insect. Claim 1.4: Sally is not bony. Next 1.4: Finish. Claim 1.5: Sally is an arthropod. Next 1.5: Arthropods are not bony. Claim 1.6: Sally is a painted lady. Next 1.6: Each painted lady is a butterfly. Facts 2: Prime numbers are natural numbers. Every Mersenne prime is not composite. Imaginary numbers are not real. Every real number is a number. Natural numbers are integers. Every real number is real. Every Mersenne prime is a prime number. Natural numbers are positive. Prime numbers are not composite. Integers are real numbers. Query 2: True or false: 127 is not real. Claim 2.1: 127 is real. Next 2.1: Finish. Claim 2.1: 127 is a natural number. Next 2.1: Natural numbers are integers. Claim 2.2: 127 is a prime number. Next 2.2: Prime numbers are natural numbers. Claim 2.3: 127 is a real number. Next 2.3: Every real number is real. Claim 2.4: 127 is a Mersenne prime. Next 2.4: Every Mersenne prime is a prime number. Claim 2.5: 127 is an integer. Next 2.5: Integers are real numbers. Facts 3: Lepidopterans are insects.</p><p>Every animal is multicellular. Each insect is an arthropod. Each invertebrate is an animal. Insects are six-legged. Arthropods are small. Arthropods are invertebrates. Each butterfly is a lepidopteran. Whales are not small. Query 3: True or false: Polly is not small. Claim 3.1: Polly is an arthropod. Next 3.1: Arthropods are small. Claim 3.2: Polly is an insect. Next 3.2: Each insect is an arthropod. Claim 3.3: Polly is small. Next 3.3: Finish.</p><p>Claim 3.4: Polly is a lepidopteran. Next 3.4: Lepidopterans are insects. Facts 4: Every cat is a feline. Mammals are vertebrates. Bilaterians are animals. Vertebrates are chordates. Carnivores are mammals. Mammals are not cold-blooded. Each chordate is a bilaterian. Every feline is a carnivore. Snakes are cold-blooded. Animals are not unicellular. Every carnivore is not herbivorous. Query 4: True or false: Fae is not cold-blooded. Claim 4.1: Fae is a feline. Next 4.1: Every feline is a carnivore. Claim 4.2: Fae is not cold-blooded. Next 4.2: Finish. Claim 4.2: Fae is a mammal. Next 4.2: Mammals are not cold-blooded. Claim 4.3: Fae is a cat. Next 4.3: Every cat is a feline. Claim 4.4: Fae is a carnivore. Next 4.4: Carnivores are mammals. Facts 5: Prime numbers are prime. Real numbers are numbers. Every integer is a real number. Real numbers are not imaginary. Mersenne primes are prime numbers. Complex numbers are imaginary. Each prime number is a natural number. Natural numbers are positive. Each Mersenne prime is prime. Each natural number is an integer. Query 5: True or false: 7 is imaginary. Claim 5.1: 7 is not imaginary. Next 5.1: Finish. Claim 5.1: 7 is a natural number. Next 5.1: Each natural number is an integer. Claim 5.2: 7 is a prime number. Next 5.2: Each prime number is a natural number. Claim 5.3: 7 is a real number. Next 5.3: Real numbers are not imaginary. Claim 5.4: 7 is an integer. Next 5.4: Every integer is a real number. Facts 6: Spiders are not six-legged. Insects are six-legged. Insects are arthropods. Every animal is not unicellular. Invertebrates are animals. Lepidopterans are insects. Every arthropod is segmented. Arthropods are invertebrates. Every butterfly is a lepidopteran. Stella is a butterfly. Query 6: True or false: Stella is six-legged. Claim 6.1: Stella is an insect. Next 6.1: Insects are six-legged. Claim 6.2: Stella is a lepidopteran. Next 6.2: Lepidopterans are insects. Claim 6.3: Stella is a butterfly. Next 6.3: Every butterfly is a lepidopteran. Claim 6.4: Stella is six-legged. Next 6.4: Finish. Facts 7: &lt;fact&gt; Query 7: &lt;query&gt;</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Related work: world model and planning</head><p>Recent years have witnessed successful applications of planning algorithms <ref type="bibr" target="#b42">(Sekar et al., 2020)</ref>, such as AlphaZero <ref type="bibr" target="#b44">(Silver et al., 2017)</ref>, and MuZero <ref type="bibr" target="#b40">(Schrittwieser et al., 2020)</ref>. These algorithms are typically based on tree-structured search and are designed to effectively maintain the balance of exploration and exploitation. Knowledge of transition dynamics is the prerequisite for planning, and recent research on model-based reinforcement learning propose to learn a world model (or dynamics model) to plan or assist policy learning. To improve sample efficiency, previous research attempts to learn a world model from offline trajectories, and directly learn a policy within the world model <ref type="bibr">(Ha and Schmidhuber, 2018a,b)</ref>. With latent imagination in a world model, RL agents can be trained to solve long-horizon tasks <ref type="bibr" target="#b14">(Hafner et al., 2019</ref><ref type="bibr" target="#b15">(Hafner et al., , 2020))</ref>.</p><p>Besides, the world model is also shown to be helpful to physical robot learning <ref type="bibr" target="#b54">(Wu et al., 2023)</ref>. In this paper, we use LLMs as world models and apply a planning algorithm to search for a reasoning path. This is similar in spirit to model predictive control <ref type="bibr" target="#b5">(Camacho and Alba, 2013)</ref>. Compared with previous works, our framework uses general LLMs as the world model and can be adapted to a wide </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E Adaptive Prompting</head><p>Through our preliminary experiments, we observed that the performance of LLMs is impacted by the discrepancy in difficulty between demonstration cases and the test cases. In the case of RAP, when a new state is predicted, we reformulate the remaining task as a new test case, initialized with the predicted new state. This new test case would require a smaller minimum number of actions, leading to a disparity in the distribution of the demonstration cases and the new cases. To mitigate this issue, we pre-compute the intermediate states of the demonstration cases beforehand. During inference, we truncate the trace from the beginning for each new state in an iteration, which reduces the minimum action number of the demonstration cases as the search tree deepens. This technique significantly enhances the performance of RAP, especially for more intricate problems, which are more susceptible to distribution mismatches.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F Reward Choice</head><p>Results. We conduct comprehensive experiments on rewards for plan generation (Table <ref type="table" target="#tab_2">5</ref>) and math reasoning (Table <ref type="table" target="#tab_3">6</ref>). Note that, in both tables, the first row indicates the setting we use in the main experiments. As shown in Table <ref type="table" target="#tab_2">5</ref>, the combination of action likelihood and task-specific reward (row 1) can significantly outperform the single reward baselines (row 3, 4, 5). Interestingly, adding the self-evaluation reward can further improve the performance slightly (row 2). Furthermore, as the results on the first 300 samples of GSM8k shown in Table <ref type="table" target="#tab_3">6</ref>, we can see adding either action likelihood (row 3) or self-evaluation (row 1) on top of confidence reward (row 2) can boost the RAP performance of only using confidence reward (row 1) with one iteration, but action likelihood reward downgrades the accuracy with more iterations. The self-evaluation reward leads to the best performance overall. This indicates the importance of self-evaluation reward in guiding reasoning as an effective and computationally efficient prior to exploration.</p><p>Self-evaluation and action likelihood. The rewards of self-evaluation and action likelihood are of particular interest, as they can be applied to a wide range of reasoning tasks. Generally, the best usage and combination with other rewards require empirical design and understanding of the task nature, and their effectiveness can vary significantly across different tasks. Here, we provide some intuitions behind the reward choices: (a) For the problems in which one reasoning step is short and structured, the action likelihood can be very indicative. Otherwise, it may be disturbed by unimportant tokens and become unreliable. For instance, a single step within the Blocksworld domain typically adheres to specific patterns (e.g., PICK/PUT/STACK a block. . . ), rendering the action likelihood indicative. However, in the math domain, a reasoning step is expressed in natural language sentences, allowing for greater freedom and potentially introducing noise.</p><p>(b) For the problems where it's easier to recognize some errors afterward than avoid them during generation, self-evaluation emerges as a helpful mechanism for enhancing reasoning accuracy. In mathematical reasoning, LLMs may struggle to generate a correct reasoning step in the first place, but the detection of calculation or logic errors is more feasible. In Blocksworlds, however, assessing the quality of a candidate action is not straightforward and still requires multi-step reasoning. This characteristic diminishes the accuracy of the selfevaluation reward, making it less helpful especially given that likelihood already provides a good intuition for search.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: An overview of Reasoning via Planning (RAP). Compared with previous LLM reasoning methods like Chain-of-Thought (Wei et al., 2022), we explicitly model the world state from a world model (repurposed from the language model), and leverage advanced planning algorithms to solve the reasoning problems.</figDesc><graphic coords="2,139.83,154.70,92.17,74.46" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: RAP for plan generation in Blocksworld (left), math reasoning in GSM8K (middle), and logical reasoning in PrOntoQA (right).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: An illustration of the four phases in an iteration in MCTS planning (Section 3.3).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><figDesc>Figure3illustrates four operations in each iteration to expand the tree and update Q values. The process continues until a specified computational budget (e.g., the number of iterations) is reached, and the resulting traces are acquired from the tree. More details and the pseudo-code of the planning algorithm are given in Appendix A and Algorithm 1.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Comparing reasoning traces in Blocksworld from CoT (left) and RAP (right).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Results on GSM-8K, with different numbers of sampled paths or iterations.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Q</head><figDesc>* (st, at) = max s t ,a t ,r t ,...,s l ,a l ,r l ,s l+1 avg(rt, . . . , r l ). (2)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 2 :</head><label>2</label><figDesc>Results on GSM8k. The superscripts indicate the number of samples or iterations.</figDesc><table><row><cell></cell><cell>50</cell><cell></cell><cell></cell></row><row><cell></cell><cell>45</cell><cell></cell><cell></cell></row><row><cell>Accuracy</cell><cell>25 30 40 35</cell><cell></cell><cell cols="2">Method Least-to-most Chain-of-thoughts RAP RAP (aggr)</cell></row><row><cell></cell><cell>1</cell><cell>2</cell><cell>3 Number of samples (iterations) 4 5 6 7 8</cell><cell>9 10</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 3 :</head><label>3</label><figDesc>Results on ProntoQA.</figDesc><table><row><cell>Method</cell><cell cols="2">Pred Acc Proof Acc</cell></row><row><cell>CoT</cell><cell>87.8</cell><cell>64.8</cell></row><row><cell>CoT + SC</cell><cell>89.8</cell><cell>-</cell></row><row><cell>RAP (Ours)</cell><cell>94.2</cell><cell>78.8</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 5 :</head><label>5</label><figDesc>Ablation study on Blocksworld. R 1 is action likelihood reward, R 2 is task-specific reward, and R 3 is self-evaluation reward.R 1 R 2 R 3 Success</figDesc><table><row><cell>✓</cell><cell>✓</cell><cell>✗</cell><cell>0.88</cell></row><row><cell>✓</cell><cell>✓</cell><cell>✓</cell><cell>0.91</cell></row><row><cell>✓</cell><cell>✗</cell><cell>✗</cell><cell>0.46</cell></row><row><cell>✗</cell><cell>✓</cell><cell>✗</cell><cell>0.21</cell></row><row><cell>✗</cell><cell>✗</cell><cell>✓</cell><cell>0.14</cell></row><row><cell>✗</cell><cell>✗</cell><cell>✗</cell><cell>0.02</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 6 :</head><label>6</label><figDesc>Ablation study on GSM8k (first 300 examples). R 1 is state transition confidence reward, R 2 is action likelihood reward, and R 3 is self-evaluation reward.R 1 R 2 R 3 RAP (1) RAP (10) +aggr -domain reasoning tasks.<ref type="bibr" target="#b55">Xiang et al. (2023)</ref> propose to train LLMs wih a external world model to gain embodied experience, while RAP focuses on the inference stage and is compatible with any training methods.</figDesc><table><row><cell>✓</cell><cell>✗</cell><cell>✓</cell><cell>0.410</cell><cell>0.450</cell><cell>0.503</cell></row><row><cell>✓</cell><cell>✗</cell><cell>✗</cell><cell>0.350</cell><cell>0.447</cell><cell>0.490</cell></row><row><cell>✓</cell><cell>✓</cell><cell>✗</cell><cell>0.373</cell><cell>0.423</cell><cell>0.443</cell></row><row><cell cols="2">range of open</cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitations</head><p>In this work, we mainly focus on utilizing frozen LLMs, whose abilities might be bounded by the pre-training. In the future, it is worth exploring how to fine-tune LLMs to better reason and serve as a world model <ref type="bibr" target="#b55">(Xiang et al., 2023)</ref>, as well as how to combine external tools <ref type="bibr">(Hao et al., 2023a;</ref><ref type="bibr" target="#b39">Schick et al., 2023)</ref> with RAP to solve more complex realworld problems.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Ethics Statement</head><p>In this paper, we primarily focus on the applications on plan generation, mathematical reasoning, and logical reasoning, posing no significant ethical concerns. We recognize that future research on border applications of reasoning with LLMs may pose a risk of misuse, and we recommend careful consideration of all aspects of safety before relevant techniques are applied to the real world.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Working memory</title>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Baddeley</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Science</title>
+		<imprint>
+			<biblScope unit="volume">255</biblScope>
+			<biblScope unit="issue">5044</biblScope>
+			<biblScope unit="page" from="556" to="559" />
+			<date type="published" when="1992">1992</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Mental imagery and the varieties of amodal perception</title>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Eamon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Briscoe</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Pacific Philosophical Quarterly</title>
+		<imprint>
+			<biblScope unit="volume">92</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="153" to="173" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sébastien</forename><surname>Bubeck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Varun</forename><surname>Chandrasekaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronen</forename><surname>Eldan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Gehrke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Horvitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ece</forename><surname>Kamar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yin</forename><surname>Tat Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Lundberg</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.12712</idno>
+		<title level="m">Sparks of artificial general intelligence: Early experiments with gpt-4</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">The computational complexity of propositional strips planning</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Bylander</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artificial Intelligence</title>
+		<imprint>
+			<biblScope unit="volume">69</biblScope>
+			<biblScope unit="issue">1-2</biblScope>
+			<biblScope unit="page" from="165" to="204" />
+			<date type="published" when="1994">1994</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Model predictive control</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Eduardo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><surname>Camacho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alba</forename><surname>Bordons</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Springer science &amp; business media</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaurav</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Barham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyung</forename><forename type="middle">Won</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Gehrmann</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.02311</idno>
+		<title level="m">Palm: Scaling language modeling with pathways</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.14168</idno>
+		<title level="m">Training verifiers to solve math word problems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Efficient selectivity and backup operators in monte-carlo tree search</title>
+		<author>
+			<persName><forename type="first">Rémi</forename><surname>Coulom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Computers and Games: 5th International Conference</title>
+		<meeting><address><addrLine>Turin, Italy</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2006-05-29">2007. 2006. May 29-31, 2006</date>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="page" from="72" to="83" />
+		</imprint>
+	</monogr>
+	<note>CG</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Paxton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiqi</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.06247</idno>
+		<title level="m">Task and motion planning with large language models for object rearrangement</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">Wojciech</forename><forename type="middle">W</forename><surname>Gasparski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tufan</forename><surname>Orel</surname></persName>
+		</author>
+		<title level="m">Designology: Studies on Planning for Action</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="volume">1</biblScope>
+		</imprint>
+	</monogr>
+	<note>Transaction Publishers</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Mental models</title>
+		<author>
+			<persName><forename type="first">Dedre</forename><surname>Gentner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Albert</forename><forename type="middle">L</forename><surname>Stevens</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<publisher>Psychology Press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">2018a. Recurrent world models facilitate policy evolution</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Ha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jürgen</forename><surname>Schmidhuber</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="page">31</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">David</forename><surname>Ha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jürgen</forename><surname>Schmidhuber</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1803.10122</idno>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">World models. arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Danijar</forename><surname>Hafner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Ba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Norouzi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1912.01603</idno>
+		<title level="m">Dream to control: Learning behaviors by latent imagination</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Mastering atari with discrete world models</title>
+		<author>
+			<persName><forename type="first">Danijar</forename><surname>Hafner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Norouzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Ba</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2010.02193</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">2023a. Toolkengpt: Augmenting frozen language models with massive tools via tool embeddings. Advances in neural information processing systems</title>
+		<author>
+			<persName><forename type="first">Shibo</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiting</forename><surname>Hu</surname></persName>
+		</author>
+		<imprint>
+			<biblScope unit="page">36</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Eric Xing, and Zhiting Hu. 2023b. Bertnet: Harvesting knowledge graphs with arbitrary relations from pretrained language models</title>
+		<author>
+			<persName><forename type="first">Shibo</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiwen</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiyan</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hengzhe</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: ACL 2023</title>
+		<imprint>
+			<biblScope unit="page" from="5000" to="5015" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">K</forename><surname>Mark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">G</forename><surname>Abel</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Correa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><forename type="middle">D</forename><surname>Michael L Littman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><forename type="middle">L</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Griffiths</surname></persName>
+		</author>
+		<title level="m">Control of mental representations in human planning. arXiv e-prints</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page">2105</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">-Chuan</forename><surname>Chang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.10403</idno>
+		<title level="m">Towards reasoning in large language models: A survey</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harris</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacky</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Chebotar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2207.05608</idno>
+		<title level="m">Inner monologue: Embodied reasoning through planning with language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Bonsai trees in your head: how the pavlovian system sculpts goal-directed choices by pruning decision trees</title>
+		<author>
+			<persName><forename type="first">Quentin Jm</forename><surname>Huys</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Neir</forename><surname>Eshel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O'</forename><surname>Elizabeth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Nions</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Sheridan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><forename type="middle">P</forename><surname>Dayan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Roiser</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PLoS computational biology</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page">1002410</biblScope>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Task planning in robotics: an empirical comparison of pddl-and asp-based systems</title>
+		<author>
+			<persName><forename type="first">Yu-Qian</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shi-Qi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piyush</forename><surname>Khandelwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Stone</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Frontiers of Information Technology &amp; Electronic Engineering</title>
+		<imprint>
+			<biblScope unit="volume">20</biblScope>
+			<biblScope unit="page" from="363" to="373" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Mental models and human reasoning</title>
+		<author>
+			<persName><forename type="first">Johnson-Laird</forename><surname>Philip</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proceedings of the National Academy of Sciences</title>
+		<imprint>
+			<biblScope unit="volume">107</biblScope>
+			<biblScope unit="issue">43</biblScope>
+			<biblScope unit="page" from="18243" to="18250" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Mental models: Towards a cognitive science of language, inference, and consciousness</title>
+		<author>
+			<persName><forename type="first">Philip</forename><surname>Nicholas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johnson-Laird</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1983">1983</date>
+			<publisher>Harvard University Press</publisher>
+			<biblScope unit="volume">6</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Gpt is becoming a turing machine: Here are some ways to program it</title>
+		<author>
+			<persName><forename type="first">Ana</forename><surname>Jojic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nebojsa</forename><surname>Jojic</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.14310</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Bandit based monte-carlo planning</title>
+		<author>
+			<persName><forename type="first">Levente</forename><surname>Kocsis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Csaba</forename><surname>Szepesvári</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Machine Learning: ECML 2006: 17th European Conference on Machine Learning</title>
+		<meeting><address><addrLine>Berlin, Germany</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2006-09-18">2006. September 18-22. 2006</date>
+			<biblScope unit="volume">17</biblScope>
+			<biblScope unit="page" from="282" to="293" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Takeshi</forename><surname>Kojima</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shane</forename><surname>Shixiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Machel</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutaka</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusuke</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Iwasawa</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.11916</idno>
+		<title level="m">Large language models are zero-shot reasoners</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Lecun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">A path towards autonomous machine intelligence version 0.9</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page">62</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">Belinda Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Andreas</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.10012</idno>
+		<title level="m">Language modeling with latent situations</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqian</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiqi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joydeep</forename><surname>Biswas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Stone</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.11477</idno>
+		<title level="m">Llm+ p: Empowering large language models with optimal planning proficiency</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qing</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shreya</forename><surname>Havaldar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Stein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Delip</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marianna</forename><surname>Apidianaki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Callison-Burch</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2301.13379</idno>
+		<title level="m">Faithful chain-ofthought reasoning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Eiji Uchibe, and Jun Morimoto. 2022. Deep learning, reinforcement learning, and world models</title>
+		<author>
+			<persName><forename type="first">Yutaka</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Lecun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maneesh</forename><surname>Sahani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Doina</forename><surname>Precup</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Masashi</forename><surname>Sugiyama</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Neural Networks</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Situations, actions, and causal laws</title>
+		<author>
+			<persName><forename type="first">John</forename><surname>Mccarthy</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1963">1963</date>
+			<publisher>STANFORD UNIV CA DEPT OF COMPUTER SCIENCE</publisher>
+		</imprint>
+	</monogr>
+	<note type="report_type">Technical report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Grégoire</forename><surname>Mialon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christoforos</forename><surname>Nalmpantis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ram</forename><surname>Pasunuru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberta</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Baptiste Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Asli</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Celikyilmaz</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.07842</idno>
+		<title level="m">Augmented language models: a survey</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<title level="m">Gpt-4 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">Debjit</forename><surname>Paul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mete</forename><surname>Ismayilzada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxime</forename><surname>Peyrard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beatriz</forename><surname>Borges</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Bosselut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>West</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boi</forename><surname>Faltings</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.01904</idno>
+		<title level="m">Refiner: Reasoning feedback on intermediate representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Puig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Ra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marko</forename><surname>Boben</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaman</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tingwu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sanja</forename><surname>Fidler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonio</forename><surname>Torralba</surname></persName>
+		</author>
+		<title level="m">Virtualhome: Simulating household activities via programs</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Language models are greedy reasoners: A systematic formal analysis of chain-of-thought</title>
+		<author>
+			<persName><forename type="first">Abulhair</forename><surname>Saparov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">He</forename><surname>He</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.01240</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberta</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicola</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Scialom</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.04761</idno>
+		<title level="m">Toolformer: Language models can teach themselves to use tools</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Mastering atari, go, chess and shogi by planning with a learned model</title>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Hubert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karen</forename><surname>Simonyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurent</forename><surname>Sifre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Schmitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Guez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Lockhart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Demis</forename><surname>Hassabis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thore</forename><surname>Graepel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="volume">588</biblScope>
+			<biblScope unit="issue">7839</biblScope>
+			<biblScope unit="page" from="604" to="609" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Action, perception and the brain: Adaptation and cephalic expression</title>
+		<author>
+			<persName><forename type="first">Jay</forename><surname>Schulkin</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<publisher>Springer</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Planning to explore via self-supervised world models</title>
+		<author>
+			<persName><forename type="first">Ramanan</forename><surname>Sekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleh</forename><surname>Rybkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kostas</forename><surname>Daniilidis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danijar</forename><surname>Hafner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deepak</forename><surname>Pathak</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="8583" to="8592" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">Reflexion: an autonomous agent with dynamic memory and self-reflection</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beck</forename><surname>Labash</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2303.11366</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Mastering chess and shogi by self-play with a general reinforcement learning algorithm</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Hubert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Guez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Lanctot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurent</forename><surname>Sifre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dharshan</forename><surname>Kumaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thore</forename><surname>Graepel</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1712.01815</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ishika</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Valts</forename><surname>Blukis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arsalan</forename><surname>Mousavian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ankit</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danfei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Tremblay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dieter</forename><surname>Fox</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Thomason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Animesh</forename><surname>Garg</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2209.11302</idno>
+		<title level="m">Progprompt: Generating situated robot task plans using large language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Cognitive maps in rats and men</title>
+		<author>
+			<persName><surname>Edward C Tolman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Psychological review</title>
+		<imprint>
+			<biblScope unit="volume">55</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page">189</biblScope>
+			<date type="published" when="1948">1948</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thibaut</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gautier</forename><surname>Izacard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Martinet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marie-Anne</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothée</forename><surname>Lacroix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baptiste</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Hambro</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.13971</idno>
+		<title level="m">Faisal Azhar, et al. 2023a. Llama: Open and efficient foundation language models</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Albert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amjad</forename><surname>Almahairi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasmine</forename><surname>Babaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolay</forename><surname>Bashlykov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soumya</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prajjwal</forename><surname>Bhargava</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.09288</idno>
+		<title level="m">Shruti Bhosale, et al. 2023b. Llama 2: Open foundation and fine-tuned chat models</title>
+		<imprint/>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<title level="m" type="main">Large language models still can&apos;t plan (a benchmark for llms on planning and reasoning about change)</title>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Valmeekam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alberto</forename><surname>Olmo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarath</forename><surname>Sreedharan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Subbarao</forename><surname>Kambhampati</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2206.10498</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<title level="m" type="main">On the planning abilities of large language models (a critical investigation with a proposed benchmark)</title>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Valmeekam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarath</forename><surname>Sreedharan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Marquez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alberto</forename><surname>Olmo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Subbarao</forename><surname>Kambhampati</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.06706</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title level="m" type="main">Self-consistency improves chain of thought reasoning in language models</title>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.11171</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.11903</idno>
+		<title level="m">Chain of thought prompting elicits reasoning in large language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<title level="m" type="main">Generating sequences by learning to self-correct</title>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Welleck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ximing</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>West</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Faeze</forename><surname>Brahman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianxiao</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Khashabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.00053</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Daydreamer: World models for physical robot learning</title>
+		<author>
+			<persName><forename type="first">Philipp</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alejandro</forename><surname>Escontrela</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danijar</forename><surname>Hafner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ken</forename><surname>Goldberg</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="2226" to="2240" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<analytic>
+		<title level="a" type="main">Language models meet world models: Embodied experiences enhance language models</title>
+		<author>
+			<persName><forename type="first">Jiannan</forename><surname>Xiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhua</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianmin</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zirui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zichao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiting</forename><surname>Hu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page">36</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<title level="m" type="main">Tree of thoughts: Deliberate problem solving with large language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><forename type="middle">L</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.10601</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<monogr>
+		<title level="m" type="main">Least-to-most prompting enables complex reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Bousquet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.10625</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<monogr>
+		<title level="m" type="main">Solving math word problem via cooperative reasoning induced language models</title>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruyi</forename><surname>Gan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxing</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujiu</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.16257</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

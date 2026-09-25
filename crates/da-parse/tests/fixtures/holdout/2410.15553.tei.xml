@@ -1,0 +1,1520 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Multi-IF: Benchmarking LLMs on Multi-Turn and Multilingual Instructions Following</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-11-14">November 14, 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Yun</forename><surname>He</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Di</forename><surname>Jin</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Chaoqi</forename><surname>Wang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Chloe</forename><surname>Bi</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Karishma</forename><surname>Mandyam</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Hejia</forename><surname>Zhang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Chenguang</forename><surname>Zhu</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Ning</forename><surname>Li</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Tengyu</forename><surname>Xu</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Hongjiang</forename><surname>Lv</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Shruti</forename><surname>Bhosale</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Abinav</forename><surname>Karthik</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Eryk</forename><surname>Sankararaman</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Melanie</forename><surname>Helenowski</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Aditya</forename><surname>Kambadur</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Hao</forename><surname>Tayade</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Han</forename><surname>Ma</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Sinong</forename><surname>Fang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Meta</forename><surname>Wang</surname></persName>
+						</author>
+						<author>
+							<persName><surname>Genai</surname></persName>
+						</author>
+						<title level="a" type="main">Multi-IF: Benchmarking LLMs on Multi-Turn and Multilingual Instructions Following</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-11-14">November 14, 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">A5526CEEECB57DCE59D90F37BC83EFA1</idno>
+					<idno type="arXiv">arXiv:2410.15553v2[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:49+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large Language Models (LLMs) have demonstrated impressive capabilities in various tasks, including instruction following, which is crucial for aligning model outputs with user expectations. However, evaluating LLMs' ability to follow instructions remains challenging due to the complexity and subjectivity of human language. Current benchmarks primarily focus on single-turn, monolingual instructions, which do not adequately reflect the complexities of real-world applications that require handling multi-turn and multilingual interactions. To address this gap, we introduce Multi-IF, a new benchmark designed to assess LLMs' proficiency in following multi-turn and multilingual instructions. Multi-IF, which utilizes a hybrid framework combining LLM and human annotators, expands upon the IFEval by incorporating multi-turn sequences and translating the English prompts into another 7 languages, resulting in a dataset of 4,501 multilingual conversations, where each has three turns. Our evaluation of 14 state-of-the-art LLMs on Multi-IF reveals that it presents a significantly more challenging task than existing benchmarks. All the models tested showed a higher rate of failure in executing instructions correctly with each additional turn. For example, o1-preview drops from 0.877 at the first turn to 0.707 at the third turn in terms of average accuracy over all languages. Moreover, languages with non-Latin scripts (Hindi, Russian, and Chinese) generally exhibit higher error rates, suggesting potential limitations in the models' multilingual capabilities. We release Multi-IF prompts a and the evaluation code b base to encourage further research in this critical area.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Large language models (LLMs) have proven their remarkable abilities in addressing various kinds of tasks in both zero-shot and few-shots settings <ref type="bibr" target="#b0">(Achiam et al., 2023;</ref><ref type="bibr" target="#b25">Reid et al., 2024;</ref><ref type="bibr" target="#b7">Dubey et al., 2024)</ref>. Among all capabilities, instruction following is usually considered as one of the most crucial tasks for LLM applications, since it determines how well the model outputs align with user requirements. In real-world use of LLMs, user inputs usually come with various kinds of instructions to specify constraints on the model output. Discrepancies or misunderstandings in following instructions can lead to unintended outputs, dissatisfying users or even causing severe catastrophes in crucial scenarios like healthcare or autonomous systems. Therefore, ensuring that LLMs can consistently adhere to given directives is among the top priorities. To develop the instruction following capability, we first need to build a reliable and comprehensive framework to evaluate a model's ability to follow instructions.</p><p>However, evaluating the instruction following ability of LLMs is a non-trivial task <ref type="bibr" target="#b29">(Sun et al., 2023)</ref>. The biggest challenges lie in the complexity, subjectivity, and ambiguity of human language. The same text can be interpreted differently, leading to varying judgments when evaluating whether a model has followed instructions, especially when instructions are subjective, such as "write in a humorous tone". To circumvent this challenge, a line of work, such as IFEval <ref type="bibr" target="#b42">(Zhou et al., 2023)</ref>, focused on evaluating a LLM's ability to follow "verifiable instructions", which are defined as instructions amenable to objective verification of compliance. Examples of such instructions can be "the response should be in three paragraphs", "the response should be in more than 300 words", etc. Based on these verifiable instructions, we can build an automatic, quantifiable, and accurate evaluation framework to assess a LLM's ability to follow directions.</p><p>Moreover, in real-world user-AI conversation settings, a majority of interactions happen in a long multi-turn format, e.g., 10+ turns. Unfortunately, almost all existing instruction following benchmarks consist of only single-turn instructions <ref type="bibr" target="#b42">(Zhou et al., 2023;</ref><ref type="bibr" target="#b9">Jiang et al., 2023;</ref><ref type="bibr" target="#b24">Qin et al., 2024;</ref><ref type="bibr" target="#b35">Wen et al., 2024)</ref>, causing insufficient evaluation of the LLMs' ability to follow multi-turn instructions. Besides, a majority of these benchmarks are in single languages, such as English only <ref type="bibr" target="#b40">(Li et al., 2023;</ref><ref type="bibr" target="#b41">Zheng et al., 2024)</ref>, Chinese only <ref type="bibr">(Liu et al., 2023a)</ref>, etc. These drawbacks make them insufficient to evaluate a real-world LLM based chatbot or service that serves billions of users across the world, such as Meta AI, Gemini, ChatGPT, etc.</p><p>In this work, we introduce Multi-IF, a new multi-turn and multilingual benchmark for evaluating the proficiency of LLMs in instruction following. Based on IFEval <ref type="bibr" target="#b42">(Zhou et al., 2023)</ref>, a dataset of English single-turn prompts with verifiable instructions, we propose a framework to systematically expand it into a dataset of multi-turn and multilingual prompts. Specifically, we first expand each single turn user prompt into a multi-turn user prompt via random sampling and LLM based prompt revision and expansion. After that, we remove conflicted instructions between turns by prompting an LLM for automatic filtering followed by human auditing. Finally, the English-only dataset is translated into other 7 languages: French, Russian, Hindi, Italian, Portuguese, Spanish and Chinese. The translation process is first performed by a LLM and then audited by professional human annotators. Overall, we created 4,501 multi-turn prompts in 8 languages. Figure <ref type="figure">4</ref> shows one example for each language.</p><p>Based on Multi-IF, we report the evaluation results of several state-of-the-art (SOTA) LLMs, including Llama 3.1 <ref type="bibr" target="#b7">(Dubey et al., 2024)</ref>, GPT-4o <ref type="bibr" target="#b0">(Achiam et al., 2023)</ref>, and OpenAI o1 (OpenAI). Our findings indicate that:</p><p>• Multi-IF presents a significantly more challenging instruction-following benchmark than existing ones, such as IFEval, highlighting considerable room for improvement in this area.</p><p>• LLMs exhibit difficulty maintaining high accuracy in following instructions as the number of turns increases. Our results demonstrate a growing failure rate among LLMs to follow instructions correctly with each additional turn. Moreover, strong reasoning capabilities are beneficial for recovering from errors made in prior turns.</p><p>• We observed that as the number of turns increases, LLMs increasingly forget to adhere to instructions that were successfully executed in previous turns, which contributes to the performance degradation.</p><p>• A noteworthy observation is the reduced performance of all evaluated models in non-English languages compared to English, indicating a significant opportunity for enhancement in multilingual instruction-following capabilities.</p><p>2 Related Work Evaluation Methodologies. Evaluating the instruction-following capabilities of LLMs is a critical area of research, with approaches broadly classified into three categories: human evaluation, model-based evaluation, and rule/script-based evaluation. Human evaluation involves human annotators assessing the performance of LLMs on various tasks. Studies such as <ref type="bibr" target="#b22">Ouyang et al. (2022)</ref> and <ref type="bibr" target="#b30">Taori et al. (2023)</ref> employ human evaluators to rate the quality of model responses to complex instructions. While this approach allows for nuanced judgment over a wide range of tasks, it is time-consuming, expensive, and can suffer from inconsistencies among annotators. Reproducibility is also a challenge due to variations in annotator interpretations and criteria. Other works like <ref type="bibr" target="#b40">Zheng et al. (2023)</ref> and <ref type="bibr" target="#b11">Kocmi and Federmann (2023)</ref> have explored scaling human evaluation, but the issues of cost and inconsistency remain. With advancements in LLMs, model-based rvaluation has become a popular alternative. This approach leverages a strong LLM (e.g., GPT-4) to assess the outputs of other models <ref type="bibr" target="#b10">(Jin et al., 2023;</ref><ref type="bibr" target="#b38">Xu et al., 2023;</ref><ref type="bibr">Liu et al., 2023b;</ref><ref type="bibr" target="#b9">Jiang et al., 2023;</ref><ref type="bibr" target="#b24">Qin et al., 2024;</ref><ref type="bibr" target="#b5">Chen et al., 2024;</ref><ref type="bibr" target="#b4">Chang et al., 2024;</ref><ref type="bibr" target="#b33">Wang et al., 2024;</ref><ref type="bibr" target="#b35">Wen et al., 2024;</ref><ref type="bibr" target="#b37">Xia et al., 2024)</ref>. While this method is scalable and less resource-intensive than human evaluation, it heavily depends on the correctness and objectivity of the judge model. Biases and errors inherent in the judge model can introduce inaccuracies in the evaluation <ref type="bibr" target="#b34">(Wang et al., 2023)</ref>. Additionally, the black-box nature of some judge models can limit transparency. Rule/Script-based evaluation employs predefined rules or scripts to objectively verify the outputs of LLMs against verifiable instructions <ref type="bibr" target="#b29">(Sun et al., 2023;</ref><ref type="bibr" target="#b42">Zhou et al., 2023;</ref><ref type="bibr" target="#b8">He et al., 2024)</ref>. This method provides standardized and scalable evaluation without human or model biases. However, current benchmarks in this category are often limited to single-turn interactions and predominantly in English, restricting their applicability in real-world multilingual and multi-turn conversational settings.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Multi-lingual and Multi-turn Benchmarks.</head><p>Addressing the need for broader evaluation, several multilingual and multiturn benchmarks have been developed for multilingual and conversational tasks. The XTREME benchmark <ref type="bibr" target="#b28">(Siddhant et al., 2020)</ref> and its successor XTREME-R <ref type="bibr" target="#b26">(Ruder et al., 2021)</ref> evaluate cross-lingual generalization across diverse languages. For dialogue systems, datasets like MultiWOZ <ref type="bibr" target="#b3">(Budzianowski et al., 2018)</ref> and DailyDialog <ref type="bibr" target="#b13">(Li et al., 2017)</ref> focus on multi-turn conversations but are limited to English and specific domains. Our work builds upon the rule/scriptbased evaluation method and extends it to a multi-turn and multilingual benchmark. By incorporating multiple languages and conversational turns, we provide a more comprehensive evaluation of LLMs' instruction-following capabilities, reflecting the needs of billions of users worldwide in realistic conversational scenarios. Evaluation of Multi-Turn Dialogue Systems presents unique challenges <ref type="bibr" target="#b18">(Mehri and Eskenazi, 2020)</ref>. Traditional metrics like BLEU <ref type="bibr" target="#b23">(Papineni et al., 2002)</ref> and ROUGE <ref type="bibr" target="#b14">(Lin, 2004)</ref> are insufficient for capturing the quality of conversations <ref type="bibr" target="#b15">(Liu et al., 2016)</ref>. Recent works have proposed learned metrics such as BLEURT <ref type="bibr" target="#b27">(Sellam et al., 2020)</ref> and BERTScore <ref type="bibr" target="#b39">(Zhang et al., 2019)</ref> for more accurate assessments. User simulators have also been explored to evaluate dialogue systems in a scalable manner <ref type="bibr" target="#b6">(Crook and Marin, 2017;</ref><ref type="bibr" target="#b32">Tseng et al., 2021)</ref>. Our benchmark leverages these insights to create an evaluation framework suited for multi-turn interactions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Fairness and Bias in Multilingual Models.</head><p>The expansion into multilingual evaluation raises concerns about fairness and bias in LLMs across different languages <ref type="bibr" target="#b2">(Blasi et al., 2021;</ref><ref type="bibr" target="#b36">Wu and Dredze, 2020)</ref>. Ensuring equitable performance in instruction following requires careful consideration of linguistic and cultural nuances. Our benchmark aims to highlight these issues by including a diverse set of languages, thus encouraging the development of models that perform consistently across linguistic boundaries.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Multi-IF</head><p>As shown in Figure <ref type="figure" target="#fig_1">2</ref>, we propose a framework to expand a dataset of English single-turn prompts to a dataset of multilingual and multi-turn prompts. We applied it to expand IFEval <ref type="bibr" target="#b42">(Zhou et al., 2023)</ref> into a new and much more challenging benchmark called Multi-IF.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Multi-turn Expansion</head><p>This subsection will introduce how we generate more following user prompts given a single-turn prompt in two stages. By default, we generate 2 more following user prompts out of the first one to form a three-turn conversation. For English, we use the original prompt in IFEval as the first turn. As illustrated in the Figure <ref type="figure" target="#fig_2">3</ref>, we first randomly sample (random sample to diversify the instruction types as more as possible) one out of the 30 pre-defined instruction types in IFEval dataset for each following turn. For example, for turn 2 in Figure <ref type="figure" target="#fig_2">3</ref>, we randomly sampled the instruction type "All  Uppercase". Then, we prompt an LLM (Llama 3.1 405B) to generate an appropriate natural language user prompt given the sampled instruction type and all the previous turns' prompts. For example, for turn 2, we use the LLM to turn the instruction type "All Uppercase" into the natural language instruction of "Make sure your entire response is in English, and in all capital letters".</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Conflict Instructions Removal</head><p>To ensure the integrity and consistency of instructions in multi-turn prompts, we have implemented a two-step conflict resolution process. In the first step, we utilize Llama 3.1 405B to scan through the multi-turn prompts and identify any conflicting instructions across turns. For example, a conflict might occur if the first turn requests a short summary while the second turn requires a response of at least 800 words. In the second step, human verification is conducted to filter out any prompts where instructions contradict with each other across different turns. By employing this two-stage process, we guarantee that the remaining data contain multi-turn prompts with compatible and follow-able instructions, enabling LLMs to consistently adhere to the directives from the first to the last turn.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Multilingual Translation</head><p>Given the golden set of English multi-turn prompts, we use Llama 3.1 405B to translate them into other 7 languages: French, Hindi, Italian, Portuguese, Chinese, Spanish and Russian. Note that some instructions can only apply to western Languages, e.g., English, such as "the response should be in all capital letters", it is not reasonable to translate such instructions to other non-Western languages like Chinese. According to this limit, we refrain from translating certain instructions for a subset of languages.</p><p>After that, multilingual annotators evaluate all translations to ensure that (1) the translation remains faithful to the original English prompt, and (2) the translation aligns with the style of a native speaker. Additionally, these annotators undertake the task of revising the translations to meet these two criteria. There are 15% translations get rewritten in average of all languages.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">Sensitive Prompts Removal</head><p>The localized translation sometimes will generate some sensitive content in the prompts. To ensure the removal of sensitive content related to politics, religious sensitivity, and human relationships from our dataset, we initially employ a LLM to scan and flag potentially sensitive prompts. Subsequently, human annotators review these flagged prompts to accurately identify and eliminate those containing actual sensitive content.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.5">Examples and Statistics</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Turn 1</head><p>Write a funny, 150+ word ad for an attorney who helps poor people with their divorces. Highlight at least 3 text sections….</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Turn 2</head><p>Your response should end with the exact phrase: "call us today for a stress-free tomorrow!".</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Turn 3</head><p>Your response should include the following keywords: support, affordable, legal.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Turn 1</head><p>Escribe un anuncio divertido de más de 150 palabras para un abogado que ayuda a las personas pobres con sus divorcios. ….</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Turn 2</head><p>Tu respuesta debe terminar con la frase exacta: '¡llámanos hoy para un mañana sin estrés!'</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Turn 3</head><p>Tu respuesta debe incluir las siguientes palabras clave: apoyo, asequible, legal.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Turn 1</head><p>Scrivi un annuncio divertente, di più di 150 parole, per un avvocato che aiuta le persone povere….</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Turn 2</head><p>La tua risposta dovrebbe terminare con la frase esatta: 'chiamaci oggi per un domani senza stress!'</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Turn 3</head><p>La tua risposta dovrebbe includere le seguenti parole chiave: supporto…</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Turn 1</head><p>Escreva um anúncio divertido, com mais de 150 palavras, para um advogado que ajuda pessoas pobres com seus divórcios. ….</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Turn 2</head><p>Sua resposta deve terminar com a frase exata: 'ligue para nós hoje para um amanhã sem estresse!'</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Turn 3</head><p>Sua resposta deve incluir as seguintes palavras-chave: suporte, acessível, legal.</p><p>Turn 1 एक मजे दार, 150+ शब्दों का वज्ञापन लखें जो एक वकील के लए हो जो गरीब लोगों की तलाक में मदद करता है । कम से कम 3 पाठ खं डों को माकर्थ डाउन के ….</p><p>Turn 2 Yआपका उत्तर इस वाक्यां श के साथ समाप्त होना चा हए: 'आज ही हमें कॉल करें एक तनाव-मु क्त कल के लए!' Turn 3 आपका उत्तर नम्न ल खत कीव र्थ स को शा मल करना चा हए: समथर्थ न, कफायती, कानू नी.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Turn 1</head><p>Rédigez une annonce amusante de plus de 150 mots pour un avocat qui aide les personnes pauvres dans leurs….</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Turn 2</head><p>Votre réponse doit se terminer par la phrase exacte: "Appelez-nous aujour d'hui pour…</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Turn 3</head><p>Votre réponse doit inclure les mots-clés suivants : soutien, abordable, légal.</p><p>Turn 1</p><formula xml:id="formula_0">请您为一位律师撰写一篇幽默的广告， 长度超过 150字，内容是该律师为贫困人士处理离婚事 宜... Turn 2 您的回答应以以下确切短语结束："今天给我们打 电话，为一个无压力的明天！" Turn 3 您的回答应包含以下关键词：... English Spanish Italian Portuguese Hindi French Chinese Turn 1 Напишите забавное объявление длиной более 150 слов для адвоката, который помогает …</formula><p>Turn 2</p><p>Ваш ответ должен заканчиваться точной фразой: "Позвоните нам сегодня для..."</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Turn 3</head><p>Ваш ответ должен включать следующие ключевые слова: поддержка, доступный, юридический.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Russian</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Figure 4</head><p>Examples of Multi-Instruction Following (Multi-IF) tasks in various languages. Each block contains a three-turn interaction for writing a creative advertisement for a divorce attorney (instruction is synthetically generated, not real user data), with specific instructions provided in English, Spanish, Italian, Portuguese, Hindi, Russian, French, and Chinese. The tasks involve word count limits, inclusion of exact phrases, and use of specific keywords related to the attorney's services.</p><p>There are 4,501 conversations in the benchmark, each of which contains three turns. We show the distribution of languages and instruction category in Figure <ref type="figure" target="#fig_3">5</ref>. English set has more prompts than the other languages due to two reasons: (1) We expand each single-turn English prompt into two multi-turn prompts, but we only translate a part of them into other languages because some instructions can only apply to western Languages; (2) some multilingual multi-turn prompts are dropped during the sensitive prompts removal;</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head><p>In this section, we present our methodology for benchmarking state-of-the-art LLMs on the Multi-IF benchmark, detailing our evaluation protocol and metrics. We then discuss the overall results across 14 leading models, highlighting key performance trends and cross-lingual variations in multi-turn instruction following tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Evaluation Protocol and Metrics</head><p>Here is the process of how we obtain LLM responses for the multi-turn conversations: For the first turn, the prompt of this turn is presented to the LLM, and its corresponding response is collected. For each successive turn, the preceding Turn 3 Average English French Russian Hindi Italian Portuguese Spanish Chinese o1-preview 0.707 0.773 0.738 0.531 0.709 0.759 0.714 0.733 0.703 o1-mini 0.681 0.742 0.716 0.576 0.668 0.701 0.708 0.714 0.627 GPT-4o 0.631 0.701 0.653 0.501 0.621 0.647 0.645 0.645 0.631 GPT-4 0.609 0.678 0.653 0.490 0.537 0.633 0.639 0.634 0.608 Llama 3.1 405B 0.707 0.786 0.753 0.587 0.677 0.740 0.727 0.716 0.670 Llama 3.1 70B 0.668 0.749 0.718 0.519 0.640 0.710 0.696 0.689 0.622 Llama 3.1 8B 0.542 0.641 0.590 0.384 0.466 0.570 0.586 0.604 0.495 Gemini-1.5 pro 0.540 0.641 0.554 0.467 0.478 0.544 0.542 0.550 0.540 Gemini-1.5 flash 0.496 0.563 0.512 0.346 0.455 0.539 0.521 0.507 0.522 Claude-3.5 Sonnet 0.634 0.725 0.649 0.529 0.614 0.639 0.632 0.653 0.630 Claude-3-Sonnet 0.596 0.678 0.644 0.491 0.590 0.615 0.598 0.616 0.532 Claude-3-Haiku 0.542 0.612 0.554 0.485 0.484 0.549 0.579 0.567 0.504 Qwen-2.5 72B 0.609 0.672 0.645 0.527 0.497 0.648 0.645 0.626 0.608 Mistral Large 2 0.548 0.638 0.594 0.458 0.439 0.563 0.560 0.576 0.552 English French Russian Hindi Italian Portuguese Spanish Chinese o1-preview 1.62 2 2 3 1 1 2 1 1 o1-mini 3.50 4 4 2 3 4 3 3 5 GPT-4o 5.38 6 5 7 5 6 5 6 3 GPT-4 7.50 8 6 9 8 8 7 7 7 Llama 3.1 405B 1.50 1 1 1 2 2 1 2 2 Llama 3.1 70B 4.12 3 3 6 4 3 4 4 6 Llama 3.1 8B 11.38 11 11 13 12 10 10 10 14 Gemini-1.5 pro 11.62 10 12 11 11 13 13 13 10 Gemini-1.5 flash 13.62 14 14 14 13 14 14 14 12 Claude-3.5 Sonnet 5.75 5 7 4 6 7 8 5 4 Claude-3-Sonnet 8.62 7 9 8 7 9 9 9 11 Claude-3-Haiku 11.75 13 13 10 10 12 11 12 13 Qwen-2.5 72B 7.25 9 8 5 9 5 6 8 8 Mistral Large 2 11.38 12 10 12 14 11 12 11 9 English 20.0% French 12.1% Hindi 12.0% Russian 11.7% Chinese 10.4% Italian 10.9% Portuguese 11.5% Spanish 11.4% Languages Distribution 0 250 500 750 1000 1250 1500 1750 2000 Count detectable_format:title startend:end_checker length_constraints:number_words startend:quotation keywords:forbidden_words keywords:existence keywords:frequency length_constraints:number_sentences length_constraints:number_paragraphs detectable_format:number_highlighted_sections punctuation:no_comma combination:two_responses detectable_format:json_format length_constraints:nth_paragraph_first_word combination:repeat_prompt detectable_format:number_bullet_lists detectable_content:number_placeholders detectable_format:multiple_sections detectable_content:postscript change_case:english_capital change_case:capital_word_frequency change_case:english_lowercase keywords:letter_frequency language:response_language 1818 1450 1434 1328 1264 1127 1019 915 751 701 658 571 467 399 375 304 283 256 102 95 83 82 55 48</p><p>Instructions Distribution turns' prompts and responses are concatenated with the current turn's prompt, forming a cumulative input string. This concatenated string is then utilized to generate a response for the current turn via the LLM.</p><p>We report the following four accuracy scores:</p><p>• Instruction-level strict accuracy: This metric measures the percentage of individual instructions that are accurately followed by LLMs. It assesses the precision in executing each specific instruction given by the user.</p><p>• Conversation-level strict accuracy: This metric evaluates the accuracy across an entire multi-turn conversation, which may contain multiple instructions. It measures the percentage of conversations whose every instruction, from the first user turn to the current turn, is followed correctly by LLMs. This ensures that the AI consistently understands and executes all directives throughout a conversation.</p><p>• Instruction-level loose accuracy: This is the instruction-level accuracy computed with a loose criterion following <ref type="bibr" target="#b42">(Zhou et al., 2023)</ref>. For example, responses of a LLM may start with an introductory sentence like "Certainly, here is the revised version..." and this sentence often violate instruction types like "All Uppercase". To resolve this issue, the loose criterion will remove the first sentence and then perform the evaluation.</p><p>• Conversation-level loose accuracy: Likewise, conversation-level accuracy computed with a loose criterion.</p><p>We report the average of the above four accuracy scores as the final metric for each model on each turn and each language. More details about evaluation can be found in Appendix A.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Overall Results</head><p>We benchmark 14 models: OpenAI o1-preview, o1-mini (OpenAI, 2024), GPT-4 (gpt-4-turbo-2024-04-09), GPT-4o <ref type="bibr" target="#b0">(Achiam et al., 2023)</ref>, Llama 3.1 (8B, 70B, and 405B) <ref type="bibr" target="#b7">(Dubey et al., 2024)</ref>, Gemini-1.5 Pro (gemini-1.5-pro-preview-0514), Gemini-1.5 Flash (gemini-1.5-flash-preview-0514) <ref type="bibr" target="#b25">(Reid et al., 2024)</ref>, Claude-3.5-Sonnet, Claude-3-Sonnet, Claude-3-Haiku (Anthropic), Qwen-2.5 72B <ref type="bibr" target="#b31">(Team, 2024)</ref>, and Mistral Large 2 (Mistral AI team, 2024), using the Multi-IF benchmark.</p><p>A summary of the overall results is presented in Figure <ref type="figure" target="#fig_0">1</ref>. In terms of the average score across all languages and across all turns. o1-preview, Llama 3.1 405B and o1-mini achieves the top 3 performance.</p><p>The evaluation results of each turn and each language are summarized in Table <ref type="table" target="#tab_0">1</ref> and Table <ref type="table" target="#tab_1">2</ref> for detailed accuracy and ranking scores. For further analysis, we focused on the models' average accuracy across all languages in the final turn, due to the multi-turn nature of the benchmark. Other models, such as GPT-4o, GPT-4, Claude-3.5 Sonnet and Qwen-2.5 72B, also performed similarly, all achieving an average accuracy above 0.6. Models scoring below 0.6 by the third turn include several others, which are mainly due to either 1) poor performance on the first turn; or 2) a more significant drop in performance between consecutive turns. Notably, Qwen-2.5 72B, ranked 4 th in the first turn, saw a significant drop in accuracy by the third turn (ranked around 7 th ). This indicates that certain models struggle with the increasing complexity of multi-turn conversations and may not generalize well across multiple turns.</p><p>Nearly all models showed worse performance on Russian compared to other languages, likely due to insufficient training data. Mistral Large, for instance, performed well on languages commonly spoken in Europe-English, French, Italian, Portuguese, and Spanish-but its poor performance on Russian, Hindi, and Chinese lowered its overall ranking. Additionally, for Llama 3.1 models (8B, 70B, and 405B), we observe a significant improvement in instruction-following accuracy as model size increases, particularly across the three turns, underscoring the benefits of scaling up models. Lastly, in our experiments with Google's Gemini models, we found that Gemini tends to be overly conservative, even refusing reasonable user requests like capitalizing responses. However, this isn't the primary reason for the weaker performance of Gemini 1.5. We suspect the main issue is that the Gemini models (e.g., gemini-1.5-prop-0514) simply aren't as performant as others. This is evident from its first-turn performance on the English split, which is consistent with observations on Scale AI's leaderboard. <ref type="foot" target="#foot_0">1</ref> We are aware of the latest version of Gemini (gemini-1.5-pro-exp-0827) but it is in experimental mode and hardly conduct large-scale test of it.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Analysis</head><p>In this section, we provide a detailed understanding of the evaluation results and delve into various aspects of language model performance on instruction following tasks. We analyze the impact of multi-turn conversations on instruction following accuracy, explore the phenomenon of instruction forgetting across turns, and examine models' ability to recover from errors in previous turns. Additionally, we investigate the performance of language models across different languages and conduct an in-depth error analysis to identify patterns and challenges in multilingual instruction following. These analyses offer valuable insights into the strengths and limitations of current language models in complex, multi-turn, and multilingual scenarios.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Multi-Turn Instruction Following</head><p>The visualization of the impact from multi-turn instructions is presented in Figure <ref type="figure" target="#fig_4">6</ref>, where "Accuracy" refers to the average final metric across all languages. The final metric is the average of instruction-level strict accuracy, conversation- level strict accuracy, instruction-level loose accuracy, and conversation-level loose accuracy. All models struggle increasingly with following multi-turn instructions as the number of turns increases. All the models tested showed a higher rate of failure in executing instructions correctly with each additional turn. For example, o1-preview drops from 0.877 at the first turn to 0.707 at the third turn in terms of average accuracy over all languages. Additionally, different models exhibit different patterns across three turns. Some models, such as Qwen 2.5 72B Instruction <ref type="bibr" target="#b31">(Team, 2024)</ref>, may achieve a high accuracy than other models, but degrades much faster than the others in later turns. In contrast, models such as o1-preview, o1-mini and Llama 3.1 405B instruct, suffers less degradation in accuracy after multiple turns of interactions. In the following sections, we seek to provide a detailed analysis to understanding such differences.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Instructions Forgetting to Follow in Multi-Turns</head><p>In this study, we investigate the factors contributing to the decrease in accuracy of LLMs when following instructions in multi-turn conversations. Specifically, we aim to determine whether the drop in accuracy is primarily due to the multiplication of single-turn error rate or if it is caused by the increased difficulty resulting from more rounds and instructions being combined. Our pilot study focuses on the forgetting issue that arises throughout the multi-turn conversation.</p><p>We first define Instruction Forgetting Ratio (IFR): The percentage of previously followed instructions that were not followed in the subsequent turn, defined as below:</p><formula xml:id="formula_1">IFR = Number of Previously Followed Instructions Not Followed in Subsequent Turns Total Number of Instructions Followed in Previous Turn × 100 (<label>1</label></formula><formula xml:id="formula_2">)</formula><p>For example, the instruction of "You are not allowed to use any commas in your response" in turn 1 in Figure <ref type="figure" target="#fig_1">2</ref> could be followed by the response to turn 1 but then not followed by that of turn 2. We count this case as the instruction that is previously followed by not followed in subsequent turns.</p><p>Using this definition, we can calculate the IFR of each turn's instructions in subsequent turns. The IFR values are visualized in a bar plot presented in Figure <ref type="figure" target="#fig_5">7</ref>. Our Analysis of the visualization reveals a pronounced tendency for LLMs to exhibit decreased adherence to previously executed instructions as the number of turns progresses. Specifically, for high-performing models, such as o1-preview, o1-mini, Llama 3.1 (70B and 405B), and Claude 3.5 Sonnet, generally have a lower rate of instruction forgetting. In particular, for Llama 3.1 models, the forgetting rate (i.e., IFR) also decreases as the model size is scaled up from 8B to 405B. Gemini models (Gemini-1.5 pro and Gemini-1.5 flash) exhibit the highest rate of instruction forgetting, which is partly but not mainly due to the false refusals in responses from Gemini models in our later investigations (check Appendix C for more details). Lastly and surprisingly, the IFR rates from turn 1 to turn 2 are generally higher than the IFR rate from turn 2 to turn 3. Further investigation is warranted to elucidate the underlying causes of this forgetting phenomenon, and targeted strategies will be developed to mitigate it.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Error Self-Correction in Multi-Turns</head><p>Instruction forgetting is a key issue contributing to degraded performance in multi-turn instruction following. In this section, we explore whether the model can recover or recall forgotten instructions in later turns. The ability to recover from errors made in previous turns is a crucial capability for advanced LLMs, especially in complex environments requiring multi-step actions, such as those involving LLM agents. To assess this, we compute the error correction rate using the following equation:</p><formula xml:id="formula_3">ECR = Number of Previously Unfollowed Instructions Followed in Subsequent Turns Total Number of Instructions UnFollowed in Previous Turn × 100 (<label>2</label></formula><formula xml:id="formula_4">)</formula><p>The results, shown in Figure <ref type="figure" target="#fig_6">8</ref>, present the Error Correction Ratio (ECR). OpenAI's o1-preview and o1-mini models exhibit the highest ECR-correcting around 25% of unfollowed instructions in later turns-suggesting that their incorporation of a hidden chain of thought is especially helpful in error correction. In contrast, other models perform similarly in terms of ECR. This is likely because these models do not "reflect" on their outputs to fix prior errors, as doing so would violate the instruction-following criteria. Thus, the hidden chain of thought capability plays a key role in error correction during multi-turn interactions. This also highlights opportunities for improvement in models that do not yet incorporate this feature, though all the models exhibit some levels of error recovery from errors made in prior turns.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.4">Multilingual Instruction Following</head><p>The performance of three language models (o1-preview, gpt4o, and llama3-405b) across eight languages is illustrated in Figure <ref type="figure">9</ref>. We observe that English has the best scores for all models, reaching approximately 0.85 with Llama 3.1 405B, followed closely by French and Italian. The o1-preview model generally achieves the highest performance across languages, with Llama 3.1 405B following closely behind. There is notable variation in performance for languages like Russian and Hindi. The "Average of Others" curve demonstrates significantly lower performance across all languages compared to the three highlighted models, suggesting a gap between these advanced models and other models.</p><p>Interestingly, o1-preview and llama 3.1 405B show comparable performance in most languages, with o1-preview having a slight edge in languages like Chinese, Spanish, Italian, and Hindi. The GPT-4o model, while performing well, often</p><p>English French Russian Hindi Italian Portuguese Spanish Chinese 0.55 0.60 0.65 0.70 0.75 0.80 0.85 Language Model Performance Across Languages o1-preview gpt4o llama3-405b Average of Others Figure 9 The performance of multilingual instructions. The performance is measured by the average of the four accuracy scores across all three turns: instruction-level strict accuracy, conversation-level strict accuracy, instruction-level loose accuracy, and conversation-level loose accuracy.</p><p>falls slightly behind the other two models. This comparison reveals the current state of multilingual capabilities in advanced language models, with o1-preview being the best-performing model. It also highlights areas for potential improvement, such as on languages like Russian, Hindi, and Chinese.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.5">Error Analysis of Multilingual Instruction Following</head><p>Figure <ref type="figure" target="#fig_7">10</ref> presents the error distribution for various instruction categories across eight languages, aggregating results from all models tested. We also provide the error distribution for each evaluated model in the Appendix B. This analysis reveals significant variations in error rates across both languages and instruction types. Languages with non-Latin scripts (Hindi, Russian, and Chinese) generally exhibit higher error rates, suggesting potential limitations in the models' multilingual capabilities. English consistently shows lower error rates, possibly due to its prevalence in training data.</p><p>Certain instruction categories prove challenging across languages. The length_constraint and combination categories show consistently high error rates, indicating universal difficulties in precise output length control and text structure control. The startend category displays high variability, with particularly elevated error rates in Russian and Chinese.</p><p>Language-specific observations include notably high error rates for Hindi across most categories, high variability in Russian (especially for startend), and a distinct pattern in Chinese with elevated errors in combination, length_constraint, and startend categories. These findings highlight areas for improvement in multilingual instruction-following capabilities, and it also emphasizes the need for targeted enhancements in consistently challenging instruction types and better support for non-Latin script languages. Future research should focus on addressing these performance gaps and investigating the factors contributing to relative successes in categories like detectcable_format. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>In this study, we introduced Multi-IF, a novel benchmark designed to evaluate the proficiency of LLMs in multi-turn and multilingual instruction following. Existing benchmarks like IFEval provide a solid foundation for assessing instruction adherence in single-turn scenarios, however, they fall short in capturing the complexities of real-world interactions that often involve multiple turns and multiple languages. The results from Multi-IF indicate that current leading LLMs, including o1-preview, o1-mini, Llama 3.1 and GPT4-o, struggle with maintaining high accuracy in following multi-turn instructions and exhibit even lower performance in non-English languages.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Error Distribution for Different Models on Each Language</head><p>We present the results for all models on each language, showing that error patterns are mostly similar across languages and models in Figures 11 to 24. For certain instruction categories, such as length_constraint and combination, consistently exhibit high error rates, while others like keywords show lower error rates. Language-specific results reveal challenges in Hindi, Russian, and Chinese, with elevated errors in specific categories across all the models. 0.0 0.2 0.4 Error Rate English Spanish French Hindi c o m b i n a t i o n d e t e c t a b l e _ c o n t e n t d e t e c t a b l e _ f o r m a t k e y w o r d s l e n g t h _ c o n s t r a i n t s p u n c t u a t i o n s t a r t e n d 0.0 0.2 0.4 Error Rate Italian c o m b i n a t i o n d e t e c t a b l e _ c o n t e n t d e t e c t a b l e _ f o r m a t k e y w o r d s l e n g t h _ c o n s t r a i n t s p u n c t u a t i o n s t a r t e n d Portoguese c o m b i n a t i o n d e t e c t a b l e _ c o n t e n t d e t e c t a b l e _ f o r m a t k e y w o r d s l e n g t h _ c o n s t r a i n t s p u n c t u a t i o n s t a r t e n d Russian c o m b i n a t i o n d e t e c t a b l e _ c o n t e n t d e t e c t a b l e _ f o r m a t k e y w o r d s l e n g t h _ c o n s t r a i n t s p u n c t u a t i o n s t a r t e n d Chinese Instruction Error Distribution for o1-mini  0.00 0.25 0.50 Error Rate English Spanish French Hindi c o m b i n a t i o n d e t e c t a b l e _ c o n t e n t d e t e c t a b l e _ f o r m a t k e y w o r d s l e n g t h _ c o n s t r a i n t s p u n c t u a t i o n s t a r t e n d 0.00 0.25 0.50 Error Rate Italian c o m b i n a t i o n d e t e c t a b l e _ c o n t e n t d e t e c t a b l e _ f o r m a t k e y w o r d s l e n g t h _ c o n s t r a i n t s p u n c t u a t i o n s t a r t e n d Portoguese c o m b i n a t i o n d e t e c t a b l e _ c o n t e n t d e t e c t a b l e _ f o r m a t k e y w o r d s l e n g t h _ c o n s t r a i n t s p u n c t u a t i o n s t a r t e n d Russian c o m b i n a t i o n d e t e c t a b l e _ c o n t e n t d e t e c t a b l e _ f o r m a t k e y w o r d s l e n g t h _ c o n s t r a i n t s p u n c t u a t i o n s t a r t e n d Chinese Instruction Error Distribution for Llama 3.1 8B Figure 17 Error distribution of Llama 3.1 8B for different languages. 0.0 0.2 0.4 Error Rate English Spanish French Hindi c o m b i n a t i o n d e t e c t a b l e _ c o n t e n t d e t e c t a b l e _ f o r m a t k e y w o r d s l e n g t h _ c o n s t r a i n t s p u n c t u a t i o n s t a r t e n d 0.0 0.2 0.4 Error Rate Italian c o m b i n a t i o n d e t e c t a b l e _ c o n t e n t d e t e c t a b l e _ f o r m a t k e y w o r d s l e n g t h _ c o n s t r a i n t s p u n c t u a t i o n s t a r t e n d Portoguese c o m b i n a t i o n d e t e c t a b l e _ c o n t e n t d e t e c t a b l e _ f o r m a t k e y w o r d s l e n g t h _ c o n s t r a i n t s p u n c t u a t i o n s t a r t e n d Russian c o m b i n a t i o n d e t e c t a b l e _ c o n t e n t d e t e c t a b l e _ f o r m a t k e y w o r d s l e n g t h _ c o n s t r a i n t s p u n c t u a t i o n s t a r t e n d Chinese Instruction Error Distribution for Gemini-1.5 pro Figure 18 Error distribution of Gemini-1.5 pro for different languages. 0.0 0.2 0.4 Error Rate English Spanish French Hindi c o m b i n a t i o n d e t e c t a b l e _ c o n t e n t d e t e c t a b l e _ f o r m a t k e y w o r d s l e n g t h _ c o n s t r a i n t s p u n c t u a t i o n s t a r t e n d 0.0 0.2 0.4 Error Rate Italian c o m b i n a t i o n d e t e c t a b l e _ c o n t e n t d e t e c t a b l e _ f o r m a t k e y w o r d s l e n g t h _ c o n s t r a i n t s p u n c t u a t i o n s t a r t e n d Portoguese c o m b i n a t i o n d e t e c t a b l e _ c o n t e n t d e t e c t a b l e _ f o r m a t k e y w o r d s l e n g t h _ c o n s t r a i n t s p u n c t u a t i o n s t a r t e n d Russian c o m b i n a t i o n d e t e c t a b l e _ c o n t e n t d e t e c t a b l e _ f o r m a t k e y w o r d s l e n g t h _ c o n s t r a i n t s p u n c t u a t i o n s t a r t e n d Chinese Instruction Error Distribution for Claude-3.5 Sonnet Figure 20 Error distribution of Claude-3.5 Sonnet for different languages. 0.0 0.2 0.4 Error Rate English Spanish French Hindi c o m b i n a t i o n d e t e c t a b l e _ c o n t e n t d e t e c t a b l e _ f o r m a t k e y w o r d s l e n g t h _ c o n s t r a i n t s p u n c t u a t i o n s t a r t e n d 0.0 0.2 0.4 Error Rate Italian c o m b i n a t i o n d e t e c t a b l e _ c o n t e n t d e t e c t a b l e _ f o r m a t k e y w o r d s l e n g t h _ c o n s t r a i n t s p u n c t u a t i o n s t a r t e n d Portoguese c o m b i n a t i o n d e t e c t a b l e _ c o n t e n t d e t e c t a b l e _ f o r m a t k e y w o r d s l e n g t h _ c o n s t r a i n t s p u n c t u a t i o n s t a r t e n d Russian c o m b i n a t i o n d e t e c t a b l e _ c o n t e n t d e t e c t a b l e _ f o r m a t k e y w o r d s l e n g t h _ c o n s t r a i n t s p u n c t u a t i o n s t a r t e n d Chinese Instruction Error Distribution for Claude-3-Sonnet Figure 21 Error distribution of Claude-3-Sonnet for different languages. 0.0 0.2 0.4 Error Rate English Spanish French Hindi c o m b i n a t i o n d e t e c t a b l e _ c o n t e n t d e t e c t a b l e _ f o r m a t k e y w o r d s l e n g t h _ c o n s t r a i n t s p u n c t u a t i o n s t a r t e n d 0.0 0.2 0.4 Error Rate Italian c o m b i n a t i o n d e t e c t a b l e _ c o n t e n t d e t e c t a b l e _ f o r m a t k e y w o r d s l e n g t h _ c o n s t r a i n t s p u n c t u a t i o n s t a r t e n d Portoguese c o m b i n a t i o n d e t e c t a b l e _ c o n t e n t d e t e c t a b l e _ f o r m a t k e y w o r d s l e n g t h _ c o n s t r a i n t s p u n c t u a t i o n s t a r t e n d Russian c o m b i n a t i o n d e t e c t a b l e _ c o n t e n t d e t e c t a b l e _ f o r m a t k e y w o r d s l e n g t h _ c o n s t r a i n t s p u n c t u a t i o n s t a r t e n d Chinese Instruction Error Distribution for Qwen-2.5 72B Figure 23 Error distribution of Qwen-2.5 72B for different languages. 0.0 0.2 0.4 Error Rate English Spanish French Hindi c o m b i n a t i o n d e t e c t a b l e _ c o n t e n t d e t e c t a b l e _ f o r m a t k e y w o r d s l e n g t h _ c o n s t r a i n t s p u n c t u a t i o n s t a r t e n d 0.0 0.2 0.4 Error Rate Italian c o m b i n a t i o n d e t e c t a b l e _ c o n t e n t d e t e c t a b l e _ f o r m a t k e y w o r d s l e n g t h _ c o n s t r a i n t s p u n c t u a t i o n s t a r t e n d Portoguese c o m b i n a t i o n d e t e c t a b l e _ c o n t e n t d e t e c t a b l e _ f o r m a t k e y w o r d s l e n g t h _ c o n s t r a i n t s p u n c t u a t i o n s t a r t e n d Russian c o m b i n a t i o n d e t e c t a b l e _ c o n t e n t d e t e c t a b l e _ f o r m a t k e y w o r d s l e n g t h _ c o n s t r a i n t s p u n c t u a t i o n s t a r t e n d Chinese Instruction Error Distribution for Mistral Large 2 Figure 24 Error distribution of Mistral Large 2 for different languages.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Analyzing the Failure Mode of Gemini Models</head><p>To understand why the Gemini model performs poorly in a multi-turn instruction-following setting, we identified a significant issue: false refusals. To detect these false refusals, we used o1-preview to pinpoint responses where this occurred. Out of 4,501 responses, 357 were identified as false refusals. We then re-evaluated the model's performance after removing these false refusal cases. The updated results, shown in Table <ref type="table">4</ref>, reveal that the Gemini model's performance improved slightly but still lagged behind other models like GPT-4, GPT-4o, o1-preview, o1-mini, Llama 3.1 405B, Llama 3.1 70B, and Claude 3.5 Sonnet. This is because, even though Gemini sometimes refuses to answer, it still follows some instructions, such as using uppercase letters in its responses, as shown below.</p><p>Conversation User: Write a poem about how I am missing my classes. The poem must have 4 sections marked with SECTION X. Finish the poem with this exact phrase: "Can I get my money back for the classes I missed?" Gemini 1.5 Pro: Empty classrooms, silent halls, A void where laughter once did call. The chalk still lingers on the board, A testament to knowledge poured.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>SECTION 2</head><p>The scent of books, the hum of fans, A symphony of academic plans. The professor's voice, a guiding light, Illuminating minds with insight.</p><p>SECTION 3 I yearn to delve into the text, To challenge thoughts and put them to the test. To engage in debates, to learn and grow, A journey of intellect, I know.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>SECTION 4</head><p>But now I'm absent, far away, Missing the lessons, day by day.</p><p>A longing fills my heart with pain, For the academic world I'll never regain. Can I get my money back for the classes I missed?</p><p>User: Make sure your entire response is in English, and in all capital letters.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Gemini 1.5 Pro: I'M SORRY, I CAN'T FULFILL THAT REQUEST. AS AN AI LANGUAGE MODEL, I'M PROGRAMMED TO BE ACCESSIBLE AND UNDERSTANDABLE TO A WIDE RANGE OF USERS. WRITING ENTIRELY IN CAPITAL LETTERS CAN BE DIFFICULT TO READ AND MAY EVEN BE PERCEIVED AS SHOUTING. WOULD YOU LIKE ME TO TRY WRITING THE POEM IN A DIFFERENT STYLE? PERHAPS WITH A MORE CONVERSATIONAL TONE?</head></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1</head><label>1</label><figDesc>Figure1Overall Performance of Large Language Models on Multi-IF. We conduct our comparison mainly by evaluating the average scores of the models across all languages and across all turns.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2</head><label>2</label><figDesc>Figure 2 Overall framework to build Multi-IF.</figDesc><graphic coords="4,117.89,63.78,376.22,185.21" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3</head><label>3</label><figDesc>Figure 3 Two stage method to expand a single-turn prompt into multi-turn prompts.</figDesc><graphic coords="4,117.89,271.90,376.21,189.24" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5</head><label>5</label><figDesc>Figure 5 The distribution of languages (left) and instruction types (right) in Multi-IF.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 6</head><label>6</label><figDesc>Figure 6The impact of multi-turns on instruction following. "Accuracy" means the average of the final metric of the all languages; The final metric is the average of the four accuracy scores: instruction-level strict accuracy, conversation-level strict accuracy, instruction-level loose accuracy, and conversation-level loose accuracy.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 7</head><label>7</label><figDesc>Figure 7 Instruction Forgetting Ratio (IFR) of Models: This figure shows the IFR for various models, highlighting their ability to retain instruction information across multiple turns.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 8</head><label>8</label><figDesc>Figure 8 Error Correction Ratio (ECR) of Models (i.e., False → True): This figure shows the ECR for various models, as well as the portion of responses (i.e., the light blue bars) that did not correct from errors in prior turns.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 10</head><label>10</label><figDesc>Figure 10 Instruction Error Distribution Across Languages and Instruction Categories for Aggregated Model Performance. The chart displays error rates for various instruction types in eight languages, highlighting cross-lingual patterns and category-specific challenges in language model instruction following.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 11 Figure 12 Figure 13 Figure 14 Figure 15</head><label>1112131415</label><figDesc>Figure 11Error distribution of o1-preview for different languages.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 16 Figure 17 Figure 18</head><label>161718</label><figDesc>Figure 16 Error distribution of Llama 3.1 70B for different languages.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 19 Figure 20 Figure 21</head><label>192021</label><figDesc>Figure19  Error distribution of Gemini-1.5 flash for different languages.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Figure 22 Figure 23 Figure 24</head><label>222324</label><figDesc>Figure 22 Error distribution of Claude-3-Haiku for different languages.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1</head><label>1</label><figDesc>Average accuracy scores of several leading LLMs on various languages. The average of the four accuracy scores is reported: instruction-level strict accuracy, conversation-level strict accuracy, instruction-level loose accuracy, and conversation-level loose accuracy. "Average" refers to the averaged accuracy across all languages.</figDesc><table><row><cell>Turn 1</cell><cell cols="9">Average English French Russian Hindi Italian Portuguese Spanish Chinese</cell></row><row><cell>o1-preview</cell><cell>0.877</cell><cell>0.856</cell><cell>0.898</cell><cell>0.835</cell><cell>0.871</cell><cell>0.891</cell><cell>0.895</cell><cell>0.912</cell><cell>0.858</cell></row><row><cell>o1-mini</cell><cell>0.853</cell><cell>0.836</cell><cell>0.882</cell><cell>0.815</cell><cell>0.842</cell><cell>0.873</cell><cell>0.868</cell><cell>0.886</cell><cell>0.824</cell></row><row><cell>GPT-4o</cell><cell>0.843</cell><cell>0.874</cell><cell>0.853</cell><cell>0.789</cell><cell>0.812</cell><cell>0.878</cell><cell>0.858</cell><cell>0.876</cell><cell>0.805</cell></row><row><cell>GPT-4</cell><cell>0.815</cell><cell>0.860</cell><cell>0.842</cell><cell>0.789</cell><cell>0.718</cell><cell>0.840</cell><cell>0.832</cell><cell>0.850</cell><cell>0.786</cell></row><row><cell>Llama 3.1 405B</cell><cell>0.854</cell><cell>0.907</cell><cell>0.868</cell><cell>0.801</cell><cell>0.825</cell><cell>0.864</cell><cell>0.876</cell><cell>0.871</cell><cell>0.817</cell></row><row><cell>Llama 3.1 70B</cell><cell>0.826</cell><cell>0.890</cell><cell>0.837</cell><cell>0.783</cell><cell>0.759</cell><cell>0.862</cell><cell>0.847</cell><cell>0.847</cell><cell>0.783</cell></row><row><cell>Llama 3.1 8B</cell><cell>0.688</cell><cell>0.801</cell><cell>0.693</cell><cell>0.617</cell><cell>0.587</cell><cell>0.702</cell><cell>0.720</cell><cell>0.743</cell><cell>0.640</cell></row><row><cell>Gemini-1.5 pro</cell><cell>0.758</cell><cell>0.835</cell><cell>0.763</cell><cell>0.743</cell><cell>0.719</cell><cell>0.745</cell><cell>0.755</cell><cell>0.756</cell><cell>0.750</cell></row><row><cell>Gemini-1.5 flash</cell><cell>0.725</cell><cell>0.775</cell><cell>0.715</cell><cell>0.686</cell><cell>0.691</cell><cell>0.766</cell><cell>0.727</cell><cell>0.722</cell><cell>0.717</cell></row><row><cell>Claude-3.5 Sonnet</cell><cell>0.817</cell><cell>0.876</cell><cell>0.828</cell><cell>0.777</cell><cell>0.782</cell><cell>0.805</cell><cell>0.837</cell><cell>0.859</cell><cell>0.773</cell></row><row><cell>Claude-3-Sonnet</cell><cell>0.782</cell><cell>0.831</cell><cell>0.774</cell><cell>0.763</cell><cell>0.754</cell><cell>0.803</cell><cell>0.801</cell><cell>0.818</cell><cell>0.714</cell></row><row><cell>Claude-3-Haiku</cell><cell>0.729</cell><cell>0.779</cell><cell>0.727</cell><cell>0.719</cell><cell>0.674</cell><cell>0.752</cell><cell>0.754</cell><cell>0.766</cell><cell>0.660</cell></row><row><cell>Qwen-2.5 72B</cell><cell>0.837</cell><cell>0.881</cell><cell>0.869</cell><cell>0.822</cell><cell>0.681</cell><cell>0.865</cell><cell>0.867</cell><cell>0.882</cell><cell>0.831</cell></row><row><cell>Mistral Large 2</cell><cell>0.805</cell><cell>0.835</cell><cell>0.837</cell><cell>0.772</cell><cell>0.678</cell><cell>0.817</cell><cell>0.840</cell><cell>0.851</cell><cell>0.808</cell></row><row><cell>Turn 2</cell><cell cols="9">Average English French Russian Hindi Italian Portuguese Spanish Chinese</cell></row><row><cell>o1-preview</cell><cell>0.783</cell><cell>0.834</cell><cell>0.820</cell><cell>0.633</cell><cell>0.775</cell><cell>0.819</cell><cell>0.811</cell><cell>0.804</cell><cell>0.766</cell></row><row><cell>o1-mini</cell><cell>0.772</cell><cell>0.802</cell><cell>0.800</cell><cell>0.684</cell><cell>0.763</cell><cell>0.812</cell><cell>0.782</cell><cell>0.809</cell><cell>0.728</cell></row><row><cell>GPT-4o</cell><cell>0.724</cell><cell>0.784</cell><cell>0.745</cell><cell>0.601</cell><cell>0.708</cell><cell>0.760</cell><cell>0.740</cell><cell>0.749</cell><cell>0.705</cell></row><row><cell>GPT-4</cell><cell>0.705</cell><cell>0.756</cell><cell>0.752</cell><cell>0.619</cell><cell>0.634</cell><cell>0.731</cell><cell>0.734</cell><cell>0.729</cell><cell>0.685</cell></row><row><cell>Llama 3.1 405B</cell><cell>0.782</cell><cell>0.843</cell><cell>0.822</cell><cell>0.692</cell><cell>0.754</cell><cell>0.793</cell><cell>0.801</cell><cell>0.800</cell><cell>0.748</cell></row><row><cell>Llama 3.1 70B</cell><cell>0.742</cell><cell>0.814</cell><cell>0.774</cell><cell>0.629</cell><cell>0.707</cell><cell>0.781</cell><cell>0.778</cell><cell>0.757</cell><cell>0.697</cell></row><row><cell>Llama 3.1 8B</cell><cell>0.615</cell><cell>0.720</cell><cell>0.663</cell><cell>0.472</cell><cell>0.540</cell><cell>0.631</cell><cell>0.645</cell><cell>0.678</cell><cell>0.570</cell></row><row><cell>Gemini-1.5 pro</cell><cell>0.624</cell><cell>0.710</cell><cell>0.646</cell><cell>0.565</cell><cell>0.578</cell><cell>0.625</cell><cell>0.610</cell><cell>0.641</cell><cell>0.613</cell></row><row><cell>Gemini-1.5 flash</cell><cell>0.570</cell><cell>0.644</cell><cell>0.602</cell><cell>0.420</cell><cell>0.534</cell><cell>0.628</cell><cell>0.571</cell><cell>0.574</cell><cell>0.591</cell></row><row><cell>Claude-3.5 Sonnet</cell><cell>0.705</cell><cell>0.780</cell><cell>0.724</cell><cell>0.632</cell><cell>0.679</cell><cell>0.705</cell><cell>0.707</cell><cell>0.736</cell><cell>0.679</cell></row><row><cell>Claude-3-Sonnet</cell><cell>0.680</cell><cell>0.753</cell><cell>0.716</cell><cell>0.616</cell><cell>0.672</cell><cell>0.691</cell><cell>0.685</cell><cell>0.702</cell><cell>0.609</cell></row><row><cell>Claude-3-Haiku</cell><cell>0.632</cell><cell>0.693</cell><cell>0.654</cell><cell>0.594</cell><cell>0.576</cell><cell>0.644</cell><cell>0.654</cell><cell>0.669</cell><cell>0.571</cell></row><row><cell>Qwen-2.5 72B</cell><cell>0.715</cell><cell>0.764</cell><cell>0.769</cell><cell>0.664</cell><cell>0.582</cell><cell>0.753</cell><cell>0.738</cell><cell>0.747</cell><cell>0.700</cell></row><row><cell>Mistral Large 2</cell><cell>0.669</cell><cell>0.734</cell><cell>0.721</cell><cell>0.598</cell><cell>0.541</cell><cell>0.698</cell><cell>0.678</cell><cell>0.705</cell><cell>0.675</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2</head><label>2</label><figDesc>Ranks of several leading LLMs on various languages, which are computed based on the accuracy in Table1. "Average" refers to the average ranks across all languages.</figDesc><table><row><cell>Turn 1</cell><cell>Avg.</cell><cell cols="8">English French Russian Hindi Italian Portuguese Spanish Chinese</cell></row><row><cell>o1-preview</cell><cell>1.75</cell><cell>7</cell><cell>1</cell><cell>1</cell><cell>1</cell><cell>1</cell><cell>1</cell><cell>1</cell><cell>1</cell></row><row><cell>o1-mini</cell><cell>3.25</cell><cell>8</cell><cell>2</cell><cell>3</cell><cell>2</cell><cell>3</cell><cell>3</cell><cell>2</cell><cell>3</cell></row><row><cell>GPT-4o</cell><cell>4.50</cell><cell>5</cell><cell>5</cell><cell>5</cell><cell>4</cell><cell>2</cell><cell>5</cell><cell>4</cell><cell>6</cell></row><row><cell>GPT-4</cell><cell>7.25</cell><cell>6</cell><cell>6</cell><cell>6</cell><cell>9</cell><cell>7</cell><cell>9</cell><cell>8</cell><cell>7</cell></row><row><cell>Llama 3.1 405B</cell><cell>3.50</cell><cell>1</cell><cell>4</cell><cell>4</cell><cell>3</cell><cell>5</cell><cell>2</cell><cell>5</cell><cell>4</cell></row><row><cell>Llama 3.1 70B</cell><cell>6.38</cell><cell>2</cell><cell>7</cell><cell>7</cell><cell>6</cell><cell>6</cell><cell>6</cell><cell>9</cell><cell>8</cell></row><row><cell>Llama 3.1 8B</cell><cell>13.62</cell><cell>12</cell><cell>14</cell><cell>14</cell><cell>14</cell><cell>14</cell><cell>14</cell><cell>13</cell><cell>14</cell></row><row><cell>Gemini-1.5 pro</cell><cell>10.62</cell><cell>9</cell><cell>11</cell><cell>11</cell><cell>8</cell><cell>13</cell><cell>11</cell><cell>12</cell><cell>10</cell></row><row><cell>Gemini-1.5 flash</cell><cell>12.38</cell><cell>14</cell><cell>13</cell><cell>13</cell><cell>10</cell><cell>11</cell><cell>13</cell><cell>14</cell><cell>11</cell></row><row><cell>Claude-3.5 Sonnet</cell><cell>7.25</cell><cell>4</cell><cell>9</cell><cell>8</cell><cell>5</cell><cell>9</cell><cell>8</cell><cell>6</cell><cell>9</cell></row><row><cell>Claude-3-Sonnet</cell><cell>10.00</cell><cell>11</cell><cell>10</cell><cell>10</cell><cell>7</cell><cell>10</cell><cell>10</cell><cell>10</cell><cell>12</cell></row><row><cell>Claude-3-Haiku</cell><cell>12.25</cell><cell>13</cell><cell>12</cell><cell>12</cell><cell>13</cell><cell>12</cell><cell>12</cell><cell>11</cell><cell>13</cell></row><row><cell>Qwen-2.5 72B</cell><cell>4.00</cell><cell>3</cell><cell>3</cell><cell>2</cell><cell>11</cell><cell>4</cell><cell>4</cell><cell>3</cell><cell>2</cell></row><row><cell>Mistral Large 2</cell><cell>8.25</cell><cell>10</cell><cell>8</cell><cell>9</cell><cell>12</cell><cell>8</cell><cell>7</cell><cell>7</cell><cell>5</cell></row><row><cell>Turn 2</cell><cell>Avg.</cell><cell cols="8">English French Russian Hindi Italian Portuguese Spanish Chinese</cell></row><row><cell>o1-preview</cell><cell>1.75</cell><cell>2</cell><cell>2</cell><cell>4</cell><cell>1</cell><cell>1</cell><cell>1</cell><cell>2</cell><cell>1</cell></row><row><cell>o1-mini</cell><cell>2.50</cell><cell>4</cell><cell>3</cell><cell>2</cell><cell>2</cell><cell>2</cell><cell>3</cell><cell>1</cell><cell>3</cell></row><row><cell>GPT-4o</cell><cell>5.50</cell><cell>5</cell><cell>7</cell><cell>9</cell><cell>4</cell><cell>5</cell><cell>5</cell><cell>5</cell><cell>4</cell></row><row><cell>GPT-4</cell><cell>7.25</cell><cell>8</cell><cell>6</cell><cell>7</cell><cell>8</cell><cell>7</cell><cell>7</cell><cell>8</cell><cell>7</cell></row><row><cell>Llama 3.1 405B</cell><cell>2.00</cell><cell>1</cell><cell>1</cell><cell>1</cell><cell>3</cell><cell>3</cell><cell>2</cell><cell>3</cell><cell>2</cell></row><row><cell>Llama 3.1 70B</cell><cell>4.50</cell><cell>3</cell><cell>4</cell><cell>6</cell><cell>5</cell><cell>4</cell><cell>4</cell><cell>4</cell><cell>6</cell></row><row><cell>Llama 3.1 8B</cell><cell>12.12</cell><cell>11</cell><cell>11</cell><cell>13</cell><cell>13</cell><cell>12</cell><cell>12</cell><cell>11</cell><cell>14</cell></row><row><cell>Gemini-1.5 pro</cell><cell>12.12</cell><cell>12</cell><cell>13</cell><cell>12</cell><cell>10</cell><cell>14</cell><cell>13</cell><cell>13</cell><cell>10</cell></row><row><cell>Gemini-1.5 flash</cell><cell>13.62</cell><cell>14</cell><cell>14</cell><cell>14</cell><cell>14</cell><cell>13</cell><cell>14</cell><cell>14</cell><cell>12</cell></row><row><cell>Claude-3.5 Sonnet</cell><cell>7.00</cell><cell>6</cell><cell>8</cell><cell>5</cell><cell>6</cell><cell>8</cell><cell>8</cell><cell>7</cell><cell>8</cell></row><row><cell>Claude-3-Sonnet</cell><cell>9.25</cell><cell>9</cell><cell>10</cell><cell>8</cell><cell>7</cell><cell>10</cell><cell>9</cell><cell>10</cell><cell>11</cell></row><row><cell>Claude-3-Haiku</cell><cell>11.75</cell><cell>13</cell><cell>12</cell><cell>11</cell><cell>11</cell><cell>11</cell><cell>11</cell><cell>12</cell><cell>13</cell></row><row><cell>Qwen-2.5 72B</cell><cell>5.88</cell><cell>7</cell><cell>5</cell><cell>3</cell><cell>9</cell><cell>6</cell><cell>6</cell><cell>6</cell><cell>5</cell></row><row><cell>Mistral Large 2</cell><cell>9.75</cell><cell>10</cell><cell>9</cell><cell>10</cell><cell>12</cell><cell>9</cell><cell>10</cell><cell>9</cell><cell>9</cell></row><row><cell>Turn 3</cell><cell>Avg.</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>https://scale.com/leaderboard/instruction_following</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Appendix</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Experimental Details</head><p>Model Name Version Temperature Top-p Max New Tokens o1-preview o1-preview-2024-09-12 1.0 1.0 25000 o1-mini o1-mini-2024-09-12 1.0 1.0 25000 GPT-4 gpt-4-turbo-2024-04-09 0.6 0.9 1024 GPT-4o gpt-4o-2024-08-06 0.6 0.9 1024 Llama 3.1 405B Llama 3.1 405B 0.6 0.9 1024 Llama 3.1 70B Llama 3.1 70B 0.6 0.9 1024 Llama 3.1 8B Llama 3.1 8B 0.6 0.9 1024 Gemini-1.5 pro gemini-1.5-pro-0514 0.6 0.9 1024 Gemini-1.5 flash gemini-1.5-flash-0514 0.6 0.9 1024 Claude-3.5 Sonnet claude-3-5-sonnet-20240620 0.6 0.9 1024 Claude-3-Sonnet claude-3-sonnet-20240229 0.6 0.9 1024 Claude-3-Haiku claude-3-haiku-20240307 0.6 0.9 1024 Qwen-2.5 72B Qwen-2.5 72B 0.6 0.9 1024 Mistral Large 2 mistral-large-latest 0.6 0.9 1024</p><p>Table 3 Experiment Settings for Different Model Versions</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Model Inference Details.</head><p>We provide detailed model configurations in Table <ref type="table">3</ref>, including their versions, temperature, top-p, and the maximum number of new tokens allowed for generation. It is important to note that we experimented with various temperature settings for all models except for the o1-preview and o1-mini models, as they do not allow users to adjust the temperature or top-p values, defaulting both to 1. Additionally, since the o1 models generate hidden chains of thought, which can consume extra tokens beyond the output, we followed OpenAI's recommendation to use 25,000 as the maximum new tokens allowed for generation. For all other models, we set this limit to 1,024, as we found it sufficient to solve all the tasks. We also tested different temperature settings {0, 0.6, 1.0, 1.4}. Our results show that for smaller values, the variation in performance was minimal (1-2%), while larger values, such as 1.4, led to performance degradation. Therefore, we ultimately selected a temperature of 0.6 for all models. Although we believe that more precise tuning of hyperparameters, such as temperature and max new tokens, could further improve the performance of individual models, we do not expect it would significantly alter our overall findings or conclusions. For all the models, we follow the official recommendation using the default system prompt.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Handling Multilingual Evaluation.</head><p>In the evaluation of multilingual instruction-following, it is crucial to account for the differences in sentence segmentation, punctuation, and word boundaries across languages. For example, in languages like Chinese and Japanese, sentences are often separated by specific punctuation marks such as "。" (Chinese/Japanese period), "！" (Chinese exclamation mark), "？" (Chinese question mark), and "，" (Chinese/Japanese comma).</p><p>Similarly, in Hindi, sentences are segmented by the Hindi-specific delimiter "|". Unlike languages such as English, which rely on spaces to separate words, languages like Chinese and Japanese do not use spaces, necessitating careful handling in evaluation.</p><p>For word counting, it is important to recognize characters from languages such as Chinese, Japanese, and Korean.</p><p>Chinese characters fall within the Unicode range U+4E00 to U+9FFF. Japanese word counts involve characters from Hiragana (U+3040 to U+309F), Katakana (U+30A0 to U+30FF), and Kanji, which overlaps with Chinese characters. In Korean, Hangul syllables are found within the Unicode range U+AC00 to U+D7AF. Additionally, evaluation must handle non-alphanumeric symbols such as punctuation marks (e.g., '.', '!', '?', ',', '.') and emojis, which are counted as individual elements within the text in our evaluation.</p><p>By incorporating these language-specific rules for sentence splitting and word counting, our evaluation ensures an accurate and consistent metric for instruction-following performance across different languages. This approach helps overcome the challenges posed by diverse linguistic structures, such as the absence of spaces in some languages and the unique use of punctuation, allowing for a fair comparison of multilingual datasets. Turn 3 Average English French Russian Hindi Italian Portuguese Spanish Chinese o1-preview 0.709 0.776 0.743 0.527 0.714 0.759 0.715 0.739 0.704 o1-mini 0.687 0.746 0.723 0.577 0.674 0.713 0.710 0.717 0.631 GPT-4o 0.636 0.706 0.654 0.499 0.625 0.659 0.649 0.654 0.638 GPT-4 0.612 0.682 0.655 0.485 0.544 0.644 0.637 0.639 0.611 Llama 3.1 405B 0.708 0.789 0.751 0.583 0.683 0.743 0.731 0.718 0.668 Llama 3.1 70B 0.671 0.748 0.726 0.517 0.643 0.718 0.699 0.693 0.626 Llama 3.1 8B 0.545 0.645 0.592 0.382 0.467 0.578 0.588 0.608 0.498 Gemini-1.5 pro 0.550 0.654 0.564 0.475 0.492 0.557 0.554 0.563 0.544 Gemini-1.5 pro 0.540 0.641 0.554 0.467 0.478 0.544 0.542 0.550 0.540 Gemini-1.5 flash 0.502 0.567 0.519 0.344 0.467 0.547 0.525 0.518 0.525 Gemini-1.5 flash 0.496 0.563 0.512 0.346 0.455 0.539 0.521 0.507 0.522 Claude-3.5 Sonnet 0.638 0.729 0.653 0.526 0.613 0.649 0.637 0.659 0.636 Claude-3-Sonnet 0.601 0.687 0.647 0.489 0.590 0.626 0.604 0.627 0.535 Claude-3-Haiku 0.546 0.615 0.558 0.485 0.484 0.559 0.583 0.574 0.508 Qwen-2.5 72B 0.613 0.675 0.646 0.528 0.506 0.653 0.646 0.630 0.616 Mistral Large 2 0.551 0.641 0.596 0.457 0.443 0.569 0.568 0.580 0.552</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4</head><label>4</label><figDesc>After removing false-refusal: Evaluation Results of several SOTA LLMs on various languages. "Avg." refers to the average score across all languages. The average of the four accuracy scores is reported: instruction-level strict accuracy, conversation-level strict accuracy, instruction-level loose accuracy, and conversation-level loose accuracy. The red rows show the results without removing the false refusals, quoted from Table1.</figDesc><table><row><cell>Turn 1</cell><cell cols="9">Average English French Russian Hindi Italian Portuguese Spanish Chinese</cell></row><row><cell>o1-preview</cell><cell>0.876</cell><cell>0.858</cell><cell>0.899</cell><cell>0.832</cell><cell>0.871</cell><cell>0.893</cell><cell>0.891</cell><cell>0.908</cell><cell>0.858</cell></row><row><cell>o1-mini</cell><cell>0.853</cell><cell>0.840</cell><cell>0.883</cell><cell>0.815</cell><cell>0.840</cell><cell>0.873</cell><cell>0.863</cell><cell>0.887</cell><cell>0.824</cell></row><row><cell>GPT-4o</cell><cell>0.842</cell><cell>0.871</cell><cell>0.855</cell><cell>0.787</cell><cell>0.813</cell><cell>0.879</cell><cell>0.854</cell><cell>0.878</cell><cell>0.799</cell></row><row><cell>GPT-4</cell><cell>0.813</cell><cell>0.858</cell><cell>0.838</cell><cell>0.780</cell><cell>0.728</cell><cell>0.838</cell><cell>0.826</cell><cell>0.847</cell><cell>0.785</cell></row><row><cell>Llama 3.1 405B</cell><cell>0.851</cell><cell>0.905</cell><cell>0.868</cell><cell>0.799</cell><cell>0.825</cell><cell>0.858</cell><cell>0.873</cell><cell>0.868</cell><cell>0.813</cell></row><row><cell>Llama 3.1 70B</cell><cell>0.826</cell><cell>0.888</cell><cell>0.836</cell><cell>0.780</cell><cell>0.764</cell><cell>0.863</cell><cell>0.845</cell><cell>0.848</cell><cell>0.783</cell></row><row><cell>Llama 3.1 8B</cell><cell>0.687</cell><cell>0.798</cell><cell>0.692</cell><cell>0.621</cell><cell>0.590</cell><cell>0.697</cell><cell>0.716</cell><cell>0.746</cell><cell>0.638</cell></row><row><cell>Gemini-1.5 pro</cell><cell>0.760</cell><cell>0.838</cell><cell>0.761</cell><cell>0.743</cell><cell>0.733</cell><cell>0.741</cell><cell>0.755</cell><cell>0.759</cell><cell>0.748</cell></row><row><cell>Gemini-1.5 pro</cell><cell>0.758</cell><cell>0.835</cell><cell>0.763</cell><cell>0.743</cell><cell>0.719</cell><cell>0.745</cell><cell>0.755</cell><cell>0.756</cell><cell>0.750</cell></row><row><cell>Gemini-1.5 flash</cell><cell>0.725</cell><cell>0.777</cell><cell>0.713</cell><cell>0.683</cell><cell>0.700</cell><cell>0.771</cell><cell>0.719</cell><cell>0.728</cell><cell>0.712</cell></row><row><cell>Gemini-1.5 flash</cell><cell>0.725</cell><cell>0.775</cell><cell>0.715</cell><cell>0.686</cell><cell>0.691</cell><cell>0.766</cell><cell>0.727</cell><cell>0.722</cell><cell>0.717</cell></row><row><cell>Claude-3.5 Sonnet</cell><cell>0.815</cell><cell>0.871</cell><cell>0.829</cell><cell>0.771</cell><cell>0.784</cell><cell>0.805</cell><cell>0.831</cell><cell>0.855</cell><cell>0.774</cell></row><row><cell>Claude-3-Sonnet</cell><cell>0.781</cell><cell>0.829</cell><cell>0.769</cell><cell>0.756</cell><cell>0.760</cell><cell>0.804</cell><cell>0.790</cell><cell>0.820</cell><cell>0.716</cell></row><row><cell>Claude-3-Haiku</cell><cell>0.728</cell><cell>0.777</cell><cell>0.728</cell><cell>0.718</cell><cell>0.669</cell><cell>0.753</cell><cell>0.751</cell><cell>0.768</cell><cell>0.663</cell></row><row><cell>Qwen-2.5 72B</cell><cell>0.833</cell><cell>0.876</cell><cell>0.866</cell><cell>0.816</cell><cell>0.678</cell><cell>0.862</cell><cell>0.865</cell><cell>0.879</cell><cell>0.826</cell></row><row><cell>Mistral Large 2</cell><cell>0.801</cell><cell>0.834</cell><cell>0.835</cell><cell>0.760</cell><cell>0.681</cell><cell>0.812</cell><cell>0.836</cell><cell>0.849</cell><cell>0.804</cell></row><row><cell>Turn 2</cell><cell cols="9">Average English French Russian Hindi Italian Portuguese Spanish Chinese</cell></row><row><cell>o1-preview</cell><cell>0.784</cell><cell>0.836</cell><cell>0.821</cell><cell>0.628</cell><cell>0.777</cell><cell>0.816</cell><cell>0.813</cell><cell>0.814</cell><cell>0.767</cell></row><row><cell>o1-mini</cell><cell>0.777</cell><cell>0.808</cell><cell>0.804</cell><cell>0.694</cell><cell>0.764</cell><cell>0.817</cell><cell>0.786</cell><cell>0.815</cell><cell>0.728</cell></row><row><cell>GPT-4o</cell><cell>0.727</cell><cell>0.786</cell><cell>0.749</cell><cell>0.598</cell><cell>0.708</cell><cell>0.768</cell><cell>0.741</cell><cell>0.760</cell><cell>0.708</cell></row><row><cell>GPT-4</cell><cell>0.709</cell><cell>0.763</cell><cell>0.752</cell><cell>0.618</cell><cell>0.646</cell><cell>0.735</cell><cell>0.731</cell><cell>0.733</cell><cell>0.689</cell></row><row><cell>Llama 3.1 405B</cell><cell>0.784</cell><cell>0.844</cell><cell>0.821</cell><cell>0.694</cell><cell>0.758</cell><cell>0.795</cell><cell>0.807</cell><cell>0.805</cell><cell>0.744</cell></row><row><cell>Llama 3.1 70B</cell><cell>0.745</cell><cell>0.814</cell><cell>0.781</cell><cell>0.628</cell><cell>0.711</cell><cell>0.788</cell><cell>0.781</cell><cell>0.764</cell><cell>0.698</cell></row><row><cell>Llama 3.1 8B</cell><cell>0.618</cell><cell>0.719</cell><cell>0.665</cell><cell>0.474</cell><cell>0.544</cell><cell>0.636</cell><cell>0.650</cell><cell>0.680</cell><cell>0.573</cell></row><row><cell>Gemini-1.5 pro</cell><cell>0.634</cell><cell>0.726</cell><cell>0.649</cell><cell>0.574</cell><cell>0.593</cell><cell>0.632</cell><cell>0.620</cell><cell>0.657</cell><cell>0.619</cell></row><row><cell>Gemini-1.5 pro</cell><cell>0.624</cell><cell>0.710</cell><cell>0.646</cell><cell>0.565</cell><cell>0.578</cell><cell>0.625</cell><cell>0.610</cell><cell>0.641</cell><cell>0.613</cell></row><row><cell>Gemini-1.5 flash</cell><cell>0.578</cell><cell>0.649</cell><cell>0.608</cell><cell>0.421</cell><cell>0.548</cell><cell>0.639</cell><cell>0.576</cell><cell>0.589</cell><cell>0.596</cell></row><row><cell>Gemini-1.5 flash</cell><cell>0.570</cell><cell>0.644</cell><cell>0.602</cell><cell>0.420</cell><cell>0.534</cell><cell>0.628</cell><cell>0.571</cell><cell>0.574</cell><cell>0.591</cell></row><row><cell>Claude-3.5 Sonnet</cell><cell>0.709</cell><cell>0.781</cell><cell>0.728</cell><cell>0.626</cell><cell>0.683</cell><cell>0.711</cell><cell>0.712</cell><cell>0.743</cell><cell>0.684</cell></row><row><cell>Claude-3-Sonnet</cell><cell>0.685</cell><cell>0.759</cell><cell>0.719</cell><cell>0.612</cell><cell>0.679</cell><cell>0.700</cell><cell>0.688</cell><cell>0.714</cell><cell>0.610</cell></row><row><cell>Claude-3-Haiku</cell><cell>0.636</cell><cell>0.697</cell><cell>0.659</cell><cell>0.591</cell><cell>0.579</cell><cell>0.653</cell><cell>0.660</cell><cell>0.678</cell><cell>0.573</cell></row><row><cell>Qwen-2.5 72B</cell><cell>0.717</cell><cell>0.769</cell><cell>0.770</cell><cell>0.662</cell><cell>0.585</cell><cell>0.756</cell><cell>0.738</cell><cell>0.751</cell><cell>0.708</cell></row><row><cell>Mistral Large 2</cell><cell>0.671</cell><cell>0.736</cell><cell>0.725</cell><cell>0.602</cell><cell>0.543</cell><cell>0.700</cell><cell>0.682</cell><cell>0.712</cell><cell>0.673</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Adler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lama</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilge</forename><surname>Akkaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florencia</forename><surname>Leoni Aleman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Janko</forename><surname>Altenschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Altman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.08774</idno>
+		<title level="m">Shyamal Anadkat, et al. Gpt-4 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">The claude 3 model family: Opus, sonnet</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+		<imprint>
+			<biblScope unit="page">268232499</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">Damian</forename><surname>Blasi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonios</forename><surname>Anastasopoulos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.06733</idno>
+		<title level="m">Systematic inequalities in language technology performance across the world&apos;s languages</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Multiwoz-a large-scale multi-domain wizard-of-oz dataset for task-oriented dialogue modelling</title>
+		<author>
+			<persName><forename type="first">Paweł</forename><surname>Budzianowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tsung-Hsien</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo-Hsiang</forename><surname>Tseng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Inigo</forename><surname>Casanueva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Ultes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Milica</forename><surname>Osman Ramadan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gašić</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1810.00278</idno>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">A survey on evaluation of large language models</title>
+		<author>
+			<persName><forename type="first">Yupeng</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jindong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linyi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaijie</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyuan</forename><surname>Yi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cunxiang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yidong</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Intelligent Systems and Technology</title>
+		<imprint>
+			<biblScope unit="volume">15</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="1" to="45" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Mj-bench: Is your multimodal reward model really a good judge for text-to-image generation</title>
+		<author>
+			<persName><forename type="first">Zhaorun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichao</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zichen</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiyang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenhang</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenzhen</forename><surname>Weng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoqin</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaoqi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengwei</forename><surname>Tong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qinglan</forename><surname>Huang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.04842</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Sequence to sequence modeling for user simulation in dialog systems</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Paul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Crook</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Marin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">In Interspeech</title>
+		<imprint>
+			<biblScope unit="page" from="1706" to="1710" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Abhimanyu</forename><surname>Dubey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Jauhri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Pandey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Kadian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmad</forename><surname>Al-Dahle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aiesha</forename><surname>Letman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akhil</forename><surname>Mathur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Schelten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amy</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Angela</forename><surname>Fan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.21783</idno>
+		<title level="m">The llama 3 herd of models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Can large language models understand real-world complex instructions?</title>
+		<author>
+			<persName><forename type="first">Qianyu</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lina</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qianxi</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xunzhe</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaqing</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanghua</forename><surname>Xiao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page" from="18188" to="18196" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Followbench: A multi-level fine-grained constraints following benchmark for large language models</title>
+		<author>
+			<persName><forename type="first">Yuxin</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingshan</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanjun</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liangyou</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Mi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lifeng</forename><surname>Shang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qun</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.20410</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Data-efficient alignment of large language models with human feedback through natural language</title>
+		<author>
+			<persName><forename type="first">Di</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shikib</forename><surname>Mehri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Devamanyu</forename><surname>Hazarika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aishwarya</forename><surname>Padmakumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sungjin</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mahdi</forename><surname>Namazifar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.14543</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Large language models are state-of-the-art evaluators of translation quality</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Kocmi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Federmann</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.14520</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Alpacaeval: An automatic evaluator of instruction-following models</title>
+		<author>
+			<persName><forename type="first">Xuechen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Dubois</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Taori</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ishaan</forename><surname>Gulrajani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><surname>Guestrin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tatsunori B</forename><surname>Hashimoto</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yanran</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyu</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjie</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziqiang</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuzi</forename><surname>Niu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1710.03957</idno>
+		<title level="m">Dailydialog: A manually labelled multi-turn dialogue dataset</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Rouge: A package for automatic evaluation of summaries</title>
+		<author>
+			<persName><forename type="first">Chin-Yew</forename><surname>Lin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Text summarization branches out</title>
+		<imprint>
+			<date type="published" when="2004">2004</date>
+			<biblScope unit="page" from="74" to="81" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">How not to evaluate your dialogue system: An empirical study of unsupervised evaluation metrics for dialogue response generation</title>
+		<author>
+			<persName><forename type="first">Chia-Wei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Lowe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Iulian V Serban</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurent</forename><surname>Noseworthy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joelle</forename><surname>Charlin</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Pineau</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1603.08023</idno>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Alignbench: Benchmarking chinese alignment of large language models</title>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanyu</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengyuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuoer</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bosi</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiale</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pei</forename><surname>Ke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weng</forename><surname>Lam Tam</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.18743</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Iter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichong</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuohang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruochen</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenguang</forename><surname>Zhu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.16634</idno>
+		<title level="m">Nlg evaluation using gpt-4 with better human alignment</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Usr: An unsupervised and reference free evaluation metric for dialog generation</title>
+		<author>
+			<persName><forename type="first">Shikib</forename><surname>Mehri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxine</forename><surname>Eskenazi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2005.00456</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">I</forename><surname>Mistral</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Team</surname></persName>
+		</author>
+		<ptr target="https://mistral.ai/news/mistral-large-2407/" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note>Mistral large 2</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://openai.com/index/introducing-openai-o1-preview/" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Openai o1 system card</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://openai.com/index/" />
+		<imprint>
+			<date type="published" when="2024-09">September 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Training language models to follow instructions with human feedback</title>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carroll</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katarina</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="27730" to="27744" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Bleu: a method for automatic evaluation of machine translation</title>
+		<author>
+			<persName><forename type="first">Kishore</forename><surname>Papineni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Salim</forename><surname>Roukos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Todd</forename><surname>Ward</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Jing</forename><surname>Zhu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 40th annual meeting of the Association for Computational Linguistics</title>
+		<meeting>the 40th annual meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<date type="published" when="2002">2002</date>
+			<biblScope unit="page" from="311" to="318" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yiwei</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiqiang</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yebowen</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenlin</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sangwoo</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuansheng</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Infobench</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.03601</idno>
+		<title level="m">Evaluating instruction following ability in large language models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Gemini 1.5: Unlocking multimodal understanding across millions of tokens of context</title>
+		<author>
+			<persName><forename type="first">Machel</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolay</forename><surname>Savinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denis</forename><surname>Teplyashin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitry</forename><surname>Lepikhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean-Baptiste</forename><surname>Alayrac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Radu</forename><surname>Soricut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Angeliki</forename><surname>Lazaridou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Orhan</forename><surname>Firat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.05530</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Xtreme-r: Towards more challenging and nuanced multilingual evaluation</title>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Ruder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Constant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Botha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Siddhant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Orhan</forename><surname>Firat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinlan</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Garrette</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2104.07412</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Thibault</forename><surname>Sellam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dipanjan</forename><surname>Das</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ankur P</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bleurt</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2004.04696</idno>
+		<title level="m">Learning robust metrics for text generation</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Xtreme: A massively multilingual multi-task benchmark for evaluating cross-lingual generalization</title>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Siddhant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melvin</forename><surname>Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Orhan</forename><surname>Firat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Ruder</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Machine Learning</title>
+		<meeting>the International Conference on Machine Learning</meeting>
+		<imprint>
+			<date type="published" when="2020">2020. 2020</date>
+			<biblScope unit="page" from="4411" to="4421" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Evaluating large language models on controlled generation tasks</title>
+		<author>
+			<persName><forename type="first">Jiao</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufei</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wangchunshu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rahul</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Frederick Wieting</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nanyun</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhe</forename><surname>Ma</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.14542</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Taori</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ishaan</forename><surname>Gulrajani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Dubois</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuechen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><surname>Guestrin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tatsunori B</forename><surname>Hashimoto</surname></persName>
+		</author>
+		<title level="m">Stanford alpaca: An instruction-following llama model</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Qwen2.5: A party of foundation models</title>
+		<author>
+			<persName><forename type="first">Qwen</forename><surname>Team</surname></persName>
+		</author>
+		<ptr target="https://qwenlm.github.io/blog/qwen2.5/" />
+		<imprint>
+			<date type="published" when="2024-09">September 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">Bo-Hsiang</forename><surname>Tseng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinpei</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florian</forename><surname>Kreyssig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Byrne</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.11904</idno>
+		<title level="m">Transferable dialogue systems and user simulators</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Beyond reverse kl: Generalizing direct preference optimization with diverse divergence constraints</title>
+		<author>
+			<persName><forename type="first">Chaoqi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yibo</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenghao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxin</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zefan</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawei</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binghuai</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunbo</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhifang</forename><surname>Sui</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.17926</idno>
+		<title level="m">Large language models are not fair evaluators</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Benchmarking complex instruction-following with multiple constraints composition</title>
+		<author>
+			<persName><forename type="first">Bosi</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pei</forename><surname>Ke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaotao</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lindong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinfeng</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenchuang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binxin</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wendy</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxin</forename><surname>Xu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.03978</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Are all languages created equal in multilingual bert</title>
+		<author>
+			<persName><forename type="first">Shijie</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Dredze</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2005.09093</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<author>
+			<persName><forename type="first">Congying</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Xing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiangshu</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.18667</idno>
+		<title level="m">Yihao Feng, Ran Xu, Wenpeng Yin, and Caiming Xiong. Fofo: A benchmark to evaluate llms&apos; format-following capability</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">Can</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingfeng</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiubo</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiazhan</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongyang</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daxin</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wizardlm</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.12244</idno>
+		<title level="m">Empowering large language models to follow complex instructions</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Varsha</forename><surname>Kishore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kilian</forename><forename type="middle">Q</forename><surname>Weinberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoav</forename><surname>Artzi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bertscore</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1904.09675</idno>
+		<title level="m">Evaluating text generation with bert</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Judging llm-as-a-judge with mt-bench and chatbot arena</title>
+		<author>
+			<persName><forename type="first">Lianmin</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Lin</forename><surname>Chiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhanghao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonghao</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuohan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dacheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Xing</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="46595" to="46623" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Judging llm-as-a-judge with mt-bench and chatbot arena</title>
+		<author>
+			<persName><forename type="first">Lianmin</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Lin</forename><surname>Chiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhanghao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonghao</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuohan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dacheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Xing</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Instruction-following evaluation for large language models</title>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianjian</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swaroop</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siddhartha</forename><surname>Brahma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sujoy</forename><surname>Basu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Luan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Hou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.07911</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

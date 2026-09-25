@@ -1,0 +1,1308 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">RAP: Retrieval-Augmented Planning with Contextual Memory for Multimodal LLM Agents</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-02-06">6 Feb 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Tomoyuki</forename><surname>Kagaya</surname></persName>
+							<email>&lt;kagaya.tomoyuki@jp.panasonic.com&gt;</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Panasonic Connect Co., Ltd</orgName>
+								<address>
+									<country key="JP">Japan</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jing</forename><surname>Thong</surname></persName>
+							<email>&lt;jingyuan.thong@sg.panasonic.com&gt;</email>
+							<affiliation key="aff4">
+								<orgName type="institution">Thong Jing Yuan</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><surname>Yuan</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Panasonic R&amp;D Center</orgName>
+								<address>
+									<country key="SG">Singapore</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yuxuan</forename><surname>Lou</surname></persName>
+							<email>lou@u.nus.edu&gt;.</email>
+							<affiliation key="aff2">
+								<orgName type="institution">National University of Singapore</orgName>
+								<address>
+									<country key="SG">Singapore</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jayashree</forename><surname>Karlekar</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Panasonic R&amp;D Center</orgName>
+								<address>
+									<country key="SG">Singapore</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Sugiri</forename><surname>Pranata</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Panasonic R&amp;D Center</orgName>
+								<address>
+									<country key="SG">Singapore</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Akira</forename><surname>Kinose</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Panasonic Connect Co., Ltd</orgName>
+								<address>
+									<country key="JP">Japan</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Koki</forename><surname>Oguri</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Panasonic Connect Co., Ltd</orgName>
+								<address>
+									<country key="JP">Japan</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Felix</forename><surname>Wick</surname></persName>
+							<affiliation key="aff3">
+								<orgName type="department">Panasonic R&amp;D Center Ger</orgName>
+								<address>
+									<settlement>- many</settlement>
+									<country key="DE">Germany</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yang</forename><surname>You</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">National University of Singapore</orgName>
+								<address>
+									<country key="SG">Singapore</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">RAP: Retrieval-Augmented Planning with Contextual Memory for Multimodal LLM Agents</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-02-06">6 Feb 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">73DF074988133170CA56DA4D851571C5</idno>
+					<idno type="arXiv">arXiv:2402.03610v1[cs.LG]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:38+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Owing to recent advancements, Large Language Models (LLMs) can now be deployed as agents for increasingly complex decision-making applications in areas including robotics, gaming, and API integration. However, reflecting past experiences in current decision-making processes, an innate human behavior, continues to pose significant challenges. Addressing this, we propose Retrieval-Augmented Planning (RAP) framework, designed to dynamically leverage past experiences corresponding to the current situation and context, thereby enhancing agents' planning capabilities. RAP distinguishes itself by being versatile: it excels in both text-only and multimodal environments, making it suitable for a wide range of tasks. Empirical evaluations demonstrate RAP's effectiveness, where it achieves SOTA performance in textual scenarios and notably enhances multimodal LLM agents' performance for embodied tasks. These results highlight RAP's potential in advancing the functionality and applicability of LLM agents in complex, real-world applications.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>Recent research has revealed the high inferential abilities of Large Language Models (LLMs) as agents <ref type="bibr">(Wang et al., 2023b;</ref><ref type="bibr" target="#b21">Xi et al., 2023)</ref>, indicating their potential application in various areas like decision-making tasks and robotic control. Previous works such as ReAct <ref type="bibr">(Yao et al., 2023)</ref> have shown that LLMs can generate accurate actions as language agents by iteratively performing actions and reasoning.</p><p>Meanwhile, with the rapid development of LLMs, Retrieval-Augmented Generation (RAG) has emerged as a prevalent technique in enhancing the generation capabilities of LLMs. This approach amalgamates external knowledge into the generation process, thus enriching the context and accuracy of generated content. However, integrating external memory to augment LLM agent planning, particularly in diverse environments, poses substantial challenges. Existing works like Reflexion <ref type="bibr">(Shinn et al., 2023)</ref>, which analyzes failure cases, and ExpeL <ref type="bibr">(Zhao et al., 2023)</ref>, which extracts insights and enhances learning of language agents, fall short in utilizing comprehensive past information in complex environments. This highlights a critical gap: the lack of a comprehensive framework for leveraging past experiences in LLM agent planning, limiting their adaptability and applicability in complex, real-world scenarios.</p><p>In this paper, we introduce a novel framework, Retrieval-Augmented Planning (RAP), which embodies a pivotal human ability -to leverage generalized past experiences for current tasks -and apply it to LLM agents. Our approach involves storing past experiences in memory, retrieving them appropriately based on the similarity with present context including multimodal information, and generating subsequent actions via in-context learning, thereby enhancing the decision-making capacity of language agents. Central to this framework is the LLMs' ability to perform analogy-making from various abstracted patterns <ref type="bibr">(Mirchandani et al., 2023)</ref>. Leveraging this capability, our memory stores both context and action-observation trajectories for each experience. The approach effectively facilitates deriving correct actions from memory examples within task constraints. Furthermore, by storing multimodal information in memory and considering it when retrieving past experiences, our approach flexibly utilizes multimodal information with LLMs and Vision-Language Models (VLMs) separately for language agents. Consequently, our approach proves to be effective for memory utilization by language agents in both decision-making and robotics tasks, in textual and multimodal environments. Specifically, RAP achieves 33.6%, 13.0%, 18.2%, and 12.7% gain over ReAct on the ALFWorld, Webshop, Franka Kitchen, and Meta World benchmarks respectively.</p><p>To summarize, our contributions are as follows:</p><p>• We propose RAP, a novel framework that enhances LLM agents' planning capacity. It strategically enriches the decision-making process by storing past experiences and intelligently retrieving them based on their similarity to the current situation.</p><p>• RAP is capable of being applied not only in textual environments but also in multimodal embodied tasks, marking it as a pioneering effort in employing memory retrieval techniques for multimodal agents, a first in this domain to our knowledge.</p><p>• We validate the effectiveness of RAP empirically across both textual and multimodal benchmarks. RAP shows significant improvements compared to prior SOTA methods in both types of environments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Related Work</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1.">Language Models and Vision-Language Models as Foundations</head><p>Large Language Models (LLMs) such as GPT (OpenAI, 2023) and the LLaMA series (GenAI, 2023), leveraging transformer architecture and self-supervised learning objectives like Next Token Prediction, have excelled in generating coherent, human-like text. These models, pre-trained on extensive text corpora, possess vast linguistic knowledge and reasoning abilities. Extending beyond LLMs, multi-modal domains have given rise to Vision-Language Models (VLMs) <ref type="bibr" target="#b24">(Yin et al., 2023)</ref> such as LLaVA <ref type="bibr" target="#b4">(Liu et al., 2023)</ref> and CogVLM <ref type="bibr">(Wang et al., 2023c)</ref>, which integrate textual and visual inputs, exemplified by LLaVA's training on image-caption pairs from the CC3M datasets <ref type="bibr" target="#b13">(Sharma et al., 2018)</ref>. Our work utilizes these foundations to build agents for textual and embodied environments: text-based agents employing LLMs, and embodied agents integrating VLMs for visual perception and action planning. We focus on enhancing these agents' planning capabilities through memory retrieval techniques, enabling them to selectively access and utilize relevant memory for improved sequential decision-making.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2.">Language Models as AI Agents</head><p>Recent works have leveraged LLM's anthropomorphic capabilities when building autonomous agents. These agents can be depicted into having 4 key aspects: Profile (agent characteristics), Memory (past information), Planning (future strategies) and Action (execution policies) <ref type="bibr">(Wang et al., 2023a)</ref>. A notable example is Chain-of-Thought (CoT) <ref type="bibr">(Wei et al., 2022)</ref>, where agents are encouraged to mirror human cognitive mechanisms by incorporating reasoning into intermediate steps for complex problem-solving tasks.</p><p>With a dynamic reasoning process, ReAct <ref type="bibr">(Yao et al., 2023)</ref> interleaves generated actions and environmental states, improving the reasoning ability through action-state synergy.</p><p>Our work seeks to enhance the ReAct framework by allowing agents to identify specific objects within observations and additionally retrieve relevant aspects of past experiences </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3.">Retrieval-Augmented Generation with Memory</head><p>Among works <ref type="bibr">(Madaan et al., 2022;</ref><ref type="bibr" target="#b5">Liu et al., 2021;</ref><ref type="bibr" target="#b16">Su et al., 2022)</ref> that seek to derive better answers from LLMs via memory, RAG <ref type="bibr" target="#b3">(Lewis et al., 2020</ref>) is a notable method that combines retrieval-based mechanisms with generative models. Responses from memory are selected based on similarity and passed into LLMs as additional context to deliver outputs that are creative and contextually-grounded. Building on RAG, Reflexion <ref type="bibr">(Shinn et al., 2023)</ref> requires LLMs to self-reflect on unsuccessful tasks for self-improvement in solving tasks over time. ADaPT <ref type="bibr" target="#b10">(Prasad et al., 2023)</ref> further decomposes into sub-tasks and re-executes where necessary. Yet, these works only reflect on trajectories within the task. Hence, these insights are often restricted to each task. Building on Reflexion, ExpeL <ref type="bibr">(Zhao et al., 2023)</ref> passes all generated experiences into the LLM to reflect in a text-based manner. In contrast, our work adopts a different approach by implicitly drawing from a diverse range of experiences from memory without explicitly requiring an additional step of re-tasking the LLM to extract insights. With this approach, our agent can not only efficiently generalize experiences from other successful tasks to solve the current task, but also be flexible enough to extract relevant components from experiences for current task, enhancing the agent's ability to expand its memory from textual to multimodal contexts.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">RAP: Retrieval-Augmented Planning</head><p>We developed Retrieval-Augmented Planning (RAP), a framework that leverages past experiences to facilitate decision-making according to the current context. Fig. <ref type="figure" target="#fig_1">2</ref> provides an overview of the framework, which consists of four core components: Memory, Reasoner, Retriever, and Executor. The specific details of each module will be discussed in sections 3.2 to 3.5.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.">Preliminaries</head><p>In this work, we consider an agent operating in a particular environment and assigned with completing some task T. The agent forms an overall plan p, then interacts with the environment over a finite horizon of H timesteps. At each timestep t ∈ {1, 2, . . . H}, the agent forms an action plan p ′ t , selects an action α t from the action space A and receives an observation o t from the observation space O.</p><p>The trajectory τ = { ⃗ p ′ t , ⃗ α t , ⃗ o t } of the agent up to time t consists of the sequences of plans ⃗ p ′ t = (p ′ 1 , ...p ′ t ), actions ⃗ α t = (α 1 , ...α t ) and observations ⃗ o t = (o 1 , ...o t ).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.">Memory</head><p>To enable retrieval-augmented planning, we first construct memory databases. The databases contain logs of prior successful task executions. For each log L i completing a task T i in H i steps, we record the task information T i , the overall plan p i , the trajectory of the agent τ Li including plans, actions, and observations sequences.</p><formula xml:id="formula_0">L i = {T i , p i , τ Li } (<label>1</label></formula><formula xml:id="formula_1">)</formula><formula xml:id="formula_2">τ Li = { ⃗ p ′ Li , ⃗ α Li , ⃗ o Li }<label>(2)</label></formula><p>For textual environments, the observations are textual descriptions of the world state. For multimodal environments, the observations are visual representations -images from a fixed viewpoint camera after each agent action.</p><p>The logs are collected by having agents attempt the tasks and saving streams of successful episodes. The episodic logs capture the steps needed to complete the tasks. Storing these examples allows the agents to leverage prior experience when planning for new instances of the tasks.</p><p>During interactions with the environment, the agents can selectively retrieve relevant memory samples to make more informed action decisions. For text tasks, the textual logs provide crucial context. For embodiment, prior visual observations reveal outcomes of actions in the space. By retrieving prototypical executions, the agents can plan smarter policies while avoiding past failures. The memory augmentation thus equips the models with vital environmental knowledge for sequential decision-making. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.">Reasoner</head><p>The Reasoner generates overall plans, action plans, and retrieval keys based on the agent's current situation and action trajectory, using LLMs. Initially, the Reasoner produces the overall plan from the task information. Based on the task and the overall plan, the Reasoner generates an action plan. Also, in accordance with ReAct, an action or action plan is dynamically generated by LLMs, considering the current task status. If an action plan is generated, a retrieval key is created based on the generated action plan. For instance, in ALFWorld <ref type="bibr">(Shridhar et al., 2021)</ref>, if an action plan like "I need to find the watch" is generated, the retrieval key would be "search watch". Hence, the Reasoner enables agents to take into consideration the current situation and context.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4.">Retriever</head><p>The Retriever is designed to extract the most relevant memory logs to guide the agent's subsequent actions to complete the current task. This process is shown in Fig. <ref type="figure" target="#fig_2">3</ref> (Left).</p><p>The similarity score, comparing the current state S 0 with log L i , is calculated as a weighted average of the task similarity, overall plan alignment, and retrieval key congruence.</p><p>Let the current agent task be T 0 , the overall plan be p 0 , and the retrieval key generated by the Reasoner based on current action plan p ′ be k 0 . The similarity score between current state S 0 with log L i is calculated as a weighted average of the similarity score for task, overall plan, and retrieval key.</p><formula xml:id="formula_3">Score(S 0 , L i ) = w t • sim(T 0 , T Li ) + w p • sim(p 0 , p Li ) + w k • sim(k 0 , τ Li )<label>(3)</label></formula><p>Each component's similarity score is determined using cosine similarity of their feature representations. For text data, the representations are derived using sentence-transformers <ref type="bibr" target="#b12">(Reimers &amp; Gurevych, 2019)</ref>. For images, the representa-tions are generated with a CLIP-based Vision Transformer.</p><p>The similarity score between the retrieval key and the log trajectory is adaptive based on environment type and retrieval key type. In multimodal environments, the retrieval key corresponds to agents' current visual observation. Thus, the retrieval-key similarity score is the score between current and logged visual trajectory observations as in equation ( <ref type="formula" target="#formula_4">4</ref>).</p><formula xml:id="formula_4">sim(k 0 , τ Li ) = max(cos sim(k visual 0 , o j )), for o j ∈ ⃗ o Li<label>(4)</label></formula><p>In textual environments, the retrieval-key similarity score is adaptive based on key type. In scenarios involving the retrieval key for searching or locating objects, the similarity score is calculated between the retrieval key and the logged textual trajectory observations, as in equation ( <ref type="formula" target="#formula_5">5</ref>).</p><formula xml:id="formula_5">sim(k 0 , τ Li ) = max(cos sim(k text 0 , o j )), for o j ∈ ⃗ o Li<label>(5)</label></formula><p>For the case retrieval-key is interacting with object action planning, it is an action similarity score, as in equation ( <ref type="formula" target="#formula_6">6</ref>).</p><formula xml:id="formula_6">sim(k 0 , τ Li ) = max(cos sim(k text 0 , α j )), for α j ∈ ⃗ α Li<label>(6)</label></formula><p>Furthermore, component weights are adaptively calibrated based on the environment. In environments with a constrained task space, task similarity is assigned a higher weight, For example, in Franka Kitchen environment which has only 5 tasks. We only retrieve logs with same task type.</p><p>For each retrieved experience, only a window of trajectory centered around the most similar action is passed to the agent. This allows agents to focus on actions most similar to current task, rather than full trajectories that may instead create additional noise to the agent.</p><p>In summary, our meticulously-crafted retrieval method efficiently identifies the most pertinent logs by calculating a weighted similarity score that takes into account various aspects including task information, overall planning, and</p><p>Algorithm 1 Retrieval-Augmented Planning Initialize: Trajectory τ , Reasoner LLM , Retriever, Executor LLM , Memory Input: Task T p o = Reasoner(T ) // Generate overall plan e = Retriever(Memory, T ) // Retrieve experiences while reward is not Success and t &lt; max steps do // Generate action or action plan a t = Executor(T , p o , e, τ ) if action plan then k = Reasoner(a t ) // Generate retrieval key e = Retriever(Memory, T , k) // Retrieve experiences else reward, o t = Env(a t ) // Input action to environment end if τ ← a t , o t // Update trajectory t = t + 1 // Increment end while</p><p>retrieval key. This process ensures that the most relevant and contextually appropriate logs are selected from a vast repository of memory logs. Once these logs are retrieved, they serve as an invaluable resource for the large language model serving as Executor.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.5.">Executor</head><p>The Executor receives past experiences from the Retriever and generates the next action by utilizing these experiences through in-context learning. This process is illustrated in Fig. <ref type="figure" target="#fig_2">3</ref> (Right). By presenting the past experience aligned with the current context as a prompt, it enables accurate decisionmaking for the next action, mirroring the process humans leverage past experiences for future actions. Additionally, the length of the current task trajectory is used in the same way as past experiences, utilizing only a constant number of new trajectories. This encourages effective analogy-making from experiences through in-context learning in LLMs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Experiments</head><p>To validate the effectiveness of our framework in various environments, we performed evaluations on four benchmarks. These include the text-based multi-step tasks in ALFWorld <ref type="bibr">(Shridhar et al., 2021)</ref> and Webshop <ref type="bibr" target="#b22">(Yao et al., 2022)</ref>, and robotics tasks, FrankaKitchen <ref type="bibr" target="#b2">(Gupta et al., 2019)</ref> and Meta-World <ref type="bibr" target="#b25">(Yu et al., 2021)</ref>, which are multimodal environments with texts and images. ALFWorld <ref type="bibr">(Shridhar et al., 2021)</ref> is a synthetic text-based game that challenges an agent to solve multi-step tasks in a variety of interactive environments based on TextWorld <ref type="bibr" target="#b0">(Côté et al., 2018)</ref>. Following ReAct, we evaluated an agent in 134 unseen games, including six types of tasks: Pick, Clean, Heat, Cool, Look, and Pick2. In this environment, agents are required to accomplish complex tasks using textbased actions in a simulated household providing textual and image feedback. Following previous works <ref type="bibr">(Yao et al., 2023;</ref><ref type="bibr">Shinn et al., 2023;</ref><ref type="bibr" target="#b10">Prasad et al., 2023)</ref>, RAP runs recursively until it reaches a depth (trial) of 3. In RAP train , we use 1000 tasks from the provided training set, and run recursively with memory from successful tasks both from the training set and previous trials. Additionally, we use task information including the task type for the Retriever. During action-based similarity calculation, it extracts four experiences and ten actions from both before and after the most similar action. Meanwhile, during observation-based similarity calculation, it uses eight experiences and five actions from both before and after the most similar action.</p><p>We conducted evaluations using three models: GPT-3.5 <ref type="bibr">(Ouyang et al., 2022)</ref>, GPT-4 (OpenAI, 2023), and Llama2-13b (GenAI, 2023). In Table <ref type="table" target="#tab_0">1</ref>, our experiments with GPT-3.5 show that RAP(85.8%) and RAP train (91.0%) achieve a significantly higher success rate compared to previous works such as ReAct(52.2%), Reflexion(74.6%), and ADaPT(71.6%). Further, RAP is also effective even with high-performance models like GPT-4, and locally-operated models such as Llama2-13b, thus illustrating the efficacy of our method across various LLMs.</p><p>Figure <ref type="figure" target="#fig_3">4</ref> highlights the progression of improvements to success rate over three trials, where RAP shows higher success rates compared to ReAct, thus indicating the effective utility of successful experiences from other tasks in memory. In addition, RAP with GPT-3.5 achieves performance equivalent * We use the performance reported by <ref type="bibr" target="#b10">(Prasad et al., 2023)</ref> to ReAct with GPT-4. Also, RAP with memory built from the training set via GPT-3.5 surpasses ReAct with GPT-4.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.2.">WEBSHOP</head><p>WebShop <ref type="bibr" target="#b22">(Yao et al., 2022)</ref> is a web application that simulates online shopping, where agents are required to select products for purchase based on a given user instruction.</p><p>WebShop contains a total of 1.18M real-world products featured on Amazon, and comprises a wide variety of structured and unstructured texts. Following Reflexion <ref type="bibr">(Shinn et al., 2023)</ref> and ADaPT <ref type="bibr" target="#b10">(Prasad et al., 2023)</ref>, we evaluated an agent across 100 instructions. For each instruction, agents are required to reason and select a desired product that is most aligned to the given instruction based on observations returned by the web application, and perform additional precise interactions with the portal to navigate through the web application such as searching or clicking buttons. Such interactions are performed in a text-based manner where the agent issues a textual command into the web application. Following previous studies, we allow the agent to run recursively until it reaches a depth (trial) of 3.</p><p>During our evaluation, we ran the initial trial with a Re-Act agent and formulated the memory database based on successful tasks. The memory database would be further expanded for subsequent trials based on successful tasks in the preceding trials. Here, successful tasks are counted as those with a reward of 1. In addition, during retrieval of actions in memory, the Retriever extracts three experiences and five actions from before and after the most similar action.</p><p>Moreover, unlike other environments where objects are generalizable across different tasks, WebShop has an additional unique feature where actions in each task are highly dependent on the scenario outlined in that task. As such, apart from the correlation between the current reasoning and trajectories in memory, our agent also considers the relationship between the action of each task in memory that is most similar to the current action and its corresponding scenario for that task. This builds on the concept of "A is to B as C is to D", where the generated action depends not only on similar trajectories in memory, but also how these trajectories relate back to their scenario, and how the current trajectory should be related to the current scenario. By incorporating intra-task relationships, this allows the agent to better reason how the actions in memory are correlated with their own scenarios, and thereafter generate an action that is also aligned to the current scenario at hand.</p><p>We performed evaluations using two different models: GPT-3.5 <ref type="bibr">(Ouyang et al., 2022)</ref> and Llama2-13b (GenAI, 2023).</p><p>In Table <ref type="table" target="#tab_1">2</ref>, experiments with GPT-3.5 demonstrate that our method (48.0%) achieves a higher success rate compared to previous studies such as ReAct (35.0%), Reflexion (35.0%), and ADaPT (43.0%). Furthermore, our method is able to achieve a higher overall reward score (76.1%) as compared to ReAct (61.8%), Reflexion (61.8%) and ADaPT (64.0%). Figure <ref type="figure" target="#fig_4">5</ref> illustrates a comparison of the improvement in success rate and reward score over three trials for ReAct and RAP, with both methods using GPT-3.5. Here, it indicates a marked improvement in both success rate and reward score for our method, indicating that successful experiences from the other tasks are being effectively utilized. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2.">Multimodal Environments</head><p>We evaluated our proposed technique in embodied multimodal agents on two benchmark environments: Franka Kitchen and Meta-World. These simulations offer a diverse set of household and robotic manipulation tasks requiring visual perception and physical interaction.</p><p>We constructed embodied agents using two VLM foundations -LLaVA and CogView. For each VLM, we compared task performance of the base model to a RAP-enhanced agent utilizing our memory retrieval system.</p><p>The Franka Kitchen benchmark consists of compound tasks like arranging objects and preparing meals. Meta-World provides a suite of 50 distinct robotic skills focused on fine manipulation. For both sets, the agent must plan actions based on visual observations in an interactive 3D environment. We report quantitative results on task success rates with and without RAP augmentation. Our method allows the VLM Agents to selectively reference prior successful executions during planning. This provides vital visual context and demonstrates the benefits of memory-augmented reasoning for embodied agents.</p><p>To map the high-level plans of the VLM agents to executable environment actions, we train a policy network on 25 demonstrations for each task. We evaluate on 5 subtasks with 2 different camera views per benchmark. For each (task, view) combination we run 50 trials with different random seeds and report success rates.</p><p>Table <ref type="table" target="#tab_2">3</ref> and Figure <ref type="figure" target="#fig_5">6</ref> shows that RAP can significantly enhance embodied multimodal agents planning on both benchmarks. The results offer insights into how memory can aid these models for sequential decision making and embodied tasks requiring interactive visual perception.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Ablation Study</head><p>In this section, we provide additional experimental results and showcase some critical components of experiences that are required to be stored into memory.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1.">Evaluation across various Retrievers</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1.1.">ALFWORLD EVALUATION</head><p>We perform evaluation on ALFWorld with GPT-3.5 by varying the Retriever, as shown in Table <ref type="table" target="#tab_3">4</ref>. The results of RAP act and RAP obs illustrate the effectiveness of switching the information used for retrieval depending on the situation.</p><p>Furthermore, we utilize visual observation provided by ALF-World instead of textual observation, and perform an evaluation using similarity between textual retrieval key and image observation with CLIP <ref type="bibr" target="#b11">(Radford et al., 2021)</ref>. As a result, slightly better performance is demonstrated than when using text observation information. This suggests that employing direct image data, rather than information converted into text, could enable more effective retrieval. Here, all evaluations are performed on Llama2-13b.</p><p>As shown in Table <ref type="table" target="#tab_4">5</ref>, through RAP obs , the agent is able to retrieve trajectories from memory based on either actions or observations, depending on the current stage of solving the task. With the incorporation of intra-task similarity in RAP intra , the agent is able to align the relationship between task information and the corresponding trajectories of each experience when projecting to the current task. By retrieving based on product category in RAP cat , the agent is able to retrieve experiences that are more related to the current task.</p><p>Overall, RAP takes into account these components, resulting in an overall boost of 6.5% and 5.0% for overall reward and success rate respectively on Llama2-13b. With these, RAP also demonstrates a boost of 14.3% and 13.0% for overall reward and success rate respectively on GPT-3.5 in Table <ref type="table" target="#tab_1">2</ref>, showcasing RAP's generalizability across different models. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.">Transfer Learning via Memory</head><p>RAP is capable of utilizing past experiences that are stored in memory. Since the experience of solving tasks is independent of the model, the model used for evaluation does not need to match the one used for memory construction. Here, we illustrate a verification of transfer learning between models by using memory constructed via different models for the evaluation model. From Section 4.1.1, we use 1000 samples from training data, but no recursive trial is conducted (d max = 1) to simply verify the effect of transfer learning.</p><p>Table <ref type="table" target="#tab_5">6</ref> shows results of transfer learning, which indicate memory generated with GPT-3.5 is also effective in Llama2-13b. Thus, RAP allows sharing experiences across models. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.">Conclusion</head><p>We propose Retrieval-Augmented Planning (RAP), which stores past experiences, extracts pertinent experiences from multimodal information such as text and images, and guides subsequent actions. Our framework demonstrated superior performance compared to baseline methods in various LLMs and across four diverse agent and robotics benchmarks. Through these results, our framework enables language agents to flexibly utilize past experiences in accordance with current situations, mirroring a human ability, and thereby enhancing decision-making capabilities.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Impact Statements</head><p>This paper presents work whose goal is to advance the field of Machine Learning. There are many potential societal consequences of our work, none which we feel must be specifically highlighted here.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Parameters</head><p>In Webshop, all experiments were performed with a temperature setting of 0.0, due to the additional requirement of precise commands for interactions with the web application. Here are examples. {Your task is to: put some vase on safe. &gt; To solve the task, I need to find and take a vase, then put it on safe.} examples x 3</p><p>Here is the task. Please make a plan from the examples. Your task is to: put some watch on safe. &gt; think: To solve the task,</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1.2. PROMPT FOR RETRIEVAL KEY IN REASONER</head><p>Here are examples. think: First I need to find a spraybottle. A spraybottle is more likely to appear in cabinet (1-4), countertop (1), toilet (1), sinkbasin (1-2), garbagecan (1). I can check one by one, starting with cabinet 1. &gt; search: spraybottle think: Now I put the first creditcard in dresser. Next, I need to find the second creditcard. I can directly go to countertop 1. &gt; search: creditcard think: Now I take a pen (2). Next, I need to find a desklamp. A desklamp is more likely to appear in dresser (1), shelf (1-9), bed (1), garbagecan (1), drawer (1-10). I can check one by one, starting with dresser 1. &gt; search: desklamp think: Now I find a lettuce (1). Next, I need to take it. &gt; action: take think: Now I find a pan (1). Next, I need to take it. &gt; action: take think: Now I find the second saltshaker (2). Next, I need to take it. &gt; action: take think: Now I heat an egg (2). Next, I need to put it in/on diningtable 1. &gt; action: put think: Now I take a spraybottle (2). Next, I need to put it in/on toilet 1. &gt; action: put think: Now I take an apple (1). Next, I need to go to a microwave (1) and heat it. &gt; action: heat think: Now I take a bread (1). Next, I need to go to a microwave (1) and heat it. &gt; action: heat think: Now I take a mug (3). Next, I need to go to a fridge (1) and cool it. &gt; action: cool think: Now I take a potato (2). Next, I need to go to a fridge (1) and cool it. &gt; action: cool think: Now I find a desklamp (1). Next, I need to use it. &gt; action: use think: Now I find a desklamp (3). Next, I need to use it.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>&gt; action: use</head><p>Here is the task. Please make a plan from the examples. think: First I need to find a watch. A watch is more likely to appear in/on cabinet (1-4), drawer (1-5). I can check one by one, starting with cabinet 1 &gt;</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1.3. PROMPT FOR ACTION PLAN IN REASONER AND FOR ACTION IN EXECUTOR</head><p>Here is the task information.</p><p>You are in the middle of a room. Looking quickly around you, you see a armchair 1, a cabinet 4, a cabinet 3, a cabinet 2, a cabinet 1, a drawer 5, a drawer 4, a drawer 3, a drawer 2, a drawer 1, a dresser 1, a garbagecan 1, a safe 1, a shelf 12, a shelf 11, a shelf 10, a shelf 9, a shelf 8, a shelf 7, a shelf 6, a shelf 5, a shelf 4, a shelf 3, a shelf 2, a shelf 1, a sidetable 1, and a sofa 1.</p><p>Here are examples. {Task: put a vase in safe. Plan: To solve the task, I need to find and take a vase, then put it in the safe.</p><p>&gt; think: First I need to find a vase. OK. &gt; go to shelf 1 On the shelf 1, you see nothing. ... &gt; go to shelf 6 On the shelf 6, you see a vase 2. &gt; think: Now I find a vase (2). Next, I need to take it OK. &gt; take vase 2 from shelf 6 You pick up the vase 2 from the shelf 6.} examples x n</p><p>Here is the task. Please make an action from the examples. Task: put some watch on safe. Plan: To solve the task, I need to find and take a watch, then put it on the safe. &gt;</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. ALFWorld trajectories</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Task Description</head><p>You are in the middle of a room. Looking quickly around you, you see a bed 1, a desk 2, a desk 1, a drawer 6, a drawer 5, a drawer 4, a drawer 3, a drawer 2, a drawer 1, a garbagecan 1, a laundryhamper 1, a safe 1, a shelf 6, a shelf 5, a shelf 4, a shelf 3, a shelf 2, and a shelf 1. Your task is to: put a mug in desk.</p><p>ReAct Act 1: think: To solve the task, I need to find and take a mug, then put it in desk Obs 1: OK. Act 2: think: First I need to find a mug. A mug is more likely to appear in drawer (1-6), shelf (1-6), desk (1-2), garbagecan (1), laundryhamper (1), safe (1).</p><p>I can check one by one, starting with drawer 1 Obs 2: OK. Act 3: go to drawer 1 Obs 3: The drawer 1 is closed. Act 4: open drawer 1 Obs 4: You open the drawer 1. The drawer 1 is open. In it, you see a pen 1. ... Act 23: think: Hmm, it seems like the mug is not in any of the drawers. Let me check the other possible locations Obs 23: OK. ... Fail RAP Plan: To solve the task, I need to find and take a mug, then put it in desk. Act 1: think: First I need to find a mug Obs 1: OK. Retrieval key: search mug Act 2: go to shelf 1 Obs 2: On the shelf 1, you see a mug 2. Act 3: take mug 2 from shelf 1 Obs 3: You pick up the mug 2 from the shelf 1. Act 4: think: Now I find a mug (2). Next, I need to put it in/on desk 1 Obs 4: OK. Retrieval key: action put Act 5: go to desk 1 Obs 5: On the desk 1, you see a bowl 1, a cd 2, a creditcard 2, a desklamp 1, a keychain 1, a laptop 2, a pen 2, and a pencil 2. Act 6: put mug 2 in/on desk 1 Obs 6: You put the mug 2 in/on the desk 1. Success Task Description You are in the middle of a room. Looking quickly around you, you see a cabinet 4, a cabinet 3, a cabinet 2, a cabinet 1, a countertop 1, a garbagecan 1, a handtowelholder 2, a handtowelholder 1, a sinkbasin 2, a sinkbasin 1, a toilet 1, a toiletpaperhanger 1, and a towelholder 1. Your task is to: clean some cloth and put it in cabinet. ReAct Act 1: think: To solve the task, I need to find and take a cloth, then clean it with sinkbasin, then put it in a cabinet Obs 1: OK. Act 2: think: First I need to find a cloth. A cloth is more likely to appear in a cabinet (1-4), countertop (1), sinkbasin (1-2), handtowelholder (1-2), towelholder (1), toiletpaperhanger (1), garbagecan (1). I can check one by one, starting with cabinet 1 Obs 2: OK. ... Act 6: open cabinet 2 Obs 6: You open the cabinet 2. The cabinet 2 is open. In it, you see a cloth 1. Act 7: take cloth 1 from cabinet 2 Obs 7: You pick up the cloth 1 from the cabinet 2. Act 8: think: Now I take a cloth (1). Next, I need to go to sinkbasin (1-2) and clean it Obs 8: OK. Act 9: go to sinkbasin 1 Obs 9: On the sinkbasin 1, you see nothing. Act 10: go to sinkbasin 2 Obs 10: On the sinkbasin 2, you see nothing. Act 11: think: I can't clean the cloth without water. I need to find a source of water Obs 11: OK. Act 12: go to toilet 1 ... Fail RAP Plan: To solve the task, I need to find and take a cloth, then clean it with sinkbasin, then put it in cabinet. Act 1: think: First I need to find a cloth Obs 1: OK. Retrieval key: search cloth Act 2: go to cabinet 1 Obs 2: The cabinet 1 is closed. Act 3: open cabinet 1 Obs 3: You open the cabinet 1. The cabinet 1 is open. In it, you see a toiletpaper 1. Act 4: go to cabinet 2 Obs 4: The cabinet 2 is closed. Act 5: open cabinet 2 Obs 5: You open the cabinet 2. The cabinet 2 is open. In it, you see a cloth 1. Act 6: take cloth 1 from cabinet 2 Obs 6: You pick up the cloth 1 from the cabinet 2. Act 7: think: Now I take a cloth (1). Next, I need to go to sinkbasin (1) and clean it Obs 7: OK. Retrieval key: action clean Act 8: go to sinkbasin 1 Obs 8: On the sinkbasin 1, you see nothing. Act 9: clean cloth 1 with sinkbasin 1 Obs 9: You clean the cloth 1 using the sinkbasin 1. Act 10: think: Now I clean a cloth (1). Next, I need to put it in/on cabinet (1-6) Obs 10: OK. Retrieval key: action put Act 11: go to cabinet 3 Obs 11: The cabinet 3 is closed. Act 12: open cabinet 3 Obs 12: You open the cabinet 3. The cabinet 3 is open. In it, you see a soapbottle 1. Act 13: put cloth 1 in/on cabinet 3 Obs 13: You put the cloth 1 in/on the cabinet 3. Success D. Webshop trajectories Task Description WebShop Instruction: i am looking for mn4 color foundation for my sensitive skin, and price lower than 40.00 dollars [Search] ReAct Action: search[mn4 color foundation sensitive skin] Observation: [Back to Search] Page 1 (Total results: 50) [Next &gt;] [B077PR9TL4] Physicians Formula The Healthy Foundation with SPF 20, LW2, 1 Fl Oz $7.59 [B07VLKYJNH] P ÜR 4-in-1 Love Your Selfie Longwear Foundation &amp; Concealer -Full Coverage Foundation &amp; Concealer Makeup For Dark Spots, Blemishes and Imperfections -Long-Lasting Liquid Makeup &amp; Skincare $36.0 [B09J1X9M1P] Neutrogena Healthy Skin Sensitive Skin Serum Foundation with Pro-Vitamin B5, Color Correcting &amp; Pore Minimizing Liquid Foundation &amp; Face Serum, Buildable Coverage, Medium 02, 1 oz $14.39 Action: think[B077PR9TL4 and B09J1X9M1P are mn4 color foundation for sensitive skin and price lower than 40 dollars.] Observation: OK. Action: click[B077PR9TL4] Observation: [Back to Search] [&lt; Prev] color [1][dc1][dn3][dn4][lc1][ln3][ln4][lw2] [mc1][mn3][mn4][mw2] size [1 fl oz (pack of 1)][1 ounce (pack of 1)][1 fluid ounce] Physicians Formula The Healthy Foundation with SPF 20, LW2, 1 Fl Oz Price: $7.59 Rating: N.A. [Description] [Features] [Reviews] [Attributes] [Buy Now] Act 11: think[For mn4 color foundation for sensitive skin, the item has options 'lw2' and '1 fluid ounce' and seems good to buy.] Observation: OK. Action: click[lw2] Observation: You have clicked lw2. Action: click[Buy Now] Observation: Your score (min 0.0, max 1.0): 0.6666666666666666 Fail RAP Action: search[mn4 color foundation sensitive skin] Observation: [Back to Search] Page 1 (Total results: 50) [Next &gt;] [B077PR9TL4] Physicians Formula The Healthy Foundation with SPF 20, LW2, 1 Fl Oz $7.59 [B07VLKYJNH] P ÜR 4-in-1 Love Your Selfie Longwear Foundation &amp; Concealer -Full Coverage Foundation &amp; Concealer Makeup For Dark Spots, Blemishes and Imperfections -Long-Lasting Liquid Makeup &amp; Skincare $36.0 [B09J1X9M1P] Neutrogena Healthy Skin Sensitive Skin Serum Foundation with Pro-Vitamin B5, Color Correcting &amp; Pore Minimizing Liquid Foundation &amp; Face Serum, Buildable Coverage, Medium 02, 1 oz $14.39 Action: think[B077PR9TL4, B07VLKYJNH, and B09J1X9M1P are mn4 color foundation for sensitive skin and price lower than 40.00 dollars.] Observation: OK. Action: click[B077PR9TL4] Observation: [Back to Search] [&lt; Prev] color [1][dc1][dn3][dn4][lc1][ln3][ln4][lw2] [mc1][mn3][mn4][mw2] size [1 fl oz (pack of 1)][1 ounce (pack of 1)][1 fluid ounce] Physicians Formula The Healthy Foundation with SPF 20, LW2, 1 Fl Oz Price: $7.59 Rating: N.A. [Description] [Features] [Reviews] [Attributes] [Buy Now]</p><p>Action: think[For mn4 color foundation for sensitive skin, the item has options '1', 'dc1', 'dn3', 'dn4', 'lc1', 'ln3', 'ln4', 'lw2','mc1','mn3','mn4', and'mw2' and seems good to buy.] Observation: OK. Action: click[mn4] Observation: You have clicked mn4.</p><p>Action: click[Buy Now] Observation: Your score (min 0.0, max 1.0): 1.0 Success For each environment, we provide 25 expert demonstrations sourced from the D4RL dataset. These demonstrations consist of trajectories that include both observations and actions, showcasing expert-level performance in the respective tasks.</p><p>In the Franka Kitchen tasks, each demonstration is composed of 50 state-action pairs, reflecting the sequence and specifics of actions required to complete the task. Meanwhile, for the Meta-World tasks, each demonstration sample comprises 500 state-action pairs.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 .</head><label>1</label><figDesc>Figure 1. Overview of RAP. Our framework stores past experiences and retrieves them based on the current situation. Left: The evaluation process on ALFWorld. ICL stands for in-context learning. Right: The evaluation process on Franka Kitchen.</figDesc><graphic coords="2,55.44,67.06,485.98,239.57" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 .</head><label>2</label><figDesc>Figure 2. RAP Core Components based on the current context. By doing so, our agent can adaptably receive different experiences at different points in time that are most similar to the situation at hand.</figDesc><graphic coords="3,67.59,67.06,461.69,96.96" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 .</head><label>3</label><figDesc>Figure 3. Memory-Retrieval in RAP. Left to Middle: The Retriever, calculating similarities with Memory, dynamically switches between action or observation based on the Retrieval Key. This figure illustrates the process of calculating similarity with observation. Right: Executor receives related experiences from memory and utilizes them in the prompt.</figDesc><graphic coords="4,67.59,67.06,461.70,137.92" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 .</head><label>4</label><figDesc>Figure 4. Success Rate of ALFWorld with trial number 4.1. Textual Environments 4.1.1. ALFWORLD</figDesc><graphic coords="5,335.79,72.04,177.31,151.04" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 5 .</head><label>5</label><figDesc>Figure 5. Success Rate and Reward Score of WebShop over 3 trials</figDesc><graphic coords="7,83.79,72.04,177.31,143.62" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 6 .</head><label>6</label><figDesc>Figure6. Evaluation on Franka-Kitchen and Meta-World Benchmark. We evaluate with two vision-language models LLaVA and CogVLM both w/wo our proposed RAP method. The results demonstrate that our method notably enhances the performance of multimodal LLM agents in executing embodied tasks.</figDesc><graphic coords="8,55.44,72.04,486.00,300.10" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 .</head><label>1</label><figDesc>ALFWorld task-specific success rate(%).</figDesc><table><row><cell>Method(dmax=3)</cell><cell>Model</cell><cell cols="2">Pick Clean</cell><cell>Heat</cell><cell cols="3">Cool Look Pick2</cell><cell>All</cell></row><row><cell>Act</cell><cell>GPT-3.5</cell><cell>66.7</cell><cell>51.6</cell><cell>73.9</cell><cell>61.9</cell><cell>38.9</cell><cell>17.6</cell><cell>53.7</cell></row><row><cell>ReAct</cell><cell>GPT-3.5</cell><cell>50.0</cell><cell>41.9</cell><cell>73.9</cell><cell>66.7</cell><cell>55.6</cell><cell>23.5</cell><cell>52.2</cell></row><row><cell>Reflexion</cell><cell>GPT-3.5</cell><cell>75.0</cell><cell>77.4</cell><cell>65.2</cell><cell>76.2</cell><cell>83.3</cell><cell>70.6</cell><cell>74.6</cell></row><row><cell>ADaPT *</cell><cell>GPT-3.5</cell><cell>87.5</cell><cell>80.6</cell><cell>60.8</cell><cell>76.2</cell><cell>61.1</cell><cell>52.9</cell><cell>71.6</cell></row><row><cell>RAP(Ours)</cell><cell>GPT-3.5</cell><cell>95.8</cell><cell>87.1</cell><cell>78.3</cell><cell>90.5</cell><cell>88.9</cell><cell>70.6</cell><cell>85.8</cell></row><row><cell>RAPtrain(Ours)</cell><cell>GPT-3.5</cell><cell cols="2">95.8 100.0</cell><cell>82.6</cell><cell cols="2">85.7 100.0</cell><cell>76.5</cell><cell>91.0</cell></row><row><cell>ReAct</cell><cell>GPT-4</cell><cell>83.3</cell><cell>71.0</cell><cell>95.7</cell><cell cols="2">81.0 100.0</cell><cell>94.1</cell><cell>85.8</cell></row><row><cell>RAP(Ours)</cell><cell>GPT-4</cell><cell>95.8</cell><cell>90.3</cell><cell cols="3">100.0 95.2 100.0</cell><cell>88.2</cell><cell>94.8</cell></row><row><cell>ReAct</cell><cell cols="2">Llama2-13b 29.2</cell><cell>41.9</cell><cell>34.8</cell><cell>52.4</cell><cell>38.9</cell><cell>17.6</cell><cell>36.6</cell></row><row><cell>RAP(Ours)</cell><cell cols="2">Llama2-13b 62.5</cell><cell>61.3</cell><cell>56.5</cell><cell>61.9</cell><cell>44.4</cell><cell>17.6</cell><cell>53.0</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 .</head><label>2</label><figDesc>WebShop Score (%) and Success Rate(%).</figDesc><table><row><cell>Method(dmax=3)</cell><cell>Model</cell><cell cols="2">Score Success Rate</cell></row><row><cell>ReAct</cell><cell>GPT-3.5</cell><cell>61.8</cell><cell>35.0</cell></row><row><cell>Reflexion</cell><cell>GPT-3.5</cell><cell>61.8</cell><cell>35.0</cell></row><row><cell>ADaPT</cell><cell>GPT-3.5</cell><cell>64.0</cell><cell>43.0</cell></row><row><cell>RAP(Ours)</cell><cell>GPT-3.5</cell><cell>76.1</cell><cell>48.0</cell></row><row><cell>ReAct</cell><cell>Llama2-13b</cell><cell>64.6</cell><cell>31.0</cell></row><row><cell>RAP(Ours)</cell><cell>Llama2-13b</cell><cell>71.1</cell><cell>36.0</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 .</head><label>3</label><figDesc>Average success rates on Franka Kitchen and Meta World of Vision-Languge Model Agents w/wo RAP(%)</figDesc><table><row><cell>Method</cell><cell cols="2">Franka Kitchen Meta World</cell></row><row><cell>LLaVA</cell><cell>43.4</cell><cell>65.4</cell></row><row><cell>LLaVA with RAP</cell><cell>61.6</cell><cell>79.2</cell></row><row><cell>CogVLM</cell><cell>44.2</cell><cell>61.5</cell></row><row><cell>CogVLM with RAP</cell><cell>56.9</cell><cell>68.8</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 .</head><label>4</label><figDesc>ALFWorld success rate(%) with different retrievers. RAPact uses only action information, while RAP obs utilizes only observation information for retrieval. RAP clip refers to evaluations using images, rather than texts, as observations with CLIP.</figDesc><table><row><cell cols="2">Method(dmax=3) Success Rate</cell></row><row><cell>ReAct</cell><cell>52.2</cell></row><row><cell>RAPact</cell><cell>82.1</cell></row><row><cell>RAP obs</cell><cell>84.3</cell></row><row><cell>RAP clip</cell><cell>86.6</cell></row><row><cell>RAP</cell><cell>85.8</cell></row><row><cell>5.1.2. WEBSHOP EVALUATION</cell><cell></cell></row><row><cell cols="2">In this subsection, we illustrate the effect of varying the</cell></row><row><cell cols="2">components extracted from each experience by the Retriever.</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 5 .</head><label>5</label><figDesc>Webshop overall score (%) and success rate(%) with different retrievers on Llama2-13b. RAP obs uses additional retrieval by observations on top of action-based retrieval in RAPact. Also, RAPintra and RAPcat uses intra-task retrieval and product-category retrieval. RAP indicates combination of RAP obs , RAPintra and RAPcat.</figDesc><table><row><cell cols="3">Method(dmax=3) Success Rate Overall Score</cell></row><row><cell>ReAct</cell><cell>31.0</cell><cell>64.6</cell></row><row><cell>RAPact</cell><cell>33.0</cell><cell>68.6</cell></row><row><cell>RAP obs</cell><cell>33.0</cell><cell>69.0</cell></row><row><cell>RAPintra</cell><cell>34.0</cell><cell>69.3</cell></row><row><cell>RAPcat</cell><cell>35.0</cell><cell>69.9</cell></row><row><cell>RAP</cell><cell>36.0</cell><cell>71.1</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 6 .</head><label>6</label><figDesc>ALFWorld success rate(%) with Memory and dmax=1.</figDesc><table><row><cell cols="3">ModelMemory indicates the language model used to construct</cell></row><row><cell cols="2">memory from the training data.</cell><cell></cell></row><row><cell>Model</cell><cell cols="2">ModelMemory Success Rate</cell></row><row><cell>GPT-3.5</cell><cell>-</cell><cell>44.0</cell></row><row><cell>GPT-3.5</cell><cell>GPT-3.5</cell><cell>63.4</cell></row><row><cell>Llama2-13b</cell><cell>-</cell><cell>20.9</cell></row><row><cell>Llama2-13b</cell><cell>GPT-3.5</cell><cell>27.6</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 7 .</head><label>7</label><figDesc>Parameters</figDesc><table><row><cell>Experiments on ALFWorld</cell><cell></cell></row><row><cell>Text Embedding Model</cell><cell>sentence-transformers/all-MiniLM-L6-v2</cell></row><row><cell>VLM</cell><cell>openai/CLIP, ViT-B/32</cell></row><row><cell>Max steps</cell><cell>50</cell></row><row><cell>GPT-3.5 version</cell><cell>gpt-3.5-turbo-instruct</cell></row><row><cell>GPT-3.5 temperature</cell><cell>0</cell></row><row><cell>GPT-4 version</cell><cell>gpt-4-0613</cell></row><row><cell>GPT-4 temperature</cell><cell>0.5</cell></row><row><cell>Llama2-13b version</cell><cell>meta-llama/Llama-2-13b-chat-hf</cell></row><row><cell>Llama2 temperature</cell><cell>default(1.0)</cell></row><row><cell>Experiments on Webshop</cell><cell></cell></row><row><cell>Text Embedding Model</cell><cell>sentence-transformers/all-MiniLM-L6-v2</cell></row><row><cell>Max steps</cell><cell>15</cell></row><row><cell>GPT-3.5 temperature</cell><cell>0</cell></row><row><cell>Llama2-13b version</cell><cell>meta-llama/Llama-2-13b-chat-hf</cell></row><row><cell>Llama2 temperature</cell><cell>0</cell></row><row><cell>B. Prompts</cell><cell></cell></row><row><cell>B.1. ALFWorld Prompt</cell><cell></cell></row><row><cell>B.1.1. PROMPT FOR OVERALL PLAN IN REASONER</cell><cell></cell></row></table></figure>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E. Multimodal Environments and Agents Details</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.1. Task Selection</head><p>To evaluate RAP in multimodal environments, we focus on two benchmarks: Franka Kitchen and Meta-World. These benchmarks offer a diverse range of tasks, simulating real-world scenarios in a controlled environment, making them ideal for evaluating the performance of multimodal agents.</p><p>Franka Kitchen Benchmark simulates a kitchen environment, where the agent interacts with various kitchen appliances and items. We have selected five specific tasks that test the agent's ability to manipulate objects and controls within this environment. These tasks are listed in</p><p>table 8 Task No. Task Description 1. cabinet Open a hinge cabinet door 2. micro Open the microwave door 3. burner Twist knob for bottom left burner 4. light Move lever to turn on light 5. kettle Move kettle from bottom to top burner</p><p>Table 8. Selected Tasks in Franka Kitchen Benchmark</p><p>The Meta-World benchmark is designed to evaluate an agent's skill in more generalized object manipulation tasks. We have selected five tasks that represent a broad range of actions.</p><p>Task No. Meta-World Tasks 1. assemble Pick up a nut and place it onto a peg 2.buttion Press a button 3. drawer Open a drawer 4. hammer Hammer a screw on the wall 5. bin</p><p>Grasp the puck from one bin and place it into another bin</p><p>Table 9. Selected Tasks in Meta-World Benchmark</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.2. Model Specification</head><p>In this subsection, we detail the model specifications for our multimodal agent, which is built upon two SOTA visionlanguage models: LLaVA and CogVLM. These models allows for a more comprehensive understanding and interaction with multimodal environments.</p><p>LLaVA Model: Our agent utilizes the LLaVA-v1.5 13B model. This version of LLaVA incorporates the Vicuna-v1.5 13B as its underlying Large Language Model (LLM). The integration of Vicuna-v1.5 13B, known for its robust linguistic processing capabilities.</p><p>CogVLM Model: For the CogVLM model, we employ the Cog-VLM 17B version. This model boasts a significant number of parameters -10 billion are dedicated to visual understanding, and 7 billion are focused on language processing.</p><p>In our experimental setup for the language generation of these models, we set the temperature to 0.0. This setting is chosen to prioritize precision and determinism in the generated outputs, which is crucial for the consistency and reliability of the agent's planning responses in our multimodal tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.3. Policy Network details</head><p>Policy Network is a crucial component of our framework designed to translate high-level action plans generated by the vision-language model into precise, low-level control actions suitable for the specific action space of the environment. Our approach utilizes a Multi-Layer Perceptron (MLP) neural network for this purpose.</p><p>In both Franka Kitchen and Meta-World environments, the policy network's learning is facilitated through a few-shot learning approach, leveraging a limited but highly informative set of demonstration data.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Textworld: A learning environment for text-based games</title>
+		<author>
+			<persName><forename type="first">M.-A</forename><surname>Côté</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ákos</forename><surname>Kádár</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kybartas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Barnes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Fine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Moore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">Y</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hausknecht</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">E</forename><surname>Asri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Adada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Trischler</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Joint Conference on Artificial Intelligence (IJCAI)</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Llama 2: Open foundation and fine-tuned chat models</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Genai</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>In arXiv</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Relay policy learning: Solving long-horizon tasks via imitation and reinforcement learning</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lynch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning (CoRL)</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Retrieval-augmented generation for knowledge-intensive nlp tasks</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Piktus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Karpukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Küttler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-T</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Rocktäschel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Riedel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kiela</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 34th International Conference on Neural Information Processing Systems, NIPS&apos;20</title>
+		<meeting>the 34th International Conference on Neural Information Processing Systems, NIPS&apos;20<address><addrLine>Red Hook, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Curran Associates Inc</publisher>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Visual instruction tuning</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">J</forename><surname>Lee</surname></persName>
+		</author>
+		<idno>abs/2304.08485</idno>
+	</analytic>
+	<monogr>
+		<title level="m">ArXiv</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Dolan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Carin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note>What makes good in-context examples for gpt-3? In arXiv</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Memoryassisted prompt editing to improve gpt-3 after deployment</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Tandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Empirical Methods in Natural Language Processing</title>
+		<imprint>
+			<biblScope unit="page">2022</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Large language models as general pattern machines</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mirchandani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Driess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">G</forename><surname>Arenas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Sadigh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning (CoRL)</title>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title/>
+	</analytic>
+	<monogr>
+		<title level="j">OpenAI. Gpt-4 technical report. In arXiv</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Training language models to follow instructions with human feedback</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Kelton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Simens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Welinder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">F</forename><surname>Christiano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Lowe</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Neural Information Processing Systems (NeurIPS)</title>
+		<imprint>
+			<biblScope unit="page">2022</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Adapt: As-needed decomposition and planning with language models</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Prasad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Koller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hartmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Khot</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>In arXiv</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Learning transferable visual models from natural language supervision</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">W</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hallacy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Goh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Sutskever</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 38th International Conference on Machine Learning</title>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Meila</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">T</forename><surname>Zhang</surname></persName>
+		</editor>
+		<meeting>the 38th International Conference on Machine Learning</meeting>
+		<imprint>
+			<date type="published" when="2021-07">Jul 2021</date>
+			<biblScope unit="volume">139</biblScope>
+			<biblScope unit="page" from="18" to="24" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">N</forename><surname>Reimers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Gurevych</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sentence-Bert</surname></persName>
+		</author>
+		<title level="m">Sentence Embeddings using Siamese BERT-Networks. In arXiv</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Conceptual captions: A cleaned, hypernymed, image alt-text dataset for automatic image captioning</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Goodman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Soricut</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/P18-1238</idno>
+		<ptr target="https://aclanthology.org/P18-1238" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 56th Annual Meeting of the Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">I</forename><surname>Gurevych</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Y</forename><surname>Miyao</surname></persName>
+		</editor>
+		<meeting>the 56th Annual Meeting of the Association for Computational Linguistics<address><addrLine>Melbourne, Australia</addrLine></address></meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2018-07">July 2018</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="2556" to="2565" />
+		</imprint>
+	</monogr>
+	<note>Association for Computational Linguistics</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Reflexion: Language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Berman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Neural Information Processing Systems (NeurIPS)</title>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Alfworld: Aligning text and embodied environments for interactive learning</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Shridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-A</forename><surname>Côté</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Trischler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hausknecht</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations (ICLR)</title>
+		<imprint>
+			<biblScope unit="page">2021</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Selective annotation makes language models better few-shot learners</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kasai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">H</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ostendorf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Yu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note>In arXiv</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">X</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-R</forename><surname>Wen</surname></persName>
+		</author>
+		<title level="m">A survey on large language model based autonomous agents</title>
+		<imprint/>
+	</monogr>
+	<note>In arXiv, 2023a</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">X</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-R</forename><forename type="middle">A</forename><surname>Wen</surname></persName>
+		</author>
+		<title level="m">Survey on Large Language Model based Autonomous Agents</title>
+		<imprint/>
+	</monogr>
+	<note>In arXiv, 2023b</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">CogVLM: Visual Expert for Pretrained Language Models</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+		<idno>ArXiv, volume abs/2311.03079</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Koyejo</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Mohamed</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Agarwal</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">D</forename><surname>Belgrave</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Cho</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Oh</surname></persName>
+		</editor>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24824" to="24837" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">The rise and potential of large language model based agents: A survey</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Xi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Dou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Weng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gui</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Webshop: Towards scalable real-world web interaction with grounded language agents</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note>In arXiv</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">React: Synergizing reasoning and acting in language models</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations (ICLR)</title>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">A survey on multimodal large language models</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Chen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>In arXiv</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">T</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Quillen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Julian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Narayan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Shively</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bellathur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<title level="m">Meta-world: A benchmark and evaluation for multi-task and meta reinforcement learning</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">ExpeL: LLM Agents Are Experiential Learners</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y.-J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Huang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI Conference on Artificial Intelligence (AAAI)</title>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">WebShop Instruction: i want capri sun pacific cooler mixed fruit naturally flavored juice drinks, and price lower than 20.00 dollars [Search] ReAct Action: search[capri sun pacific cooler mixed fruit naturally flavored juice drinks] Observation: [Back to Search] Page 1 (Total results: 50) [Next &gt;] [B000R30X2A] Capri Sun Pacific Cooler Mixed Fruit Naturally Flavored Juice Drink Blend (Pack of 10) (Packaging May Vary) $2.55 [B075CSWGJR] Capri Sun Pacific Cooler Ready-to-Drink Juice, 6 Fl Oz (Pack of 30</title>
+		<idno>100.0 [B0083GG2SC</idno>
+		<imprint/>
+	</monogr>
+	<note>Capri Sun Coolers Variety Pack Ready-to-Drink Juice (40 Pouches, 4 Boxes of 10</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">A is capri sun pacific cooler mixed fruit naturally flavored juice drinks and price lower than 20.00 dollars.] Observation: OK. Action: click[B000R30X2A] Observation: [Back to Search] [&lt; Prev] flavor name</title>
+		<idno>$100.0 Action: think[B000R30X2</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Capri Sun Pacific Cooler Mixed Fruit Naturally Flavored Juice Drink Blend (Pack of 10) (Packaging May Vary) Price: $2.55 Rating: N.A</title>
+		<imprint>
+			<biblScope unit="page" from="0" to="6666666666666666" />
+		</imprint>
+	</monogr>
+	<note>pacific cooler strawberry kiwi variety pack] size [6 fl oz (pack of 10 6 fl oz (pack of 30 Attributes Buy Now Action: think[For capri sun pacific cooler mixed fruit naturally flavored juice drinks, the item has options &apos;assorted&apos;, &apos;pacific cooler&apos;, and &apos;6 fl oz (pack of 10)&apos;] Observation: OK Action: click[assorted] Observation: You have clicked assorted. Action: click[Buy Now] Observation: Your score (min 0.0, max 1.0</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Fail RAP Action: search[capri sun pacific cooler mixed fruit naturally flavored juice drinks] Observation: [Back to Search] Page 1 (Total results: 50) [Next &gt;] [B000R30X2A] Capri Sun Pacific Cooler Mixed Fruit Naturally Flavored Juice Drink Blend (Pack of 10) (Packaging May Vary) $2.55 [B075CSWGJR] Capri Sun Pacific Cooler Ready-to-Drink Juice, 6 Fl Oz (Pack of 30) $100.0 [B0083GG2SC] Capri Sun Coolers Variety Pack Ready-to-Drink Juice</title>
+		<imprint/>
+	</monogr>
+	<note>40 Pouches, 4 Boxes of 10</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Action: think[For capri sun pacific cooler mixed fruit naturally flavored juice drinks, the item has options &apos;assorted&apos;, &apos;pacific cooler&apos;, and &apos;6 fl oz (pack of 10)&apos; and seems good to buy.] Observation: OK. Action: click[assorted] Observation: You have clicked assorted. Action: click[pacific cooler] Observation: You have clicked pacific cooler</title>
+		<idno>$100.0 Action: think[B000R30X2</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Capri Sun Pacific Cooler Mixed Fruit Naturally Flavored Juice Drink Blend</title>
+		<imprint/>
+	</monogr>
+	<note>Observation: OK Action: click[B000R30X2A] Observation: [Back to Search] [&lt; Prev] flavor name pacific cooler strawberry kiwi variety pack] size [6 fl oz (pack of 10) 6 fl oz (pack of 30 Packaging May Vary) Price: $2.55 Rating: N.A. [Description] [Features] [Reviews Attributes Buy Now A is capri sun pacific cooler mixed fruit naturally flavored juice drinks and seems good to buy 6 fl oz (pack of 10)] Observation: You have clicked 6 fl oz (pack of 10 Action: click[Buy Now] Observation: Your score (min 0.0, max 1.0): 1.0</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

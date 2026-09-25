@@ -1,0 +1,2092 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">LLM+P: Empowering Large Language Models with Optimal Planning Proficiency</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Bo</forename><surname>Liu</surname></persName>
+							<email>bliu@cs.utexas.edu</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">The University of Texas at Austin</orgName>
+							</affiliation>
+							<affiliation key="aff2">
+								<address>
+									<settlement>Sony</settlement>
+									<region>AI</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yuqian</forename><surname>Jiang</surname></persName>
+							<email>lqiang@cs.utexas.edu</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">The University of Texas at Austin</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xiaohan</forename><surname>Zhang</surname></persName>
+							<email>zhangs@binghamton.edu</email>
+							<affiliation key="aff1">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">State University of New York at Binghamton</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Qiang</forename><surname>Liu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">The University of Texas at Austin</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Shiqi</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">State University of New York at Binghamton</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Joydeep</forename><surname>Biswas</surname></persName>
+							<email>joydeep@cs.utexas.edu</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">The University of Texas at Austin</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Peter</forename><surname>Stone</surname></persName>
+							<email>pstone@cs.utexas.edu</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">The University of Texas at Austin</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">LLM+P: Empowering Large Language Models with Optimal Planning Proficiency</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">34A23587B9667C460DC9EAF3FA4DE351</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:29+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large language models (LLMs) have demonstrated remarkable zero-shot generalization abilities: stateof-the-art chatbots can provide plausible answers to many common questions that arise in daily life. However, so far, LLMs cannot reliably solve long-horizon robot planning problems. By contrast, classical planners, once a problem is given in a formatted way, can use efficient search algorithms to quickly identify correct, or even optimal, plans. In an effort to get the best of both worlds, this paper introduces LLM+P, the first framework that incorporates the strengths of classical planners into LLMs. LLM+P takes in a natural language description of a planning problem, then returns a correct (or optimal) plan for solving that problem in natural language. LLM+P does so by first converting the language description into a file written in the planning domain definition language (PDDL), then leveraging classical planners to quickly find a solution, and then translating the found solution back into natural language. Along with LLM+P, we define a diverse set of different benchmark problems taken from robot planning scenarios. Via a comprehensive set of experiments on these benchmark problems, we find that LLM+P is able to provide optimal solutions for most problems, while LLMs fail to provide even feasible plans for most problems. We also show LLM+P enables a home robot to solve a complex manipulation task that is specified by the user in natural language. 1 *Equal contribution.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I. INTRODUCTION</head><p>Ever since the birth of the field, AI researchers have sought to create programs that can converse in natural language with the same grace and flexibility as people. While even relatively simple models, such as Eliza from 1966 <ref type="bibr" target="#b0">[1]</ref>, can generate responses to some prompts that seem reasonable, it has always been relatively easy to generate prompts that expose their weaknesses compared to people -their lack of true "understanding."</p><p>While large language models (LLMs) such as GPT-4 [2] and ChatGPT <ref type="bibr" target="#b2">[3]</ref> have far surpassed expectations of just a few years ago, they are no different in this respect. Indeed the internet is now awash with examples of people reveling in getting ChatGPT to generate output that even a 5-year-old human child would know to be ill-advised.</p><p>Given how LLMs are designed and trained, this phenomenon should come as no surprise. They are not specifically built to demonstrate understanding. They are trained to generate sequences of words that might be plausible to a human given a prior context. In the terms of Mahowald et al. <ref type="bibr" target="#b3">[4]</ref> LLMs have become amazingly proficient at linguistic competence -knowing how to say things; but they are not nearly as good at functional competence -knowing what to say. Specifically, they can be (relatively) easily fooled by, for example, asking for the result of a straightforward arithmetic problem that does not appear in their training corpus or by asking for the solution to a novel planning problem that requires knowledge about how the world works.</p><p>A Failure Example of GPT-4 in Planning Problem (P1): You have 5 blocks. One cannot place more than one block on another block. b5 is on top of b3. b4 is on top of b2. b2 is on top of b1. b3 is on top of b4. b1 is on the table. b5 is clear. Your arm is empty. Your goal is to move the blocks. b1 should be on top of b2. b3 should be on top of b5. b4 should be on top of b1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>GPT-4:</head><p>1. Move b5 from b3 to the table. 2. Move b3 from b4 to b5. 3. Move b4 from b2 to the table. 4. Move b2 from b1 to b5. 5. Move b1 from the table to b2. 6. Move b4 from the table to b1.</p><p>Does that mean that we should increase efforts to include all arithmetic and planning problems in their training corpus? Clearly, that is a fool's errand. On the other hand, why should it be necessary? We already have calculators and generalpurpose symbolic planners that are guaranteed to produce correct answers. Thus a natural alternative approach, and one that we are admittedly not the first to explore, is to connect LLMs to such tools.</p><p>With this motivation in mind, the objective of the research reported in this paper is, for the first time, to enable LLMs to solve planning problems correctly. We aim to do so without altering the LLMs themselves, even with finetuning <ref type="bibr" target="#b4">[5]</ref>, <ref type="bibr" target="#b5">[6]</ref>. Rather, we introduce a methodology, called LLM+P by which, when posed a natural language description of a planning problem, the LLM:</p><p>1) outputs a problem description suitable as input to a</p><p>arXiv:2304.11477v3 [cs.AI] 27 Sep 2023 LLM Plan LLM Problem PDDL Planner PDDL Plan LLM Plan Generated Text Module Provided Text Problem (P) LLM-As-Planner LLM + P (In-context Learning) Problem (P) Domain LLM Plan Ex. P &amp; Ex. Sol Context LLM-As-Planner (In-context Learning) Ex. P &amp; Ex. PDDL Context Domain PDDL Problem (P) Domain Fig. <ref type="figure">1</ref>: LLM+P makes use of a large language model (LLM) to produce the PDDL description of the given problem, then leverages a classical planner for finding an optimal plan, then translates the raw plan back to natural language using the LLM again.</p><p>general-purpose planner; 2) solves the problem using the general-purpose planner; and 3) converts the output of the planner back to natural language (or connects to action executors of a robot). Our extensive empirical evaluations indicate that LLM+P is able to generate correct solutions to many more planning problems than are LLMs on their own. While demonstrated in this paper on planning problems, this general methodology can be applied to any class of problems for which we have a sound and complete solver, such as arithmetic problems (by leveraging calculators). Limitation: In this paper, we do not ask the LLM to recognize that it has been posed a prompt that is suitable for processing using the proposed LLM+P pipeline. A valuable future research direction will be to consider recognizing when a prompt should be processed by LLM+P.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>II. BACKGROUND</head><p>This section introduces the notation we use for representing a planning problem to be solved by LLMs, and recaps the standard representation of classical planners.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. The Classical Planning Problem</head><p>Formally, the input of a planning problem P is defined by a tuple ⟨S , s init , S G , A , f ⟩:</p><p>• S is a finite and discrete set of states used to describe the world's state (i.e., state space). We assume a factored state space such that each state s ∈ S is defined by the values of a fixed set of variables.</p><p>• s init ∈ S is an initial world state.</p><p>• S G ⊂ S is a set of goal states. S G are usually specified as a list of goal conditions, all of which must hold in a goal state.</p><p>• A is a set of symbolic actions.</p><p>• f is the underlying state transition function. f takes the current state and an action as input and outputs the corresponding next state. A solution to a planning problem P is a symbolic plan π in the form of ⟨a 1 , a 2 , . . . , a N ⟩, such that the preconditions of a 1 hold in s init , the preconditions of a 2 hold in the state that results from applying a 1 , and so on, with the goal conditions all holding in the state that results after applying a N .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Planning Domain Definition Language (PDDL)</head><p>The planning domain definition language (PDDL) serves as a standardized encoding of classical planning problems <ref type="bibr" target="#b6">[7]</ref>, <ref type="bibr" target="#b7">[8]</ref>. The PDDL representation of a planning problem P is separated into two files: a domain file and a problem file. The domain PDDL file provides a lifted representation of the underlying rules of the world. It includes a set of predicates that define the state space S and the actions (i.e., A ) with their preconditions and effects (i.e., the transition function f ). The problem PDDL file provides a list of objects to ground the domain, the problem's initial state s init and goal conditions S G . There exists a rich set of symbolic planners that implement efficient search algorithms to solve planning problems formalized in PDDL. In this work, we aim to take a natural language prompt which describes the initial state s init and goal conditions S G , formulate it in PDDL, and leverage symbolic planners to output correct plans. We assume the domain rules are available (See the assumptions in Section III).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>III. METHOD</head><p>This section first uses a running example to investigate ways for formulating planning prompts in PDDL and then introduces the LLM+P method.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Large Language Model as a PDDL Writer</head><p>LLMs are bad at planning (or long-horizon reasoning) <ref type="bibr" target="#b8">[9]</ref> but they are good at describing and translating textual inputs, including re-writing planning prompts in the PDDL format. The intuition is that we can view PDDL as a different language than English, so re-writing planning prompts in PDDL is essentially a "machine translation" task that LLMs are known to excel at. Here we provide an example of a PDDL problem file written by GPT-4 without any promptengineering. As we see, the generated file appears to have the correct PDDL syntax but uses a made-up predicate (empty) and misses the initial condition that b1 is on the table.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>An Example PDDL Problem File Written by GPT-4</head><p>Prompt: Description of Problem (P1) + Provide me with the problem PDDL file that describes the planning problem directly without further explanations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>GPT-4 (the generated problem PDDL): (:objects b1 b2 b3 b4 b5 -block) (:init (on b5 b3) (on b4 b2) (on b2 b1) (on b3 b4) (clear b5) (empty)) (:goal (and (on b1 b2) (on b3 b5) (on b4 b1)))</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. In-Context Learning</head><p>LLMs are known to be capable of in-context learning without finetuning their parameters. By in-context learning, we mean LLMs' ability to perform unseen downstream tasks by simply conditioning on a few input-label pairs (demonstrations) <ref type="bibr" target="#b9">[10]</ref>. Here is a pair of problem descriptions in natural language and in PDDL provided to GPT-4 as context. When the context is included with the prompt from the example above, the resulting PDDL problem file is directly solvable by the planner.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>An Example PDDL Problem File Written by GPT-4 with Context</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Context (shaded):</head><p>An example planning problem is: You have 5 blocks. b2 is on top of b5. b5 is on top of b1. b1 is on top of b4. b3 is on top of b2. b4 is on the table. b3 is clear. Your arm is empty. Your goal is to move the blocks. b4 should be on top of b3. The problem PDDL is:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>(:objects b1 b2 b3 b4 b5) (:init (arm-empty) (on b1 b4) (on b2 b5) (on b3 b2) (on-table b4) (on b5 b1) (clear b3)) (:goal (and (on b4 b3))))</head><p>Prompt: Description of Problem (P1) + Context + Provide me with the problem PDDL file that describes the planning problem directly without further explanations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>GPT-4 (the generated problem PDDL): (:objects b1 b2 b3 b4 b5 ) (:init (arm-empty) (on-table b1) (on b2 b1) (on b3 b4) (on b4 b2) (on b5 b3) (clear b5))) (:goal (and (on b1 b2) (on b3 b5) (on b4 b1)))</head><p>Planner:</p><formula xml:id="formula_0">(unstack b5 b3) (putdown b5) (unstack b3 b4) (stack b3 b5) (unstack b4 b2) (putdown b4) (unstack b2 b1) (putdown b2) (pickup b1) (stack b1 b2) (pickup b4) (stack b4 b1) C. Large Language Model + Classical Planner (LLM+P)</formula><p>Having introduced the LLM's ability to encode problems in PDDL and in-context learning, we are ready to introduce the proposed LLM+P solution (the bottom of Fig. <ref type="figure">1</ref>). In particular, we assume that for each problem domain, a human expert can provide a domain description (i.e. action preconditions and effects) that will be fixed for all problem instances that happen in that domain. While the problem of automatically generating the description is another valuable research question, in this proposed work, we assume that the description is available as a PDDL domain file. The LLM+P method is directly applicable as a natural language interface for giving tasks to robot systems. For instance, assume we want a robot to act as a bartender to make cocktails. It is reasonable to tell it what actions it can take, but leave itself to infer how to make new cocktails most efficiently given a set of ingredients to combine. Moreover, we assume the agent is provided with a minimal example that demonstrates what an example problem PDDL looks like for a simple problem inside that domain. Next, the agent is provided with a new (potentially quite complicated) problem (P). The LLM then uses the in-context learning to infer the problem PDDL file corresponding to P. Once the problem PDDL file is generated, we feed it into any classical planner, together with the provided domain PDDL file, to generate a PDDL plan <ref type="bibr" target="#b10">[11]</ref>. In the end, the LLM translates the PDDL plan back into the natural language to finish up the LLM+P pipeline. To summarize, the assumptions we need for LLM+P are:</p><p>1) A robot knows when to trigger LLM+P based on its conversation with a human user. 2) A domain PDDL is provided to define the actions that the robot is capable of. This specification is taskagnostic -the entities relevant to the task are specified in the LLM-generated problem PDDL. 3) A simple problem description in natural language and its corresponding problem PDDL file are also provided.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>IV. RELATED WORK</head><p>This section first provides a brief overview of classical planning algorithms. Then it summarizes recent advances in using large language models for planning tasks. It concludes with a discussion of recent research on augmenting LLMs with external modules.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Classical Planning</head><p>Automated planning (or classical planning) techniques can be used for computing a sequence of actions that achieves a given goal <ref type="bibr" target="#b11">[12]</ref>, <ref type="bibr" target="#b12">[13]</ref>, <ref type="bibr" target="#b13">[14]</ref>. Automated planning algorithms have been widely used in robot systems. Shakey is the first robot that was equipped with a planning component, which was constructed using STRIPS <ref type="bibr" target="#b14">[15]</ref>. Some previous generalpurpose planning architectures were also demonstrated to be useful for robot planning, such as PRODIGY <ref type="bibr" target="#b15">[16]</ref> and HTN <ref type="bibr" target="#b16">[17]</ref>. Recent classical planning systems designed for robotics frequently use planning domain description language (PDDL) or answer set programming (ASP) as the underlying action language for the planners <ref type="bibr" target="#b17">[18]</ref>, <ref type="bibr" target="#b18">[19]</ref>, <ref type="bibr" target="#b19">[20]</ref>, <ref type="bibr" target="#b20">[21]</ref>. For example, researchers have used classical planning algorithms for sequencing actions for a mobile robot working on delivery tasks <ref type="bibr" target="#b21">[22]</ref>, reasoning about safe and efficient urban driving behaviors for autonomous vehicles <ref type="bibr" target="#b22">[23]</ref>, and planning actions for a team of mobile robots <ref type="bibr" target="#b23">[24]</ref>. Task and motion planning (TAMP) is a hierarchical planning framework that combines classical planning in discrete spaces and robot motion planning in continuous space <ref type="bibr" target="#b24">[25]</ref>, <ref type="bibr" target="#b25">[26]</ref>.</p><p>Most of the above-mentioned planning methods require domain-specific programming languages as the underlying representation of the problems and their solutions. LLM+P, on the other hand, takes advantage of LLMs and serves as a natural language interface for robots to solve complex planning tasks. The main feature that motivates us to use such classical planning systems is that most of these planners are sound and complete, meaning that they are guaranteed to be logically correct and will output a plan if one exists. Many are also able to find optimal (shortest) plans, at least if given sufficient time.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Planning with Large Language Models</head><p>Various large language models (LLMs) have been developed in recent years, such as Bert <ref type="bibr" target="#b26">[27]</ref>, CodeX <ref type="bibr" target="#b27">[28]</ref>, Opt <ref type="bibr" target="#b28">[29]</ref>, GPT-3 <ref type="bibr" target="#b9">[10]</ref>, ChatGPT <ref type="bibr" target="#b29">[30]</ref>, GPT-4 <ref type="bibr" target="#b1">[2]</ref>, Llama <ref type="bibr" target="#b30">[31]</ref>, Llama2 <ref type="bibr" target="#b31">[32]</ref>, and PaLM <ref type="bibr" target="#b32">[33]</ref>. As LLMs are pretrained with a tremendous amount of offline text data, they can emerge with surprising zero-shot generalization ability, which can be leveraged for robot planning tasks <ref type="bibr" target="#b33">[34]</ref>, <ref type="bibr" target="#b34">[35]</ref>, <ref type="bibr" target="#b35">[36]</ref>, <ref type="bibr" target="#b36">[37]</ref>, <ref type="bibr" target="#b37">[38]</ref>, <ref type="bibr" target="#b38">[39]</ref>, <ref type="bibr" target="#b39">[40]</ref>, <ref type="bibr" target="#b40">[41]</ref>, <ref type="bibr" target="#b41">[42]</ref>, <ref type="bibr" target="#b42">[43]</ref>, <ref type="bibr" target="#b43">[44]</ref>, <ref type="bibr" target="#b44">[45]</ref>. Several recent methods had successes in extracting task knowledge from LLMs to decompose commands or instructions for robots in natural language. For instance, the work of Huang et al. showed that LLMs can be used for task planning in household domains by iteratively augmenting prompts <ref type="bibr" target="#b37">[38]</ref>. SayCan is another approach that enabled robot planning with affordance functions to account for action feasibility, where the service requests are specified in natural language <ref type="bibr" target="#b33">[34]</ref>. Vemprala et al. recently studied how ChatGPT can be applied to generalized robotics domains <ref type="bibr" target="#b2">[3]</ref>.</p><p>However, a major drawback of existing LLMs is their lack of long-horizon reasoning ability for complex tasks (See <ref type="bibr" target="#b8">[9]</ref>, <ref type="bibr" target="#b45">[46]</ref> and Section 8.2 from <ref type="bibr" target="#b1">[2]</ref>). Specifically, the output they produce when presented with such a task is often incorrect in the sense that following the output plan will not actually solve the task. Therefore, in this work, we focus on resolving this issue by leveraging the properties of classical planners. Similarly, some recent work also investigates approaches for combining classical planning with LLMs <ref type="bibr" target="#b46">[47]</ref>, <ref type="bibr" target="#b47">[48]</ref>, <ref type="bibr" target="#b48">[49]</ref>, <ref type="bibr" target="#b49">[50]</ref>, <ref type="bibr" target="#b50">[51]</ref>, <ref type="bibr" target="#b51">[52]</ref>, <ref type="bibr" target="#b52">[53]</ref>, <ref type="bibr" target="#b53">[54]</ref>, <ref type="bibr" target="#b54">[55]</ref>, <ref type="bibr" target="#b55">[56]</ref>, <ref type="bibr" target="#b56">[57]</ref>. They either use prompting or fine-tuning to make LLMs capable of solving PDDL planning problems. Improvements to longhorizon planning capabilities have also been made by iteratively querying LLMs, as demonstrated in Minecraft <ref type="bibr" target="#b57">[58]</ref>. In contrast, we do not solely rely on LLM as the problem solver, but are more into taking the advantage of both the planner (i.e., generating accurate and optimal plans) and the LLM itself (i.e., 1-shot generalization for translating naturallanguage problem descriptions into PDDL).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Augmenting LLMs with External Modules</head><p>Recently developed methods have shown that the performance of downstream tasks of LLMs can be improved by combining them with external modules. For instance, WebGPT <ref type="bibr" target="#b58">[59]</ref> is a fine-tuned version of GPT-3 by combining web knowledge to answer open-ended questions. Lazaridou et al. studied how search engines like Google can be utilized as external tools for LLMs <ref type="bibr" target="#b59">[60]</ref>. MemPrompt <ref type="bibr" target="#b60">[61]</ref> presented a human-in-the-loop system where a growing memory of errors and user feedback is served as past experience adding to the prompts for more accurately answering new questions. REPLUG <ref type="bibr" target="#b61">[62]</ref> is another retrieval-augmented language modeling paradigm that treats the language model as a black box and augments it with a tuneable retrieval model. Specifically, people have investigated using calculators for computation <ref type="bibr" target="#b62">[63]</ref>, <ref type="bibr" target="#b63">[64]</ref>. In very recent work related to ours, Schick et al. trained a model called ToolFormer that can decide when and how to call certain tool APIs by in-line augmentation on prompts for LLMs <ref type="bibr" target="#b64">[65]</ref>. In this work, we propose that classical planners can be another particularly useful external module. In comparison, LLM+P, does not rely on any fine-tuning or re-training of LLMs. By simply incorporating knowledge from classical planners, LLM+P incorporates long-horizon reasoning and planning capabilities into existing LLMs.</p><p>The authors are informed that a concurrent work <ref type="bibr" target="#b65">[66]</ref> presents preliminary results of integrating LLMs with PDDL using the SayCan dataset <ref type="bibr" target="#b33">[34]</ref>. However, the SayCan dataset has a limited scope, as it contains only three predefined actions. Consequently, all model variants evaluated in the original paper achieved a success rate of approximately 90%. Due to the homogeneity of the SayCan dataset, Lyu et al. did not necessitate a rigorous definition of the domain PDDL, which can lead to infeasible plans. As a result, we consider our LLM+P method as a more comprehensive investigation into enhancing LLMs with optimal planning proficiency.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>V. EXPERIMENTS</head><p>We conduct experiments to answer these questions:</p><p>1) How well does LLM-AS-P work? To what extent can state-of-the-art LLMs and LLM-based reasoning methods be directly used for planning? (Not at all) 2) How well does LLM+P work compare to LLM-AS-P? (Much better) 3) What role does the context play in the success of LLM+P? (It's crucial) 4) Can LLM+P help make service robots more efficient on realistic tasks? (Yes)</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Benchmark Problems</head><p>We present seven robot planning domains borrowed from past International Planning Competitions and 20 automatically generated tasks for each domain <ref type="bibr" target="#b66">[67]</ref>. Below is a list of the planning domains, along with a brief summary of each.</p><p>1) BLOCKSWORLD: Given a set of piles of blocks on a table, a robot is tasked with rearranging them into a specified target configuration. 2) BARMAN: A robot bartender is tasked with creating cocktails for a customer's order, utilizing the available ingredients and containers. 3) FLOORTILE: A set of robots are tasked to use paint color patterns on floor tiles. Robots can move around and change colors but cannot step on painted tiles. 4) GRIPPERS: A set of robots with two grippers is given a task to move objects among different rooms. 5) STORAGE: Given a set of hoists, the goal is to lift and drop crates using the hoists into a depot. Crates are initially stored in different areas and hoists can be moved among storage areas. 6) TERMES: A robot is tasked to build complex structures by carrying and placing blocks, and also climbing on them so that it can build towers. 7) TYREWORLD: The robot is given a task to replace flat tires by, for example, inflating tires, tightening nuts, and moving tools back to the boot when done, all in the proper order. For each problem P, P comes with a natural language description and a ground-truth problem PDDL file. Each domain also includes an example problem description, a corresponding PDDL file, and a plan description, used as context in various approaches. We assume each problem domain has its own domain PDDL file given by the user or a domain expert prior to addressing any planning problems in that domain. This dataset is made publicly available in our codebase for reproducibility.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Experiment Setup</head><p>We leverage the GPT-4 model provided by OpenAI<ref type="foot" target="#foot_0">foot_0</ref> for all experiments. We set the temperature to 0, and use the top probability response. As a result, the response returned from the LLM is deterministic. Once a text PDDL response is generated, we feed it into the FAST-DOWNWARD planner <ref type="foot" target="#foot_1">3</ref>and try both aliases SEQ-OPT-FDSS-1 (guaranteed optimal) and LAMA (not guaranteed optimal) with a maximum search time of 200 seconds. We report the success rate of the optimal alias, and for the domains that time out, we show the success rate of the sub-optimal alias in parentheses. For the baseline methods, we manually count the number of optimal plans, and report the number of correct plans in parentheses (if there are any sub-optimal plans).</p><p>We also evaluate a recent LLM-based approach for deliberate reasoning called Tree of Thoughts <ref type="bibr" target="#b67">[68]</ref>, referred to as LLM-AS-P (TOT). We adapt the breadth-first-search algorithm from the original ToT implementation <ref type="foot" target="#foot_2">4</ref> for planning. The LLM is prompted to expand the search tree from allowed actions and evaluate the paths on their likelihood of reaching the goal. The same time limit of 200 seconds is applied.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Results and Analysis</head><p>The results of applying LLM-AS-P and LLM+P across 7 domains are provided in Table <ref type="table">I</ref>. Domain Success Rate % LLM - LLM LLM ToT LLM+P - LLM+P BARMAN 0 0 0 0 20 (100) BLOCKSWORLD 20 15 (30) 0 (5) 0 90 FLOORTILE 0 0 0 0 0 GRIPPERS 25 (60) 35 (50) 10 (20) 0 95 (100) STORAGE 0 0 (25) 0 0 85 TERMES 0 0 0 0 20 TYREWORLD 5 15 0 0 10 (90)</p><p>TABLE I: Success rate % of applying LLM-AS-P without context (LLM -), LLM-AS-P (LLM), Tree of Thoughts (LLM ToT ), LLM+P without context (LLM -), and LLM+P.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Findings (LLM-AS-P):</head><p>1) We observe that though LLM-AS-P provides a plan in natural language for every problem, most of these plans are not feasible. The main reason is that LLM-AS-P lacks the ability to reason about preconditions. 2) In most cases, LLM-AS-P fails in the same way with or without the example plan as context. In particular, in the BLOCKSWORLD domain, LLM-AS-P cannot keep track of properties like ON and CLEAR. In the BARMAN domain, LLM-AS-P's plans fail to clean shot glasses before using them again. 3) The hardest domains are the ones with complex spatial relationship. The LLM-AS-P methods (with or without context) completely fail at this type of problems. In the FLOORTILE domain, LLM-AS-P generates "move right to tile 0-4 and paint tile 1-2 black" but the robot can only paint neighboring tiles. In TERMES and STORAGE, LLM-AS-P ignores the requirement that the robot cannot unload the block/crate at the same position it occupies. 4) LLM-AS-P (TOT) calls the LLM at each tree node</p><p>to provide a list of available actions, and then calls the LLM to evaluate each new path on the tree as a partial plan. We find that the LLM is able to give reasonable rankings on the partial plans, but it often fails to recognize whether the plan reaches the goal. LLM-AS-P (TOT) times out in most cases due to the large number of LLM calls, so it is not suitable for solving long-horizon problems. Findings (LLM+P):</p><p>1) The proposed LLM+P produces an optimal plan for the majority of problems. Most failed cases are due to mis-specified problem files, such as missing one of the initial conditions (e.g. leaving the tiles disconnected in FLOORTILE), causing the planning problem to be unsolvable. 2) Without the context (i.e., an example problem and its corresponding problem PDDL), we observe that LLMs fail to produce correct problem PDDL files. Therefore, the context is important for LLM+P to work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. Robot Demonstration</head><p>We verify that LLM+P can efficiently solve realistic service robot problems by deploying it on a real robot tasked with tidying up a home. The user asks the robot to move a mustard bottle from the coffee table to the pantry, and throw away the empty soup can from the side table. Since the side table and the recycle bin are on the way from the coffee table to the pantry, the optimal plan is to take the mustard bottle to the side table, and re-grasp it after throwing away the soup can, with a total cost of 22. Fig. <ref type="figure" target="#fig_0">2</ref> shows the optimal plan found by LLM+P. Parts of the prompt and the generated PDDL are shown below. LLM-AS-P outputs a sub-optimal plan which takes the bottle to the pantry first and travels back for the soup can, with a total cost of 31.</p><p>Tidy-Up Problem PDDL Generated by LLM+P Problem (P): You are a home robot with one gripper. The distance between coffee table and side table is 10. The distance between coffee table and pantry is 20... You are at the coffee table. There is a mustard bottle... Your goal is to move objects to their destinations... Problem PDDL generated by LLM+P: (:objects coffee-table side-table recycle-bin pantry -location mustard-bottle soup-can -object) (:init (= (total-cost) 0) (= (distance coffee-table side-table) 10) (= (distance coffee-table pantry) 20) ... (robot-at coffee-table) (at mustard-bottle coffee-table) (at soup-can side-table) (hand-empty) ) (:goal (and (at mustard-bottle pantry) (at soup-can recycle-bin))) (:metric minimize (total-cost)) )</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>VI. CONCLUSION AND FUTURE WORK</head><p>In this work, we propose to leverage classical planners to empower large language models with optimal planning capabilities. The key design choice of the proposed LLM+P framework is to focus LLMs on translating the planning problem from natural language to structured PDDL format. Moreover, we show that it is important to also make LLMs aware of a simple (problem, PDDL) pair as a demonstration (or the context) for in-context learning. Some interesting directions to further extend the LLM+P framework include: 1) enabling the LLM to auto-detect when and how to apply LLM+P; and 2) reducing LLM+P's dependency on information by humans, potentially involving finetuning.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Fig. 2 :</head><label>2</label><figDesc>Fig.2: Demonstration of the optimal tidy-up plan. The robot starts at the coffee table and 1) picks up the bottle, 2) navigates to a room with the side table and the recycle bin, 3) puts down the bottle, 4) grasps the soup can, 5) puts the soup can in the recycle bin, 6) re-grasps the bottle, 7) navigates to the kitchen, 8) places the bottle in the pantry.</figDesc></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_0"><p>We use the most recent model as of September 2023. https:// platform.openai.com/docs/models/gpt-4</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_1"><p>https://github.com/aibasel/downward/tree/ release-22.12.0</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_2"><p>https://github.com/princeton-nlp/ tree-of-thought-llm/</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Eliza-a computer program for the study of natural language communication between man and machine</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Weizenbaum</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Communications of the ACM</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="36" to="45" />
+			<date type="published" when="1966">1966</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Gpt-4 technical report</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Chatgpt for robotics: Design principles and model abilities</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Vemprala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Bonatti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bucker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kapoor</surname></persName>
+		</author>
+		<idno>MSR-TR-2023-8</idno>
+		<ptr target="https://www.microsoft.com/en-us/research/publication/chatgpt-for-robotics-design-principles-and-model-abilities/" />
+		<imprint>
+			<date type="published" when="2023-02">February 2023</date>
+			<publisher>Microsoft</publisher>
+		</imprint>
+	</monogr>
+	<note type="report_type">Tech. Rep.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">K</forename><surname>Mahowald</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">A</forename><surname>Ivanova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><forename type="middle">A</forename><surname>Blank</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Kanwisher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Fedorenko</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2301.06627</idno>
+		<title level="m">Dissociating language and thought in large language models: a cognitive perspective</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Mixout: Effective regularization to finetune large-scale pretrained language models</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Kang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1909.11299</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Finetuned language models are zero-shot learners</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">Y</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Guu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">W</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Lester</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">M</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2109.01652</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Pddl-the planning domain definition language</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Mcdermott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ghallab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Howe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Knoblock</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ram</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Veloso</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Weld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wilkins</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1998">1998</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">An introduction to the planning domain definition language</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Haslum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Lipovetzky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Magazzeni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Muise</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Synthesis Lectures on Artificial Intelligence and Machine Learning</title>
+		<imprint>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="1" to="187" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Large language models still can&apos;t plan (a benchmark for llms on planning and reasoning about change)</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Valmeekam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Olmo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sreedharan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kambhampati</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2206.10498</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Askell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">The fast downward planning system</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Helmert</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Artificial Intelligence Research</title>
+		<imprint>
+			<biblScope unit="volume">26</biblScope>
+			<biblScope unit="page" from="191" to="246" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">The computational complexity of propositional STRIPS planning</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Bylander</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artificial Intelligence</title>
+		<imprint>
+			<biblScope unit="volume">69</biblScope>
+			<biblScope unit="issue">1-2</biblScope>
+			<biblScope unit="page" from="165" to="204" />
+			<date type="published" when="1994">1994</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Situations, actions, and causal laws</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Mccarthy</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1963">1963</date>
+		</imprint>
+		<respStmt>
+			<orgName>Stanford University Technical</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">Tech. Rep</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Strips: A new approach to the application of theorem proving to problem solving</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">E</forename><surname>Fikes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">J</forename><surname>Nilsson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artificial intelligence</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">3-4</biblScope>
+			<biblScope unit="page" from="189" to="208" />
+			<date type="published" when="1971">1971</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Shakey the robot</title>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">J</forename><surname>Nilsson</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1984">1984</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Prodigy: An integrated architecture for planning and learning</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Carbonell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Etzioni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Knoblock</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Minton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Veloso</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM SIGART Bulletin</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="51" to="55" />
+			<date type="published" when="1991">1991</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Shop2: An htn planning system</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">S</forename><surname>Nau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T.-C</forename><surname>Au</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Ilghami</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Kuter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">W</forename><surname>Murdock</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Yaman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of artificial intelligence research</title>
+		<imprint>
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Task planning in robotics: an empirical comparison of pddl-and asp-based systems</title>
+		<author>
+			<persName><forename type="first">Y.-Q</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>-Q. Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Khandelwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Stone</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Frontiers of Information Technology &amp; Electronic Engineering</title>
+		<imprint>
+			<biblScope unit="volume">20</biblScope>
+			<biblScope unit="page" from="363" to="373" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Answer set programming at a glance</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Brewka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Eiter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Truszczyński</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Communications of the ACM</title>
+		<imprint>
+			<biblScope unit="volume">54</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="92" to="103" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Answer set programming and plan generation</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Lifschitz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artificial Intelligence</title>
+		<imprint>
+			<biblScope unit="volume">138</biblScope>
+			<biblScope unit="issue">1-2</biblScope>
+			<biblScope unit="page" from="39" to="54" />
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Pddl2. 1: An extension to pddl for expressing temporal planning domains</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Fox</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Long</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of artificial intelligence research</title>
+		<imprint>
+			<biblScope unit="volume">20</biblScope>
+			<biblScope unit="page" from="61" to="124" />
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Mobile robot planning using action language bc with an abstraction hierarchy</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Khandelwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Stone</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Logic Programming and Nonmonotonic Reasoning</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="502" to="516" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Task-motion planning for safe and efficient urban driving</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2020 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Multi-robot planning with conflicts and synergies</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yedidsion</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sharon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Stone</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Autonomous Robots</title>
+		<imprint>
+			<biblScope unit="volume">43</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page" from="2011" to="2032" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Platform-independent benchmarks for task and motion planning</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Lagriffoul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">T</forename><surname>Dantam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Garrett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Akbari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Srivastava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">E</forename><surname>Kavraki</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Robotics and Automation Letters</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="3765" to="3772" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Integrated task and motion planning in belief space</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">P</forename><surname>Kaelbling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lozano-Pérez</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The International Journal of Robotics Research</title>
+		<imprint>
+			<biblScope unit="volume">32</biblScope>
+			<biblScope unit="issue">9-10</biblScope>
+			<biblScope unit="page" from="1194" to="1227" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Bert: Pre-training of deep bidirectional transformers for language understanding</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-W</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Toutanova</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1810.04805</idno>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">P D O</forename><surname>Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Brockman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Opt: Open pre-trained transformer language models</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Roller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Artetxe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Dewan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Diab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">V</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.01068</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">"</forename><surname>Openai</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chatgpt</surname></persName>
+		</author>
+		<ptr target="https://openai.com/blog/chatgpt/" />
+		<imprint>
+			<date type="published" when="2023-02-08">2023-02-08, 2023</date>
+			<biblScope unit="page" from="1" to="16" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Llama: Open and efficient foundation language models</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Izacard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Martinet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-A</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lacroix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Azhar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.13971</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Llama 2: Open foundation and fine-tuned chat models</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Albert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Almahairi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Babaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Bashlykov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Bhargava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bhosale</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.09288</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Palm: Scaling language modeling with pathways</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Barham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">W</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gehrmann</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.02311</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Cortes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Herzog</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.01691</idno>
+		<title level="m">Do as i can, not as i say: Grounding language in robotic affordances</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Task and motion planning with large language models for object rearrangement</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Paxton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2023 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)</title>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">D</forename><surname>Driess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">S</forename><surname>Sajjadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lynch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Wahid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Vuong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.03378</idno>
+		<title level="m">Palm-e: An embodied multimodal language model</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Inner monologue: Embodied reasoning through planning with language models</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Mordatch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chebotar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2207.05608</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Language models as zero-shot planners: Extracting actionable knowledge for embodied agents</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Pathak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Mordatch</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="9118" to="9147" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Housekeep: Tidying virtual households using commonsense reasoning</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Kant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ramachandran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yenamandra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Gilitschenski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Szot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Computer Vision-ECCV 2022: 17th European Conference</title>
+		<meeting><address><addrLine>Tel Aviv, Israel</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2022">October 23-27, 2022. 2022</date>
+			<biblScope unit="page" from="355" to="373" />
+		</imprint>
+	</monogr>
+	<note>Proceedings, Part XXXIX</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Progprompt: Generating situated robot task plans using large language models</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Blukis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mousavian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tremblay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fox</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Thomason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Garg</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2209.11302</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Text2motion: From natural language instructions to feasible plans</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Agia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Migimatsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Pavone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bohg</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.12153</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Automaton-based representations of task knowledge from generative language models</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-R</forename><surname>Gaglione</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Neary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Topcu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.01944</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Integrating action knowledge and llms for task planning and situation handling in open worlds</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Amiri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kaminski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Esselink</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.17590</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">Z</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dixit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bodrova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Takayama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Varley</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.01928</idno>
+		<title level="m">Robots that ask for help: Uncertainty alignment for large language model planners</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Autotamp: Autoregressive task and motion planning with llms as translators and checkers</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Arkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Roy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Fan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.06531</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">On the planning abilities of large language models (a critical investigation with a proposed benchmark)</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Valmeekam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sreedharan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Marquez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Olmo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kambhampati</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.06706</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">PDDL planning with pretrained large language models</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Hariprasad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">S</forename><surname>Shuttleworth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lozano-Pérez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">P</forename><surname>Kaelbling</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=1QMMUB4zfl" />
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS 2022 Foundation Models for Decision Making Workshop</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">Plansformer: Generating symbolic plans using transformers</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Pallagani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Muppasani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Murugesan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Rossi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Horesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Srivastava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Fabiano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Loreggia</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.08681</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<title level="m" type="main">Learning and leveraging verifiers to improve planning capabilities of pre-trained language models</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kambhampati</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.17077</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<title level="m" type="main">Leveraging pre-trained large language models to construct and utilize world models for model-based task planning</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Valmeekam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sreedharan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kambhampati</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.14909</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<title level="m" type="main">Generalized planning in pddl domains with pretrained large language models</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Dan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Srinivas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">P</forename><surname>Kaelbling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Katz</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.11014</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title level="m" type="main">Understanding the capabilities of large language models for automated planning</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Pallagani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Muppasani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Murugesan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Rossi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Srivastava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Horesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Fabiano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Loreggia</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.16151</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<title level="m" type="main">On the planning abilities of large language models-a critical investigation</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Valmeekam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Marquez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sreedharan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kambhampati</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.15771</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Soh</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.05128</idno>
+		<title level="m">Translating natural language to planning goals with large-language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<title level="m" type="main">Saycanpay: Heuristic planning with large language models using learnable domain knowledge</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Hazra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">Z D</forename><surname>Martires</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">De</forename><surname>Raedt</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.12682</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<title level="m" type="main">Sayplan: Grounding large language models using 3d scene graphs for scalable task planning</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Rana</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Haviland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Abou-Chakra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Suenderhauf</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.06135</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<title level="m" type="main">Isr-llm: Iterative self-refined large language model for long-horizon sequential task planning</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ma</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.13724</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<monogr>
+		<title level="m" type="main">Describe, explain, plan and select: Interactive planning with large language models enables open-world multi-task agents</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.01560</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<monogr>
+		<title level="m" type="main">Webgpt: Browserassisted question-answering with human feedback</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Saunders</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2112.09332</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<monogr>
+		<title level="m" type="main">Internet-augmented language models through few-shot prompting for open-domain question answering</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lazaridou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Gribovskaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Stokowiec</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Grigorev</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.05115</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<monogr>
+		<title level="m" type="main">Memory-assisted prompt editing to improve gpt-3 after deployment</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Tandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<monogr>
+		<author>
+			<persName><forename type="first">W</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yasunaga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Seo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>James</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-T</forename><surname>Yih</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2301.12652</idno>
+		<title level="m">Replug: Retrieval-augmented black-box language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<monogr>
+		<title level="m" type="main">Program of thoughts prompting: Disentangling computation from reasoning for numerical reasoning tasks</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">W</forename><surname>Cohen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.12588</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<monogr>
+		<title level="m" type="main">Pal: Program-aided language models</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Callan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Neubig</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.10435</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<monogr>
+		<title level="m" type="main">Toolformer: Language models can teach themselves to use tools</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Scialom</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.04761</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<monogr>
+		<title level="m" type="main">Faithful chain-of-thought reasoning</title>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Havaldar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Stein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Apidianaki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Callison-Burch</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2301.13379</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b66">
+	<monogr>
+		<title level="m" type="main">PDDL generators</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Seipp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Á</forename><surname>Torralba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hoffmann</surname></persName>
+		</author>
+		<idno type="DOI">10.5281/zenodo.6382173</idno>
+		<ptr target="https://doi.org/10.5281/zenodo.6382173" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b67">
+	<monogr>
+		<title level="m" type="main">Tree of thoughts: Deliberate problem solving with large language models</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">L</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.10601</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,1973 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">How to Train Your LLM Web Agent: A Statistical Diagnosis</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-02-13">13 Feb 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Dheeraj</forename><surname>Vattikonda</surname></persName>
+							<email>dheeraj.vattikonda@servicenow.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">ServiceNow AI Research</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution">Mila-Quebec AI Institute</orgName>
+							</affiliation>
+							<affiliation key="aff3">
+								<orgName type="institution">McGill University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Santhoshi</forename><surname>Ravichandran</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">ServiceNow AI Research</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution">Mila-Quebec AI Institute</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Emiliano</forename><surname>Penaloza</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">ServiceNow AI Research</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution">Mila-Quebec AI Institute</orgName>
+							</affiliation>
+							<affiliation key="aff4">
+								<orgName type="institution">Univeristé de Montréal</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hadi</forename><surname>Nekoei</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">ServiceNow AI Research</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution">Mila-Quebec AI Institute</orgName>
+							</affiliation>
+							<affiliation key="aff4">
+								<orgName type="institution">Univeristé de Montréal</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Megh</forename><surname>Thakkar</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">ServiceNow AI Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Thibault</forename><surname>Le Sellier De Chezelles</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">ServiceNow AI Research</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution">Mila-Quebec AI Institute</orgName>
+							</affiliation>
+							<affiliation key="aff2">
+								<orgName type="department">Polytechnique Montréal</orgName>
+								<address>
+									<addrLine>4 HEC</addrLine>
+									<settlement>Montréal</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Nicolas</forename><surname>Gontier</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">ServiceNow AI Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Miguel</forename><surname>Muñoz-Mármol</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">ServiceNow AI Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Sahar</forename><forename type="middle">Omidi</forename><surname>Shayegan</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">ServiceNow AI Research</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution">Mila-Quebec AI Institute</orgName>
+							</affiliation>
+							<affiliation key="aff3">
+								<orgName type="institution">McGill University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Stefania</forename><surname>Raimondo</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">ServiceNow AI Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xue</forename><surname>Liu</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Mila-Quebec AI Institute</orgName>
+							</affiliation>
+							<affiliation key="aff3">
+								<orgName type="institution">McGill University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Alexandre</forename><surname>Drouin</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">ServiceNow AI Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Laurent</forename><surname>Charlin</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Mila-Quebec AI Institute</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Alexandre</forename><surname>Piché</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">ServiceNow AI Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Alexandre</forename><surname>Lacoste</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">ServiceNow AI Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Massimo</forename><surname>Caccia</surname></persName>
+							<email>massimo.caccia1@servicenow.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">ServiceNow AI Research</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">How to Train Your LLM Web Agent: A Statistical Diagnosis</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-02-13">13 Feb 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">FE56FD00487918261C38F6C1BF265F0E</idno>
+					<idno type="arXiv">arXiv:2507.04103v4[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:10+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>LLM-based web agents have recently made significant progress, but much of it has occurred in closed-source systems, widening the gap with open-source alternatives. Progress has been held back by two key challenges, first, a narrow focus on single-step tasks that overlooks the complexity of multi-step web interactions, and second, the high compute costs required to post-train LLM-based web agents. To address this, we present the first statistically grounded study on compute allocation for LLM web-agent post-training. Our approach uses a two-stage pipeline, training a Llama 3.1 8B student to imitate a Llama 3.3 70B teacher via SFT, followed by on-policy reinforcement learning. We find this process highly sensitive to hyperparameter choices in setting where exhaustive sweeps are impractical. To spare others from expensive trial-and-error, we sample 1,370 configurations and use bootstrapping to estimate effective hyperparameters. Our results show that combining SFT with on-policy RL consistently outperforms either approach alone on both WorkArena and MiniWob++. Further, this strategy only requires 55% of the compute to match the peak of pure SFT on MiniWob++, pushing the compute-performance Pareto frontier and is the only strategy that can close the gap with closed-source models.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="26" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Llama-3.3 70b (Teacher) 0e18 5e18 10e18 15e18 Compute (FLOPs) 20e18 25e18 0.35 0e18 5e18 10e18 15e18 Compute (FLOPs) 4 6 8 RL branching index 20e18 25e18 Success Rate Held-out Goals 0 2 Held-out Tasks 10 Llama-3.1 8b (SFT) GPT-4o 0.40 0.45 0.50 0.55 0.60 0.65 0.30 0.35 0.40 0.45 0.50 0.55 0.60 0.65 Success Rate</p><p>Figure <ref type="figure">1</ref> Compute-performance frontier on MiniWoB++ (results averaged over two seeds). The blue curve shows pure SFT on teacher demonstrations. Warm-colored curves represent hybrid runs that branch off from SFT checkpoints and continue training with RL. Early transitions to RL push the Pareto frontier achieving higher success rates for the same compute and is the only approach able to achieve over 30% improvement on both held-out goals (left) and held-out tasks (right) closing the gap between open and closed-source models. See figure <ref type="figure" target="#fig_2">4</ref> for the Qwen2.5 7B plot.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Large language model (LLM) agents for web interfaces have advanced rapidly, but open-source systems still trail proprietary ones. Bridging this gap would allow organizations to train smaller, cost-efficient agents tailored to their needs while maintaining data privacy. Yet, despite impressive progress of open-source models in domains like math and code generation, advances in training web-capable LLM agents remain limited by mainly by the lack of attention to multi-turn, long-horizon tasks and the high cost and low reproducibility of current training pipelines.</p><p>Most research centers on single-step tasks like code or math domains with rapid feedback and simplified credit assignment which fall short of real-world web environments requiring sequential decisions and longhorizon planning. Recent benchmarks like WebArena <ref type="bibr" target="#b26">(Zhou et al., 2023)</ref>, WorkArena <ref type="bibr" target="#b9">(Drouin et al., 2024)</ref>, OSWorld <ref type="bibr" target="#b23">(Xie et al., 2024)</ref>, and The Agent Company <ref type="bibr">(Xu et al., 2024)</ref> have exposed how brittle current methods become under delayed rewards, sparse feedback, and compounding errors. Addressing these settings demands not just better agents, but reproducible, compute-efficient training pipelines an area we directly tackle.</p><p>However, building such pipelines is nontrivial. Modern LLM post-training often involves a combination of Supervised Fine-Tuning (SFT) and Reinforcement Learning (RL), with performance sensitive to a large number of interacting hyperparameters <ref type="bibr" target="#b11">(Hochlehnert et al., 2025)</ref>. Single-seed results are noisy and misleading, but exhaustive tuning and multi-seed sweeps (e.g. <ref type="bibr" target="#b1">(Abdin et al., 2025)</ref>) remain infeasible for most labs due to the cost of LLM training. This makes it all the more critical to design pipelines that are not only effective but statistically robust and accessible within realistic compute budgets.</p><p>In this paper, we tackle these gaps by providing a statistically driven diagnosis of training LLM agents for web-based, multi-step tasks. Specifically, we study how to allocate compute between expensive, high-quality off-policy demonstrations from a large teacher model and cheaper on-policy rollouts from a smaller student model. We analyze this tradeoff across two levels of generalization, held-out goals being tasks encountered during training but with novel goals and held-out tasks, which are entirely unseen during training.</p><p>To study this compute-performance trade-off we use a two-stage training pipeline. First, a LLaMA 3.3 70B teacher model generates K successful trajectories to warm-start a smaller LLaMA 3.1 8B student via SFT.</p><p>We then branch of various SFT checkpoints where training continues with an on-policy RL phase using Group Relative Policy Optimization (GRPO) <ref type="bibr" target="#b8">(DeepSeek-AI et al., 2025)</ref>. Our central objective is to determine the optimal compute allocation and hyperparameter mix for training web-based LLM agents. To this end, we run 1,370 training configurations, varying key hyperparameters and branching points between SFT and RL. We then apply bootstrap-based analysis to estimate the impact of different hyper-parameters on downstream performance and how they vary across branching SFT checkpoints. This data-driven approach enables us to identify important considerations to get the most out of each run. We use this method to show the optimal mix between SFT and RL in the MiniWob++ environment, achieving better task accuracy at a significantly lower cost. Additionally, we provide concrete recommendations on compute allocations between SFT and RL on the more demanding WorkArena environment.</p><p>Putting things together, we show how our study yields several actionable insights. First, branching into RL early, but not immediately after SFT leads to better outcomes. This hybrid strategy consistently outperforms pure SFT and pure RL, and reaches the maximal performance of pure SFT while requiring only 55% of the compute, effectively pushing the compute-performance Pareto frontier. It is also the only strategy that can close the gap with closed-source models. Second, curriculum learning and error log feedback help the less SFT warmup has been applied but can become counterproductive thereafter. Third, in GRPO, applying zero-advantage filtering consistently improve performance, while dividing the advantage with the standard deviation and wether to use an importance ratio are dependent on the amount of SFT warmup done. Fourth, decoding temperature is consistently critical, while learning rate and discount rate must also be carefully tuned.</p><p>These findings are significant for two reasons. First, they give smaller research groups a reproducible, budgetaware playbook for pushing open LLM agents closer to state-of-the-art without scaling model size. Second, they address a slice of the broader reproducibility concerns recently highlighted in the RL community <ref type="bibr" target="#b2">(Agarwal et al., 2021;</ref><ref type="bibr" target="#b11">Hochlehnert et al., 2025)</ref>, offering a template for rigorous, statistically-grounded hyperparameter tuning and compute allocation in LLM agent training.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Background</head><p>This section consolidates the algorithmic ingredients used throughout the paper: (i) the MDP formulation of web-based language agents, (ii) SFT on expert traces, (iii) GRPO for RL, and (iv) curriculum and normalization techniques that stabilize training.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Language Agents as MDPs</head><p>We model each task as a Markov Decision Process (MDP) M = ⟨S, A, P, r, ρ 0 , γ⟩. A state s t ∈ S is a textual context-in our case a prompt and an action a t ∈ A is a textual response generated by the agent. Each action a t consists of a sequence of tokens o 1t:Kt sampled autoregressively from the policy π θ (a t |s t ) parameterized by an LLM sampled with temperature ρ LLM . The environment then returns a scalar reward r t ∈ {-1, 1} indicating task failure/success. In our setting we assume the environment dynamics are p(s t+1 | a t ) ∈ P . We optimize the policy π θ to maximize the expected discounted return:</p><formula xml:id="formula_0">J(θ) = E τ ∼π θ T t=0 γ t r t<label>(1)</label></formula><p>Here, γ ∈ [0, 1] is the discount rate, which controls the agent's preference for immediate versus future rewards and τ = (s 0 , a 0 , r 0 , s 1 , a 1 , r 1 , . . . , s T ) refers to a trajectory sampled from the policy.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Off-policy boot-strapping via SFT</head><p>We first imitate a stronger expert policy π E by minimizing the cross-entropy loss</p><formula xml:id="formula_1">L SFT (θ) = -E τ ∼π E T t=0 log π θ (a t | s t ) .<label>(2)</label></formula><p>SFT offers a high-quality, low-variance gradient but is inherently off-policy which can lead to poor generalization <ref type="bibr" target="#b5">(Chu et al., 2025)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">Rejection Fine-Tuning</head><p>Similar to SFT, Rejection Fine-Tuning (RFT) optimizes the policy using successful trajectories, but in this case bootstrapped of the training policy rather than a larger expert</p><formula xml:id="formula_2">L RFT (θ) = -E τ ∼π θ 1 {rt=1} T t=0 log π θ (a t | s t ) .<label>(3)</label></formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.4">On-Policy Improvement with Multi-Turn GRPO</head><p>After the initial SFT warmup phase, we continue training using on-policy RL using GRPO as the optimization algorithm. Like REINFORCE <ref type="bibr" target="#b19">(Sutton et al., 1999)</ref>, GRPO maximizes the expected return using a policy gradient objective. However, GRPO introduces additional structure by leveraging per-goal advantage normalization and importance weighting, wherein each trajectory is associated with a specific goal in our context, referring to the seed of the target task. For a given goal g, the group-normalized advantage function is:</p><formula xml:id="formula_3">A t,g = r t,g -mean(R t,g ) std(R t,g ) ,</formula><p>where R t,g = (r t,1 , . . . , r t,G ) is the set of rewards across the G goals at timestamp t. In addition to this similar to proximal policy optimization (PPO) <ref type="bibr" target="#b1">(Abdin et al., 2025)</ref> an importance-ratio is often applied to the GRPO objective:</p><formula xml:id="formula_4">η t,g = π θ (a t | s t ) π θ old (a t | s t ) ,</formula><p>where π θ is the current policy and π θ old is the behavior policy used to collect trajectories. Finally, a clippedminimum is also applied to stabilize the training process. Putting things together the GRPO objective for our multi-turn setting is:</p><formula xml:id="formula_5">J MT-GRPO (θ) = Eτ ∼π θ old 1 G G g=1 1 T T t=0 min η t,g A t,g , clip(η t,g , 1-ϵ, 1+ϵ)A t,g .<label>(4)</label></formula><p>Traditionally the GRPO objective includes a KL penalty between the optimizing and reference policies which we do not use as early experiments showed they did not improve performance, slowed down training and required additional compute budget.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Zero-advantage filtering.</head><p>Tokens with A t,g = 0 contribute no learning signal yet still consume memory. Dropping them yields a constant effective batch size and modestly accelerates training <ref type="bibr" target="#b25">(Yu et al., 2025)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.5">Curriculum through Variance-Aware Boltzmann Sampling</head><p>To promote steady learning progress, we design a curriculum that prioritizes challenging tasks, neither trivial nor too difficult <ref type="bibr" target="#b20">(Thakkar et al., 2023)</ref>. Specifically, we select tasks according to a Boltzmann distribution centered around a target return µ target which specifies the desired performance threshold, encouraging focus on partially mastered tasks, with a temperature parameter ρ Curr controlling the sharpness of the distribution, with lower values concentrating probability mass tightly around µ target .</p><p>This sampling mechanism dynamically adapts the training distribution, concentrating learning on tasks where the agent is neither already proficient nor entirely unskilled. As a result, the agent avoids premature convergence on easy tasks and prevents wasted effort on tasks far beyond its current capabilities.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Methodology</head><p>Our training pipeline consists of two sequential stages SFT followed by RL framed as a resource allocation problem. We also describe our hyperparameter sweep strategy and statistical analysis protocol that consolidates hundreds of runs into reliable conclusions. We evaluate our recipe along two axes: compute cost, measured in FLOPs (using the formula from (ben)), and model performance, assessed on both unseen training goals and held-out testing tasks.</p><p>Stage 1 -Supervised Fine-Tuning (SFT). We begin by generating N E expert trajectories using a large teacher model. Only successful trajectories are retained after filtering, and the corresponding (s, a) pairs, along with chain-of-thought annotations, form the SFT dataset. Note that computing the cost of the SFT dataset includes both successful and discarded unsuccessful trajectories.</p><p>We then train a smaller student model for T SFT gradient steps. To explore the trade-off between SFT and RL, we branch off B times at fixed intervals along the SFT trajectory, yielding checkpoints at timesteps t b ∈ [0, T SFT ]. Each checkpoint corresponds to a student policy π θ(t b ) , which initializes a distinct RL phase.</p><p>The total compute used up to each branching point, F SFT (t b ), includes both teacher inference and student training FLOPs accumulated over t b steps.</p><p>Stage 2 -RL Fine-Tuning. Each policy π θ(t b ) is further trained using GRPO for T RL steps. The compute cost of this phase, F RL (T RL ), includes both the FLOPs required for data collection (online rollouts) and for student updates across all T RL steps. The total FLOPs for a full training run starting from θ(t b ) is computed as:</p><formula xml:id="formula_6">FLOPs(t b ) = F SFT (t b ) + F RL (T RL ).<label>(5)</label></formula><p>By varying t b throughout SFT, we assess how shifting compute between expert-driven supervision and on-policy learning impacts final performance. This setup highlights the trade-off between the high compute cost of expert supervision and the lower-cost, but noisier, nature of on-policy learning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Estimating the Uncertainty of the Hyperparameter Selection Process</head><p>Across the different SFT checkpoints, we sample 1,370 distinct configurations with ten varying hyperparameters (see Section L for details). Our objective is to study the effect of various hyperparameters (HP) on the downstream success rate of our trained agents. This comes with two important considerations. First, if we change the value of, e.g., the batch size, and we want to know if a bigger batch size is better, the learning rate and other parameters need to be readjusted close to their optimal configuration (under a fixed budget). Secondly, to account for noise, we would need to restart the same experiment several times to avoid spurious conclusions. In practice, this is out of reach. For a more computationally friendly approach, we resort to bootstrapping the collection of trials over different HP configurations. The boostrap algorithm has many desriable properties such as being a consistent and unbiased estimator for the sampling distribution of any data statistic without requiring parametric assumptions (see Section K for details), thus allowing us to reliably obtain robust estimates of both the expected value and variance of the success rate given by any HP.</p><p>Bootstrapping the hyperparameter selection process. From the full set of 1,370 training runs, we perform bootstrap resampling by drawing individual runs (with replacement). For each resample, we identify the best-performing configuration and repeat this process 1,000 times. We also compute the fraction of times each hyperparameter value "wins", which serves as an estimated probability that it belongs to the global optimum. This procedure serves two purposes: to estimate the maximum relative improvement a specific hyper-parameter provides while accounting for variation in other parameters and to offer uncertainty estimates in the form of win-rate distributions between different configurations. In addition, to better understand how optimal hyper-parameters may change depending on the amount of SFT warmup we apply this analysis across various SFT checkpoints.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Balancing unequal coverage.</head><p>Due to random search, some HP values were explored more than others, biasing the winner toward the larger groups. To correct for this, each run is sampled with probability ∝ 1/group size, approximating an equal compute budget for every HP value.</p><p>We provide a detailed explanation of this procedure in Algorithm 1. Additionally in Section J we describe how use this procedure to obtain the results reported in Figure <ref type="figure">1</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experimental Setup</head><p>In this section, we describe the experimental setup used to validate our findings. We detail the models, benchmarks, action spaces, training framework, compute infrastructure, and evaluation protocols, ensuring that all components are aligned with the goals of studying compute-efficient, reproducible training for LLM web agents.</p><p>Models. We evaluate our approach using two teacher models, Llama 3.3 70B and Qwen 2.5 72B to generate SFT traces, with Llama 3.1 8B and Qwen 2.5 7B acting as the student model for fine-tuning. All models operate with a 16k token context window to handle the complexity of web-based tasks. For the LLama models we report results using GRPO, while for Qwen we report results using RFT as we found it more stable during training.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Benchmarks.</head><p>Our experiments focus on two benchmarks. The first is MiniWoB++, a suite of 30 mediumhorizon web interaction tasks, where we observe that optimal policies typically complete tasks in 2 to 5 steps.</p><p>The second is WorkArena <ref type="bibr" target="#b9">(Drouin et al., 2024)</ref>, a more challenging benchmark of 33 enterprise knowledge-work tasks, where we observe optimal policies generally complete tasks in 3 to 10 steps. These benchmarks provide a representative spectrum of sequential decision-making challenges faced by interactive LLM agents. Both benchmarks are depicted in Figure <ref type="figure" target="#fig_5">7</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Algorithm 1 Bootstrap Estimation of Hyperparameter Importance</head><p>Require: Set of training runs Results, evaluation metric column M , hyperparameter of interest H, number of bootstrap iterations B</p><formula xml:id="formula_7">1: W = dict( ) ▷ Win counts per HP value 2: S = defaultdict(List) ▷ Score samples per HP value 3: H vals = unique(Results[H]) ▷ Distinct values of the hyperparameter 4: weights = { h i : 1/count(Results[h i ]) for each h i ∈ H vals } 5: for b = 1 to B do 6: sample b = resample(Results, weights) 7: h * = argmax h sample b [M ]</formula><p>▷ Get the winning HP value for sample b 8:</p><formula xml:id="formula_8">W[h * ] += 1 9: for each h in H vals do 10: S[h]+ = max sample b [sample b [H] == h][M ] 11:</formula><p>end for 12: end for 13: for each h in H vals do</p><p>14: Compute 95% confidence interval from S[h] 15: end for 16: return W, S with confidence intervals 0 4 Epoch order-apple-mac-book-pro15 knowledge-base-search order-apple-watch order-ipad-mini order-ipad-pro order-development-laptop-p-c multi-chart-value-retrieval single-chart-value-retrieval all-menu create-incident order-sales-laptop sort-hardware-list sort-incident-list 13/26 Failed tasks order-loaner-laptop create-user create-change-request multi-chart-min-max-retrieval order-standard-laptop create-problem impersonation Average Train Average Test Task 0.25 0.47 0.00 0.35 0.50 0.48 0.00 0.22 0.00 0.26 0.00 0.48 0.00 0.05 0.00 0.00 0.00 0.06 0.00 0.08 0.00 0.00 0.25 0.23 0.25 0.25 0.00 0.01 0.00 0.31 0.07 0.21 0.00 0.00 0.29 0.29 0.00 0.05 0.00 0.11 0.00 0.02 0.04 0.10 0.05 0.14 SFT 20 Epoch 0.72 0.24 0.82 0.44 0.57 0.71 0.05 0.00 0.19 0.18 0.19 0.25 0.25 0.03 0.47 0.17 0.02 0.44 0.48 0.58 0.00 0.17 0.31 Cont. SFT 20 Epoch 0.85 0.48 0.79 0.45 0.73 0.81 0.00 0.00 0.00 0.12 0.20 0.25 0.26 0.03 0.51 0.39 0.08 0.31 0.38 0.50 0.00 0.18 0.31 RL 1.00 1.00 1.00 1.00 1.00 0.75 0.33 0.33 0.25 0.25 0.25 0.25 0.25 0.00 0.80 0.71 0.60 0.57 0.43 0.36 0.00 0.27 0.50 LLaMA 70B 0.0 0.2 0.4 0.6 0.8 1.0 Figure 2 Per-task performance of SFT and SFT+RL agents on WorkArena. The Llama 3.1 8B model is initially finetuned for 4 epochs on trajectories from a teacher Llama 3.3 70B model. Training then continues either with additional SFT or with GRPO fine-tuning up to epoch 20. The teacher model's success rate is also shown.</p><p>Observation &amp; Action Spaces. MiniWoB++ provides raw HTML trees, whereas WorkArena leverages accessibility trees (AxTrees), which we truncate to 16k tokens to meet hardware constraints. The agent operates in a discrete action space composed of high-level UI primitives: noop, fill(node, text), click(node), type(node, text), select_option(node, option), scroll(node), and hover(node). This abstraction allows the agent to interact effectively with diverse web interfaces.</p><p>All agents employ chain-of-thought prompting <ref type="bibr" target="#b22">(Wei et al., 2023)</ref>. We also experiment with applying error log feedback, allowing the agent to receive explicit error messages when it takes invalid actions (during both training and testing). Evaluation Protocol. Both environments are stochastic, and we control for randomness during training by fixing the task seed. Each task-seed pair is referred to as a "goal". The evaluation protocol assesses generalization at two levels: (i) performance on held-out goals within the training tasks, and (ii) performance on entirely new, unseen held-out tasks. We consider both settings important as they capture different aspects of generalization held-out goals test reliability on trained tasks, while held-out tasks test the model's ability to transfer skills learnt in training to entirely new situations.</p><p>In both settings we use the the average task success rate as the evaluation metric, which reflects the agent's ability to generalize beyond its training distribution. To reduce the impact of evaluation noise during model selection, we apply a rolling average with a window size of 3 on the held-out goals, and select the checkpoint with the highest smoothed score.</p><p>For all our reported runs (SFT, RL, SFT + RL) we report the average of the non-smoothed scores at the selected checkpoint, aggregated over four runs chosen through the described model selection procedure based on our random search. For all other models, we report average scores over 100 independent runs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Compute Allocation Protocol.</head><p>We track the total floating-point operations (FLOPs) consumed during both SFT and GRPO phases, following the procedure in Section 3 and Appendix D. For RL branching, we start from the SFT run that (i) attains the highest SFT performance and (ii) exhibits stable learning, allowing us to sample checkpoints at regular intervals and cleanly study the effect of SFT warm-up. Because this run sits in the top 10% of all SFT trials by area-under-the-training-curve (AUC) the mean success rate across all checkpoints of the run, serving as a proxy for overall training efficiency, we match that selection pressure for RL by averaging the top two seeds out of ten RL trials, thus approximating the 90th-percentile of the RL distribution and ensuring a fair compute-aware comparison between strategies.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Main Results and Compute Trade-Offs</head><p>In this section, we present our primary findings and analyze the trade-offs between SFT and RL in terms of both performance and compute efficiency.</p><p>Performance Overview. Table <ref type="table" target="#tab_0">1</ref> summarizes the results on MiniWoB++ and WorkArena. Combining SFT with RL consistently yields the best performance among student models. Pure SFT and pure RL each fall short, with RL from scratch particularly struggling due to sparse rewards and unstable learning dynamics. These results highlight the complementary strengths of expert demonstrations and on-policy fine-tuning.</p><p>On MiniWoB++, this approach not only maximizes student performance but also matches the teacher and significantly closes the gap with proprietary models. In contrast, WorkArena remains more challenging: while SFT+RL improves over SFT alone, student performance still lags behind the teacher and proprietary models, suggesting that stronger supervision or more effective RL strategies may be needed for complex enterprise tasks.</p><p>We observe that agent performance eventually saturates for both SFT and SFT+RL, especially on more difficult tasks. Further analysis of this saturation behavior is provided at the end of this section. Notably, WorkArena's test set can be easier than its training set for certain agents, which adds nuance to the observed performance gaps and complicates straightforward interpretation of generalization performance.</p><p>Compute-Performance Trade-Off. Our analysis focuses on the trade-off between costly but high-quality teacher demonstrations and cheaper, noisier on-policy rollouts. To examine this, we branch RL fine-tuning from SFT checkpoints sampled at fixed intervals along the training trajectory. Figure <ref type="figure">1</ref> illustrates the compute-performance frontier on MiniWoB++, where runs that combine SFT with RL (warm colors) consistently outperform pure SFT (blue), pushing the Pareto frontier forward. Early branching into RL unlocks substantial gains in compute efficiency, delivering stronger performance at lower compute budgets. For example, SFT+RL reaches the maximal performance of pure SFT on the test set (achieved at approximately 11 exaFLOPs with pure SFT) using only around 6 exaFLOPs translating to roughly 45% of compute saved (11 vs 6 exaFLOPs).</p><p>Notably, this is the only strategy that closes the performance gap with closed-source models like GPT-4o. The trend is consistent across both held-out goals and held-out tasks: warm-started RL yields higher performance than either SFT or RL alone, reinforcing the importance of blending expert supervision with on-policy learning. These findings underscore the need to balance sample efficiency from demonstrations with the compute efficiency of on-policy learning, and the results generalize to Qwen2.5 7B (see figure <ref type="figure" target="#fig_2">4</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Task Performance Saturation and Analysis</head><p>Despite extensive post-training, agent performance on the WorkArena benchmark plateaus at around 40% after just 9-10 epochs. This stagnation appears to stem from the intrinsic difficulty of certain tasks (e.g as sorting and filtering tasks) that even frontier models struggles to solve (see Figure <ref type="figure">2</ref>). A per-task breakdown shows that while both SFT and RL agents gradually close the performance gap with the teacher model, with RL achieving a slightly higher final success rate, a significant portion of tasks (14 out of 33) remain completely unsolved. These failures are attributed to either the limitations of the teacher model or the sparsity of reward signals, both of which hamper the learning process. On-policy RL exploration proves ineffective in overcoming these challenges due to the lack of foundational skills and informative feedback. These findings underscore the need for more effective methods to address complex tasks under sparse reward settings. Additional per-task performance results for WorkArena and Miniwob are provided in Section C.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Shortcut-Seeking Agents and Task Integrity</head><p>During extended training we found that giving agents full administrative privileges invites creative but problematic shortcuts. For instance, in WorkArena's "Order hardware devices" task, rather than navigating through the catalogue as intended, the agent simply edits its homepage to add a direct link to the ordering form. While this hack fulfills the success condition, it violates the task's spirit and, worse, the modifications persist across sessions. Other agents entering the environment later inherit the altered UI, leading to failures unrelated to their own policies.</p><p>In general, agents exploited admin rights to create or delete elements, reshaping pages in ways that saved clicks but destabilised the environment. These findings argue for a tighter sandbox enough access for exploration and accomplishment, but safeguards against permanent, instance-wide side-effects.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Ablation and Sensitivity Analysis</head><p>We simulate re-running hyperparameter configurations and selecting the best-performing ones using the method described in Section 3.1. This is done across three checkpoints: the base LLaMA 3.1 8B Instruct model</p><p>0.4 0.2 0.0 0.2 0.4 0.08 0.10 0.12 0.14 0.16 0.18 0.20 Relative Reward 0.12 0.14 Instruct False True 0.4 0.2 0.0 0.2 0.4 0.13 0.16 + 2.5e+18 SFT FLOPs 0.4 0.2 0.0 0.2 0.4 0.12 0.11 + 7.6e+18 SFT FLOPs False True 0 50 100 Win Rate (%) 30% 70% False True 10% 90% False True 60% 40% 0.4 0.2 0.0 0.2 0.4 0.08 0.10 0.12 0.14 0.16 0.18 0.20 0.22 0.24 Relative Reward 0.17 0.18 Instruct False True 0.4 0.2 0.0 0.2 0.4 0.14 0.15 + 2.5e+18 SFT FLOPs 0.4 0.2 0.0 0.2 0.4 0.11 0.11 + 7.6e+18 SFT FLOPs False True 0 50 100 Win Rate (%) 30% 70% False True 30% 70% False True 50% 50% 0.4 0.2 0.0 0.2 0.4 0.05 0.08 0.10 0.12 0.15 0.18 0.20 0.23 Relative Reward 0.18 0.12 0.17 0.14 Instruct 0.25 0.5 0.75 1.0 0.4 0.2 0.0 0.2 0.4 0.16 0.14 0.14 0.15 + 2.5e+18 SFT FLOPs 0.4 0.2 0.0 0.2 0.4 0.12 0.12 0.10 0.08 + 7.6e+18 SFT FLOPs 0.25 0.5 0.75 1.0 0 50 100 Win Rate (%) 70% 30% 0.25 0.5 0.75 1.0 50% 30% 20% 0.25 0.5 0.75 1.0 60% 40% 0.4 0.2 0.0 0.2 0.4 0.08 0.10 0.12 0.14 0.16 0.18 0.20 0.22 0.24 Relative Reward 0.16 0.19 0.15 0.13 Instruct 0.5 0.9 0.95 0.98 0.4 0.2 0.0 0.2 0.4 0.14 0.15 0.14 0.16 + 2.5e+18 SFT FLOPs 0.4 0.2 0.0 0.2 0.4 0.13 0.12 0.11 0.11 + 7.6e+18 SFT FLOPs 0.5 0.9 0.95 0.98 0 50 100 Win Rate (%) 20% 80% 0.5 0.9 0.95 0.98 40% 30% 30% 0.5 0.9 0.95 0.98 50% 40% 10% 0.4 0.2 0.0 0.2 0.4 0.08 0.10 0.12 0.14 0.16 0.18 0.20 0.22 0.24 Relative Reward 0.16 0.17 Instruct False True 0.4 0.2 0.0 0.2 0.4 0.16 0.14 + 2.5e+18 SFT FLOPs 0.4 0.2 0.0 0.2 0.4 0.12 0.12 + 7.6e+18 SFT FLOPs False True 0 50 100 Win Rate (%) 30% 70% False True 70% 30% False True 60% 40% 0.4 0.2 0.0 0.2 0.4 0.08 0.10 0.12 0.14 0.16 0.18 0.20 0.22 Relative Reward 0.18 0.15 Instruct False True 0.4 0.2 0.0 0.2 0.4 0.13 0.15 + 2.5e+18 SFT FLOPs 0.4 0.2 0.0 0.2 0.4 0.10 0.12 + 7.6e+18 SFT FLOPs False True 0 50 100 Win Rate (%) 80% 20% False True 30% 70% False True 20% 80% 0.4 0.2 0.0 0.2 0.4 0.08 0.10 0.12 0.15 0.17 0.20 0.23 0.25 Relative Reward 0.12 0.16 0.18 0.17 Instruct 1024 256 512 64 0.4 0.2 0.0 0.2 0.4 0.13 0.14 0.16 0.15 + 2.5e+18 SFT FLOPs 0.4 0.2 0.0 0.2 0.4 0.10 0.10 0.12 0.10 + 7.6e+18 SFT FLOPs 1024 256 512 64 0 50 100 Win Rate (%) 20% 50% 30% 1024 256 512 64 10% 60% 30% 1024 256 512 64 100% 0.4 0.2 0.0 0.2 0.4 0.08 0.10 0.12 0.14 0.16 0.18 0.20 0.22 0.24 Relative Reward 0.19 0.13 Instruct False True 0.4 0.2 0.0 0.2 0.4 0.16 0.14 + 2.5e+18 SFT FLOPs 0.4 0.2 0.0 0.2 0.4 0.10 0.12 + 7.6e+18 SFT FLOPs False True 0 50 100 Win Rate (%) 100% False True 100% False True 10% 90% 0.4 0.2 0.0 0.2 0.4 0.08 0.10 0.12 0.14 0.16 0.18 0.20 Relative Reward 0.13 0.16 Instruct False True 0.4 0.2 0.0 0.2 0.4 0.15 0.15 + 2.5e+18 SFT FLOPs 0.4 0.2 0.0 0.2 0.4 0.12 0.10 + 7.6e+18 SFT FLOPs False True 0 50 100 Win Rate (%) 10% 90% False True 40% 60% False True 100% 0.4 0.2 0.0 0.2 0.4 0.05 0.08 0.10 0.12 0.15 0.18 0.20 Relative Reward 0.18 0.17 Instruct 1e-06 5e-07 0.4 0.2 0.0 0.2 0.4 0.15 0.15 + 2.5e+18 SFT FLOPs 0.4 0.2 0.0 0.2 0.4 0.12 0.06 + 7.6e+18 SFT FLOPs 1e-06 5e-07 0 50 100 Win Rate (%) 70% 30% 1e-06 5e-07 60% 40% 1e-06 5e-07 100% Zero-Advantage Filtering Curriculum Learning Decoding Temperature Discount Rate Error Log Usage Advantage Application Effective Batch Size Importance Ratio/Trust Region Standard-Deviation Normalized Advantage Learning Rate and two warm-started variants with an additional 2.5 × 10 18 and 7.6 × 10 18 FLOPs of supervised fine-tuning, respectively, to assess variations across compute budgets. We evaluate the held-out goals and held-out tasks performance of 10 hyper-parameters across 1,370 runs. We report final held-out task performance to verify generalization in Section G finding no significant deviations between held-out tasks and held-out goals parameters.</p><p>Figure <ref type="figure" target="#fig_1">3</ref> displays our findings, which we summarize as follows. Curriculum learning is beneficial when starting RL from scratch but becomes detrimental after warm-starting, likely because warm-started models already perform well on easy tasks, and curriculum forces them to overfocus on harder ones. Error log feedback helps when there's no SFT but otherwise does not, likely because SFT warmup removes many common errors made by weaker models. A decoding temperature of 0.25 consistently yields the best results, striking a balance between exploration and exploitation; lower values led to under-exploration and were discarded.</p><p>Grouped-relative advantage helps only after SFT, while using raw rewards works better when starting directly from the Instruct model, possibly due to how advantage scaling interacts with the initial weights. Zeroadvantage filtering improves training across most settings by ensuring batches focus on informative updates. Standard-deviation normalized advantage, as noted by <ref type="bibr" target="#b15">(Liu et al., 2025)</ref>, seems to aid performance under less finetuned models and decrease in value the more finetuning is done. Importance ratio correction and trust region, though standard, also hurt models with little or no SFT, likely because conservative updates slow down learning. In contrast, for models that start from a stronger SFT checkpoint, these mechanisms can help stabilize training and avoid catastrophic updates. For the learning rate, the larger value (1e-6) generally worked better. Effective batch size of 512 appears to be generally be a safe and robust choice in all our experiments. Finally, regarding the discount rate, values above 0.9 work well for models with little or no SFT warmup, while heavily warm-started models benefit from a lower rate around 0.5 likely because it encourages the agent to optimize more aggressively on tasks it already handles well. A further hypothesis is that the large deviation in optimal hyperparameters between the base and warm-start models could be attributed to the significant entropy reduction introduced by SFT (see Section H).</p><p>7 Related Work</p><p>Best prectices in deep RL. Building on the recognition of reproducibility challenges and unstable RL training of LLM agents, recent studies have proposed best practices for training LLM agents using RL methods. Dang &amp; Ngo (2025) recommend leveraging high quality data, balancing easy and hard problems, and controlling length generation with cosine reward. Yu et al. (2025) promote higher clipping in the GRPO loss to promote diversity and avoid entropy collapse, dynamic sampling to improve training efficiency and stability, token level gradients for long CoT sequences, and overlong reward shaping to reduce reward noise. Roux et al. (2025) introduce tapered variant of importance sampling to speed up learning while maintaining stable learning dynamics. The proposed method (TOPR) allows the handling of both positive and negative examples in a fully offline setting. More generally, Hochlehnert et al. ( <ref type="formula">2025</ref>) emphasizes the need for greater methodological precision, particularly concerning decoding parameters, random seeds, prompt formatting, as well as the hardware and software frameworks, to guarantee transparent and thorough assessments of model performance. These practices are essential for developing robust and reproducible agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LLM Agents trained with RL on multi-step environments.</head><p>Recent advancements have sought to bridge the gap in training LLM agents for multi-step environments, with approaches like WebRL <ref type="bibr" target="#b17">(Qi et al., 2025)</ref> and SWEET-RL <ref type="bibr" target="#b27">(Zhou et al., 2025)</ref> demonstrating significant progress. WebRL employs a self-evolving curriculum to address the challenges of sparse feedback and task scarcity, successfully enhancing the performance of open LLMs in web-based tasks <ref type="bibr" target="#b17">(Qi et al., 2025)</ref>. Similarly, SWEET-RL introduces a hierarchical structure that enables effective credit assignment over multiple turns, improving policy learning and generalization in collaborative reasoning tasks <ref type="bibr" target="#b27">(Zhou et al., 2025)</ref>. These studies collectively illustrate the necessity of adapting RL techniques to accommodate the complexities of multi-step interactions, paving the way for more capable and versatile LLM agents. Similar in spirit to our work, <ref type="bibr" target="#b3">(Andreux et al., 2025)</ref> propose an empiral study on the inference cost of trained LLM web agents. An extended version of the related work is provided in Section F.</p><p>LLM agents trained with RL in multi-step environments. Recent work has begun closing the gap for LLM agents that must reason over multiple steps. WebRL <ref type="bibr" target="#b17">(Qi et al., 2025)</ref> introduces a self-evolving curriculum that tackles sparse feedback and task scarcity, substantially boosting open-source agents on web tasks. SWEET-RL <ref type="bibr" target="#b27">(Zhou et al., 2025)</ref> adds a hierarchical credit-assignment scheme spanning many turns, improving both learning stability and generalization in collaborative reasoning. Together, these studies underscore the need to adapt RL techniques to the intricacies of long-horizon interaction, paving the way for more capable, versatile agents. Similar in spirit, <ref type="bibr" target="#b3">(Andreux et al., 2025)</ref> provide an empirical analysis of inference costs for trained LLM web agents. An extended discussion of related work appears in Section F.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8">Discussion</head><p>Limitations. Our focus is on providing a comprehensive perspective on training an LLM-based web agent, studying compute trade-offs, hyperparameter selection, and analyzing failure cases. With this in mind, our results are limited to English-language web interfaces and Llama 3 models in the 8B-70B parameter range, where larger models may alter trade-offs.</p><p>Regarding our statistical method, it does not account for the lack of coverage from the random search. A more exhaustive search could discover configurations that would change the conclusions drawn in this study. We note also that a significant portion of the reported uncertainty is due to epistemic uncertainty that could be reduced by evaluating more configurations.</p><p>Conclusion. We present a statistically grounded study on training LLM web agents, analyzing the tradeoff between SFT and RL. We perform a random sweep across 1,370 configurations to identify optimal hyperparameter choices, finding interesting variation across compute budgets. Using the bootstrap prescribed hyper-parameters we show that branching into RL early, but not immediately, after SFT achieves better performance-compute trade-offs, matching peak SFT with 45% less compute and closing the gap with closed-source agents. Our findings offer a reproducible, budget-aware blueprint for advancing open-source LLM web agents in complex multi-step environments.</p><p>A Compute-peformance frontier for Qwen2.5 7B</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Compute Infrastructure</head><p>Our computational infrastructure comprises 8 × H100-80GB GPUs for expert data generation with the 70B model. For student model training, we allocate 2 × H100 GPUs for MiniWoB++ experiments and 4 × H100 GPUs for WorkArena experiments, reflecting the increased complexity of the latter.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Extended Learning and Saturation Analysis</head><p>Challenges in Agent-Environment Interaction In this section we talk about the general challenges faced by the agent to interact effectively with the environment.</p><p>• Observation/action space mismatch: One of the important thing to note specifically in our web environment is the observation space which the agent uses is a bit different from the action space. Multiple times, the agent can see the correct action in the AxTree but the action space, the icon is not 0 2 Epoch choose-list click-checkboxes-soft click-button-sequence copy-paste-2 count-shape click-widget click-color click-collapsible-nodelay click-collapsible-2-nodelay click-collapsible-2 click-checkboxes-transfer click-dialog-2 click-dialog click-link click-tab-2-medium click-tab click-tab-2 click-tab-2-hard click-menu-2 click-test-2 click-test-transfer click-test email-inbox-star-reply enter-date enter-text enter-text-dynamic enter-time drag-sort-numbers draw-circle draw-line email-inbox email-inbox-delete email-inbox-forward email-inbox-forward-nl email-inbox-forward-nl-turk use-spinner social-media-all visual-addition text-transform social-media-some simple-algebra sign-agreement scroll-text-2 social-media order-food navigate-tree multi-orderings login-user-popup email-inbox-reply email-inbox-noscroll email-inbox-important find-greatest find-word focus-text-2 generate-number read-table phone-book scroll-text read-table-2 odd-or-even multi-layouts identify-shape login-user ascending-numbers circle-center bisect-angle book-flight count-sides copy-paste click-menu click-scroll-list click-shape choose-date-easy choose-date-medium choose-date-nodelay choose-date drag-shapes drag-items-grid drag-items drag-shapes-2 drag-circle drag-box daily-calendar guess-number grid-coordinate form-sequence- 0 4 Epoch knowledge-base-search order-apple-mac-book-pro15</p><p>order-ipad-mini order-ipad-pro order-apple-watch order-development-laptop-p-c multi-chart-value-retrieval single-chart-value-retrieval create-incident all-menu sort-incident-list sort-hardware-list order-sales-laptop filter-incident-list filter-asset-list filter-change-request-list create-hardware-asset filter-hardware-list filter-user-list filter-service-catalog-item-list order-developer-laptop single-chart-min-max-retrieval sort-change-request-list sort-asset-list sort-service-catalog-item-list sort-user-list order-loaner-laptop create-user create-change-request multi-chart-min-max-retrieval order-standard-laptop create-problem impersonation</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Average Train Average Test</head><p>Task 0.00 0.35 0.25 0.47 0.00 0.22 0.00 0.26 0.50 0.48 0.00 0.48 0.00 0.05 0.00 0.00 0.00 0.08 0.00 0.06 0.25 0.25 0.25 0.23 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.17 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.31 0.07 0.21 0.00 0.00 0.29 0.29 0.00 0.05 0.00 0.11 0.00 0.02 0.03 0.08 0.05 0.14 SFT 10 15 20 Epoch 0.38 0.37 0.24 0.81 0.78 0.72 0.51 0.67 0.44 0.61 0.51 0.57 0.73 0.80 0.82 0.67 0.67 0.71 0.00 0.00 0.05 0.00 0.00 0.00 0.16 0.05 0.18 0.13 0.18 0.19 0.25 0.25 0.25 0.25 0.25 0.25 0.16 0.44 0.19 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.27 0.22 0.28 0.07 0.06 0.06 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.02 0.00 0.00 0.52 0.57 0.47 0.14 0.17 0.17 0.01 0.04 0.02 0.41 0.45 0.44 0.35 0.55 0.48 0.40 0.62 0.58 0.00 0.00 0.00 0.13 0.13 0.12 0.26 0.34 0.31 Approach 0: Continued SFT 10 15 20 Epoch 0.77 0.55 0.48 1.00 0.86 0.85 0.75 0.71 0.45 0.55 0.65 0.73 0.98 0.92 0.79 0.65 0.62 0.81 0.00 0.00 0.00 0.00 0.00 0.00 0.03 0.02 0.12 0.10 0.01 0.00 0.25 0.25 0.26 0.25 0.25 0.25 0.26 0.14 0.20 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.12 0.23 0.25 0.12 0.16 0.14 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.07 0.06 0.69 0.57 0.51 0.30 0.38 0.39 0.04 0.04 0.08 0.32 0.39 0.31 0.37 0.41 0.38 0.33 0.42 0.50 0.00 0.00 0.00 0.15 0.14 0.13 0.29 0.31 0.31 Approach 1: On-Policy RL 1.00 1.00 1.00 1.00 1.00 0.75 0.33 0.33 0.25 0.25 0.25 0.25 0.25 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.80 0.71 0.60 0.57 0.43 0.36 0.00 0.19 0.50 LLaMA 70B 0.0 0.2 0.4 0.6 0.8 1.0 visible and to make it visible, the agent needs to scroll down and do the action. This mismatch causes huge problems <ref type="bibr" target="#b13">Koh &amp; et al. (2024)</ref> • UI Misuse: The agent tries to interact with items in the environment in ways that it is not designed. For example, the agent trying to fill in a checkbox with value True while it should just click on it. <ref type="bibr" target="#b16">Murty &amp; et al. (2025)</ref> • Repeating actions: A common issue we observed is the repetition of actions across multiple consecutive steps, often accompanied by verbose and redundant chains of thought. The agent frequently restates similar thoughts or re-executes the same actions unnecessarily, leading to inefficiencies and sometimes getting stuck in loops. <ref type="bibr" target="#b16">(Murty &amp; et al., 2025)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Deriving Compute Cost</head><p>FLOPs Estimation Methodology Flop calculations are based on model architecture, token counts, and average sequence lengths observed during training and evaluation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>FLOPs per Token</head><p>We estimate FLOPs per token using the following formula, adapted from nvidia benchmarkingben:</p><formula xml:id="formula_9">FLOPs per token = (FLOPs attn + FLOPs MLP + FLOPs embed ) × (1 + backward multiplier) (<label>6</label></formula><p>) Where: FLOPs attn = 12 × (number of layers) × (hidden size) 2 × 1 + number of query groups number of attention heads + sequence length hidden size (7) FLOPs MLP = 18 × (number of layers) × (hidden size) × FFN (8) FLOPs embed = 6 × vocabulary size × (hidden size) (9) E Benchmark Descriptions MiniWoB consists of single-page simple tasks such as selecting a particular date and using a basic text editor, while WorkArena comprises multi-page complex tasks like filling forms and placing orders in an enterprise environment.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F Extended Related Work</head><p>The Reproducibility Crisis in RL. The reproducibility crisis in large language models (LLMs) and reinforcement learning (RL) has garnered increasing attention, particularly due to the reliance on single seed results that distort the perceived performance of models. The reproducibility challenge<ref type="foot" target="#foot_0">foot_0</ref> organized every year is a positive step towards addressing this. More concretely, <ref type="bibr" target="#b11">Hochlehnert et al. (2025)</ref> provide a critical examination of how such practices undermine the reliability of published findings, revealing that many reported gains are sensitive to implementation choices, such as random seeds and prompt formatting <ref type="bibr" target="#b11">Hochlehnert et al. (2025)</ref>.  <ref type="formula">2025</ref>). While these approaches exhibit promising results, they are limited in their applicability to real-world scenarios, which often require multistep decision-making capabilities.</p><p>The narrow focus on bandit-style problems fails to address the complexities inherent in tasks that demand sequential interaction, highlighting a significant gap in the current research landscape.</p><p>Interactive Agent Benchmarks.</p><p>To assess the capabilities of LLM agents in more realistic environments, benchmarks such as WebArena Zhou et al. (2023), WorkArena Drouin et al. (2024); Boisvert et al. (2024), the Agent Company Xu et al. (2024), and OSWorld Xie et al. (2024) have been designed to evaluate agents on multi-step tasks across various domains. These benchmarks expose the limitations of current LLM agents, revealing that while they may perform well in controlled settings, their performance in practical applications remains subpar, underscoring the need for further advancements in agent robustness and generalization to multi-step planning. Best practices in deep RL. Building on the recognition of reproducibility challenges and unstable RL training of LLM agents, recent studies have proposed best practices for training LLM agents using RL methods. Dang &amp; Ngo (2025) recommend leveraging high quality data, balancing easy and hard problems, and controlling length generation with cosine reward. Yu et al. (2025) promote higher clipping in the GRPO loss to promote diversity and avoid entropy collapse, dynamic sampling to improve training efficiency and stability, token level gradients for long CoT sequences, and overlong reward shaping to reduce reward noise. Roux et al. (2025) introduce tapered variant of importance sampling to speed up learning while maintaining stable learning dynamics. The proposed method (TOPR) allows the handling of both positive and negative examples in a fully offline setting. More generally, Hochlehnert et al. (2025) emphasizes the need for greater methodological precision, particularly concerning decoding parameters, random seeds, prompt formatting, as well as the hardware and software frameworks, to guarantee transparent and thorough assessments of model performance. LLM Agents trained with RL on multi-step environments. Recent advancements have sought to bridge the gap in training LLM agents for multi-step environments, with approaches like WebRL Qi et al. (2025) and SWEET-RL Zhou et al. (2025) demonstrating significant progress. WebRL employs a self-evolving curriculum to address the challenges of sparse feedback and task scarcity, successfully enhancing the performance of open LLMs in web-based tasks <ref type="bibr" target="#b17">Qi et al. (2025)</ref>. Similarly, SWEET-RL introduces a hierarchical structure that enables effective credit assignment over multiple turns, improving policy learning and generalization in collaborative reasoning tasks <ref type="bibr" target="#b27">Zhou et al. (2025)</ref>. These studies collectively illustrate the necessity of adapting RL techniques to accommodate the complexities of multi-step interactions, paving the way for more capable and versatile LLM agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G Test Set Hyper-Parameter Bootstrap Analysis</head><p>We overall find similar results between the held-out train and test tasks with respect to optimal hyperparameters. While we see no large deviations, we find that some parameters such as curriculum learning from the instruct model and using error logs can have a larger beneficial effect on the held-out testing tasks. 0e18 5e18 10e18 Compute (FLOPs) 3.0 2.5 2.0 1.5 1.0 0.5 0.0 0.5 1.0</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>H Entropy</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Log Entropy</head><p>Figure <ref type="figure" target="#fig_7">9</ref> relationship between log-entropy and compute allocated to SFT warm-starting. We observe an initial sharp drop in log-entropy, followed by a period of stabilization and gradual decline. We speculate that this reduction in entropy, which makes rollouts more deterministic, may explain the difference in optimal hyperparameters between the base and warm-started checkpoints.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I Random Search Space</head><p>We conduct a random hyperparameter sweep over 1,370 training runs over the following parameter configurations:</p><p>• Decoding temperature (ρ LLM ): Sampled from {0.1, 0.25, 0.5, 0.75, 1}</p><p>• Curriculum learning: Enabled or disabled (True, False)</p><p>• Curriculum mean (µ target ): {0.25, 0.5, 0.75}</p><p>• Curriculum Temperature (ρ Curr ): {0.1, 0.3}</p><p>• Discount rate: {0.5, 0.8, 0.9, 0.95, 0.98, 1.0}</p><p>• Grouped-relative advantage: Enabled or disabled</p><p>• Zero-advantage filtering: Enabled or disabled</p><p>• Standard-deviation normalized advantage: Enabled or disabled</p><p>• Effective batch size: {64, 256, 512, 1024}</p><p>• Learning rate: {1e-6, 5e-6, 5e-7}</p><p>• Error log feedback: Enabled or disabled</p><p>• Importance ratio: Enabled or disabled</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>J Compute Allocation Hyperparameter Selection</head><p>For consistency, we select a single set of hyperparameters for all runs in Figure <ref type="figure">1</ref>. To do so, we use the bootstrap algorithm described in Algorithm 1 where we use all the runs over all SFT checkpoints as input into Results. We then analyze the results of this bootstrap and use them to obtain the reported results.</p><p>The optimal parameters given by this aggregate bootstrap are:</p><p>• Decoding temperature ρ LLM : 0.25</p><p>• Curriculum learning: False</p><p>• Discount rate: 0.90 • Grouped-relative advantage: True • Zero-advantage filtering: True • Standard-deviation normalized advantage: True • Effective batch size: 512 • Learning rate: 1e-6 • Error log feedback: True • Importance Ratio: False</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>K Correctness of the Bootsrap</head><p>One of the main motivations for using the boostrap algorithm for our hyper-parameter evaluation is the vast amount of literature showing its desrable properties for estimating the sampling distribution of data statistics.</p><p>The most important attribute for the robustness of the boostrap is its ability to exploit the Central Limit Theorem (CLT) to approximate the sampling distribution of a statistic. Using the CLT it can allow us to estimate its expectation and variability without parametric assumptions <ref type="bibr" target="#b10">(Efron &amp; Tibshirani, 1994)</ref>.</p><p>Specifically, in our use case, we want to evaluate, for each hyperparameter value h, how well it performs when paired with the best possible values of the other hyperparameters. The bootstrap algorithm yields an unbiased estimate for a target statistic given an initial n samples (full runs in our case). Thus, we choose the statistic of interest to be the evaluation score M conditioned on the hyper-parameter of interst h assuming all other hyper-parameters g are optimal:</p><formula xml:id="formula_10">T h (D) = max {M (h ′ , g) : (h ′ , g) ∈ D, h ′ = h}<label>(16)</label></formula><p>Bootstrapping this yields an empirical distribution over T h values, providing an unbiased estimate and confidence intervals for the maximum score achievable for h when other hyperparameters are optimal.</p><p>Additionally, there exists results showing the rate of convergence and consistency of the bootstrap algorithm which we directly exploit. It is a well known result that as the number of training runs n → ∞, the bootstrap estimate Th of the maximum achievable score for hyperparameter value h becomes consistent. That is:</p><formula xml:id="formula_11">Th p -→ T h = sup {M (h, g) : g ∈ G}<label>(17)</label></formula><p>This follows from the law of large numbers <ref type="bibr" target="#b21">(Wainwright, 2019)</ref>, assuming sufficient coverage of other hyperparameters G. The rate of convergence depends on the tail behavior of the conditional distribution M | H = h. Since our evaluation metric is bounded in [0, 1], the sub-Gaussian assumption holds automatically by Hoeffding's Lemma <ref type="bibr" target="#b12">(Hoeffding, 1963)</ref>, ensuring concentration of the estimate. Under these conditions, the expected bias decays as O(1/n h ), where n h is the number of runs with H = h.</p><p>These are well-known results, which is why the bootstrap is an extremely useful and simple algorithm for estimating any statistic of interest <ref type="bibr" target="#b10">(Efron, 1979;</ref><ref type="bibr" target="#b10">Efron &amp; Tibshirani, 1994)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>L Train and Test Splits Used in the Experiments</head><p>We evaluate generalization by training only on the train split and reporting performance on held-out tasks from the test split.</p><p>For the held-out goals metric, we instantiate goal variations using seed ranges [0, 2] de Chezelles et al. (2025) for training tasks (3 goals per task) and [0, 9] de Chezelles et al. (2025) for test tasks (10 goals per task). Below we list the exact task identifiers used in our experiments for both benchmarks. Task names are the registry keys from the respective environments. 0.4 0.2 0.0 0.2 0.4 0.03 0.05 0.08 0.10 0.12 0.15 0.18 0.20 Relative Reward 0.16 0.14 Instruct False True 0.4 0.2 0.0 0.2 0.4 0.13 0.13 + 2.5e+18 SFT FLOPs 0.4 0.2 0.0 0.2 0.4 0.04 0.06 + 7.6e+18 SFT FLOPs False True 0 50 100 Win Rate (%) 100% False True 60% 40% False True 10% 90% 0.4 0.2 0.0 0.2 0.4 0.03 0.05 0.08 0.10 0.12 0.15 0.18 0.20 Relative Reward 0.16 0.12 Instruct False True 0.4 0.2 0.0 0.2 0.4 0.15 0.14 + 2.5e+18 SFT FLOPs 0.4 0.2 0.0 0.2 0.4 0.05 0.05 + 7.6e+18 SFT FLOPs False True 0 50 100 Win Rate (%) 100% False True 70% 30% False True 60% 40% 0.4 0.2 0.0 0.2 0.4 0.00 0.03 0.05 0.08 0.10 0.12 0.15 0.18 0.20 Relative Reward 0.11 0.08 0.16 0.08 Instruct 0.25 0.5 0.75 1.0 0.4 0.2 0.0 0.2 0.4 0.14 0.16 0.12 0.14 + 2.5e+18 SFT FLOPs 0.4 0.2 0.0 0.2 0.4 0.06 0.04 0.05 0.05 + 7.6e+18 SFT FLOPs 0.25 0.5 0.75 1.0 0 50 100 Win Rate (%) 100% 0.25 0.5 0.75 1.0 90% 10% 0.25 0.5 0.75 1.0 30% 20% 10% 40% 0.4 0.2 0.0 0.2 0.4 0.02 0.04 0.06 0.08 0.10 0.12 0.14 0.16 0.18 Relative Reward 0.12 0.09 0.08 0.08 Instruct 0.5 0.9 0.95 0.98 0.4 0.2 0.0 0.2 0.4 0.11 0.13 0.14 0.13 + 2.5e+18 SFT FLOPs 0.4 0.2 0.0 0.2 0.4 0.06 0.06 0.03 0.05 + 7.6e+18 SFT FLOPs 0.5 0.9 0.95 0.98 0 50 100 Win Rate (%) 90% 10% 0.5 0.9 0.95 0.98 40% 60% 0.5 0.9 0.95 0.98 30% 60% 10% 0.4 0.2 0.0 0.2 0.4 0.02 0.04 0.06 0.08 0.10 0.12 0.14 0.16 0.18 Relative Reward 0.12 0.16 Instruct False True 0.4 0.2 0.0 0.2 0.4 0.15 0.13 + 2.5e+18 SFT FLOPs 0.4 0.2 0.0 0.2 0.4 0.05 0.05 + 7.6e+18 SFT FLOPs False True 0 50 100 Win Rate (%) 100% False True 90% 10% False True 40% 60% 0.4 0.2 0.0 0.2 0.4 0.03 0.05 0.08 0.10 0.12 0.15 0.18 0.20 Relative Reward 0.09 0.16 Instruct False True 0.4 0.2 0.0 0.2 0.4 0.15 0.14 + 2.5e+18 SFT FLOPs 0.4 0.2 0.0 0.2 0.4 0.05 0.05 + 7.6e+18 SFT FLOPs False True 0 50 100 Win Rate (%) 100% False True 90% 10% False True 30% 70% 0.4 0.2 0.0 0.2 0.4 0.02 0.04 0.06 0.08 0.10 0.12 0.14 0.16 0.18 Relative Reward 0.12 0.09 0.07 0.16 Instruct 1024 256 512 64 0.4 0.2 0.0 0.2 0.4 0.13 0.12 0.16 0.13 + 2.5e+18 SFT FLOPs 0.4 0.2 0.0 0.2 0.4 0.06 0.05 0.05 0.05 + 7.6e+18 SFT FLOPs 1024 256 512 64 0 50 100 Win Rate (%) 100% 1024 256 512 64 20% 80% 1024 256 512 64 50% 40% 10% 0.4 0.2 0.0 0.2 0.4 0.03 0.05 0.08 0.10 0.12 0.15 0.18 0.20 Relative Reward 0.16 0.11 Instruct False True 0.4 0.2 0.0 0.2 0.4 0.14 0.15 + 2.5e+18 SFT FLOPs 0.4 0.2 0.0 0.2 0.4 0.05 0.06 + 7.6e+18 SFT FLOPs False True 0 50 100 Win Rate (%) 100% False True 30% 70% False True 30% 70% 0.4 0.2 0.0 0.2 0.4 0.02 0.04 0.06 0.08 0.10 0.12 0.14 0.16 0.18 Relative Reward 0.17 0.14 Instruct False True 0.4 0.2 0.0 0.2 0.4 0.13 0.13 + 2.5e+18 SFT FLOPs 0.4 0.2 0.0 0.2 0.4 0.04 0.04 + 7.6e+18 SFT FLOPs False True 0 50 100 Win Rate (%) 100% False True 70% 30% False True 50% 50% 0.4 0.2 0.0 0.2 0.4 0.03 0.05 0.08 0.10 0.12 0.15 0.18 0.20 Relative Reward 0.17 0.11 Instruct 1e-06 5e-07 0.4 0.2 0.0 0.2 0.4 0.14 0.15 + 2.5e+18 SFT FLOPs 0.4 0.2 0.0 0.2 0.4 0.04 0.05 + 7.6e+18 SFT FLOPs 1e-06 5e-07 0 50 100 Win Rate (%) 100% 1e-06 5e-07 30% 70% 1e-06 5e-07 30% 70% Zero-Advantage Filtering Curriculum Learning Decoding Temperature Discount Rate Error Log Usage Advantage Application Effective Batch Size Importance Ratio/Trust Region Standard-Deviation Normalized Advantage Learning Rate </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><figDesc>Training Framework. To manage the training pipeline, we use BrowserGym (de Chezelles et al., 2025) for orchestrating Chromium-based web environments and structuring the agent's action space, while AgentLab (de Chezelles et al., 2025) handles agent design. Model fine-tuning is conducted with Torchtune (torchtune maintainers &amp; contributors, 2024), utilizing Fully Sharded Data Parallelism (FSDP) to enable scalable training across multiple GPUs. Given the high memory demands of long-sequence processing, we apply activation offloading and gradient checkpointing techniques, achieving approximately 40% reduction in memory usage.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3</head><label>3</label><figDesc>Figure3Bootstrap analysis (n = 1000 samples) of hyperparameter optimization across different SFT compute budgets on training held out tasks. Each subplot examines a different hyperparameter, including increasing SFT compute: the base instruct model (left), +2.5×10 18 SFT FLOPs (middle), and +7.6e×10 18 SFT FLOPs (right). For each hyperparameter-compute combination, the top panel shows relative reward performance with error bars indicating 95% confidence intervals, while the bottom panel displays win rates representing the percentage of bootstrap iterations where each parameter value achieved maximum performance. Results demonstrate that optimal hyperparameter values shift as model pre-training compute increases, suggesting that hyperparameter selection should be adapted to the computational budget allocated to SFT.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4</head><label>4</label><figDesc>Figure4Compute-performance frontier on MiniWoB++ (results averaged over two seeds) for Qwen2.5 7B. The blue curve shows pure SFT on teacher demonstrations. Warm-colored curves represent hybrid runs that branch off from SFT checkpoints and continue training with RL. Early transitions to RL push the Pareto frontier achieving higher success rates for the same compute and is the only approach able to achieve over 30% improvement on both held-out goals (left) and held-out tasks (right).</figDesc><graphic coords="14,82.62,69.07,446.75,139.61" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5</head><label>5</label><figDesc>Figure5Per task performance of SFT and SFT+RL agents on MiniWob++.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 6</head><label>6</label><figDesc>Figure 6 Per task performance of SFT and SFT+RL agents on WorkArena.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 7</head><label>7</label><figDesc>Figure 7 Example tasks in MiniWoB++ Liu et al. (2018) (top) and WorkArena Drouin et al. (2024) (bottom).MiniWoB consists of single-page simple tasks such as selecting a particular date and using a basic text editor, while WorkArena comprises multi-page complex tasks like filling forms and placing orders in an enterprise environment.</figDesc><graphic coords="17,70.87,98.56,470.26,428.19" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><figDesc>Bandit-domain RLHF with LLMs. Previous work in RL for LLMs has predominantly focused on single-step tasks, which have shown effectiveness in mathematical reasoning and code generation Yu et al. (2025); DeepSeek-AI et al. (2025); Roux et al. (</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 9</head><label>9</label><figDesc>Figure9reports log-entropy as a function of training compute (FLOPs) across the training run.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 8</head><label>8</label><figDesc>Figure8Bootstrap analysis (n = 1000 samples) of hyperparameter optimization across different SFT compute budgets on test held out tasks. Each subplot examines a different hyperparameter, including increasing SFT compute: the base instruct model (left), +2.5e+18 SFT FLOPs (middle), and +7.6e+18 SFT FLOPs (right). For each hyperparametercompute combination, the top panel shows relative reward performance with error bars indicating 95% confidence intervals, while the bottom panel displays win rates representing the percentage of bootstrap iterations where each parameter value achieved maximum performance. Results demonstrate that optimal hyperparameter values often shift as model pre-training compute increases, suggesting that hyperparameter selection should be adapted based on the computational budget allocated to SFT.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1</head><label>1</label><figDesc>Comparison of our method with baselines on the held-out train and test splits of MiniWoB++ and WorkArena.Here ± are the averaged standard errors computed separately for each of the two top seeds.</figDesc><table><row><cell>Model</cell><cell cols="2">MiniWoB++</cell><cell>WorkArena</cell><cell></cell></row><row><cell></cell><cell cols="4">Held-out Goals Held-out Tasks Held-out Goals Held-out Tasks</cell></row><row><cell>Claude-3.5-Sonnet</cell><cell>70.5±2.0</cell><cell>70.4±4.3</cell><cell>52.5±3.2</cell><cell>70.0±5.5</cell></row><row><cell>GPT-4o</cell><cell>65.7±2.1</cell><cell>64.3±4.5</cell><cell>42.1±3.2</cell><cell>55.7±5.9</cell></row><row><cell>GPT-4o-Mini</cell><cell>56.2±2.2</cell><cell>66.1±4.4</cell><cell>27.1±2.9</cell><cell>28.6±5.4</cell></row><row><cell>Llama-3.1-70B-Instruct</cell><cell>57.0±2.2</cell><cell>65.2±4.4</cell><cell>25.0±2.8</cell><cell>32.9±5.6</cell></row><row><cell>o1-Mini</cell><cell>69.7±2.1</cell><cell>66.1±4.4</cell><cell>53.8±3.2</cell><cell>68.6±5.5</cell></row><row><cell>Llama-3.1-405B-Instruct</cell><cell>65.9±2.4</cell><cell>65.2±2.4</cell><cell>39.2±2.4</cell><cell>58.6±2.5</cell></row><row><cell>Llama-3.3-70B Instruct (Teacher)</cell><cell>63.2±2.4</cell><cell>61.9±2.4</cell><cell>36.0±2.4</cell><cell>44.0±2.5</cell></row><row><cell>Llama-3.1-8B Instruct (Student)</cell><cell>29.5±2.3</cell><cell>36.4±2.4</cell><cell>8.3±1.5</cell><cell>4.2±1.2</cell></row><row><cell>Llama-3.1-8B RL (Ours)</cell><cell>43.5±3.5</cell><cell>43.5±3.5</cell><cell>8.0±1.9</cell><cell>11.5±2.3</cell></row><row><cell>Llama-3.1-8B SFT (Ours)</cell><cell>55.2±2.5</cell><cell>56.7±2.5</cell><cell>28.4±2.0</cell><cell>26.4±2.0</cell></row><row><cell>Llama-3.1-8B SFT+RL (Ours)</cell><cell>67.2±2.1</cell><cell>63.3±2.2</cell><cell>35.4±2.1</cell><cell>28.8±2.0</cell></row><row><cell>Qwen-2.5-72B Instruct (Teacher)</cell><cell>61.0±3.4</cell><cell>59.0±3.4</cell><cell>33.3±2.4</cell><cell>27.0±2.5</cell></row><row><cell>Qwen-2.5-7B Instruct (Student)</cell><cell>32.8±3.3</cell><cell>37.0±3.4</cell><cell>5.2±2.2</cell><cell>10.0±3.8</cell></row><row><cell>Qwen-2.5-7B RL (Ours)</cell><cell>52.5±3.5</cell><cell>53.0±3.5</cell><cell>4.5±1.5</cell><cell>7.0±1.8</cell></row><row><cell>Qwen-2.5-7B SFT (Ours)</cell><cell>57.0±3.5</cell><cell>56.5±3.5</cell><cell>25.0±4.3</cell><cell>21.0±4.1</cell></row><row><cell>Qwen-2.5-7B SFT+RL (Ours)</cell><cell>65.0±3.4</cell><cell>61.5±3.4</cell><cell>32.5±3.3</cell><cell>25.0±3.1</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>https://reproml.org/</p></note>
+		</body>
+		<back>
+
+			<div type="availability">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>WorkArena (Train: 24 tasks, Test: 7 tasks) Train: • workarena.servicenow.all-menu • workarena.servicenow.create-hardware-asset • workarena.servicenow.create-incident • workarena.servicenow.filter-asset-list • workarena.servicenow.filter-change-request-list • workarena.servicenow.filter-hardware-list • workarena.servicenow.filter-service-catalog-item-list • workarena.servicenow.filter-user-list • workarena.servicenow.knowledge-base-search • workarena.servicenow.order-apple-mac-book-pro15 • workarena.servicenow.order-development-laptop-p-c • workarena.servicenow.order-ipad-mini • workarena.servicenow.order-ipad-pro • workarena.servicenow.order-sales-laptop • workarena.servicenow.sort-change-request-list • workarena.servicenow.sort-hardware-list • workarena.servicenow.sort-incident-list • workarena.servicenow.sort-service-catalog-item-list • workarena.servicenow.sort-user-list • workarena.servicenow.single-chart-value-retrieval • workarena.servicenow.create-change-request • workarena.servicenow.order-loaner-laptop • workarena.servicenow.order-standard-laptop • workarena.servicenow.create-problem Test: • workarena.servicenow.create-user • workarena.servicenow.filter-incident-list • workarena.servicenow.sort-asset-list • workarena.servicenow.impersonation • workarena.servicenow.order-apple-watch • workarena.servicenow.order-developer-laptop • workarena.servicenow.single-chart-min-max-retrieval MiniWoB++ (Train: 99 tasks, Test: 23 tasks) Train: • miniwob.ascending-numbers • miniwob.bisect-angle • miniwob.book-flight • miniwob.choose-date • miniwob.choose-date-easy • miniwob.choose-date-medium • miniwob.choose-date-nodelay • miniwob.choose-list • miniwob.circle-center • miniwob.click-button-sequence • miniwob.click-checkboxes-soft • miniwob.click-checkboxes-transfer • miniwob.click-collapsible-2 • miniwob.click-collapsible-2-nodelay • miniwob.click-collapsible-nodelay • miniwob.click-color • miniwob.click-dialog • miniwob.click-dialog-2 • miniwob.click-link • miniwob.click-menu • miniwob.click-menu-2 • miniwob.click-scroll-list • miniwob.click-shape • miniwob.click-tab • miniwob.click-tab-2 • miniwob.click-tab-2-hard • miniwob.click-tab-2-medium • miniwob.click-test • miniwob.click-test-2 • miniwob.click-test-transfer • miniwob.click-widget • miniwob.copy-paste • miniwob.copy-paste-2 • miniwob.count-shape • miniwob.count-sides • miniwob.daily-calendar • miniwob.drag-box • miniwob.drag-circle • miniwob.drag-cube • miniwob.drag-items • miniwob.drag-items-grid • miniwob.drag-shapes • miniwob.drag-shapes-2 • miniwob.drag-sort-numbers • miniwob.draw-circle • miniwob.draw-line • miniwob.email-inbox • miniwob.email-inbox-delete • miniwob.email-inbox-forward • miniwob.email-inbox-forward-nl • miniwob.email-inbox-forward-nl-turk • miniwob.email-inbox-important • miniwob.email-inbox-noscroll • miniwob.email-inbox-reply • miniwob.email-inbox-star-reply • miniwob.enter-date • miniwob.enter-text • miniwob.enter-text-dynamic • miniwob.enter-time • miniwob.find-greatest • miniwob.find-word • miniwob.focus-text-2 • miniwob.form-sequence • miniwob.form-sequence-2 • miniwob.generate-number • miniwob.grid-coordinate • miniwob.guess-number • miniwob.highlight-text • miniwob.hot-cold • miniwob.identify-shape • miniwob.login-user • miniwob.login-user-popup • miniwob.multi-layouts • miniwob.multi-orderings • miniwob.navigate-tree • miniwob.odd-or-even • miniwob.order-food • miniwob.phone-book • miniwob.read-table • miniwob.read-table-2 • miniwob.resize-textarea • miniwob.right-angle • miniwob.scroll-text • miniwob.scroll-text-2 • miniwob.search-engine • miniwob.sign-agreement • miniwob.simple-algebra • miniwob.social-media • miniwob.social-media-all • miniwob.social-media-some • miniwob.text-editor • miniwob.text-transform • miniwob.tic-tac-toe • miniwob.use-autocomplete • miniwob.use-autocomplete-nodelay • miniwob.use-colorwheel • miniwob.use-colorwheel-2 • miniwob.use-spinner • miniwob.visual-addition Test: • miniwob.buy-ticket • miniwob.click-button • miniwob.click-option • miniwob.click-pie-nodelay • miniwob.drag-single-shape • miniwob.email-inbox-nl-turk • miniwob.enter-text-2 • miniwob.find-midpoint • miniwob.focus-text • miniwob.simple-arithmetic • miniwob.stock-market • miniwob.use-slider-2 • miniwob.click-checkboxes • miniwob.click-checkboxes-large • miniwob.click-collapsible • miniwob.click-pie • miniwob.click-shades • miniwob.click-tab-2-easy • miniwob.enter-password • miniwob.form-sequence-3 • miniwob.highlight-text-2 • miniwob.unicode-test • miniwob.use-slider</p></div>
+			</div>
+
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>On-Policy FLOPs (LLaMA-8B)</head><p>We compute the total FLOPs for each on-policy epoch by summing the training and testing FLOPs:</p><formula xml:id="formula_12">FLOPs train = N train × FLOPs (backward=3) per token (10) FLOPs test = N test × FLOPs (backward=0) per token (11) FLOPs epoch = FLOPs train + FLOPs test (<label>12</label></formula><formula xml:id="formula_13">)</formula><p>Where N train and N test are the number of tokens used for training and evaluation respectively. Sequence length S is measured per epoch from logged metrics.</p><p>Offline FLOPs (Generation: LLaMA-70B, Training: LLaMA-8B)</p><p>Offline training includes two compute components:</p><p>• Data Generation (LLaMA-70B, forward-only):</p><formula xml:id="formula_14">FLOPs gen = N gen × FLOPs (70B,backward=0) per token (<label>13</label></formula><formula xml:id="formula_15">)</formula><p>where N gen = avg seq len × samples per epoch (from dataset metadata).</p><p>• Training (LLaMA-8B, with backward pass):</p><formula xml:id="formula_16">FLOPs train = N gen × FLOPs (8B,backward=3) per token<label>(14)</label></formula><p>The total FLOPs per offline epoch is:</p><formula xml:id="formula_17">FLOPs epoch = FLOPs gen + FLOPs train<label>(15)</label></formula><p>All FLOPs values are reported in exaFLOPs by dividing the total FLOPs by 10 18 .</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Dgxc Benchmarking</surname></persName>
+		</author>
+		<ptr target="https://catalog.ngc.nvidia.com/orgs/nvidia/teams/dgxc-benchmarking/resources/llama31-8b-dgxc-benchmarking-a" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sahaj</forename><surname>Marah Abdin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmed</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vidhisha</forename><surname>Awadallah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harkirat</forename><surname>Balachandran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingjiao</forename><surname>Behl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gustavo</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suriya</forename><surname>De Rosa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mojan</forename><surname>Gunasekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Neel</forename><surname>Javaheripi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piero</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yash</forename><surname>Kauffmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caio</forename><surname>Lara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teodoro</forename><surname>César</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arindam</forename><surname>Mendes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Besmira</forename><surname>Mitra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dimitris</forename><surname>Nushi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olli</forename><surname>Papailiopoulos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shital</forename><surname>Saarikivi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vaishnavi</forename><surname>Shah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vibhav</forename><surname>Shrivastava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Vineet</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2504.21318" />
+		<title level="m">Safoora Yousefi, and Guoqing Zheng. Phi-4-reasoning technical report</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Deep reinforcement learning at the edge of the statistical precipice</title>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Max</forename><surname>Schwarzer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pablo</forename><forename type="middle">Samuel</forename><surname>Castro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aaron</forename><forename type="middle">C</forename><surname>Courville</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Bellemare</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="29304" to="29320" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><surname>Mathieu Andreux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baldas</forename><surname>Breno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hamza</forename><surname>Skuk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emilien</forename><surname>Benchekroun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Biré</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Riaz</forename><surname>Bonnet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Bordie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre-Louis</forename><surname>Brunel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Cedoz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mickaël</forename><surname>Chassang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2506.02865</idno>
+		<title level="m">Surfer-h meets holo1: Cost-efficient web agent powered by open weights</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Workarena++: Towards compositional planning and reasoning-based common knowledge work tasks</title>
+		<author>
+			<persName><forename type="first">Léo</forename><surname>Boisvert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Megh</forename><surname>Thakkar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxime</forename><surname>Gasse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Massimo</forename><surname>Caccia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Thibault</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">De</forename><surname>Sellier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quentin</forename><surname>Chezelles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Cappart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandre</forename><surname>Chapados</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandre</forename><surname>Lacoste</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Drouin</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2407.05291" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tianzhe</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuexiang</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jihan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengbang</forename><surname>Tong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saining</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Ma</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2501.17161" />
+		<title level="m">Sft memorizes, rl generalizes: A comparative study of foundation model post-training</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Reinforcement learning for reasoning in small llms: What works and what doesn</title>
+		<author>
+			<persName><forename type="first">Quy-Anh</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Ngo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.16219</idno>
+		<ptr target="https://arxiv.org/abs/2503.16219" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">t. arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">The browsergym ecosystem for web agent research</title>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Thibault</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxime</forename><surname>Sellier De Chezelles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandre</forename><surname>Gasse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Massimo</forename><surname>Lacoste</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandre</forename><surname>Caccia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Léo</forename><surname>Drouin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Megh</forename><surname>Boisvert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Thakkar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rim</forename><surname>Marty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sahar</forename><surname>Assouel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lawrence</forename><forename type="middle">Keunho</forename><surname>Omidi Shayegan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xing</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ori</forename><surname>Han Lù</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dehan</forename><surname>Yoran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Kong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siva</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Reddy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quentin</forename><surname>Neubig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Russ</forename><surname>Cappart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chapados</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum" />
+	</analytic>
+	<monogr>
+		<title level="j">Transactions on Machine Learning Research</title>
+		<idno type="ISSN">2835-8856</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note>id=5298fKGmv3. Expert Certification</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Deepseek-Ai</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daya</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shirong</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaokang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingkai</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><forename type="middle">F</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhibin</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuoshu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyi</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aixin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bingxuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bochao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengda</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenggang</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengqi</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Ruan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Damai</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deli</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongjie</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erhang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangyun</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fucong</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fuli</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guangbo</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanting</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guowei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanwei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haocheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honghui</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huajian</forename><surname>Xin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huazuo</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianzhong</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiashi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingchang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyang</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junlong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">L</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaqi</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaige</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Kang Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuai</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lean</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lecong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Litong</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leyi</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minghua</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minghui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meng</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miaojun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingming</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Panpan</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiancheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qinyu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiushi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiqi</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruisong</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruizhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runji</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">L</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruyi</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanghao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shangyan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanhuang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengfeng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyu</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuiping</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunfeng</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">S</forename><surname>Shuting Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoqing</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengfeng</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tian</forename><surname>Yun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wangding</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanjia</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenfeng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjun</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenqin</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wentao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">L</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>An</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaokang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaotao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingchao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuecheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">Q</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyue</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojin</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaosha</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaowen</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoxiang</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinnan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianzu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinxia</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Shan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">Q</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanhong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaofeng</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaohui</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiliang</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yishi</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yisong</forename><surname>Piao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiyang</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiyuan</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongqiang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuduan</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfan</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>You</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">X</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanhong</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanping</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaohui</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunxian</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yukun</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuting</forename><surname>Zha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><forename type="middle">Z</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zehui</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhangli</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Sha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhean</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenda</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengyan</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhewen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhicheng</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhigang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyu</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihui</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijia</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziwei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Xie</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.12948</idno>
+		<ptr target="https://arxiv.org/abs/2501.12948" />
+		<title level="m">Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning</title>
+		<meeting><address><addrLine>Ziyang Song, Zizheng Pan</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>Zhen Huang, Zhipeng Xu, Zhongyu Zhang, and Zhen Zhang</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">How capable are web agents at solving common knowledge work tasks?</title>
+		<author>
+			<persName><forename type="first">Alexandre</forename><surname>Drouin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxime</forename><surname>Gasse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Massimo</forename><surname>Caccia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Issam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manuel</forename><surname>Laradji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Del Verme</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Léo</forename><surname>Marty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Megh</forename><surname>Boisvert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quentin</forename><surname>Thakkar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Cappart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Vazquez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandre</forename><surname>Chapados</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lacoste</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Workarena</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Bootstrap methods: Another look at the jackknife</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Efron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Bradley Efron</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tibshirani</surname></persName>
+		</author>
+		<idno type="DOI">10.1201/9780429246593</idno>
+		<ptr target="http://dx.doi.org/10.1201/9780429246593" />
+	</analytic>
+	<monogr>
+		<title level="j">The Annals of Statistics</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="26" />
+			<date type="published" when="1979-05">1979. May 1994</date>
+			<publisher>Chapman and Hall/CRC</publisher>
+		</imprint>
+	</monogr>
+	<note>An Introduction to the Bootstrap</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">A sober look at progress in language model reasoning: Pitfalls and paths to reproducibility</title>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Hochlehnert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hardik</forename><surname>Bhatnagar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vishaal</forename><surname>Udandarao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><surname>Albanie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ameya</forename><surname>Prabhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Bethge</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2504.07086" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Probability inequalities for sums of bounded random variables</title>
+		<author>
+			<persName><forename type="first">Wassily</forename><surname>Hoeffding</surname></persName>
+		</author>
+		<idno type="DOI">10.1080/01621459.1963.10500830</idno>
+		<ptr target="http://dx.doi.org/10.1080/01621459.1963.10500830" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the American Statistical Association</title>
+		<imprint>
+			<biblScope unit="volume">58</biblScope>
+			<biblScope unit="issue">301</biblScope>
+			<biblScope unit="page" from="13" to="30" />
+			<date type="published" when="1963-03">March 1963</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Visualwebarena: Evaluating multimodal agents on realistic visually grounded web tasks</title>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Koh</forename></persName>
+		</author>
+		<ptr target="https://aclanthology.org/2024.acl-long.50" />
+	</analytic>
+	<monogr>
+		<title level="m">ACL 2024</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Reinforcement learning on web interfaces using workflow-guided exploration</title>
+		<author>
+			<persName><forename type="first">Evan Zheran</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kelvin</forename><surname>Guu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Panupong</forename><surname>Pasupat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianlin</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1802.08802" />
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations (ICLR)</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Understanding r1-zero-like training: A critical perspective</title>
+		<author>
+			<persName><forename type="first">Zichen</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changyu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Penghui</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wee</forename><surname>Sun Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Lin</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2503.20783" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Nnetnav: Unsupervised learning of browser agents through environment interaction in the wild</title>
+		<author>
+			<persName><forename type="first">Shikhar</forename><surname>Murty</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.02907</idno>
+		<ptr target="https://arxiv.org/abs/2410.02907" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">WebRL: Training LLM web agents via self-evolving online curriculum reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Zehan</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iat</forename><surname>Long Iong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanyu</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueqiao</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiadai</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyue</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuntian</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiao</forename><surname>Dong</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=oVKEAFjEqv" />
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Le Roux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><forename type="middle">G</forename><surname>Bellemare</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Lebensold</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arnaud</forename><surname>Bergeron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><surname>Greaves</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Fréchette</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carolyne</forename><surname>Pelletier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Thibodeau-Laufer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sándor</forename><surname>Toth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Work</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.14286</idno>
+		<ptr target="https://arxiv.org/abs/2503.14286" />
+		<title level="m">Tapered off-policy reinforce: Stable and efficient reinforcement learning for llms</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Policy gradient methods for reinforcement learning with function approximation</title>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">S</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Mcallester</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Satinder</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yishay</forename><surname>Mansour</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 13th International Conference on Neural Information Processing Systems, NIPS&apos;99</title>
+		<meeting>the 13th International Conference on Neural Information Processing Systems, NIPS&apos;99<address><addrLine>Cambridge, MA, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>MIT Press</publisher>
+			<date type="published" when="1999">1999</date>
+			<biblScope unit="page" from="1057" to="1063" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">p. torchtune maintainers and contributors. torchtune: Pytorch&apos;s finetuning library</title>
+		<author>
+			<persName><forename type="first">Megh</forename><surname>Thakkar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tolga</forename><surname>Bolukbasi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sriram</forename><surname>Ganapathy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shikhar</forename><surname>Vashishth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarath</forename><surname>Chandar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Partha</forename><surname>Talukdar</surname></persName>
+		</author>
+		<ptr target="https//github.com/pytorch/torchtune" />
+	</analytic>
+	<monogr>
+		<title level="m">The 2023 Conference on Empirical Methods in Natural Language Processing</title>
+		<imprint>
+			<date type="published" when="2023-04">2023. April 2024</date>
+		</imprint>
+	</monogr>
+	<note>Self-influence guided data reweighting for language model pre-training</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">High-Dimensional Statistics: A Non-Asymptotic Viewpoint</title>
+		<author>
+			<persName><forename type="first">Martin</forename><forename type="middle">J</forename><surname>Wainwright</surname></persName>
+		</author>
+		<idno type="DOI">10.1017/9781108627771</idno>
+		<ptr target="http://dx.doi.org/10.1017/9781108627771" />
+		<imprint>
+			<date type="published" when="2019-02">February 2019</date>
+			<publisher>Cambridge University Press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2201.11903" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Osworld: Benchmarking multimodal agents for open-ended tasks in real computer environments</title>
+		<author>
+			<persName><forename type="first">Tianbao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danyang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jixuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaochuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siheng</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruisheng</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Toh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhoujun</forename><surname>Hua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongchan</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangyu</forename><surname>Shin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yitao</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvio</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Theagentcompany: Benchmarking llm agents on consequential real world tasks</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Frank</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boxuan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kritanjali</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengxue</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zora</forename><forename type="middle">Z</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuhui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhitong</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Murong</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingyang</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amaad</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leander</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raj</forename><surname>Maben</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wayne</forename><surname>Mehta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lawrence</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiqing</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Neubig</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2412.14161" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qiying</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruofei</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufeng</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaochen</forename><surname>Zuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tiantian</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaohong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingjun</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haibin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bole</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guangming</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Tong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mofan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinhua</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaze</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiangjie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongli</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weinan</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangpeng</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingjing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Ying</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ya-Qin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mu</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonghui</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingxuan</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.14476</idno>
+		<ptr target="https://arxiv.org/abs/2503.14476" />
+		<title level="m">Dapo: An open-source llm reinforcement learning system at scale. arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuhui</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abishek</forename><surname>Sridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianyi</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyue</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.13854</idno>
+		<ptr target="https://arxiv.org/abs/2307.13854" />
+		<title level="m">Webarena: A realistic web environment for building autonomous agents</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Sweet-rl: Training multi-turn llm agents on collaborative reasoning tasks</title>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Song</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuandong</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sainbayar</forename><surname>Sukhbaatar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xian</forename><surname>Li</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2503.15478" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

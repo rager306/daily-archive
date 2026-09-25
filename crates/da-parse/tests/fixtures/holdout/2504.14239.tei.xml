@@ -1,0 +1,2427 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">InfiGUI-R1: Advancing Multimodal GUI Agents from Reactive Actors to Deliberative Reasoners</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-04-19">19 Apr 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Yuhang</forename><surname>Liu</surname></persName>
+							<email>liuyuhang@zju.edu.cn</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Zhejiang University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Pengxiang</forename><surname>Li</surname></persName>
+							<email>lipengxiang@mail.dlut.edu.cn</email>
+							<affiliation key="aff1">
+								<orgName type="institution">Dalian University of Technology</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Congkai</forename><surname>Xie</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="laboratory">Reallm Labs</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xavier</forename><surname>Hu</surname></persName>
+							<affiliation key="aff3">
+								<orgName type="institution">Zhejiang University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xiaotian</forename><surname>Han</surname></persName>
+							<email>xiaotian.sky.han@gmail.com</email>
+							<affiliation key="aff1">
+								<orgName type="institution">Dalian University of Technology</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Shengyu</forename><surname>Zhang</surname></persName>
+							<email>sy_zhang@zju.edu.cn</email>
+							<affiliation key="aff4">
+								<orgName type="institution">Zhejiang University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hongxia</forename><surname>Yang</surname></persName>
+							<email>hongxia.yang@polyu.edu.hk</email>
+							<affiliation key="aff5">
+								<orgName type="institution">The Hong Kong Polytechnic University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Fei</forename><surname>Wu</surname></persName>
+							<email>wufei@zju.edu.cn</email>
+							<affiliation key="aff6">
+								<orgName type="institution">Zhejiang University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">InfiGUI-R1: Advancing Multimodal GUI Agents from Reactive Actors to Deliberative Reasoners</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-04-19">19 Apr 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">B189F75C8E2D3D5630A84B8EDA705FA0</idno>
+					<idno type="arXiv">arXiv:2504.14239v1[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:01+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>GUI Agents</term>
+					<term>MLLMs</term>
+					<term>Reinforcement Learning</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Multimodal Large Language Models (MLLMs) have powered Graphical User Interface (GUI) Agents, showing promise in automating tasks on computing devices. Recent works have begun exploring reasoning in GUI tasks with encouraging results. However, many current approaches rely on manually designed reasoning templates, which may result in reasoning that is not sufficiently robust and adaptive for complex GUI environments. Meanwhile, some existing agents continue to operate as Reactive Actors, relying primarily on implicit reasoning that may lack sufficient depth for GUI tasks demanding planning and error recovery. We argue that advancing these agents requires a shift from reactive acting towards acting based on deliberate reasoning. To facilitate this transformation, we introduce InfiGUI-R1, an MLLM-based GUI agent developed through our Actor2Reasoner framework, a reasoning-centric, twostage training approach designed to progressively evolve agents from Reactive Actors to Deliberative Reasoners. The first stage, Reasoning Injection, focuses on establishing a basic reasoner. We employ Spatial Reasoning Distillation to transfer cross-modal spatial reasoning capabilities from teacher models to MLLMs through trajectories with explicit reasoning steps, enabling models to integrate GUI visual-spatial information with logical reasoning before action generation. The second stage, Deliberation Enhancement, refines the basic reasoner into a deliberative one using Reinforcement Learning. This stage introduces two approaches: Sub-goal Guidance, which rewards models for generating accurate intermediate sub-goals, and Error Recovery Scenario Construction, which creates failure-and-recovery training scenarios from identified prone-toerror steps. These approaches enhance the agent's planning abilities and self-correction capabilities. Experimental results confirm that InfiGUI-R1 achieves strong performance in both cross-platform GUI grounding and trajectory tasks, proving competitive against previous agents, even those with significantly larger parameters. Resources are available at <ref type="url" target="https://github.com/Reallm-Labs/InfiGUI-R1">https://github.com/Reallm-Labs/InfiGUI-R1</ref>.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Graphical User Interface (GUI) agents, increasingly powered by advances in Multimodal Large Language Models (MLLMs) <ref type="bibr" target="#b4">[5,</ref><ref type="bibr" target="#b21">22,</ref><ref type="bibr" target="#b27">28,</ref><ref type="bibr" target="#b38">39,</ref><ref type="bibr" target="#b47">48]</ref> hold significant promise for automating a wide range of tasks on computing devices such as mobile phones and computers <ref type="bibr" target="#b8">[9,</ref><ref type="bibr" target="#b41">42]</ref>. These agents interact with digital environments through visual interfaces, aiming to enhance user productivity and broaden the scope of automated task completion.</p><p>Recent works have begun exploring reasoning in GUI tasks with encouraging results. However, many current approaches either rely on manually designed reasoning templates or lack GUI-specific optimization, which may result in reasoning that is not sufficiently robust and adaptive for complex GUI environments. Meanwhile, many existing MLLM-based GUI agents continue to operate as Reactive Actors <ref type="bibr" target="#b9">[10,</ref><ref type="bibr" target="#b28">29]</ref>, relying primarily on implicit reasoning. This implicit reasoning often lacks the sufficient depth required for complex, multi-step GUI tasks demanding sophisticated planning and adaptive error recovery. Such tasks necessitate not only precise spatial understanding of dense visual layouts but also the ability to effectively integrate cross-modal information (visual-spatial understanding into textual reasoning) and engage in the deliberative processes crucial for robust, long-horizon task execution.</p><p>We argue that fundamentally advancing GUI agent capabilities requires a paradigm shift: moving beyond reactive execution towards agents that function as Deliberative Reasoners. These agents should explicitly incorporate reasoning processes between perception and action (Perception → Reasoning → Action), enabling them to plan ahead, decompose complex goals, understand spatial relationships deeply, and reflect upon past actions to correct mistakes. This transition is crucial for handling the complexities and dynamic nature of real-world GUI environments.</p><p>To enable this transformation, we introduce the Actor2Reasoner framework, a reasoning-centric methodology designed to progressively evolve GUI agents from Reactive Actors to Deliberative Reasoners. Our framework culminates in InfiGUI-R1-3B, an MLLMbased agent demonstrating enhanced reasoning and robustness. The Actor2Reasoner framework tackles two core challenges: 1) reliably injecting foundational reasoning capabilities, particularly bridging the critical cross-modal gap between visual-spatial perception and textual reasoning, to achieve the initial leap from Actor to Reasoner; and 2) refining and elevating the reasoning quality of this foundational Reasoner to instill advanced planning and reflection capabilities, ultimately reaching the Deliberative stage.</p><p>The Actor2Reasoner framework unfolds in two distinct stages: • Stage 1: Reasoning Injection (Laying the Foundation for the Reasoner): This stage focuses on the pivotal transition from Actor to Reasoner. We employ Spatial Reasoning Distillation, leveraging trajectories from a powerful reasoning teacher model that include explicit spatial reasoning steps. By training the base MLLM on this distilled data via Supervised Fine-Tuning (SFT), we guide it to break the direct Perception → Action link and explicitly incorporate reasoning, especially spatial reasoning crucial for GUI tasks. This establishes the foundational (Perception → Reasoning → Action) pattern, overcoming a key limitation of standard MLLMs in integrating visual-spatial understanding into their reasoning flow.</p><p>• Stage 2: Deliberation Enhancement (Refining into a Deliberative Reasoner): Building upon the Reasoner established in Stage 1, this stage uses Reinforcement Learning (RL) to refine its capabilities towards deliberation. This refinement strategically enhances the two core facets of deliberative reasoning: planning and reflection. Two key innovations drive this process:</p><p>• Sub-goal Guidance: To enhance the agent's forward-looking planning and task decomposition abilities, we guide it to generate explicit intermediate sub-goals during its reasoning process. The alignment of these generated sub-goals with ground truth provides an intermediate reward signal, effectively training the agent's capacity for proactive planning ("Total Goal → Sub-goal → Action").</p><p>• Error Recovery Scenario Construction: Complementing the planning focus, this innovation cultivates the agent's ability to look backward and adjust through reflective self-correction -a hallmark of deliberation. We actively construct scenarios within the RL environment that simulate error states or recovery moments (e.g., having just executed an incorrect action or needing to get "back on track" after an error). Training within these scenarios, using targeted rewards, compels the agent to learn adaptive strategies like escaping error states (e.g., using a 'back' action) and adjusting plans after recognizing a mistake. This directly shapes the agent's ability to reflect on its actions and recover from failures, enhancing its robustness. Together, our framework provides a pathway to imbue GUI agents with the reasoning, planning, and reflection capabilities necessary for task automation. We validate the effectiveness of InfiGUI-R1-3B, trained using our Actor2Reasoner framework, on a suite of challenging benchmarks designed to assess core GUI agent competencies. These include tasks requiring precise GUI element grounding across platforms (e.g., ScreenSpot, ScreenSpot-Pro <ref type="bibr" target="#b20">[21,</ref><ref type="bibr" target="#b23">24]</ref>) and those demanding complex, long-horizon task execution with planning and adaptation (e.g., AndroidControl <ref type="bibr" target="#b25">[26]</ref>). Our experimental results demonstrate significant improvements. InfiGUI-R1-3B achieves state-of-the-art cross-platform grounding capabilities (87.5% avg on ScreenSpot) and strong performance in executing complex, long-horizon tasks (71.1% success rate on AndroidControl-High) among models with comparable parameter counts. These findings confirm our framework's ability to cultivate sophisticated planning and reflection abilities, substantially advancing the agent's capacity for deliberate, robust, and effective GUI task automation.</p><p>Our main contributions are threefold: • We propose the Actor2Reasoner framework, a novel twostage training methodology designed to systematically transform MLLM-based GUI agents from Reactive Actors into Deliberative Reasoners by progressively injecting and refining reasoning capabilities.</p><p>• We introduce three key technical innovations within this framework: Spatial Reasoning Distillation to establish foundational cross-modal reasoning, Sub-goal Guidance to enhance planning reasoning, and Error Recovery Scenario Construction to cultivate reflective error correction abilities through targeted RL.</p><p>• We develop InfiGUI-R1-3B, an MLLM-based GUI agent trained via our framework, and demonstrate its effectiveness through comprehensive experiments.</p><p>2 Related Works</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Multimodal LLMs</head><p>Large Language Models (LLMs) <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b12">13,</ref><ref type="bibr" target="#b46">47,</ref><ref type="bibr" target="#b52">53]</ref> have significantly enhanced the capabilities of AI systems in tackling a wide range of tasks <ref type="bibr" target="#b16">[17,</ref><ref type="bibr" target="#b24">25]</ref>, thanks to their exceptional ability to process complex semantic and contextual information. The remarkable power of LLMs has also inspired exploration into their potential for processing multimodal data, such as images. Typically, the architecture of Multimodal Large Language Models (MLLMs) consists of three main components: a pre-trained large language model, a trained modality encoder, and a modality interface that connects the LLM with the encoded modality features. Various vision encoders, such as ViT <ref type="bibr" target="#b11">[12]</ref>, CLIP <ref type="bibr" target="#b40">[41]</ref>, and ConvNeXt <ref type="bibr" target="#b33">[34]</ref>, extract visual features, which are integrated using techniques like adapter networks <ref type="bibr" target="#b30">[31]</ref>, crossattention layers <ref type="bibr" target="#b2">[3]</ref>, and visual expert modules <ref type="bibr" target="#b48">[49]</ref>. These methods have facilitated the development of high-performing MLLMs, such as Qwen-VL <ref type="bibr" target="#b6">[7]</ref>, GPT-4 Vision <ref type="bibr" target="#b35">[36]</ref>, BLIP-2 <ref type="bibr" target="#b22">[23]</ref> and InfiMM <ref type="bibr" target="#b31">[32]</ref>, thus opening new avenues for LLMs in processing GUI tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">MLLM-based GUI Agents</head><p>Agents are AI systems that perceive their environments, make decisions, and take actions to complete specific tasks. The emergence of LLMs with human-level reasoning ability has significantly advanced the development of agents. For GUI tasks, earlier systems relied on LLMs to read and interpret structured representations such as HTML code <ref type="bibr" target="#b49">[50]</ref>. However, recent works have demonstrated that directly interacting with the visual form of GUIs leads to better performance <ref type="bibr" target="#b15">[16]</ref>. Consequently, MLLM-based GUI agents have been proposed, leveraging visual perception alongside language understanding. Several representative systems have pioneered this area. ILu-vUI <ref type="bibr" target="#b19">[20]</ref> fine-tuned LLaVA to enhance general GUI comprehension, while AppAgent <ref type="bibr" target="#b57">[58]</ref> explored mobile app usage through autonomous interactions. CogAgent <ref type="bibr" target="#b14">[15]</ref> introduced high-resolution encoders to better capture UI detail, and Ferret-UI-anyres <ref type="bibr" target="#b56">[57]</ref> supported flexible screen resolutions to handle diverse device settings.</p><p>More recent works have introduced modular and lightweight architectures aimed at improving generalization and deployment efficiency. InfiGUIAgent <ref type="bibr" target="#b32">[33]</ref> proposed a two-stage approach, combining general pretraining on grounding and QA tasks with synthetic fine-tuning for hierarchical planning and reasoning. UI-TARS <ref type="bibr" target="#b39">[40]</ref> extended this by using a unified vision-language interface across mobile, web, and desktop environments, incorporating reflection and milestone tracking mechanisms to boost task success rates. In parallel, AgentS2 <ref type="bibr" target="#b0">[1]</ref> adopted a generalist-specialist framework, decoupling high-level reasoning from domain-specific grounding modules and enabling long-horizon planning with Mixture of Grounding mechanisms.</p><p>In terms of input, recent agents prioritize screenshot-level visual understanding, optionally enhanced with layout or OCR-based textual cues. Techniques such as set-of-mark prompting <ref type="bibr" target="#b53">[54]</ref> and chain-of-action reasoning <ref type="bibr" target="#b37">[38]</ref> have been employed to improve grounding accuracy and task planning. To further improve interaction efficiency, agents such as UI-R1 <ref type="bibr" target="#b34">[35]</ref>, GUI-R1 <ref type="bibr" target="#b51">[52]</ref> replace large-scale supervision with rule-based reinforcement learning, achieving competitive performance with minimal expert data.</p><p>Moreover, to support real-world usability, newer agents are tested on increasingly complex environments. UI-TARS and AgentS2 report strong performance on OSWorld and AndroidWorld benchmarks, showing robust cross-platform generalization. GUI-Xplore <ref type="bibr" target="#b43">[44]</ref> further introduces a one-shot adaptation setting, encouraging agents to build structural UI maps via autonomous exploration before task execution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Actor2Reasoner</head><p>We introduce the Actor2Reasoner framework, a reasoning-centric, progressive training methodology designed to systematically enhance the capabilities of Multimodal Large Language Model (MLLM)</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>GUI Understanding: • Screen2Words</head><p>• Screen Annotation Question Answering:</p><formula xml:id="formula_0">• ScreenQA • Complex QA Instruction Grounding: • RicoSCA • Widget Caption • ... • LLaVA-OneVision • PixMo</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Stage 1: Reasoning Injection Stage 2: Deliberation Enhancement</head><p>• Glaive Function Calling</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>GUI Understanding</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Instruction GroundingQuestion Answering</head><p>Expected to open clock app by tapping icon... (Succeed )</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Hierarchical Reasoning</head><p>Expectation-Reflexion Reasoning Task: Set an alarm for 7am.  based GUI agents. The core objective is to transition agents from reactive behavior towards deliberative reasoning for GUI task automation. This framework comprises two stages designed to first establish foundational reasoning and then refine it towards advanced deliberation. Section 3.1 details the methodology for Stage 1, focusing on reasoning injection via Spatial Reasoning Distillation. Subsequently, Section 3.2 details the methodology for Stage 2, where RL is employed to enhance deliberation through Sub-goal Guidance and Error Recovery Scenario Construction.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Strategic</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Stage 1: Reasoning Injection</head><p>The primary objective of Stage 1 is to accomplish the fundamental transition from a Reactive Actor (Perception → Action) to a foundational Reasoner (Perception → Reasoning → Action). This transition is critical because standard MLLMs often struggle to effectively integrate the rich visual-spatial information present in GUI screenshots into their textual reasoning processes. This limitation hinders their ability to handle the GUI tasks that demand precise spatial understanding and grounding. To address this, Stage 1 employs Spatial Reasoning Distillation, which is designed to explicitly inject spatial reasoning capabilities into the agent.</p><p>Spatial Reasoning Distillation leverages the reasoning capabilities of a powerful teacher model to generate high-quality reasoning trajectories, which are then used to train the target MLLM (the student). The core idea is to guide the student model to learn not just the correct action, but also the intermediate reasoning steps-particularly those involving spatial logic-that lead to that action. This process is implemented through the following steps:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.1">Pinpointing Reasoning Bottleneck Samples.</head><p>To maximize the efficiency of distillation, we first identify interaction steps where the base MLLM's failure is most likely attributable to a lack of reasoning, rather than fundamental perception or action execution deficits. We term these Reasoning Bottleneck Samples. This identification employs a two-step criterion for each step 𝑠 in a given trajectory:</p><p>(i) The base MLLM 𝑀, when given the current GUI screenshot 𝐼 𝑠 and the overall task goal 𝐺, fails to predict the correct action. Let 𝑎 high = 𝑀 (𝐼 𝑠 , 𝐺). (ii) However, when provided with the additional ground-truth sub-goal 𝑔 𝑠 for that specific step, the same model 𝑀 successfully predicts the correct action. Let 𝑎 low = 𝑀 (𝐼 𝑠 , 𝐺, 𝑔 𝑠 ). Formally, the set of reasoning bottleneck steps 𝑆 bottleneck is defined as:</p><formula xml:id="formula_1">𝑆 bottleneck = {𝑠 | IsCorrect(𝑎 high ) = False ∧ IsCorrect(𝑎 low ) = True}</formula><p>These samples represent steps where the primary difficulty lies in inferring the immediate task (𝑔 𝑠 ) from the overall goal (𝐺) based on the visual context (𝐼 𝑠 ), making them ideal candidates for reasoning injection. We use a base MLLM such as Qwen2.5-VL-3B-Instruct for this filtering process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.2">Generating Spatial Reasoning Trajectories.</head><p>For each step 𝑠 ∈ 𝑆 bottleneck , we generate a detailed reasoning trajectory using a highcapability teacher model. This involves:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Spatial Information Extraction and Compression.</head><p>We extract relevant structural and spatial information (e.g., element types, text content, coordinates, hierarchy) from the accessibility tree (a11y tree) associated with the GUI screenshot 𝐼 𝑠 . Irrelevant attributes and elements are filtered out. A powerful MLLM (e.g., Qwen2.5-VL-32B-Instruct) is then employed to compress this processed information into a concise textual description 𝐷 spatial , which consists of a detailed description of the GUI page, including all relevant elements' coordinate information and descriptions for the specific step, capturing the essential spatial layout and key element details.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reasoning Trajectory Generation.</head><p>The compressed spatial description 𝐷 spatial , the available action space description, and the overall goal 𝐺 are fed as input to a powerful large language model with strong reasoning capabilities (e.g., QwQ-32B <ref type="bibr" target="#b45">[46]</ref>). This teacher model is prompted to generate both an explicit reasoning text 𝑅 teacher and the corresponding action 𝑎 teacher . Crucially, 𝑅 teacher is guided to articulate the logical steps, including using the spatial information in 𝐷 spatial for element localization, relationship assessment, and action justification.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.3">Injecting Reasoning via SFT.</head><p>The generated pairs (𝑅 teacher , 𝑎 teacher ) are first filtered to ensure quality via rejection sampling based on the correctness of the predicted action 𝑎 teacher . The highquality pairs are then used to fine-tune the base MLLM. The SFT objective trains the student model to predict the teacher's reasoning and action when given the GUI screenshot and the overall goal: (𝐼 𝑠 , 𝐺) → (𝑅 teacher , 𝑎 teacher ). By learning to explicitly generate or implicitly simulate these reasoning steps before outputting the action, the student model internalizes the Perception → Reasoning → Action pattern.</p><p>Upon completion of Stage 1, the resulting model is a foundational Reasoner equipped with enhanced spatial understanding and the basic ability to connect perception to action through an intermediate reasoning process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Stage 2: Deliberation Enhancement</head><p>Building upon the foundational Reasoner established in Stage 1, the objective of Stage 2 is to refine its capabilities, transforming it into a Deliberative Reasoner. This stage employs RL with rulebased rewards as the primary mechanism for enhancement. The core idea is to cultivate the agent's ability for more sophisticated, "deliberative" decision-making by specifically targeting two aspects: forward-looking planning and backward-looking reflection/correction. These aspects are addressed through two key innovations integrated into the RL process: Sub-goal Guidance (detailed in Section 3.2.2) to bolster planning and task decomposition, and Error Recovery Scenario Construction (detailed in Section 3.2.3) to foster self-correction and robustness.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.1">Reinforcement Learning Setup.</head><p>We utilize RL to further optimize the agent's policy beyond supervised learning. Specifically, we adopt the REINFORCE Leave-One-Out (RLOO) algorithm <ref type="bibr" target="#b1">[2]</ref>, which effectively reduces the variance of policy gradient estimates by employing the average reward of other samples within the same batch as a baseline for the current sample. This "leave-one-out" baseline strategy obviates the need for training a separate value or critic model, thereby simplifying the training architecture. The RLOO policy gradient ∇ 𝜃 𝐽 (𝜃 ) is estimated as:</p><formula xml:id="formula_2">∇ 𝜃 𝐽 (𝜃 ) ≈ 1 𝑘 𝑘 ∑︁ 𝑖=1       𝑅(𝑦 (𝑖 ) , 𝑥) - 1 𝑘 -1 ∑︁ 𝑗≠𝑖 𝑅(𝑦 ( 𝑗 ) , 𝑥)       ∇ 𝜃 log 𝜋 𝜃 (𝑦 (𝑖 ) |𝑥)</formula><p>where 𝑘 is the number of output sequences 𝑦 (𝑖 ) sampled from the current policy 𝜋 𝜃 given input 𝑥, and 𝑅(𝑦, 𝑥) is the reward function evaluating the quality of output 𝑦.</p><p>The design of the reward function 𝑅(𝑦, 𝑥) is crucial for guiding the agent's learning trajectory. Our total reward 𝑅 total integrates assessments of both output format correctness and task execution accuracy:</p><formula xml:id="formula_3">𝑅 total = 𝑤 𝑓 • 𝑅 format + 𝑤 𝑎 • 𝑅 acc</formula><p>Here, 𝑅 format checks if the model's output 𝑦 conforms to the expected format (e.g., putting the reasoning process within &lt;think&gt; &lt;/think&gt; tags), yielding 1 if valid and 0 otherwise. 𝑅 acc measures the accuracy of the content, and is calculated only if 𝑅 format = 1, ensuring the agent first learns to generate structurally valid outputs. 𝑤 𝑓 and 𝑤 𝑎 are weighting hyperparameters (𝑤 𝑓 + 𝑤 𝑎 = 1).</p><p>The accuracy reward 𝑅 acc is tailored to the specific task type:</p><p>Agent Trajectory Task Reward (𝑅 agent ): For evaluating sequences of GUI actions, we provide fine-grained feedback by combining rewards for the action type and its parameters:</p><formula xml:id="formula_4">𝑅 agent = 𝑤 𝑡 • 𝑅 type + 𝑤 𝑝 • 𝑅 param</formula><p>where 𝑤 𝑡 + 𝑤 𝑝 = 1. 𝑅 type grants a reward of 1 if the predicted action type (e.g., 'click', 'type') matches the ground truth, and 0 otherwise. 𝑅 param provides a stricter reward, granting 1 only if both the action type and all its parameters match the ground truth, and 0 otherwise. (Note: This reward is further refined by Sub-goal Guidance in Section 3.2.2).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Grounding</head><p>Task Rewards: For evaluating GUI element localization: • Point Localization Reward (𝑅 point ): Given a predicted point coordinate (𝑥 𝑝 , 𝑦 𝑝 ) and the ground-truth bounding box 𝐵 gt of the target element, the reward is 1 if the point falls within the box, and 0 otherwise: 𝑅 point = I((𝑥 𝑝 , 𝑦 𝑝 ) ∈ 𝐵 gt ) • Bounding Box Reward (𝑅 bbox ): We compute the Intersection over Union (IoU) between the predicted bounding box 𝐵 pred and the ground-truth box 𝐵 gt . To avoid penalizing minor deviations excessively while encouraging significant overlap, we use a threshold 𝜏 IoU . The reward is 1 if the IoU meets or exceeds the threshold, otherwise it is the IoU scaled by the threshold:</p><formula xml:id="formula_5">𝑅 bbox = 1 if IoU(𝐵 pred , 𝐵 gt ) ≥ 𝜏 IoU IoU(𝐵 pred ,𝐵 gt ) 𝜏 IoU if IoU(𝐵 pred , 𝐵 gt ) &lt; 𝜏 IoU</formula><p>Other Task Rewards (𝑅 other ): For auxiliary tasks potentially included in the training mix (e.g., VQA, multiple-choice questions), we use Exact Match (EM) or mathematical expression verification against the ground truth 𝑦 gt to determine correctness:</p><formula xml:id="formula_6">𝑅 other = I(ExactMatch(𝑦 ans , 𝑦 gt ) ∨ MathVerify(𝑦 ans , 𝑦 gt ))</formula><p>To ensure the agent enhances its GUI-specific deliberation skills without compromising its general multimodal understanding and visual grounding foundations, the RL training phase utilizes a diverse mixture of data. This includes the core GUI trajectory data (e.g., from AndroidControl <ref type="bibr" target="#b25">[26]</ref>), GUI element grounding data (e.g., from widget captioning datasets <ref type="bibr" target="#b26">[27]</ref>), general-purpose multimodal question-answering datasets, and object detection datasets (e.g., from COCO <ref type="bibr" target="#b29">[30]</ref>).</p><p>Following established practices for eliciting reasoning <ref type="bibr" target="#b42">[43,</ref><ref type="bibr" target="#b55">56]</ref>, we employ a system prompt that explicitly instructs the model to first articulate its reasoning process internally before providing the final action. The specific prompt used is:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>System Prompt for Reasoning</head><p>You FIRST think about the reasoning process as an internal monologue and then provide the final answer. The reasoning process MUST BE enclosed within &lt;think&gt; &lt;/think&gt; tags.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.2">Sub-goal Guidance.</head><p>To elevate the foundational Reasoner towards a Deliberative Reasoner capable of sophisticated planning, a core aspect of Stage 2 focuses on enhancing its task decomposition ability. Standard MLLMs often falter when required to independently infer the necessary intermediate steps from a high-level objective within a complex GUI environment. Sub-goal Guidance is specifically designed to address this limitation within the RL framework by incentivizing the agent to formulate and pursue accurate sub-goals, thereby fostering more structured and effective planning. This is achieved by assessing the quality of the sub-goal implied within the agent's reasoning process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Sub-goal Quality Assessment.</head><p>We incentivize accurate sub-goal formulation by integrating its assessment into the agent's reward structure during RL training. We assess the quality of the implicitly generated sub-goal within the reasoning text.</p><p>During training, for each step, we employ a lightweight scoring LLM to analyze the agent's reasoning output (the text within &lt;think&gt;...&lt;/think&gt; tags) and attempt to extract the implied subgoal, denoted as 𝑠 extracted 𝑔 . This extracted sub-goal 𝑠 extracted 𝑔 is then compared against the corresponding ground-truth sub-goal 𝑠 gt 𝑔 (obtained from dataset annotations<ref type="foot" target="#foot_0">foot_0</ref> ). Based on the degree of semantic match between 𝑠 extracted 𝑔 and 𝑠 gt 𝑔 , a raw score 𝑆 raw is assigned on a scale of 1 to 10. If the scoring LLM fails to extract a sub-goal from the reasoning text, 𝑆 raw is set to 0. This raw score is then normalized to the range [0, 1] to produce the final sub-goal reward:</p><formula xml:id="formula_7">𝑅 subgoal = 𝑆 raw 10</formula><p>This normalized score, 𝑅 subgoal , serves as an intermediate reward signal reflecting the quality of the agent's planning for the current step. To specifically encourage correct planning even when the final action execution fails, we integrate 𝑅 subgoal into the Agent Trajectory Task Reward 𝑅 agent (introduced in Section 3.2.1). The formulation is modified as follows, incorporating a dedicated weight 𝑤 𝑠 :</p><formula xml:id="formula_8">𝑅 agent = 𝑤 𝑡 • 𝑅 type + 𝑤 𝑝 • 𝑅 param if 𝑅 param = 1 𝑤 𝑡 • 𝑅 type + 𝑤 𝑠 • 𝑅 subgoal if 𝑅 param = 0</formula><p>where 𝑤 𝑡 , 𝑤 𝑝 , 𝑤 𝑠 are non-negative weights, and typically 𝑤 𝑠 is set lower than 𝑤 𝑝 to prioritize full action correctness when achievable. This conditional reward structure provides targeted feedback on the planning quality when the agent struggles with accurate action execution, thereby guiding the learning process towards better intermediate reasoning and task decomposition.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.3">Error Recovery Scenario Construction.</head><p>While Sub-goal Guidance enhances forward-looking planning, developing a Deliberative Reasoner also necessitates the ability to reflect upon and recover from errors-a capability often missing in standard GUI agents prone to irrecoverable failures. To cultivate robustness and adaptability, we utilize Error Recovery Scenario Construction, a technique that directly targets the agent's reflective and corrective reasoning abilities by integrating specific failure-recovery situations into the RL training process. This mechanism complements planning by strengthening the agent's capacity for backwardlooking adjustment.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Identify Prone-to-error Steps:</head><p>To maximize training efficiency, we first identify interaction steps where the agent demonstrates instability. For a given step 𝑠, we employ the base model (e.g., Qwen2.5-VL-3B-Instruct) to sample 𝑁 𝑠𝑎𝑚𝑝𝑙𝑒 action sequences at a heightened temperature 𝑇 . Steps whose success rate 𝑃 success (𝑠) falls between 0 and 1 (0 &lt; 𝑃 success (𝑠) &lt; 1) are designated as Prone-to-error Steps, forming the set 𝑆 error_prone . These steps signify situations where the agent possesses the capacity for correct action but is also susceptible to errors, presenting optimal opportunities for learning corrective strategies. Training on steps the agent always masters or always fails is less efficient for learning recovery; the former needs no correction, while the latter might indicate deeper issues potentially confounded by naive recovery training.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Constructing Recovery Scenarios:</head><p>For each prone-to-error step 𝑠 ∈ 𝑆 error_prone , we construct two distinct types of scenarios for RL training, each designed to teach a specific aspect of error handling: Error Escape Scenario. The primary objective here is to train the agent to recognize it has entered an erroneous state and execute an appropriate "escape" action (e.g., pressing the back button). To simulate this, we select an incorrect action 𝑎 err 𝑠 sampled during the identification phase, which leads to an unintended subsequent observation 𝐼 err 𝑠+1 . The RL agent is then presented with this error observation 𝐼 err 𝑠+1 alongside a modified history 𝐻 err 𝑠 = 𝐻 𝑠 -1 ⊕ 𝑎 err 𝑠 (where 𝐻 𝑠 -1 is the history prior to step 𝑠, and ⊕ denotes concatenation). The desired behavior for the agent in this context is to output a predefined escape action, 𝑎 escape . Back on Track Scenario. This scenario aims to train reflective adjustment, enabling the agent to resume the intended task flow after recovering from an error. We assume the agent has just executed the escape action 𝑎 escape from the error state, returning it to the original observation 𝐼 𝑠 encountered at step 𝑠. The agent is presented with this original observation 𝐼 𝑠 , but its history reflects the recent detour: 𝐻 recover 𝑠 = 𝐻 𝑠 -1 ⊕ 𝑎 err 𝑠 ⊕ 𝑎 escape . The desired behavior in this "back on track" state is for the agent to perform the originally correct action 𝑎 * 𝑠 for step 𝑠, demonstrating its ability to re-evaluate the situation and proceed correctly despite the preceding failure. The constructed 'Error Escape' and 'Back on Track' scenario samples are incorporated into the data used for RL training in Stage 2. When the agent encounters these scenarios as input 𝑥 and generates an output 𝑦, its performance is evaluated using the same comprehensive reward function 𝑅 total (𝑦, 𝑥). By rewarding successful escape actions in the first scenario type and correct subsequent actions in the second, the RL process specifically reinforces the agent's adaptive strategies for handling failures. This targeted training solidifies the agent's transition towards a Deliberative Reasoner, together with the task decomposition ability.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head><p>In this section, we detail the experimental setup used to train and evaluate our proposed InfiGUI-R1-3B agent. We describe the implementation details, the benchmarks used for evaluation, and present a comprehensive analysis of the results compared to existing state-of-the-art methods.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Setup</head><p>Implementation Details. Our model, InfiGUI-R1-3B, is built upon Qwen2.5-VL-3B-Instruct and trained using the proposed Ac-tor2Reasoner Framework, which consists of two main stages. For the RL reward function 𝑅 total = 𝑤 𝑓 • 𝑅 format + 𝑤 𝑎 • 𝑅 acc , we set the weights 𝑤 𝑓 = 0.1 and 𝑤 𝑎 = 0.9. Within the agent trajectory accuracy reward 𝑅 acc_agent , the weights are 𝑤 𝑡 = 0.2 for type matching and 𝑤 𝑝 = 0.8 for exact parameter matching. For bounding box Model CAD Development Creative Scientific Office OS Avg.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Text Icon Avg. Text Icon Avg. Text Icon Avg. Text Icon Avg. Text Icon Avg. Text Icon Avg. Text Icon Avg.</head><p>Proprietary Models GPT-4o <ref type="bibr" target="#b18">[19]</ref> 2.0 0.0 1.5 1.3 0.0 0.7 1.0 0.0 0.6 2.1 0.0 1.2 1.1 0.0 0.9 0.0 0.0 0.0 1.3 0.0 0.8 Claude Computer Use <ref type="bibr" target="#b3">[4]</ref>  <ref type="formula">14.5 3.7 11.9 22.0 3.9 12.6 25.9 3.4 16.8 33.9 15.8 25.8 30.1 16.3 26.9 11.0 4.5 8.1 23.4 7.1 17.1</ref>General Open-source Models Qwen2-VL-7B <ref type="bibr" target="#b47">[48]</ref> 0.5 0.0 0.4 2.6 0.0 1.3 1.5 0.0 0.9 6.3 0.0 3.5 3.4 1.9 3.0 0.9 0.0 0.5 2.5 0.2 1.6 Qwen2.5-VL-3B <ref type="bibr" target="#b7">[8]</ref> -----34.5 GUI-specific Models SeeClick [10] 2.5 0.0 1.9 0.6 0.0 0.3 1.0 0.0 0.6 3.5 0.0 2.0 1.1 0.0 0.9 2.8 0.0 1.5 1.8 0.0 1.1 CogAgent-18B <ref type="bibr" target="#b14">[15]</ref> 7.1 3.1 6.1 14.9 0.7 8.0 9.6 0.0 5.6 22.2 1.8 13.4 13.0 0.0 10.0 5.6 0.0 3.1 12.0 0.8 7.7 Aria-UI <ref type="bibr" target="#b54">[55]</ref> 7.6 1.6 6.1 16.2 0.0 <ref type="formula">8.4 23.7 2.1 14.7 27.1 6.4 18.1 20.3 1.9 16.1 4.7 0.0 2.6 17.1 2.0 11.3</ref></p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>OS-Atlas-4B [51]</head><p>2.0 0.0 1.5 7.1 0.0 3.7 3.0 1.4 2.3 9.0 5.5 7.5 5.1 3.8 4.8 5.6 0.0 3.1 5.0 1.7 3.7 OS-Atlas-7B <ref type="bibr" target="#b50">[51]</ref> 12. <ref type="formula">2 4.7 10.3 33.1 1.4 17.7 28.8 2.8 17.9 37.5 7.3 24.4 33.9 5.7 27.4 27.1 4.5 16.8 28.1 4.0</ref> Training Data. To ensure both strong GUI capabilities and general multimodal understanding, we train InfiGUI-R1-3B on a diverse dataset mixture: AndroidControl (10k trajectories + 2k reflection-focused trajectories), GUI Grounding data (5k samples aggregated from RicoSCA, Widget Caption, etc.), MathV360K (11k samples for general reasoning), and COCO (4k samples for general visual grounding and understanding).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Training Parameters.</head><p>All experiments were conducted using 16 NVIDIA H800 GPUs. For the SFT stage (Stage 1), we used a learning rate of 2.0e-6, a global batch size of 32, and a warmup ratio of 0.1. For the RL stage (Stage 2), we used a learning rate of 1.0e-6, a batch size of 256 for training updates, a rollout batch size of 256, and generated 16 rollouts per sample during policy exploration.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Evaluation Benchmarks</head><p>To comprehensively evaluate InfiGUI-R1-3B, we utilize several key benchmarks targeting different facets of GUI agent capabilities:</p><p>ScreenSpot &amp; ScreenSpot-Pro: These benchmarks assess fundamental GUI understanding and element grounding accuracy across diverse platforms (Mobile, Desktop, Web). ScreenSpot-Pro specifically increases the difficulty with complex desktop applications and high-resolution screens.</p><p>AndroidControl: This benchmark evaluate the agent's ability to execute complex, multi-step tasks within realistic Android environments. They directly test the higher-level reasoning capabilities crucial for a Deliberative Reasoner, including planning, and state tracking over long interaction trajectories. We report results on the Low-level (Low) and High-level (High) splits of AndroidControl.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Results</head><p>We compare InfiGUI-R1-3B against a range of state-of-the-art open-source and proprietary GUI agents. The results demonstrate the effectiveness of our Actor2Reasoner framework in advancing GUI agents towards deliberative reasoning. underscores the robustness and generalization ability of InfiGUI-R1-3B's visual understanding and grounding capabilities.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Performance on ScreenSpot.</head><p>Performance on ScreenSpot-Pro. As shown in Table <ref type="table" target="#tab_1">2</ref>, InfiGUI-R1-3B achieves competitive performance on the demanding Screen-Spot-Pro benchmark, which focuses on complex, high-resolution desktop GUI grounding. With an overall average score of 35.7, it performs comparably to the larger UI-TARS-7B model (35.7) and significantly outperforms other baselines like OS-Atlas-7B (18.9) and UGround-7B (16.5). Our model shows particular strength in categories like CAD (28.4 avg), Office (57.0 avg) and OS (29.6 avg), demonstrating robust grounding capabilities even in specialized software environments. While not universally outperforming the top model in every category, the strong overall performance validates the effectiveness of our approach.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Performance on AndroidControl.</head><p>Table <ref type="table" target="#tab_2">3</ref> presents the results on the AndroidControl benchmark. InfiGUI-R1-3B achieves a high Success Rate (SR) of 92.1% on AndroidControl-Low and 71.1% on AndroidControl-High. This surpasses the previous state-of-the-art model with similar parameters, UI-TARS-2B (SR: 89.3% / 68.9%). Furthermore, it also outperforms larger GUI-specific models such as Aguvis-72B (SR: 84.4% / 66.4%). This highlights the effectiveness of the training focused on planning capabilities in our Stage 2.</p><p>In summary, the experimental results across AndroidControl, ScreenSpot-Pro, and ScreenSpot demonstrate that InfiGUI-R1-3B significantly advances the capabilities of GUI agents. Our Ac-tor2Reasoner framework, combining Spatial Reasoning Distillation and RL-based Deliberation Enhancement (Sub-goal Guidance, Error Recovery), successfully transforms a base MLLM into a more effective Deliberative Reasoner, achieving state-of-the-art among models with similar parameter counts in trajectory-based tasks and element grounding across different platforms and resolutions, even with a relatively small 3B parameter model. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Visualization</head><p>Figure <ref type="figure" target="#fig_2">3</ref> illustrates the reward progression throughout the reinforcement learning training process. It displays both the overall reward accumulated by the agent and the specific rewards obtained for different task categories -Low-level, High-level, and Grounding tasks. As observed from the curves, the rewards for the overall agent performance, as well as for each individual task type, exhibit a consistent upward trend as training progresses. This indicates that the agent effectively learns and improves its performance across all GUI tasks during the RL training phase.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>We present InfiGUI-R1-3B, a multimodal GUI agent that bridges the gap between reactive execution and deliberative reasoning. Through the Actor2Reasoner framework, our approach systematically injects and refines reasoning capabilities in two stages: Spatial Reasoning Distillation to build foundational cross-modal reasoning, and Deliberation Enhancement via reinforcement learning to support sub-goal planning and error recovery. Empirical results across diverse benchmarks demonstrate that InfiGUI-R1-3B not only matches or surpasses larger models in grounding accuracy but also excels in long-horizon task execution with robust planning and reflection.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><figDesc>Layer: Summary: Home screen → App Drawer → Clock interface Planning: Alarm tab → Create new → Set 7am → Save Tactical Layer: Current Step Reasoning: Need to access alarm tab from current clock screen with multiple function tabs Grounding: Tap alarm icon in top left corner {"name": "tap", "arguments": {"point": {"x": 115, "y": 67}}} Alarm tab will open showing new alarm option...</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Overview of the Actor2Reasoner framework, a twostage methodology for progressively transforming a Reactive Actor into a Deliberative Reasoner. Stage 1: Reasoning Injection uses Supervised Fine-Tuning (SFT) with Spatial Reasoning Distillation-identifying reasoning bottlenecks (Pinpoint) and leveraging a teacher model (Distill)-to instill foundational cross-modal reasoning and transition the agent into a Basic Reasoner (Perception → Reasoning → Action). Stage 2: Deliberation Enhancement applies RL to refine planning and reflection capabilities, using Sub-goal Guidance (Reward) for forward-looking task decomposition and Error Recovery Scenario Construction (Reflect) for backward-looking self-correction, culminating in a Deliberative Reasoner.</figDesc><graphic coords="3,65.38,368.96,436.67,263.12" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Reward curves during reinforcement learning training. The plot shows the overall reward and the rewards for individual task types (Low-level, High-level, Grounding) over training steps.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Performances on various platforms (Mobile, Desktop, Web) on ScreenSpot. All experiments were conducted using raw screenshot information. Results marked in bold represent the best performance, and those underlined indicate the second-best performance.</figDesc><table><row><cell>Model</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>51.3 12.4 32.4 44.9 7.0 29.0 58.3 20.0 41.7 65.5 28.3 57.0 43.9 12.4 29.6 49.1 14.1 35.7    Performance comparison of different agent models across various task categories based on Text, Icon, and Average scores on ScreenSpot-Pro. Results marked in bold represent the best performance, and those underlined indicate the second-best performance.rewards (𝑅 bbox ), the IoU threshold is 𝜏 IoU = 0.7. When using subgoal similarity as a reward (𝑅 subgoal ) in cases where the action parameters are incorrect (𝑅 param = 0), we use a weight 𝑤 𝑠 = 0.2.</figDesc><table><row><cell>18.9</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Table1summarizes the results on the ScreenSpot benchmark, evaluating grounding across Mobile, Desktop, and Web platforms. InfiGUI-R1-3B achieves state-of-theart performance among all compared models, including proprietary ones like Gemini 1.5 Pro and Claude, with an impressive average accuracy of 87.5%. It consistently ranks first across all platforms and both text-based and icon-based grounding tasks (Mobile: 97.1/81.2, Desktop: 94.3/77.1, Web: 91.7/77.6). This outstanding performance Performance comparison of different agent models on AndroidControl benchmarks. SR stands for Success Rate. Results marked in bold represent the best performance, and those underlined indicate the second-best performance.</figDesc><table><row><cell>Model</cell><cell cols="3">AndroidControl-Low</cell><cell cols="3">AndroidControl-High</cell></row><row><cell></cell><cell cols="2">Type Grounding</cell><cell>SR</cell><cell cols="2">Type Grounding</cell><cell>SR</cell></row><row><cell>Claude*</cell><cell>74.3</cell><cell>0.0</cell><cell>19.4</cell><cell>63.7</cell><cell>0.0</cell><cell>12.5</cell></row><row><cell>GPT-4o</cell><cell>74.3</cell><cell>0.0</cell><cell>19.4</cell><cell>66.3</cell><cell>0.0</cell><cell>20.8</cell></row><row><cell>Aria-UI</cell><cell>-</cell><cell>87.7</cell><cell>67.3</cell><cell>-</cell><cell>43.2</cell><cell>10.2</cell></row><row><cell>OS-Atlas-4B</cell><cell>91.9</cell><cell>83.8</cell><cell cols="2">80.6 84.7</cell><cell>73.8</cell><cell>67.5</cell></row><row><cell>Aguvis-7B</cell><cell>-</cell><cell>-</cell><cell>80.5</cell><cell>-</cell><cell>-</cell><cell>61.5</cell></row><row><cell>Aguvis-72B</cell><cell>-</cell><cell>-</cell><cell>84.4</cell><cell>-</cell><cell>-</cell><cell>66.4</cell></row><row><cell>UI-R1</cell><cell>94.3</cell><cell>82.6</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>GUI-R1-3B</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>58.0</cell><cell>56.2</cell><cell>46.6</cell></row><row><cell>GUI-R1-7B</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>71.6</cell><cell>65.6</cell><cell>51.7</cell></row><row><cell>UI-TARS-2B</cell><cell>98.1</cell><cell>87.3</cell><cell>89.3</cell><cell>81.2</cell><cell>78.4</cell><cell>68.9</cell></row><row><cell>Ours</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="2">InfiGUI-R1-3B 96.0</cell><cell>93.2</cell><cell cols="2">92.1 82.7</cell><cell>74.4</cell><cell>71.1</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>https://github.com/google-research/google-research/tree/master/android_control</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_1"><p>-------------------23.9 Qwen2.5-VL-7B [8] --------------------29.0 Kimi-VL [45] ----------------</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Agent S2: A Compositional Generalist-Specialist Framework for Computer Use Agents</title>
+		<author>
+			<persName><forename type="first">Saaket</forename><surname>Agashe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiachen</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Eric</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.00906[cs.AI</idno>
+		<ptr target="https://arxiv.org/abs/2504.00906" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Arash</forename><surname>Ahmadian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Cremer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Gallé</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marzieh</forename><surname>Fadaee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julia</forename><surname>Kreutzer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Pietquin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmet</forename><surname>Üstün</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sara</forename><surname>Hooker</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.14740</idno>
+		<title level="m">Back to basics: Revisiting reinforce style optimization for learning from human feedback in llms</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Flamingo: a Visual Language Model for Few-Shot Learning</title>
+		<author>
+			<persName><forename type="first">Jean-Baptiste</forename><surname>Alayrac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Donahue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pauline</forename><surname>Luc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Miech</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iain</forename><surname>Barr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yana</forename><surname>Hasson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karel</forename><surname>Lenc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Mensch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katie</forename><surname>Millican</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Malcolm</forename><surname>Reynolds</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roman</forename><surname>Ring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eliza</forename><surname>Rutherford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Serkan</forename><surname>Cabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tengda</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhitao</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sina</forename><surname>Samangooei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marianne</forename><surname>Monteiro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Menick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Borgeaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Brock</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aida</forename><surname>Nematzadeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sahand</forename><surname>Sharifzadeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikolaj</forename><surname>Binkowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ricardo</forename><surname>Barreira</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oriol</forename><surname>Vinyals</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Zisserman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karen</forename><surname>Simonyan</surname></persName>
+		</author>
+		<ptr target="http://papers.nips.cc/paper_files/paper/2022/hash/960" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 35: Annual Conference on Neural Information Processing Systems 2022, NeurIPS 2022</title>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Sanmi Koyejo</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Mohamed</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Danielle</forename><surname>Agarwal</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Belgrave</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Cho</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Oh</surname></persName>
+		</editor>
+		<meeting><address><addrLine>New Orleans, LA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2022-11-28">2022. November 28 -December 9, 2022</date>
+		</imprint>
+	</monogr>
+	<note>a172bc7fbf0177ccccbb411a7d800-Abstract-Conference.html</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/news/developing-computer-use" />
+		<title level="m">Developing a computer use model</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="2025" to="2029" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Anas</forename><surname>Awadalla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Irena</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Gardner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Hessel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusuf</forename><surname>Hanafy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanrong</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Kalyani Marathe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samir</forename><surname>Bitton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiori</forename><surname>Gadre</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sagawa</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.01390</idno>
+		<title level="m">Openflamingo: An open-source framework for training large autoregressive vision-language models</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Jinze</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfei</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhang</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luo</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runji</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengqiang</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianxin</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Men</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingzhang</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuancheng</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuanqi</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sinan</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianhong</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengguang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benfeng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shusheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Bowen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongyi</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianwei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xing</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenru</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingren</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2309.16609</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2309.16609" />
+	</analytic>
+	<monogr>
+		<title level="j">Qwen Technical Report. ArXiv</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+			<publisher>Xiaohuan Zhou, and Tianhang Zhu</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<author>
+			<persName><forename type="first">Jinze</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shusheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sinan</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingren</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2308.12966</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2308.12966" />
+	</analytic>
+	<monogr>
+		<title level="m">Qwen-VL: A Frontier Large Vision-Language Model with Versatile Abilities</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keqin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuejing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenbin</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sibo</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijie</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.13923</idno>
+		<title level="m">Qwen2. 5-vl technical report</title>
+		<imprint>
+			<date type="published" when="2025-06">Jun Tang, et al. 2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Rogerio</forename><surname>Bonatti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francesco</forename><surname>Bonacci</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dillon</forename><surname>Dupont</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sara</forename><surname>Abdali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yadong</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Justin</forename><surname>Wagle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kazuhito</forename><surname>Koishida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Bucker</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.08264</idno>
+		<title level="m">Windows agent arena: Evaluating multi-modal os agents at scale</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Kanzhi</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiushi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yougang</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangzhi</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yantao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianbing</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyong</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.10935</idno>
+		<title level="m">Seeclick: Harnessing gui grounding for advanced visual gui agents</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Gemini-2.0 (Project Mariner</title>
+		<author>
+			<persName><forename type="first">Google</forename><surname>Deepmind</surname></persName>
+		</author>
+		<ptr target="https://deepmind.google/technologies/project-mariner" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="2025" to="2029" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">Alexey</forename><surname>Dosovitskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Beyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Kolesnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dirk</forename><surname>Weissenborn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohua</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Unterthiner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mostafa</forename><surname>Dehghani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Minderer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Georg</forename><surname>Heigold</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sylvain</forename><surname>Gelly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakob</forename><surname>Uszkoreit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Neil</forename><surname>Houlsby</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=YicbFdNTTy" />
+		<title level="m">An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale. In 9th International Conference on Learning Representations, ICLR 2021, Virtual Event</title>
+		<meeting><address><addrLine>Austria</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2021-05-03">2021. May 3-7, 2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">GPT-3: Its nature, scope, limits, and consequences. Minds and Machines</title>
+		<author>
+			<persName><forename type="first">Luciano</forename><surname>Floridi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Massimo</forename><surname>Chiriatti</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2020">2020. 2020</date>
+			<biblScope unit="volume">30</biblScope>
+			<biblScope unit="page" from="681" to="694" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Boyu</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruohan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyuan</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanan</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiheng</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Su</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.05243</idno>
+		<title level="m">Navigating the digital world as humans do: Universal visual grounding for gui agents</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Cogagent: A visual language model for gui agents</title>
+		<author>
+			<persName><forename type="first">Wenyi</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weihan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingsong</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiazheng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenmeng</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junhui</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiao</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Ding</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="14281" to="14290" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xueyu</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Biao</forename><surname>Yi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zishu</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruixuan</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yurun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiasheng</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meiling</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangxin</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhuai</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengze</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shawn</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinchen</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuofei</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Kuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tieyong</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiwei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eleanor</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wangchunshu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guoyin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keting</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhou</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongxia</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="DOI">10.20944/preprints202412.2294.v1</idno>
+		<title level="m">OS Agents: A Survey on MLLM-Based Agents for General Computing Devices Use. Preprints</title>
+		<imprint>
+			<date type="published" when="2024-12">2024. December 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xueyu</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziwei</forename><surname>Chai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qianli</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guoyin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuwu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingjing</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianbo</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiwei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Kuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongxia</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.05507</idno>
+		<title level="m">InfiAgent-DABench: Evaluating Agents on Data Analysis Tasks</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiwen</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaolong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingmei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Defu</forename><surname>Lian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasheng</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.02716</idno>
+		<title level="m">Ruiming Tang, and Enhong Chen. 2024. Understanding the planning of LLM agents: A survey</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Hurst</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Lerer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><forename type="middle">P</forename><surname>Goucher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Perelman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aidan</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akila</forename><surname>Ostrow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Welihinda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Hayes</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Radford</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.21276</idno>
+		<title level="m">Gpt-4o system card</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eldon</forename><surname>Schoop</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Swearngin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Nichols</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.04869</idno>
+		<title level="m">ILuvUI: Instruction-tuned LangUage-Vision modeling of UIs from Machine Conversations</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">ScreenSpot: Multidimensional resource discovery for distributed applications in smart spaces</title>
+		<author>
+			<persName><forename type="first">Marko</forename><surname>Jurmu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Boring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jukka</forename><surname>Riekki</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 5th Annual International Conference on Mobile and Ubiquitous Systems: Computing, Networking, and Services</title>
+		<meeting>the 5th Annual International Conference on Mobile and Ubiquitous Systems: Computing, Networking, and Services</meeting>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+			<biblScope unit="page" from="1" to="9" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanhan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Renrui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaichen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanwei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziwei</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.03326</idno>
+		<title level="m">Llava-onevision: Easy visual task transfer</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Blip-2: Bootstrapping language-image pre-training with frozen image encoders and large language models</title>
+		<author>
+			<persName><forename type="first">Junnan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongxu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvio</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Hoi</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on machine learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="19730" to="19742" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Screenspot-pro: Gui grounding for professional highresolution computer use</title>
+		<author>
+			<persName><forename type="first">Kaixin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongzhan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyang</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tat-Seng</forename><surname>Chua</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Workshop on Reasoning and Planning for Large Language Models</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Linyi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijie</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenwen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yibo</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyue</forename><surname>Hua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanghan</forename><surname>Ning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siwei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongxia</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.07940</idno>
+		<title level="m">InfiBench: Evaluating the Question-Answering Capabilities of Code Large Language Models</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Bishop</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alice</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Rawles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Folawiyo</forename><surname>Campbell-Ajala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Divya</forename><surname>Tyamagundlu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oriana</forename><surname>Riva</surname></persName>
+		</author>
+		<title level="m">On the effects of data scale on computer control agents</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+			<biblScope unit="page">2406</biblScope>
+		</imprint>
+	</monogr>
+	<note>arXiv e-prints</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gangaand</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingjie</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiwei</forename><surname>Guan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2010.04295</idno>
+		<title level="m">Widget Captioning: Generating Natural Language Description for Mobile User Interface Elements</title>
+		<imprint>
+			<date type="published" when="2020">2020. 2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">A Survey of Multimodel Large Language Models</title>
+		<author>
+			<persName><forename type="first">Zijing</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanjie</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Penghui</forename><surname>Shang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiang</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ke</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 3rd International Conference on Computer</title>
+		<meeting>the 3rd International Conference on Computer</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="405" to="409" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Showui: One vision-languageaction model for generalist gui agent</title>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Qinghong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linjie</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Difei</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zechen</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weixian</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lijuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><forename type="middle">Zheng</forename><surname>Shou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS 2024 Workshop on Open-World Agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Microsoft coco: Common objects in context</title>
+		<author>
+			<persName><forename type="first">Tsung-Yi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Maire</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Serge</forename><surname>Belongie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Hays</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pietro</forename><surname>Perona</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deva</forename><surname>Ramanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Dollár</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lawrence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zitnick</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Computer vision-ECCV 2014: 13th European conference</title>
+		<meeting><address><addrLine>zurich, Switzerland</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2014-09-06">2014. September 6-12, 2014</date>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="page" from="740" to="755" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Visual Instruction Tuning</title>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong Jae</forename><surname>Lee</surname></persName>
+		</author>
+		<ptr target="http://papers.nips.cc/paper_files/paper/2023/hash/6" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 36: Annual Conference on Neural Information Processing Systems 2023, NeurIPS 2023</title>
+		<editor>
+			<persName><forename type="first">Kate</forename><surname>Amir Globerson</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Moritz</forename><surname>Saenko</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sergey</forename><surname>Hardt</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Levine</surname></persName>
+		</editor>
+		<meeting><address><addrLine>New Orleans, LA, USA; Alice Oh, Tristan Naumann</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023-12-10">2023. December 10 -16, 2023</date>
+		</imprint>
+	</monogr>
+	<note>dcf277ea32ce3288914faf369fe6de0-Abstract</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">InfiMM: Advancing Multimodal Understanding with an Open-Sourced Visual Language Model</title>
+		<author>
+			<persName><forename type="first">Haogeng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quanzeng</forename><surname>You</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiqi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaotian</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bohan</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongfei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wentao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiren</forename><surname>Jian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunzhe</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianbo</forename><surname>Yuan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Annual Meeting of the Association for Computational Linguistics</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note>Ran He, and Hongxia Yang</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuhang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengxiang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zishu</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Congkai</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueyu</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinchen</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaotian</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongxia</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.04575</idno>
+		<title level="m">InfiGUIAgent: A Multimodal Generalist GUI Agent with Native Reasoning and Reflection</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">A convnet for the 2020s</title>
+		<author>
+			<persName><forename type="first">Zhuang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanzi</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao-Yuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christoph</forename><surname>Feichtenhofer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Trevor</forename><surname>Darrell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saining</forename><surname>Xie</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF conference on computer vision and pattern recognition</title>
+		<meeting>the IEEE/CVF conference on computer vision and pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="11976" to="11986" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhengxi</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Chai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaxuan</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanjing</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongsheng</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.21620</idno>
+		<title level="m">UI-R1: Enhancing Action Prediction of GUI Agents by Reinforcement Learning</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">GPT-4V(ision) System Card</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://cdn.openai.com/papers/GPTV_System_Card.pdf" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://openai.com/index/hello-gpt-4" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="2025" to="2026" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Chain-of-action: Faithful and multimodal question answering through large language models</title>
+		<author>
+			<persName><forename type="first">Zhenyu</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haozheng</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manling</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.17359</idno>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Kosmos-2: Grounding multimodal large language models to the world</title>
+		<author>
+			<persName><forename type="first">Zhiliang</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaru</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaohan</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuming</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Furu</forename><surname>Wei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.14824</idno>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yining</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoming</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shihao</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shizuo</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junda</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunxin</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.12326</idno>
+		<title level="m">Shijue Huang, et al. 2025. UI-TARS: Pioneering Automated GUI Interaction with Native Agents</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Learning transferable visual models from natural language supervision</title>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jong</forename><forename type="middle">Wook</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Hallacy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Goh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Clark</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on machine learning</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="8748" to="8763" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Rawles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Clinckemaillie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Waltz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabrielle</forename><surname>Lau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marybeth</forename><surname>Fair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alice</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Bishop</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Folawiyo</forename><surname>Campbell-Ajala</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.14573</idno>
+		<title level="m">Androidworld: A dynamic benchmarking environment for autonomous agents</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<author>
+			<persName><forename type="first">Guangming</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilingfeng</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xibin</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ru</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanghua</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haibin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuan</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.19256</idno>
+		<title level="m">HybridFlow: A Flexible and Efficient RLHF Framework</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanhui</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samith</forename><surname>Va</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengwei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanchun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongyang</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.17709</idno>
+		<title level="m">GUI-Xplore: Empowering Generalizable GUI Agents with One Exploration</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Kimi</forename><surname>Team</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Angang</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bohong</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowei</forename><surname>Xing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenlin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenzhuang</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chu</forename><surname>Wei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.07491</idno>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">QwQ-32B: Embracing the Power of Reinforcement Learning</title>
+		<author>
+			<persName><forename type="first">Qwen</forename><surname>Team</surname></persName>
+		</author>
+		<ptr target="https://qwenlm.github.io/blog/qwq-32b/" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">LLaMA: Open and Efficient Foundation Language Models</title>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thibaut</forename><surname>Lavril</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gautier</forename><surname>Izacard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Martinet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marie-Anne</forename><surname>Lachaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothée</forename><surname>Lacroix</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baptiste</forename><surname>Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Faisal</forename><surname>Azhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aurelien</forename><surname>Rodriguez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armand</forename><surname>Joulin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edouard</forename><surname>Grave</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guillaume</forename><surname>Lample</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2302.13971</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2302.13971" />
+	</analytic>
+	<monogr>
+		<title level="j">ArXiv</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">Qwen2-vl: Enhancing vision-language model&apos;s perception of the world at any resolution</title>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sinan</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihao</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinze</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keqin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuejing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenbin</forename><surname>Ge</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.12191</idno>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<title level="m" type="main">Cogvlm: Visual expert for pretrained language models</title>
+		<author>
+			<persName><forename type="first">Weihan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingsong</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenmeng</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenyi</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junhui</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuoyi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xixuan</forename><surname>Song</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.03079</idno>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuanchun</forename><surname>Hao Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guohong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanhui</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Toby Jia-Jun</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiqi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunhao</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaqin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunxin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.15272</idno>
+		<title level="m">AutoDroid: LLMpowered Task Automation in Android</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhiyong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenyu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangzhi</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yian</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiushi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengyou</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kanzhi</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zichen</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liheng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><forename type="middle">Pu</forename><surname>Liang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.23218</idno>
+		<title level="m">Osatlas: A foundation action model for generalist gui agents</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xiaobo</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Run</forename><surname>Luo</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.10458</idno>
+		<title level="m">GUI-R1: A Generalist R1-Style Vision-Language Action Model For GUI Agents</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Lawformer: A pre-trained language model for chinese legal long documents</title>
+		<author>
+			<persName><forename type="first">Chaojun</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueyu</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cunchao</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">AI Open</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="79" to="84" />
+			<date type="published" when="2021">2021. 2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<title level="m" type="main">Set-of-mark prompting unleashes extraordinary visual grounding in gpt-4v</title>
+		<author>
+			<persName><forename type="first">Jianwei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueyan</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Gao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.11441</idno>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuhao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongxu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyang</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junnan</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.16256</idno>
+		<title level="m">Aria-UI: Visual Grounding for GUI Instructions</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shenzhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhangchi</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongdong</forename><surname>Kuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuwen</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaowei</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junting</forename><surname>Lu</surname></persName>
+		</author>
+		<ptr target="https://github.com/hiyouga/EasyR1" />
+		<title level="m">EasyR1: An Efficient, Scalable, Multi-Modality RL Training Framework</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<analytic>
+		<title level="a" type="main">Ferret-ui: Grounded mobile ui understanding with multimodal llms</title>
+		<author>
+			<persName><forename type="first">Keen</forename><surname>You</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eldon</forename><surname>Schoop</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Floris</forename><surname>Weers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Swearngin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Nichols</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinfei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Gan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">European Conference on Computer Vision</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="240" to="255" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yucheng</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zebiao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gang</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.13771</idno>
+		<title level="m">Appagent: Multimodal agents as smartphone users</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

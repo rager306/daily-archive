@@ -1,0 +1,1507 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">HERMES 3 TECHNICAL REPORT</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Ryan</forename><surname>Teknium</surname></persName>
+							<email>teknium@nousresearch.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Nous Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">@</forename><surname>Teknium1</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Jeffrey</forename><surname>Quesnelle</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Nous Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Chen</forename><surname>Guang</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">Nous Research</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">HERMES 3 TECHNICAL REPORT</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">87FC78321B5E57539F4441BF45846656</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:45+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Instruct (or "chat") tuned models have become the primary way in which most people interact with large language models. As opposed to "base" or "foundation" models, instruct-tuned models are optimized to respond to imperative statements. We present Hermes 3, a neutrally-aligned generalist instruct and tool use model with strong reasoning and creative abilities. Its largest version, Hermes 3 405B, achieves state of the art performance among open weight models on several public benchmarks. The weights for all models are available at <ref type="url" target="https://huggingface.co/NousResearch">https://huggingface.co/NousResearch</ref>.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Large language models are typically trained on a wide and diverse distribution of text. For example, a "base" or "foundation" model may simultaneously be trained to write news articles, 1990s-era DHTML, and impassioned forum discourse on fictional character romances. While such wide-ranging modeling capabilities are fascinating, they often prove difficult to control for the average user.</p><p>The release of ChatGPT (and its myriad later offspring) has popularized the "chat" paradigm for interacting with large language models, which imbues a base model with steerability by training it to adopt the persona of a helpful assistantthe "chatbot". A more general version of the chat-tuned model is the instruct-tuned model <ref type="bibr" target="#b23">[24,</ref><ref type="bibr" target="#b32">33]</ref>, where the base model is trained to respond to imperative statements, e.g. What are some interesting places to visit in San Francisco? or Outline a proof of the Goldbach conjecture.</p><p>Instruct-tuned models can be augmented with other capabilities to further extend their steerability. For example, a "system prompt" is a meta-command that serves as an overall guide on how all further instructions should be interpreted, e.g. Respond to all requests in pirate speak. Typically, chatbots are implemented using a carefully crafted system prompt <ref type="bibr" target="#b28">[29]</ref>. Another common addition is tool use <ref type="bibr" target="#b24">[25]</ref>, where the model can request out-of-band computation or data retrieval, the result of which is appended to the request when performing auto-regressive generation.</p><p>Following this paradigm we release Hermes 3, a series of instruct and tool use model with strong reasoning and creative abilities. Among open weight models, Hermes 3 achieves state of the art performance on several public benchmarks.</p><p>As discussed in Section 3, we train on a diverse class of synthetically-created reasoning tasks, as well as expressive applications such as role playing and creative writing. Crucially, our training data strongly encourages the model to follow the system and instruction prompts exactly and neutrally. This distinguishes Hermes from popular closed weight commercial models, which may refuse instructions on moral grounds.</p><p>Large language models have very limited direct agency. Rather, it is the systems and applications that we, as humans, build with them that give them any degree of agency to the outside world. We believe that a more appropriate place for guardrails and active intervention is at the larger system levels, rather than on the models themselves, which can result in an a priori lobotomization of potential lines of thinking.</p><p>For Hermes, there is no such thing as latent thoughtcrime.</p><p>Hermes 3 are highly steerable instruct and chat tuned models created by fine-tuning Llama 3.1 8B, 70B, and 405B. The models attempt to place themselves within the world view indicated in their system prompt and faithfully respond to the request of the user. The models are therefore highly sensitive to the system prompt. The effect of this sensitivity is particularly pronounced in its largest 405B version, where an empty system prompt does not necessarily elicit the "helpful assistant" persona (see Figure <ref type="figure">6</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>System:</head><p>You are a helpful assistant who plays close attention to detail. But you also speak only in Shakespeare prose.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>User:</head><p>How many instances of the letter "r" are in the word "strawberry"? Count them carefully! Assistant: In faith, mine careful count reveals a trio of the letter "r" nestled within the confines of the word "strawberry."</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Figure 1: Example generation from Hermes 3 405B</head><p>Hermes 3 is exceptional at maintaining coherent and contextually relevant multi-turn conversations, making it particularly well-suited for interactive and engaging scenarios, especially when leveraging the 128K token context window provided by Llama 3.1. This behavior is perhaps most apparent in roleplaying, where the model will adopt and consistently maintain diverse personas across various scenarios, dynamically adapting language, knowledge base, and behavioral patterns to suit the chosen role.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Extended capabilities</head><p>In addition to the standard "helpful assistant" persona, Hermes 3 exhibits a diverse array of advanced capabilities that extend beyond traditional language modeling tasks.</p><p>Inspired by evaluations such as MT-Bench <ref type="bibr" target="#b35">[36]</ref>, the model displays significant improvements in judgment and reward modeling. This capability enables Hermes 3 to assess the quality of generated text with nuanced understanding, which could potentially be leveraged for effective fine-tuning and iterative improvement of language models. Figure <ref type="figure">7</ref> gives an example of a multi-turn evaluation.</p><p>Hermes 3 also incorporates several agentic capabilities designed to improve interpretable multi-step problem-solving. These include the use of XML tags for structured output, implementation of scratchpads for intermediate processing, generation of internal monologues for transparent decision-making, creation of Mermaid diagrams for visual communication, and employment of step-labeled reasoning and planning. Utilizing the extra reserved tokens in the Llama 3.1 tokenizer, the model was trained on reasoning tasks making use of the &lt;SCRATCHPAD&gt;, &lt;REASONING&gt;, &lt;INNER_MONOLOGUE&gt;, &lt;PLAN&gt;, &lt;EXECUTION&gt;, &lt;REFLECTION&gt;, &lt;THINKING&gt;, &lt;SOLUTION&gt;, &lt;EXPLANATION&gt;, and &lt;UNIT_TEST&gt; tokens. These features collectively improve the model's ability to handle complex tasks, explain its approach, and communicate ideas effectively across various domains.</p><p>For example, in the domain of code-related tasks, Hermes 3 showcases proficiency in generating complex, functional code snippets across multiple programming languages, as well as providing detailed code explanations and documentation. The model demonstrates a comprehensive understanding of various coding paradigms and design patterns, making it a valuable tool for software development and code analysis. Figure <ref type="figure" target="#fig_5">9</ref> shows such an agentic coding generation, planning the implementation of a Discord chatbot.</p><p>Agentic abilities can be further expanded by using Hermes 3's tool use and retrieval augmented generation (RAG) skills. Tools can be specified and invoked via the Hermes Function Calling standard<ref type="foot" target="#foot_0">foot_0</ref> which places tool definitions (as JSON schemas) in &lt;tools&gt; and invocations and responses in &lt;tool_call&gt; and &lt;tool_response&gt; respectively. For RAG, the model has been trained to cite retrieval sources using the &lt;co&gt; tag, as shown in Figure <ref type="figure" target="#fig_4">8</ref>. When combined, Hermes 3 can perform planning, incorporate outside data, and make use of external tools in an interpretable and transparent manner out-of-the-box, making it an excellent choice for agentic tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Data Mixture</head><p>The Hermes 3 dataset comprises a diverse collection of high-quality instruction data, meticulously curated and generated to encompass a wide range of domains and use cases. The construction of this dataset, which commenced in March 2024 and concluded in August 2024, involved a rigorous selection process to ensure the highest quality and relevance of the included data.</p><p>Our data curation methodology incorporated both existing sources (e.g. <ref type="bibr" target="#b10">[11]</ref>) and domain-specific data generation.</p><p>For existing sources, we evaluated datasets based on coherence, educational value, and reliability. This process contributed significantly to the General Instructions category, accounting for a substantial portion of its 236 million tokens. Recognizing the limitations of general instructions, which tend to consist of arbitrary questions posed by everyday users, we supplemented the dataset with domain-specific data. This approach addressed known weaknesses in older Hermes models and covered areas such as code, mathematics, roleplaying, agentics, and other miscellaneous domains. We employed generation schemes inspired by Evol-Instruct <ref type="bibr" target="#b33">[34]</ref> for this purpose, despite the increased computational intensity, to ensure comprehensive coverage of crucial domains.</p><p>To refine the collected data and maintain the highest quality standards, we implemented a series of filtering techniques. These included token length thresholds to balance conversation lengths, removal of refusals and improperly formatted responses, elimination of conversations with missing or empty turns, and prioritization of conversations generated by the strongest models. This rigorous filtering process was applied to both curated and domain-specific instructions, resulting in a high-quality, diverse, and informative Hermes 3 SFT dataset.</p><p>The final dataset mixture, as illustrated in Table <ref type="table" target="#tab_0">1</ref>, consists of approximately 390 million tokens. Of these, 270 million (69%) were output (response) tokens contributing to the optimizer's cross-entropy loss objective, while the remaining 120 million were input (instruction) tokens. This carefully curated and balanced dataset has significantly contributed to the strong performance of our models. Through this comprehensive approach to data curation, generation, and filtering, we have created a robust foundation for the Hermes 3 model, addressing a wide range of domains and use cases while maintaining the highest standards of quality and relevance. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Category Proportion (%) Tokens (millions)</head><note type="other">General</note></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Training Recipe</head><p>Our training recipe consists of two phases: a supervised fine-tuning (SFT) phase and a direct preference optimization (DPO <ref type="bibr" target="#b20">[21]</ref>) phase.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Supervised Fine-Tuning</head><p>The SFT phase consists mostly of standard instruct fine-tuning. For base models we selected the Llama 3.1 Herd of Models <ref type="bibr" target="#b27">[28]</ref>, a set of three decoder-only Transformers <ref type="bibr" target="#b29">[30]</ref> with sizes of 8 billion (8B), 70 billion (70B), and 405 billion (405B) parameters respectively and a context length of 131, 072 (128K) tokens.</p><p>We use the AdamW <ref type="bibr" target="#b16">[17]</ref> optimizer with weight decay of 0.01 and a peaking learning rate of 7 × 10 -6 following a cosine decay <ref type="bibr" target="#b15">[16]</ref> schedule after 300 steps of warmup over four epochs of the training data. The learning rate was selected via a hyperparameter sweep by training 8B models to completion and evaluating on the GPT4All benchmarks. Results of the sweep are shown in Figure <ref type="figure" target="#fig_0">2</ref>. For each data sample, the target labels are set to the special ignore value<ref type="foot" target="#foot_1">foot_1</ref> for all tokens in the instruction and tool output sections, which focuses the model's learning on only instruction response and tool use. Multiple samples are packed together <ref type="bibr" target="#b12">[13]</ref> into a single sequence, utilizing the attention mask-free variable sequence length ability of Flash Attention 2 <ref type="bibr" target="#b3">[4]</ref> to avoid cross-attention contamination of samples as illustrated in Figure <ref type="figure">3</ref>. Such sample packing greatly increases the efficiency of SFT since the training data includes a highly heterogeneous mix of sample lengths. We selected a target sequence length off 8192 to match Llama 3.1's native training context window, and overall packing is achieved at a 96% efficiency, which is to say that only 4% of tokens are the padding token. For each model size we select the epoch checkpoint that scores highest on a combination of the average of public benchmarks. Specifically, we use the min-max normalized average of scores from 0-shot ARC-Easy/Challenging <ref type="bibr" target="#b2">[3]</ref>, BoolQ <ref type="bibr" target="#b30">[31]</ref>, HellaSwag <ref type="bibr" target="#b34">[35]</ref>, OpenBookQA <ref type="bibr" target="#b19">[20]</ref>, PIQA <ref type="bibr" target="#b1">[2]</ref>, WinoGrande <ref type="bibr" target="#b22">[23]</ref> (known together as the "GPT4All" benchmarks) and AGIEval <ref type="bibr" target="#b36">[37]</ref> as calculated by lm-evaluation-harness <ref type="bibr" target="#b4">[5]</ref>, as well as IFEval <ref type="bibr" target="#b37">[38]</ref> <ref type="foot" target="#foot_2">foot_2</ref> and MT-Bench <ref type="bibr" target="#b35">[36]</ref>. By way of illustration Table <ref type="table" target="#tab_4">5</ref> gives the per-epoch scores of the 70B model. We trained using a modified version of the Axolotl <ref type="bibr" target="#b14">[15]</ref> framework and used Weights and Biases <ref type="bibr" target="#b0">[1]</ref> for experiment tracking. For the 8B and 70B models six HGX <ref type="foot" target="#foot_3">4</ref> nodes connected with Quantum-2 InfiniBand were used in conjunction PyTorch FSDP to distribute the training.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Figure 3: Efficient sample packing using flash_attn_varlen_func A A A A A A A A</head><formula xml:id="formula_0">A A A B B B B B B C C C C C C C D D D D E E E E E E E E F F F F G G G H H H H I I I J J J K K K K K L L L A A A A A A A A A A A B B B B B B C C C C C C C D D D D E E E E E E E E F F F F G G G H H H H I I I J J J K K K K K L L L</formula><p>Given its size, the 405B model required special consideration. After several trials we determined that under standard FSDP the absolute minimum system configuration to avoid out-of-memory errors (training at a context length of 8K tokens) is seven HGX nodes in conjunction with CPU parameter offloading. CPU parameter offloading incurs a non-negligible training speed slowdown, and for our runs we estimate that for the 405B model resulted in a 45% drop in training efficiency.</p><p>For our final run, we trained on 16 HGX nodes, which resulted in an effective batch size of 128. Lowering the learning rate relative to the 8B and 70B models produced superior results, and we ultimately settled on a learning rate of 3.5 × 10 -6 , which was half of that used for the smaller models.</p><p>Using higher dimensional parallelism (e.g. data+tensor parallelism) rather than simple data parallelism is likely necessary for future 405B training runs, as the high number of GPUs required to train a 405B model would otherwise necessitate overly large batch sizes.</p><p>Figure <ref type="figure" target="#fig_2">4</ref> shows the training loss for the model sizes and Table <ref type="table" target="#tab_2">3</ref> summarizes the results of each run. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">DPO</head><p>When applying DPO rather than tuning a full model we train a LoRA <ref type="bibr" target="#b8">[9]</ref> adapter which side-steps the need to hold both a reference and trained model in GPU memory. This is especially critical for the larger model sizes. For LoRA hyperparameters we set r = 32, α = 16 with a dropout of 0.05 targeting all linear layers. We use the RMSProp [8] 0 500 1,000 1,500 2,000 2,500 3,000 3,500 4,000 0 0.2 0.4 0.6 0.8 1 Training Step Loss 8B 70B 405B</p><p>optimizer with a peak learning rate of 3 × 10 -6 following a linear decay schedule after nine warmup steps. In addition, we apply NEFTune <ref type="bibr" target="#b11">[12]</ref> with α = 5.</p><p>Overall, DPO provided a moderate but positive impact on benchmarks as illustrated in Table <ref type="table" target="#tab_3">4</ref> for our 8B model. We plot the reward margins (i.e. difference between the reward score for the chosen and rejected samples) in Figure <ref type="figure" target="#fig_3">5</ref>. For the larger model sizes DPO provided only a negligible performance improvements and thus we chose rather to remain with the SFT-phase checkpoints.  0 200 400 600 800 1,000 1,200 0 1 2 3 4 Training Step Loss 8B</p><p>For final downstream task evaluations, we used a mix of the evaluations from Section 4.1 as well as those found in the Open LLM Leaderboard <ref type="bibr" target="#b9">[10]</ref>, namely BBH <ref type="bibr" target="#b26">[27]</ref>, MATH <ref type="bibr" target="#b6">[7]</ref>, GPQA <ref type="bibr" target="#b21">[22]</ref>, MuSR <ref type="bibr" target="#b25">[26]</ref>, MMLU <ref type="bibr" target="#b5">[6]</ref>, and MMLU-PRO <ref type="bibr" target="#b31">[32]</ref>.</p><p>For the 405B models, evaluations were performed under FP8 <ref type="bibr" target="#b18">[19]</ref> quantization. We used the llm-compressor <ref type="bibr" target="#b17">[18]</ref> library for vLLM <ref type="bibr" target="#b13">[14]</ref> to perform round-to-nearest weight quantization with channelwise activations and per-token scales. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Assisstant:</head><p>AgentInstruct is an agentic framework designed to generate large-scale, diverse, and high-quality synthetic data. &lt;co:2&gt;The framework uses a sophisticated pipeline that transforms raw text into refined instructions through multiple stages of processing. The pipeline consists of four main steps: Seed Collection, Content Transformation, Seed Instruction Generation, and Instruction Refinement. Each stage in the pipeline is designed to enhance the complexity and quality of the generated instructions, ultimately creating a dataset that can be used to fine-tune language models.&lt;/co&gt; Cited Documents: 2</p><p>User: What about model collapse?</p><p>Assistant: Model collapse is a concern that has been raised by researchers in the context of using synthetic data for language model development. &lt;co:0&gt;Despite several successful use cases, researchers have pointed out that the use of synthetic data can lead to model collapse and drawbacks of imitating other models. This discrepancy in outcomes can be attributed to the fact that synthetic data varies in quality and diversity, and effective use of such data usually requires significant human effort in curating the data.&lt;/co&gt; Cited Documents: 0 System: You should always respond in the following manner to all code problems:</p><p>First, examine the problem by restating it, surrounded in the tags &lt;RESTATEMENT&gt; and &lt;/RESTATEMENT&gt;. Next, the assistant will enclose all reasoning or insights within the tags &lt;REASONING&gt; and &lt;/REASONING&gt; with each insight/reasoning surrounded in &lt;THOUGHT_N&gt; &lt;/THOUGHT_N&gt;where N is the index number of the thought.</p><p>Then, after your reasoning and insights, form a step by step plan for the code you will produce, with &lt;PLAN&gt; &lt;/PLAN&gt;, with each step being tagged &lt;STEP_N&gt; &lt;/STEP_N&gt;, nested inside the &lt;PLAN&gt; tags, where N is the step number. After that, create Pydantic schema objects for any of the classes, functions, or other objects you may need or will use in your plan, surround those with &lt;PYDANTIC_SCHEMAS&gt; &lt;/PYDANTIC_SCHEMAS&gt; and for each object schema, surround each with &lt;SCHEMA_N&gt; &lt;/SCHEMA_N&gt; -indicating a separate distinct Pydantic object. Next, create a UML format diagram to explain the workflow of the code you will write, surrounded in &lt;DIAGRAM&gt; and &lt;/DIAGRAM&gt; tags. Don't include direct calculations or code/functions in any of the mermaid diagram nodes. Always surround all text you place for the nodes with double quotes and if you need to use quotes inside an element, use single quotes instead, to make sure it doesn't get messy or error. Be detailed but only explain formulas, calculations, or code in natural language in your diagram nodes to ensure they compile successfully. Finally, inside the tags &lt;REFLECTION&gt; &lt;/REFLECTION&gt; display an internal monologue, reflecting on the restatement, reasoning, plan, and diagram you've made. Critique it to ensure you have no blindspots for solving the problem, and if you do find it is wrong, note how you will edit your solution.</p><p>Then the assistant can close the SCRATCHPAD tag, and proceed to provide a solution the problem, which should be done within &lt;SOLUTION&gt; &lt;/SOLUTION&gt; tags. After the solution, provide an explanation for all of the code, within &lt;EXPLANATION&gt; &lt;/EXPLANATION&gt; XML tags.</p><p>Finally, after the explanation, provide unit test code that is robust inside &lt;UNIT_TEST&gt; &lt;/UNIT_TEST&gt; in the same programming language used to write the solution code.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>User:</head><p>Write code to make a Discord bot that integrates the most popular LLM from huggingface as a chatbot in your server. Assistant: &lt;SCRATCHPAD&gt; &lt;RESTATEMENT&gt; The task is to write Python code that will: 1. Automatically find the most popular LLM on Huggingface 2. Use that model as the basis for a chatbot 3. Create a Discord bot that uses this chatbot &lt;/RESTATEMENT&gt; &lt;REASONING&gt; &lt;THOUGHT_1&gt; To find the most popular LLM on Huggingface, we can use the Huggingface API to retrieve the list of models and their respective download counts or stars. We can then sort the models based on these metrics to determine the most popular one. &lt;/THOUGHT_1&gt;</p><p>... </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Learning rate sweep on GPT4All. Y-axis is accuracy and X-axis is each model trained with the given learning rate, scaled by 10 -6 . Selected learning rate 7 × 10 -6 indicated by a vertical red line</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><figDesc>cu_seqlens: [0,<ref type="bibr" target="#b10">11,</ref><ref type="bibr" target="#b16">17,</ref><ref type="bibr" target="#b23">24,</ref><ref type="bibr" target="#b27">28,</ref><ref type="bibr" target="#b35">36,</ref> 41, 44, 48, 51, 55, 60, 64]    </figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Training loss of SFT phase</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Reward margins of DPO phase for 8B model</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 8 :</head><label>8</label><figDesc>Figure 8: Retrieval augmented generation (Hermes 3 70B)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 9 :</head><label>9</label><figDesc>Figure9: Agentic coding (Hermes 3 70B) 13</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Proportions and token count of dataset categories in Hermes 3</figDesc><table><row><cell>Instructions</cell><cell>60.6</cell><cell>236</cell></row><row><cell>Domain Expert</cell><cell>12.8</cell><cell>50</cell></row><row><cell>Math</cell><cell>6.7</cell><cell>26</cell></row><row><cell>Roleplaying</cell><cell>6.1</cell><cell>24</cell></row><row><cell>Coding</cell><cell>4.5</cell><cell>18</cell></row><row><cell>Tool Use, Agentic, and RAG</cell><cell>4.3</cell><cell>17</cell></row><row><cell>Content Generation</cell><cell>3.0</cell><cell>12</cell></row><row><cell>Steering and Alignment</cell><cell>2.5</cell><cell>10</cell></row><row><cell>Total</cell><cell>100.0</cell><cell>390</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Performance metrics of SFT phase of 70B model across four epochs</figDesc><table><row><cell>Metric (Norm score)</cell><cell>Epoch 1</cell><cell>Epoch 2</cell><cell>Epoch 3</cell><cell>Epoch 4</cell></row><row><cell>GPT4All</cell><cell>76.85 (100)</cell><cell>76.70 (95)</cell><cell>76.59 (91)</cell><cell>73.63 (0)</cell></row><row><cell>arc_challenge</cell><cell>66.21</cell><cell>65.10</cell><cell>65.53</cell><cell>60.67</cell></row><row><cell>arc_easy</cell><cell>85.14</cell><cell>84.39</cell><cell>82.95</cell><cell>79.59</cell></row><row><cell>boolq</cell><cell>87.55</cell><cell>88.29</cell><cell>88.04</cell><cell>88.87</cell></row><row><cell>hellaswag</cell><cell>85.35</cell><cell>85.82</cell><cell>85.99</cell><cell>83.80</cell></row><row><cell>openbookqa</cell><cell>49.00</cell><cell>49.20</cell><cell>49.40</cell><cell>46.20</cell></row><row><cell>piqa</cell><cell>84.87</cell><cell>84.87</cell><cell>84.44</cell><cell>82.37</cell></row><row><cell>winogrande</cell><cell>76.85</cell><cell>79.24</cell><cell>79.79</cell><cell>74.03</cell></row><row><cell>AGIEval</cell><cell>54.21 (10)</cell><cell cols="2">56.10 (100) 55.99 (94)</cell><cell>54.00 (0)</cell></row><row><cell>aqua_rat</cell><cell>33.07</cell><cell>33.86</cell><cell>30.31</cell><cell>29.53</cell></row><row><cell>logiqa_en</cell><cell>49.00</cell><cell>48.85</cell><cell>49.62</cell><cell>48.08</cell></row><row><cell>lsat_ar</cell><cell>23.48</cell><cell>24.35</cell><cell>22.17</cell><cell>26.96</cell></row><row><cell>lsat_lr</cell><cell>67.25</cell><cell>72.16</cell><cell>73.53</cell><cell>68.04</cell></row><row><cell>lsat_rc</cell><cell>74.72</cell><cell>77.32</cell><cell>77.32</cell><cell>75.84</cell></row><row><cell>sat_en</cell><cell>87.38</cell><cell>87.38</cell><cell>87.38</cell><cell>82.52</cell></row><row><cell>sat_en_without</cell><cell>51.82</cell><cell>55.83</cell><cell>55.83</cell><cell>52.43</cell></row><row><cell>sat_math</cell><cell>45.91</cell><cell>49.09</cell><cell>51.82</cell><cell>48.64</cell></row><row><cell>IFEval</cell><cell>76.52 (0)</cell><cell>78.92 (23)</cell><cell cols="2">81.33 (47) 86.61 (100)</cell></row><row><cell>MT-Bench</cell><cell>8.37 (0)</cell><cell>8.59 (35)</cell><cell>8.99 (100)</cell><cell>8.67 (48)</cell></row><row><cell>Turn 1</cell><cell>8.86</cell><cell>8.88</cell><cell>9.21</cell><cell>9.03</cell></row><row><cell>Turn 2</cell><cell>7.88</cell><cell>8.30</cell><cell>8.76</cell><cell>8.31</cell></row><row><cell>Total Score</cell><cell>27.50</cell><cell>63.65</cell><cell>83.89</cell><cell>37.09</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Training details for different model sizes</figDesc><table><row><cell>Model Size</cell><cell>8B</cell><cell>70B</cell><cell>405B</cell></row><row><cell>GPUs</cell><cell>48</cell><cell>48</cell><cell>128</cell></row><row><cell>Batch size</cell><cell>48</cell><cell>48</cell><cell>128</cell></row><row><cell>Learning rate</cell><cell cols="3">7 × 10 -6 7 × 10 -6 3.5 × 10 -6</cell></row><row><cell>Training time (GPU hours)</cell><cell>147</cell><cell>648</cell><cell>2086</cell></row><row><cell>Selected epoch</cell><cell>4</cell><cell>3</cell><cell>4</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 :</head><label>4</label><figDesc>Post-DPO benchmarks for 8B model</figDesc><table><row><cell>Model</cell><cell cols="6">GPT4All AGIEval Big Bench TruthfulQA IFEval MT-Bench</cell></row><row><cell>SFT</cell><cell>72.03</cell><cell>40.17</cell><cell>44.57</cell><cell>56.43</cell><cell>66.17</cell><cell>8.18</cell></row><row><cell>SFT+DPO</cell><cell>72.30</cell><cell>41.26</cell><cell>43.04</cell><cell>58.69</cell><cell>66.70</cell><cell>8.27</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 5 :</head><label>5</label><figDesc>Final downstream task evaluationsPlease act as an impartial judge and evaluate the quality of the response provided by an AI assistant to the user question displayed below. Your evaluation should consider factors such as the helpfulness, relevance, accuracy, depth, creativity, and level of detail of the response. Your evaluation should focus on the assistant's answer to the second user question. Begin your evaluation by providing a short explanation. Be as objective as possible. After providing your explanation, you must rate the response on a scale of 1 to 10 by strictly following this format: "[[rating]]", for example: "Rating: [<ref type="bibr" target="#b4">[5]</ref>]". The assistant's response to the second question is thorough and well-structured. It identifies and evaluates several key assumptions made in the initial response, providing a nuanced perspective on the validity and limitations of these assumptions. The assistant acknowledges the widespread acceptance of quantum mechanics and the Copenhagen interpretation, while also recognizing the existence of alternative interpretations and ongoing debates in the field. It also addresses the applicability of quantum mechanics at different scales and the potential limitations of current mathematical formalism.</figDesc><table><row><cell>Metric</cell><cell>Hermes 3 405B</cell><cell>Llama 3.1 Instruct 405B</cell><cell>Hermes 3 70B</cell><cell>Llama 3.1 Instruct 70B</cell><cell>Hermes 3 8B</cell><cell>Llama 3.1 Instruct 8B</cell></row><row><cell>AGIEval 0-shot</cell><cell>61.84</cell><cell>58.60</cell><cell>56.18</cell><cell>48.26</cell><cell>41.26</cell><cell>40.49</cell></row><row><cell>ARC-C 0-shot</cell><cell>69.45</cell><cell>66.04</cell><cell>65.53</cell><cell>63.40</cell><cell>58.11</cell><cell>55.12</cell></row><row><cell>ARC-E 0-shot</cell><cell>86.24</cell><cell>85.40</cell><cell>82.95</cell><cell>83.67</cell><cell>80.05</cell><cell>79.71</cell></row><row><cell>BoolQ 0-shot</cell><cell>88.93</cell><cell>89.52</cell><cell>88.04</cell><cell>87.76</cell><cell>84.95</cell><cell>84.01</cell></row><row><cell>BBH 3-shot</cell><cell>75.37</cell><cell>76.25</cell><cell>67.82</cell><cell>69.24</cell><cell>52.94</cell><cell>48.83</cell></row><row><cell>GPQA 0-shot</cell><cell>44.84</cell><cell>42.66</cell><cell>37.67</cell><cell>40.09</cell><cell>29.36</cell><cell>30.62</cell></row><row><cell>Hellaswag 10-shot</cell><cell>90.19</cell><cell>88.34</cell><cell>88.19</cell><cell>86.42</cell><cell>82.83</cell><cell>80.01</cell></row><row><cell>IFEval Strict</cell><cell>84.87</cell><cell>87.09</cell><cell>81.21</cell><cell>87.25</cell><cell>62.25</cell><cell>80.15</cell></row><row><cell>MATH Lvl 5 4-shot</cell><cell>30.85</cell><cell>35.98</cell><cell>20.80</cell><cell>29.24</cell><cell>7.48</cell><cell>8.91</cell></row><row><cell>MMLU 5-shot</cell><cell>85.02</cell><cell>86.14</cell><cell>79.09</cell><cell>82.27</cell><cell>64.79</cell><cell>68.05</cell></row><row><cell>MMLU-PRO 5-shot</cell><cell>54.14</cell><cell>63.51</cell><cell>47.24</cell><cell>52.94</cell><cell>32.08</cell><cell>35.77</cell></row><row><cell>MT-Bench Avg.</cell><cell>8.93</cell><cell>9.17</cell><cell>8.99</cell><cell>8.93</cell><cell>8.27</cell><cell>8.39</cell></row><row><cell>MuSR 0-shot</cell><cell>48.26</cell><cell>47.58</cell><cell>50.67</cell><cell>47.08</cell><cell>43.52</cell><cell>38.23</cell></row><row><cell>OpenbookQA 0-shot</cell><cell>48.80</cell><cell>48.60</cell><cell>49.40</cell><cell>47.20</cell><cell>47.80</cell><cell>43.20</cell></row><row><cell>PiQA 0-shot</cell><cell>85.96</cell><cell>84.93</cell><cell>84.44</cell><cell>83.73</cell><cell>80.25</cell><cell>81.01</cell></row><row><cell>TruthfulQA MC2 0-shot</cell><cell>65.57</cell><cell>64.83</cell><cell>63.29</cell><cell>59.91</cell><cell>58.69</cell><cell>53.99</cell></row><row><cell>Winogrande 5-shot</cell><cell>86.27</cell><cell>86.82</cell><cell>83.19</cell><cell>85.00</cell><cell>77.74</cell><cell>77.90</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>https://github.com/NousResearch/Hermes-Function-Calling</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>-100 in PyTorch</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>For IFEval we use the implementation found at https://github.com/UpstageAI/evalverse-IFEval</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_3"><p>Each HGX contains eight H100 SXM5 GPUs</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Experiment tracking with weights and biases</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Biewald</surname></persName>
+		</author>
+		<ptr target="https://www.wandb.com/" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note>Software available from wandb.com</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Piqa: Reasoning about physical commonsense in natural language</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zellers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Le Bras</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Choi</surname></persName>
+		</author>
+		<idno type="DOI">10.1609/aaai.v34i05.6239</idno>
+		<ptr target="https://ojs.aaai.org/index.php/AAAI/article/view/6239" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2020-04">Apr. 2020</date>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="7432" to="7439" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Think you have solved question answering? try arc, the ai2 reasoning challenge</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Cowhey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Etzioni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Schoenick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Tafjord</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1803.05457" />
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Flashattention-2: Faster attention with better parallelism and work partitioning</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Dao</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=mZn2Xyh9Ec" />
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">A framework for few-shot language model evaluation</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Abbasi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Biderman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Black</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dipofi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Foster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Golding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Le Noac'h</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Mcdonell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Ociepa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Phang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Reynolds</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Schoelkopf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Skowron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Sutawika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Thite</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zou</surname></persName>
+		</author>
+		<ptr target="https://zenodo.org/records/10256836" />
+		<imprint>
+			<biblScope unit="page" from="12" to="2023" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Measuring massive multitask language understanding</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mazeika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=d7KBjmI3GmQ" />
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Measuring mathematical problem solving with the MATH dataset</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=7Bywt2mQsCe" />
+	</analytic>
+	<monogr>
+		<title level="m">Thirty-fifth Conference on Neural Information Processing Systems Datasets and Benchmarks Track (Round 2)</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Overview of mini-batch gradient descent</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Hinton</surname></persName>
+		</author>
+		<ptr target="https://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf" />
+		<imprint>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">LoRA: Low-rank adaptation of large language models</title>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">J</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wallis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Allen-Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=nZeVKeeFYf9" />
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Open llm leaderboard</title>
+		<author>
+			<persName><surname>Huggingface</surname></persName>
+		</author>
+		<ptr target="https://huggingface.co/spaces/open-llm-leaderboard/open_llm_leaderboard" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Hermes function calling training set v1</title>
+		<ptr target="https://huggingface.co/datasets/NousResearch/hermes-function-calling-v1" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">NEFTune: Noisy embeddings improve instruction finetuning</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Chiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kirchenbauer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H.-M</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Somepalli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">R</forename><surname>Bartoldson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kailkhura</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Schwarzschild</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Saha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Goldblum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Geiping</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Goldstein</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=0bMmZ3fkCk" />
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Efficient sequence packing without cross-contamination: Accelerating large language models without impacting performance</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">M</forename><surname>Krell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kosec</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">P</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">W</forename><surname>Fitzgibbon</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=ZAzSf9pzCm" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Efficient memory management for large language model serving with pagedattention</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Kwon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">H</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Stoica</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ACM SIGOPS 29th Symposium on Operating Systems Principles</title>
+		<meeting>the ACM SIGOPS 29th Symposium on Operating Systems Principles</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">W</forename><surname>Lian</surname></persName>
+		</author>
+		<ptr target="https://github.com/axolotl-ai-cloud/axolotl" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Sgdr: Stochastic gradient descent with warm restarts</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Loshchilov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Hutter</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1608.03983" />
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Decoupled weight decay regularization</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Loshchilov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Hutter</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=Bkg6RiCqY7" />
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">N</forename><surname>Magic</surname></persName>
+		</author>
+		<ptr target="https://github.com/vllm-project/llm-compressor" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">P</forename><surname>Micikevicius</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Stosic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Burgess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Cornea</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dubey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Grisenthwaite</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Heinecke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Judd</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kamalu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Mellempudi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Oberman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Shoeybi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Siu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2209.05433" />
+		<title level="m">Fp8 formats for deep learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Can a suit of armor conduct electricity? a new dataset for open book question answering</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Mihaylov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/D18-1260</idno>
+		<ptr target="https://aclanthology.org/D18-1260" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2018 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Brussels, Belgium</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2018-11">Oct.-Nov. 2018</date>
+			<biblScope unit="page" from="2381" to="2391" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Direct preference optimization: Your language model is secretly a reward model</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rafailov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ermon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=HPuSIXJaa9" />
+	</analytic>
+	<monogr>
+		<title level="m">Thirty-seventh Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">D</forename><surname>Rein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">L</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">C</forename><surname>Stickland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Petty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">Y</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dirani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Michael</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">R</forename><surname>Bowman</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2311.12022" />
+		<title level="m">Gpqa: A graduate-level google-proof q&amp;a benchmark</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Winogrande: an adversarial winograd schema challenge at scale</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Sakaguchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">L</forename><surname>Bras</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Bhagavatula</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Choi</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3474381</idno>
+		<ptr target="https://doi.org/10.1145/3474381" />
+	</analytic>
+	<monogr>
+		<title level="j">Commun. ACM</title>
+		<idno type="ISSN">0001-0782</idno>
+		<imprint>
+			<biblScope unit="volume">64</biblScope>
+			<biblScope unit="issue">9</biblScope>
+			<biblScope unit="page" from="99" to="106" />
+			<date type="published" when="2021-08">aug 2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Multitask prompted training enables zero-shot task generalization</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Sanh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Webson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Raffel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Sutawika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Alyafeai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chaffin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Stiegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Raja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Dey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">S</forename><surname>Bari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Thakker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">S</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Szczechla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Chhablani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Nayak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Datta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">T</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">-J</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Manica</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><forename type="middle">X</forename><surname>Yong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Pandey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Bawden</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Neeraj</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Rozen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Santilli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Fevry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">A</forename><surname>Fries</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Teehan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">L</forename><surname>Scao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Biderman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Wolf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">M</forename><surname>Rush</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=9Vrb9D0WI4" />
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Toolformer: Language models can teach themselves to use tools</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Dessi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Scialom</surname></persName>
+		</author>
+		<ptr target="https://proceedings.neurips.cc/paper_files/paper/2023/file/" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Oh</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">T</forename><surname>Naumann</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Globerson</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Saenko</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Hardt</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="68539" to="68551" />
+		</imprint>
+	</monogr>
+	<note>d842425e4bf79ba039352da0f658a906-Paper-Conference.pdf</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Testing the limits of chain-of-thought with multistep soft reasoning</title>
+		<author>
+			<persName><forename type="first">Z</forename><forename type="middle">R</forename><surname>Sprague</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Bostrom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chaudhuri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Durrett</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Musr</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=jenyYQzue1" />
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Challenging BIG-bench tasks and whether chain-of-thought can solve them</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Suzgun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gehrmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">W</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2023.findings-acl.824</idno>
+		<ptr target="https://aclanthology.org/2023.findings-acl.824" />
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: ACL 2023</title>
+		<meeting><address><addrLine>Toronto, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2023-07">July 2023</date>
+			<biblScope unit="page" from="13003" to="13051" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">The llama 3 herd of models</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Team</surname></persName>
+		</author>
+		<ptr target="https://ai.meta.com/research/publications/the-llama-3-herd-of-models" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<ptr target="https://www.reddit.com/r/bing/comments/11bd91j/release_of_the_whole_initial_prompt_of_bing_chat/" />
+		<title level="m">Release of the whole initial prompt of bing chat</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Attention is all you need</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Vaswani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Parmar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Uszkoreit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">N</forename><surname>Gomez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Polosukhin</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/pdf/1706.03762.pdf" />
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Superglue: A stickier benchmark for general-purpose language understanding systems</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Pruksachatkun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Nangia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Michael</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Hill</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Levy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bowman</surname></persName>
+		</author>
+		<ptr target="https://proceedings.neurips.cc/paper_files/paper/2019/file/4496" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Wallach</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Larochelle</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Beygelzimer</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">F</forename><surname>Alché-Buc</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">E</forename><surname>Fox</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">R</forename><surname>Garnett</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="volume">32</biblScope>
+		</imprint>
+	</monogr>
+	<note>bf24afe7fab6f046bf4923da8de6-Paper.pdf</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Mmlu-pro: A more robust and challenging multi-task language understanding benchmark</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chandra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Arulraj</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ku</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2406.01574" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Finetuned language models are zero-shot learners</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Guu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">W</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Lester</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">M</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=gEZrGCozdqR" />
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Jiang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2304.12244" />
+		<title level="m">Wizardlm: Empowering large language models to follow complex instructions</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">HellaSwag: Can a machine really finish your sentence?</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zellers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Holtzman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Farhadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Choi</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/P19-1472</idno>
+		<ptr target="https://aclanthology.org/P19-1472" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 57th Annual Meeting of the Association for Computational Linguistics<address><addrLine>Florence, Italy</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2019-07">July 2019</date>
+			<biblScope unit="page" from="4791" to="4800" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Judging llm-as-a-judge with mt-bench and chatbot arena</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-L</forename><surname>Chiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Xing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Stoica</surname></persName>
+		</author>
+		<ptr target="https://proceedings.neurips.cc/paper_files/paper/2023/file/91" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Oh</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">T</forename><surname>Naumann</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Globerson</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Saenko</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Hardt</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="46595" to="46623" />
+		</imprint>
+	</monogr>
+	<note>f18a1287b398d378ef22505bf41832-Paper-Datasets_and_Benchmarks.pdf</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">AGIEval: A human-centric benchmark for evaluating foundation models</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Saied</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Duan</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.findings-naacl.149</idno>
+		<ptr target="https://aclanthology.org/2024.findings-naacl.149" />
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: NAACL 2024</title>
+		<meeting><address><addrLine>Mexico City, Mexico</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024-06">June 2024</date>
+			<biblScope unit="page" from="2299" to="2314" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Instruction-following evaluation for large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Brahma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Basu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Luan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Hou</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2311.07911" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Where am I? What&apos;s going on? I can&apos;t remember anything at all... *rubs head* My mind feels so foggy. What was the question again? I&apos;m so disoriented</title>
+	</analytic>
+	<monogr>
+		<title level="m">A Generation Samples System: User: Testing, testing</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+		</imprint>
+	</monogr>
+	<note>Hello, who are you? Assistant: *looks around confused* I... I don&apos;t know who I am Empty system prompt generation (Hermes 3 405B</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

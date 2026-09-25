@@ -1,0 +1,1829 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Learning to Use Tools via Cooperative and Interactive Agents with Large Language Models</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Zhengliang</forename><surname>Shi</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Shandong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Shen</forename><surname>Gao</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Electronic Science</orgName>
+								<address>
+									<country>Technology of China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xiuyi</forename><surname>Chen</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">Baidu Inc</orgName>
+								<address>
+									<settlement>Beijing</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yue</forename><surname>Feng</surname></persName>
+							<affiliation key="aff3">
+								<orgName type="institution">University of Birmingham</orgName>
+								<address>
+									<settlement>Birmingham</settlement>
+									<country key="GB">UK</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Lingyong</forename><surname>Yan</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">Baidu Inc</orgName>
+								<address>
+									<settlement>Beijing</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Haibo</forename><surname>Shi</surname></persName>
+							<email>shizhl@mail.sdu.edu.cn</email>
+							<affiliation key="aff2">
+								<orgName type="institution">Baidu Inc</orgName>
+								<address>
+									<settlement>Beijing</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Dawei</forename><surname>Yin</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">Baidu Inc</orgName>
+								<address>
+									<settlement>Beijing</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Pengjie</forename><surname>Ren</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Shandong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Suzan</forename><surname>Verberne</surname></persName>
+							<affiliation key="aff4">
+								<orgName type="institution">Leiden University</orgName>
+								<address>
+									<settlement>Leiden</settlement>
+									<country key="NL">The Netherlands</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhaochun</forename><surname>Ren</surname></persName>
+							<email>z.ren@liacs.leidenuniv.nl</email>
+							<affiliation key="aff4">
+								<orgName type="institution">Leiden University</orgName>
+								<address>
+									<settlement>Leiden</settlement>
+									<country key="NL">The Netherlands</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Learning to Use Tools via Cooperative and Interactive Agents with Large Language Models</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">BE1C8A93CA00D773A8809B7D06C42E3F</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:39+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Tool learning empowers large language models (LLMs) as agents to use external tools and extend their utility. Existing methods employ one single LLM-based agent to iteratively select and execute tools, thereafter incorporating execution results into the next action prediction. Despite their progress, these methods suffer from performance degradation when addressing practical tasks due to: (1) the pre-defined pipeline with restricted flexibility to calibrate incorrect actions, and (2) the struggle to adapt a general LLM-based agent to perform a variety of specialized actions. To mitigate these problems, we propose ConAgents, a Cooperative and interactive Agents framework, which coordinates three specialized agents for tool selection, tool execution, and action calibration separately. ConAgents introduces two communication protocols to enable the flexible cooperation of agents. To effectively generalize the ConAgents into open-source models, we also propose specialized action distillation, enhancing their ability to perform specialized actions in our framework. Our extensive experiments on three datasets show that the LLMs, when equipped with the ConAgents, outperform baselines with substantial improvement (i.e., up to 14% higher success rate).</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="595.276" lry="841.89"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Although large language models (LLMs) have achieved remarkable performance in a broad range of natural language processing tasks <ref type="bibr">(Wang et al., 2023c;</ref><ref type="bibr" target="#b1">Chang et al., 2023)</ref>, they still encounter inherent limitations such as out-of-date information <ref type="bibr">(Qin et al., 2023b;</ref><ref type="bibr" target="#b14">Mallen et al., 2023)</ref>. Tool learning is proposed to equip LLMs with various auxiliary resources, e.g., a search engine <ref type="bibr">(Qin et al., 2023a;</ref><ref type="bibr" target="#b16">Nakano et al., 2021)</ref> or a calculator <ref type="bibr" target="#b25">(Schick et al., 2023;</ref><ref type="bibr">Gao et al.</ref>, 2023a), which empower them as tool-use agents and improve their proficiency in tackling concrete complex tasks. As shown in Figure <ref type="figure" target="#fig_0">1</ref>(a), most previous studies allow the LLM-based agent to interleave multiple actions in a pre-defined order to interact with tools <ref type="bibr" target="#b5">(Yao et al., 2023;</ref><ref type="bibr">Yang et al., 2023b;</ref><ref type="bibr" target="#b44">Zhuang et al., 2023)</ref>. The agent first breaks down the task and plans a series of tools in a stepby-step manner. For each step, the agent executes the tools by passing arguments and continuously incorporates useful intermediates into the next action prediction. Despite the advancement of existing methods, they face two challenges in practice. First, most of them alternate the planning and execution with a pre-defined pipeline <ref type="bibr">(Yang et al., 2023b;</ref><ref type="bibr" target="#b31">Song et al., 2023)</ref>, which inevitably constrains their flexibility in handling exceptional errors that frequently occur during a tool-use workflow <ref type="bibr" target="#b29">(Shi et al., 2024;</ref><ref type="bibr">Wang et al., 2023b;</ref><ref type="bibr" target="#b19">Prasad et al., 2023)</ref>. When failing to invoke tools, it is crucial to enable agents to revise their incorrect actions instead of directly shifting to the next step with the error response of previous steps. Second, it is struggling to adapt a single LLM-based agent to learn a variety of specialized actions in solving a task <ref type="bibr" target="#b4">(Dziri et al., 2023;</ref><ref type="bibr">Yin et al., 2023)</ref>. Solving a practical task involves varied actions with substantial differences, e.g., planning, execution, and reflection, drawing upon different facets of the LLMs <ref type="bibr" target="#b26">(Shen et al., 2024;</ref><ref type="bibr" target="#b21">Qiao et al., 2024)</ref>. Therefore, developing effective agent flow and adapting tool-use models to solve practical tasks remains a challenging research topic.</p><p>In this work, we propose ConAgents, a Cooperative and interative Agents framework for tool learning tasks.</p><p>As illustrated in Figure <ref type="figure" target="#fig_0">1</ref>, ConAgents decomposes the overall tool-use workflow using three specialized agents: Grounding, Execution, and Review agents. The grounding agent reasons the task description and grounds it into planning by specifying which tool to use. The execution agent follows the planning to execute the selected tool by generating executable code. The review agent reviews the incorrectness in planning or execution, providing feedback for revision. To enable the dynamic cooperation of these specialized agents, we propose two communication protocols, including automatic and adaptive interaction. In the process of automatic interaction, the review agent provides real-time reviews to calibrate incorrect actions. Thus, the agent flow alternates between the planning-review and execution-review phases as shown in Figure <ref type="figure" target="#fig_0">1</ref>.</p><p>In the process of adaptive interaction, the review agent only provides feedback when exceptional errors are captured while executing the tools.</p><p>For a comprehensive evaluation, we conduct experiments on two benchmarks, i.e., ToolBench and RestBench, using various LLMs as backbones. We find that ConAgents outperforms the state-ofthe-art baseline with both communication protocols (6% improvement in Success Rate on average).</p><p>Despite closed-source LLMs performing well with our framework, we find the open-source models may struggle with the modulized agent flow. Thus, we propose an approach called specialized action distillation (SPAN), enhancing the performance of open-source models in ConAgents. We heuristically sample 2,919 highquality tasks from the ToolBench <ref type="bibr" target="#b24">(Qin et al., 2024)</ref> training set, and cluster them based on their similarity, retaining only one task in each cluster to avoid duplication. For each task, we guide the GPT-4 to generate solutions using ConAgents, and reorganize them into actions tailored to specialized agent functionalities in ConAgents. These actions are separately distilled into different student models through instruction tuning. We employ parameterefficient tuning techniques, i.e., <ref type="bibr">LoRA (Hu et al., 2021)</ref>, further extending our distillation method into low-resource scenarios. Experiment results show that our distillation method empowers opensource models with strong performance with only 500 training examples.</p><p>Our contributions are summarized as follows: <ref type="table">(1</ref>) We propose ConAgents, a cooperative and interactive agents framework, for tool learning tasks. ConAgents coordinates three specialized agents with two communication protocols to solve a complex task. (2) We propose specialized action distillation (SPAN), which more effectively enables open-source models to work with the ConAgents; (3) Both automatic and human evaluation conducted on two benchmarks validate the superiority of ConAgents.</p><p>2 Related Work LLMs for tool learning. Enhancing LLMs with external tools has been proven a promising method for solving practical tasks <ref type="bibr" target="#b0">(Bran et al., 2023;</ref><ref type="bibr" target="#b25">Qu et al., 2024;</ref><ref type="bibr">Wang et al., 2024b)</ref>. Previous works empower a tool-learning agent typically by supervised fine-tuning <ref type="bibr" target="#b18">(Patil et al., 2023;</ref><ref type="bibr">Yang et al., 2023a;</ref><ref type="bibr">Gao et al., 2023b)</ref> or prompt learning <ref type="bibr" target="#b13">(Lu et al., 2023;</ref><ref type="bibr" target="#b27">Shen et al., 2023)</ref>. Specifically, the former trains LLMs on tool-use dataset <ref type="bibr">(Wang et al., 2023c)</ref>, teaching LLMs how to use tools from the data. The latter directly demonstrates tool usages to LLM using in-context examples <ref type="bibr" target="#b17">(Paranjape et al., 2023;</ref><ref type="bibr" target="#b9">Kim et al., 2023)</ref>. However, solving complex tasks with tools involves various actions, e.g., deciding which tools to use, what arguments to pass, and how to utilize the results <ref type="bibr" target="#b25">(Schick et al., 2023;</ref><ref type="bibr" target="#b21">Qiao et al., 2024)</ref>. Compelling one single agent to learn all abilities places even greater pressure on it <ref type="bibr">(Yin et al., 2023;</ref><ref type="bibr" target="#b19">Prasad et al., 2023)</ref>. In addition, as the tasks become complex, LLMs-based agents struggle to incorporate lengthy task-solving contexts to predict the next actions correctly due to their limited working memory <ref type="bibr" target="#b28">(Shi et al., 2023)</ref>. In contrast, our proposed ConAgents coordinates three specialized agents, generating a solution through agent cooperation.</p><p>Multi-agent cooperation. Synergizing multiple agents has demonstrated strong performance on a variety of tasks <ref type="bibr" target="#b12">(Liu et al., 2023;</ref><ref type="bibr" target="#b32">Sun et al., 2023;</ref><ref type="bibr" target="#b43">Zhang et al., 2023)</ref>, enhancing the capabilities of individual agents <ref type="bibr" target="#b33">(Talebirad and Nadiri, 2023;</ref><ref type="bibr" target="#b15">Mohtashami et al., 2023;</ref><ref type="bibr" target="#b20">Qian et al., 2023)</ref>. Recent studies take multiple agents into a debate for a fixed number of rounds <ref type="bibr">(Wang et al., 2023a;</ref><ref type="bibr" target="#b11">Liang et al., 2023)</ref>, boosting their factuality <ref type="bibr" target="#b2">(Cohen et al., 2023)</ref> and reasoning abilities <ref type="bibr" target="#b3">(Du et al., 2023;</ref><ref type="bibr" target="#b5">Fu et al., 2023)</ref>. In the tool learning tasks, recent work separately implements the task planning and execution with different agents, thereby reducing the workload of a single agent <ref type="bibr" target="#b26">(Shen et al., 2024;</ref><ref type="bibr" target="#b31">Song et al., 2023;</ref><ref type="bibr" target="#b21">Qiao et al., 2024)</ref>. Despite their progress, their agent flow is simplified into a predefined pipeline <ref type="bibr" target="#b19">(Prasad et al., 2023)</ref>, struggling to handle exceptional errors that frequently occur during the tool-use workflows <ref type="bibr" target="#b44">(Zhuang et al., 2023;</ref><ref type="bibr">Wang et al., 2023b)</ref>. In our work, we propose two communication protocols, which enable the action calibrations and dynamic cooperation of agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Methodology</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Overall Framework</head><p>Our cooperative framework, ConAgents, is proposed to enable the dynamic cooperation of agents to solve complex tasks. As shown in Figure <ref type="figure" target="#fig_1">2</ref>, ConAgents streamlines and modularizes the workflow of tool learning tasks into a grounding agent M G , execution agent M E , and review agent M R . These agents are implemented with different system prompt or learnable parameters. Given a complex task x, the M G first decomposes x into simpler sub-tasks and generates tool-use planning t in a step-by-step manner. For each step, the M E executes the selected tool by writing executable code following the planning t. The execution result r is then incorporated into the context of the grounding agent M G to predict planning in the next iteration. The M R is employed to simulate an expert to provide feedback to agent M G and M E , guiding them to revise their incorrect planning or execution. To coordinate these three specialized agents, we explore and analyze two communication protocols, including the automatic and adaptive interactions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Specialized Agents</head><p>Grounding Agent. The grounding agent is designed to break down an input task and generate a series of tool-use planing. At ith iteration, the grounding agent generates planning t i on the condition of the task x and current trajectory H i = {(t j , r j )|j &lt; i}, consisting of the accumulation of previous planning t &lt;i and results r &lt;i . It can be formulated as:</p><formula xml:id="formula_0">t i = M G (x, S, H i ),<label>(1)</label></formula><p>where t i contains a tool selected from the provided toolset S and necessary arguments to invoke the tool, such as "Use the Bing search to find a movie shown on Dec 24, 2023".</p><p>Execution Agent. Following the generated planning t i , the execution agent M E executes the selected tool by generating executable code c with the assistance of the tool documentation d. This process can be formulated as:</p><formula xml:id="formula_1">c i = M E (d, t i ).</formula><p>The execution result r i is obtained by running the generated code c i to request the data from the backend servers of tools, denoted as r i = Execute(c i ). When the tool fails to execute, the r i indicates an error message as a failure signal.</p><p>When the tool executes successfully, the result r i contains the targeted information in response to the planning t i .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Review Agent.</head><p>Incorrect planning and execution are frequently observed during the tool-use workflow. The review agent M R is employed as an expert, providing feedback to agent M G and M E for revision. Specifically, if the planning generated by M G is vague or selects a non-existing tool, the agent M R generates verbal feedback to instruct the M G to reformulate planning. It can be formulated as:</p><formula xml:id="formula_2">f R→G = M R (x, S, t i )<label>(2)</label></formula><p>Similarly, if M E hallucinates generating a wrong program to execute the tool, the agent M R reviews execution results (or errors) and re-checks the tool documentation, providing instructions for calibration:</p><formula xml:id="formula_3">f R→E = M R (x, d, c i , r i )<label>(3)</label></formula><p>We denote the maximum turns of interaction between agent M R and agent M G (or M E ) is denoted as α (or β). Their communication protocol and action flow are explained in § 3.3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Agent communication protocols</head><p>We propose two agent communication protocols, including automatic and adaptive interaction.</p><p>Question: Can you recommend the latest TV series released on December 24, 2023, directed by Lilly Wachowski?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Grounding Agent</head><p>Review Agent </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Automatic interaction.</head><p>As illustrated in Figure <ref type="figure" target="#fig_1">2</ref>, our automatic interaction alternates between planning-review and execution-review phases. For the ith step, it starts with the interaction between the agent M G and M R until a correct planning t i is determined or up to the maximum turns α. Formally, it can be formulated as:</p><formula xml:id="formula_4">t j i = M G (x, S, H i , {t &lt;j i , f &lt;j R→G } planning calibration )<label>(4)</label></formula><p>Here, j indicates jth interaction of two agents. Following the planning t, the agent M E generates executable programs to execute the selected tool and calibrates the incorrect result r with the feedback of agent M R for up to β turns. This process can be formulated as:</p><formula xml:id="formula_5">c j i = M E (t i , d, {c &lt;j i , f &lt;j R→E } execution calibration ) (<label>5</label></formula><formula xml:id="formula_6">)</formula><p>The calibrated result is then incorporated into the context of M G for the next planning generation.</p><p>Adaptive interaction. In our adaptive interaction strategy, the agent flow primarily alternates from (1) generating tool-use planning by agent M G and</p><p>(2) generating execution code by agent M E , in a step-by-step manner. The review agent M R is adaptively triggered to provide feedback only when the generated code fails to execute correctly.</p><p>Specifically, a runtime error can be caused by either unfeasible planning or coding faulty. Thus, the agent M R first reviews the generated planning and code, routines the errors to agent M G or M E accordingly, and provides feedback for revision.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Specialization by Agent Distillation</head><p>Our initial experiment shows that powerful LLMs such as GPT-4, achieve promising results when equipped with our framework. However, these model are often considered black boxes <ref type="bibr">(Qin et al., 2023a;</ref><ref type="bibr">Gao et al., 2023b)</ref> with potential privacy issues. Thus, we aim to adapt our framework to open-source models. We propose specialized action distillation (SPAN), which distills the tasksolving trajectory of powerful commercial LLMs into different open-source LLM agents tailored to specific functionalities in ConAgents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Synthesize the Training Dataset</head><p>Our distillation method collects the task-solving trajectory of specialized agents simulated by GPT-4, in ConAgents ( § 3.1). To achieve this, we first sample tasks from ToolBench <ref type="bibr" target="#b24">(Qin et al., 2024)</ref>, which contains nearly 200k practical tasks across 3,451 tools. We select 2,919 tasks using various heuristic strategies (see Appendix A.2 for more details). Each task x is paired with a list of relevant tools. Since we find that some tasks in Statistic # The data scale 500 # The average tokens of input task 52.48 # The average number of candidate tools 20 # The average number of ground truth tools per task 3.39 # The average turns of planning-review interaction 4.62 # The average turns of execution-review interaction 5.21</p><p>Table <ref type="table">1</ref>: The statistics of our synthetic dataset in our specialized action distillation method.</p><p>ToolBench are very similar to each other, we cluster them based on the semantic similarities between task descriptions and retain one instance for each cluster. Next, we supplement each of these selected tasks with a detailed solution. Specifically, we separately implement our grounding, execution, and review agent with GPT-4, and coordinate them using the proposed automatic communication protocol ( § 3.3) to generate solutions. Finally, we synthesize a dataset with 500 diverse examples. Each example contains a task x, a candidate toolset S, and the task-solving trajectory of three agents. The statistics of our synthetic dataset are provided in Table <ref type="table">1</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Agent Training</head><p>Due to the large number of parameters of the LLM, we employ a parameter-efficient tuning technique (i.e., LoRa <ref type="bibr" target="#b8">(Hu et al., 2021)</ref>) to train each specialized agent separately. The objective is to optimize the delta parameters ∆θ of the LLM θ to minimize the loss function.</p><p>We reorganize the dataset according to the agents' functionality ( § 3.1), thereby distilling specific abilities into different student models. Formally, given a task x, in the ith step, the H i contains historical planning and execution results. We train the agent M G to generate the ith tool-use planning t i on the condition of H i and revise its incorrect planning following the review from agent M R ( Eq. 4 ). We train the agent M E to generate programs c for tool execution following the generated planning t and feedback of agent M R ( Eq. 5 ). Similarly, the agent M R are trained to provide feedback as Eq. <ref type="formula" target="#formula_2">2 and Eq. 3 .</ref>We apply the standard language modeling loss for the optimization. More details and formulations can be found in Appendix A.1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Experimental Setup</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Datasets and Evaluation Metrics</head><p>Datasets. We conduct experiments on two well established benchmarks, i.e., RestBench <ref type="bibr" target="#b31">(Song et al., 2023)</ref> and Toolbench <ref type="bibr" target="#b24">(Qin et al., 2024)</ref>. The RestBench consists of two subsets, including: (1) TMDB, a high-quality human annotated dataset consisting of 54 movie-related tools; and (2) Spotify, a dataset with 40 music-related tools. The Toolbench contains various practical tasks across diverse scenarios. We provide more details for these datasets in Appendix A.3. Evaluation metrics. Following Yang <ref type="formula">et al.  (2023a); Gao et al. (2023b)</ref>, we use two evaluation metrics: (1) Success Rate (Success%) measuring the proportion of successful query completions, and (2) Correct Path Rate (Path%) calculating the F1 score between the generated tool sequence and ground-truth tool sequence. We also conduct a human evaluation, in which three well-educated volunteers are invited to evaluate 30 randomly sampled cases with a three-scale rating in two aspects: (1) Executability (Exec): whether multiple tools are invoked in a correct logical order; and (2) Utility: whether the execution results of tools can be used to generate an answer.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Baselines</head><p>We compare our method with agent-based tool learning methods, including: (1) Chameleon <ref type="bibr" target="#b13">(Lu et al., 2023)</ref>, an LLM-based agent that directly generates multi-step plans for tool use and then sequentially executes the plan; (2) ReAct <ref type="bibr" target="#b5">(Yao et al., 2023)</ref>, which prompts LLM to generate the chainof-thought and actions in an interleaved manner.;</p><p>(3) CodeAct <ref type="bibr">(Wang et al., 2024a)</ref>, which allows the LLM to generate executable code snippets as actions to use tools; (4) ToolLLM (DFSDT, <ref type="bibr" target="#b24">Qin et al., 2024)</ref>, which enhances LLMs with the Depth First Search-based Decision Tree (DFSDT) to select tools to solve a task. For further comparison, Since our ConAgents coordinates three specialized agents, we also establish two baselines, i.e., ReAct@N and ToolLLM@N, which are up to N times runs of their vanilla method (ReAct or ToolLLM) until an input task is completed.</p><p>We also consider baselines with multi-agent architecture, including (1) RestGPT <ref type="bibr" target="#b31">(Song et al., 2023)</ref>: which consists of a planning module, a tool selector, an executor, and a response parsing module; (2) Reflexion <ref type="bibr" target="#b30">(Shinn et al., 2023)</ref>, which</p><p>Method RestBench-TMDB RestBench-Spotify ToolBench Success Rate Path% Success Rate Path% Success Rate Path% gpt-3.5-turbo ReAct (Yao et al., 2023) 40.00 71.19 51.28 60.35 39.39 65.04 Chameleon <ref type="bibr" target="#b13">(Lu et al., 2023)</ref> 63.00 66.10 56.20 64.55 37.44 67.55 CodeAct <ref type="bibr">(Wang et al., 2024a)</ref> 63.00 80.91 54.30 76.64 --ToolLLM (DFSDT, <ref type="bibr" target="#b24">Qin et al., 2024)</ref> 68.00 76.77 61.40 74.77 66.39 86.43 Reflexion <ref type="bibr" target="#b30">(Shinn et al., 2023)</ref> 53.00 55.00 49.10 50.90 -α-UMi <ref type="bibr" target="#b26">(Shen et al., 2024)</ref> 62.00 70.23 66.74 70.27 67.55 78.37 RestGPT <ref type="bibr" target="#b31">(Song et al., 2023)</ref> 65 Table 3: We employ the Mixtral-8x7B as the backbone LLM of for our method and baselines. The Vanilla and Distilled indicate enable our framework by prompting and our action distillation, respectively.</p><p>employs an LLM for task execution and uses another LLM to verbally reflect on task feedback signals; and (3) α-UMi <ref type="bibr" target="#b26">(Shen et al., 2024)</ref>, which consists of a planner, an executor, and an answer generator.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Implementation Details</head><p>We use gpt-3.5-turbo 1 from OpenAI as the LLM backbone for each agent in our method and all baselines. We instruct the three agents to perform specific actions with different system prompts. The decoding temperature is set to 0 for the most deterministic generation. We also repeat the experiment with an open-source model Mistral-1 <ref type="url" target="https://openai.com/chatgpt">https://openai.com/chatgpt</ref> 8x7B 2 for further comparison. In our agent communication ( § 3.3), we set the maximum iteration of interactions α = 3 and β = 3, respectively. For each sample in the test set, we provide all the baselines with the same candidate toolset for a fair comparison, which contains the required tools and ten randomly sampled tools.</p><p>Our action distillation separately trains three Mistral-8x7B using the corresponding optimization objectives in § 4.2 with the learning rate of 5×10 -5 . The training of our model can be done within 4 hours with 3 NVIDIA A800-PCIE-80GB GPUs using LoRA <ref type="bibr" target="#b8">(Hu et al., 2021)</ref>. Table <ref type="table">4</ref>: The ablation study on two datasets with gpt-3.5-turbo as backbone. See § 6.3 for details proposed two communication protocols enable the dynamic interaction of agents, which is more flexible to handle exception errors.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Results and Analysis</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.1">Experimental Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Overall performance.</head><p>Performance with the open-source LLM. We further evaluate our ConAgents by swapping the backbone LLM with Mistral-8x7B and repeating the experiment under the same conditions. As shown in Table <ref type="table">3</ref>, we implement our framework in two ways with Mistral-8x7B: (1) directly prompting (w/ Auto and w/ Ada); (2) tuning with our proposed action distillation (w/ Auto † and w/ Ada † ). We observe that directly prompting Mistral-8x7B with ConAgents yields better performance than baselines. The action distillation further improves overall performance substantially, such as pushing the Success Rate from 47.00 to 51.00 in the TMDB dataset. These results further prove the effectiveness of our cooperative framework.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.2">Human Evaluation</head><p>Table <ref type="table">5</ref> shows the results of the human evaluation. We find that ConAgents achieves the best results in the Executability aspect with 0.08~0.12 improvement. These results further validate the necessity of agent specialization and cooperation. The overall Kappa statistics for Executability and Utility are 0.75 and 0.71, illustrating substantial agreement <ref type="bibr" target="#b10">(Landis and Koch, 1977)</ref> among the annotators.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.3">Ablation Study</head><p>To better understand the impact of different components of our method, we make the following modifications to the architecture and measure the effect.</p><p>-w/o M R → M G . We remove the interaction between agent M R and M G in our framework. As shown in</p><p>Table 4, the Success Rate has a average 2.50 decline, while the Correct Path Rate has a 3.05 average decline on two datasets. This results validate the necessity of feedback of M R which can instruct the M G to revise incorrect planning. Method TMDB Spotify Exec Utility Exec Utility gpt-3.5-turbo ReAct 1.89 1.93 1.77 2.10 ToolLLM 2.26 1.87 2.26 2.30 RestGPT 2.35 2.45 2.30 2.40 Ours w/ Auto 2.47 2.56 2.43 2.50 Ours w/ Ada 2.43 2.50 2.38 2.45 Table 5: Human evaluation on Executability (Exec) and Correct Rate of Parsing (Parsing).</p><p>-w/o M R → M E . We remove the interaction between agent M R and M E in our framework when programming to execute tools. As shown in Table <ref type="table">4</ref>, the Success Rate suffers from obvious decrease in both two datasets. These results indicate that the agent M R can review the generated programs of agent M E and provide useful instruction for calibrating errors.</p><p>-w/ static cooperation. We implement the M R with a code compiler, which is triggered to provide static feedback only when runtime errors are raised during executing tools by agent M E . This allows us to compare our framework with a static algorithm for agent cooperation. Table <ref type="table">4</ref> present the results, where we observe a 4.12 average decrease in the Success Rate, e.g., dropping from 79.00 to 75.00 on the TMDB dataset. The same trend is also observed in the Correct Path Rate, e.g., a 2.5 decrease on the Spotify dataset. These results indicate the superiority of our dynamic agent cooperation framework.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.4">Case Study</head><p>We conduct the case studies and find that our cooperative agent framework is more effective at executing various tools and handle exceptional errors in solving tasks. We also provide examples to explain the detailed process of agent cooperation.</p><p>The details can be found in Appendix A.5.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Discussion</head><p>Qualitative analysis for the maximum number of interactions. In our automatic agent interaction, agents M G and M E revise their actions following the feedback of agent M R for up to α and β turns, respectively. To further explore the impact of the interaction times on overall performance, we conduct a quantitative and qualitative analysis by varying α and β from 1</p><formula xml:id="formula_7">1</formula><p>2 3 4 5 Iteration number 50 58 66 74 82 Success Rate : 1 5, =3 1 2 3 4 5 Iteration number 50 56 62 68 75 Success Rate : 1 5, = 3 Ours Ours w/o Iteration Figure 3: The qualitative analysis for the maximum interaction turns α and β in our agent communication protocols (Section 3.3) on the TMDB dataset.</p><p>to 5. Then we evaluate our framework using the RestBench-TMDB dataset with the same settings as in Table <ref type="table" target="#tab_0">2</ref>. As illustrated in Figure <ref type="figure">3</ref>, we find an increasing Success Rate when the maximum iteration turns shifts from 1 to 3. In addition, a relatively stable trend is observed when the α and β keep increasing (from 3 to 5), which indicates the agents can correct most errors within 3 turns.</p><p>We also look at the poorly performing cases where we find that since the planning from agent M G is typically open-ended, the M R struggles to detect all the incorrect planning. For example, the planning may be plausible and clear but lacks the required arguments to execute tools, thus resulting in a failure of M E in subsequent steps.</p><p>Qualitative analysis for the efficiency of inference. Due to the intensive inference cost of LLMs-based agents, we further explore the efficiency of our ConAgents. To explain more intuitively, we compare the token consumption for the ConAgents and baselines using the RestBench-TMDB dataset with the same settings as in Table <ref type="table" target="#tab_0">2</ref>.</p><p>As illustrated in Figure <ref type="figure" target="#fig_2">4</ref>, we find that although our framework achieves better performance, we spend fewer tokens compared with strong baselines such as RestGPT and ToolLLM@3. The reason is that the cooperative framework ConAgents enables each agent to perform specific tasks more efficiently, reducing the length exploration trajectory by the single agent.</p><p>The quality of generated review. We further analyze the quality of reviews given by review agent M R . Specifically, we randomly sample 50 task-solving trajectories in Table <ref type="table" target="#tab_0">2</ref> (w/ Auto) manually analyze the review of review agent. For most tasks, we find that the agent M R can assist agent M E to revise its generated code or provides useful reviews for the planning generated by agent M G , such as only select tools from given list. In addition, we find that in less than 5% of tasks, the agent M R hallucinates giving an incorrect review, indicating its reliability.</p><p>Runtime consistency. Considering the nondeterministic nature of LLM generation, we analyze the consistency of our framework. We repeat our method multiple times with the same settings as in Table <ref type="table" target="#tab_0">2</ref>. The statistical significance of differences observed between the performance of two runs is tested using a two-tailed paired ttest. We find no significant difference between the results of two randomly conducted experiments (significance level α = 0.05).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8">Conclusions</head><p>We present a cooperative and interactive agents framework (ConAgents) for tool learning, which diverges from previous work by allowing the cooperation of agents to solve complex tasks. The ConAgents first modularizes the overall workflow with three specialized agents for tool planning, tool execution, and action calibration, respectively. Then, two communication protocols are introduced to enable the dynamic cooperation of these agents.</p><p>To generalize our framework to open-source models, we propose specialized action distillation, enhancing the models' capability to perform specific actions. Extensive experiments conducted on three datasets demonstrate the superiority of our ConAgents, e.g., pushing the success rate to 77.00 with 13.2% point improvement. Our future work includes: (1) extending our method to agents empowered by multi-modal foundation models, incorporating image and sound; (2) coordinating the cooperation between strong and weak agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitations</head><p>The main limitation is that our LLM-based agent is limited when perceiving multi-modal tasks. When executing the tools, we represent the image and speech input with url, following previous works.</p><p>In the future, we plan to extend our method to agents empowered by multi-modal foundation models.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Ethics Statement</head><p>The paper proposes a cooperative agent framework, synergizing specialized agents to solve complex tasks. The modularized design enables the agents to utilize feedback from the tool environment to calibrate themselves adaptively. In addition to the use of state-of-the-art commercial LLMs, we have experimented with an open-source LLM, for reproducibility reasons and to allow the use of our method in lower-resource contexts. All the tools used in our experiment are provided by open-source platforms, including TMDB, Spotify, and Rapid API, thus ensuring a high level of transparency and reproducibility.</p><p>We have made every effort to ensure that our research does not harm individuals or groups, nor does it involve any form of deception or potential misuse of information.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Appendix</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 Details of Action Distillation</head><p>Our specialized action distillation (SPAN) trains three student models separately using the tasksolving trajectory of a powerful model, i.e., GPT-4 in our implementation. These three student models are trained to conduct specific actions of the grounding agent, execution agent, and review agent, respectively. Their initial parameters weights θ are initialized from the same open-source model M θ . Since we use LoRa <ref type="bibr" target="#b8">(Hu et al., 2021)</ref> for parameterefficient tuning, the optimization objective of our distillation is to search for the delta parameter ∆θ to minimize the loss function. Here, we introduce their detailed optimization objectives.</p><p>Notations. As mentioned in § 3, we denote an input task as x, which is solved in a stepby-step manner while the task-solving context is denoted as H. In ith step, the context H i contains historical planning t &lt;i and execution results r &lt;i . The planning t specifies a tool to use in a current step which is selected from a candidate toolset S.</p><p>Training of grounding agent. Given a task x, we train the grounding agent M G to decompose x into simpler sub-tasks and ground each sub-task into tool-use planning t on the condition of the current context H and revise incorrect planning following the feedback f R→G of the review agent M R . For each step t i , we use the standard language modeling loss for optimization, which can be formulated as:</p><formula xml:id="formula_8">L G = -log P θ+∆θ G t j i |x, H i , S, {t &lt;j i , f &lt;j R→G }</formula><p>Here, the j indicate the jth interaction between the agent M G and M R . The {t &lt;j i , f &lt;j R→G } indicates the planning-review alternated from agent M G to M R . The LoRa parameter of agent M G is denoted as ∆θ G .</p><p>Training of execution agent. Similarly, in the ith step, we train the execution agent M E to execute a tool following the planning t i by generating an executable program, and then calibrate incorrect code following the review of agent M R . Formally, the optimization objective can be formulated as:</p><formula xml:id="formula_9">L E = -log P θ+∆θ E c j i |x, t, d, {c &lt;j i , f &lt;j R→E }</formula><p>Here, d indicates the tool documentation. The LoRa parameter of agent M E is denoted as ∆θ E .</p><p>Training of review agent. The review agent agent is trained to provide reviews for agent M E and M R , calibrating their incorrect actions, i.e., planning or execution. Thus, the optimization objective can be formulated as:</p><formula xml:id="formula_10">L R = - α j=1 log P θ+∆θ R f j R→G |x, S, t j-1 i - β j=1 log P θ+∆θ R f j R→E |x, d, c j-1 i , r j-1 i</formula><p>Here, the LoRa parameter of agent M R is denoted as ∆θ R .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Heuristic Strategies for Data Selection</head><p>We employ the following heuristic methods to filter low-quality tasks in the original ToolBench:</p><p>• Each task in ToolBench is paired with a list of candidate tools. Generally, the more candidate tools there are, the more complex the task. Thus, we filter out tasks with fewer than 10 candidate tools to ensure the overall complexity of the sampled tasks.</p><p>• To improve the quality of our training dataset, we remove tasks if their tools are not callable or deprecated.</p><p>• We remove tasks if their tools lack the required documentation or if the documentation is less than 100 words in length.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3 Datasets Experiment dataset</head><p>We conduct experiments on three commonly-used datasets with tool learning tasks, including:</p><p>• RestBench <ref type="bibr" target="#b31">(Song et al., 2023)</ref>: a high-quality human annotated dataset consisting of 54 tools about movie scenarios.</p><p>• RestBench-Spotify <ref type="bibr" target="#b31">(Song et al., 2023)</ref>: a dataset with 40 tools for music scenarios.</p><p>• ToolBench <ref type="bibr" target="#b24">(Qin et al., 2024)</ref>: a dataset containing diverse real-world tools across various applications, which contains the simple tasks, i.e., solving a task with one single tool, and complex tasks, i.e., executing multiple tools in a logic order to solve a task.</p><p>We conduct experiments on the full dataset of TMDB and Spotify. Due to the intensive inference cost of LLMs-based agents, we randomly sample 117 cases as test sets from the complex tasks in Toolbench datasets to evaluate the performance of our cooperative agent framework in solving practical tasks. We will release the sampled task for the transparency consideration.</p><p>Extend existing datasets. The original ToolBench benchmark only provides a step-bystep task-solving trajectory of GPT-3.5, which consists of both valid ground truth tools and irrelevant tools. However, our evaluation involves computing the overlap between model-selected tools with ground truth tools. Therefore, we repurpose the ToolBench to support our evaluation methods. Specifically, for each task, we extract the tools in the original solution provided by ToolBench and only retain the relevant tools that are required for solving the task. We invite three well-educated masters with relevant research backgrounds to implement this process. To guarantee annotation quality, we ask at least two annotators to annotate the same task repeatedly. If there is a discrepancy between the two annotators (i.e., two annotators give different answers), we ask a third annotator to recheck it. We hold regular meetings and pre-annotation tests to ensure that each expert undergoes detailed training to familiarize themselves with our annotation task. We will release these repurposed tasks to facilitate future research.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.4 Evaluation Metrics Details</head><p>Automatic evaluation. We mainly employ Success Rate and Correct Path Rate as two automatic evaluation metrics, following previous works <ref type="bibr">(Yang et al., 2023a;</ref><ref type="bibr">Gao et al., 2023b)</ref>. The Success Rate (Success%) computes the proportion of successful query completions. Specifically, when all the ground-truth tools are executed correctly, the Success Rate is set to 1; otherwise, it is set to 0. The Correct Path Rate (Path%) computes the F1 score between the generated tool sequence and the ground-truth tool sequence.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Human evaluation</head><p>We conduct a human evaluation on two metrics, including: (1) Executability (Exec): whether the multiple tools are invoked in a correct logical order to complete the task; and (2) Utility: whether the execution results of tools can be used to generate an answer. We invite three well-educated volunteers to evaluate 30 cases randomly sampled from RestBench-TMDB and RestBench-Spotify datasets, respectively, with a three-scale rating. Using a 3-point scale over a binary scale provides an option for the annotators to factor in their subjective interpretation of the extent of success or failure of a system's response to satisfy a user's request. The instructions used in our human evaluation are summarized as follows.</p><p>The evaluation guideline for our human evaluation.</p><p>In this evaluation task , you are provided with some question -solution pairs . The question can be only solved by using real -world tools ( or APIs ). The solution is a sequential tool -use process , involving multi -step tool callings .</p><p>Your task is to rate the quality of the solution on a three scale based on the following two metrics : 1. Executability : Whether multiple tools are invoked in a correct logical order to complete the task . 2. Utility : Whether the model can observe the relevant values from lengthy execution results , incorporate them to predict the next action , and finally output a correct answer .</p><p>We also provide scoring criteria for your reference . Please adhere to our criteria since we will re -check the score you provide . Now , read the following criteria and rate the provided question -solution pairs . Note that , you are encouraged to give us feedback and share any confusion you may have .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>== Scoring Criteria ==</head><p>1. For the Executability metric :</p><p>-Three points : Call all necessary tools correctly and solve the task . Allow for redundant tools or inference steps . -Two points : Not fully calling all necessary tools correctly , partially solving the task .</p><p>-One point : Only some sub -steps are solved and the entire task is not completed . And there is a lot of redundancy or incorrect reasoning .</p><p>2. For the Utility metric : -Three points : A majority of the execution results of the tools are correctly used to address the question ( minor mistakes are allowed ).</p><p>-Two points : Only part of the execution results of the tools are used . For example , in a question requiring finding an actor ' s highest -grossing film , the correct solution is to sequentially look at all the films the actor has appeared in , instead of just counting the top -k like top -5 or top -10.</p><p>-One point : Only a small part of the execution results of the tools are used , while other useful intermediates are ignored .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.5 Case Study</head><p>We conduct several case studies and find that our method is effective at executing various tools and incorporating execution results to solve the input tasks. Figure <ref type="figure">5</ref> presents a concrete example of the workflow of our proposed cooperative framework.</p><p>Case for our automatic agent communication. Figure <ref type="figure">5</ref> shows an example of our proposed automatic communication protocol. For each turn, the communication starts with the planning-andreview between the grounding agent and review agent. Following the planning , the execution agent generates programs to execute tools and calibrates the incorrect result with the review of review agent. For example, in the first turn, the agent M G regenerate a planning following the review from agent M R , and finally output a clear planning. This example also illustrate the interaction between grounding agent M G and review agent M R , where the agent M G calibrates its execution programs following the feedback of M R , and finally generate Case for our adaptive agent communication Figure <ref type="figure">6</ref> shows an example of our proposed adaptive communication protocol. The agent flow mainly alternates between (1) generating tool-use planning by grounding agent and (2) generating execution code by execution agent, in a step-by-step manner. The review agent is adaptively triggered to provide feedback only when the generated code fails to execute correctly. For example, in the second turn, agent M E initially generates a wrong program due to the lack of necessary arguments. Then, agent M R reviews the current context, routes this error to agent M G , and instructs M G to supplement this argument, instead of directly shifting to the next state with an error response. This example intuitively illustrates the process of our adaptive interaction.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Comparison between (a) existing single-agent tool learning method and (b) our cooperative agent framework ConAgents. The ConAgents coordinates three agents through two proposed communication protocols, e.g., automatic and adaptive interaction.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Our proposed cooperative and interactive agent framework. The left shows the three specialized agents in our framework ( § 3.1). The right illustrates two proposed communication protocols to coordinate these specialized agents, including the automatic and adaptive communication ( § 3.3).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure4: The efficiency analysis for different methods, where we count the average consumed tokens.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 2 :</head><label>2</label><figDesc>The results on three datasets. The metrics Success% and Path% indicate the Success Rate and Correct Path Rate, respectively. The icon denotes the single-agent method and symbolizes multi-agent architecture.</figDesc><table><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>.00</cell><cell>69.21</cell><cell>67.10</cell><cell>70.75</cell><cell>63.88</cell><cell>77.40</cell></row><row><cell cols="2">ConAgents w/ Ada</cell><cell></cell><cell></cell><cell>78.00</cell><cell>79.57</cell><cell>69.43</cell><cell>77.54</cell><cell>69.84</cell><cell>81.58</cell></row><row><cell cols="2">ConAgents w/ Auto</cell><cell></cell><cell></cell><cell>79.00</cell><cell>81.97</cell><cell>71.21</cell><cell>79.17</cell><cell>72.15</cell><cell>83.33</cell></row><row><cell cols="2">ReAct@N → N = 2</cell><cell></cell><cell></cell><cell>54.00</cell><cell>67.90</cell><cell>56.71</cell><cell>59.47</cell><cell>41.41</cell><cell>63.67</cell></row><row><cell cols="2">ReAct@N → N = 3</cell><cell></cell><cell></cell><cell>62.00</cell><cell>65.40</cell><cell>58.13</cell><cell>63.26</cell><cell>42.67</cell><cell>66.12</cell></row><row><cell cols="2">ToolLLM@N → N = 2</cell><cell></cell><cell></cell><cell>70.00</cell><cell>76.54</cell><cell>63.16</cell><cell>75.27</cell><cell>68.37</cell><cell>86.43</cell></row><row><cell cols="2">ToolLLM@N → N = 3</cell><cell></cell><cell></cell><cell>71.00</cell><cell>78.11</cell><cell>63.16</cell><cell>76.30</cell><cell>68.77</cell><cell>87.54</cell></row><row><cell>Method</cell><cell cols="2">TMDB</cell><cell cols="2">Spotify</cell><cell></cell><cell></cell></row><row><cell></cell><cell cols="4">Success% Path% Success% Path%</cell><cell></cell><cell></cell></row><row><cell cols="2">ConAgents (Mixtral-8x7B)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="2">w/ Auto (Distilled) 53.00</cell><cell>79.32</cell><cell>36.09</cell><cell>73.92</cell><cell></cell><cell></cell></row><row><cell>w/ Auto (Vanilla)</cell><cell>49.00</cell><cell>76.22</cell><cell>34.21</cell><cell>68.14</cell><cell></cell><cell></cell></row><row><cell>w/ Ada (Distilled)</cell><cell>51.00</cell><cell>78.74</cell><cell>35.47</cell><cell>69.86</cell><cell></cell><cell></cell></row><row><cell>w/ Ada (Vanilla)</cell><cell>47.00</cell><cell>74.05</cell><cell>33.33</cell><cell>66.41</cell><cell></cell><cell></cell></row><row><cell cols="2">Baselines (Mixtral-8x7B)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>ReAct</cell><cell>26.00</cell><cell>61.21</cell><cell>21.35</cell><cell>47.21</cell><cell></cell><cell></cell></row><row><cell>ReAct@3</cell><cell>33.00</cell><cell>63.27</cell><cell>26.93</cell><cell>50.31</cell><cell></cell><cell></cell></row><row><cell>ToolLLM</cell><cell>37.00</cell><cell>64.32</cell><cell>28.07</cell><cell>52.31</cell><cell></cell><cell></cell></row><row><cell>ToolLLM@3</cell><cell>45.00</cell><cell>74.40</cell><cell>31.58</cell><cell>57.68</cell><cell></cell><cell></cell></row><row><cell>RestGPT</cell><cell>34.00</cell><cell>72.20</cell><cell>31.58</cell><cell>67.82</cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2</head><label>2</label><figDesc>M R →M G 77.00↓ 2.0 78.10↓ 3.9 68.42↓ 3.0 75.33↓ 2.2 w/o M R →M E 75.00↓ 4.0 74.23↓ 7.7 64.91↓ 6.5 72.41↓ 5.1 w/ static coop.75.00↓ 4.00 75.74↓ 6.2 67.12↓ 4.3 75.07 ↓ 2.5</figDesc><table><row><cell>demonstrates the</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Who directed the top-1 rated movie</head><p>Decision: wrong Review: The code correctly makes a request. However, it does not parse the response to extract the target values as specified in the instruction.</p><p>Input: ```python url = base_url+"/movie/top_rated" params = {'page': 1, 'region': 'US'} response = requests.get(url, headers=headers, params=params) data = response.json() print(top_rated_movie_id)``` Output: {'id': 278, 'genreids': [18, 80], ori... Input: ```python url = base_url+"/movie/top_rated" params = {'page': 1, 'region': 'US'} response = requests.get(url, headers=headers, params=params) data = response.json() print(top_rated_movie_id)``` Output: 278 Continue, based on the **movie id** 278, use "GET_movie_movie_id_credits" to search for the **person** of its director Input: ```python url = base_url+"/movie/278/credits" data = requests.get(url, headers=headers).json() = responsefor crew_member in data['crew']: if crew_member['job'] == 'Director': print(crew_member['name']) ``` Output: Frank Darabont Decision: correct Review: The code is correct ...    </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>First</head><figDesc>, use "GET_movie_top_rated" to search for the **movie id** of the top-1 rated movie Decision: correct Review: The code is correct ...</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>Last, I am finished executing a plan. The answer is [The top-1 rated movie was directed by Frank Darabont] Decision: correct Review: Your planning is clear... Decision: correct Review: Your planning is clear ...</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 5 :</head><label>5</label><figDesc>An example to illustrate the proposed automatic agent communication of our framework ConAgents. For each turn, the communication starts with the planning-and-review between the grounding agent and review agent. Following the planning , the execution agent generates programs to execute tools and calibrates the incorrect result with the review of review agent . In this figure, we highlight the useful review of review agent with red .Can you give me a photo belong to the second episode of the first season of the Witcher? Decision: planning Review: Your planning lack the required **person id** First, use "GET_search_tv" to search for the TV show id of \"The Witcher Last, the task is solved and the answer is [the second episode of the first season of The Witcher: https://image.tmdb.org/t/p/original/7KWyZgiSXSAuagbtzjTZLrkOtNk.jpg Input: ```python season = 1 episode = 2 url = base_url+f"/tv/&lt;YOUR_TV_ID&gt;}/{season}/{episode}/images" response = requests.get(url, headers=headers) print(response.json()) ``` Output: {'success': False, 'status_message': 'Invalid id: The prerequisite id is invalid or not found.'} Continue, use season_episode_images to get the images that belong to the second episode of the first season of The Witcher Input: ```python tv_id = 71912 season_number = 1 episode_number = 2 url = base_url+f"/{tv_id}/season/{season_number}/episode/{episode_number}/images" print(response.json()) ``` Output: {'id': 1954612, 'stills': [{'aspect_ratio': 1.778, 'heig Use season_episode_images to obtain images from the second episode of the first season of The Witcher. The TV show ID is 71912, the season number is 1, and the episode number is 2." Input: ```python import requests url = base_url+"/search/tv" params = {'query': 'The Witcher', 'include_adult': 'false'} response = requests.get(url, headers=headers, params=params) data = response.json() print(data['results']</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><figDesc>to provide review) (No triggered to provide review)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 6 :</head><label>6</label><figDesc>An example to illustrate the proposed adaptive agent communication in our framework ConAgents. The agent flow mainly alternates from (1) generating tool-use planning by grounding agent and (2) generating execution code by execution agent, in a step-by-step manner. The review agent is adaptively triggered to provide feedback only when the generated code fails to execute correctly . In this figure, we highlight the review of review agent with red .</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Andres M Bran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">D</forename><surname>Cox</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philippe</forename><surname>White</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Schwaller</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.05376</idno>
+		<title level="m">Chemcrow: Augmenting large-language models with chemistry tools</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">A survey on evaluation of large language models</title>
+		<author>
+			<persName><forename type="first">Yupeng</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jindong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linyi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaijie</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyuan</forename><surname>Yi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cunxiang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yidong</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Intelligent Systems and Technology</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Lm vs lm: Detecting factual errors via cross examination</title>
+		<author>
+			<persName><forename type="first">Roi</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">May</forename><surname>Hamri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mor</forename><surname>Geva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amir</forename><surname>Globerson</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.13281</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Improving factuality and reasoning in language models through multiagent debate</title>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonio</forename><surname>Torralba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.14325</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Nouha</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ximing</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Sclar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lorraine</forename><surname>Xiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liwei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Jian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Yuchen Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chandra</forename><surname>West</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bhagavatula</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Ronan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jena</forename><forename type="middle">D</forename><surname>Bras</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hwang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.18654</idno>
+		<title level="m">Faith and fate: Limits of transformers on compositionality</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Improving language model negotiation with self-play and in-context learning from ai feedback</title>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mirella</forename><surname>Lapata</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.10142</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Jamie Callan, and Graham Neubig. 2023a. PAL: Program-aided language models</title>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+		<imprint>
+			<biblScope unit="page" from="10764" to="10799" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">2023b. Confucius: Iterative tool learning from introspection feedback by easy-todifficult curriculum</title>
+		<author>
+			<persName><forename type="first">Shen</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengliang</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minghang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Xin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengjie</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhumin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaochun</forename><surname>Ren</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Edward</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yelong</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phillip</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyuan</forename><surname>Wallis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Allen-Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shean</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2106.09685</idno>
+		<title level="m">Lora: Low-rank adaptation of large language models</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Language models can solve computer tasks</title>
+		<author>
+			<persName><forename type="first">Geunwoo</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Baldi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Mcaleer</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2303.17491</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">The measurement of observer agreement for categorical data</title>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Landis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gary</forename><forename type="middle">G</forename><surname>Koch</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">biometrics</title>
+		<imprint>
+			<biblScope unit="page" from="159" to="174" />
+			<date type="published" when="1977">1977</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tian</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiwei</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenxiang</forename><surname>Jiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xing</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujiu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaopeng</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuming</forename><surname>Shi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.19118</idno>
+		<title level="m">Encouraging divergent thinking in large language models through multi-agent debate</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Dynamic llm-agent network: An llm-agent collaboration framework with agent team optimization</title>
+		<author>
+			<persName><forename type="first">Zijun</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanzhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diyi</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.02170</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Chameleon: Plug-and-play compositional reasoning with large language models</title>
+		<author>
+			<persName><forename type="first">Pan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baolin</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michel</forename><surname>Galley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><forename type="middle">Nian</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Song-Chun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Gao</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2304.09842</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">When not to trust language models: Investigating effectiveness of parametric and nonparametric memories</title>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Mallen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akari</forename><surname>Asai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rajarshi</forename><surname>Das</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Khashabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 61st Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="9802" to="9822" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Social learning: Towards collaborative learning with large language models</title>
+		<author>
+			<persName><forename type="first">Amirkeivan</forename><surname>Mohtashami</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florian</forename><surname>Hartmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sian</forename><surname>Gooding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukas</forename><surname>Zilka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matt</forename><surname>Sharifi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.11441</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Webgpt: Browserassisted question-answering with human feedback</title>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">Arun</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christina</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shantanu</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Saunders</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tyna</forename><surname>Eloundou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Button</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Knight</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Chess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2112.09332</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Automatic multistep reasoning and tool-use for large language models</title>
+		<author>
+			<persName><forename type="first">Bhargavi</forename><surname>Paranjape</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><forename type="middle">M</forename><surname>Lundberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sameer</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanna</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marco</forename><surname>Tulio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ribeiro</forename></persName>
+		</author>
+		<idno>ArXiv, abs/2303.09014</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<pubPlace>Art</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tianjun</forename><surname>Shishir G Patil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gonzalez</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.15334</idno>
+		<title level="m">Gorilla: Large language model connected with massive apis</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">Archiki</forename><surname>Prasad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Koller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mareike</forename><surname>Hartmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.05772</idno>
+		<title level="m">Adapt: As-needed decomposition and planning with language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juyuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.07924</idno>
+		<title level="m">Communicative agents for software development</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Autoact: Automatic agent learning from scratch via self-planning</title>
+		<author>
+			<persName><forename type="first">Shuofei</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ningyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runnan</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujie</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wangchunshu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eleanor</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengfei</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huajun</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.05268</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">WebCPM: Interactive web search for Chinese longform question answering</title>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lan</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shihao</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kunlun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huadong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruobing</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fanchao</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="8968" to="8988" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengding</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ganqu</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheni</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaojun</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><forename type="middle">Ren</forename><surname>Fung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huadong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runchu</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kunlun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shi</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingyu</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bokai</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yining</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziwei</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Yi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenning</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lan</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ya-Ting</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weilin</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun-Han</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xian</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dahai</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Phang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tongshuang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji</forename><surname>Heng</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2304.08354</idno>
+		<imprint/>
+	</monogr>
+	<note>Zhiyuan Liu, and Maosong Sun. 2023b. Tool learning with foundation models</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Toolllm: Facilitating large language models to master 16000+ real-world apis</title>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shi</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yining</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kunlun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lan</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ya-Ting</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sihan</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runchu</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruobing</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><forename type="middle">H</forename><surname>Gerstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dahai</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Toolformer: Language models can teach themselves to use tools</title>
+		<author>
+			<persName><forename type="first">Changle</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sunhao</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaochi</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hengyi</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuaiqiang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawei</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji-Rong</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">; Timo</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberta</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicola</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Scialom</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.17935</idno>
+		<idno>ArXiv, abs/2302.04761</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Tool learning with large language models: A survey</title>
+		<imprint>
+			<date type="published" when="2023">2024. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Weizhou</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenliang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongzhan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojun</forename><surname>Quan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hehong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.07324</idno>
+		<title level="m">Small llms are weak tool learners: A multi-llm agent</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Hugginggpt: Solving ai tasks with chatgpt and its friends in huggingface</title>
+		<author>
+			<persName><forename type="first">Yongliang</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaitao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><forename type="middle">Sheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiming</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Ting</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuang</forename></persName>
+		</author>
+		<idno>ArXiv, abs/2303.17580</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Large language models can be easily distracted by irrelevant context</title>
+		<author>
+			<persName><forename type="first">Freda</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kanishka</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><forename type="middle">H</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 40th International Conference on Machine Learning, Proceedings of Machine Learning Research</title>
+		<meeting>the 40th International Conference on Machine Learning, Machine Learning Research</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhengliang</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shen</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiuyi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingyong</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haibo</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawei</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhumin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suzan</forename><surname>Verberne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaochun</forename><surname>Ren</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.16533</idno>
+		<title level="m">Chain of tools: Large language model is an automatic multitool learner</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Reflexion: Language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beck</forename><surname>Labash</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<idno>cs.AI/2303.11366</idno>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Restgpt: Connecting large language models with real-world applications via restful apis</title>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weimin</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawei</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengzu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ke</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ye</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sujian</forename><surname>Li</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2306.06624</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qiushi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhangyue</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xipeng</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingpeng</forename><surname>Kong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.00280</idno>
+		<title level="m">Corex: Pushing the boundaries of complex reasoning through multi-model collaboration</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Multi-agent collaboration: Harnessing the power of intelligent llm agents</title>
+		<author>
+			<persName><forename type="first">Yashar</forename><surname>Talebirad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amirhossein</forename><surname>Nadiri</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.03314</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changyu</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinnian</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaqi</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian-Wen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhao</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhoujun</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.11242</idno>
+		<title level="m">Mac-sql: Multi-agent collaboration for text-to-sql</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Executable code actions elicit better llm agents</title>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangyi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lifan</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunzhu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiateng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangyi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lifan</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2309.10691</idno>
+		<title level="m">Evaluating llms in multi-turn interaction with tools and language feedback</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">2023c. Self-instruct: Aligning language models with self-generated instructions</title>
+		<author>
+			<persName><forename type="first">Yizhong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yeganeh</forename><surname>Kordi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swaroop</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alisa</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Khashabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhiruo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhoujun</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.15452</idno>
+		<title level="m">What are tools anyway? a survey from the language model perspective</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">2023a. Gpt4tools: Teaching large language model to use tools via self-instruction</title>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanwei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sijie</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixiao</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Shan</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2305.18752</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">2023b. Mm-react: Prompting chatgpt for multimodal reasoning and action</title>
+		<author>
+			<persName><forename type="first">Zhengyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linjie</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ehsan</forename><surname>Azarnasab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Faisal</forename><surname>Ahmed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zicheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ce</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lijuan</forename><surname>Wang</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2303.11381</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">React: Synergizing reasoning and acting in language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Karthik R Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<author>
+			<persName><forename type="first">Faeze</forename><surname>Da Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhilasha</forename><surname>Brahman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Khyathi</forename><surname>Ravichander</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Chandu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Yuchen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.05657</idno>
+		<title level="m">Lumos: Learning agents with unified data, modular design, and open-source llms</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">Agentcf: Collaborative learning with autonomous language agents for recommender systems</title>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yupeng</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruobing</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenqi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Mcauley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wayne</forename><forename type="middle">Xin</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leyu</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji-Rong</forename><surname>Wen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.09233</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Toolqa: A dataset for llm question answering with external tools</title>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.13304</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

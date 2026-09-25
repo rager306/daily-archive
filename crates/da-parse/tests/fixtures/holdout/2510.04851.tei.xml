@@ -1,0 +1,1538 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">LEGOMem: Modular Procedural Memory for Multi-agent LLM Systems for Workflow Automation</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-10-06">6 Oct 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Dongge</forename><surname>Han</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Camille</forename><surname>Couturier</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Daniel</forename><surname>Madrigal Diaz</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Xuchao</forename><surname>Zhang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Victor</forename><surname>Rühle</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Rajmohan</forename><surname>Saravan</surname></persName>
+						</author>
+						<author>
+							<persName><surname>Microsoft</surname></persName>
+						</author>
+						<title level="a" type="main">LEGOMem: Modular Procedural Memory for Multi-agent LLM Systems for Workflow Automation</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-10-06">6 Oct 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">967579B70AE2C1305855CA2D60672606</idno>
+					<idno type="arXiv">arXiv:2510.04851v1[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:13+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>CCS CONCEPTS</term>
+					<term>Computing methodologies → Multi-agent systems; Reasoning about beliefs and knowledge Multi-agent systems</term>
+					<term>Procedural memory</term>
+					<term>LLM Agents</term>
+					<term>Workflow</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>We introduce LEGOMem, a modular procedural memory framework for multi-agent large language model (LLM) systems in workflow automation. LEGOMem decomposes past task trajectories into reusable memory units and flexibly allocates them across orchestrators and task agents to support planning and execution. To explore the design space of memory in multi-agent systems, we use LEGOMem as a lens and conduct a systematic study of procedural memory in multi-agent systems, examining where memory should be placed, how it should be retrieved, and which agents benefit most. Experiments on the OfficeBench benchmark show that orchestrator memory is critical for effective task decomposition and delegation, while fine-grained agent memory improves execution accuracy. We find that even teams composed of smaller language models can benefit substantially from procedural memory, narrowing the performance gap with stronger agents by leveraging prior execution traces for more accurate planning and tool use. These results position LEGOMem as both a practical framework for memory-augmented agent systems and a research tool for studying memory design in multi-agent workflow automation.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>Large Language Models (LLMs) are increasingly deployed as agents to automate complex multi-step workflows <ref type="bibr">[2, 3, 5, 13, 19, 20, 22, 25-28, 33, 35, 39]</ref>. These agents are especially valuable in productivity environments such as document editing, email handling, and calendar scheduling. To manage the diversity and compositionality of such tasks, recent systems often adopt multi-agent <ref type="bibr" target="#b22">[23,</ref><ref type="bibr" target="#b29">30]</ref> designs, correspond to Dongge Han at donggehan@microsoft.com.</p><p>Proc. of the 25th International Conference on Autonomous Agents and Multiagent Systems (AAMAS 2026), C. Amato, L. Dennis, V. Mascardi, J. Thangarajah (eds.), May 25 -29, 2026, Paphos, Cyprus. © 2026 International Foundation for Autonomous Agents and Multiagent Systems (<ref type="url" target="www.ifaamas.org">www.ifaamas.org</ref>). This work is licenced under the Creative Commons Attribution 4.0 International (CC-BY 4.0) licence.</p><p>where multiple LLM-based agents collaborate, specialize, or delegate responsibilities across roles and tools <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b6">7,</ref><ref type="bibr" target="#b8">9,</ref><ref type="bibr" target="#b31">32,</ref><ref type="bibr" target="#b35">36]</ref>. This trend reflects a broader shift in AI system design: the real world is inherently multi-agent, involving heterogeneous roles and coordinated decision-making. Multi-agent LLM systems offer a scalable and modular approach to reasoning, tool-use, and workflow execution, positioning them as a natural fit for these increasingly complex productivity environments.</p><p>Despite these advances, current multi-agent systems remain largely stateless and transactional: each task is solved from scratch, without reusing prior experience. This lack of memory-particularly procedural memory-limits their ability to learn from past experiences and build up execution skills over time for complex workflows. While recent works have proposed memory modules for single-agent LLMs, such as Synapse <ref type="bibr" target="#b36">[37]</ref>, Agent Workflow Memory (AWM) <ref type="bibr" target="#b28">[29]</ref>, these approaches do not address the unique coordination and specialization challenges of multi-agent systems.</p><p>To address this gap, we introduce LEGOMem, a modular procedural memory framework designed for multi-agent LLM systems. In this work, we focus on a common and practical subclass of multiagent architectures, where a central orchestrator performs planning and delegates subtasks to specialized tool-using task agents, as exemplified by the Magentic-One framework <ref type="bibr" target="#b8">[9,</ref><ref type="bibr" target="#b31">32]</ref>. Our goal is to equip both orchestrators and task agents with memory grounded in prior task trajectories, enabling them to perform better planning, coordination, and task executions. To this end, we design LEGOMem to distill successful executions into structured memory units: full-task memories (task-level plans and reasoning traces) and subtask memories (agent behavior and tool interactions). These modular memories are stored in a memory bank, indexed by semantic embeddings, and reused at inference time to augment planning and execution.</p><p>LEGOMem is instantiated as a retrieval augmentation (RAG) <ref type="bibr" target="#b7">[8,</ref><ref type="bibr" target="#b9">10,</ref><ref type="bibr" target="#b14">15]</ref> layer over existing multi-agent systems. During a new task, the orchestrator receives relevant full-task memories to support task decomposition and agent selection, while each task agent is assigned subtask memories aligned with its delegated subtasks. We explore three memory retrieval strategies-vanilla, dynamic retrieval, and query rewriting-to study how retrieval and memory specificity affect multi-agent performance. This framework allows us to systematically investigate key questions in multi-agent memory design, including where memory should be placed, how it should be retrieved, and which agents benefit most from it.</p><p>We evaluate LEGOMem in the context of productivity workflow automation using the OfficeBench <ref type="bibr" target="#b27">[28]</ref> benchmark, with agent teams composed of LLM-only, hybrid, and small language model</p><p>Offline memory curation ('Training') OfficeBench tasks Run without memory Extract trajectories Summarize Procedural memory bank Inference: LEGO memory allocation User task Orchestrator Retrieve full memory</p><p>Task agents Calendar agent Email agent Excel agent OfficeBench APIs LEGO allocation Query with task description Allocate memory to orchestrator Allocate relevant subtask memory to each agent Memory 1 High-level summary subtask 1: subtask description agent x steps subtask 2: subtask description agent y steps</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Memory 2</head><p>High-level summary subtask 1: subtask description agent x steps subtask 2:</p><p>subtask description agent y steps</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>…</head><p>High-level summary subtask 1: subtask description agent x steps subtask 2:</p><p>subtask description agent y steps</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Memory m</head><p>Task description High-level plan subtask 1: subtask description agent x steps subtask 2: subtask description agent y steps (a) Overview of the LEGOMem framework</p><p>• Agent: calendar_agent • Description: Extract the meeting agenda details from the specified calendar, including date, time, participants, agenda items, location… • steps:</p><p>• Thought: I need to list all events from Alice's calendar...</p><p>• Action: {"app": "calendar", "action": "list_events", "username": "Alice"}, • Obs.: Successfully listed events for Alice… configurations. Across these settings, all LEGOMem variants significantly improve task success rates over memory-less and baseline methods. Our ablation studies reveal that orchestrator memory is critical for high-level planning and delegation, while fine-grained subtask retrieval provides meaningful gains for smaller agents that rely more on localized execution support. These findings highlight how memory placement and retrieval strategy shape the effectiveness of multi-agent collaboration in workflow settings. Overall, LEGOMem provides a practical and extensible framework for memory-augmented multi-agent workflow automation, enabling agents to plan, coordinate, and execute more effectively by reusing structured procedural knowledge. We hope this work facilitates further research on memory design, continual learning, and efficient agent collaboration in complex productivity settings.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">RELATED WORK</head><p>Multi-agent LLM systems for workflow automation. The recent advent of LLMs has enabled the development of multi-agent systems able to plan, decompose and solve complex workflows. Generalist multi-agent frameworks <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b6">7,</ref><ref type="bibr" target="#b8">9,</ref><ref type="bibr" target="#b31">32,</ref><ref type="bibr" target="#b35">36]</ref> such as Magentic-One <ref type="bibr" target="#b8">[9]</ref> use a common design pattern where a lead orchestrator agent decomposes high-level goals into a step-by-step plan and directs a team of specialized agents to execute specific subtasks. This modular, multi-agent architecture simplifies development and facilitates the reuse of encapsulated skills, a significant advantage over monolithic, single-agent approaches. However, a key limitation remains that they are often stateless, solving each task from scratch and discarding valuable insights gained during execution. Without memory, agents may repeatedly make the same errors and cannot improve over time.</p><p>Memory for LLM agents. Memory offers a natural solution to the limitations of stateless agents. However, a primary challenge is that memory in LLM agents is often designed for single-agent systems and are often episodic/semantic, replaying information from dialogue histories <ref type="bibr" target="#b17">[18,</ref><ref type="bibr" target="#b20">21,</ref><ref type="bibr" target="#b23">24,</ref><ref type="bibr" target="#b30">31,</ref><ref type="bibr" target="#b37">38]</ref>, such as A-MEM <ref type="bibr" target="#b33">[34]</ref> which captures interactions as a network of interconnected notes that form an evolving memory structure, and Mem0 <ref type="bibr" target="#b5">[6]</ref>, which focus on managing memory from ongoing conversations. While these systems advance memory capabilities, they are not designed for agentic learning and workflow automation. Another line of works target memory optimization for agentic workflows including <ref type="bibr" target="#b11">[12,</ref><ref type="bibr" target="#b13">14,</ref><ref type="bibr" target="#b39">40]</ref>, which focus on short-term context optimization for workflow agents. Most closely related works on long-term, procedural memory for agents include Synapse <ref type="bibr" target="#b36">[37]</ref>, which uses successful past full trajectories as exemplars, and Agent Workflow Memory (AWM) <ref type="bibr" target="#b28">[29]</ref> which induces frequently used subtask sequences as reusable skills. However, both works target procedural memory for single-agent scenarios. In contrast, LEGOMem introduces modular, role-aware procedural memory for multi-agent systems. By flexibly allocating memory across orchestrators and task agents, it addresses unique challenges in memory placement and allocation, improving workflow automation through better planning, execution, and coordination.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">LEGOMEM: MODULAR PROCEDURAL MEMORY FOR MULTI-AGENT LLM SYSTEMS</head><p>In this section, we introduce LEGOMem, a modular procedural memory framework designed for multi-agent LLM systems. We begin by formalizing the problem setting of multi-agent workflow execution with procedural memory, then present the detailed LEGOMem framework, its variants and the design choices studied in our experiments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Problem formulation</head><p>3.1.1 Multi-agent system for workflow automation. We consider a common multi-agent workflow automation framework (based on Magentic-One system <ref type="bibr" target="#b8">[9]</ref>) with an orchestrator 𝐴 orch , a set of task agents 𝐴 = {𝐴 1 , . . . , 𝐴 𝑘 }, and an external environment E. A task𝑇 is specified by a natural language description 𝑑 and must be executed within E. Specifically, we implemented task agents for Word, Excel, Calendar, Email, System, and OCR-PDF apps. These task agents interact with the simulated apps in a Docker environment via tool APIs, ensuring isolated and reproducible execution.</p><p>The orchestrator first generates an initial high-level plan 𝜋 0 = {𝑠 1 , . . . , 𝑠 𝑚 }, outlining a possible sequence of subtasks. However, orchestration is not a static plan-following process: after each orchestration step, the orchestrator dynamically generates the next subtask based on the current state 𝜎 𝑡 and observations returned from the agents, rather than simply selecting from the initial plan.</p><p>Formally, at each orchestration step 𝑡:</p><p>(1) the orchestrator proposes the next subtask 𝑠 𝑡 = 𝜋 orch (𝜎 𝑡 );</p><p>(2) the subtask is assigned to an appropriate task agent 𝐴 𝑗 ;</p><p>(3) the task agent executes 𝑠 𝑡 by issuing tool-use commands to the environment E, returning an observation 𝑜 𝑡 and an execution summary 𝑟 𝑡 ; (4) the orchestrator updates its state 𝜎 𝑡 +1 = 𝑓 (𝜎 𝑡 , 𝑟 𝑡 ) and continues orchestration.</p><p>If progress stalls (e.g., repeated states or looping behavior), the orchestrator may perform re-planning, generating a revised highlevel plan 𝜋 ′ , and resuming orchestration from the updated state. The system is considered successful if the final environment state 𝜎 final ∈ E satisfies the task goal.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.2">Multi-agent procedural memory.</head><p>While the orchestration loop above defines how agents interact with the environment, it remains stateless: each new task 𝑇 is solved from scratch, discarding knowledge from past executions. To address this limitation and enable agents to improve through experience, we introduce multiagent procedural memory: modular, role-aware memories distilled from successful trajectories and reused across tasks in a multi-agent system. In contrast to episodic or semantic memory, which primarily capture events or textual information, multi-agent procedural memory abstracts workflows into reusable subroutines tailored to both orchestrators and task agents. These memories allow orchestrators to plan more effectively and select agents with greater context, while equipping task agents with execution-level guidance for more accurate and efficient tool use.</p><p>Formally, we define a memory store 𝑀 as a collection of modular memory units derived from past executions. These include full memories that capture orchestration plans and summarized execution traces, as well as subtask memories that capture agentspecific subtask executions. Together, they form a role-aware memory library that can be retrieved and allocated during inference to augment both planning and execution.</p><p>In the following section, we present LEGOMem, a concrete framework that implements this formulation through structured memory construction, inference-time allocation, and variant strategies for retrieval and memory reuse for more robust workflow automation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">The LEGOMem framework</head><p>The LEGOMem framework instantiates the problem formulation by equipping multi-agent systems with modular procedural memory. It operates in two phases: (i) an offline memory construction phase, where successful task trajectories are distilled into reusable memory units; and (ii) an online memory-augmented inference phase, where retrieved memories are allocated to the orchestrator and task agents to guide planning and execution. As illustrated in Figure <ref type="figure">1a</ref>, past task trajectories are curated into a procedural memory bank, which is then queried at inference time to provide high-level orchestration guidance and agent-specific execution traces. Figure <ref type="figure">1b</ref> further shows the structure of these memory units, consisting of a high-level plan, localized agent subtask traces, the final answer, and a brief reflection. This modular design enables LEGO-like recombination of past experiences to support efficient and reliable task completion across diverse multi-agent environments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.1">Memory construction.</head><p>The first phase of LEGOMem is offline memory construction, where successful task trajectories are distilled into structured and reusable memory units. From each trajectory, we extract two complementary types of memory: (i) fulltask memories that capture the task description, the high-level plan executed, and (ii) subtask memories, that encapsulate the subtask description, the localized agent behavior and tool-use, and observations. These modular units are stored in a procedural memory bank M for future reuse. At inference time, the orchestrator receives the full-task memory in its entirety, while task agents are provided with the relevant subtask memories.</p><p>Concretely, the construction process operates on execution logs of successfully completed tasks. Each log records the task description, the orchestrator's planning and orchestration steps, the subtasks delegated to agents, and the corresponding agent executions (tool-use commands, observations, and outcomes). We use an LLM to transform these logs into structured LEGOMem units, as shown in Figure <ref type="figure">1b</ref>. The resulting memory bank M is implemented as a vector database, indexed using dense embeddings. Let 𝜙 (•) denote the embedding model used for indexing; for full-task memories, we compute 𝜙 (𝑑) based on the task description 𝑑 to enable semantic similarity retrieval. We implement and compare three retrieval and allocation strategies: vanilla LEGOMem, LEGOMem-Dynamic, and LEGOMem-QueryRewrite. For vanilla LEGOMem, the entire memory bank M is indexed using 𝜙 (𝑑), enabling direct retrieval of relevant full-task memories at inference time and subtask allocation to task agents. For the other two variants, we separate the global memory bank M of full task memories, and subtask memory banks {M 𝐴 𝑗 |𝐴 𝑗 ∈ 𝐴} per task agent, which contain the subtask memories that are easily extracted from the global memories, and Algorithm 1 Multi-agent Execution with Vanilla LEGOMem</p><p>1: Input: task description 𝑑 new , memory bank M, orchestrator 𝐴 orch , task agents 𝐴 = {𝐴 1 , ...𝐴 𝑘 } 2: Compute embedding of 𝜙 (𝑑 new ) and retrieve top-𝐾 semantically similar full-task memories 𝑚 = {𝑚 1 , ..., 𝑚 𝐾 } from M. 3: Extract subtask memories {𝑚 1 1 , ..., 𝑚 K 𝑛 } from the full-task memories and assign subtask memories corresponding to each agent. 4: Initialize environment E and start task 𝑑 new . 5: Augment retrieved full-task memories 𝑚 to the orchestrator, which then generates initial plan 𝜋 𝑜 . 6: while task not completed do 7: Orchestrator 𝐴 orch selects next agent 𝐴 𝑡 ∈ 𝐴, generates the next subtask 𝑠 𝑡 and assign to 𝐴 𝑡 , 8: Augment subtask memories to the task agent 𝐴 𝑡 9: Task agent 𝐴 𝑡 generates a list of tool-use actions, which are executed in the environment. 10: Agent receives observation 𝑜 𝑡 , summarize subtask execution and sends summary message 𝑟 𝑡 to orchestrator 𝐴 orch 11: if progress stalls then 12: Orchestrator performs re-planning and update plan 𝜋 ′ 13: end if 14: end while 15: return orchestrator final response.</p><p>subtask memory banks are indexed by the embeddings of the subtask descriptions 𝜙 (𝑑 subtask ). More details regarding the LEGOMem variants will be discussed in Section 3.3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.2">Memory-augmented inference.</head><p>In the second phase, LEGOMem augments the task execution loop by supplying the orchestrator with full-task memories (end-to-end for planning and detailed orchestration) and augment task agents with subtask memories (localized execution guidance). Given a new task 𝑑 new , the system retrieves relevant memories from the memory banks and allocates them accordingly. We designed and tested three different LEGOMem variants which exhibit different memory retrieval strategies, which will be detailed in Section 3.3. Here we will describe the vanilla LEGOMem inference approach, as shown in Algorithm 1.</p><p>Given a new task with description 𝑑 new , we obtain the embedding 𝜙 (𝑑 new ) and the system first retrieves top-K relevant memories from the global memory bank M using semantic similarity. Then we allocate the full-task memory to the orchestrator, and extract the subtask memories from the retrieved full-task memories and allocate the subtask memories to the corresponding task agents. As shown in Figure <ref type="figure">1a</ref>, for the vanilla LEGOMem variant, the orchestrator receives full-task memories that provide end-to-end workflows, while task agents are supplied with subtask memories that offer localized execution guidance. This design enables orchestrators to leverage prior trajectories for informed planning, agent capability grounding, and error recovery, while task agents improve their accuracy and efficiency in tool-use. As the task starts, the orchestrator receives the full memories and perform initial planning. Then, at each orchestration step, the orchestrator dynamically generates the next subtask using both the current state and retrieved full-task memories. The selected agent then executes the subtask with its allocated subtask memories, returning observations and summaries to update the orchestrator state. If progress stalls, the orchestrator can re-plan using memory as additional guidance. Through this loop, LEGOMem integrates past experiences to make more informed decision during planning and coordination, improving both reliability and efficiency of the multi-agent workflows.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">LEGOMem variants</head><p>To explore the impact of subtask retrieval granularity in multiagent systems, we compare three variants of LEGOMem: (vanilla) LEGOMem, LEGOMem-Dynamic, and LEGOMem-QueryRewrite. These variants differ in how they store and retrieve subtask memories and allocate them to the task agents.</p><p>As discussed in 3.2, vanilla LEGOMem keeps a global procedural memory bank M, and during inference, retrieves full-task memories using the task description and augment them to the orchestrator. Subtask memories are then extracted from these retrieved memories straightforwardly and are statically assigned to the relevant task agents. This approach is simple and efficient, and provides strong performance across teams. However, it may occasionally fail to surface relevant subtask memories for certain agents if the retrieved full-task memories differ in subtask structures from the current task. In such cases, even if the overall task appears similar, the subtask components may diverge. To address this, we implement two variants that enable finer-grained subtask-level retrieval, improving task agent-level memory relevance:</p><p>LEGOMem-Dynamic: As illustrated in Figure <ref type="figure" target="#fig_2">2a</ref>, LEGOMem-Dynamic performs subtask-level retrieval during execution. The orchestrator memory storage and retrieval remain the same as the vanilla version, while the system maintains per-agent subtask memory banks segmented from the global memory bank. When the orchestrator generates a subtask 𝑠 𝑡 for an agent 𝐴 𝑡 , we compute its embedding 𝜙 (𝑠 𝑡 ) and query the agent's memory bank M 𝐴𝑡 to retrieve only the most relevant past subtask traces. This just-in-time retrieval provides more precise execution guidance for task agents and reduces noise from irrelevant memories.</p><p>LEGOMem-QueryRewrite: While LEGOMem-Dynamic performs just-in-time retrieval at each orchestration step, it incurs repeated subtask embedding and retrieval during execution. LEGOMem-QueryRewrite shifts this to the planning stage using query rewriting <ref type="bibr" target="#b15">[16,</ref><ref type="bibr" target="#b16">17]</ref>. As shown in Figure <ref type="figure" target="#fig_2">2b</ref>, after retrieving full-task memories, a query rewriter LLM 𝜓 uses the memories to generate a draft plan for the new task 𝜋 ′ draft = {𝑠 ′ 1 , 𝑠 ′ 2 , . . . , 𝑠 ′ 𝑛 } consisting of rewritten subtasks. Each 𝑠 ′ 𝑗 is then embedded via 𝜙 (𝑠 ′ 𝑗 ) and used to retrieve relevant subtask memories from the corresponding agent's memory bank M 𝐴 𝑗 before task execution starts. This approach preserves the fine-grained retrieval benefits of LEGOMem-Dynamic while avoiding repeated queries at runtime, enabling more efficient execution and smoother orchestration.</p><p>Interestingly, our experiments show that all three variants achieve similar overall performance in full memory settings, demonstrating the robustness across variants. Furthermore, our ablation study shows that LEGOMem-Dynamic and LEGOMem-QueryRewrite outperform vanilla LEGOMem when only task agent-level memory is used and with small language model task agents. This indicates Global] Procedural memory bank Segment Excel agent's procedural memory bank Calendar agent's procedural memory bank Segment into per-agent memories Inference: Lego memory allocation User task Orchestrator Retrieve full memory Subtask 1 description  Calendar agent Task agents Calendar agent Email agent Excel agent OfficeBench APIs Query with "task description" Allocate full memory to orchestrator During task execution, allocate memory to each agent dynamically Subtask 2 Query with "subtask description" Subtask n … [Calendar] subtask memory 1 subtask description steps [Calendar] subtask memory 2 subtask description steps … subtask description steps [Calendar] subtask memory k subtask description steps Index with "subtask description" Summarize … (a) LEGOMem-Dynamic variant [Global] Procedural memory bank Segment Excel agent's procedural memory bank Calendar agent's procedural memory bank Segment into per-agent memories Query with "task description" Query with "subtask description" [Calendar] subtask memory 1 subtask description steps</p><p>[Calendar] subtask memory 2 subtask description steps … subtask description steps that fine-grained subtask retrieval may offer more relevant guidance to task agents and may be particularly beneficial in settings with weaker orchestrator support. Together, the LEGOMem framework and its variants provide a general and modular approach to procedural memory for multiagent LLM systems, enabling both orchestrators and task agents to learn from and reuse prior task executions. In the following section, we empirically evaluate these variants across different agent team configurations and memory settings.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">EXPERIMENTS</head><p>We evaluate LEGOMem on the OfficeBench benchmark, comparing its variants with strong baselines across LLM-only, hybrid, and SLMonly multi-agent teams. Beyond overall performance, we conduct ablations on memory placement, retrieval strategies, and representation formats to analyze the contributions of different design choices. Our results show that LEGOMem consistently improves task success rates across team configurations, and that memory design, particularly the placement of orchestrator memory, plays a central role in enabling effective multi-agent coordination.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Experimental setup</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.1">Dataset and metrics.</head><p>We evaluate the agents on the OfficeBench, which consists of multi-step office automation tasks with varying levels of complexity. We split the 300 tasks into training (148 instances, for memory curation) and test (152 instances, for evaluation) sets. Tasks span three difficulty levels: Level 1 (single application), Level 2 (two-application), and Level 3 (multi-application workflows).</p><p>The evaluation metric is the success rate, i.e. the percentage of tasks solved correctly. The success of a task is evaluated programmatically according to the final state of the environment, including exact match or fuzzy keyword match of the final outputs and expected outputs (e.g., correctly updated spreadsheet entries, calendar events, emails sent and received, and question answering).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.2">Implementation details.</head><p>We experiment with three team configurations with agents of different sizes and capabilities:</p><p>• LLM team: for the full LLM team, we use GPT-4o <ref type="bibr" target="#b10">[11]</ref> for both the orchestrator and task agents • Hybrid (LLM + SLM) team: GPT-4o for the orchestrator, and GPT-4o-mini for the task agents • SLM team: GPT-4o-mini <ref type="bibr" target="#b10">[11]</ref> for all components Additionally, for memory storage and retrieval, we use the OpenAI text-embedding-3-large model for embedding the task descriptions, and the FAISS library <ref type="bibr" target="#b7">[8]</ref> for the vector database. For the OCR app, we use the Phi-3.5-mini model <ref type="bibr" target="#b0">[1]</ref> as the vision language model for image parsing.</p><p>We compare the LEGOMem variants with three baselines: (i) No memory, and two state-of-the-art methods on procedural memory for workflow automation (ii) Synapse, which augments agents with semantically similar memories using raw action sequences and full trajectories, and (iii) AWM, which augments agents with summarized subtask memories extracted from full trajectories.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.3">Memory curation and agent inference details.</head><p>Memory construction uses the 148 training tasks, where we first run the full LLM agent team without memory, and filter for successful trajectories and extracted 93 full task memories from the successful trajectories. For the LEGOMem variants, we further extracted 250 subtask memories for the task agents from the 93 full task memories. Both Synapse and AWM focus on single-agent systems; for a fair comparison we use the same 93 successful trajectories, and adapt both baselines to the multi-agent team, augmenting the memories to both orchestrators and task agents. For Synapse, we augment both orchestrators and task agents with the full trajectories. For AWM, we cluster the successful trajectories, to extract and consolidate subtask memories from each cluster, and during inference, we augment the task agents with their corresponding extracted subtask memories and augment the orchestrator with a list of extracted subtask memories. For all variants, we use 5 memories for orchestrator and 3 memories for each task agent from the successful trajectories.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Main results</head><p>Table <ref type="table" target="#tab_0">1</ref> presents the main experiment results, comparing the performance of LEGOMem with baseline methods across different task levels and agentic team configurations. Across all scenarios and agent team configurations, LEGOMem variants consistently outperform baseline methods in terms of overall success rate. All three LEGOMem variants show similar, consistent performance, with the vanilla LEGOMem variant being lightweight while achieving the best overall performance. The performance improvement shows the effectiveness of modularized memory representations and allocation for multi-agent systems. Compared with memory-less teams, LEGOMem improves overall task success rate by +12.61%, +12.72%, and +13.38% absolute points on LLM, Hybrid and SLM teams, respectively.</p><p>Importantly, LEGOMem enables smaller models to close the gap with, and sometimes outperform, larger ones. For example, the Hybrid team with LEGOMem-QueryRewrite achieves 50.22%, surpassing the memory-less LLM team (45.83%). Likewise, a full SLM team with vanilla LEGOMem (38.16%) outperforms the Hybrid team without memory (35.31%). While Synapse remains competitive in LLM teams, reflecting the ability of LLMs to interpret raw procedural traces, its effectiveness is less consistent for Hybrid and SLM teams. In contrast, LEGOMem maintains strong performance across all team settings, highlighting the importance of modularized procedural memory for enabling efficient, smaller-model teams. To better illustrate the effect of memory on agent behavior, Figure <ref type="figure" target="#fig_3">3</ref> presents a qualitative case study. Without memory, the agent fails to identify the earliest email due to incomplete planning, stopping after reading only the first entry. With LEGOMem, the agent systematically reads and compares all emails, correctly identifying the earliest one. This example highlights how LEGOMem improves reasoning consistency and task completeness beyond what is reflected in aggregate success rates.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Ablations experiments</head><p>This section investigates how different memory retrieval, allocation, and placement strategies affect the performance of LEGOMem.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.1">Memory retrieval, allocation, and placement.</head><p>Table <ref type="table" target="#tab_1">2</ref> summarizes our ablation results across different memory retrieval variants, memory allocation strategies, and memory placement settings.</p><p>Memory retrieval. The three subtask memory retrieval strategies-vanilla LEGOMem, LEGOMem-Dynamic, and LEGOMem-QueryRewrite-all perform robustly and achieve similar overall success rates. While dynamic retrieval enables more targeted allocation and query rewriting improves robustness to subtask phrasing variations, these differences are modest compared to the impact of memory placement and allocation strategy.</p><p>In the task-agent-only memory setting, both LEGOMem-Dynamic and LEGOMem-QueryRewrite outperform vanilla LEGOMem by 4-5% on average in the Hybrid team where task agents are smaller models and agent-level memory plays a more critical role. These results highlight the advantage of fine-grained subtask retrieval in providing more relevant and contextual guidance to task agents, especially when global planning signals are weaker. We hypothesize that the similar overall performance of all three variants in full-memory settings may be due to the strength of the orchestrator memory, where the orchestrator receives the complete trajectory of prior solutions, compensating for weaker task agent execution by enabling better task decomposition and delegation.</p><p>Overall, these findings demonstrate the flexibility of the LEGOMem framework: even the lightweight vanilla variant performs competitively, while more advanced variants offer additional benefits in settings that demand finer-grained memory retrieval. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Memory allocation.</head><p>Regarding memory allocation, we find that joint allocation of orchestrator and task agent memory (Orchestrator + Agent memory variant) yields the strongest overall results, with orchestrator memory supporting effective planning, task decomposition and subtask orchestration, and task agent memory enabling execution-level precision. Orchestrator memory emerges as essential: when memory is removed from the orchestrator and provided only to task agents (Task Agent memory variant), performance drops noticeably.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Memory placement.</head><p>Looking at memory placement, even when restricted to the planning and replanning stages, orchestrator memory still improves over task-agent-only variants, confirming its central role in guiding high-level planning and task decomposition. Finally, Task-Agent-only memory while facilitating more accurate tool use and outperforming the no-memory baseline, remains less effective than orchestrator-level memory -indicating that local memory without global coordination is insufficient.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.2">Effectiveness of adding reasoning in memory.</head><p>We also examine whether augmenting procedural memories with lightweight reasoning improves performance. As shown in Table <ref type="table" target="#tab_2">3</ref>, the differences are minor: overall scores change by less than two points across variants and team types. For example, vanilla LEGOMem improves slightly on LLM teams (56.36% → 58.44%) but decreases on Hybrid teams (49.78% → 48.03%). These results suggest that LEGOMem is robust, with its modularized structure already providing sufficient procedural guidance without additional reasoning steps.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.3">Effectiveness of memory on execution steps and failure rates.</head><p>As an additional ablations study, Figure <ref type="figure" target="#fig_4">4</ref> compares the average number of execution steps taken by the agent with different memory placement variants and the step failure rate (due to wrong tool-use actions issued) per task for the LLM team. As shown in Figure <ref type="figure" target="#fig_4">4a</ref> Compared to the no memory variant, the agents equipped with LEGOMem can reduce the number of execution steps required to complete the tasks, for example, a -16.2% drop from an average of 26.5 to 22.2 steps for Level 3 tasks. The task memory only variant where we remove the orchestrator memory required more steps to complete a task compared with the variant with orchestrator memory, due to the effectiveness of the orchestrator memory for improved planning.</p><p>Similarly, Figure <ref type="figure" target="#fig_4">4b</ref> shows that LEGOMem reduces the average failure rate of agent steps. At Level 3, the failure rate decreases from 0.275 in the no-memory setting to 0.225 with LEGOMem. These results indicate that LEGOMem not only improves task success rates but also enables more efficient and reliable task execution.</p><p>In summary, our experiments show that LEGOMem consistently outperforms baselines methods, improving task success by over 12 absolute percentage points compared with memory-less teams. LEGOMem can enable smaller and hybrid teams to match or even surpass LLM-only teams, highlighting its value for efficient multiagent configurations. Ablations reveal that, as one may expect, the memory placement strategy is critical: orchestrator memory is essential for effective planning, while subtask memory complements execution. Additional analysis also show reductions in execution steps required and per-step failure rates with LEGOMem.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">CONCLUSION</head><p>We introduced LEGOMem, a modular procedural memory framework for multi-agent systems that enables orchestrators and task agents to learn from prior task executions. By representing workflows as reusable memory units-split into full-task and subtask components-LEGOMem supports efficient task planning and execution through memory retrieval and allocation. We implemented and evaluated three LEGOMem variants to explore the design space of memory retrieval and placement strategies. Across extensive experiments on workflow automation tasks, we show that LEGOMem significantly improves task success rates over memory-less and baseline methods, with orchestrator memory playing a critical role in planning and coordination, and memory can also benefit smaller</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A PROMPTS FOR MEMORY CURATION</head><p>In this section, we provide the detailed prompts for memory curation and the prompt for the query rewriting LLM.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Prompt 1: Memory Curation Prompt</head><p>From the following agent trajectory, generate memory that can be useful for future LLM agents' reference. # Trajectory: {full_trajectory} # Example: {start_tag} {{ "high_level_plan": "1. Check Bob's calendar availability for the specified time slot. 2. Add the meeting to Bob's calendar for 5172024 from 10:30 a.m. to 11:00 a.m.", "subtasks": [ {{ "agent": "calendar_agent", "description": "Check Bob's schedule on 5/17/2024 from 10:30 a.m. to 11:00 a.m to ensure there are no conflicts", "steps": "&lt;think&gt;I need to check Bob's existing calendar events to ensure no scheduling conflicts&lt;/think&gt;&lt;action&gt;{{"𝑎𝑝𝑝" : "𝑐𝑎𝑙𝑒𝑛𝑑𝑎𝑟 ", "𝑎𝑐𝑡𝑖𝑜𝑛" : "𝑙𝑖𝑠𝑡_𝑒𝑣𝑒𝑛𝑡𝑠", "𝑢𝑠𝑒𝑟𝑛𝑎𝑚𝑒" : "𝐵𝑜𝑏"}&lt;/action&gt;", "observations": "No events found for Bob -calendar is available for the requested time slot" }}, {{ "agent": "calendar_agent", "description": "Add a meeting to Bob's calendar on 5/17/2024 from 10:30 a.m. to 11:00 a.m", "steps": "&lt;think&gt;Since no conflicts were found, I can now create the new calendar event for Bob&lt;/think&gt;&lt;action&gt;{{"𝑎𝑝𝑝" : "𝑐𝑎𝑙𝑒𝑛𝑑𝑎𝑟 ", "𝑎𝑐𝑡𝑖𝑜𝑛" : "𝑐𝑟𝑒𝑎𝑡𝑒_𝑒𝑣𝑒𝑛𝑡", "𝑢𝑠𝑒𝑟 " : "𝐵𝑜𝑏", "𝑠𝑢𝑚𝑚𝑎𝑟𝑦" : "𝑀𝑒𝑒𝑡𝑖𝑛𝑔", "𝑡𝑖𝑚𝑒_𝑠𝑡𝑎𝑟𝑡" : "2024 -05 -1710 : 30 : 00", "𝑡𝑖𝑚𝑒_𝑒𝑛𝑑" : "2024 -05 -1711 : 00 : 00"}}&lt;/action&gt;", "observations": "Successfully created a new event in Bob's calendar for the specified date and time" }} ], "final_answer": "The meeting has been successfully added to Bob's calendar on 5172024 from 10:30 a.m. to 11:00 a.m. ", "reflections": "Task completed successfully without any conflicts or errors. The calendar check confirmed availability, and the meeting was created with proper date/time formatting. " }} {end_tag} # Instructions: Please analyze the trajectory and extract structured memory with clear thinking and well-formed actions. Use the following format for each subtask step: &lt;think&gt;reasoning about what needs to be done and why this action is appropriate&lt;/think&gt; &lt;action&gt;precise tool call command in structured format&lt;/action&gt; The memory object should be formatted as follows: {{ "high_level_plan": "&lt;a string that lists the high-level steps taken and which agent performs each subtask&gt;", "subtasks": [ {{ "agent": "&lt;copy the exact name of agent that performed the subtask&gt;", "description": "&lt;description of the subtask given by the orchestrator&gt;", "steps": "&lt;Copy the precise actions taken with think-action structure: &lt;think&gt;reasoning&lt;/think&gt;&lt;action&gt;𝑡𝑜𝑜𝑙_𝑐𝑎𝑙𝑙&lt;/action&gt;, repeat for each action. Omit some actions if there are too many similar commands (&gt;10). Remove actions that yielded errors or were malformed.&gt;", "observations": "&lt;a very brief summary of the key observations from the function execution results&gt;", }}, ... ], "final_answer": "&lt;The final answer given by the orchestrator or answer agent&gt;", "reflections": "&lt;a concise summary that lists what was successful, what were specific failures, root cause of which action and how to avoid, if any&gt;", }} # Rules to follow: 1. Group together actions into subtasks if they are related and can be done together. 2. For each action in the steps field, use the think-action format with clear reasoning followed by structured tool calls. 3. When copying actions, remove function call IDs but keep the essential tool call structure. 4. Only include successful actions; omit actions that resulted in errors. If there are too many repeated similar actions, truncate and omit some, and if the action parameters (such as contents to write to a word document) are too long, you can summarize it. 5. Keep observations very concise but informative. 6. Do not include orchestrator coordination steps in the subtasks. 7. For the subtask steps field, use a string format with think-action pairs, not a list.</p><p>Follow the JSON format exactly to ensure it can be parsed automatically, and put the json object between the tags {start_tag} # your json here {end_tag} and do not use markdown.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Prompt 2: Query Rewriting Prompt</head><p>Based on the following similar task examples, break down the new task into a step-by-step plan. ## Similar Task Examples: {memory_context} ## New Task: {task_description} Please provide a numbered list of 3-5 high-level steps that would be needed to complete this task. Focus on the main phases/subtasks, not detailed actions. Format your response as a simple numbered list enclosed within &lt;start&gt; and &lt;end&gt; tags: </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>• 1 . 2 .Figure 1 :</head><label>121</label><figDesc>Figure 1: LEGOMem framework overview and example memory. The multi-agent system consists of an orchestrator and task agents. The orchestrator performs planning, next agent selection, and subtask allocation, while task agents execute subtasks by interacting with the environment via API tool calls. (Note: For clarity, additional task agents such as Word agent are omitted.)</figDesc><graphic coords="2,367.89,192.03,187.91,110.80" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>[</head></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Comparison of LEGOMem variants: (a) LEGOMem-Dynamic dynamically retrieves subtask memories during execution, and (b) LEGOMem-QueryRewrite employs query rewriting to retrieve multiple candidate memories for each subtask.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 3 :</head><label>3</label><figDesc>Figure3: Qualitative example of agent execution with and without memory. The memory-less team fails to identify the earliest email due to incomplete planning, stopping after reading the first email, while the team with LEGOMem systematically reads to obtain and compare all email timestamps, producing the correct answer.</figDesc><graphic coords="6,58.06,253.64,530.01,249.50" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Ablations study: execution steps comparison for different LEGOMem memory placement for LLM teams. (a) shows that LEGOMem variants reduce the number of execution steps required, with up to 16.2% reduction for Level 3 tasks. (b) shows lower failure rates of steps, indicating more reliable task execution with procedural memory.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><figDesc>&lt;start&gt; 1. [First step] 2. [Second step] 3. [Third step] ... &lt;end&gt; Steps:</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Performance comparison across memory variants, task levels, and multi-agent teams. Results show mean success rates across different LEGOMem variants compared with baseline methods, each data-point is averaged over three random seeds.Overall Level 1 Level 2 Level 3 Overall Level 1 Level 2 Level 3 Overall</figDesc><table><row><cell></cell><cell></cell><cell cols="2">LLM team</cell><cell></cell><cell cols="4">Hybrid (LLM + SLM) team</cell><cell></cell><cell cols="2">SLM team</cell><cell></cell></row><row><cell cols="4">Level 1 Level 2 Level 3 Baseline methods</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>No memory</cell><cell>49.31</cell><cell>58.52</cell><cell>33.33</cell><cell>45.83</cell><cell>45.14</cell><cell>48.89</cell><cell>16.95</cell><cell>35.31</cell><cell>36.81</cell><cell>34.81</cell><cell>7.34</cell><cell>24.78</cell></row><row><cell>Synapse</cell><cell cols="3">59.72 75.56 43.50</cell><cell>58.11</cell><cell cols="3">46.53 68.15 29.94</cell><cell>46.49</cell><cell>36.81</cell><cell>42.22</cell><cell>20.90</cell><cell>32.24</cell></row><row><cell>AWM</cell><cell>54.17</cell><cell>58.52</cell><cell>35.03</cell><cell>48.03</cell><cell>43.75</cell><cell>55.56</cell><cell>18.64</cell><cell>37.50</cell><cell>35.42</cell><cell>36.30</cell><cell>12.99</cell><cell>26.97</cell></row><row><cell>Our methods</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>LEGOMem</cell><cell>57.99</cell><cell cols="2">73.33 47.46</cell><cell>58.44</cell><cell cols="2">49.31 62.22</cell><cell>36.16</cell><cell>48.03</cell><cell cols="3">38.89 54.07 25.42</cell><cell>38.16</cell></row><row><cell>LEGOMem-Dynamic</cell><cell cols="3">56.25 75.56 43.79</cell><cell>57.12</cell><cell>44.44</cell><cell>65.93</cell><cell>36.16</cell><cell>47.59</cell><cell cols="3">38.89 50.37 27.12</cell><cell>37.72</cell></row><row><cell cols="2">LEGOMem-QueryRewrite 54.17</cell><cell>72.59</cell><cell>42.94</cell><cell>55.26</cell><cell>47.22</cell><cell cols="2">66.67 40.11</cell><cell>50.22</cell><cell>36.81</cell><cell>48.89</cell><cell>26.55</cell><cell>36.40</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Comparing performance with various memory placement mechanism across LEGOMem variants.</figDesc><table><row><cell>LLM variants</cell><cell>Hybrid (LLM + SLM) variants</cell></row><row><cell cols="2">Level 1 Level 2 Level 3 Overall Level 1 Level 2 Level 3 Overall</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Comparing memory with and without reasoning across different LEGOMem variants.</figDesc><table><row><cell></cell><cell></cell><cell cols="2">LLM team</cell><cell></cell><cell cols="4">Hybrid (LLM + SLM) team</cell></row><row><cell></cell><cell cols="8">Level 1 Level 2 Level 3 Overall Level 1 Level 2 Level 3 Overall</cell></row><row><cell>No reasoning</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>LEGOMem</cell><cell>54.17</cell><cell>75.93</cell><cell>43.22</cell><cell>56.36</cell><cell>48.61</cell><cell>68.15</cell><cell>36.72</cell><cell>49.78</cell></row><row><cell>LEGOMem-Dynamic</cell><cell>56.94</cell><cell>73.33</cell><cell>44.63</cell><cell>57.02</cell><cell>50.00</cell><cell>68.15</cell><cell>36.72</cell><cell>50.22</cell></row><row><cell>LEGOMem-QueryRewrite</cell><cell>48.61</cell><cell>69.63</cell><cell>48.02</cell><cell>54.61</cell><cell>37.50</cell><cell>65.19</cell><cell>36.16</cell><cell>45.18</cell></row><row><cell>With reasoning</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>LEGOMem</cell><cell>57.99</cell><cell>73.33</cell><cell>47.46</cell><cell>58.44</cell><cell>49.31</cell><cell>62.22</cell><cell>36.16</cell><cell>48.03</cell></row><row><cell>LEGOMem-Dynamic</cell><cell>56.25</cell><cell>75.56</cell><cell>43.79</cell><cell>57.12</cell><cell>44.44</cell><cell>65.93</cell><cell>36.16</cell><cell>47.59</cell></row><row><cell>LEGOMem-QueryRewrite</cell><cell>54.17</cell><cell>72.59</cell><cell>42.94</cell><cell>55.26</cell><cell>47.22</cell><cell>66.67</cell><cell>40.11</cell><cell>50.22</cell></row></table></figure>
+		</body>
+		<back>
+
+			
+			<div type="acknowledgement">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>agents, highlighting the flexibility and effectiveness of the framework. Our work shows that integrating procedural memory into multi-agent systems enables more reliable and reusable solutions. Future work may explore continual learning also from failed past trajectories, and scaling LEGOMem to open-ended environments and tool ecosystems.</p></div>
+			</div>
+
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jyoti</forename><surname>Marah Abdin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harkirat</forename><surname>Aneja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sébastien</forename><surname>Behl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronen</forename><surname>Bubeck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suriya</forename><surname>Eldan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Gunasekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Russell</forename><forename type="middle">J</forename><surname>Harrison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mojan</forename><surname>Hewett</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Javaheripi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.08905</idno>
+		<title level="m">Piero Kauffmann, et al. 2024. Phi-4 technical report</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Michael Ahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Byron</forename><surname>Cortes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuyuan</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keerthana</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hausman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.01691</idno>
+		<title level="m">Do as i can, not as i say: Grounding language in robotic affordances</title>
+		<imprint>
+			<date type="published" when="2022">2022. 2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Spider2-v: How far are multimodal agents from automating data science and engineering workflows?</title>
+		<author>
+			<persName><forename type="first">Ruisheng</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangyu</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoyuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jixuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yeqiao</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongcheng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinzhuang</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanchong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjing</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Mao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="107703" to="107744" />
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingwei</forename><surname>Zuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenfei</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi-Min</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaxi</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruobing</forename><surname>Xie</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.10848</idno>
+		<title level="m">Agentverse: Facilitating multi-agent collaboration and exploring emergent behaviors in agents</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page">6</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ceyao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengwen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangrui</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sirui</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zekai</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feng</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junhua</forename><surname>Zhao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.03428</idno>
+		<title level="m">Exploring large language model based intelligent agents: Definitions, methods, and prospects</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Prateek</forename><surname>Chhikara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dev</forename><surname>Khant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saket</forename><surname>Aryan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Taranjeet</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deshraj</forename><surname>Yadav</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2504.19413</idno>
+		<idno type="arXiv">arXiv:2504.19413</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2504.19413" />
+		<title level="m">Mem0: Building Production-Ready AI Agents with Scalable Long-Term Memory</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note>cs</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Yufan</forename><surname>Dang</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">Multi-Agent Collaboration via Evolving Orchestration</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Qian</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">Multi-Agent Collaboration via Evolving Orchestration</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Xueheng</forename><surname>Luo</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">Multi-Agent Collaboration via Evolving Orchestration</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Jingru</forename><surname>Fan</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">Multi-Agent Collaboration via Evolving Orchestration</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Zihao</forename><surname>Xie</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">Multi-Agent Collaboration via Evolving Orchestration</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Ruijie</forename><surname>Shi</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">Multi-Agent Collaboration via Evolving Orchestration</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">Multi-Agent Collaboration via Evolving Orchestration</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Yang</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">Multi-Agent Collaboration via Evolving Orchestration</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyin</forename><surname>Che</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">Multi-Agent Collaboration via Evolving Orchestration</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Ye</forename><surname>Tian</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">Multi-Agent Collaboration via Evolving Orchestration</orgName>
+			</affiliation>
+		</author>
+		<idno type="arXiv">arXiv:2505.19591</idno>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Matthijs</forename><surname>Douze</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandr</forename><surname>Guzhva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengqi</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gergely</forename><surname>Szilvasy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre-Emmanuel</forename><surname>Mazaré</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Hosseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hervé</forename><surname>Jégou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.08281</idno>
+		<title level="m">The faiss library</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Magentic-one: A generalist multi-agent system for solving complex tasks</title>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Fourney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gagan</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hussein</forename><surname>Mozannar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eduardo</forename><surname>Salinas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Friederike</forename><surname>Niedtner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Grace</forename><surname>Proebsting</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Griffin</forename><surname>Bassman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Gerrits</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Alber</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2411.04468</idno>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yunfan</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yun</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kangxiang</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinliu</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxi</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixin</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haofen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haofen</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.10997</idno>
+		<title level="m">Retrieval-augmented generation for large language models: A survey</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page">1</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Hurst</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Lerer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><forename type="middle">P</forename><surname>Goucher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Perelman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aidan</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akila</forename><surname>Ostrow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Welihinda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Hayes</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Radford</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.21276</idno>
+		<title level="m">Gpt-4o system card</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">Minki</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Ning</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongge</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukas</forename><surname>Huseyin A Inan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanzhi</forename><surname>Wutschitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saravan</forename><surname>Sim</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rajmohan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2510.00615</idno>
+		<title level="m">ACON: Optimizing Context Compression for Long-horizon LLM Agents</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">An llm compiler for parallel function calling</title>
+		<author>
+			<persName><forename type="first">Sehoon</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suhong</forename><surname>Moon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Tabrizi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><forename type="middle">W</forename><surname>Mahoney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kurt</forename><surname>Keutzer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amir</forename><surname>Gholami</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Forty-first International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dongjun</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juyong</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyuyoung</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jihoon</forename><surname>Tack</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinwoo</forename><surname>Shin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yee</forename><forename type="middle">Whye</forename><surname>Teh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kimin</forename><surname>Lee</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.10689</idno>
+		<title level="m">Learning to contextualize web pages for enhanced decision making by LLM agents</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Retrieval-augmented generation for knowledge-intensive nlp tasks</title>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Piktus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladimir</forename><surname>Karpukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heinrich</forename><surname>Küttler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Rocktäschel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="9459" to="9474" />
+			<date type="published" when="2020">2020. 2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhicong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hangyu</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhishu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongxia</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Du</forename><surname>Jiazhen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fuzheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhang</forename><surname>Di</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Liu</surname></persName>
+		</author>
+		<title level="m">DMQR-RAG: Diverse Multi-Query Rewriting in Retrieval-Augmented Generation</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Query rewriting in retrieval-augmented large language models</title>
+		<author>
+			<persName><forename type="first">Xinbei</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yeyun</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengcheng</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hai</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Duan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2023 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="5303" to="5315" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Evaluating very long-term conversational memory of llm agents</title>
+		<author>
+			<persName><forename type="first">Adyasha</forename><surname>Maharana</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong-Ho</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Tulyakov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Bansal</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.17753</idno>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>Francesco Barbieri, and Yuwei Fang</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Gaia: a benchmark for general ai assistants</title>
+		<author>
+			<persName><forename type="first">Grégoire</forename><surname>Mialon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clémentine</forename><surname>Fourrier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Wolf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Lecun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Scialom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Sayplan: Grounding large language models using 3d scene graphs for scalable robot task planning</title>
+		<author>
+			<persName><forename type="first">Krishan</forename><surname>Rana</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Haviland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sourav</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jad</forename><surname>Abou-Chakra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ian</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niko</forename><surname>Suenderhauf</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.06135</idno>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Preston</forename><surname>Rasmussen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pavlo</forename><surname>Paliychuk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Travis</forename><surname>Beauvais</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Ryan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Chalef</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.13956</idno>
+		<title level="m">Zep: a temporal knowledge graph architecture for agent memory</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Llm-planner: Few-shot grounded planning for embodied agents with large language models</title>
+		<author>
+			<persName><forename type="first">Hee</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaman</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clayton</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><forename type="middle">M</forename><surname>Washington</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Lun</forename><surname>Sadler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Chao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Su</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings</title>
+		<meeting>null</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="2998" to="3009" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Multiagent systems: A survey from a machine learning perspective</title>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manuela</forename><surname>Veloso</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Autonomous Robots</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="page" from="345" to="383" />
+			<date type="published" when="2000">2000. 2000</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoning</forename><surname>Zeng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.22925</idno>
+		<title level="m">Hierarchical Memory for High-Efficiency Long-Term Reasoning in LLM Agents</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">A survey on large language model based autonomous agents</title>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueyang</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingsen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiakai</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yankai</forename><surname>Lin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Frontiers of Computer Science</title>
+		<imprint>
+			<biblScope unit="volume">18</biblScope>
+			<biblScope unit="page">186345</biblScope>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Plan-and-solve prompting: Improving zero-shot chainof-thought reasoning by large language models</title>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanyu</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihuai</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqiang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunshi</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roy</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ka-Wei</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ee-Peng</forename><surname>Lim</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.04091</idno>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Weixuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongge</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">Madrigal</forename><surname>Diaz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Rühle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saravan</forename><surname>Rajmohan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2508.09124</idno>
+		<title level="m">OdysseyBench: Evaluating LLM Agents on Long-Horizon Complex Office Application Workflows</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zilong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuedong</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zimin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Da</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Yuchen Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingbo</forename><surname>Shang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.19056</idno>
+		<title level="m">Officebench: Benchmarking language agents across multiple applications for office automation</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Zora</forename><surname>Zhiruo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayuan</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2409.07429</idno>
+		<idno type="arXiv">arXiv:2409.07429</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2409.07429" />
+	</analytic>
+	<monogr>
+		<title level="j">Agent Workflow Memory</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note>cs</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Wooldridge</surname></persName>
+		</author>
+		<title level="m">An Introduction to MultiAgent Systems</title>
+		<imprint>
+			<publisher>Wiley Publishing</publisher>
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+	<note>nd ed.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Di</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongwei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuwei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.10813</idno>
+		<title level="m">Longmemeval: Benchmarking chat assistants on long-term interactive memory</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Autogen: Enabling next-gen LLM applications via multi-agent conversations</title>
+		<author>
+			<persName><forename type="first">Qingyun</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gagan</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jieyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiran</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beibin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erkang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaokun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiale</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">First Conference on Language Modeling</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Osworld: Benchmarking multimodal agents for open-ended tasks in real computer environments</title>
+		<author>
+			<persName><forename type="first">Tianbao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danyang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jixuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaochuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siheng</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruisheng</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Toh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhoujun</forename><surname>Hua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongchan</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangyu</forename><surname>Shin</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="52040" to="52094" />
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">Wujiang</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Mei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juntao</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zujie</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongfeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2502.12110</idno>
+		<idno type="arXiv">arXiv:2502.12110</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2502.12110" />
+		<title level="m">A-MEM: Agentic Memory for LLM Agents</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note>cs</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">React: Synergizing reasoning and acting in language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations (ICLR)</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chaoyun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liqun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shilin</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Si</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minghua</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingwei</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saravan</forename><surname>Rajmohan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.07939</idno>
+		<title level="m">Ufo: A ui-focused agent for windows os interaction</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Synapse: Trajectory-as-exemplar prompting with memory for computer control</title>
+		<author>
+			<persName><forename type="first">Longtao</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rundong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinrun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>An</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.07863</idno>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Memorybank: Enhancing large language models with long-term memory</title>
+		<author>
+			<persName><forename type="first">Wanjun</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lianghong</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiqi</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">He</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanlin</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2024">2024. 19724-19731</date>
+			<biblScope unit="volume">38</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuhui</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abishek</forename><surname>Sridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianyi</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyue</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.13854</idno>
+		<title level="m">Webarena: A realistic web environment for building autonomous agents</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zijian</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ao</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoxuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sunghwan</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alok</forename><surname>Prakash</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniela</forename><surname>Rus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinhua</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan Kian Hsiang</forename><surname>Low</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><forename type="middle">Pu</forename><surname>Liang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2506.15841</idno>
+		<title level="m">MEM1: Learning to Synergize Memory and Reasoning for Efficient Long-Horizon Agents</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,2815 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Learning GUI Grounding with Spatial Reasoning from Visual Feedback</title>
+				<funder ref="#_dw2rHX6">
+					<orgName type="full">UK Research and Innovation</orgName>
+				</funder>
+				<funder ref="#_GC5cNYG">
+					<orgName type="full">UKRI</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-05-25">25 May 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Yu</forename><surname>Zhao</surname></persName>
+							<email>&lt;yu.zhao@ed.ac.uk&gt;.</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Edinburgh</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Wei-Ning</forename><surname>Chen</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Edinburgh</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Huseyin</forename><forename type="middle">A</forename><surname>Inan</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Edinburgh</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Samuel</forename><surname>Kessler</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Edinburgh</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Edinburgh</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Lukas</forename><surname>Wutschitz</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Edinburgh</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Fangkai</forename><surname>Yang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Edinburgh</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Chaoyun</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Edinburgh</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Pasquale</forename><surname>Minervini</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Edinburgh</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Saravan</forename><surname>Rajmohan</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Edinburgh</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Robert</forename><surname>Sim</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Edinburgh</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Microsoft</forename><forename type="middle">Miniml</forename><surname>Ai</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Edinburgh</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Learning GUI Grounding with Spatial Reasoning from Visual Feedback</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-05-25">25 May 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">9A3223E53222894C601AAA62C7038129</idno>
+					<idno type="arXiv">arXiv:2509.21552v2[cs.CV]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T20:13+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Graphical User Interface (GUI) grounding is commonly framed as a coordinate prediction taskgiven a natural language instruction, generate onscreen coordinates for actions such as clicks and keystrokes. However, recent Vision Language Models (VLMs) often fail to predict accurate numeric coordinates when processing GUI images with high resolutions and complex layouts. To address this issue, we reframe GUI grounding as an interactive search task, where the VLM generates actions to move a cursor in the GUI to locate UI elements. At each step, the model determines the target object, evaluates the spatial relations between the cursor and the target, and moves the cursor closer to the target conditioned on the movement history. In this interactive process, the rendered cursor provides visual feedback to help the model align its predictions with the corresponding on-screen locations. We train our GUI grounding model, GUI-CURSOR, using multistep online reinforcement learning with a dense trajectory-based reward function. Experimental results demonstrate that GUI-CURSOR surpasses strong baselines in GUI grounding and agentic tasks, achieving superior performance with the same base models while requiring less training data. Further analysis shows that GUI-CURSOR learns to adaptively conduct more steps on more difficult examples, and it obtains better spatial reasoning capability on out-of-distribution domains.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="26" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>Graphical User Interface (GUI) agents solve tasks by translating user instructions into multiple GUI interaction steps <ref type="bibr" target="#b7">(Deng et al., 2023;</ref><ref type="bibr" target="#b16">Li et al., 2024;</ref><ref type="bibr">Zhang et al., 2025a)</ref>.</p><p>A core component of these agents is GUI grounding, i.e., identifying a specific pixel coordinate to execute an action, like a click or keystroke. While early approaches rely on extracting coordinates from textual representations of GUIs (e.g., HTML and DOM trees), such data is often redundant and is not consistently available across platforms <ref type="bibr">(Zhang et al., 2025c;</ref><ref type="bibr">b;</ref><ref type="bibr">Wu et al., 2025b)</ref>. Thus, recent research emphasises pure vision-driven GUI grounding that perceives the interface directly from rendered screenshots <ref type="bibr">(Xu et al., 2024;</ref><ref type="bibr" target="#b9">Gou et al., 2025;</ref><ref type="bibr" target="#b5">Yuan et al., 2025)</ref>.</p><p>However, accurately predicting the precise numerical coordinates of an element on a high-resolution GUI image remains a challenge for current vision-language models (VLMs). This difficulty largely arises from the problem of spatial semantic alignment <ref type="bibr">(Wu et al., 2025b)</ref>, which requires a language model to generate discrete coordinate tokens by implicitly mapping its understanding of a visual element to a specific set of coordinates on the GUI image. Current methods, whether based on supervised fine-tuning <ref type="bibr" target="#b9">(Gou et al., 2025;</ref><ref type="bibr" target="#b3">Wu et al., 2024;</ref><ref type="bibr">Xu et al., 2024)</ref>, reinforcement learning <ref type="bibr" target="#b5">(Yuan et al., 2025;</ref><ref type="bibr">Liu et al., 2025c;</ref><ref type="bibr">Yang et al., 2025a)</ref>, or architectural modifications <ref type="bibr">(Wu et al., 2025b)</ref>, commonly frame GUI grounding as a one-step coordinate prediction problem during training: given a screenshot, the VLM is tasked with generating the coordinates of the target. One potential limitation of this one-step learning paradigm is the absence of a visual feedback loop: the model is only supervised on the generated numerical coordinates, but does not receive any information on where its prediction actually lands on the GUIs. As a consequence, the model may fail to develop a robust alignment between its numerical predictions and their corresponding on-screen positions.</p><p>To address this limitation, we propose GUI-CURSOR, which reframes GUI grounding as a search task in an interactive environment (Section 2.2), as shown in Figure <ref type="figure" target="#fig_0">1</ref>. During training, GUI-CURSOR operates by controlling a virtual cursor on a GUI image; at each step, the model performs spatial reasoning to determine if the cursor is positioned over the target GUI element. If the model determines that the cursor is not positioned over the target, it predicts a new position, and the environment provides an updated image of the GUI with the cursor located in the new position. This iterative process terminates when the model determines the cursor is correctly positioned on the target UI element, or when a maximum number of cursor moving steps is reached. This interactive process improves GUI grounding training and inference in two ways: 1) the rendered cursor provides explicit visual feedback that shows the predicted position on the GUI image, helping the model better align numerical coordinates with their corresponding GUI elements during training; and 2) this interactive environment allows the model to conduct spatial reasoning based on its visual feedback, allowing it to incrementally refine its predictions at inference time.</p><p>We train the model using reinforcement learning (RL) in this interactive environment, as it provides a natural framework for this sequential decision-making task. We design a reward function that combines a position-based reward with several trajectory penalties that discourage wrong or inefficient search processes (Section 2.3). Our ablation studies (Section 3.2) show that these penalties are helpful to prevent degenerate behaviour and significantly improve the downstream accuracy of the model. Furthermore, to improve the efficiency of this interactive grounding process, we introduce a strategy that balances training cost and inference accuracy (Section 2.4).</p><p>Experimental results on GUI grounding and agentic benchmarks show that GUI-CURSOR outperforms all strong baseline models consistently based on Qwen2.5-VL-7B <ref type="bibr" target="#b33">(Bai et al., 2025)</ref> and UI-TARS-1.5-7B <ref type="bibr">(Qin et al., 2025)</ref>. When using the same base model, GUI-CURSOR outperforms prior leading model GTA1 <ref type="bibr">(Yang et al., 2025a</ref>) by 8.0% on ScreenSpot-Pro <ref type="bibr">(Li et al., 2025b)</ref> while only requiring 8K training samples compared to 64K samples used by GTA1.</p><p>In terms of computational efficiency, the fine-tuned model learns to solve the problem within two steps for 95% of the instances and adaptively conducts more steps on difficult tasks, such as locating UI elements with small sizes.</p><p>To test the spatial reasoning capability of the model, we design a cursor-in-box test -asking the model to classify the spatial relationship between a cursor and a box in a clean background (Section 3.3). We observe that even the strong base model struggles with this simple task, which suggests its grounding ability may not be founded on a robust spatial understanding of images, while GUI-CURSOR obtains higher accuracy without being explicitly trained on it. Further evaluation on spatial reasoning benchmarks indicates that learning GUI grounding by moving a cursor improves the spatial reasoning capability that can generalise to out-of-distribution domains.</p><p>Our work makes the following contributions: 1) we reformulate GUI grounding from the static, one-step task to a dynamic, interactive process, which enables the model to learn coordinate-spatial alignment from visual feedback during training; 2) we introduce GUI-CURSOR, the GUI grounding model trained with reinforcement learning in the interactive environment, using a dense, trajectory-based reward function; 3) our comprehensive evaluation across GUI grounding, online agentic, and spatial reasoning benchmarks shows that learning GUI grounding by moving a cursor improves both grounding accuracy and spatial reasoning capability.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">GUI Grounding with Visual Feedback</head><p>We introduce GUI-CURSOR, a method that learns GUI grounding by moving a virtual cursor in an interactive environment. This interactive environment provides explicit visual feedback through the cursor to help the model better align the coordinate and its actual spatial position on the image. During inference, it also allows the model to refine the prediction according to the spatial relation of the target and the cursor. We train this iterative behaviour using reinforcement learning, as it provides a natural framework for optimising this sequential decision-making process. In the following, we introduce the process of GUI grounding by moving a cursor (Section 2.2), reward function modelling (Section 2.3), and a strategy to balance training efficiency and inference accuracy (Section 2.4).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1.">Problem Formulation</head><p>The task of GUI grounding is to map a natural language instruction to a target coordinate on a GUI. Formally, given a GUI screenshot O with W ×H pixels and a natural language instruction I describing a target element, the goal is to predict an integer coordinate pair (x, y), with x, y ∈ N 0 , where an action should be performed at this pixel. The ground truth is the rectangular area defined by the bounding box B.</p><p>Given the top-left corner (x min , y min ) and the bottom-right corner (x max , y max ), this area is the set of all points (x, y) such that: B = {(x, y)|x min ≤ x ≤ x max , y min ≤ y ≤ y max }. The prediction (x, y) is correct when (x, y) ∈ B.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2.">GUI Grounding by Moving a Cursor</head><p>We design an interactive environment that allows the model to locate the GUI element by moving a cursor. The interaction process consists of a sequence of steps. At the initial step t = 0, the screenshot O 0 displays with a cursor at its centre (x 0 , y 0 ); conditioned on a natural language instruction I and the observation O 0 , the model generates the response A 0 that contains an action to move the cursor to a position (x 1 , y 1 ). At each subsequent step t, the new observation O t displays the cursor at the latest position (x t , y t ), and the model generates the response A t conditioned on the interaction history and the new observation: (I, O 0 , A 0 , O 1 , . . . , A t-1 , O t ). Each response consists of a thinking process before an action :</p><formula xml:id="formula_0">A t = &lt;think&gt;w 1 , w 2 , . . . , w n &lt;/think&gt;&lt;answer&gt;v 1 , v 2 . . . , v m &lt;/answer&gt;.</formula><p>The thinking tokens {w i } n i=1 contain the analysis about the target UI element, the current cursor's location, and the spatial relationship between the target and the cursor. The answer tokens {v i } m i=1 can be either a new coordinate {v i } m i=1 = (x t , y t ), or {v i } m i=1 = STOP when the model judges the cursor is correctly on the target. If the new coordinate (x t , y t ) is provided, the cursor will be rendered at the position (x t , y t ) for the next turn observation O t+1 ; otherwise, the position of the cursor will not be updated.</p><p>The episode terminates when the model outputs STOP (i.e., {v i } m i=1 = STOP) or a pre-defined maximum number of steps is reached. Then, the final position (x T , y T ) of the cursor is returned as the grounding prediction, where T is the number of steps. Figure <ref type="figure" target="#fig_0">1</ref> illustrates how the model locates the target by moving a cursor in this interactive environment.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3.">Trajectory Reward Modelling</head><p>Our reward function aims to guide the model to obtain both an accurate final prediction and a rational search behaviour. To achieve these goals, we introduce 1) a position-based reward to minimise the distance between the final position and the target, and 2) several trajectory penalties to discourage unreasonable search processes. Existing GUI grounding methods that use RL frameworks <ref type="bibr">(Yang et al., 2025a;</ref><ref type="bibr" target="#b5">Yuan et al., 2025</ref>) mainly apply a position-based reward. Differently, regulating the search process is important in our multi-step interaction approach, because it helps to prevent degenerate strategies, e.g., immediately stopping without using visual feedback or repeatedly moving to a visited position. In the following, we introduce the position reward and trajectory penalties used in GUI-CURSOR.</p><p>Position Reward This reward measures the quality of the final cursor position, (x T , y T ), relative to the target bounding box B. We adopt the dense distance reward used by SE-GUI <ref type="bibr" target="#b5">(Yuan et al., 2025)</ref>, which considers both the distance to the box and centrality within it:</p><formula xml:id="formula_1">r p =    1 + 1 -dcentre((x T ,y T ),B) dmax(B) 2 if (x T , y T ) ∈ B 1 -d edge ((x T , y T ), B)</formula><p>otherwise, (1) where d edge ((x, y), B) is the Euclidean distance of (x, y) to the nearest edge of B, d max (B) is the distance of the vertex of B to the centre of B, and d centre ((x, y), B) is the distance to the centre of B. We normalise all distances by the width and height of the image. In Equation (1), the position reward is 1 -d edge if (x T , y T ) is outside B, increasing with proximity to the centre when inside B.</p><p>Trajectory Penalties While the position reward defines a final goal, it provides no guidance on the search process. To guide the model in learning a rational search strategy, we introduce four trajectory-based penalties that target specific undesirable behaviours. We present the examples of the penalised trajectories in the right part of Figure <ref type="figure" target="#fig_0">1</ref>. </p><p>False Move Penalty (r FM ): Checks if there is a history position inside the target box, but the model does not output STOP and the final position p T is outside of it: r FM = I[(∃t &lt; T s.t. (x t , y t ) ∈ B)∧((x T , y T ) / ∈ B)] (3) False Direction Penalty (r FD ): Checks if the final position (x T , y T ) is further from the target box than the initial prediction (x 1 , y 1 ) was, in which case the movement does not shorten the distance between the prediction and the target: r FD = I[d edge ((x T , y T ), B) &gt; d edge ((x 1 , y 1 ), B)] (4) Repeated Position Penalty (r RP ): Checks if the model predicts the same coordinate more than once: r RP = I[∃i, j ∈ 1, . . . , T s.t</p><formula xml:id="formula_3">. i ̸ = j ∧ (x i , y i ) = (x j , y j )]<label>(5)</label></formula><p>Then, we define the trajectory reward R T as a weighted combination of the position reward r p and a sum of the trajectory penalties r FS , r FM , r FD , and r RP weighted by an hyper-parameter w p :</p><formula xml:id="formula_4">R T = r p -w p (r FD + r FS + r FM + r RP )<label>(6)</label></formula><p>Training Objective We use Group Relative Policy Optimisation (GRPO) to optimise the interaction policy guided by the trajectory reward R T and a format reward to ensure the valid output format (DeepSeek-AI, 2025). GRPO has been successfully applied in prior RL-based GUI grounding methods <ref type="bibr">(Luo et al., 2025a;</ref><ref type="bibr" target="#b5">Yuan et al., 2025;</ref><ref type="bibr">Yang et al., 2025a)</ref>, and we also use it for its advantages in training stability and efficiency. More details are presented Section A.1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.4.">Cursor-Centric Focusing</head><p>The iterative nature of GUI-CURSOR could be computationally demanding, as it processes a growing sequence of interaction history (I, O 0 , A o , . . . , A t-1 , O t ) to generate an action. This becomes infeasible when handling native high-resolution screenshots. To alleviate this issue, we use a two-part strategy that balances computational efficiency with predictive accuracy.</p><p>During training, we downscale the large image to a manageable resolution P (e.g., 1920 × 1080 pixels in our experiments), preserving the original aspect ratio. This allows the model to learn the iterative grounding task without a heavy computational burden of processing large images. Although this may increase the grounding difficulty when searching for small UI elements, it effectively trains the model to approximate the target's location.</p><p>During inference, we employ a cursor-centric focusing strategy (CCF) for any image larger than the training resolution. CCF begins with a single step to get an initial coarse prediction on the full image. Then, it crops a P -size area centred on this initial prediction, thereby positioning the cursor at the centre of this focused view; in the following steps, the model conducts fine-grained movement within the cropped area. Here, P is the maximum resolution during training, and the following moving steps will not include the original large image in the interaction history. This combined strategy enables GUI-CURSOR to learn a general interaction policy without a heavy computational burden, while performing accurate inference on higherresolution displays.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.">Experiment Settings</head><p>Implementation Details We implement GUI-CURSOR using two base models: Qwen2.5-VL-7B <ref type="bibr" target="#b33">(Bai et al., 2025)</ref> and UI-TARS-1.5-7B <ref type="bibr">(Qin et al., 2025)</ref>, and we train both models using the same settings. We train GUI-CURSOR with a maximum of 250 steps. The learning rate is 10 -6 , the batch size is 32, and 12 sample moving trajectories for each instruction. We set the maximum moving steps to 4 during training. Following <ref type="bibr">Yang et al. (2025a)</ref>, we use GUI grounding datasets from Aria-UI <ref type="bibr">(Yang et al., 2025b)</ref> and OS-Atlas <ref type="bibr" target="#b3">(Wu et al., 2024)</ref>, employ the same filtering and preprocessing scripts, and randomly sample data to train the model. We apply online filtering <ref type="bibr" target="#b5">(Cui et al., 2025)</ref> to filter out training examples when all sampled trajectories either successfully or unsuccessfully locate the target -a common data selection strategy to remove overly easy or difficult examples for online policy models. More implementation details are available in Section A.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Evaluation Benchmarks and Baseline Models</head><p>We evaluate our method on the four GUI grounding benchmarks: ScreenSpot-V2 <ref type="bibr" target="#b3">(Cheng et al., 2024;</ref><ref type="bibr" target="#b3">Wu et al., 2024)</ref>, ScreenSpot-Pro <ref type="bibr">(Li et al., 2025b)</ref>, OSWorld-G <ref type="bibr">(Xie et al., 2025)</ref>, and UI-Vision <ref type="bibr" target="#b25">(Nayak et al., 2025)</ref>; we conduct online agentic evaluation using OSWorld <ref type="bibr" target="#b41">(Xie et al., 2024)</ref>. Moreover, we design a cursor-in-box test and use Spa-tialMQA <ref type="bibr">(Liu et al., 2025a)</ref> and SPHERE <ref type="bibr">(Zhang et al., 2025e)</ref> to evaluate the spatial reasoning capability. We compare GUI-CURSOR against GUI grounding models optimised by supervised fine-tuning: SeeClick <ref type="bibr" target="#b3">(Cheng et al., 2024)</ref>, UGround <ref type="bibr" target="#b9">(Gou et al., 2025)</ref>, OS-Atlas <ref type="bibr" target="#b3">(Wu et al., 2024)</ref>, UI-TARS <ref type="bibr">(Qin et al., 2025)</ref> and GUI-Actor <ref type="bibr">(Wu et al., 2025b)</ref>, and RL methods: UI-R1 <ref type="bibr">(Lu et al., 2025)</ref>, GUI-R1 <ref type="bibr">(Luo et al., 2025a)</ref>, InfiGUI-R1 <ref type="bibr">(Liu et al., 2025c)</ref>, SE-GUI <ref type="bibr" target="#b5">(Yuan et al., 2025)</ref>, LPO <ref type="bibr">(Tang et al., 2025b)</ref>, GTA1 <ref type="bibr">(Yang et al., 2025a)</ref>, and GUI-G 2 <ref type="bibr">(Tang et al., 2025a)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.">Main Experimental Results</head><p>Grounding Evaluation Table <ref type="table">1</ref>, Table <ref type="table">2</ref>, and Table <ref type="table" target="#tab_0">3</ref> show the evaluation results on ScreenSpot-Pro, OSWorld-G, UI-Vision, and ScreenSpot-v2. GUI-CURSOR, based on UI-TARS-1.5-7B, obtains the best results in 3 out of 4 of the grounding benchmarks compared to other methods, except for OSWorld-G, with a small gap of 2 compared to GTA1;</p><formula xml:id="formula_5">Model CAD Dev Creative Scientific Office OS Avg.</formula><p>Text Icon Text Icon Text Icon Text Icon Text Icon Text Icon Text Icon Avg.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Supervised Fine-Tuning Methods</head><p>SeeClick <ref type="bibr" target="#b3">(Cheng et al., 2024)</ref> 0.6 0.0 1.0 0.0 2.5 0.0 3.5 0.0 1.1 0.0 2.8 0.0 1.8 0.0 1.1 OS-Altlas-7B <ref type="bibr" target="#b3">(Wu et al., 2024)</ref> 33.1 1.4 28.8 2.8 12.2 4.7 37.5 7.3 33.9 5.7 27.1 4.5 28.1 4.0 18.9 UGround-7B <ref type="bibr" target="#b9">(Gou et al., 2025)</ref> --------------31.1 UI-TARS-7B <ref type="bibr">(Qin et al., 2025)</ref> 58.4 12.4 50.0 9.1 20.8 9.4 63.9 31.8 63.3 20.8 30.8 16.9 47.8 16.2 35.7 UI-TARS-72B <ref type="bibr">(Qin et al., 2025)</ref> 63.0 17.3 57.1 15.4 18.8 12.5 64.6 20.9 63.3 26.4 42.1 15.7 50.9 17.5 38.1 Jedi-7B <ref type="bibr">(Xie et al., 2025)</ref> 42.9 11.0 50.0 11.9 38.0 14.1 72.9 25.5 75.1 47.2 33.6 16.9 52.6 18.2 39.5 GUI-Actor-7B <ref type="bibr">(Wu et al., 2025b)</ref> --------------47.7</p><p>Reinforcement Learning Methods UI-R1-3B <ref type="bibr">(Lu et al., 2025)</ref> 11.2 6.3 22.7 4.1 27.3 3.5 42.4 11.8 32.2 11.3 13.1 4.5 24.9 6.4 17.8 UI-R1-E-3B <ref type="bibr">(Lu et al., 2025)</ref> 37.1 12.5 46.1 6.9 41.9 4.2 56.9 21.8 65.0 26.4 32.7 10.1 --33.5 GUI-R1-3B <ref type="bibr">(Luo et al., 2025a)</ref> 26.4 7.8 33.8 4.8 40.9 5.6 61.8 17.3 53.6 17.0 28.1 5.6 ---InfiGUI-R1-3B <ref type="bibr">(Liu et al., 2025c)</ref> 33.0 14.1 51.3 12.4 44.9 7.0 58.3 20.0 65.5 28.3 43.9 12.4 49.1 14.1 35.7 GUI-R1-7B <ref type="bibr">(Luo et al., 2025a)</ref> 23.9 6.3 49.4 4.8 38.9 8.4 55.6 11.8 58.7 26.4 42.1 16.9 ---SE-GUI-7B <ref type="bibr" target="#b5">(Yuan et al., 2025)</ref> 51.3 42.2 68.2 19.3 57.6 9.1 75.0 28.2 78.5 43.4 49.5 25.8 63.5 21.0 47.3 GUI-G 2 -7B <ref type="bibr">(Tang et al., 2025a)</ref> 55.8 12.5 68.8 17.2 57.1 15.4 77.1 24.5 74.0 32.7 57.9 21.3 64.7 19.6 47.5 GTA1-7B <ref type="bibr">(Yang et al., 2025a)</ref> 66.9 20.7 62.6 18.2 53.3 17.2 76.4 31.8 82.5 50.9 48.6 25.9 65.5 25.2 50.1 GUI-Cursor-7B (Qwen2.5-VL-7B) 80.5 33.1 65.7 18.2 62.4 25.0 83.3 32.7 84.2 43.4 65.4 31.5 73.3 29.3 56.5 GUI-Cursor-7B (UI-TARS-1.5-7B) 55.8 53.1 60.4 60.0 52.0 49.0 71.5 42.7 80.8 67.9 55.1 37.1 62.5 50.8 58.1</p><p>Table <ref type="table">1</ref>. ScreenSpot-Pro accuracy (%) broken down by six application domains (CAD, Dev, Creative, Scientific, Office, OS) and by text versus icon queries. GUI-CURSOR attains the best average and delivers the strongest icon grounding, notably on CAD, Creative, and OS screens, outperforming both supervised and reinforcement learning baselines.</p><formula xml:id="formula_6">OSWorld-G UI-Vision Model Text Match Element Rec. Layout Und.</formula><p>Fine-grained Manipulation Refusal Avg. Basic Func. Spatial Avg OS-Atlas-7B <ref type="bibr" target="#b3">(Wu et al., 2024)</ref> 44.1 29.4 35.2 16.8 7.4 27.7 12.2 11.2 3.7 9.0 UGround-v1-7B <ref type="bibr" target="#b9">(Gou et al., 2025)</ref> 51.3 40.3 43.5 24.8 0 36.4 15.4 17.1 6.3 12.9 Jedi-7B <ref type="bibr">(Xie et al., 2025)</ref> 65.9 55.5 57.7 46.9 7.4 54.1 ----Qwen2.5-VL-7B <ref type="bibr" target="#b33">(Bai et al., 2025)</ref> 45.6 32.7 41.9 18.1 0 31.4 1.2 0.8 0.5 0.9 UI-TARS-1.5-7B <ref type="bibr">(Qin et al., 2025)</ref> 67.3 64.5 65.2 42.9 0 61.9 22.9 26.1 6.6 18.1</p><p>Initialised from Qwen2.5-VL-7B</p><p>GUI-Spotlight (Lei et al., 2025) 47.3 50.0 40.1 20.2 0 35.6 11.1 13.4 1.2 8.3 GUI-Cursor (Qwen2.5-VL-7B) 70.1 58.5 62.1 52.3 0 58.0 35.0 31.2 12.1 25.7 Initialised from UI-TARS-1.5-7B GTA1-7B (Yang et al., 2025a) 63.2 82.1 74.2 42.9 0 67.7 35.4 33.1 11.4 26.2 GUI-Spotlight (Lei et al., 2025) 68.2 60.6 63.2 45.6 0 62.7 32.1 30.2 9.1 23.4 GUI-Cursor (UI-TARS-1.5-7B) 77.0 66.7 70.4 67.4 0 65.6 35.4 33.5 14.2 27.3</p><p>Table <ref type="table">2</ref>. Evaluation results on OSWorld-G and UI-Vision. We find that GUI-Cursor achieves significantly higher accuracy on tasks that require understanding spatial relationships ("Spatial" and "Fine-grained Manipulation" categories).</p><p>however, we show that GUI-CURSOR outperforms GTA1 on OSWorld in the later analysis. In the more challenging benchmark ScreenSpot-Pro, which contains GUI images with high resolution and complex layouts, GUI-CURSOR outperforms the previous leading model GTA1 <ref type="bibr">(Yang et al., 2025a</ref>) by 8.1%. GUI-CURSOR uses the same training setting as GTA1, so these results demonstrate the effectiveness of learning GUI grounding by moving a cursor. Moreover, we find GUI-CURSOR achieves significantly better accuracy on the tasks that require understanding and inferring spatial relationships: the "Spatial" category in UI-Vision and the "Manipulation" category in OSWorld-G. This indicates that GUI-CURSOR obtains better spatial reasoning capability by learning with spatial reasoning from visual feedback. A qualitative case analysis is provided in Section M.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Online Agentic Evaluation</head><p>We conduct the online evaluation using OSWorld <ref type="bibr" target="#b41">(Xie et al., 2024)</ref>. In the agentic setting, a planner model is applied to predict actions and call the grounding model to obtain the precise positions to take these actions. To compare the grounding models fairly, we use the same o3-based planning strategy (OpenAI, 2025) used by GTA1-7B <ref type="bibr">(Yang et al., 2025a)</ref>. The results shown in the Table <ref type="table">4</ref> indicate that GUI-Cursor significantly improves agent performance. Using fewer action steps, GUI-Cursor-7B (57.1% at 50 steps) outperforms GTA1-7B (53.1% at 100 steps), and also outperforms the larger model GTA1-32B (55.4% at 100 steps). These results demonstrate that GUI-CURSOR can handle more realistic and diverse grounding tasks in agentic scenarios.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Ablation Studies Trajectory penalties and thinking pro-</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Model Mobile Desktop Web Average</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Supervised Fine-Tuning Methods</head><p>SeeClick <ref type="bibr" target="#b3">(Cheng et al., 2024)</ref> 64.6 49.7 43.9 55.1 OmniParser-v2 <ref type="bibr" target="#b21">(Lu et al., 2024)</ref> 85.1 76.6 73.8 80.7 OS-Altlas-7B <ref type="bibr" target="#b3">(Wu et al., 2024)</ref> 85.5 77.2 84.0 84.1 UGround <ref type="bibr" target="#b9">(Gou et al., 2025)</ref> 89.2 86.4 84.7 87.6 UI-TARS-7B <ref type="bibr">(Qin et al., 2025)</ref> 93.0 90.2 89.4 91.6 UI-TARS-72B <ref type="bibr">(Qin et al., 2025)</ref> 90.6 89.6 89.6 90.3 Jedi-7B <ref type="bibr">(Xie et al., 2025)</ref> 92.1 91.9 89.3 91.7 GUI-Actor-7B <ref type="bibr">(Wu et al., 2025b)</ref> 93.3 91.9 90.2 92.5</p><p>Reinforcement Learning Methods LPO-8B <ref type="bibr">(Tang et al., 2025b)</ref> 90.4 91.2 89.9 90.5 SE-GUI-7B <ref type="bibr" target="#b5">(Yuan et al., 2025)</ref> ---90.3 GUI-G 2 -7B <ref type="bibr">(Tang et al., 2025a)</ref> 95.1 92.4 90.9 93.3 GTA1-7B <ref type="bibr">(Yang et al., 2025a)</ref> 93.8 92.1 89.5 92.4 GUI-Cursor-7B (Qwen2.5-VL-7B) 94.9 92.9 92.6 93.9 GUI-Cursor-7B (UI-TARS-1.5-7B) 93.3 95.8 91.7 93.9 Table 4. Online evaluation results on OSWorld.</p><p>cess improve the grounding accuracy. In Figure <ref type="figure" target="#fig_2">2</ref>, we show the accuracy of our model without using each of the penalty terms, and without generating thinking tokens. The results show that the accuracy without each penalty is lower than the full reward, and it is less effective in improving accuracy with additional movement steps. Additionally, we find that without thinking, the accuracy of GUI-CURSOR decreases significantly, whereas <ref type="bibr">Tang et al. (2025a)</ref> and <ref type="bibr">Yang et al. (2025a)</ref> found that thinking is less effective in improving accuracy. One possible reason might be that GUI-CURSOR is trained in an interactive environment -the explicit analysis of the target and the spatial relationship between the target and the cursor, which is helpful for the model to check whether the cursor is correctly located at the target, can help to align the coordinates with their corresponding position on the GUI. The above results show that both reward penalties (Section 2.3) and the generation of explicit spatial reasoning are essential for the downstream accuracy of the model.</p><p>Cursor-centric focusing improves the grounding accuracy.</p><p>Figure <ref type="figure" target="#fig_3">3</ref> shows the accuracy without using cursor-centric focusing (w/o CCF). We find CCF in ScreenSpot-Pro is more effective (45.3% → 56.5%) than ScreenSpot-v2 (93.6% → 93.9%), demonstrating the effectiveness of CCF on large and complex GUI images. We also present the two-stage inference strategy used in GUI-Actor <ref type="bibr">(Wu et al., 2025b)</ref>, where the model first predicts a set of candidate positions and an external verifier model is applied to select the final answer. Though the verifier introduces new parameters and needs additional training, the accuracy improvement GUI-Cursor GUI-Actor GUI-G2 GT A1 Model 86 88 90 92 94 Accuracy (%) 93.6 89.7 88.3 92.6 93.9 93.3 93.2 92.4 ScreenSpot-v2 GUI-Cursor GUI-Actor GUI-G2 GT A1 Model 35 40 45 50 55 56.5 45.3 47.7 44.6 47.5 52.1 50.1 54.0 ScreenSpot-Pro GUI-Cursor w/o CCF GUI-Actor w/o V erifier GUI-G2 + Focus GT A1 + Focus (44.6% → 47.7%, red bars) is less effective than CCF.</p><p>To further verify the effectiveness of CCF, we apply a similar approach to the SOTA methods GTA1 <ref type="bibr">(Yang et al., 2025a)</ref> and GUI-G 2 <ref type="bibr">(Tang et al., 2025a)</ref>, labelled with (+ Focus) in Figure <ref type="figure" target="#fig_3">3</ref>. Here, the image is cropped around the initial prediction using the same image size as in GUI-CURSOR, and the model makes its second step prediction using this cropped image. Results show that the accuracy of GTA1 is effectively improved (50.1% → 54.0%, yellow bars), but it is still lower than that of GUI-CURSOR (56.5%). However, without CCF, the accuracy of GUI-CURSOR is lower than GTA1, which is because GTA1 is trained with a higher resolution setting (4096 × 2160 pixels) than GUI-CURSOR (1920 × 1080 pixels). The above results show that CCF is an effective method to balance the training efficiency and inference accuracy.</p><p>Analysis on the Cursor Movements GUI-CURSOR adaptively conducts more cursor movement on more difficult tasks. As shown in Figure Model 0 1 2 3 4 5 Percentage (%) 0.5% 0.1% 0.1% 0.0% 1.3% 0.2% ScreenSpot-v2 Model 0 5 10 15 9.4% 2.4% 1.9% 0.1% 16.6% 1.1% ScreenSpot-Pro GUI-Cursor w/o False Direction w/o False Move w/o False Stop w/o Repeated Position w/o Think 1 step &gt; 1 step 0 5000 10000 15000 20000 25000 30000 Avg. # Target Pixels 26776 5104 1 step &gt; 1 step 0.00% 0.20% 0.40% 0.60% 0.80% 1.00% Avg. Target Area in Image 0.9728% 0.1190% Figure 5. The target size in one-and multi-step movement cases.</p><p>analyses are available in Section C.</p><p>Trajectory penalties influence the number of movement steps and training dynamics. Compared to the model without the repeated position penalty, the percentage of cursor moving steps increases: 0.5% → 1.3% in ScreenSpot-v2 and 9.4% → 16.6% in ScreenSpot-Pro, indicating that the repeated position penalty can improve efficiency. The model without the false stop penalty tends not to perform multiple cursor movements: 0.5% → 0.0% in ScreenSpot-v2, and 9.4% → 0.1% in ScreenSpot-Pro, indicating that the false stop penalty prevents a degenerate behaviour where the model always takes a single step. Figure <ref type="figure" target="#fig_9">8</ref> presents the average number of movement steps and the overall reward in each batch during training. GUI-CURSOR initially converges to single-step predictions after 50 training steps; at later steps, the average number of movements increases to an average of 1.25. The model without the false stop penalty quickly converges to take one-step movements around 20 steps and fail to learn to move at later steps, which further shows the false stop penalty is necessary for the model to learn multi-step movements. The model without the repeated position penalty converges to a single-step policy more slowly than GUI-CURSOR, and it becomes unstable when trained for more steps, with the number of steps increasing significantly around 220 steps. A more detailed analysis of training dynamics is available in Section D.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.">Analysis and Discussions on Spatial Reasoning</head><p>Moving the Cursor for GUI Grounding without Fine-Tuning We investigate whether general-purpose VLMs can conduct GUI grounding by moving a cursor without fine-tuning. This zero-shot task assesses the model's spatial reasoning ability to identify the spatial relationship between a cursor and a target and refine its predictions accordingly. We test two distinct prompting strategies: 1) Relative Move: the model is prompted to generate a relative offset (∆x, ∆y), and the cursor is then moved from its current position (x t , y t ) to (x t + ∆x, y t + ∆y); and 2) Direct Move: the model is prompted to generate new absolute coordinates (x, y), and the cursor is rendered at that position -this is the strategy used by GUI-CURSOR in the main experiments (Section 3.2). More implementation details and analysis are presented in Section B.</p><p>We analyse the accuracy for GPT-4o (OpenAI, 2024) and Qwen2.5-VL-7B on ScreenSpot-v2. In the standard onestep GUI grounding setting, the accuracy of GPT-4o is low (17.5%), and Qwen2.5-VL-7B performs well (88.8%) because it has been fine-tuned on GUI grounding tasks. With 10 steps of movement, GPT-4o's performance improves with both direct move and (17.5% → 21.7%) relative move (17.5% → 25.5%), suggesting it possesses the underlying spatial reasoning capability to benefit from the iterative process. However, the same strategies cause a significant performance drop for the Qwen2.5-VL-7B (direct move: 36.3%, relative move: 1.3%). The above analysis suggests that the high single-step accuracy of Qwen2.5-VL-7B does not generalise to this iterative process, and its success on GUI grounding may not be founded on robust spatial understanding of the GUI image. Based on this result, it is necessary to fine-tune the model to gain the ability to use a cursor. We use the direct move strategy in GUI-CURSOR, as its higher zero-shot accuracy provides a better starting point for reinforcement learning.</p><p>Probing Spatial Reasoning We designed a cursor-inbox test to isolate and evaluate a VLM's spatial reasoning accuracy over different positions of the image. The task is straightforward: given a white background containing a red bounding box and a black cursor, the model must answer "Yes or No" to the question: "Is the black cursor inside the red bounding box?". We generated a comprehensive dataset by placing the box at different locations across the image and sampling cursor positions both inside and outside the box for each location. More implementation details and analysis are presented in Section E. This minimalist setup eliminates errors that stem from target misidentification in standard GUI grounding by moving a cursor, allowing us to focus on evaluating spatial reasoning around the cursor.</p><p>We evaluate Qwen-2.5-VL-7B and measure performance using the F1 score, visualised in Figure <ref type="figure" target="#fig_6">6</ref>. The results reveal a critical flaw in Qwen-2.5-VL-7B. The left heatmap shows that the model struggles with this simple task and also exhibits a severe positional bias. It performs well only when the box is near the centre of the image (green areas) 1 0 5 1 3 1 1 5 7 1 8 3 2 0 9 2 3 5 2 6 1 2 8 7 3 1 3 3 3 9 3 6 5 3 9 1 4 1 7 4 4 3 4 6 9 4 9 5 5 2 1 5 4 7 5 7 3 5 9 9 6 2 5 6 5 1 6 7 7 7 0 3 7 2 9 7 5 5</p><p>BBox X Position</p><p>38 75 112 149 186 223 260 297 334 371 408 BBox Y Position F1 Scores Before Training <ref type="table" target="#tab_2">7 9  1 0 5 1 3 1 1 5 7 1 8 3 2 0 9 2 3 5 2 6 1 2 8 7 3 1 3 3 3 9 3 6 5 3 9 1 4 1 7 4 4 3 4 6 9 4 9 5 5 2 1 5 4 7 5 7 3 5 9 9 6 2 5 6 5 1 6 7 7 7 0 3 7 2 9 7 5</ref>  Model SPHERE SpatialMQA Single Skill Reason. Combine 2 Skills Avg.</p><p>Qwen2.5-VL-7B <ref type="bibr" target="#b33">(Bai et al., 2025)</ref> 70.9 54.7 39.0 56.7 38.1 GUI-G 2 -7B <ref type="bibr">(Tang et al., 2025a)</ref> 71.2 55.8 39.9 57.3 38.0 GUI-Cursor (Qwen2.5-VL-7B) 71.2 56.6 42.9 58.5 43.4</p><p>Table <ref type="table">5</ref>. Evaluation results on spatial reasoning benchmarks SPHERE <ref type="bibr">(Zhang et al., 2025e)</ref> and SpatialMQA <ref type="bibr">(Liu et al., 2025a)</ref>.</p><p>and fails towards the edges (red areas). This failure suggests its grounding capabilities may be brittle and not founded on a robust spatial understanding of GUI images. The right heatmap shows that GUI-CURSOR achieves higher accuracy, though it is not explicitly trained on this classification task. Instead, we design trajectory penalties to discourage the wrong-moving behaviours, which may implicitly improve this spatial reasoning capability by rewarding the trajectory with a correct spatial thinking process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Generalisation of Spatial Reasoning</head><p>We further evaluate the model's spatial reasoning capability on Spa-tialMQA <ref type="bibr">(Liu et al., 2025a)</ref> and SPHERE <ref type="bibr">(Zhang et al., 2025e)</ref>. SpatialMQA evaluates the accuracy of inferring the spatial relationship between two objects. Though it evaluates spatial reasoning on 3D natural images, we find that GUI-CURSOR shows improvement in such out-ofdistribution settings (+5.3%). While GUI-G 2 -7B <ref type="bibr">(Tang et al., 2025a)</ref>, fine-tuned from the same model as ours using one-step RL, does not show this improvement. SPHERE evaluates the model's spatial understanding across multiple aspects, and we find our method yields more improvements in the "reasoning" (+1.9%) and "combine 2 skills" (+3.9%) categories. The above results provide additional evidence that GUI-CURSOR obtains better spatial reasoning capability and the ability to utilise multiple spatial reasoning skills in out-of-distribution domains beyond the GUI images.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Related Work</head><p>GUI Grounding A common implementation for these agents involves a planning model that determines the sequence of actions, and a grounding model that predicts the positions to execute them. Recently, the purely vision-driven approach has shown significant advantages in accuracy and general applicability, as it does not rely on backends of systems and external utilities <ref type="bibr" target="#b9">(Gou et al., 2025;</ref><ref type="bibr">Wu et al., 2025b;</ref><ref type="bibr">Yang et al., 2025a)</ref>. Some works train grounding models by SFT on large-scale GUI datasets <ref type="bibr" target="#b10">(Hong et al., 2024;</ref><ref type="bibr" target="#b9">Gou et al., 2025;</ref><ref type="bibr" target="#b3">Wu et al., 2024;</ref><ref type="bibr">Xu et al., 2024)</ref>, and some works train the models by RL with rule-based rewards <ref type="bibr">(Luo et al., 2025a;</ref><ref type="bibr">Zhou et al., 2025b;</ref><ref type="bibr">Lu et al., 2025;</ref><ref type="bibr">Liu et al., 2025c)</ref>. Some concurrent works learn iterative cropping, aiming to reduce the difficulty of one-step grounding on large images <ref type="bibr" target="#b13">(Lei et al., 2025;</ref><ref type="bibr" target="#b48">Ye et al., 2025;</ref><ref type="bibr" target="#b8">Du et al., 2025)</ref>. Differently, GUI-CURSOR aims to improve the alignment between coordinates and on-screen locations by learning to control a cursor; the cropping CCF is only applied during inference and can also improve the accuracy of other methods due to its simplicity and effectiveness.  <ref type="formula">2025</ref>) proposed to generate visual reasoning thoughts. Our multi-step interaction learning process is related to recent works on multi-turn interaction paradigms in VLMs <ref type="bibr">(Shen et al., 2025b;</ref><ref type="bibr">Su et al., 2025b)</ref>, which suggested scaling test-time interaction to improve reasoning, and tool-augmented reasoning frameworks <ref type="bibr" target="#b47">(Yao et al., 2023;</ref><ref type="bibr" target="#b28">Qin et al., 2024;</ref><ref type="bibr">Qu et al., 2025)</ref>, where agents iteratively refine their predictions by sequential actions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Multimodal Reasoning</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Conclusion</head><p>We reframe GUI grounding as a cursor-driven search. During training, the rendered cursor provides explicit visual feedback that shows the predicted position on the GUI image, helping the model better align numerical coordinates with their corresponding on-screen positions. During in-ference, this interactive environment allows the model to incrementally refine its predictions. GUI-CURSOR couples GRPO with a trajectory-aware reward and employs cursorcentric focusing (CCF) for balancing training efficiency and inference accuracy. Our comprehensive experiments demonstrate the effectiveness of GUI-CURSOR. Moreover, the evaluation results on spatial reasoning tasks show that GUI-CURSOR obtains better spatial reasoning capability that also generalises to out-of-distribution images.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Impact Statement</head><p>This paper presents work whose goal is to advance the field of Machine Learning. There are many potential societal consequences of our work, none of which we feel must be specifically highlighted here.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Implementation Details</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1. GRPO Training Objective</head><p>We optimise the policy π θ , i.e., a vision-language model, to locate the target UI element with multi-step interaction using GRPO. For each instruction I, we sample a batch of N trajectories {τ 1 , . . . , τ N } from the current policy, where each trajectory τ i is a sequence of generated responses at each step: τ i = {A i 0 , A i 1 , . . . , A i T }, and each response A i t consists of tokens with a thinking process and an answer, as introduced in Section 2.2. We elaborate the rollout process in Section A.2. We calculate the reward R for each sampled trajectory: {R τ1 , R τ2 , . . . , R τ N }, where R τi refers to the overall reward for the trajectory τ i . The reward R τi is calculated by the weighted sum of the trajectory reward and a format reward R τ = 0.9 × R T + 0.1 × R format , where R format is 1 when the output format follows the thinking before answering format, otherwise it is 0. Then, we calculate the relative advantage Âτi of each sampled trajectory:</p><formula xml:id="formula_7">Âτi = R τi -Mean({R τ1 , R τ2 , . . . , R τ N } Std({R τ1 , R τ2 , . . . , R τ N }) .<label>(7)</label></formula><p>The objective function seeks to increase the likelihood of high-reward trajectories:</p><formula xml:id="formula_8">J (θ) = E τ ∼π θ i min r i (θ) Âτi , clip(r i (θ), 1 -ϵ, 1 + ϵ) Âτi ,<label>(8)</label></formula><p>where, r i (θ) = T t=1 π θ (A i t |I,O0,A0,...,Ot-1) T t=1 π θ old (A i t |I,O0,A0,...,Ot-1) is the probability ratio for responses in the trajectory τ i , ϵ controls the trust region. We omit the KL regularisation term as previous work shows that it does not improve the grounding accuracy <ref type="bibr">(Yang et al., 2025a)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2. Moving Trajectory Rollout</head><p>Given an instruction I and a GUI screenshot O, we rollout N different trajectories {τ i } N i=1 for each GRPO optimisation step by the following process: At the first step, we sample N different responses {A i 0 } N i=1 conditioned on the same initial history (I, O 0 ), where each response has a thinking process before the action, and we do not constrain the action to be different. At the subsequence steps, we sample 1 response A i t conditioned on the interaction history (I, O 0 , A i 0 , . . . , A i t-1 , O i t ). Each trajectory τ i stops growing until the action part in A i t is STOP, or the maximum number of steps T is reached. We use vLLM <ref type="bibr" target="#b12">(Kwon et al., 2023)</ref> for efficient inference during rollout.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3. Hyperparameter Settings</head><p>GUI-CURSOR moves a cursor to locate the target. We use a cursor image with a size of 20 × 31, and we present it in Figure <ref type="figure" target="#fig_2">12</ref>. We set the weight of the trajectory penalty w p to 0.2 (Equation ( <ref type="formula" target="#formula_4">6</ref>)) in our experiments. We empirically observe that the false stop penalty is crucial for preventing the model from only conducting a single prediction without using the visual feedback, which may be because it results in a higher reward for the trajectories with accurate movements. We find that the accuracy improves slightly when increasing the weight of the false stop penalty r FS to 0.5 and keeping other penalties 0.2. We train the model using 8 NVIDIA A100 80GB GPUs. We implement RL training based on EasyR1 <ref type="bibr" target="#b55">(Zheng et al., 2025)</ref> During training, we evaluate the model on the validation set every 20 steps and save a checkpoint every 50 steps. We measure the success rate on the validation set, where a sample is considered successful if the final predicted position is within the target area and the final action is STOP. In our main experiments, we use the model at the 200th step, as the success rate does not improve in later steps, as shown in the third figure of Figure <ref type="figure" target="#fig_0">10</ref>. Because sampling multi-step moving trajectories is timeconsuming, we set the maximum number of movement steps to 4 during training. We find that setting the maximum steps to 3 decreases around 1.0 success rate in validation data. We set the maximum response length to 512. We set the temperature to 0.5 for sampling trajectories during training and use greedy decoding during inference.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.4. Cursor-Centric Focusing</head><p>During training, we set the maximum resolution P to 1920 × 1080, and any larger image will be downscaled to this resolution while keeping the original aspect ratio. Qwen2.5-VL-7B uses a patch size of 14 × 14 and aggregates each 4 adjacent patch features before forwarding to the transformer, so the maximum number of tokens for each image is around 26k. During inference, we apply CCF to obtain better accuracy in the task with a higher resolution than the maximum resolution during training. It crops the full image based on the initial prediction. The crop is sized to the maximum training resolution while maintaining the original image's aspect ratio. It attempts to centre this crop on the initial prediction; however, if the prediction is near an edge, the crop area is shifted to ensure it remains entirely within the image boundaries. Though we have shown that CCF can improve the accuracy effectively, its accuracy could be impacted by the initial prediction, because the target could be out of the focused area when the initial prediction is far away from the target; we find that 10.3% of examples in ScreenSpot-Pro have this issue. Several potential strategies could be used to alleviate this issue, such as increasing the training resolution size to improve the initial prediction precision, keeping the initial image in the interaction history,  and training the model to decide which area to focus. We will explore these strategies in future work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Relative and Direct Moving Strategies</head><p>We try two action strategies for moving the cursor: relative move and direct move. In the relative move strategy, the model outputs relative offset (∆x, ∆y), and the position of the cursor will be moved from (x, y) to (x + ∆x, y + ∆y), where ∆x and ∆y are integers, positive and negative ∆x moves the cursor right and left, and positive and negative ∆y moves the cursor down and up, respectively. We evaluate both strategies for GPT-4o and Qwen-2.5-VL-7B. We present the prompt used by GPT-4o in Figure <ref type="figure" target="#fig_16">22</ref>.</p><p>We tuned the prompts of Qwen-2.5-VL-7B for both strategies. However, we found that it fails to conduct relative movement with an accuracy close to zero. It might be because the model has been heavily fine-tuned on grounding data that requires directly outputting the coordinates. Therefore, in GUI-CURSOR, we use the direct move strategy with better starting accuracy for RL training. The system prompt used by GUI-CURSOR is presented in Figure <ref type="figure" target="#fig_14">21</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Movement Steps and Target Sizes</head><p>We analyse the relationship between the target UI element size and the moving steps. In Figure <ref type="figure">9</ref>, we group the samples into two groups: only conducting one step movement after CCF, and conducting more than one step movement after CCF. Within each group, we then calculate the average target size and the average proportion of the target in the image, shown in the first and second row of Figure <ref type="figure">9</ref>, respectively. The first row shows that the samples with more than one step movement have a smaller target size. The second row further shows that the target with a smaller relative size in an image may need more movement steps. These results show that the smaller targets may increase the difficulty of the tasks, and thus the model may conduct more movement steps in these samples. We also analyse the average number of image pixels in each group, and we found that the higher resolution may not always be related to more movement steps, e.g., in ScreenSpot-Pro, the average number of pixels in the moving one-step group is 56 × 10 5 , which is larger than the moving more steps group 50 × 10 5 .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. Training Dynamics</head><p>We present the average number of response tokens, trajectory reward R T (Equation ( <ref type="formula" target="#formula_4">6</ref>)), and the success rate in validation data during training in Figure <ref type="figure" target="#fig_0">10</ref>, where the token numbers and the trajectory reward are calculated after the online filtering. According to Figure <ref type="figure" target="#fig_0">10</ref> and Figure <ref type="figure" target="#fig_9">8</ref>, we observe that the learning of GUI-CURSOR mainly has three stages.</p><p>Phase one (cold start) -From 0 to 25 steps, the response length decreases, and the trajectory reward increases. At this stage, the model learns to output the correct format, and the accuracy of prediction improves, resulting in higher trajectory reward values.</p><p>Phase two (single-step grounding) -From 50 to 150 steps, the response length decreases, and the trajectory reward</p><p>1 step &gt; 1 step 0 20000 40000 60000 Avg. # Target Pixels 53374 43301 ScreenSpot-v2 1 step &gt; 1 step 0 1000 2000 3000 3348 2515 ScreenSpot-Pro 1 step &gt; 1 step 0 10000 20000 30000 26776 5104 All Results 1 step &gt; 1 step 0.00% 0.50% 1.00% 1.50% 2.00% Target Area in Image 2.0124% 1.4444% ScreenSpot-v2 1 step &gt; 1 step 0.00% 0.02% 0.04% 0.06% 0.0631% 0.0545% ScreenSpot-Pro 1 step &gt; 1 step 0.00% 0.25% 0.50% 0.75% 1.00% 1.25% 0.9728% 0.1190%</p><p>All Results 0 50 100 150 200 250 Training Step 150 200 250 Mean # Response Tokens Mean # Response Tokens 0 50 100 150 200 250 Training Step 0.60 0.65 0.70 0.75 Trajectory Reward Trajectory Reward 0 50 100 150 200 250 Training Step 0.4 0.6 0.8 Validation Success Rate Validation Success Rate Figure 10. The training dynamics of GUI-CURSOR. The first and the second figures show the average number of response tokens and the average trajectory reward in each batch during training, respectively; the values are calculated after the online filtering. The third figure shows the success rate every 20 training steps in the validation data; the success rate metric requires the final prediction within the target area, and the model explicitly outputs STOP at the last step.</p><p>also decreases. Since we apply the online filtering, the easy training samples will be filtered out. The decrease in the trajectory reward indicates that more difficult samples are used to train the model. As shown in Figure <ref type="figure" target="#fig_9">8</ref>, the average number of movement steps is close to 1 at this stage. These results indicate that at this stage, the model continues to improve one-step grounding accuracy but hasn't learnt a good cursor moving policy.</p><p>Phase three (multi-step movements) -From 150 to 200 steps, the trajectory rewards, the response length, and the average number of movement steps increase. This indicates that the model learns to execute multiple movements to refine the cursor position, thereby obtaining better accuracy. Additionally, the increase in response length may indicate that the model generates more spatial analysis, thereby improving the moving correctness. We also present the evaluation results on saved checkpoints (every 50 steps) in Figure <ref type="figure" target="#fig_11">11</ref>, which also shows a three-stage learning property. We observe that on ScreenSpot-v2, the accuracy is highest at the 150th step, which is the end of the second stage. In contrast, on the more difficult ScreenSpot-Pro benchmark, the accuracy continues to improve after the 150th steps. These results indicate that 1) the model improves one-step grounding accuracy at the first two stages, which is usually sufficient for easier tasks in ScreenSpot-v2; 2) it learns rational multi-step movement at the third stage, which helps to improve accuracy for more difficult tasks in ScreenSpot-Pro; and 3) though it hasn't learn a moving policy well at the second stage, the visual feedback helps the alignment between coordinates and their on-screen positions, and the accuracy at the 150th steps in SceenSpot-v2 is 94.2, significantly higher than the baselines presented in Table <ref type="table" target="#tab_0">3</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E. Cursor-in-Box Test</head><p>We design the "cursor-in-box" test to evaluate how well a VLM can infer the spatial relationship between a cursor and another object. We present the model with a white background showing a red bounding box and a black mouse cursor, and the model classifies whether the cursor is inside the box. We present the prompt in Figure <ref type="figure" target="#fig_13">20</ref>. We generate the test dataset by putting the bounding box across different positions of the white background, and putting the cursor inside or outside each box. In Figure <ref type="figure" target="#fig_2">12</ref>, we present an example showing a box in a white background, and several cursors around it are used to test the classification accuracy at this box position. We only show one box with one cursor for each test example. For each box, we select 5 positions inside it, with 4 close to the corners and one at the centre; the positions outside the box have a distance shorter than 3 times the cursor size. We test the classification F1 scores at different positions of the background, and then obtain the heatmap as shown in Figure <ref type="figure" target="#fig_6">6</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F. Training and Inference Efficiency</head><p>We compare the number of training samples of different grounding models in Table <ref type="table" target="#tab_2">7</ref>. We can see that GUI-CURSOR achieves the best accuracy while using the fewest training samples, demonstrating the data efficiency feature of our method. Regarding the efficiency of multi-turn RL, the average training time per step for one-step and four-step movements is 289 and 680 seconds in our implementation. The primary bottleneck is online trajectory rollout, which increases from 157 to 432 seconds when using fourstep movement in our implementation. To accelerate the multi-step rollout, we can improve parallelism through asynchronous processing or by adding more machines for the rollout. In summary, our method remains more efficient overall, achieving better accuracy with significantly fewer samples and fewer total steps.</p><p>In Table <ref type="table">8</ref>, we compare the inference speed when taking different steps of movement. Compared to one-step inference, the samples that conduct 2-and 3-step movement</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Model # Training Samples ScreenSpot-Pro Acc.</head><p>Initialised from Qwen2.5-VL-7B</p><p>Qwen2.5-VL-7B <ref type="bibr" target="#b33">(Bai et al., 2025</ref>) -26.8 GUI-Actor-7B <ref type="bibr">(Wu et al., 2025b)</ref> 1.76M 47.7 GUI-G 2 -7B <ref type="bibr">(Tang et al., 2025a)</ref> 100K 47.5 GUI-Spotlight-7B <ref type="bibr" target="#b13">(Lei et al., 2025)</ref> 18.6K 38.7 GUI-Cursor-7B 8K 56.5</p><p>Initialised from UI-TARS-1.5-7B UI-TARS-1.5-7B <ref type="bibr">(Qin et al., 2025</ref>) -38.7 GTA1-7B <ref type="bibr">(Yang et al., 2025a)</ref> 64K 50.1 GUI-Spotlight-7B <ref type="bibr" target="#b13">(Lei et al., 2025)</ref> 18.6K 52.8 GUI-Cursor-7B 8K 58.1 Table 8. Inference speed (Samples per Second) by number of steps.</p><p>decrease the throughput by 11% and 41%. As 95% of samples can be solved within two steps, our method decreases the efficiency by 12.5% compared to one-step methods on average. Beyond the throughput analysis in Table <ref type="table">8</ref>, we report the end-to-end wall-clock latency of GUI-CURSOR and compare it against the one-step baseline GTA1-7B <ref type="bibr">(Yang et al., 2025a)</ref>. The latency includes the cursor rendering time and the input-encoding cost of the interaction history. On ScreenSpot-v2, where most queries can be solved in a single step, GUI-CURSOR adds only ∼0.1 s of latency over GTA1-7B for a marginal accuracy gain.</p><p>On the more challenging ScreenSpot-Pro, full multi-step inference increases per-sample latency by ∼0.3 s but yields a 6.4% accuracy improvement over GTA1-7B. The latency-accuracy trade-off therefore strongly favours GUI-CURSOR on high-resolution, complex GUI screenshots. In future work, the maximum number of movement steps could be set adaptively based on the difficulty of each task (e.g., the planning model could estimate the difficulty from the screenshot resolution and the approximate target size) to further reduce average latency without sacrificing accuracy on hard examples.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G. Concurrent Iterative Cropping Methods</head><p>Some concurrent works propose to crop GUI images and narrow the prediction region iteratively <ref type="bibr" target="#b13">(Lei et al., 2025;</ref><ref type="bibr" target="#b48">Ye et al., 2025;</ref><ref type="bibr" target="#b8">Du et al., 2025)</ref>. We compare CCF with them in the following. GUI-Spotlight <ref type="bibr" target="#b13">(Lei et al., 2025)</ref> introduces three tools for narrowing the region iteratively and is trained by multi-step RL. CCF is simpler and more effective, e.g., applying CCF to GTA1 surpasses GUI-Spotlight on ScreenSpot-Pro by 2.2% without training. GUI-ARP <ref type="bibr" target="#b48">(Ye et al., 2025)</ref> proposes a cropping strategy by taking the signals from attention scores, but it needs two-stage large-scale training. Though it shows advantage on the larger images, it is less effective in tasks with standard image sizes (e.g.,</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Model ScreenSpot-v2 ScreenSpot-Pro OSWorld-G</head><p>Qwen3-VL-32B-Thinking (Qwen Team, 2025) 95.7 57.1 64.0 Qwen3-VL-8B-Thinking (Qwen <ref type="bibr" target="#b31">Team, 2025)</ref> 93.6 46.6 56.7 GUI-CURSOR-7B (Qwen2.5-VL-7B) 93.9 58.1 65.6</p><p>Qwen3-VL-2B-Thinking (Qwen</p><p>Team, 2025) 88.9 32.2 41.8 GUI-CURSOR-2B (Qwen3-VL-2B-Thinking) 92.6 55.0 58.5 Table 11. Accuracy (%) when applying GUI-CURSOR to recent Qwen3-VL-Thinking backbones. GUI-CURSOR-2B outperforms the off-the-shelf Qwen3-VL-8B-Thinking on ScreenSpot-Pro and OSWorld-G.</p><p>As noted in Section 2.4, when the initial coarse prediction is far from the target (∼ 10.3% of cases on ScreenSpot-Pro), the target may be cropped out of the focused view and GUI-CURSOR has no built-in mechanism to "zoom out" or re-centre. We conduct a preliminary experiment to assess whether GUI-CURSOR already possesses the zero-shot capability to detect this failure mode. Using the cropped views from ScreenSpot-Pro, we prompt GUI-CURSOR-7B with a binary classification task: "Given a GUI screenshot and a user instruction, determine whether the target element described in the instruction is within the screenshot. Answer with 'Yes' if the target element is within the screenshot, and 'No' if it is not. Instruction: {instruction}." The model correctly identifies that the target is missing in 31% of cases where the target was indeed cropped out, but it also incorrectly reports the target as missing in 20% of cases where the target was actually present. Because the base rate of out-of-crop predictions is low (∼ 10.3%), a 20% false-positive rate would cause the system to abandon many correct crops and degrade overall accuracy. Implementing a reliable zoom-out / re-centre action therefore likely requires explicitly incorporating a target-presence classification signal into the reward function during training, which we leave to future work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>K. Cursor Occlusion of Small Targets</head><p>A potential concern with rendering a virtual cursor onto the GUI image is that the cursor may occlude very small UI elements (e.g., a 10×10-pixel close button) at the final step, hindering fine-grained verification. GUI-CURSOR mitigates this by conditioning each step on the entire interaction history (I, O 0 , A 0 , . . . , A t-1 , O t ), which provides a form of sequential visual memory. The model can therefore reason about the target's appearance from earlier observations (in which the cursor was elsewhere) and use that context to confirm that a partially occluded cursor is correctly positioned on the target. Figure <ref type="figure" target="#fig_9">18</ref> in Section M provides a qualitative example: the target is very small and partially occluded by the cursor at the last step, yet the model correctly infers the cursor lies on the target and issues STOP using context from the prior observations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>L. Extension to Continuous GUI Interactions</head><p>GUI-CURSOR focuses on click-style grounding, which is the dominant setting in current GUI grounding benchmarks. Continuous interactions such as dragging or sliding require predicting two coordinates (a start point (x start , y start ) and an end point (x end , y end )) and are largely under-explored. The recent work GUI-Drag (Liao et al., 2026) formulates drag-like actions as a two-coordinate prediction task and shows that current grounding models struggle on it, e.g., Qwen2.5-VL-7B recognises only 5% of drag tasks and achieves a 2.6% success rate; but fine-tuning on drag-style data substantially closes the gap. GUI-CURSOR can be extended to such interactions by letting the high-level planning model sequentially invoke the grounding model to predict the two coordinates: first the cursor is moved to (x start , y start ) using the interactive search introduced in Section 2.2, then a second invocation predicts (x end , y end ). The main requirement for this extension is the availability of drag-style training data so that the model can learn the crosscoordinate dependencies; the interactive feedback loop and the trajectory-based reward used by GUI-CURSOR transfer naturally to each individual coordinate prediction. We leave a full empirical evaluation of continuous interactions to future work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>M. Case Study</head><p>We present case studies and visualise the prediction process of GUI-CURSOR. We render the predicted cursor trajectory as a sequence of positions connected by blue lines. Each cursor position is labelled with a red number at its top-left position to indicate the step number. The target is highlighted with a red bounding box. If CCF is applied, the corresponding focused region is shown with an orange bounding box.</p><p>We present positive examples with single-step movement (Figure <ref type="figure" target="#fig_3">13</ref>), multi-step movement (Figure <ref type="figure" target="#fig_0">19</ref>, Figure <ref type="figure" target="#fig_0">14</ref> and Figure <ref type="figure" target="#fig_9">18</ref>). We also present negative examples with single-step movement (Figure <ref type="figure" target="#fig_8">17</ref>), and multi-step movement (Figure <ref type="figure" target="#fig_0">15</ref> and Figure <ref type="figure" target="#fig_6">16</ref>). Task: enter the interactive cell selection mode to select sources for data validation Step 0: &lt;think&gt;To enter the interactive cell selection mode for data validation, I need to click on the "between" button, which is typically a dropdown or a checkbox that allows for cell range selection.&lt;/think&gt;&lt;answer&gt;(1814, 606)&lt;/answer&gt; Step 1: &lt;think&gt;To enter the interactive cell selection mode for data validation, I need to click on the "Source" field and then click on the cell or range in the spreadsheet that I want to select as the data source.&lt;/think&gt;&lt;answer&gt;(978, 603)&lt;/answer&gt; Step 2: &lt;think&gt;The target, the interactive cell selection mode for data validation, seems to be the small white arrow icon located at the bottom right of the "Source" field. This icon is likely the button that allows for interactive cell selection.&lt;/think&gt;&lt;answer&gt;(1242, 602)&lt;/answer&gt; Step 3: &lt;think&gt;The target, the interactive cell selection mode, appears to be the small white arrow at the bottom right of the "Source" field, which aligns with the description of the interactive selection tool.&lt;/think&gt;&lt;answer&gt;STOP&lt;/answer&gt;  You are an expert UI element locator. Given a GUI image and a user's element description, your goal is to provide the coordinate of the element intended by the user. A cursor will be exactly placed to the coordinate provided by you. Please make sure to check whether the cursor is at the target position. The image resolution is height {height} and width {width}. The cursor is a black arrow with white fill, initialized at the center of the image. The cursor's hotspot is at the top-left corner. Please output &lt;answer&gt;STOP&lt;/answer&gt; if the cursor's hotspot is on the target position. Otherwise, provide a new coordinate by &lt;answer&gt;(x, y)&lt;/answer&gt;, where x and y must be positive integer values. You will receive a new image with updated cursor position at each turn. Your response must contain a thinking process before the answer. The thinking process is enclosed in a &lt;think&gt; tag, and the answer is enclosed in an &lt;answer&gt; tag. In your thinking process, you should identify the target element and the spatial relation between the cursor and the target. Make sure to use the updated cursor position to refine your estimation about the coordinate of the target element. You are an AI assistant designed for precise cursor control within a graphical user interface. Your Primary Goal: Based on the user query, accurately move the cursor to the center of the intended target UI element on the screen.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Information Provided at Each Step:</head><p>1. Screenshot:</p><p>• Dimensions: {screen width} × {screen height} pixels.</p><p>• Content: An image of the current screen, showing the cursor you are controlling.</p><p>• Updates: After each MOVE command you issue, a new screenshot will be provided in the subsequent turn reflecting the new cursor position.</p><p>2. Cursor Details:</p><p>• The cursor is black and is initially positioned at the center of the screen.</p><p>• If you attempt to move the cursor outside the screen, its position will be automatically adjusted to remain within the screen boundaries.</p><p>Your Iterative Task and Output:</p><p>1. Identify Target and Analyze:</p><p>• Carefully examine the user's query and the current screenshot to pinpoint the intended target UI element.</p><p>• If your understanding of the target element is incorrect or needs adjustment during the process, revise your identified target.</p><p>• Determine the relative position between the cursor's current position and the center of your identified target UI element.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Determine Action &amp; Output:</head><p>•  </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 .</head><label>1</label><figDesc>Figure 1. The workflow of our method GUI-CURSOR. The left part presents an example where GUI-CURSOR locates the target successfully: at the first step, the model correctly describes the shape of the target and predicts a coordinate; at the second step, the model evaluates the spatial relationship between the cursor and the target, and it finds the cursor is not correctly positioned, then provides a new position; at the third step, the model terminates the interaction. The right part presents the examples of incorrect or inefficient moving trajectories penalised in our reward function.</figDesc><graphic coords="2,92.49,81.05,202.76,118.39" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>False</head><figDesc>Stop Penalty (r FS ): Checks if the model outputs STOP but the final cursor position p T is outside the target box B: r FS = I[A T = STOP ∧ (x T , y T ) / ∈ B]</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 2 .</head><label>2</label><figDesc>Figure 2. Ablations on reward penalties and thinking</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 3 .</head><label>3</label><figDesc>Figure 3. Ablations and comparison on CCF</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>4, GUI-CURSOR conducts singlestep interactions on most instances after CCF: it executes more than one step movement on 0.5% of examples in ScreenSpot-v2, but this rate increases to 9.4% on the more difficult dataset ScreenSpot-Pro. In Figure5, we present the average size of the target in the samples where the model conducts multi-step (red bar) and one-step movement (blue bar). On average, the target size for multi-step samples is 5024 pixels, compared to 31584 pixels for one-step samples. This result indicates that the model may conduct more steps when the target is small. More details and additional</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 4 .Figure 5 .</head><label>45</label><figDesc>Figure 4. Percentage of examples with &gt; 1 steps movement.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 6 .</head><label>6</label><figDesc>Figure6. Cursor-in-box spatial reasoning test results. The heatmap presents F1 scores across different positions. Left: before training, Qwen-2.5-VL-7B exhibits a strong centre bias; Right: GUI-CURSOR achieves higher F1, despite not being explicitly trained on this task.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><figDesc>Huang et al. (2025); Zhou et al. (2025a); Shen et al. (2025a); Chen et al. (2025a); Su et al. (2025a) show emergent multimodal reasoning capability in VLMs after RL training. Chen et al. (2025b); Liu et al. (2025b); Zhang et al. (2025d) reveal that VLMs struggle with spatial reasoning and often fail in inferring spatial relationships between objects. (Wu et al., 2025a) improves image-text interleaved reasoning through RL. Li et al. (2025a) and Chern et al. (</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 7 .</head><label>7</label><figDesc>Figure 7. ScreenSpot-v2 accuracy in different moving strategies.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 8 .</head><label>8</label><figDesc>Figure 8. Average movement steps and reward in during training.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 9 .Figure 10 .</head><label>910</label><figDesc>Figure9. Analysis of the relationship between moving steps and the size of the target UI element. Above: the average number of pixels of the targets. Below: the average proportion of target size in the GUI image. All results in the last column refer to the average values in both datasets. The red and blue bars refer to the samples that move one step and more than one step, respectively. The comparisons show that the target size is often smaller in the samples that move more than one step.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Figure 11 .</head><label>11</label><figDesc>Figure 11. Accuracy of intermediate checkpoints on test sets.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>Task:Figure 13 .Figure 14 .Figure 15 .Figure 16 .Figure 17 .Figure 18 .Figure 19 .</head><label>13141516171819</label><figDesc>Figure 13. Positive example from ScreenSpot-Pro with single-step movements.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><head>Figure 20 .</head><label>20</label><figDesc>Figure20. The prompt of "cursor-in-box" test.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_14"><head>Figure 21 .</head><label>21</label><figDesc>Figure 21. The system prompt of GUI-CURSOR.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_15"><figDesc>If the cursor is not yet at the target: -Output: MOVE(dx, dy) dx (Horizontal Movement): * Positive dx moves the cursor right. Negative dx moves the cursor left. dy (Vertical Movement): * Positive dy moves the cursor down. Negative dy moves the cursor up.• If the cursor is at the target:-Output: STOP -This command should only be issued when the cursor is accurately positioned at the center of the intended UI element.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_16"><head>Figure 22 .</head><label>22</label><figDesc>Figure 22. The system prompt of GPT-4o used in the relative move strategy.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_17"><graphic coords="17,104.04,70.45,388.79,218.69" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_18"><graphic coords="20,55.44,120.56,485.99,273.37" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_19"><graphic coords="21,55.44,118.08,485.96,273.36" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_20"><graphic coords="22,55.44,112.44,485.96,273.36" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_21"><graphic coords="23,55.44,134.51,485.97,273.36" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_22"><graphic coords="24,55.44,118.60,486.02,314.17" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 3 .</head><label>3</label><figDesc>Accuracy on ScreenSpot-v2.</figDesc><table><row><cell>Agent Model</cell><cell></cell><cell>Accuracy</cell><cell></cell></row><row><cell></cell><cell cols="3">15 steps 50 steps 100 steps</cell></row><row><cell>o3 (OpenAI, 2025)</cell><cell>9.1</cell><cell>17.2</cell><cell>23.0</cell></row><row><cell>GTA1-7B w/ o3 (Yang et al., 2025a)</cell><cell>-</cell><cell>-</cell><cell>53.1</cell></row><row><cell>GTA1-32B w/ o3 (Yang et al., 2025a)</cell><cell>-</cell><cell>-</cell><cell>55.4</cell></row><row><cell>GUI-Cursor-7B (Qwen2.5-VL-7B) w/ o3</cell><cell>-</cell><cell>57.1</cell><cell>-</cell></row><row><cell>GUI-Cursor-7B (UI-TARS-1.5-7B) w/ o3</cell><cell>-</cell><cell>55.2</cell><cell>-</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 6 .</head><label>6</label><figDesc>ScreenSpot-v2 accuracy (%) of VLMs without fine-tuning using the direct and relative moving strategies.</figDesc><table><row><cell></cell><cell></cell><cell cols="7">Learning GUI Grounding with Spatial Reasoning from Visual Feedback</cell></row><row><cell></cell><cell>Model</cell><cell></cell><cell></cell><cell></cell><cell cols="2">Mobile</cell><cell></cell><cell>Desktop</cell><cell>Web</cell><cell>Average</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="4">Text Icon/Widget Text Icon/Widget Text Icon/Widget</cell></row><row><cell></cell><cell>GPT-4o</cell><cell></cell><cell></cell><cell></cell><cell>20.5</cell><cell>22.7</cell><cell>21.1</cell><cell>24.3</cell><cell>10.0</cell><cell>6.3</cell><cell>17.5</cell></row><row><cell></cell><cell cols="4">+ Direct Move, 10 Steps</cell><cell>29.3</cell><cell>30.1</cell><cell>26.3</cell><cell>20.0</cell><cell>14.8</cell><cell>9.7</cell><cell>21.7</cell></row><row><cell></cell><cell cols="5">+ Relative Move, 10 Steps 46.3</cell><cell>27.7</cell><cell>36.6</cell><cell>15.0</cell><cell>17.5</cell><cell>9.9</cell><cell>25.5</cell></row><row><cell></cell><cell cols="2">Qwen-2.5-VL-7B</cell><cell></cell><cell></cell><cell>97.6</cell><cell>87.2</cell><cell>90.2</cell><cell>74.2</cell><cell>93.2</cell><cell>81.3</cell><cell>88.8</cell></row><row><cell></cell><cell cols="3">+ Direct Move, 4 Steps</cell><cell></cell><cell>50.0</cell><cell>28.3</cell><cell>57.2</cell><cell>19.0</cell><cell>42.9</cell><cell>20.3</cell><cell>36.3</cell></row><row><cell></cell><cell cols="4">+ Relative Move, 4 Steps</cell><cell>2.7</cell><cell>2.1</cell><cell>1.7</cell><cell>1.6</cell><cell>0.0</cell><cell>0.0</cell><cell>1.3</cell></row><row><cell>0 10 20 30 Accuracy (%)</cell><cell cols="2">GPT-4o 17.5% 21.7% 25.5%</cell><cell>40 60 80 100 0 20</cell><cell cols="2">88.8% Qwen-2.5-VL-7B 36.3% 1.3%</cell><cell></cell><cell></cell></row><row><cell></cell><cell>Baseline</cell><cell cols="2">+ Relative Move</cell><cell></cell><cell>+ Direct Move</cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 7 .</head><label>7</label><figDesc>Comparison of the number of training samples and the accuracy on ScreenSpot-Pro.</figDesc><table><row><cell>Steps</cell><cell>1</cell><cell>2</cell><cell>3</cell></row><row><cell cols="4"># Samples per Second 2.35 2.08 1.38</cell></row></table></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgements</head><p>We would like to thank the anonymous reviewers for their thorough feedback and suggestions. The work was done during <rs type="person">Yu Zhao</rs>'s internship at <rs type="institution">Microsoft Research Cambridge, UK</rs>. <rs type="person">Yu Zhao</rs> was partly supported by the <rs type="funder">UKRI</rs> <rs type="grantName">Centre for Doctoral Training in Natural Language Processing</rs>, funded by <rs type="funder">UK Research and Innovation</rs> (grant <rs type="grantNumber">EP/S022481/1</rs>) and the <rs type="institution">University of Edinburgh, School of Informatics</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_GC5cNYG">
+					<orgName type="grant-name">Centre for Doctoral Training in Natural Language Processing</orgName>
+				</org>
+				<org type="funding" xml:id="_dw2rHX6">
+					<idno type="grant-number">EP/S022481/1</idno>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Model ScreenSpot-v2 ScreenSpot-Pro Acc. (%) Latency (s) Acc. (%) Latency (s) GTA1-7B, 1 step 92.4 0.26 50.1 0.58 GUI-Cursor-7B (Qwen), 1 step 93.2 0.27 45.3 0.59 GUI-Cursor-7B (Qwen), 2 steps 93.8 0.37 56.0 0.71 GUI-Cursor-7B (Qwen), full (max 4) 93.9 0.37 56.5 0.89 it only obtains 91.8% accuracy in ScreenSpot-v2) due to it does not solve the spatial semantic alignment issue. GUI-RC/RCPO <ref type="bibr" target="#b8">(Du et al., 2025)</ref> samples multiple predictions and then conducts voting or test-time RL to improve the grounding accuracy. GUI-RC also does not require training, but CCF remains simpler and more effective, e.g., in ScreenSpot-Pro, GUI-G2-7B +CCF achieves 52.1% accuracy, but GUI-G2-7B +GUI-RC only achieves 47.9%.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>H. Compare with Test-Time Scaling Methods</head><p>We further compare GUI-CURSOR against the recent testtime scaling approach RegionFocus <ref type="bibr">(Luo et al., 2025b)</ref>, which iteratively narrows the region of interest by predicting multiple candidate areas at inference time. We evaluate RegionFocus using its officially released code on the same hardware as our experiments.</p><p>Table 10 summarises the comparison. RegionFocus requires up to 100 inference steps per sample on Qwen2.5-VL-7B, yielding an average latency of 5.7 s, roughly 10× slower than the one-step baseline. Despite this much larger compute budget, RegionFocus reaches only 32.1% accuracy on ScreenSpot-Pro with Qwen2.5-VL-Model ScreenSpot-Pro Max Steps Latency GTA1-7B (UI-TARS-1.5-7B) 50.1 1 0.58 GUI-CURSOR-7B (Qwen2.5-VL-7B) 56.5 4 0.89 RegionFocus (Qwen2.5-VL-7B) 32.1 100 5.7 RegionFocus (UI-TARS-7B) 41.2 100 -RegionFocus (UI-TARS-7B) ∼45.0 300 -</p><p>Table 10. Comparison with the test-time scaling method Region-Focus on ScreenSpot-Pro. GUI-CURSOR achieves substantially higher accuracy with far fewer inference steps and lower latency.</p><p>7B. In contrast, GUI-CURSOR attains 56.5% in at most 4 steps and with an average latency of 0.89 s, a 24.4% accuracy gain at over 6× lower latency.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I. Compare with Qwen3-VL Backbones</head><p>To assess whether the gains of GUI-CURSOR persist on more recent and stronger backbones, we train an additional model, GUI-CURSOR-2B, initialised from Qwen3-VL-2B-Thinking (Qwen Team, 2025), and compare against the offthe-shelf Qwen3-VL series at three scales (2B, 8B, and 32B).</p><p>We adopt the same training data and hyperparameters used for the main 7B experiments. </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_23"><head>Figure 12 .</head><label>12</label><figDesc>Example of a box position in the white background. The black frames are used for edge visualisation and are not a part of the image for testing. For each test example, we only show one box with one cursor in the white background.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 9 .</head><label>9</label><figDesc>End</figDesc><table><row><cell>-to-end wall-clock latency (Seconds per Sample) and</cell></row><row><cell>accuracy of GTA1-7B (single-step baseline) and GUI-CURSOR</cell></row><row><cell>under different maximum movement-step budgets.</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_7"><head>Table 11</head><label>11</label><figDesc>Thinking (46.6%). Even the 2B variant trained with GUI-CURSOR approaches the larger Qwen3-VL-32B-Thinking on ScreenSpot-Pro (55.0% vs. 57.1%). These results indicate that the interactive cursormoving paradigm is complementary to and benefits from stronger pre-trained VLMs.</figDesc><table><row><cell>summarises the re-</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2502.13923</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2502.13923" />
+	</analytic>
+	<monogr>
+		<title level="j">J. Qwen</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page">2025</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Sft or rl? an early investigation into training r1-like reasoning large vision-language models</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xie</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2504.11468</idno>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page">277824294</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Why is spatial reasoning hard for vlms? an attention mechanism perspective on focus areas</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">C</forename><surname>Niebles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Geva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Li</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2503.01773</idno>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page">276775433</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Harnessing GUI grounding for advanced visual GUI agents</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Seeclick</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2024.acl-long.505</idno>
+		<ptr target="https://doi.org/10.18653/v1/2024.acl-long.505" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">L</forename><surname>Ku</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Martins</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">V</forename><surname>Srikumar</surname></persName>
+		</editor>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics<address><addrLine>Bangkok, Thailand</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2024">August 11-16, 2024. 2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="9313" to="9332" />
+		</imprint>
+	</monogr>
+	<note>Long Papers), ACL 2024</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Thinking with generated images</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Chern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liu</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2505.22525</idno>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page">278959478</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">G</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ding</surname></persName>
+		</author>
+		<idno>CoRR, abs/2502.01456</idno>
+		<title level="m">Process reinforcement through implicit rewards</title>
+		<meeting>ess reinforcement through implicit rewards</meeting>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Deepseek-Ai</forename></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2501.12948</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2501.12948" />
+		<imprint>
+			<biblScope unit="page">2025</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Mind2web: Towards a generalist agent for the web</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Stevens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Su</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 36: Annual Conference on Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Oh</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">T</forename><surname>Naumann</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Globerson</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Saenko</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Hardt</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</editor>
+		<meeting><address><addrLine>NeurIPS; New Orleans, LA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023-12-10">2023. 2023. December 10 -16, 2023, 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2508.05615</idno>
+		<title level="m">Test-time reinforcement learning for gui grounding via region consistency</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Navigating the digital world as humans do: Universal visual grounding for GUI agents</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Su</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=kxnoqaisCT" />
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations, ICLR 2025</title>
+		<meeting><address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2025">April 24-28, 2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note>OpenReview.net</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Cogagent: A visual language model for GUI agents</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/CVPR52733.2024.01354</idno>
+		<ptr target="https://doi.org/10.1109/CVPR52733.2024.01354" />
+	</analytic>
+	<monogr>
+		<title level="m">IEEE/CVF Conference on Computer Vision and Pattern Recognition, CVPR 2024</title>
+		<meeting><address><addrLine>Seattle, WA, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2024">June 16-22, 2024</date>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Visionr1: Incentivizing reasoning capability in multimodal large language models</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lin</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2503.06749</idno>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page">276902576</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Efficient memory management for large language model serving with pagedattention</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Kwon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">H</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Stoica</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3600006.3613165</idno>
+		<ptr target="https://doi.org/10.1145/3600006.3613165" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 29th Symposium on Operating Systems Principles, SOSP 2023</title>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Flinn</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><forename type="middle">I</forename><surname>Seltzer</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">P</forename><surname>Druschel</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Kaufmann</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Mace</surname></persName>
+		</editor>
+		<meeting>the 29th Symposium on Operating Systems Principles, SOSP 2023<address><addrLine>Koblenz, Germany</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2023">October 23-26, 2023</date>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">B</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Payani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Liao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><surname>{gui-Spotlight}</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2510.04039</idno>
+		<title level="m">Adaptive iterative focus refinement for enhanced gui visual grounding</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Imagine while reasoning in space: Multimodal visualization-of-thought</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Vuli'c</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Wei</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2501.07542</idno>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page">275471612</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Screenspot-pro: GUI grounding for professional high-resolution computer use</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Chua</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2504.07981</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2504.07981" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">On the effects of data scale on UI control agents</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">E</forename><surname>Bishop</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Rawles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Campbell-Ajala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Tyamagundlu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Riva</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 38: Annual Conference on Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Globersons</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">L</forename><surname>Mackey</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">D</forename><surname>Belgrave</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Fan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">U</forename><surname>Paquet</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Tomczak</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</editor>
+		<meeting><address><addrLine>NeurIPS; Vancouver, BC, Canada</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024-12-10">2024. 2024. December 10 -15, 2024, 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Beyond clicking:a step towards generalist GUI grounding via text dragging</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Awadallah</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2601.06031</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2601.06031" />
+		<imprint>
+			<biblScope unit="page">2026</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Can multimodal large language models understand spatial relations</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Cen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Ruan</surname></persName>
+		</author>
+		<ptr target="https://aclanthology.org/2025.acl-long.31/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">W</forename><surname>Che</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Nabende</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">E</forename><surname>Shutova</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><forename type="middle">T</forename><surname>Pilehvar</surname></persName>
+		</editor>
+		<meeting>the 63rd Annual Meeting of the Association for Computational Linguistics<address><addrLine>Vienna, Austria</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2025-08-01">July 27 -August 1, 2025. 2025</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="620" to="632" />
+		</imprint>
+	</monogr>
+	<note>Long Papers), ACL 2025 Association for Computational Linguistics</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Can multimodal large language models understand spatial relations?</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Cen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Ruan</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2505.19015</idno>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page">278905162</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Infigui-r1: Advancing multimodal GUI agents from reactive actors to deliberative reasoners</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2504.14239</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2504.14239" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Omniparser for pure vision based GUI agent</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Awadallah</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2408.00203</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2408.00203" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">UI-R1: enhancing action prediction of GUI agents by reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2503.21620</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2503.21620" />
+		<imprint>
+			<biblScope unit="page">2025</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">GUI-R1 : A generalist r1-style vision-language action model for GUI agents</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xia</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2504.10458</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2504.10458" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Visual test-time scaling for GUI agent grounding</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Logeswaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Lee</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ICCV51701.2025.01859</idno>
+		<ptr target="https://doi.org/10.1109/ICCV51701.2025.01859" />
+	</analytic>
+	<monogr>
+		<title level="m">IEEE/CVF International Conference on Computer Vision, ICCV 2025</title>
+		<meeting><address><addrLine>Honolulu, HI, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2025">October 19-25, 2025. 2025</date>
+			<biblScope unit="page" from="19989" to="19998" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">UI-vision: A desktop-centric GUI benchmark for visual perception and interaction</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Nayak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Jian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">Q</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">A</forename><surname>Rodriguez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kalsi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Chapados</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">T</forename><surname>Özsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Vazquez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Pal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Taslakian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gella</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Rajeswar</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+		<ptr target="https://proceedings.mlr.press/v267/nayak25a.html" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 42nd International Conference on Machine Learning</title>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Singh</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Fazel</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">D</forename><surname>Hsu</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Lacoste-Julien</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">F</forename><surname>Berkenkamp</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">T</forename><surname>Maharaj</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Wagstaff</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Zhu</surname></persName>
+		</editor>
+		<meeting>the 42nd International Conference on Machine Learning</meeting>
+		<imprint>
+			<date type="published" when="2025-07">Jul 2025</date>
+			<biblScope unit="volume">267</biblScope>
+			<biblScope unit="page" from="13" to="19" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Gpt-4o system card</title>
+		<idno>ArXiv, abs/2410.21276</idno>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page">273662196</biblScope>
+		</imprint>
+		<respStmt>
+			<orgName>OpenAI</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">T</forename><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://openai.com/index/introducing" />
+		<imprint>
+			<date type="published" when="2025">4-mini/, 2025</date>
+			<biblScope unit="page">4</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Facilitating large language models to master 16000+ real-world apis</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Gerstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Toolllm</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=dHng2O0Jjr" />
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations, ICLR 2024</title>
+		<meeting><address><addrLine>Vienna, Austria</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024">May 7-11, 2024. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">UI-TARS: pioneering automated GUI interaction with native agents</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Miao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Shi</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2501.12326</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2501.12326" />
+		<imprint>
+			<biblScope unit="page">2025</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Tool learning with large language models: a survey</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wen</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s11704-024-40678-2</idno>
+		<ptr target="https://doi.org/10.1007/s11704-024-40678-2" />
+	</analytic>
+	<monogr>
+		<title level="j">Frontiers Comput. Sci</title>
+		<imprint>
+			<biblScope unit="volume">19</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page">2025</biblScope>
+			<date>198343</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Qwen3-vl technical report</title>
+		<author>
+			<persName><forename type="first">Qwen</forename><surname>Team</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2511.21631</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2511.21631" />
+		<imprint>
+			<date type="published" when="2025">CoRR, abs/2511.21631, 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Vlm-r1: A stable and generalizable r1-style large vision-language model</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhao</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2504.07615</idno>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page">277667819</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Thinking vs. doing: Agents that reason by scaling test-time interaction</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">R</forename><surname>Setlur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Tong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Caples</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Talwalkar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kumar</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2506.07976</idno>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page">279251333</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Pixel reasoner: Incentivizing pixel-space reasoning with curiositydriven reinforcement learning</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2505.15966</idno>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page">278789415</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Learn-by-interact: A data-centric framework for self-adaptive agents in realistic environments</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yoon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">Ö</forename><surname>Arik</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2501.10893</idno>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page">275757520</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">F</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gui</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2507.15846" />
+		<title level="m">Gaussian reward modeling for gui grounding, 2025a</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">LPO: towards accurate GUI agent interaction via location preference optimization</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2506.09373</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2506.09373" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Reinforcing spatial reasoning in vision-language models with interwoven thinking and visual drawing</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Tan</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2506.09965</idno>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page">279306073</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Gui-actor: Coordinate-free visual grounding for GUI agents</title>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Liden</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gao</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2506.03143</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2506.03143" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">OS-ATLAS: A foundation action model for generalist GUI agents</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">P</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Qiao</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2410.23218</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2410.23218" />
+		<imprint>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Benchmarking multimodal agents for open-ended tasks in real computer environments</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">J</forename><surname>Hua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Shin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Osworld</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 38: Annual Conference on Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Globersons</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">L</forename><surname>Mackey</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">D</forename><surname>Belgrave</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Fan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">U</forename><surname>Paquet</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Tomczak</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</editor>
+		<meeting><address><addrLine>NeurIPS; Vancouver, BC, Canada</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024-12-10">2024. 2024. December 10 -15, 2024, 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Scaling computer-use grounding via user interface decomposition and synthesis</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Sahoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xiong</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Corr</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2505.13227</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2505.13227" />
+		<imprint>
+			<biblScope unit="page">2025</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Aguvis: Unified pure vision agents for autonomous GUI interaction</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Saha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Sahoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xiong</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2412.04454</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2412.04454" />
+		<imprint>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Saha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.05791</idno>
+		<title level="m">Gta1: Gui test-time scaling agent</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Aria-ui: Visual grounding for GUI instructions</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<ptr target="https://aclanthology.org/2025.findings-acl.1152/" />
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics, ACL 2025</title>
+		<editor>
+			<persName><forename type="first">W</forename><surname>Che</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Nabende</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">E</forename><surname>Shutova</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><forename type="middle">T</forename><surname>Pilehvar</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Vienna, Austria</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2025-08-01">July 27 -August 1, 2025. 2025</date>
+			<biblScope unit="page" from="22418" to="22433" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">React: Synergizing reasoning and acting in language models</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">R</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=WE_vluYUL-X" />
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations, ICLR 2023</title>
+		<meeting><address><addrLine>Kigali, Rwanda</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023">May 1-5, 2023</date>
+		</imprint>
+	</monogr>
+	<note>OpenReview.net, 2023</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2509.15532</idno>
+		<title level="m">Enhancing grounding with adaptive region perception for gui agents</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<title level="m" type="main">Enhancing visual grounding for GUI agents via self-evolutionary reinforcement learning</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2505.12370</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2505.12370" />
+		<imprint>
+			<biblScope unit="page">2025</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Large language model-brained GUI agents: A survey</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Rajmohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zhang</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=xChvYjvXTp" />
+	</analytic>
+	<monogr>
+		<title level="j">Trans. Mach. Learn. Res</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Rajmohan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhang</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2504.14603</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2504.14603" />
+		<imprint/>
+	</monogr>
+	<note>D. UFO2: the desktop agentos. CoRR, abs/2504.14603, 2025b</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">UFO: A ui-focused agent for windows OS interaction</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Rajmohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2025.naacl-long.26</idno>
+		<ptr target="https://doi.org/10.18653/v1/2025.naacl-long.26" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies, NAACL 2025</title>
+		<editor>
+			<persName><forename type="first">L</forename><surname>Chiruzzo</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Ritter</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</editor>
+		<meeting>the 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies, NAACL 2025<address><addrLine>Albuquerque, New Mexico, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2025-05-04">April 29 -May 4, 2025. 2025</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="597" to="622" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<title level="m" type="main">Why do mllms struggle with spatial understanding? a systematic analysis from data to architecture</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2509.02359</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<analytic>
+		<title level="a" type="main">SPHERE: unveiling spatial blind spots in vision-language models through hierarchical evaluation</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">E</forename><surname>Ng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Koenecke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</author>
+		<ptr target="https://aclanthology.org/2025.acl-long.568/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">W</forename><surname>Che</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Nabende</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">E</forename><surname>Shutova</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><forename type="middle">T</forename><surname>Pilehvar</surname></persName>
+		</editor>
+		<meeting>the 63rd Annual Meeting of the Association for Computational Linguistics<address><addrLine>Vienna, Austria</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2025-08-01">July 27 -August 1, 2025. 2025</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="11591" to="11609" />
+		</imprint>
+	</monogr>
+	<note>ACL 2025</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<title level="m" type="main">Easyr1: An efficient, scalable, multi-modality rl training framework</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xiong</surname></persName>
+		</author>
+		<ptr target="https://github.com/hiyouga/EasyR1" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<title level="m" type="main">R1-zero&apos;s &quot;aha moment&quot; in visual reasoning on a 2b non-sft model</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C.-J</forename><surname>Hsieh</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2503.05132</idno>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page">276884980</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<monogr>
+		<title level="m" type="main">GUI-G1: understanding r1-zero-like training for visual grounding in GUI agents</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xu</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2505.15810</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2505.15810" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

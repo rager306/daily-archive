@@ -1,0 +1,2690 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">FLIP: FLOW-CENTRIC GENERATIVE PLANNING AS GENERAL-PURPOSE MANIPULATION WORLD MODEL</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2025-02-16">16 Feb 2025</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Chongkai</forename><surname>Gao</surname></persName>
+							<email>gaochongkai@u.nus.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">National University of Singapore</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Haozhuo</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Peking University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhixuan</forename><surname>Xu</surname></persName>
+							<email>zhixuanxu@u.nus.edu</email>
+							<affiliation key="aff2">
+								<orgName type="institution">National University of Singapore</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zhehao</forename><surname>Cai</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">National University of Singapore</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Lin</forename><surname>Shao</surname></persName>
+							<email>linshao@nus.edu.sg</email>
+							<affiliation key="aff3">
+								<orgName type="institution">National University of Singapore</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">FLIP: FLOW-CENTRIC GENERATIVE PLANNING AS GENERAL-PURPOSE MANIPULATION WORLD MODEL</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2025-02-16">16 Feb 2025</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">E6F35F7DF31DEE322F43814B12F9CDDE</idno>
+					<idno type="arXiv">arXiv:2412.08261v2[cs.RO]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:51+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>We aim to develop a model-based planning framework for world models that can be scaled with increasing model and data budgets for general-purpose manipulation tasks with only language and vision inputs. To this end, we present FLow-CentrIc generative Planning (FLIP), a model-based planning algorithm on visual space that features three key modules: 1) a multi-modal flow generation model as the general-purpose action proposal module; 2) a flow-conditioned video generation model as the dynamics module; and 3) a vision-language representation learning model as the value module. Given an initial image and language instruction as the goal, FLIP can progressively search for long-horizon flow and video plans that maximize the discounted return to accomplish the task. FLIP is able to synthesize long-horizon plans across objects, robots, and tasks with image flows as the general action representation, and the dense flow information also provides rich guidance for long-horizon video generation. In addition, the synthesized flow and video plans can guide the training of low-level control policies for robot execution. Experiments on diverse benchmarks demonstrate that FLIP can improve both the success rates and quality of long-horizon video plan synthesis and has the interactive world model property, opening up wider applications for future works. Video demos are on our website: <ref type="url" target="https://nus-lins-lab.github.io/flipweb/">https://nus-lins-lab.github.io/flipweb/</ref>.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>World models refer to learning-based representations or models that learn to simulate the environment <ref type="bibr" target="#b38">(LeCun, 2024;</ref><ref type="bibr" target="#b22">Ha &amp; Schmidhuber, 2018)</ref>. With world models, agents can imagine, reason, and plan inside world models to solve tasks more safely and efficiently. Recent advancements in generative models, especially in the area of video generation <ref type="bibr" target="#b7">(Brooks et al., 2024;</ref><ref type="bibr" target="#b5">Blattmann et al., 2023;</ref><ref type="bibr" target="#b77">Yang et al., 2023)</ref>, have demonstrated the application of generating high-quality videos as world simulators with internet-scale training data. World models have opened new avenues across various fields, particularly in the domain of robotic manipulation <ref type="bibr" target="#b77">(Yang et al., 2023;</ref><ref type="bibr" target="#b49">Mendonca et al., 2023;</ref><ref type="bibr" target="#b60">Seo et al., 2023)</ref>, which is the focus of this paper.</p><p>The intelligence of generalist robots involves two levels of abilities <ref type="bibr" target="#b9">(Caucheteux &amp; King, 2022;</ref><ref type="bibr" target="#b48">Manto et al., 2012)</ref>: 1) high-level planning of the abstraction sequence of the task with multi-modal inputs, and 2) low-level execution of the plan by interacting with the real world. A well-designed world model could serve as an ideal way to realize the first function, for which it should enable model-based planning. This requires the world model to be interactive, i.e., can simulate the world according to some given actions. The core of this framework is to find a scalable action representation that serves as the connection between high-level planning and low-level control. This representation should: 1) be able to represent various kinds of movements across diverse objects, robots, and tasks in the whole scene; 2) be easy to obtain or label a large amount of training data for scaling up. Regarding this, <ref type="bibr" target="#b77">Yang et al. (2023)</ref>; <ref type="bibr" target="#b14">Du et al. (2023)</ref>; <ref type="bibr" target="#b82">Zhou et al. (2024)</ref> use languages from VLMs <ref type="bibr" target="#b13">(Driess et al., 2023)</ref> as high-level actions, while <ref type="bibr" target="#b74">Wu et al. (2024)</ref> directly use low-level robot actions to interact with the world model. However, they either require extra datasets or task-specific high-level action labeling processes for training the interactive world model, or their representations cannot describe sophisticated subtle movements in the whole scene. For example, they cannot describe the detailed movements of a dexterous hand spinning a pen. These limit their application as a scalable interactive world model and inspire us to find other action representations.</p><p>Figure <ref type="figure">1</ref>: Overview of our method. Left: FLIP is trained on video datasets across different tasks, objects, and robots, with only one language description for each video as the goal. Right: we train an interactive world model consisting of an action module for flow generation, a dynamics module for video generation, and a value module for assigning value at each step. These modules can perform flow-centric model-based planning for manipulation tasks on the flow and video space.</p><p>Image flow, a dynamic representation of pixel-level changes over time, is a concise yet general representation of all kinds of movements in images for different robots and objects and can describe more subtle changes than language. More importantly, image flow can be completely obtained by off-the-shelf trackers <ref type="bibr" target="#b34">(Karaev et al., 2023)</ref> from pure video datasets. Meanwhile, recent works also show that flows are effective representations for training low-level manipulation policies <ref type="bibr" target="#b73">(Wen et al., 2023;</ref><ref type="bibr">Xu et al., 2024a;</ref><ref type="bibr">b)</ref>. These make flow a good choice for action representation of world models. However, it remains unclear how to leverage flows for planning on manipulation tasks.</p><p>In this work, we present Flow-Centric General Planning (FLIP) for general-purpose robot manipulation tasks. As shown in Figure <ref type="figure">1</ref>, we train a flow-centric world model purely from languageannotated video data from diverse tasks. This world model contains three modules: 1) a flow generation network as the action module, 2) a flow-conditioned video generation model as the dynamics module, and 3) a visual-language representation learning model as the value module. Specifically, we design our action and dynamics module based on CVAE <ref type="bibr" target="#b36">(Kingma, 2013)</ref> and DiT <ref type="bibr" target="#b54">(Peebles &amp; Xie, 2023)</ref> architectures respectively and propose a new training mechanism for leveraging LIV <ref type="bibr" target="#b47">(Ma et al., 2023)</ref> as our value module. The trained modules enable model-based planning by progressively searching successful long-horizon plans on the flow and video spaces: given an initial image and language instruction as the goal, the action module will propose several flow candidates, and the dynamics module will generate the short-horizon future videos. The value module will access the favorability of generated videos that maximize the discounted returns and perform tree search <ref type="bibr" target="#b59">(Selman &amp; Gomes, 2006)</ref> to synthesize long-horizon plans for solving the task.</p><p>In experiments, we show that FLIP can perform model-based planning to solve tasks for both simulation manipulation tasks (LIBERO <ref type="bibr">(Liu et al., 2024a)</ref>) and real-world tasks (including FMB <ref type="bibr" target="#b43">(Luo et al., 2023)</ref>, cloth folding, unfolding, and Bridge-V2 <ref type="bibr" target="#b70">(Walke et al., 2023)</ref>). We also show that FLIP can generate high-quality long-horizon videos for these tasks. Meanwhile, the generated flow and video plans can guide the training of low-level policies. We also show that the three modules of FLIP are superior to their respective baselines <ref type="bibr" target="#b73">(Wen et al., 2023;</ref><ref type="bibr" target="#b83">Zhu et al., 2024;</ref><ref type="bibr" target="#b47">Ma et al., 2023)</ref>. We quantitatively show that FLIP can simulate diverse complex manipulation tasks across objects and robots. The trained world model also demonstrates interactive properties, zero-shot transfer ability, and scalability. In summary, our contributions are: 2 RELATED WORKS</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">WORLD MODELS FOR DECISION MAKING</head><p>Early works of world models learn system dynamics in low dimensional state space <ref type="bibr" target="#b39">(Lesort et al., 2018;</ref><ref type="bibr" target="#b17">Ferns et al., 2004)</ref>, perform planning in latent space <ref type="bibr" target="#b52">(Nasiriany et al., 2019)</ref>, or train networks to predict the future observations <ref type="bibr" target="#b18">(Finn &amp; Levine, 2017)</ref> and actions <ref type="bibr" target="#b33">(Kaiser et al., 2019)</ref>. Modern model-based reinforcement learning methods <ref type="bibr" target="#b23">(Hafner et al., 2020;</ref><ref type="bibr">2023;</ref><ref type="bibr" target="#b25">Hansen et al., 2023;</ref><ref type="bibr" target="#b2">Baker et al., 2022;</ref><ref type="bibr" target="#b50">Micheli et al., 2022)</ref> focus on latent space imagination with coupled dynamics and action modules. Recent works leverage powerful scalable video generation architectures like Diffusion Transformer <ref type="bibr" target="#b54">(Peebles &amp; Xie, 2023)</ref> and large-scale training data <ref type="bibr" target="#b21">(Grauman et al., 2022)</ref> to develop video generation networks to simulate an interactive environment <ref type="bibr" target="#b77">(Yang et al., 2023;</ref><ref type="bibr" target="#b8">Bruce et al., 2024;</ref><ref type="bibr" target="#b63">Shridhar et al., 2024;</ref><ref type="bibr" target="#b68">Valevski et al., 2024;</ref><ref type="bibr" target="#b74">Wu et al., 2024;</ref><ref type="bibr" target="#b83">Zhu et al., 2024;</ref><ref type="bibr" target="#b74">Wu et al., 2024)</ref>. In this work, we build a world model with separate flow-centric action and dynamics modules as well as a vision-language value model for model-based planning for robot manipulation tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">FLOW AND VIDEO MODELS FOR MANIPULATION</head><p>Flows are the future trajectories of query points on images or point clouds. They are universal descriptors for motions in the video, while video data contains rich knowledge of behaviors, physics, and semantics, and have unparalleled scalability in terms of both content diversity and data acquisition. For robotics, people have been trying to use flows as policy guidance <ref type="bibr" target="#b73">(Wen et al., 2023;</ref><ref type="bibr" target="#b4">Bharadhwaj et al., 2024)</ref>, learn dense correspondence <ref type="bibr">(Jiang et al., 2024b)</ref>, tool using <ref type="bibr" target="#b58">(Seita et al., 2023)</ref>, or cross-embodiment representations <ref type="bibr">(Xu et al., 2024a;</ref><ref type="bibr" target="#b83">Zhu et al., 2024;</ref><ref type="bibr" target="#b78">Yuan et al., 2024)</ref>. Videos are usually used for learning inverse dynamics <ref type="bibr" target="#b15">(Du et al., 2024;</ref><ref type="bibr" target="#b18">Finn &amp; Levine, 2017;</ref><ref type="bibr" target="#b6">Brandfonbrener et al., 2024;</ref><ref type="bibr" target="#b19">Gao et al., 2021)</ref>, rewards <ref type="bibr" target="#b46">(Ma et al., 2022;</ref><ref type="bibr">2023;</ref><ref type="bibr" target="#b51">Nair et al., 2022;</ref><ref type="bibr" target="#b79">Zakka et al., 2022)</ref>, transferrable visual representations such as latent embeddings <ref type="bibr" target="#b61">(Sermanet et al., 2018;</ref><ref type="bibr" target="#b51">Nair et al., 2022;</ref><ref type="bibr">Liu et al., 2024a)</ref>, key points <ref type="bibr" target="#b30">(Huang et al., 2024;</ref><ref type="bibr" target="#b12">Di Palo &amp; Johns, 2024)</ref>, affordance <ref type="bibr" target="#b1">(Bahl et al., 2023;</ref><ref type="bibr" target="#b64">Shu et al., 2017)</ref>, flows <ref type="bibr" target="#b73">(Wen et al., 2023;</ref><ref type="bibr">Xu et al., 2024a;</ref><ref type="bibr" target="#b4">Bharadhwaj et al., 2024)</ref>, scene graphs <ref type="bibr" target="#b80">(Zhang et al., 2024;</ref><ref type="bibr">Jiang et al., 2024a;</ref><ref type="bibr" target="#b37">Kumar et al., 2023)</ref>, or acquire similar manipulation knowledge from human videos <ref type="bibr" target="#b71">(Wang et al., 2023;</ref><ref type="bibr" target="#b49">Mendonca et al., 2023;</ref><ref type="bibr" target="#b62">Shao et al., 2021;</ref><ref type="bibr" target="#b40">Liang et al., 2024)</ref>. Recent works also use video generation techniques as visual simulation <ref type="bibr" target="#b77">(Yang et al., 2023;</ref><ref type="bibr">Liu et al., 2024b)</ref>. In this work, we build our action, dynamics, and value modules all based on video and language inputs, enabling the scalability of our framework.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">THREE FUNDAMENTAL MODULES OF FLIP</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">PROBLEM FORMULATION</head><p>We model a manipulation task T as a goal-conditioned Partially Observable Markov Decision Process (POMDP) parameterized by (S, O, ϕ, A, P, R, γ, g) where S, A, O are state, action, and observation spaces, ϕ : S → O is the state-observation mapping function, P : S × A → S is the transition function, R : S × A → R is the reward function, γ is the discount factor, and g is the goal state. In this work, the observation space is the image space: O = R H×W ×3 , where H and W are the height and width of the image, and R(s, g) = I(s == g) -1 is a goal-conditioned sparse reward. The task is solved if the agent maximizes the return T t=0 γ t R(s t , g). We aim to solve this problem by learning a world model and a low-level policy. The world model performs model-based planning on image and flow spaces to maximize the return, synthesizing longhorizon plans, and the low-level policy executes the plan in the real environment. We aim to train the world model only on language-annotated video datasets to make it general-purpose and scalable, and train the low-level policy on a few action-labeled datasets. To enable model-based planning, our world model contains three key modules, as introduced in the following sections.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">FLOW GENERATION NETWORK AS ACTION MODULE</head><p>Overview. The action module of FLIP is a flow generation network π f that generates image flows (future trajectories on query points) as actions for planning. The reason why we use a generation model rather than a predictive model is that we are doing model-based planning, where the action module should give different action proposals for sampling-based planning. Formally, given h step  image observation history o t-h:t at timestep t, the language goal g, and a set of 2D query points coordinates p t = {p k t } K k=1 , where p t,k = (u, v) is the k-th query point coordinate on o t , the flow generation network π f generates coordinates of query points in future L timesteps (including the current step): p t:t+L = π f (o t-h:t , p t , g) ∈ R L×K×2 .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Training Data Annotation.</head><p>The flows of query points can be extracted from pure video data by the off-the-shelf point tracking models. The problem is how to select query points. Previous works either use SAM <ref type="bibr" target="#b56">(Ravi et al., 2024)</ref> to select query points on the region of interest or select query points on active/stationary regions with a predefined ratio <ref type="bibr" target="#b73">(Wen et al., 2023)</ref>. These methods face two problems: 1) for diverse kinds of videos with complex scenes, it is hard for modern segmentation models <ref type="bibr" target="#b56">(Ravi et al., 2024)</ref> to segment perfect regions of interest with no human assistance; 2) for long-horizon videos, there may be objects appearing/disappearing in the video, and using query points only from the initial frame become problematic. To this end, in this work, we uniformly sample dense grid query points for the whole image (for the first problem) at each timestep, and track them for only a short-horizon video clip, i.e., tracking on video clips starting from every frame of the long-horizon video (for the second problem). This can mitigate the second problem because even if some objects appear/disappear, their influences are restricted in a short horizon. Formally, for each frame in the dataset, we uniformly sample a grid of N q points, then use Co-Tracker <ref type="bibr" target="#b34">(Karaev et al., 2023)</ref> to generate the flows {p k t:t+L } Nq k=1 within a future video clip of L steps.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Model Design.</head><p>We design a Conditional VAE (Kingma, 2013) with transformer <ref type="bibr" target="#b69">(Vaswani, 2017)</ref> architecture for flow generation, as illustrated in Figure <ref type="figure" target="#fig_1">2</ref>. As opposed to previous flow prediction works <ref type="bibr" target="#b73">(Wen et al., 2023;</ref><ref type="bibr">Xu et al., 2024a;</ref><ref type="bibr" target="#b4">Bharadhwaj et al., 2024)</ref>, we observe enhanced performance when predicting relative displacements rather than absolute coordinates, i.e., we predict ∆p k t = p k t+1 -p k t for the k-th point at each time step. For the VAE encoder, we encode ground truth flow {p t } L t=1 , patchify observation history o t-h:t , and encode language embedding from Llama 3.1 8B <ref type="bibr" target="#b16">(Dubey et al., 2024)</ref> to tokens, concatenate them with a CLS token for gathering the information, and then send them to a transformer encoder to extract the output at the CLS token position as the latent variable of VAE. For the VAE decoder, we first encode the query points {p k t }</p><p>Nq k=1 at only timestep t to query tokens, concatenate them with image and language tokens as well as the sampled latent variable z from reparameterization, and send them to another transformer encoder. We extract the output at the query tokens and use two MLPs to predict the delta scale δ s ∈ R L×K ≥0 and delta direction ⃗ δ d ∈ R 2L×K for L future horizons.</p><p>Thus we can get ∆p k t = δ tk s ⃗ δ tk d , and the whole future flow can be reconstructed step by step. We also decode the output at the image token positions as an auxiliary image reconstruction task <ref type="bibr" target="#b73">(Wen et al., 2023;</ref><ref type="bibr">He et al., 2022a)</ref>, which we find useful for improving the training accuracy.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">FLOW-CONDITIONED VIDEO GENERATION NETWORK AS DYNAMICS MODULE</head><p>Overview. The flow-conditioned video generation network D generates the following L frames based on current image observation history o t-h:t , the language goal g, and the predicted flow p t:t+L to enable iterative planning for the next planning step: ôt+1:t+L = D(o t-h:t , g, p t:t+L ).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Model Design.</head><p>We design a new latent video diffusion model that can effectively take as input different kinds of conditions such as images, flows, and language. This model is built on the DiT (Peebles &amp; Xie, 2023) architecture with spatial-temporal attention mechanism <ref type="bibr" target="#b45">(Ma et al., 2024;</ref><ref type="bibr" target="#b8">Bruce et al., 2024;</ref><ref type="bibr" target="#b83">Zhu et al., 2024)</ref>. The background knowledge of latent video diffusion models is in Appendix A.1. Here we introduce the design of the multi-modal condition mechanism.</p><p>In the original DiT <ref type="bibr" target="#b54">(Peebles &amp; Xie, 2023)</ref> and previous trajectory-conditional video diffusion paper <ref type="bibr" target="#b83">(Zhu et al., 2024)</ref>, they use adaptive layer norm zero (AdaLN-Zero) blocks to process conditional inputs (such as diffusion timestep and class labels), which regress the scale and shift parameters of the layer norm layers from all conditions with a zero-initialized MLP. However, AdaLN will compress all conditional information to scalars, and cannot enable fine-grained interaction between different parts of conditions with the inputs. Thus, this mechanism is not suitable for complex conditions such as image and flow <ref type="bibr" target="#b81">(Zhang et al., 2023;</ref><ref type="bibr" target="#b3">Bao et al., 2023)</ref>. To this end, we propose a mixed conditioning mechanism for multi-modal conditional generation. We use cross attention for fine-grained interactions between flow conditions (tokenized as N q tokens) and observation conditions and noisy frames. For image history conditions, we concatenate them on the Gaussian noise frames. We use AdaLN-Zero to process the global conditions including the diffusion timestep and language instruction, as shown in Figure <ref type="figure" target="#fig_1">2</ref>. To keep the observation condition clean, we do not add noise to o t-h:t during the diffusion process and do not perform denoising on them either. Overview. The value module V assigns an estimated value Vt for each frame o t to enable model-based planning on the image space, based on the language goal g: Vt = V(o t , g).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">VISION-LANGUAGE REPRESENTATION LEARNING AS VALUE MODULE</head><p>In this work, we adopt LIV <ref type="bibr" target="#b47">(Ma et al., 2023)</ref> to instantiate the value function. LIV first learns a shared language-vision representation from action-free videos with language annotations. It then computes the similarity between current frame o t and g as the value for timestep t: Vt = S(ψ I (o t ), ψ L (g)) = 1 1-γ cos(ψ I (o t ), ψ L (g)), where ψ I and ψ L are the encoding network for image and language respectively, and S is the γ-weighted cosine similarity metric.</p><p>The pretrained LIV model needs to be finetuned to give good value representation on new tasks <ref type="bibr" target="#b47">(Ma et al., 2023)</ref> Finetuning LIV on Long-Horizon Imperfect Videos. Finetuning LIV with the original training objective works well on short-horizon perfect videos (about 50 frames in their original papers <ref type="bibr" target="#b46">(Ma et al., 2022;</ref><ref type="bibr">2023)</ref>). However, we find that it does not work well for our long-horizon imperfect videos, as shown in Figure <ref type="figure" target="#fig_2">3</ref>, where the fine-tuned value curve exhibits numerous jagged peaks.</p><p>Algorithm 1 Flow-Centric Generative Planning 1: Input: Current observation history o 0-h:0 , language goal g, query points p, flow prediction network π f , flow-conditioned video generation network D, vision-language value module V. 2: Hyperparameters: Flow candidates number A, planning Beams B, planning horizon H.</p><formula xml:id="formula_0">3: Initialization: Flow plans f p ← [p i 0-h:0 , i ∈ 1 . . . B], video plans v p ← [o i 0-h:0 , i ∈ 1 . . . B]. 4: for h = 1 . . . H do 5: for b = 1 . . . B do 6: o ← v p [b][-h :]</formula><p>▷ Get the Latest Observation History in the Plan Beam 7:</p><formula xml:id="formula_1">a 1:A ← π(o, P, g) ▷ Generate A Different Flow Actions 8: v 1:A ← D(o, a i , g) for i in(1 . . . A) ▷ Generate Corresponding Different Video Clips 9: id ← arg max R(v i , g) for i in (1 . . . A) 10: f p [b].append(a id ), v p [b].append(v id ) ▷ Add</formula><p>Plans with Highest Value 11: end for 12:</p><formula xml:id="formula_2">max idx, min idx ← arg max(v p , V), arg min(v p , V) 13: f p [min idx] ← f p [max idx], v p [min idx] ← v p [max idx] ▷ Periodically Replace 14: end for 15: f ← f p [arg max(v p , V)], v ← v p [arg max(v p , V)] ▷ Return Highest Value Plan</formula><p>This is disastrous for sampling-based planning algorithms since most planning algorithms expect a smoothing value curve to be effective <ref type="bibr" target="#b59">(Selman &amp; Gomes, 2006;</ref><ref type="bibr" target="#b47">Ma et al., 2023)</ref>.</p><p>We point out that this problem is caused by imperfect long-horizon videos, where the task does not necessarily progress smoothly as the video progresses. For example, the robot arm may hesitate in the air during the task. To mitigate this problem, we replace the concept of adjacent frames in the original loss to adjacent states, where we define states as short-horizon video clips. Formally, we divide a long-horizon video into small segments of fixed length and treat each clip s clip as the smallest unit of the video. The original o s , o T , o k , o k+1 are seamlessly replaced by s clip s , s clip T , s clip k , s clip k+1 respectively. As shown in Figure <ref type="figure" target="#fig_2">3</ref>, this simple strategy is surprisingly useful and makes the fine-tuned vale curve much smoother than the originally fine-tuned ones.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">FLOW-CENTRIC GENERATIVE PLANNING</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">MODEL-BASED PLANNING WITH FLOWS, VIDEOS, AND VALUE FUNCTIONS</head><p>Directly generating long-horizon videos autoregressively is usually not accurate <ref type="bibr" target="#b73">(Wen et al., 2023;</ref><ref type="bibr" target="#b77">Yang et al., 2023;</ref><ref type="bibr" target="#b15">Du et al., 2024)</ref> due to compounding errors. In this work, we use model-based planning to search for a sequence of flow actions and video plans that maximizes the discounted return:</p><formula xml:id="formula_3">o * 0:L = arg max o 0:L ∼π f ,D L i=0 γ i R(o i , g).<label>(1)</label></formula><p>According to Bellman Equation <ref type="bibr" target="#b66">(Sutton, 2018)</ref>, this equals stepping towards the next state that maximizes r t + γV * (s t+1 , g) at each time step given an optimal value function V * . In our problem, r t = -1 is a constant for every step before reaching the goal, and we assume our learned value function V = V * , thus our problem is simplified to find the next state that maximizes V at each time step. Note this reward design also encourages finding the shortest plan. We use hill climbing <ref type="bibr" target="#b59">(Selman &amp; Gomes, 2006)</ref> to solve this problem. It initializes B plan beams. At each timestep t, given current image history o t-h:t and the language goal g, it employs π f to generate multiple flow actions p t+1:t+L = π f (o t-h:t , p t , g) on uniformly sampled query points as candidates for tree search, then use D to generate corresponding short-horizon videos ôt+1:t+L = D(o t-h:t , g, p t+1:t+L ). The value module V is then used to select the generated video with the highest reward among A videos to enable the next iteration of generation for each beam. In order to prevent exploitative planning routes that over-exploit on an irregular state, we periodically replace the lowest value plan among the beams with the beam with the highest value. The algorithm is summarized in Algorithm 1. <ref type="bibr">LIBERO-LONG (Liu et al., 2024a</ref>) FMB-S <ref type="bibr" target="#b43">(Luo et al., 2023</ref>) FMB-M Folding Unfolding UniPi <ref type="bibr">(Du et</ref>  Table 2: Quantitative results on long-horizon video generation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">PLAN-CONDITIONED LOW-LEVEL POLICY</head><p>The low-level policy π L are given the image observation history o t-h:t , the language goal g, and the predicted flow plan p t:t+L as well as the video plan ôt+1:t+L = D(o t-h:t , g, p t+1:t+L ) to predict the low-level robot action a t:t+L that drive the robot to operate in the environment. We train different policies that take as input different kinds of condition information, with all of them trained on a few demonstrations with action labels. The policy architectures are similar to diffusion policy <ref type="bibr" target="#b11">(Chi et al., 2023)</ref>. Details can be found in Appendix A.3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">EXPERIMENTS</head><p>In this section, we first demonstrate that FLIP can: 1) perform model-based planning for different manipulation tasks; 2) synthesize long-horizon videos (≥ 200 frames); and 3) can guide the lowlevel policy for executing the plan for both simulation and real-world tasks. We also evaluate the action, dynamics, and value modules separately compared to corresponding baselines and show the interactive, zero-shot, scalability properties of FLIP. More results and videos are on our <ref type="url" target="https://nus-lins-lab.github.io/flipweb/">website</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">MODEL-BASED PLANNING FOR MANIPULATION TASKS</head><p>Setup. In this section, we train FLIP on four benchmarks to show its model-based planning ability. The model is given an initial image and a language instruction, and it is required to search the flow and video spaces to synthesize the plan for this task. The first one is LIBERO-LONG <ref type="bibr">(Liu et al., 2024a)</ref>, a long-horizon table-top manipulation benchmark of 10 tasks in simulation. We train FLIP on 50 × 10 long-horizon videos with a resolution of 128 × 128 × 3 and test on 50 × 10 new random initializations. The second one is the FMB benchmark <ref type="bibr" target="#b43">(Luo et al., 2023)</ref>, a long-horizon object manipulation and assembly benchmark with varying object shapes and appearances. We train FLIP on 1K single-object multi-stage videos and 100 multi-object multi-stage videos with a resolution of 128 × 128 × 3 and test on 50 new initialization for each. The third and fourth suites are cloth folding and cloth unfolding. These two datasets are collected by ourselves. We train each suite on 40 videos with varying viewpoints and test on 10 new viewpoints for each with a resolution of 96 × 128 × 3.</p><p>We follow previous works <ref type="bibr" target="#b14">(Du et al., 2023;</ref><ref type="bibr" target="#b83">Zhu et al., 2024)</ref> and evaluate our model-based planning results by human evaluating the correctness of generated video plans. That is, we visually assess the percentage of time the video successfully solved the given task. We compare FLIP to two baselines: 1) UniPi <ref type="bibr" target="#b15">(Du et al., 2024)</ref>, a text-to-video generation method with long-horizon text goals. 2) FLIP-NV, an ablation of FLIP that performs the same beam search but with no value module as guidance.</p><p>Results. Table <ref type="table" target="#tab_0">1</ref> shows the results. We can see that UniPi achieves low success rates across all tasks, which shows that directly synthesizing long-horizon videos is difficult. FLIP-NV achieves better results than UniPi. This shows that with dense flow information as guidance, the performance of the video generation model is improved. FLIP outperforms all baselines, pointing out the effectiveness of using value functions for model-based planning. This can eliminate incorrect search routes during planning. We show such incorrect search routes on our website. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">LONG-HORIZON VIDEO GENERATION EVALUATION</head><p>Setup. In this section, we quantitatively evaluate the long-horizon video generation quality of FLIP compared to other video generation models. We choose the same datasets as in Section 5.1 as well as Bridge-V2 (Walke et al., 2023) as the evaluation benchmarks. Here all videos are longer than 200 frames except for Bridge-V2. For Bridge-V2, we train on 10k videos and test on 256 videos with a resolution of 96×128×3. We choose two baselines: 1) LVDM <ref type="bibr">(He et al., 2022b)</ref>, a state-of-the-art text-to-video method for video generation; 2) IRASim <ref type="bibr" target="#b83">(Zhu et al., 2024)</ref>, a conditional video generation method with the end-effector trajectories as the condition. We use SAM2 <ref type="bibr" target="#b56">(Ravi et al., 2024)</ref> to label the end-effector trajectory for IRASim. We choose model-based metrics including Latent L2 loss and FVD <ref type="bibr" target="#b67">(Unterthiner et al., 2018)</ref> as well as a computation-based metric PSNR <ref type="bibr" target="#b29">(Hore &amp; Ziou, 2010)</ref>. Latent L2 loss and PSNR measure the L2 distance between the predicted video and the ground-truth video in the latent space and pixel space, and FVD assess video quality by analyzing the similarity of video feature distributions Results. Table <ref type="table">2</ref> shows the results. We can see that our method consistently outperforms baselines in all datasets. LVDM performs badly on LIBERO-LONG and FMB, and better on Bridge-V2. This is because the videos in Bridge-V2 are shorter than the previous two benchmarks. IRASim performs better than LVDM, which shows the importance of trajectory guidance. However, it generates longhorizon videos in an auto-regressive manner, which has worse results than our method, showing that model-based planning can also help generate high-quality videos by concatenating short-horizon videos generated with rich flow guidance. The results on the FMB benchmark are the worst for all methods. This is because the training videos have many discontinuous transitions, where the robot gripper instantly moves to where the next stage begins. Since our model leverages history observations as input conditions, it can sometimes overcome this discontinuous gap. We qualitatively show the model-based planning results on the four tasks in Figure <ref type="figure" target="#fig_4">4</ref>.</p><p>Since FLIP is a universal framework for all manipulation tasks as long as they have languageannotated video datasets, here we qualitatively show FLIP can be used for complex long-horizon video generation including the ALOHA tasks <ref type="bibr" target="#b0">(Aldaco et al., 2024)</ref>, pen spinning <ref type="bibr" target="#b72">(Wang et al., 2024)</ref>, robot pilling <ref type="bibr" target="#b10">(Chen et al., 2024)</ref>, tying plastic bags <ref type="bibr" target="#b20">(Gao et al., 2023)</ref>, and human peeling eggs, as shown in Figure <ref type="figure" target="#fig_6">7</ref>. More video demos are on our website.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">PLAN-GUIDED LOW-LEVEL POLICY</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Setup.</head><p>In this evaluation we explore how the generated flow and video plans can be used as conditions for training a manipulation policy to accomplish the task. We aim to answer the question: which one, flow or video (or both at the same time), is more suitable to be used as the condition to guide the learning of the underlying strategy? We use LIBERO-LONG <ref type="bibr">(Liu et al., 2024a)</ref> for evaluation, where for each task in LIBERO-LONG, we use 10 demonstrations with action labels and 50 demonstrations without action labels, as done in the baseline method ATM <ref type="bibr" target="#b73">(Wen et al., 2023)</ref>. During inference, FLIP is a close-loop policy that will replan after every action chunking. We compare FLIP to <ref type="bibr">ATM Wen et al</ref>. (2023) and its diffusion-policy version. We also compare OpenVLA Kim et al. (2024) (with both zeros-shot and fine-tuned version) and policies with pretrained FLIP on LIBERO-90 as the planner. Please see Appendix B.2 for these results. 𝒗 𝒕 make one horizontal line out of the red and green blocks, then make a vertical line out of the blue and yellow blocks 𝒗 𝒕 𝒗 𝒕 𝒗 𝒕 𝒗 𝒕 𝒗 𝒕 Fold the cloth Tasks PreTrained Finetune-LIV Finetune-Ours Figure 6: Value curves from the pretrained LIV, finetuned by LIV, and fine-tuned by FLIP.</p><p>LIBERO-10 Language-Table Bridge-V2 Latent L2 ↓ FVD ↓ PSNR ↑ Latent L2 ↓ FVD ↓ PSNR ↑ Latent L2 ↓ FVD ↓ PSNR ↑ LVDM He et al. (2022b) 0.366 109.41 18.852 0.364 124.75 19.943 0.328 111.34 18.104 IRASim (Zhu et al., 2024) 0.307 92.76 19.205 0.335 132.56 18.156 0.318 107.89 19.967 FLIP-SC 0.271 89.77 20.089 0.304 137.89 18.904 0.316 127.65 18.375 FLIP(Ours) 0.197 27.62 28.602 0.159 21.23 33.632 0.171 38.41 34.576  We use LIBERO-LONG <ref type="bibr">(Liu et al., 2024a)</ref> and <ref type="bibr">Bridge-V2 (Walke et al., 2023)</ref> for evaluation. We compare our method with 3 baselines: 1) ATM <ref type="bibr" target="#b73">(Wen et al., 2023)</ref>, the state-of-the-art flow prediction module for manipulation tasks; 2) Ours-ABS: directly generating absolute flow coordinates at each timestep rather than generating the scale and direction; 3) Ours-NoAUX: the same architecture of ours with no auxiliary training losses (the flow and image reconstruction losses).</p><p>From Table <ref type="table" target="#tab_2">4</ref>, we can see that Ours-ABS generally achieves the same results as ATM, and predicting the scale and directions are better than ATM and Ours-ABS, showing that directly regressing the absolute coordinates is worse than predicting the delta of flows at each timestep. We can also see that the auxiliary losses can help improve the final results.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Dynamics Module Experiments.</head><p>We evaluate our dynamics module separately with the ground truth flows as conditions on short-horizon video generation. We use PSNR <ref type="bibr" target="#b29">(Hore &amp; Ziou, 2010)</ref>, latent L2 loss, and FVD <ref type="bibr" target="#b67">(Unterthiner et al., 2018)</ref> as metrics. We use LIBERO-LONG <ref type="bibr">(Liu et al., 2024a)</ref>, Bridge-V2 <ref type="bibr" target="#b70">(Walke et al., 2023)</ref>, and Language-Table <ref type="bibr" target="#b44">(Lynch et al., 2023)</ref> as the evaluation datasets. We use three baselines (as introduced in Section 5.2): 1) LVDM <ref type="bibr">(He et al., 2022b)</ref>; 2) IRAsim <ref type="bibr" target="#b83">(Zhu et al., 2024)</ref>; 3) Ours-SC: using AdaLN-Zero for all kinds of conditions.</p><p>Results are in Table <ref type="table" target="#tab_1">3</ref>. The result trends across methods are generally consistent with the longhorizon video generation results in Table <ref type="table">2</ref>. FLIP-SC generally achieves the same performance with    Value Module Experiments. We here qualitatively show the fine-tuned value curves of our method compared to the original LIV <ref type="bibr" target="#b47">(Ma et al., 2023</ref>) method on two different tasks consisting of Language-Table <ref type="bibr" target="#b44">(Lynch et al., 2023)</ref> and cloth folding in Figure <ref type="figure">6</ref>. We also show the value curves before fine-tuning. We can see our method consistently gets smoother value curves than the original LIV method, where the value curves have violent oscillations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.5">APPLICATIONS AND SCALING</head><p>Finally, we train FLIP on LIBERO-90, a large-scale simulation manipulation dataset to show three properties of FLIP. We use 50 videos for each task in the resolution of 3 × 64 × 64.</p><p>Interactive World Model. We first show that the trained dynamics module is interactive: it can generate corresponding videos given image flows specified by humans. We use SAM2 <ref type="bibr" target="#b56">(Ravi et al., 2024)</ref> to select the region of the robot arm and manually give flows in different directions. Results are shown in Figure <ref type="figure" target="#fig_7">8</ref>. We can see the robot arm can move left or right according to the given flow.</p><p>Zero-Shot Generation. Secondly, we show that the trained FLIP has zero-shot transfer ability.</p><p>We test the trained model on LIBERO-LONG. Results are shown in Figure <ref type="figure" target="#fig_8">9</ref>. Interestingly, we can see that the pretrained model, without fine-tuning, can generate natural movement for the robot arm with unseen observations and instructions. This shows FLIP has a certain knowledge transfer ability.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Model Scaling.</head><p>We show that the action and dynamics module are scalable with increasing model sizes. Figure <ref type="figure">10</ref> shows the smoothed ADE and Latent L2 loss on the validation set. It shows that increasing the model size can consistently help achieve better performance for both modules.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">CONCLUSION AND LIMITATION</head><p>In this work, we present FLIP, a flow-centric generative planning method for general-purpose manipulation tasks. FLIP is trained on only video and language data, can perform model-based planning on the trained world model to synthesize long-horizon plans, and can guide low-level policy learning. FLIP has the potential to scale up with increasing data and computation budgets in the future.</p><p>A major limitation of FLIP is the slow speed of planning, which is restricted by extensive video generation processes during the planning phase. This restricts our method on quasi-static manipulation tasks. Another limitation is that FLIP does not use physical properties and 3D information of the scene. Future works can develop physical 3D world models and extend FLIP to 3D scenarios.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A METHOD DETAILS</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 LATENT DIFFUSION MODELS</head><p>Diffusion Models. Diffusion models <ref type="bibr" target="#b65">(Song et al., 2020;</ref><ref type="bibr" target="#b28">Ho et al., 2020)</ref> typically contain a forward nosing process and a reverse denoising process. During the forward process, we gradually apply noise to real data x 0 : q(x t |x 0 ) = N (x t ; √ a t x 0 , (1 -a t )I) over T timesteps, where constants a t are hyperparameters. By applying the reparameterization trick, we can sample x t = √ a t x 0 + √ 1 -a t ϵ t , where ϵ t ∼ N (0, I). During the reverse process, it starts from Gaussian noise x T ∼ N (0, I) and gradually removes noises to recover</p><formula xml:id="formula_4">x 0 : p θ (x t-1 |x t ) = N (µ θ (x t ), Σ θ (x t )). With reparameterizing µ θ as a noise prediction network ϵ θ , the model can be trained with L simple (θ) = ||ϵ θ (x t ) -ϵ t || 2 2 .</formula><p>We also learn the covariance Σ θ following Nichol &amp; Dhariwal (2021); Peebles &amp; Xie (2023) with the full KL loss.</p><p>Latent Diffusion and Tokenization. Latent diffusion models <ref type="bibr" target="#b57">(Rombach et al., 2022;</ref><ref type="bibr" target="#b45">Ma et al., 2024)</ref> perform diffusion process in a low-dimensional latent space z ld rather than the original pixel space. We leverage the pre-trained VAE in SDXL <ref type="bibr" target="#b55">(Podell et al., 2023)</ref> to compress each frame o t to latent representations: z ld t = Enc(o t ), and after the denoising process, the latent representation can be decoded back to the pixel space with the VAE decoder: o t = Dec(z ld t ). For each z ld , it is divided into image patches and tokenized by convolutional networks to P tokens with D dimensions (hidden size). Sequencing the image tokens of all T frames, we get the video token in the shape of T × P × D.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Spatial-Temporal Attention Mechanism.</head><p>We leverage transformers <ref type="bibr" target="#b69">(Vaswani, 2017)</ref> to implement the dynamics module, and use the memory-efficient spatial-temporal attention mechanism <ref type="bibr" target="#b45">(Ma et al., 2024;</ref><ref type="bibr" target="#b8">Bruce et al., 2024;</ref><ref type="bibr" target="#b83">Zhu et al., 2024)</ref>, where each attention block consists of a spatial attention block and a temporal attention block. The spatial attention operates on the 1 × P tokens within each frame, and the temporal attention operates on the T × 1 tokens across T timesteps at the same location. </p><formula xml:id="formula_5">L I (ψ I ) = 1 -γ B B i=1 [-S(ψ I (o i s ), ψ I (o i T ))]+ log 1 B B i=1 exp[S(ψ I (o i k ), ψ I (o i T )) + 1 -γS(ψ I (o i k+1 ), ψ I (o i T ))], L L (ψ I , ψ L ) = 1 -γ B B i=1   -log e (1-γ)S(ψI (o i T ),ψL((g i )) 1 B B j=1 e (1-γ)S(ψI (o j T ),ψL(g i ))]   ,<label>(2)</label></formula><p>A.3 LOW-LEVEL POLICY</p><p>In this work, we use a low-level policy with a similar structure to diffusion policy <ref type="bibr" target="#b11">(Chi et al., 2023)</ref>. We show the architecture of this policy in Figure <ref type="figure" target="#fig_11">11</ref>. We employ a spatial-temporal attention mechanism. Specifically, the input contains the agent view observation history o a t-12:t ∈ R 12×3×128×128 and the eye in hand observation history o e t-12:t ∈ R 12×3×128×128 at timestep t, the proprioception state history s t-12:t ∈ R 12×123 , the language tokens extracted from Meta Llama 3.1 8B <ref type="bibr" target="#b16">(Dubey et al., 2024)</ref> g ∈ R Tg×4096 , the predicted flow for both the agent view p a t:t+16 ∈ R 16×529×2 and eye in hand view p e t:t+16 ∈ R 16×529×2 , and the predicted future videos for both the agent view ôa t:t+16 ∈ R 16×3×128×128 and eye in hand view ôe t:t+16 ∈ R 16×3×128×128 . The low-level policies are a denoising model that will predict the gradient field of the action chunking ∇E(A t ), and after 500 denoising steps, we can get the future action sequences a ∈ R 16×7 where 7 is the action size. We use the action in a receding horizon manner where we only execute 8 steps and we replan the future flow and videos and predict another 16 action steps iteratively. B EXPERIMENT DETAILS B.1 TRAINING DETAILS</p><p>We report the hyperparameters of the models we trained in Table <ref type="table">5</ref> and Table <ref type="table" target="#tab_3">6</ref>. We train all data with observation history equals to 16 and future flow horizon equals to 16. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2 MORE POLICIES RESULTS</head><p>Besides the low-level experiments in Section 5.3, we also perform experiments in the LIBERO-LONG task suite with two other models:</p><p>1. OpenVLA <ref type="bibr" target="#b35">Kim et al. (2024)</ref>: this is a large-scale retained that is designed for generalpurpose vision-language-action prediction. We use the pretrained checkpoint from the official paper and test with both zero-shot and fine-tuned models. We use 50 demonstrations for each task in LIBERO-LONG to fine-tune the OpenVLA model. For consistency, we use a resolution of 128×128 for fine-tuning. For fair comparisons, we only use the agent view images as input because the original OpenVLA is only trained with third-view images. 2. Pretrained FLIP on LIBERO-90 and fine-tuned on LIBERO-10 as the high-level planner.</p><p>In this setting, we train FLIP on 50×90 action-less demonstrations with a resolution of 64×64 from LIBERO-90, and finetune it with 50×10 from LIBERO-LONG, and use this FLIP model as the planner to train the same low-level policy as in the main paper. Here we only test the flow-conditioned policy version, and call it Ours-90.</p><p>Results. We show the results together with the main paper results in Figure <ref type="figure" target="#fig_10">12</ref>. We can see that OpenVLA cannot handle the long-horizon tasks of LIBERO-LONG either with zero-shot or finetuned models, showing there is still a long way to go for general-purpose vision-language-action models. Ours-90 performs similarly to Ours-F and Ours-FV, showing that pretraining in other tasks may not bring significant improvement for low-level policy learning. This comforts with the lifelong learning results in the original LIBERO paper <ref type="bibr">(Liu et al., 2024a)</ref>, where they also show that pretraining cannot help (sometimes even hurt) the policy training results.</p><p>It is worth noting that, in the original OpenVLA paper, they also fine-tuned the pretrained model on LIBERO-LONG tasks and archived a 53.7 ± 1.3% success rate. We think the success of their results comes from two aspects, which cannot be true in our setting: 1) we are using a resolution of 128×128, which may not be large enough to represent the details in the scene. In comparison, OpenVLA uses a resolution of 256×256. 2) We are using the official demonstrations provided by the LIBERO paper, which may not be as good as the re-collected demonstrations in their demonstrations.</p><p>Figure <ref type="figure" target="#fig_10">12</ref>: Low-level policy results in LIBERO-LONG.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3 ABLATION STUDIES OF ACTION MODULE</head><p>To verify if diffusion models can generate better results for image flow prediction (the action module of FLIP) than a CVAE model, here we design a diffusion model for the flow generation task. We use the same architecture as the CVAE decoder for the diffusion model (as illustrated in Figure <ref type="figure" target="#fig_1">2</ref>, where a transformer encoder takes as input the query points tokens, the image history tokens, the language embedding tokens, and noisy inputs, and outputs the scale and direction gradient fields for each query point. The network structure is shown in Figure <ref type="figure" target="#fig_12">13</ref>. We perform comparison experiments in both LIBERO-LONG and Bridge-V2 data.</p><p>Results. Table <ref type="table" target="#tab_4">7</ref> shows the results. We can see that CVAE performs better on LIBERO-LONG tasks and the diffusion model performs better on Bridge-V2 tasks, but their performance difference is minor. We can see the main improvement of the action module comes from: 1) predicting the delta action (scale and direction) rather than predicting the absolute coordinates of the image flows; 2) auxiliary losses as stated in our main paper.</p><p>Although using the diffusion model may perform better in some tasks, the inference speed is slower than CVAE models. Given that their performance is not too different, we still use CVAE as our default action module.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.4 REAL WORLD EXPERIMENTS</head><p>In order to show the application of FLIP on real-world tasks, here we design two long-horizon real-world manipulation tasks for testing. We use a 6-DOF X-arm as the robot arm, and use two RealSense D435i cameras to get the visual inputs. We put one camera on the other robot arm as the third-view camera and another camera on the wrist of the robot arm as the eye-in-hand camera. The control frequency of both tasks is set to 10Hz. We also train a diffusion policy and an ATM (Wen   <ref type="figure" target="#fig_13">14</ref>. We test both tasks with 20 random initialized episodes. The two tasks are:</p><p>1. Tea Scooping Task. In this task, there is a white bowl of dry tea leaf (Tieguanyin), a yellow bowl with an iron spoon, and an empty cup on the table, as shown in Figure <ref type="figure" target="#fig_14">15</ref>. The robot is trained to first pick up the spoon from the yellow bowl, then use the spoon to scoop the tea  leaf from the white bowl pour the tea leaf into the cup, and finally put back the spoon into the yellow bowl. The positions of both the bowls and the cup are randomized in the space that the robot arm can reach. The task is successful if all three stages are accomplished. The action space of the robot is 7-dim, including the 6-DOF pose and the gripper action. We collect 40 demonstrations with a scripted policy to train FLIP and a flow-guided low-level policy. We choose this task because it is both long-horizon and requires precise grasping and manipulation. It also requires tool use and interaction between rigid body and granular objects. 2. Cloth Unfolding Task. In this task, a pair of denim shorts was randomly thrown on the table, and the robot is trained to unfold it to make it flat, as shown in Figure <ref type="figure" target="#fig_14">15</ref>. The task is successful if the projection area of the jeans on the table is greater than 85% of its maximum area. The action space of the robot is 6-dim, which consists of a 2-dim endeffector coordinate in the x-y plane, a 1-dim grasping orientation angle, a 2-dim dragging coordinate in the x-y plane, and the gripper aperture. We fix the grasping height to 22 mm for this task. We collect 50 demonstrations for this task with a scripted policy. We choose this task because it is both long-horizon and difficult because of the deformation of the jeans, which requires a long-horizon task planning ability for the policy. The robot has to finish the task in 15 grasps and drags.</p><p>Results. Table <ref type="table">8</ref> shows the results of both tasks. We can see that our policy is significantly better than the baselines. These two tasks are very difficult in out setting since we only use no more than 50 demonstrations for each of them, while modern image-based imitation learning algorithms (such as Diffusion Policy <ref type="bibr" target="#b11">(Chi et al., 2023)</ref>) usually require more than 500 demonstrations for such kinds of long-horizon tasks. In contrast, our method benefits from the high-level model-based planning advantages and can correct back to the good trajectory when it deviates from it, thus the success rates are improved.</p><p>Diffusion Policy <ref type="bibr" target="#b11">(Chi et al., 2023)</ref> ATM <ref type="bibr" target="#b73">(Wen et al., 2023)</ref> Ours Tea Scooping 15.0% 25% 55% Cloth Unfolding 0.0% 0.0% 50.0%</p><p>Table 8: Success rates of real robot experiments over 20 evaluations. B.5 DATA SCALABILITY</p><p>To show the performance change of FLIP along with different amounts of training data, here we perform an experiment on LIBERO-LONG to show the planning success rates change with different amount of demonstrations. Results are shown in Table <ref type="table">9</ref>. From the results, we can see that with more data for each task, the planning success rates become better.</p><p>LIBERO-LONG <ref type="bibr">(Liu et al., 2024a)</ref> FLIP-10 0% FLIP-20 5% FLIP-30 40% FLIP-40 90% FLIP-50 <ref type="table" target="#tab_0">100%</ref> Table <ref type="table">9</ref>: Planning results change along with data amounts for LIBERO-LONG. The number shown in the left column is the demonstration number for each task during training.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.6 GENERATIVE PLANNING WITH VISUAL DISTRACTION</head><p>In this section, we perform a qualitative experiment to see how will our FLIP be affected in the presence of noise or visual obstructions. To this end, we manually add an image of an apple in the initial image of the LIBERO-LONG tasks, as shown in Figure <ref type="figure" target="#fig_16">16</ref> and  </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Flow</head></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: The action module and dynamics module of FLIP. Left: the tokenizing process of different modalities in training data. Middle: we use a Conditional VAE to generate flows as actions. It separately generates the delta scale and directions on each query point for flow reconstruction. Right: we use a DiT model with the spatial-temporal attention mechanism for flow-conditioned video generation. Flows (and observation history) are conditioned with cross attention, while languages and timestep are conditioned with AdaLN-zero.</figDesc><graphic coords="4,174.44,79.45,144.22,133.31" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure3: Top: The value module of FLIP. We follow the idea of<ref type="bibr" target="#b47">(Ma et al., 2023)</ref> and use timecontrastive learning for the visual-language representation, but we treat each video clip (rather than each frame) as a state. Bottom: the fine-tuned value curves of<ref type="bibr" target="#b47">Ma et al. (2023)</ref> and ours.</figDesc><graphic coords="5,306.16,383.29,196.14,154.97" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><figDesc>. The original fine-tuning loss L LIV = L I (ψ I ) + L L (ψ I , ψ L ) is calculated on sampled sub-trajectory batch data o i s , . . . , o i k , o i k+1 , . . . , o i T , g i B i=1 from each task T i , where s ∈ [0, T i -1] , s ≤ k &lt; T i . For ∀ task i, L I (ψ I ) will use time contrastive learning to increase the similarity S(o i s , o i T ) between the sampled start frame and the end frame and keep the embedding distance between two adjacent frames as (γ-discounted) 1, and L L encourages the image goal o i T and language goal g i have the same embedding for the same task i. Details of this process can be found in Appendix A.2.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Model-based planning results on LIBERO-LONG, FMB, cloth folding, and cloth unfolding. All of the flows, images, and values shown are generated by FLIP.</figDesc><graphic coords="8,108.00,81.86,396.01,132.00" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 5 :Figure 6 :</head><label>56</label><figDesc>Figure 5: Success rates of different low-level policies on LIBERO-LONG.</figDesc><graphic coords="9,108.00,82.52,182.16,78.07" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 7 :</head><label>7</label><figDesc>Figure7: FLIP is a general framework for diverse kinds of manipulation tasks across objects and robots, even for human hands. All of the flows and images are generated.</figDesc><graphic coords="10,377.28,223.42,126.72,77.26" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 8 :</head><label>8</label><figDesc>Figure 8: Interactive ability.Figure9: Zero-shot transfer.Figure10: Scalability.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 9 :</head><label>9</label><figDesc>Figure 8: Interactive ability.Figure9: Zero-shot transfer.Figure10: Scalability.</figDesc><graphic coords="10,108.00,229.81,126.72,70.86" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><figDesc>Figure 8: Interactive ability.Figure9: Zero-shot transfer. Figure 10: Scalability.IRASim, showing that even if the model is given dense flow information, it requires a fine-grained mechanism to leverage the condition for video generation.</figDesc><graphic coords="10,242.64,229.81,126.71,70.86" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>A. 2</head><label>2</label><figDesc>LANGUAGE-VISION REPRESENTATION The original fine-tuning loss L LIV = L I (ψ I ) + L L (ψ I , ψ L ) is calculated on sampled sub-trajectory batch data o i s , . . . , o i k , o i k+1 , . . . , o i T , g i B i=1 from each task T i , where s ∈ [0, T i -1] , s ≤ k &lt; T i . They have the following forms:</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Figure 11 :</head><label>11</label><figDesc>Figure 11: Low-level policy architecture. This is Ours-FV. Ours-F and Ours-V are in the same architecture without corresponding input conditions.</figDesc><graphic coords="17,147.60,81.86,316.80,119.30" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>Figure 13 :</head><label>13</label><figDesc>Figure 13: Using diffusion model for the action module. The model also generates the scale and directions for each query point and the full flow trajectory can be reconstructed by them.</figDesc><graphic coords="19,147.60,81.86,316.79,191.35" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><head>Figure 14 :</head><label>14</label><figDesc>Figure 14: Our real-world experiment setting. We use the right X-arm as the manipulator, and use two RealSense D435i cameras as visual inputs.</figDesc><graphic coords="19,157.50,543.29,297.01,154.69" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_14"><head>Figure 15 :</head><label>15</label><figDesc>Figure 15: Two tasks in our real-world experiments.</figDesc><graphic coords="20,117.90,81.86,376.20,176.34" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_15"><figDesc>Figure 17, and see how FLIP performs generative planning in this setting. Results. We add the visual distraction image in different areas of the initial image, and we can see that, the video generation model will first fail after several planning steps and generative distorted cups and make the whole image grey. However, before the model fails, the flow generation model still performs very well, which shows that the flow generation model can resist visual distractions, while the video generation model is susceptible to visual distractions.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_16"><head>Figure 16 :</head><label>16</label><figDesc>Figure16: The apple is put on the target cup, and the generative planning fails in 7 steps (the cup is distorted, by which we call the planning fails). Note, the flow model performs well before the image is distorted and turns to grey, which shows that the flow model can capture the geometry of the objects and understand the physical movement requirements of the task.</figDesc><graphic coords="21,127.80,389.46,356.41,179.80" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_17"><graphic coords="2,108.00,81.86,395.99,138.29" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_18"><graphic coords="22,127.80,251.61,356.39,276.63" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Success rates of model-based planning on long-horizon tasks.</figDesc><table><row><cell>al., 2024)</cell><cell></cell><cell>2%</cell><cell></cell><cell></cell><cell>0%</cell><cell>0%</cell><cell>20%</cell><cell>10%</cell></row><row><cell>FLIP-NV</cell><cell></cell><cell>78%</cell><cell></cell><cell></cell><cell>52%</cell><cell>40%</cell><cell>100%</cell><cell>70%</cell></row><row><cell>FLIP(Ours)</cell><cell></cell><cell>100%</cell><cell></cell><cell></cell><cell>86%</cell><cell>78%</cell><cell>100%</cell><cell>90%</cell></row><row><cell></cell><cell cols="3">LIBERO-LONG (Liu et al., 2024a)</cell><cell cols="2">FMB (Luo et al., 2023)</cell><cell cols="3">Bridge-V2 (Walke et al., 2023)</cell></row><row><cell></cell><cell cols="2">Latent L2 ↓ FVD ↓</cell><cell>PSNR ↑</cell><cell cols="5">Latent L2 ↓ FVD ↓ PSNR ↑ Latent L2 ↓ FVD ↓ PSNR ↑</cell></row><row><cell>LVDM He et al. (2022b)</cell><cell>0.566</cell><cell>610.98</cell><cell>10.852</cell><cell>0.484</cell><cell>358.22 12.349</cell><cell>0.373</cell><cell cols="2">153.41 16.481</cell></row><row><cell>IRASim (Zhu et al., 2024)</cell><cell>0.407</cell><cell>206.28</cell><cell>12.205</cell><cell>0.395</cell><cell>172.45 13.157</cell><cell>0.325</cell><cell cols="2">138.97 16.796</cell></row><row><cell>FLIP(Ours)</cell><cell>0.217</cell><cell>35.62</cell><cell>26.452</cell><cell>0.264</cell><cell>43.712 25.531</cell><cell>0.173</cell><cell>36.15</cell><cell>33.485</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 3 :</head><label>3</label><figDesc>Quantitative results on short-horizon video generation.Results. The results are in Figure5. We can see that our plan-guided policies achieve higher success rates than diffusion policies and ATM-DP, showing that dense flow information and highquality future videos are better to be used as conditions than sparse flow information. The flowvideo-guided policy (Ours-FV) achieves the best average success rates across all methods, showing the advantage of using multi-modality information as conditions. Although video-guided policies (Ours-V) achieve a competitive mean success rate, they have a high variance, showing that using videos as conditions is unstable. This may come from that the generated future videos can become low-quality if the robot deviates from the trained trajectories. Instead, with the flow as extra conditions, the variance becomes lower, showing the stability of dense image flow predictions.</figDesc><table><row><cell>5.4 EXPERIMENTS ON FUNDAMENTAL MODULES OF FLIP</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell cols="2">LIBERO-10</cell><cell cols="2">Bridge-V2</cell></row><row><cell></cell><cell cols="4">ADE ↓ LTDR ↑ ADE ↓ LTDR ↑</cell></row><row><cell>ATM (Wen et al., 2023)</cell><cell>19.6</cell><cell>53.8%</cell><cell>18.4</cell><cell>66.1%</cell></row><row><cell>Ours-ABS</cell><cell>20.5</cell><cell>57.3%</cell><cell>17.9</cell><cell>59.3%</cell></row><row><cell>Ours-NoAUX</cell><cell>14.5</cell><cell>73.2%</cell><cell>12.7</cell><cell>75.6%</cell></row><row><cell>Ours</cell><cell>12.7</cell><cell>76.5%</cell><cell>11.9</cell><cell>80.2%</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 4 :</head><label>4</label><figDesc>Quantitative results of the action model., and 8 pixels between the reconstructed and the ground truth flows at each time step. Since most of the points are stationary points, in order to better demonstrate the results, we only calculate points with δ s ≥ 1. We also do experiments that compare using CVAE and diffusion models as the action module in Appendix B.3.</figDesc><table><row><cell>Action Module Experiments. We use two</cell></row><row><cell>metrics to assess the flow generation model π f</cell></row><row><cell>quantitatively (Jiang et al., 2024b): 1) Average</cell></row><row><cell>Distance Error (ADE) between the generated</cell></row><row><cell>and the ground truth flows in pixel units on all</cell></row><row><cell>query points; 2) Less Than Delta Ratio (LTDR):</cell></row><row><cell>the average percentage of points within the dis-</cell></row><row><cell>tance threshold of 1, 2, 4</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 6 :</head><label>6</label><figDesc>Hyperparameters of the dynamics module.</figDesc><table><row><cell cols="4">CVAE-S CVAE-B CVAE-L</cell></row><row><cell>Encoder Layer</cell><cell>4</cell><cell>6</cell><cell>8</cell></row><row><cell>Decoder Layer</cell><cell>6</cell><cell>8</cell><cell>12</cell></row><row><cell>Hideen Size</cell><cell>384</cell><cell>768</cell><cell>1024</cell></row><row><cell>Learning Rate</cell><cell>1e-4</cell><cell>5e-5</cell><cell>1e-5</cell></row><row><cell>Image Patch Size</cell><cell>8</cell><cell>8</cell><cell>8</cell></row><row><cell>Head Number</cell><cell>4</cell><cell>8</cell><cell>12</cell></row><row><cell cols="4">Table 5: Hyperparameters of CVAE.</cell></row><row><cell></cell><cell cols="3">D-S D-B D-L</cell></row><row><cell>Layers</cell><cell>8</cell><cell>12</cell><cell>16</cell></row><row><cell>Hideen Size</cell><cell cols="3">384 768 1024</cell></row><row><cell cols="4">Learning Rate 1e-4 1e-4 1e-4</cell></row><row><cell>Head Number</cell><cell>6</cell><cell>12</cell><cell>16</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 7 :</head><label>7</label><figDesc>Comparison results of CVAE and Diffusion models as the action module for FLIP.</figDesc><table><row><cell>2023)</cell><cell>19.6</cell><cell>53.8%</cell><cell>18.4</cell><cell>66.1%</cell></row><row><cell>Ours-ABS</cell><cell>20.5</cell><cell>57.3%</cell><cell>17.9</cell><cell>59.3%</cell></row><row><cell>Ours-NoAUX</cell><cell>14.5</cell><cell>73.2%</cell><cell>12.7</cell><cell>75.6%</cell></row><row><cell>Ours(CVAE)</cell><cell>12.7</cell><cell>76.5%</cell><cell>11.9</cell><cell>80.2%</cell></row><row><cell>Diffusion</cell><cell>13.4</cell><cell>75.9%</cell><cell>10.2</cell><cell>82.7%</cell></row></table><note><p>LIBERO-LONG Bridge-V2 ADE ↓ LTDR ↑ ADE ↓ LTDR ↑ ATM (<ref type="bibr" target="#b73">Wen et al., et al., 2023)</ref> </p><p>policy as the baseline for each task. We perform experiments in a table-top setting, as shown in Figure</p></note></figure>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0" /><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_19"><figDesc>Published as a conference paper at ICLR 2025 Figure 17: The apple is put away from the target object, and the generative planning can exist more steps.</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Aloha 2: An enhanced low-cost hardware for bimanual teleoperation</title>
+		<author>
+			<persName><forename type="first">Jorge</forename><surname>Aldaco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Travis</forename><surname>Armstrong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Baruch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Bingham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sanky</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenneth</forename><surname>Draper</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Debidatta</forename><surname>Dwibedi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Spencer</forename><surname>Goodrich</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.02292</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Affordances from human videos as a versatile representation for robotics</title>
+		<author>
+			<persName><forename type="first">Shikhar</forename><surname>Bahl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Russell</forename><surname>Mendonca</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lili</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Unnat</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deepak</forename><surname>Pathak</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="13778" to="13790" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Video pretraining (vpt): Learning to act by watching unlabeled online videos</title>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilge</forename><surname>Akkaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Zhokov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joost</forename><surname>Huizinga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adrien</forename><surname>Ecoffet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brandon</forename><surname>Houghton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raul</forename><surname>Sampedro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Clune</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24639" to="24654" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">All are worth words: A vit backbone for diffusion models</title>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shen</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiwen</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongxuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Zhu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF conference on computer vision and pattern recognition</title>
+		<meeting>the IEEE/CVF conference on computer vision and pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="22669" to="22679" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Track2act: Predicting point tracks from internet videos enables diverse zero-shot robot manipulation</title>
+		<author>
+			<persName><forename type="first">Homanga</forename><surname>Bharadhwaj</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roozbeh</forename><surname>Mottaghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shubham</forename><surname>Tulsiani</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.01527</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Stable video diffusion: Scaling latent video diffusion models to large datasets</title>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Blattmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Dockhorn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sumith</forename><surname>Kulal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Mendelevitch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maciej</forename><surname>Kilian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dominik</forename><surname>Lorenz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yam</forename><surname>Levi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zion</forename><surname>English</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vikram</forename><surname>Voleti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Letts</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.15127</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Inverse dynamics pretraining learns good representations for multitask imitation</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Brandfonbrener</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Nachum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joan</forename><surname>Bruna</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Video generation models as world simulators</title>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Brooks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Peebles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Connor</forename><surname>Holmes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Will</forename><surname>Depue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufei</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Jing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Schnurr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joe</forename><surname>Taylor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Troy</forename><surname>Luhman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Luhman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clarence</forename><surname>Ng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ricky</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Ramesh</surname></persName>
+		</author>
+		<ptr target="https://openai.com/research/video-generation-models-as-world-simulators" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Genie: Generative interactive environments</title>
+		<author>
+			<persName><forename type="first">Jake</forename><surname>Bruce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Michael</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashley</forename><surname>Dennis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuge</forename><surname>Parker-Holder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Hughes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditi</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richie</forename><surname>Mavalankar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Steigerwald</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Apps</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Forty-first International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Brains and algorithms partially converge in natural language processing</title>
+		<author>
+			<persName><forename type="first">Charlotte</forename><surname>Caucheteux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean-Rémi</forename><surname>King</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">communications biology</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Vegetable peeling: A case study in constrained dexterous manipulation</title>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Cousineau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naveen</forename><surname>Kuppuswamy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pulkit</forename><surname>Agrawal</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.07884</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Diffusion policy: Visuomotor policy learning via action diffusion</title>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenjia</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Cousineau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Burchfiel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Russ</forename><surname>Tedrake</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuran</forename><surname>Song</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The International Journal of Robotics Research</title>
+		<imprint>
+			<biblScope unit="page">02783649241273668</biblScope>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Keypoint action tokens enable in-context imitation learning in robotics</title>
+		<author>
+			<persName><forename type="first">Norman</forename><surname>Di</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Palo</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Johns</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.19578</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Driess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">M</forename><surname>Mehdi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Corey</forename><surname>Sajjadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Lynch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ayzaan</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Wahid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quan</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhe</forename><surname>Vuong</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.03378</idno>
+		<title level="m">Palm-e: An embodied multimodal language model</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengjiao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ayzaan</forename><surname>Wahid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Sermanet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhe</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.10625</idno>
+		<title level="m">Video language planning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Learning universal policies via text-guided video generation</title>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sherry</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanjun</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Nachum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<author>
+			<persName><forename type="first">Abhimanyu</forename><surname>Dubey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Jauhri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Pandey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Kadian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmad</forename><surname>Al-Dahle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aiesha</forename><surname>Letman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akhil</forename><surname>Mathur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Schelten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amy</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Angela</forename><surname>Fan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.21783</idno>
+		<title level="m">The llama 3 herd of models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Metrics for finite markov decision processes</title>
+		<author>
+			<persName><forename type="first">Norm</forename><surname>Ferns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Doina</forename><surname>Prakash Panangaden</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Precup</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">UAI</title>
+		<imprint>
+			<date type="published" when="2004">2004</date>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="page" from="162" to="169" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Deep visual foresight for planning robot motion</title>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2017 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="2786" to="2793" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Cril: Continual robot imitation learning via generative and prediction model</title>
+		<author>
+			<persName><forename type="first">Chongkai</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haichuan</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shangqi</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianren</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feng</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2021 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="6747" to="5754" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Iterative interactive modeling for knotting plastic bags</title>
+		<author>
+			<persName><forename type="first">Chongkai</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zekun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haichuan</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feng</forename><surname>Chen</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="571" to="582" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Ego4d: Around the world in 3,000 hours of egocentric video</title>
+		<author>
+			<persName><forename type="first">Kristen</forename><surname>Grauman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Westbury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eugene</forename><surname>Byrne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zachary</forename><surname>Chavis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonino</forename><surname>Furnari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohit</forename><surname>Girdhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jackson</forename><surname>Hamburger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingyu</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="18995" to="19012" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Recurrent world models facilitate policy evolution</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Ha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jürgen</forename><surname>Schmidhuber</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page">31</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Mastering atari with discrete world models</title>
+		<author>
+			<persName><forename type="first">Danijar</forename><surname>Hafner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Norouzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Ba</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2010.02193</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Mastering diverse domains through world models</title>
+		<author>
+			<persName><forename type="first">Danijar</forename><surname>Hafner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jurgis</forename><surname>Pasukonis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Ba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2301.04104</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Nicklas</forename><surname>Hansen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaolong</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.16828</idno>
+		<title level="m">Td-mpc2: Scalable, robust world models for continuous control</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Masked autoencoders are scalable vision learners</title>
+		<author>
+			<persName><forename type="first">Kaiming</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinlei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saining</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanghao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Dollár</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ross</forename><surname>Girshick</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF conference on computer vision and pattern recognition</title>
+		<meeting>the IEEE/CVF conference on computer vision and pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="16000" to="16009" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Latent video diffusion models for high-fidelity long video generation</title>
+		<author>
+			<persName><forename type="first">Yingqing</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Shan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qifeng</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.13221</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Denoising diffusion probabilistic models</title>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="6840" to="6851" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Image quality metrics: Psnr vs. ssim</title>
+		<author>
+			<persName><forename type="first">Alain</forename><surname>Hore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Djemel</forename><surname>Ziou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2010 20th international conference on pattern recognition</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="2366" to="2369" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Rekep: Spatio-temporal reasoning of relational keypoint constraints for robotic manipulation</title>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunzhu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei-Fei</forename><surname>Li</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Roboexp: Action-conditioned scene graph via interactive exploration for robotic manipulation</title>
+		<author>
+			<persName><forename type="first">Hanxiao</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binghao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruihai</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuoran</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shubham</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hooshang</forename><surname>Nayyeri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shenlong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunzhu</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.15487</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Learning dense visual correspondence from unsupervised semantic-aware flow</title>
+		<author>
+			<persName><forename type="first">Zhenyu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanwen</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuke</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Doduo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2024 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="12420" to="12427" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Model-based reinforcement learning for atari</title>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Babaeizadeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Milos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Blazej</forename><surname>Osinski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roy</forename><forename type="middle">H</forename><surname>Campbell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Konrad</forename><surname>Czechowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dumitru</forename><surname>Erhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Kozakowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1903.00374</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Nikita</forename><surname>Karaev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ignacio</forename><surname>Rocco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Graham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Natalia</forename><surname>Neverova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrea</forename><surname>Vedaldi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Rupprecht</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.07635</idno>
+		<title level="m">Cotracker: It is better to track together</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Moo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siddharth</forename><surname>Pertsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Karamcheti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suraj</forename><surname>Balakrishna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rafael</forename><surname>Nair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Rafailov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Grace</forename><surname>Foster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pannag</forename><surname>Lam</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sanketi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.09246</idno>
+		<title level="m">An open-source vision-language-action model</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">P</forename><surname>Diederik</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kingma</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1312.6114</idno>
+		<title level="m">Auto-encoding variational bayes</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Graph inverse reinforcement learning from diverse videos</title>
+		<author>
+			<persName><forename type="first">Sateesh</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Zamora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicklas</forename><surname>Hansen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Jangir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaolong</forename><surname>Wang</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="55" to="66" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">A path towards autonomous machine intelligence</title>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Lecun</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/pdf" />
+		<imprint>
+			<date type="published" when="2022">2022. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">State representation learning for control: An overview</title>
+		<author>
+			<persName><forename type="first">Timothée</forename><surname>Lesort</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Natalia</forename><surname>Díaz-Rodríguez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean-Franois</forename><surname>Goudou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Filliat</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Neural Networks</title>
+		<imprint>
+			<biblScope unit="volume">108</biblScope>
+			<biblScope unit="page" from="379" to="392" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Dreamitate: Real-world visuomotor policy learning via video generation</title>
+		<author>
+			<persName><forename type="first">Junbang</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoshi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ege</forename><surname>Ozguroglu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sruthi</forename><surname>Sudhakar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Achal</forename><surname>Dave</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pavel</forename><surname>Tokmakov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuran</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carl</forename><surname>Vondrick</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.16862</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Libero: Benchmarking knowledge transfer for lifelong robot learning</title>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifeng</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongkai</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihao</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuke</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Stone</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Physgen: Rigid-body physicsgrounded image-to-video generation</title>
+		<author>
+			<persName><forename type="first">Shaowei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongzheng</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurabh</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shenlong</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">European Conference on Computer Vision</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Fmb: A functional manipulation benchmark for generalizable robotic learning</title>
+		<author>
+			<persName><forename type="first">Jianlan</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangchen</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liam</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zipeng</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The International Journal of Robotics Research</title>
+		<imprint>
+			<biblScope unit="page">02783649241276017</biblScope>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Interactive language: Talking to robots in real time</title>
+		<author>
+			<persName><forename type="first">Corey</forename><surname>Lynch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ayzaan</forename><surname>Wahid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianli</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Betker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Baruch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Travis</forename><surname>Armstrong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Florence</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Robotics and Automation Letters</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Latte: Latent diffusion transformer for video generation</title>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaohui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gengyun</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziwei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan-Fang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cunjian</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Qiao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.03048</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Yecheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shagun</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dinesh</forename><surname>Sodhani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Osbert</forename><surname>Jayaraman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vikash</forename><surname>Bastani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amy</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Vip</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.00030</idno>
+		<title level="m">Towards universal visual reward and representation via value-implicit pre-training</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Liv: Language-image representations and rewards for robotic control</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Yecheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vikash</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amy</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Osbert</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dinesh</forename><surname>Bastani</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Jayaraman</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="23301" to="23320" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Consensus paper: roles of the cerebellum in motor control-the diversity of ideas on cerebellar involvement in movement</title>
+		<author>
+			<persName><forename type="first">Mario</forename><surname>Manto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><forename type="middle">M</forename><surname>Bower</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adriana</forename><forename type="middle">Bastos</forename><surname>Conforto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>José</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suzete</forename><surname>Delgado-García</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcus</forename><surname>Nascimento Farias Da Guarda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christophe</forename><surname>Gerwig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nobuhiro</forename><surname>Habas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">B</forename><surname>Hagura</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Ivry</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mariën</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The Cerebellum</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="page" from="457" to="487" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<author>
+			<persName><forename type="first">Russell</forename><surname>Mendonca</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shikhar</forename><surname>Bahl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deepak</forename><surname>Pathak</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.10901</idno>
+		<title level="m">Structured world models from human videos</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Micheli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eloi</forename><surname>Alonso</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Franc</forename><surname>¸ois</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fleuret</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:2209.00588</idno>
+		<title level="m">Transformers are sample-efficient world models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title level="m" type="main">R3m: A universal visual representation for robot manipulation</title>
+		<author>
+			<persName><forename type="first">Suraj</forename><surname>Nair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aravind</forename><surname>Rajeswaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vikash</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Gupta</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.12601</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Planning with goal-conditioned policies</title>
+		<author>
+			<persName><forename type="first">Soroush</forename><surname>Nasiriany</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vitchyr</forename><surname>Pong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="volume">32</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Improved denoising diffusion probabilistic models</title>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Quinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nichol</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on machine learning</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="8162" to="8171" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Scalable diffusion models with transformers</title>
+		<author>
+			<persName><forename type="first">William</forename><surname>Peebles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saining</forename><surname>Xie</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF International Conference on Computer Vision</title>
+		<meeting>the IEEE/CVF International Conference on Computer Vision</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="4195" to="4205" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<title level="m" type="main">Sdxl: Improving latent diffusion models for high-resolution image synthesis</title>
+		<author>
+			<persName><forename type="first">Dustin</forename><surname>Podell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zion</forename><surname>English</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Lacey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Blattmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Dockhorn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Müller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joe</forename><surname>Penna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robin</forename><surname>Rombach</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.01952</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<author>
+			<persName><forename type="first">Nikhila</forename><surname>Ravi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Valentin</forename><surname>Gabeur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan-Ting</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronghang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaitanya</forename><surname>Ryali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tengyu</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haitham</forename><surname>Khedr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roman</forename><surname>Rädle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chloe</forename><surname>Rolland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laura</forename><surname>Gustafson</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.00714</idno>
+		<title level="m">Segment anything in images and videos</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<analytic>
+		<title level="a" type="main">Highresolution image synthesis with latent diffusion models</title>
+		<author>
+			<persName><forename type="first">Robin</forename><surname>Rombach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Blattmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dominik</forename><surname>Lorenz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Esser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Björn</forename><surname>Ommer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF conference on computer vision and pattern recognition</title>
+		<meeting>the IEEE/CVF conference on computer vision and pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="10684" to="10695" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<analytic>
+		<title level="a" type="main">Toolflownet: Robotic manipulation with tools via predicting tool flow from point clouds</title>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Seita</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sarthak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><forename type="middle">Yao</forename><surname>Shetty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zackory</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Erickson</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Held</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="1038" to="1049" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<monogr>
+		<title level="m" type="main">Hill-climbing search. Encyclopedia of cognitive science</title>
+		<author>
+			<persName><forename type="first">Bart</forename><surname>Selman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carla</forename><forename type="middle">P</forename><surname>Gomes</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+			<biblScope unit="volume">81</biblScope>
+			<biblScope unit="page" from="333" to="335" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<analytic>
+		<title level="a" type="main">Multi-view masked world models for visual robotic manipulation</title>
+		<author>
+			<persName><forename type="first">Younggyo</forename><surname>Seo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junsu</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>James</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kimin</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinwoo</forename><surname>Shin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="30613" to="30632" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<analytic>
+		<title level="a" type="main">Time-contrastive networks: Self-supervised learning from video</title>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Sermanet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Corey</forename><surname>Lynch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jasmine</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Schaal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Google</forename><surname>Brain</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2018 IEEE international conference on robotics and automation (ICRA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="1134" to="1141" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<analytic>
+		<title level="a" type="main">Concept2robot: Learning manipulation concepts from instructions and human demonstrations</title>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Toki</forename><surname>Migimatsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karen</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeannette</forename><surname>Bohg</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The International Journal of Robotics Research</title>
+		<imprint>
+			<biblScope unit="volume">40</biblScope>
+			<biblScope unit="issue">12-14</biblScope>
+			<biblScope unit="page" from="1419" to="1434" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Shridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yat</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>James</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.07875</idno>
+		<title level="m">Generative image as action models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<analytic>
+		<title level="a" type="main">Learning social affordance grammar from videos: Transferring human interactions to human-robot interactions</title>
+		<author>
+			<persName><forename type="first">Tianmin</forename><surname>Shu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaofeng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Song-Chun</forename><surname>Michael S Ryoo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE international conference on robotics and automation</title>
+		<imprint>
+			<biblScope unit="page" from="1669" to="1676" />
+			<date type="published" when="2017">2017. 2017</date>
+			<publisher>IEEE</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jascha</forename><surname>Sohl-Dickstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Diederik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Kingma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefano</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Ermon</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Poole</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2011.13456</idno>
+		<title level="m">Score-based generative modeling through stochastic differential equations</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b66">
+	<monogr>
+		<title level="m" type="main">Reinforcement learning: An introduction</title>
+		<author>
+			<persName><surname>Richard S Sutton</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<publisher>A Bradford Book</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b67">
+	<monogr>
+		<title level="m" type="main">Towards accurate generative models of video: A new metric &amp; challenges</title>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Unterthiner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sjoerd</forename><surname>Van Steenkiste</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Kurach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raphael</forename><surname>Marinier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcin</forename><surname>Michalski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sylvain</forename><surname>Gelly</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1812.01717</idno>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b68">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dani</forename><surname>Valevski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaniv</forename><surname>Leviathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moab</forename><surname>Arar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shlomi</forename><surname>Fruchter</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.14837</idno>
+		<title level="m">Diffusion models are real-time game engines</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b69">
+	<analytic>
+		<title level="a" type="main">Attention is all you need</title>
+		<author>
+			<persName><surname>Vaswani</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b70">
+	<analytic>
+		<title level="a" type="main">Bridgedata v2: A dataset for robot learning at scale</title>
+		<author>
+			<persName><forename type="first">Homer</forename><surname>Rich Walke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Black</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tony</forename><forename type="middle">Z</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quan</forename><surname>Vuong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongyi</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philippe</forename><surname>Hansen-Estruch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andre</forename><forename type="middle">Wang</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vivek</forename><surname>Myers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Moo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Max</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Du</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="1723" to="1736" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b71">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linxi</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiankai</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruohan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danfei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuke</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anima</forename><surname>Anandkumar</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mimicplay</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.12422</idno>
+		<title level="m">Long-horizon imitation learning by watching human play</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b72">
+	<monogr>
+		<title level="m" type="main">Lessons from learning to spin&quot; pens</title>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haichuan</forename><surname>Che</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haozhi</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jitendra</forename><surname>Malik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaolong</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.18902</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b73">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chuan</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingyu</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>So</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Dou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.00025</idno>
+		<title level="m">Any-point trajectory modeling for policy learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b74">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jialong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaofeng</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ningya</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianye</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingsheng</forename><surname>Long</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.15223</idno>
+		<title level="m">ivideogpt: Interactive videogpts are scalable world models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b75">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mengda</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenjia</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinghao</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gordon</forename><surname>Wetzstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manuela</forename><surname>Veloso</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuran</forename><surname>Song</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.15208</idno>
+		<title level="m">Flow as the cross-domain manipulation interface</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b76">
+	<monogr>
+		<title level="m" type="main">Manifoundation model for general-purpose robotic manipulation of contact synthesis with arbitrary objects and robots</title>
+		<author>
+			<persName><forename type="first">Zhixuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongkai</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zixuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gang</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenrui</forename><surname>Tie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haozhuo</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoyu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weikun</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Debang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.06964</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b77">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mengjiao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kamyar</forename><surname>Ghasemipour</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.06114</idno>
+		<title level="m">Learning interactive real-world simulators</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b78">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chengbo</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuan</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Gao</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.11439</idno>
+		<title level="m">General flow as foundation affordance for scalable robot learning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b79">
+	<analytic>
+		<title level="a" type="main">Xirl: Cross-embodiment inverse reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Zakka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeannette</forename><surname>Bohg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Debidatta</forename><surname>Dwibedi</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="537" to="546" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b80">
+	<monogr>
+		<title level="m" type="main">Adaptigraph: Material-adaptive graph-based neural dynamics for robotic manipulation</title>
+		<author>
+			<persName><forename type="first">Kaifeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baoyu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kris</forename><surname>Hauser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunzhu</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.07889</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b81">
+	<analytic>
+		<title level="a" type="main">Adding conditional control to text-to-image diffusion models</title>
+		<author>
+			<persName><forename type="first">Lvmin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anyi</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maneesh</forename><surname>Agrawala</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF International Conference on Computer Vision</title>
+		<meeting>the IEEE/CVF International Conference on Computer Vision</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="3836" to="3847" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b82">
+	<monogr>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaben</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yandong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dit-Yan</forename><surname>Yeung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuang</forename><surname>Gan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Robodreamer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.12377</idno>
+		<title level="m">Learning compositional world models for robot imagination</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b83">
+	<monogr>
+		<author>
+			<persName><forename type="first">Fangqi</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongtao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Song</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chilam</forename><surname>Cheang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Kong</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Irasim</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.14540</idno>
+		<title level="m">Learning interactive real-robot action simulators</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

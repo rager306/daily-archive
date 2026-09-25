@@ -1,0 +1,1185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">BenchMARL: Benchmarking Multi-Agent Reinforcement Learning</title>
+				<funder>
+					<orgName type="full">Meta</orgName>
+				</funder>
+				<funder ref="#_7StTsM8">
+					<orgName type="full">ARL DCIST CRA</orgName>
+				</funder>
+				<funder ref="#_dhApBZw">
+					<orgName type="full">European Research Council</orgName>
+					<orgName type="abbreviated">ERC</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-11-25">25 Nov 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Matteo</forename><surname>Bettini</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Cambridge</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Amanda</forename><surname>Prorok</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Cambridge</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Vincent</forename><forename type="middle">Moens</forename><surname>Pytorch</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Cambridge</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">BenchMARL: Benchmarking Multi-Agent Reinforcement Learning</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-11-25">25 Nov 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">E18FF012140DA29AF839D54914CD34A1</idno>
+					<idno type="arXiv">arXiv:2312.01472v3[cs.LG]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T19:36+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>Preprint. Under review</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>The field of Multi-Agent Reinforcement Learning (MARL) is currently facing a reproducibility crisis. While solutions for standardized reporting have been proposed to address the issue, we still lack a benchmarking tool that enables standardization and reproducibility, while leveraging cutting-edge Reinforcement Learning (RL) implementations. In this paper, we introduce BenchMARL, the first MARL training library created to enable standardized benchmarking across different algorithms, models, and environments. BenchMARL uses TorchRL as its backend, granting it high performance and maintained state-of-the-art implementations while addressing the broad community of MARL PyTorch users. Its design enables systematic configuration and reporting, thus allowing users to create and run complex benchmarks from simple one-line inputs. BenchMARL is open-sourced on GitHub at: <ref type="url" target="https://github.com/facebookresearch/BenchMARL">https://github.com/facebookresearch/BenchMARL</ref>. Figure 1: BenchMARL enables comparisons across different Multi-Agent Reinforcement Learning (MARL) algorithms, models, and tasks while focusing on standardization and reproducibility.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>The Multi-Agent Reinforcement Learning (MARL) community in PyTorch is evergrowing. Despite this, there exists a persistent fragmentation of experimental tools and standards in the field. The PyTorch-backed TorchRL project <ref type="bibr" target="#b0">[Bou et al., 2024]</ref> successfully addressed this issue in the broader Reinforcement Learning (RL) domain, providing a state-of-the-art library adopted by thousands of users. In this work, we introduce BenchMARL: a MARL training library that leverages TorchRL as its backend while focusing on standardization of MARL experiments.</p><p>Thanks to the flexibility of the TorchRL backend, BenchMARL enables reproducibility and benchmarking across different MARL algorithms, models, and environments. Its mission is to present a standardized interface that allows easy integration of new algorithms and environments to provide a fair and systematic comparison with existing solutions. Its core design tenets are: (1) Reproducibility, achieved via standardization of configuration using the Hydra framework <ref type="bibr" target="#b1">[Yadan, 2019]</ref>; (2) Standardized plotting and reporting, achieved by integrating with the statistically-rigorous tools proposed by <ref type="bibr" target="#b2">Gorsane et al. [2022]</ref> <ref type="foot" target="#foot_0">foot_0</ref> ; (3) TorchRL backend, which grants high performance and state-of-the-art RL implementations; (4) Experiment independence, achieved via an experiment class that is agnostic to the choices of algorithm, model, or task; (5) Easy integration of new solutions, achieved via simple abstract interfaces. This set of tenets allows BenchMARL users to go from simple command line inputs to statistically rigorous output reports (see Fig. <ref type="figure" target="#fig_0">2</ref>) without extensive experimental domain knowledge. In doing so, the library uses (when possible) solutions from the single-agent RL domain, avoiding custom re-implementations and leveraging the extensive benchmarking already performed on TorchRL algorithms <ref type="bibr" target="#b0">[Bou et al., 2024]</ref>. High-performance is guaranteed thanks to several features such as: vectorized simulation <ref type="bibr" target="#b4">[Bettini et al., 2022]</ref>, vectorized training (using t o r c h . vmap) over the agents' parameters and data, and a SLURM <ref type="bibr" target="#b5">[Yoo et al., 2003]</ref> launcher backend for running experiments on High Performance Computing (HPC) clusters.</p><p>In the following, we introduce the library, providing a overview of its structure and discussing its components (Sec. 3.1) and features (Sec. 3.2). We then report results from an initial experimental comparison, consisting of benchmarking the 9 algorithms available in BenchMARL on 3 VMAS <ref type="bibr" target="#b4">[Bettini et al., 2022]</ref> tasks representing high-level multi-robot control problems (Sec. 4). With this effort, we hope to stimulate more researchers to adopt shared standards for configuration and reporting towards a standardization of MARL experimental pipelines.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related work</head><p>The recent popularity of MARL has exacerbated the fragmentation of shared community standards and tools, with new libraries being frequently introduced, each one focusing on specific algorithms, environments, or models. Popular examples are PyMARL <ref type="bibr" target="#b6">[Samvelyan et al., 2019]</ref> and its extensions: PyMARL2 <ref type="bibr" target="#b7">[Hu et al., 2021]</ref> and EPyMARL <ref type="bibr" target="#b8">[Papoudakis et al., 2021]</ref>, which are limited to environments with discrete action spaces. Furthermore, these libraries often implement algorithmic components from scratch, without leveraging native and stable baselines from the single-agent RL community. MARLlib <ref type="bibr" target="#b9">[Hu et al., 2023]</ref> addresses this problem by basing on the RLlib framework <ref type="bibr" target="#b10">[Liang et al., 2018]</ref>. However, RLlib presents significant limitations due to its aim of being agnostic to the underlying learning framework, which causes it to lack core features for state-of-the-art benchmarking, such as support for vectorized environments. In contrast to these PyTorch-based libraries, BenchMARL focuses on covering the whole breadth of MARL algorithms, models, and tasks (e.g., continuous vs discrete actions and state, competitive vs cooperative, vision vs vector observation) while being compatible with state-of the art vectorized simulation.</p><p>Concurrent to our work, other MARL libraries have been proposed in the Jax <ref type="bibr" target="#b11">[Bradbury et al., 2018]</ref> ecosystem <ref type="bibr" target="#b12">[de Kock et al., 2021</ref><ref type="bibr" target="#b13">, Rutherford et al., 2024]</ref>. With Jax being a promising emergent machine learning framework, these projects are important complementary tools to our work,which is in turn focused on the PyTorch domain. To promote cross-framework comparisons, BenchMARL adopts the same reporting format as Mava <ref type="bibr" target="#b12">[de Kock et al., 2021]</ref>, making interactions easier for experimentalists from either domain. Lastly, we note that these projects often propose single-file implementations, while BenchMARL focuses on providing abstractions and components that can be reused across experiments.</p><p>The fragmentation of the MARL domain has recently led to a reproducibility crisis, highlighted by <ref type="bibr" target="#b2">Gorsane et al. [2022]</ref>. While the authors propose a set of tools for results' reporting, there is still the need for a standardized library to run such benchmarks. BenchMARL's mission is to provide such a benchmarking library for MARL, integrating with the reporting tools proposed and using TorchRL as an efficient, tried and tested backend.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">BenchMARL</head><p>BenchMARL tackles its reproducibility goals via defining unifying abstractions over MARL training components. Components are gathered into experiments that are agnostic of their specific implementations. Structured configurations allow to easily run multiple experiments to create a benchmark, making it possible for users to go directly from one-line inputs to benchmarking plots. This process is depicted in Fig. <ref type="figure" target="#fig_0">2</ref>. In the following, we illustrate the components and features that enable this pipeline.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Components</head><p>BenchMARL has a few core components, which correspond to classes in the codebase. Each component has a default YAML configuration in a dedicated directory. We now introduce the core components of the library.</p><p>Experiment. An experiment is a training run in which an algorithm, a task, and a model are fixed. Experiments are configured by passing the choices for these components alongside a seed and the experiment's hyperparameters. They cover both on-policy and off-policy algorithms, discrete and continuous actions, probabilistic and deterministic policies, and competitive and cooperative scenarios. Experiments will try to match versions of algorithms and tasks on a best-effort basis: for example, if a task has continuous actions, and an algorithm supports both continuous and discrete actions, the experiment will instantiate the version of the algorithm compatible with the task. To address the heterogeneity of the MARL ecosystem, experiments leverage the agent grouping mechanism available in TorchRL. This mechanism allows to define which agents should have their data stacked in a group (to benefit from vectorization) and which agents should have their data as separate entries (due to heterogeneity in their shapes). This is a unique feature of BenchMARL that allows compatibility with both environments that stack all agent data together (e.g., SMACv2 <ref type="bibr" target="#b14">[Ellis et al., 2022]</ref>) and environments that keep agent data separate (e.g., PettingZoo <ref type="bibr" target="#b15">[Terry et al., 2021]</ref>). During training, each group will be trained independently and agents within a group will be able to reuse most single-agent RL components, just with the addition of the agent dimension in the data shape. At a high-level, an experiment iteration is composed of the following steps: (1) collection: which is vectorized for compatible environments or parallel/sequential for other environments;</p><p>(2) addition of data to the replay buffers of each agent group; (3) training: where, for each agent group, data is sampled from the replay buffer and optimizer steps are performed, (4) evaluation: where agents are evaluated on a test environment. An experiment can be launched from the command line using Hydra or directly from a Python script.</p><p>Benchmark. A benchmark is a collection of experiments that can vary in task, algorithm, or model. Where possible, a benchmark shares hyperparameters across its experiments. Benchmarks allow to compare different MARL components in a standardized way. A benchmark can be launched from the  <ref type="bibr" target="#b21">[Rashid et al., 2018]</ref> Off No NA Discrete No VDN <ref type="bibr" target="#b22">[Sunehag et al., 2017]</ref> Off No NA Discrete No IQL <ref type="bibr" target="#b23">[Tan, 1993]</ref> Off No NA Discrete No  <ref type="bibr" target="#b4">[Bettini et al., 2022]</ref> 27 Cooperative + Competitive No Shared + Independent + Global Continuous + Discrete Yes SMACv2 <ref type="bibr" target="#b14">[Ellis et al., 2022]</ref> 15 Cooperative Yes Global Discrete No MPE <ref type="bibr" target="#b20">[Lowe et al., 2017]</ref> 8 Cooperative + Competitive Yes Shared + Independent + Global Continuous + Discrete No SISL <ref type="bibr" target="#b25">[Gupta et al., 2017]</ref> 2 Cooperative No Shared Continuous No MeltingPot <ref type="bibr">[Leibo et al., 2021]</ref> 49 Cooperative + Competitive Yes Independent Discrete No command line using Hydra or directly from a python script. For example, by looking at the input code in Fig. <ref type="figure" target="#fig_0">2</ref>, we can see that it is sufficient to provide a list of components (e.g., algorithms, tasks) to instantiate a benchmark. Thanks to Hydra, it is then possible to specify custom backends for running the experiments in a benchmark, such as: sequential, in parallel processes, or in separate SLURM <ref type="bibr" target="#b5">[Yoo et al., 2003]</ref> submissions on an HPC cluster.</p><p>Algorithms. Algorithms are an ensemble of components (e.g., loss, replay buffer) that determine the training strategy. In Table <ref type="table" target="#tab_0">1</ref> we report and classify the algorithms available in BenchMARL.</p><p>As we can see, BenchMARL provides a wide range of algorithms, allowing our benchmarks to span over the wide range of different options available in the MARL domain. We further provide novel implementations (MASAC, ISAC) based on the SAC <ref type="bibr" target="#b16">[Haarnoja et al., 2018]</ref> algorithm. These are multi-agent adaptions of the single-agent algorithm with (MASAC) and without (ISAC) fullobservability in the critic. All our algorithms have the option of sharing parameters within agent groups for actors and critics (where applicable). Custom algorithms can further be designed by combining this choice with the algorithm and the model. For example, the HetGPPO <ref type="bibr" target="#b17">[Bettini et al., 2023]</ref> algorithm can be obtained by using IPPO without parameter sharing and with a Graph Neural Network (GNN) model for actor and critic.</p><p>Tasks. Tasks are scenarios from an environment which constitute the MARL challenge to solve.</p><p>In Table <ref type="table" target="#tab_1">2</ref> we report the environments available in BenchMARL with the respective number of tasks available in the library. Fig. <ref type="figure" target="#fig_1">3</ref> shows renderings for one example task for each of the environments. Environments in BenchMARL showcase the variety of MARL paradigms compatible with the library (e.g., differing in cooperation, reward sharing, action space). Importantly, BenchMARL supports vectorized environments, allowing to scale simulation when using batched environments on GPU devices<ref type="foot" target="#foot_1">foot_1</ref> . When using a vectorized environment on GPU, both simulation and training can be performed on the same device, granting important performance speed-ups and avoiding data casting and CPU-GPU communication costs. Tasks are represented as enumerations of an environment in order to provide auto-completion functionality when choosing a task and to ground the available tasks associated to a specific BenchMARL release in a static fashion. BenchMARL further supports environments with action masking (e.g., <ref type="bibr" target="#b14">[Ellis et al., 2022]</ref>) and allows users to specify custom transforms to process the input-output data of an environment. For example, in environments with visual observations such as MeltingPot <ref type="bibr">[Leibo et al., 2021]</ref>, transforms are used to store images as integers in the replay buffer, and appropriately cast them to floating point when passing them to neural networks.</p><p>Models. BenchMARL models are neural network blueprints designed to be used in multiple MARL contexts. They can be instantiated in multiple ways. (1) Decentralized: when a model is instantiated in a decentralized manner (e.g., a policy) it will compute a separate value for each agent. These separate values will only be conditioned on local inputs (e.g., the agent's observation or observations from a local neighborhood). (2) Centralized with global input: when a model is instantiated in  <ref type="table" target="#tab_1">2</ref>.  <ref type="bibr" target="#b26">[Zaheer et al., 2017]</ref> Yes Yes Yes centralized mode with global input (e.g., a global critic) it will compute a shared value for a group of agents given a shared input. For example, this could be a centralized critic that takes a global topdown view of the task and outputs a shared value. (3) Centralized with local input: like centralized with global input with the difference that the value is computed from aggregating local inputs. For example, this could be a centralized critic that takes a concatenation of the agents' observations and outputs a shared value. Furthermore, in any of these settings, it is possible to decide whether or not to share parameters among agents. Users can decide which model to use for their critics and actors and are able to mix models as they like. The models currently available in BenchMARL are reported in Table <ref type="table" target="#tab_2">3</ref> and include: Multi Layer Perceptron (MLP), Graph Neural Network (GNN), Convolutional Neural Network (CNN), Long Short-Term Memory (LSTM), Gated Recurrent Unit (GRU), and Deep Sets <ref type="bibr" target="#b26">[Zaheer et al., 2017]</ref> models. BenchMARL models can be chained in a sequence, allowing to build more complex networks. For example, by chaining a CNN to a fully-connected GNN attention layer <ref type="bibr" target="#b27">[Veličković et al., 2018]</ref> and an MLP, it is possible to process agents' image inputs using a transformer-like architecture.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Features</head><p>In the following, we present some of the core features that enable the library's standardization and reproducibility goals.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Documentation, tests, engineering.</head><p>The library is accompanied by version-tracked documentation available <ref type="url" target="https://benchmarl.readthedocs.io">here</ref>. Each component is accompanied by docstrings compiled in the package reference section to explain the components' functionalities. We provide an extensive set of examples and notebooks in the dedicated repository folder with the goal of showcasing the library's main use-cases.</p><p>Integration and unit tests are run on all tasks and algorithms, with a separate job being run for each environment. These tests are executed in the continuous integration (CI) and perform complete training iterations to check all components. Coverage is reported online and is currently around 90%. The library is maintained by the authors and the community with its backend maintained directly in the TorchRL project.</p><p>Reporting. The library is directly integrated with the reporting tools proposed by <ref type="bibr" target="#b2">Gorsane et al. [2022]</ref>. This allows users to avoid spending time crafting dedicated plots while providing them with state-of-the-art tools for automating this process. To enable this, BenchMARL experiments optionally output results in the JSON format required by the reporting library. Practitioners will be able to use the tools in <ref type="url" target="https://github.com/instadeepai/marl-eval">https://github.com/instadeepai/marl-eval</ref> to process raw MARL experiment data for downstream use with the tools provided by <ref type="bibr" target="#b3">Agarwal et al. [2021]</ref>. BenchMARL is furtherly compatible with all the loggers available in TorchRL (e.g., Wandb <ref type="bibr">[Biewald, 2020]</ref>, tensorboard <ref type="bibr" target="#b28">[Abadi et al., 2015]</ref>, csv), with additional support for saving and restoring experiments. Wandb users will be able to access online interactive plots for their experiments together with renderings of evaluation runs.</p><p>Configuring. A core reproducibility challenge resides in sharing experiment configurations. For this reason, BenchMARL completely decouples configuration parameters from the Python codebase. Configuration files use a standardized YAML format and are available in the c o n f folder, structured in sub-folders mimicking the hierarchy of the respective Python components. When an experiment is instantiated, each component configuration is loaded from YAML into a corresponding Python dataclass. This process allows to strongly check types and values of a configuration and fail early if some parameters do not pass this check. Loaded BenchMARL components' dataclasses can then be safely passed around as they only represent a lazy configuration and their respective component is not instantiated until the experiment is run. To simplify the process of loading configurations from YAML, users can optionally benefit from using Hydra <ref type="bibr" target="#b1">[Yadan, 2019]</ref>, a project that allows to define modular configuration trees in YAML files that can be overridden in many ways either within scripts or in the command line. Such modularity in the configuration allows to run complex benchmarks in one line by listing the desired algorithms, models, and tasks to compare. Different execution backends can be used (e.g., sequential, parallel, SLURM). Users that do not want to depend on Hydra can directly load YAML configurations into the respective dataclass from a Python script.</p><p>Extending. Each component in the library has an associated abstract class which defines the minimal functionalities needed to implement a new instance. This makes it easy to integrate custom algorithms, models, and tasks allowing to compare them against the wide range of already implemented ones.</p><p>Our examples provide detailed illustrations on how to create custom components. For example, when creating a new algorithm, users will just need to implement the functions that provide a TorchRL loss and policy as well as some general flags on whether the algorithm should be trained on or off policy and what type of actions are supported. Similarly, when integrating a new environment, they will need to provide a TorchRL environment class alongside basic information on the input and output spaces, global state, agent grouping, and action type. BenchMARL will then automatically be able to determine compatibility between environments and algorithms.</p><p>Callbacks and checkpointing. To aid in experimentation, BenchMARL provides multiple callbacks in all the major phases of the training process. These callbacks will notify a list of listener components defined by the user. For example, callbacks can be used: to stop or resume training a particular agent group, to train additional losses on top of the RL objective, to create a curriculum of tasks, to perform self-play in adversarial environments, or simply to log custom data or plots. Alongside callbacks, BenchMARL is compatible with experiment checkpointing and restoring in the standard PyTorch format. Experiment state (e.g., replay buffers, networks, environments) can all be loaded and saved to disk. This particular feature also enables the deployment of trained policies, as shown in <ref type="bibr" target="#b29">Blumenkamp et al. [2024]</ref>, where policies trained in BenchMARL and VMAS are deployed on a real-world multi-robot system.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Public benchmark results.</head><p>As part of the effort for the standardization of MARL benchmarking, we are fine-tuning and releasing hyperparameters and experiment results for BenchMARL environments and algorithms in public interactive notebooks. Fine-tuned configurations are available in the c o n f folder of the project repository. The notebooks and interactive plots are publicly available on Wandb (at <ref type="url" target="https://wandb.ai/matteobettini/benchmarl-public/reportlist">this url</ref>). Towards this goal, we have already run and published benchmarks for VMAS environments. The results are reported in Sec. 4.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head><p>In this section, we report some experiments to confirm the correctness of the implementations in the library and provide public benchmarking references. Furthermore, since the majority of the algorithms available is simply a multi-agent extension of single-agent algorithms (e.g., PPO, DDPG, SAC, DQN), BenchMARL is able to reuse the algorithm implementations available in TorchRL. We refer to <ref type="bibr" target="#b0">Bou et al. [2024]</ref> for extended evaluations of these single-agent algorithms as well as comparisons to the original papers.</p><p>0.0 0.2 0.4 0.6 0.8 1.0 Number of timesteps 1e7 0.3 0.4 0.5 0.6 0.7 0.8 Normalized return MASAC QMIX VDN MADDPG MAPPO IQL IPPO ISAC IDDPG (a) Sample efficiency curves. 0.0 0.2 0.4 0.6 0.8 1.0 Normalized return ( ) 0.00 0.25 0.50 0.75 1.00 Fraction of runs with score &gt; MASAC QMIX VDN MADDPG MAPPO IQL IPPO ISAC IDDPG (b) Performance profile.</p><p>0.85 0.90 0.95 1.00 MASAC QMIX VDN MADDPG MAPPO IQL IPPO ISAC IDDPG Median 0.88 0.92 0.96 1.00 IQM 0.88 0.92 0.96 Mean 0.04 0.08 0.12 Optimality Gap Normalized return (c) Aggregate scores.</p><p>Figure <ref type="figure">4</ref>: Benchmark results over VMAS tasks (Navigation, Sampling, Balance). All plots report the 95% stratified bootstrap confidence intervals over 3 random seeds for each experiment. Curves in the top report the inter-quartile mean (IQM). See <ref type="bibr" target="#b2">[Gorsane et al., 2022</ref><ref type="bibr" target="#b3">, Agarwal et al., 2021]</ref> for more details on the reported metrics. Details and references for the algorithms used are available in Table <ref type="table" target="#tab_0">1</ref>.</p><p>A first set of benchmarks was run on the VMAS tasks. For these experiments, we ran all of the currently available algorithms in BenchMARL on the Navigation, Sampling, and Balance tasks. Experiment results, aggregated over all tasks, are reported in Fig. <ref type="figure">4</ref>. Individual task results are reported in Fig. <ref type="figure" target="#fig_5">5</ref>. All the algorithms, models, and tasks were run using the default BenchMARL configuration, available in the c o n f folder. The experiment hyperparameters are available in the f i n e _ t u n e d / vmas folder. The obtained results match the ones reported by <ref type="bibr" target="#b0">Bou et al. [2024]</ref> and <ref type="bibr" target="#b4">Bettini et al. [2022]</ref>. An interactive version of these results is available <ref type="url" target="https://api.wandb.ai/links/matteobettini/wu6wwp6q">here</ref>.</p><p>As we can see from the general plots in Fig. <ref type="figure">4</ref> (aggregated over all tasks), the Multi-Agent (MA) versions of all algorithms (i.e., MASAC, MADDPG, MAPPO) obtain the best overall performance. This is because these algorithms benefit from centralized critics during training, which allows the critic to condition on the global state instead of using just local information. Q-Learning algorithms (i.e., IQL, VDN, QMIX) perform suboptimally compared to the actor-critic ones. This might be due to the fact that these approaches are trained on a version of the tasks with discrete actions, which might impede performance given the continuous multi-robot control nature of these tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>In this paper we present BenchMARL, the first MARL benchmarking library with the goal of enabling standardization and reproducibility in the field. BenchMARL focuses on high-level structuring of configuration and reporting while using low-level benchmarked RL implementations from TorchRL. Thanks to this, it provides a lightweight and easy-to-use MARL training library that has already proved successful in multi-robot learning and zero-shot deployment in the real world <ref type="bibr" target="#b29">[Blumenkamp et al., 2024]</ref>. The MARL community can take advantage of BenchMARL to easily compare and share MARL components, increasing reproducibility in the field and reducing its costs. The library also provides an easy-to-use tool for users approaching MARL for the first time.     <ref type="table" target="#tab_0">1</ref>.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: BenchMARL execution diagram. Users run benchmarks as sets of experiments, where each experiment loads its components from the respective YAML configuration files.</figDesc><graphic coords="3,108.00,72.00,395.99,104.83" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 :</head><label>3</label><figDesc>Figure3: Environments in BenchMARL. This figure shows renderings from one example task for each environment. Details and references for all environments are available in Table2.</figDesc><graphic coords="5,118.30,85.69,75.23,50.03" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>( a )</head><label>a</label><figDesc>Sampling task.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><figDesc>Sampling reward curves.(c) Navigation task.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><figDesc>Balance reward curves.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 5 :</head><label>5</label><figDesc>Figure5: The sample efficiency curves for all BenchMARL algorithms over the three VMAS tasks analyzed. We report the inter-quartile mean (IQM) with 95% stratified bootstrap confidence intervals over 3 random seeds for each experiment. Details and references for the algorithms used are available in Table1.</figDesc><graphic coords="8,112.69,408.32,118.80,118.80" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Algorithms in BenchMARL.</figDesc><table><row><cell>Name</cell><cell cols="5">On/Off policy Actor-critic Full-observability in critic Action compatibility Probabilistic actor</cell></row><row><cell>MAPPO [Yu et al., 2021]</cell><cell>On</cell><cell>Yes</cell><cell>Yes</cell><cell>Continuous + Discrete</cell><cell>Yes</cell></row><row><cell>IPPO [de Witt et al., 2020]</cell><cell>On</cell><cell>Yes</cell><cell>No</cell><cell>Continuous + Discrete</cell><cell>Yes</cell></row><row><cell>MADDPG [Lowe et al., 2017]</cell><cell>Off</cell><cell>Yes</cell><cell>Yes</cell><cell>Continuous</cell><cell>No</cell></row><row><cell>IDDPG</cell><cell>Off</cell><cell>Yes</cell><cell>No</cell><cell>Continuous</cell><cell>No</cell></row><row><cell>MASAC</cell><cell>Off</cell><cell>Yes</cell><cell>Yes</cell><cell>Continuous + Discrete</cell><cell>Yes</cell></row><row><cell>ISAC</cell><cell>Off</cell><cell>Yes</cell><cell>No</cell><cell>Continuous + Discrete</cell><cell>Yes</cell></row><row><cell>QMIX</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Environments in BenchMARL.</figDesc><table><row><cell>Environment</cell><cell>Tasks</cell><cell>Cooperation</cell><cell>Global state</cell><cell>Reward function</cell><cell>Action space</cell><cell>Vectorized</cell></row><row><cell>VMAS</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Models in BenchMARL.</figDesc><table><row><cell>Model</cell><cell cols="3">Decentralized Centralized with local inputs Centralized with global input</cell></row><row><cell>MLP</cell><cell>Yes</cell><cell>Yes</cell><cell>Yes</cell></row><row><cell>CNN</cell><cell>Yes</cell><cell>Yes</cell><cell>Yes</cell></row><row><cell>GRU</cell><cell>Yes</cell><cell>Yes</cell><cell>Yes</cell></row><row><cell>LSTM</cell><cell>Yes</cell><cell>Yes</cell><cell>Yes</cell></row><row><cell>GNN</cell><cell>Yes</cell><cell>Yes</cell><cell>No</cell></row><row><cell>Deep Sets</cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_0"><p>Based on the NeurIPS 21 Outstanding Paper by<ref type="bibr" target="#b3">Agarwal et al. [2021]</ref> </p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_1"><p>For more info, see<ref type="bibr" target="#b4">Bettini et al. [2022]</ref>.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgments</head><p>The majority of the work was done during an internship at PyTorch, <rs type="funder">Meta</rs>. This work was supported in part by <rs type="funder">European Research Council (ERC)</rs> Project <rs type="grantNumber">949940</rs> (gAIa) and <rs type="funder">ARL DCIST CRA</rs> <rs type="grantNumber">W911NF-17-2-0181</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_dhApBZw">
+					<idno type="grant-number">949940</idno>
+				</org>
+				<org type="funding" xml:id="_7StTsM8">
+					<idno type="grant-number">W911NF-17-2-0181</idno>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Torchrl: A data-driven decision-making library for pytorch</title>
+		<author>
+			<persName><forename type="first">Albert</forename><surname>Bou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matteo</forename><surname>Bettini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Dittert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vikash</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shagun</forename><surname>Sodhani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaomeng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gianni</forename><surname>De Fabritiis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Moens</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=QxItoEAVMb" />
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Hydra -a framework for elegantly configuring complex applications</title>
+		<author>
+			<persName><forename type="first">Omry</forename><surname>Yadan</surname></persName>
+		</author>
+		<ptr target="https://github.com/facebookresearch/hydra" />
+	</analytic>
+	<monogr>
+		<title level="j">Github</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Towards a standardised performance evaluation protocol for cooperative marl</title>
+		<author>
+			<persName><forename type="first">Rihab</forename><surname>Gorsane</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omayma</forename><surname>Mahjoub</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruan</forename><surname>John De Kock</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roland</forename><surname>Dubb</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siddarth</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arnu</forename><surname>Pretorius</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="5510" to="5521" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Deep reinforcement learning at the edge of the statistical precipice</title>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Max</forename><surname>Schwarzer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pablo</forename><forename type="middle">Samuel</forename><surname>Castro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Courville</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><forename type="middle">G</forename><surname>Bellemare</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Vmas: A vectorized multiagent simulator for collective robot learning</title>
+		<author>
+			<persName><forename type="first">Matteo</forename><surname>Bettini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Kortvelesy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Blumenkamp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Prorok</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 16th International Symposium on Distributed Autonomous Robotic Systems, DARS &apos;22</title>
+		<meeting>the 16th International Symposium on Distributed Autonomous Robotic Systems, DARS &apos;22</meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Slurm: Simple linux utility for resource management</title>
+		<author>
+			<persName><forename type="first">Andy</forename><forename type="middle">B</forename><surname>Yoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Morris</forename><forename type="middle">A</forename><surname>Jette</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Grondona</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Workshop on job scheduling strategies for parallel processing</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2003">2003</date>
+			<biblScope unit="page" from="44" to="60" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Tabish</forename><surname>Mikayel Samvelyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Rashid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gregory</forename><surname>Schroeder De Witt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nantas</forename><surname>Farquhar</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Nardelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">J</forename><surname>Tim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chia-Man</forename><surname>Rudner</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">S</forename><surname>Philiph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakob</forename><surname>Torr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shimon</forename><surname>Foerster</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Whiteson</surname></persName>
+		</author>
+		<idno>abs/1902.04043</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+		<respStmt>
+			<orgName>The StarCraft Multi-Agent Challenge. CoRR</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Rethinking the implementation tricks and monotonicity constraint in cooperative multi-agent reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyang</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Seth</forename><forename type="middle">Austin</forename><surname>Harding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haibin</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shih</forename><surname>Wei Liao</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Benchmarking multi-agent deep reinforcement learning algorithms in cooperative tasks</title>
+		<author>
+			<persName><forename type="first">Georgios</forename><surname>Papoudakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Filippos</forename><surname>Christianos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukas</forename><surname>Schäfer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefano</forename><forename type="middle">V</forename><surname>Albrecht</surname></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/2006.07869" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Neural Information Processing Systems Track on Datasets and Benchmarks (NeurIPS)</title>
+		<meeting>the Neural Information Processing Systems Track on Datasets and Benchmarks (NeurIPS)</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Marllib: A scalable and efficient multi-agent reinforcement learning library</title>
+		<author>
+			<persName><forename type="first">Siyi</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minquan</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weixun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodan</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojun</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaodong</forename><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">24</biblScope>
+			<biblScope unit="issue">315</biblScope>
+			<biblScope unit="page" from="1" to="23" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Rllib: Abstractions for distributed reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Liaw</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Nishihara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philipp</forename><surname>Moritz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roy</forename><surname>Fox</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ken</forename><surname>Goldberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Jordan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Stoica</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="3053" to="3062" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">JAX: composable transformations of Python+NumPy programs</title>
+		<author>
+			<persName><forename type="first">James</forename><surname>Bradbury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roy</forename><surname>Frostig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Hawkins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><forename type="middle">James</forename><surname>Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Leary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dougal</forename><surname>Maclaurin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Necula</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Paszke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jake</forename><surname>Vanderplas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Skye</forename><surname>Wanderman-Milne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiao</forename><surname>Zhang</surname></persName>
+		</author>
+		<ptr target="http://github.com/google/jax" />
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ruan</forename><surname>De Kock</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omayma</forename><surname>Mahjoub</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sasha</forename><surname>Abramowitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wiem</forename><surname>Khlifi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.01460</idno>
+		<title level="m">Callum Rhys Tilbury, Claude Formanek, Andries Smit, and Arnu Pretorius. Mava: a research library for distributed multi-agent reinforcement learning in jax</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Jaxmarl: Multi-agent rl environments and algorithms in jax</title>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Rutherford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Ellis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matteo</forename><surname>Gallici</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Cook</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrei</forename><surname>Lupu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Garðar</forename><surname>Ingvarsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timon</forename><surname>Willi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akbir</forename><surname>Khan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Schroeder De Witt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandra</forename><surname>Souly</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 23rd International Conference on Autonomous Agents and Multiagent Systems</title>
+		<meeting>the 23rd International Conference on Autonomous Agents and Multiagent Systems</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="2444" to="2446" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Smacv2: An improved benchmark for cooperative multi-agent reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Ellis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Skander</forename><surname>Moalla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikayel</forename><surname>Samvelyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingfei</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anuj</forename><surname>Mahajan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakob</forename><forename type="middle">N</forename><surname>Foerster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shimon</forename><surname>Whiteson</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2212.07489" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Pettingzoo: Gym for multi-agent reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathaniel</forename><surname>Black</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mario</forename><surname>Grammel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ananth</forename><surname>Jayakumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Hari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luis</forename><forename type="middle">S</forename><surname>Sullivan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clemens</forename><surname>Santos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caroline</forename><surname>Dieffendahl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rodrigo</forename><surname>Horsch</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Perez-Vicente</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="15032" to="15043" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Soft actor-critic: Off-policy maximum entropy deep reinforcement learning with a stochastic actor</title>
+		<author>
+			<persName><forename type="first">Tuomas</forename><surname>Haarnoja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aurick</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on machine learning</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="1861" to="1870" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Heterogeneous multi-robot reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Matteo</forename><surname>Bettini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Shankar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Prorok</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 22nd International Conference on Autonomous Agents and Multiagent Systems, AAMAS &apos;23. International Foundation for Autonomous Agents and Multiagent Systems</title>
+		<meeting>the 22nd International Conference on Autonomous Agents and Multiagent Systems, AAMAS &apos;23. International Foundation for Autonomous Agents and Multiagent Systems</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akash</forename><surname>Velu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eugene</forename><surname>Vinitsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandre</forename><surname>Bayen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2103.01955</idno>
+		<title level="m">The surprising effectiveness of ppo in cooperative, multi-agent games</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Schroeder De Witt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tarun</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denys</forename><surname>Makoviichuk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Viktor</forename><surname>Makoviychuk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingfei</forename><surname>Philip Hs Torr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shimon</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Whiteson</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2011.09533</idno>
+		<title level="m">Is independent learning all you need in the starcraft multi-agent challenge? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Multi-agent actor-critic for mixed cooperative-competitive environments</title>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Lowe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><forename type="middle">I</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aviv</forename><surname>Tamar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean</forename><surname>Harb</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Openai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mordatch</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">30</biblScope>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Qmix: Monotonic value function factorisation for deep multi-agent reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Tabish</forename><surname>Rashid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikayel</forename><surname>Samvelyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Schroeder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gregory</forename><surname>Farquhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakob</forename><surname>Foerster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shimon</forename><surname>Whiteson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="4295" to="4304" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Value-decomposition networks for cooperative multi-agent learning</title>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Sunehag</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guy</forename><surname>Lever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Audrunas</forename><surname>Gruslys</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wojciech</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marian</forename><surname>Czarnecki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vinicius</forename><surname>Zambaldi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Max</forename><surname>Jaderberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Lanctot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Sonnerat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joel</forename><forename type="middle">Z</forename><surname>Leibo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Tuyls</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1706.05296</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Multi-Agent Reinforcement Learning: Independent vs. Cooperative Agents</title>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Tan</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/b978-1-55860-307-3.50049-6</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Machine Learning Proceedings</title>
+		<imprint>
+			<date type="published" when="1993">1993. 1993</date>
+			<biblScope unit="page" from="330" to="337" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Scalable evaluation of multi-agent reinforcement learning with melting pot</title>
+		<author>
+			<persName><forename type="first">Joel</forename><forename type="middle">Z</forename><surname>Leibo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edgar</forename><surname>Dué Nez Guzmán</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sasha</forename><surname>Vezhnevets</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><forename type="middle">P</forename><surname>Agapiou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Sunehag</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raphael</forename><surname>Koster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jayd</forename><surname>Matyas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Beattie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thore</forename><surname>Graepel</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2107.06857</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2107.06857" />
+	</analytic>
+	<monogr>
+		<title level="j">PMLR</title>
+		<imprint>
+			<biblScope unit="page">2021</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Cooperative multi-agent control using deep reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Maxim</forename><surname>Jayesh K Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mykel</forename><surname>Egorov</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kochenderfer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on autonomous agents and multiagent systems</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="66" to="83" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Deep sets. Advances in neural information processing systems</title>
+		<author>
+			<persName><forename type="first">Manzil</forename><surname>Zaheer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Satwik</forename><surname>Kottur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siamak</forename><surname>Ravanbakhsh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barnabas</forename><surname>Poczos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Russ</forename><forename type="middle">R</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><forename type="middle">J</forename><surname>Smola</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="volume">30</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Graph attention networks</title>
+		<author>
+			<persName><forename type="first">Petar</forename><surname>Veličković</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guillem</forename><surname>Cucurull</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arantxa</forename><surname>Casanova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adriana</forename><surname>Romero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pietro</forename><surname>Liò</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+		<ptr target="https://www.wandb.com/" />
+	</analytic>
+	<monogr>
+		<title level="m">Lukas Biewald. Experiment tracking with weights and biases</title>
+		<imprint>
+			<date type="published" when="2018">2018. 2020</date>
+		</imprint>
+	</monogr>
+	<note>International Conference on Learning Representations Software available from wandb.com</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">TensorFlow: Large-scale machine learning on heterogeneous systems</title>
+		<author>
+			<persName><forename type="first">Martín</forename><surname>Abadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Barham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eugene</forename><surname>Brevdo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhifeng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Craig</forename><surname>Citro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><forename type="middle">S</forename><surname>Corrado</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Davis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Dean</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthieu</forename><surname>Devin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sanjay</forename><surname>Ghemawat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ian</forename><surname>Goodfellow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Harp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Irving</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Isard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangqing</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rafal</forename><surname>Jozefowicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manjunath</forename><surname>Kudlur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Levenberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dandelion</forename><surname>Mané</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rajat</forename><surname>Monga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sherry</forename><surname>Moore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Derek</forename><surname>Murray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Olah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Schuster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathon</forename><surname>Shlens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benoit</forename><surname>Steiner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kunal</forename><surname>Talwar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Tucker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Vanhoucke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vijay</forename><surname>Vasudevan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fernanda</forename><surname>Viégas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oriol</forename><surname>Vinyals</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Warden</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Wattenberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Wicke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoqiang</forename><surname>Zheng</surname></persName>
+		</author>
+		<ptr target="https://www.tensorflow.org/.Softwareavailablefromtensorflow.org" />
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Blumenkamp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Shankar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matteo</forename><surname>Bettini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><surname>Bird</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Prorok</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.02198</idno>
+		<title level="m">The cambridge robomaster: An agile multi-robot research platform</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>
